@@ -136,6 +136,7 @@ dcc.Checklist(
     value=['MTL'] # Set the default value
 ),
 
+# Generate the map
 dl.Map([dl.TileLayer(), cluster], zoom=3, center=(51, 10), style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"})])
 
 # Launch the Flask app
