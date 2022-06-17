@@ -124,20 +124,24 @@ markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude,
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
 app = JupyterDash(__name__)
-app.layout = html.Div([
-# Create a checklist of options for the user
-# https://dash.plotly.com/dash-core-components/checklist
-dcc.Checklist( 
-    options=[
-       {'label': 'New York City', 'value': 'NYC'},
-       {'label': 'Montreal', 'value': 'MTL'},
-       {'label': 'San Francisco', 'value': 'SF'},
-   ],
-    value=['MTL'] # Set the default value
-),
 
-# Generate the map
-dl.Map([dl.TileLayer(), cluster], zoom=3, center=(51, 10), style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"})])
+app.layout = html.Div([
+  # Create a checklist of options for the user
+  # https://dash.plotly.com/dash-core-components/checklist
+  dcc.Checklist( 
+      id = checklist,
+      options=[
+        {'label': 'New York City', 'value': 'NYC'},
+        {'label': 'Montreal', 'value': 'MTL'},
+        {'label': 'San Francisco', 'value': 'SF'},
+    ],
+      value=['MTL'] # Set the default value
+  ),
+
+  # Generate the map
+  dl.Map([dl.TileLayer(), cluster], zoom=3, center=(51, 10), style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"})
+
+])
 
 # Launch the Flask app
 if __name__ == '__main__':
