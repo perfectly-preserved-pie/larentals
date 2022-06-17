@@ -139,9 +139,23 @@ app.layout = html.Div([
   ),
 
   # Generate the map
-  dl.Map([dl.TileLayer(), cluster], zoom=3, center=(51, 10), style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"})
+  dl.Map(
+    [dl.TileLayer(), cluster],
+    id=map,
+    zoom=3,
+    center=(51, 10),
+    style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
+  )
 
 ])
+
+@app.callback(
+  Output
+
+
+
+
+)
 
 # Launch the Flask app
 if __name__ == '__main__':
