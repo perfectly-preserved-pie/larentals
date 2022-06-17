@@ -1,4 +1,6 @@
 from defusedxml import DTDForbidden
+from requests import options
+from yaml import compose
 import plotly.express as px
 from jupyter_dash import JupyterDash
 import dash_core_components as dcc
@@ -129,19 +131,30 @@ app.layout = html.Div([
   # Create a checklist of options for the user
   # https://dash.plotly.com/dash-core-components/checklist
   dcc.Checklist( 
-      id = checklist,
+      id = 'checklist',
       options=[
-        {'label': 'New York City', 'value': 'NYC'},
-        {'label': 'Montreal', 'value': 'MTL'},
-        {'label': 'San Francisco', 'value': 'SF'},
+        {'label': 'Apartment (Attached)', 'value': 'APT/A'},
+        {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+        #{'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+        #{'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
+        #{'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
+        #{'label': 'Condo (Detached)', 'value': 'CONDO/D'},
+        #{'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+        #{'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
+        #{'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
+        #{'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+        #{'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
+        #{'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
+        #{'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
+        #{'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
     ],
-      value=['MTL'] # Set the default value
+      #value=['MTL'] # Set the default value
   ),
 
   # Generate the map
   dl.Map(
     [dl.TileLayer(), cluster],
-    id=map,
+    id='map',
     zoom=3,
     center=(51, 10),
     style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
@@ -150,12 +163,28 @@ app.layout = html.Div([
 ])
 
 @app.callback(
-  Output
-
-
-
-
+  Output(component_id='map', component_property='children'),
+  Input(component_id='checklist', component_property='value')
 )
+def update_map(options_chosen):
+  df_filtered = df[df['Sub Type'].isin(options_chosen)]
+
+  # Create markers & associated popups from dataframe
+  markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df_filtered.itertuples()]
+
+  # Add them to a MarkerCluster
+  cluster = dl.MarkerClusterGroup(id="markers", children=markers)
+
+  # Generate the map
+  return dl.Map(
+    [dl.TileLayer(), cluster],
+    id='map',
+    zoom=3,
+    center=(51, 10),
+    style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
+  )
+
+
 
 # Launch the Flask app
 if __name__ == '__main__':
