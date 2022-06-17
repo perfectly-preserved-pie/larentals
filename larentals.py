@@ -60,6 +60,7 @@ def popup_html(row):
     i = row.Index
     street_address=df['Full Street Address'].iloc[i] 
     mls_number=df['Listing ID (MLS#)'].iloc[i]
+    mls_number_hyperlink=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/"
     lc_price = df['L/C Price'].iloc[i] 
     price_per_sqft=df['Price Per Square Foot'].iloc[i]                  
     brba = df['Br/Ba'].iloc[i]
@@ -78,7 +79,9 @@ def popup_html(row):
             html.Td("Street Address"), html.Td(f"{street_address}")
           ]), # end row #1
           html.Tr([ # Start row #2
-            html.Td("Listing ID (MLS#)"), html.Td(f"{mls_number}")
+            # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
+            # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
+            html.Td("Listing ID (MLS#)"), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]), # end row #2
           html.Tr([ # Start row #3
             html.Td("L/C Price"), html.Td(f"{lc_price}")
