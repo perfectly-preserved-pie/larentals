@@ -135,20 +135,20 @@ app.layout = html.Div([
       options=[
         {'label': 'Apartment (Attached)', 'value': 'APT/A'},
         {'label': 'Studio (Attached)', 'value': 'STUD/A'},
-        #{'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
-        #{'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
-        #{'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
-        #{'label': 'Condo (Detached)', 'value': 'CONDO/D'},
-        #{'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
-        #{'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
-        #{'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
-        #{'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
-        #{'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
-        #{'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
-        #{'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
-        #{'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
+        {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+        {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
+        {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
+        {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
+        {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+        {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
+        {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
+        {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+        {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
+        {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
+        {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
+        {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
     ],
-      #value=['MTL'] # Set the default value
+      value=['APT/A'] # Set the default value
   ),
 
   # Generate the map
