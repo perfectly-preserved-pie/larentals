@@ -52,6 +52,16 @@ for row in df.itertuples():
     df.at[row.Index, 'Longitude'] = coordinates[1]
     df.at[row.Index, 'Coordinates'] = coordinates[2]
 
+# Add an extra column for simply saying either Yes or No if pets are allowed
+# We need this because there are many ways of saying "Yes":
+# i.e "Call", "Small Dogs OK", "Breed Restrictions", "Cats Only", etc.
+# To be used later in the Dash callback function
+for row in df.itertuples():
+    if row.PetsAllowed != 'No':
+        df.at[row.Index, "PetsAllowedSimple"] = 'Yes'
+    elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
+        df.at[row.Index, "PetsAllowedSimple"] = 'No'
+
 
 # Get the means so we can center the map
 #lat_mean = df['Latitude'].mean()
@@ -150,6 +160,15 @@ app.layout = html.Div([
     ],
       value=['APT/A'] # Set the default value
   ),
+  # Create a checklist for pet policy
+  dcc.Checklist(
+    id = 'pets_checklist',
+    options=[
+      {'label': 'Pets Allowed', 'value': 'Yes'},
+      {'label': 'Pets NOT Allowed', 'value': 'No'}
+    ],
+      value=['Yes', 'No']
+  ), # end div
 
   # Generate the map
   dl.Map(
@@ -164,10 +183,14 @@ app.layout = html.Div([
 
 @app.callback(
   Output(component_id='map', component_property='children'),
-  Input(component_id='checklist', component_property='value')
+  [Input(component_id='checklist', component_property='value'),
+  Input(component_id='pets_checklist', component_property='value')
+  ]
 )
-def update_map(options_chosen):
-  df_filtered = df[df['Sub Type'].isin(options_chosen)]
+def update_map(subtypes_chosen, pets_chosen):
+  df_filtered = df[df['Sub Type'].isin(subtypes_chosen) &
+    (df['PetsAllowedSimple'].isin(pets_chosen))
+  ]
 
   # Create markers & associated popups from dataframe
   markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df_filtered.itertuples()]
