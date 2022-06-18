@@ -167,7 +167,7 @@ app.layout = html.Div([
       {'label': 'Pets Allowed', 'value': 'Yes'},
       {'label': 'Pets NOT Allowed', 'value': 'No'}
     ],
-      value=['Yes', 'No']
+      value=['Yes', 'No'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
   ), # end div
 
   # Generate the map
