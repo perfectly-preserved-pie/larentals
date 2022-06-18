@@ -70,10 +70,6 @@ df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
 # Convert the L/C Price column into integers
 df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
 
-# Get the means so we can center the map
-#lat_mean = df['Latitude'].mean()
-#long_mean = df['Longitude'].mean()
-
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
     i = row.Index
@@ -138,6 +134,10 @@ def popup_html(row):
 
 # Create markers & associated popups from dataframe
 markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+
+# Get the means so we can center the map
+lat_mean = df['Latitude'].mean()
+long_mean = df['Longitude'].mean()
 
 # Add them to a MarkerCluster
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
@@ -212,7 +212,7 @@ app.layout = html.Div([
     [dl.TileLayer(), cluster],
     id='map',
     zoom=3,
-    center=(51, 10),
+    center=(lat_mean, long_mean),
     style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
   )
 
@@ -249,12 +249,16 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Add them to a MarkerCluster
   cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
+  # Get the means so we can center the map
+  lat_mean = df['Latitude'].mean()
+  long_mean = df['Longitude'].mean()
+
   # Generate the map
   return dl.Map(
     [dl.TileLayer(), cluster],
     id='map',
     zoom=3,
-    center=(51, 10),
+    center=(lat_mean, long_mean),
     style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
   )
 
