@@ -60,9 +60,9 @@ for row in df.itertuples():
 # To be used later in the Dash callback function
 for row in df.itertuples():
     if row.PetsAllowed != 'No':
-        df.at[row.Index, "PetsAllowedSimple"] = 'Yes'
+        df.at[row.Index, "PetsAllowedSimple"] = 'True'
     elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
-        df.at[row.Index, "PetsAllowedSimple"] = 'No'
+        df.at[row.Index, "PetsAllowedSimple"] = 'False'
 
 
 # Get the means so we can center the map
@@ -166,10 +166,10 @@ app.layout = html.Div([
   dcc.Checklist(
     id = 'pets_checklist',
     options=[
-      {'label': 'Pets Allowed', 'value': 'Yes'},
-      {'label': 'Pets NOT Allowed', 'value': 'No'}
+      {'label': 'Pets Allowed', 'value': 'True'},
+      {'label': 'Pets NOT Allowed', 'value': 'False'}
     ],
-      value=['Yes', 'No'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+      value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
   ),
   # Create a range slider for # of garage spaces
   dcc.RangeSlider(
