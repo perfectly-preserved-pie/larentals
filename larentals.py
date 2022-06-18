@@ -64,6 +64,11 @@ for row in df.itertuples():
     elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
         df.at[row.Index, "PetsAllowedSimple"] = 'False'
 
+# Remove the leading $ symbol and comma in the cost field
+df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
+
+# Convert the L/C Price column into integers
+df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
 
 # Get the means so we can center the map
 #lat_mean = df['Latitude'].mean()
@@ -98,7 +103,7 @@ def popup_html(row):
             html.Td("Listing ID (MLS#)"), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]), # end row #2
           html.Tr([ # Start row #3
-            html.Td("L/C Price"), html.Td(f"{lc_price}")
+            html.Td("L/C Price"), html.Td(f"${lc_price}")
           ]), # end row #3
           html.Tr([
             html.Td("Price Per Square Foot"), html.Td(f"{price_per_sqft}")
@@ -171,13 +176,36 @@ app.layout = html.Div([
     ],
       value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
   ),
+  # Create a checklist for rental terms
+  dcc.Checklist(
+    id = 'terms_checklist',
+    options = [
+      {'label': 'Monthly', 'value': 'MO'},
+      {'label': '12 Months', 'value': '12M'},
+      {'label': '24 Months', 'value': '24M'},
+      {'label': 'Negotiable', 'value': 'NG'}
+    ],
+      value=['MO', '12M', '24M', 'NG']
+  ),
   # Create a range slider for # of garage spaces
   dcc.RangeSlider(
     min=0, 
     max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
     step=1, 
     value=[0, df['Garage Spaces'].max()], 
-    id='garage_spaces_slider'),
+    id='garage_spaces_slider'
+  ),
+  # Create a range slider for rental price
+  dcc.RangeSlider(
+    min=df['L/C Price'].min(),
+    max=df['L/C Price'].max(),
+    value=[0, df['L/C Price'].max()],
+    id='rental_price_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    }
+  ),
 
   # Generate the map
   dl.Map(
@@ -192,19 +220,27 @@ app.layout = html.Div([
 
 @app.callback(
   Output(component_id='map', component_property='children'),
-  [Input(component_id='subtype_checklist', component_property='value'),
-  Input(component_id='pets_checklist', component_property='value'),
-  Input(component_id='garage_spaces_slider', component_property='value')
+  [
+    Input(component_id='subtype_checklist', component_property='value'),
+    Input(component_id='pets_checklist', component_property='value'),
+    Input(component_id='terms_checklist', component_property='value'),
+    Input(component_id='garage_spaces_slider', component_property='value'),
+    Input(component_id='rental_price_slider', component_property='value')
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, garage_spaces):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price):
   df_filtered = df[
-    (df['Sub Type'].isin(subtypes_chosen)) &
-    (df['PetsAllowedSimple'].isin(pets_chosen)) &
-    # For the slider, we need to filter the dataframe by a range this time and not a singular value like the ones aboves
+    (
+      (df['Sub Type'].isin(subtypes_chosen)) &
+      (df['PetsAllowedSimple'].isin(pets_chosen)) &
+      (df['Terms'].isin(terms_chosen))
+    ) &
+    # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
-    (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1]))
+    (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) &
+    # Repeat but for rental price
+    (df['L/C Price'].between(rental_price[0], rental_price[1]))
   ]
 
   # Create markers & associated popups from dataframe
