@@ -159,7 +159,7 @@ app.layout = html.Div([
         {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
         {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
         {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
-    ],
+      ],
       value=['APT/A'] # Set the default value
   ),
   # Create a checklist for pet policy
