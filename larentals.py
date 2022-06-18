@@ -18,6 +18,8 @@ import os
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv(GOOGLE_API_KEY)) # https://github.com/geopy/geopy/issues/171
 
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
 # import the csv
 # Don't round the float. See https://stackoverflow.com/a/68027847
 df = pd.read_csv("larentals.csv", float_precision="round_trip")
@@ -135,7 +137,7 @@ markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude,
 # Add them to a MarkerCluster
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
-app = JupyterDash(__name__)
+app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
   # Create a checklist of options for the user
@@ -172,9 +174,9 @@ app.layout = html.Div([
   # Create a range slider for # of garage spaces
   dcc.RangeSlider(
     min=0, 
-    max=int(df['Garage Spaces'].max()), # Dynamically calculate the maximum number of garage spaces
+    max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
     step=1, 
-    value=[0, int(df['Garage Spaces'].max())], 
+    value=[0, df['Garage Spaces'].max()], 
     id='garage_spaces_slider'),
 
   # Generate the map
@@ -196,9 +198,13 @@ app.layout = html.Div([
   ]
 )
 def update_map(subtypes_chosen, pets_chosen, garage_spaces):
-  df_filtered = df[df['Sub Type'].isin(subtypes_chosen) &
+  df_filtered = df[
+    (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
-    (df['Garage Spaces'].isin(garage_spaces))
+    # For the slider, we need to filter the dataframe by a range this time and not a singular value like the ones aboves
+    # To do this, we can use the Pandas .between function
+    # See https://stackoverflow.com/a/40442778
+    (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1]))
   ]
 
   # Create markers & associated popups from dataframe
