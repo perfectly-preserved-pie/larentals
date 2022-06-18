@@ -141,7 +141,7 @@ app.layout = html.Div([
   # Create a checklist of options for the user
   # https://dash.plotly.com/dash-core-components/checklist
   dcc.Checklist( 
-      id = 'checklist',
+      id = 'subtype_checklist',
       options=[
         {'label': 'Apartment (Attached)', 'value': 'APT/A'},
         {'label': 'Studio (Attached)', 'value': 'STUD/A'},
@@ -168,7 +168,14 @@ app.layout = html.Div([
       {'label': 'Pets NOT Allowed', 'value': 'No'}
     ],
       value=['Yes', 'No'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
-  ), # end div
+  ),
+  # Create a range slider for # of garage spaces
+  dcc.RangeSlider(
+    min=0, 
+    max=int(df['Garage Spaces'].max()), # Dynamically calculate the maximum number of garage spaces
+    step=1, 
+    value=[0, int(df['Garage Spaces'].max())], 
+    id='garage_spaces_slider'),
 
   # Generate the map
   dl.Map(
@@ -183,13 +190,15 @@ app.layout = html.Div([
 
 @app.callback(
   Output(component_id='map', component_property='children'),
-  [Input(component_id='checklist', component_property='value'),
-  Input(component_id='pets_checklist', component_property='value')
+  [Input(component_id='subtype_checklist', component_property='value'),
+  Input(component_id='pets_checklist', component_property='value'),
+  Input(component_id='garage_spaces_slider', component_property='value')
   ]
 )
-def update_map(subtypes_chosen, pets_chosen):
+def update_map(subtypes_chosen, pets_chosen, garage_spaces):
   df_filtered = df[df['Sub Type'].isin(subtypes_chosen) &
-    (df['PetsAllowedSimple'].isin(pets_chosen))
+    (df['PetsAllowedSimple'].isin(pets_chosen)) &
+    (df['Garage Spaces'].isin(garage_spaces))
   ]
 
   # Create markers & associated popups from dataframe
