@@ -67,8 +67,21 @@ for row in df.itertuples():
 # Remove the leading $ symbol and comma in the cost field
 df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
 
-# Convert the L/C Price column into integers
+# Convert a few columns into integers 
+# To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
 df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
+df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
+df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
+
+# Split the Bedroom/Bathrooms column into separate columns based on delimiters
+# Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
+# Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
+# TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than that, and you can’t officially consider it a full bath.
+df['Bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
+df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
+df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
+df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
+df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
@@ -167,6 +180,22 @@ app.layout = html.Div([
       ],
       value=['APT/A'] # Set the default value
   ),
+  # Create a range slider for # of bedrooms
+  dcc.RangeSlider(
+    min=0, 
+    max=df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+    step=1, 
+    value=[0, df['Bedrooms'].max()], 
+    id='bedrooms_slider'
+  ),
+  # Create a range slider for # of total bathrooms
+  dcc.RangeSlider(
+    min=0, 
+    max=df['Total Bathrooms'].max(), 
+    step=1, 
+    value=[0, df['Total Bathrooms'].max()], 
+    id='bathrooms_slider'
+  ),
   # Create a checklist for pet policy
   dcc.Checklist(
     id = 'pets_checklist',
@@ -225,22 +254,24 @@ app.layout = html.Div([
     Input(component_id='pets_checklist', component_property='value'),
     Input(component_id='terms_checklist', component_property='value'),
     Input(component_id='garage_spaces_slider', component_property='value'),
-    Input(component_id='rental_price_slider', component_property='value')
+    Input(component_id='rental_price_slider', component_property='value'),
+    Input(component_id='bedrooms_slider', component_property='value'),
+    Input(component_id='bathrooms_slider', component_property='value'),
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen):
   df_filtered = df[
-    (
-      (df['Sub Type'].isin(subtypes_chosen)) &
-      (df['PetsAllowedSimple'].isin(pets_chosen)) &
-      (df['Terms'].isin(terms_chosen))
-    ) &
+    (df['Sub Type'].isin(subtypes_chosen)) &
+    (df['PetsAllowedSimple'].isin(pets_chosen)) &
+    (df['Terms'].isin(terms_chosen)) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
     (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) &
     # Repeat but for rental price
-    (df['L/C Price'].between(rental_price[0], rental_price[1]))
+    (df['L/C Price'].between(rental_price[0], rental_price[1])) &
+    (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
+    (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1]))
   ]
 
   # Create markers & associated popups from dataframe
