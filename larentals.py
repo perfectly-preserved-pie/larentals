@@ -158,6 +158,8 @@ cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
+  # Title this section
+  html.H5("Subtypes"), 
   # Create a checklist of options for the user
   # https://dash.plotly.com/dash-core-components/checklist
   dcc.Checklist( 
@@ -180,6 +182,7 @@ app.layout = html.Div([
       ],
       value=['APT/A'] # Set the default value
   ),
+  html.H5("Bedrooms"),
   # Create a range slider for # of bedrooms
   dcc.RangeSlider(
     min=0, 
@@ -188,6 +191,7 @@ app.layout = html.Div([
     value=[0, df['Bedrooms'].max()], 
     id='bedrooms_slider'
   ),
+  html.H5("Bathrooms"),
   # Create a range slider for # of total bathrooms
   dcc.RangeSlider(
     min=0, 
@@ -196,6 +200,7 @@ app.layout = html.Div([
     value=[0, df['Total Bathrooms'].max()], 
     id='bathrooms_slider'
   ),
+  html.H5("Pet Policy"),
   # Create a checklist for pet policy
   dcc.Checklist(
     id = 'pets_checklist',
@@ -205,6 +210,7 @@ app.layout = html.Div([
     ],
       value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
   ),
+  html.H5("Lease Length"),
   # Create a checklist for rental terms
   dcc.Checklist(
     id = 'terms_checklist',
@@ -216,6 +222,7 @@ app.layout = html.Div([
     ],
       value=['MO', '12M', '24M', 'NG']
   ),
+  html.H5("Garage Spaces"),
   # Create a range slider for # of garage spaces
   dcc.RangeSlider(
     min=0, 
@@ -224,6 +231,7 @@ app.layout = html.Div([
     value=[0, df['Garage Spaces'].max()], 
     id='garage_spaces_slider'
   ),
+  html.H5("Price (Monthly)"),
   # Create a range slider for rental price
   dcc.RangeSlider(
     min=df['L/C Price'].min(),
