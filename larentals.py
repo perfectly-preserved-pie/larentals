@@ -68,12 +68,6 @@ for row in df.itertuples():
 # Remove the leading $ symbol and comma in the cost field
 df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
 
-# Convert a few columns into integers 
-# To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
-df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
-df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
-df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
-
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
@@ -83,6 +77,12 @@ df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split('
 df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
 df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
+
+# Convert a few columns into integers 
+# To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
+df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
+df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
+df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
