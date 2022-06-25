@@ -78,11 +78,15 @@ df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
 df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
+# Remove the square footage abbreviations
+df['Sqft'] = df['Sqft'].str.split('/').str[0]
+
 # Convert a few columns into integers 
 # To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
 df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
+df['Sqft'] = df['Sqft'].apply(pd.to_numeric)
 
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
