@@ -14,6 +14,7 @@ import pandas as pd
 from geopy.geocoders import GoogleV3
 from dotenv import load_dotenv, find_dotenv
 import os
+import uuid
 
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv(GOOGLE_API_KEY)) # https://github.com/geopy/geopy/issues/171
@@ -246,7 +247,7 @@ app.layout = html.Div([
 
   # Generate the map
   dl.Map(
-    [dl.TileLayer(), cluster],
+    [dl.TileLayer(), dl.LayerGroup(id="cluster")],
     id='map',
     zoom=3,
     center=(lat_mean, long_mean),
@@ -256,7 +257,7 @@ app.layout = html.Div([
 ])
 
 @app.callback(
-  Output(component_id='map', component_property='children'),
+  Output(component_id='cluster', component_property='children'),
   [
     Input(component_id='subtype_checklist', component_property='value'),
     Input(component_id='pets_checklist', component_property='value'),
@@ -293,13 +294,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   long_mean = df['Longitude'].mean()
 
   # Generate the map
-  return dl.Map(
-    [dl.TileLayer(), cluster],
-    id='map',
-    zoom=3,
-    center=(lat_mean, long_mean),
-    style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
-  )
+  return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
 
 
 
