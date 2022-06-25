@@ -1,5 +1,6 @@
 from defusedxml import DTDForbidden
 from requests import options
+from sympy import sqf
 from yaml import compose
 import plotly.express as px
 from jupyter_dash import JupyterDash
@@ -205,6 +206,18 @@ app.layout = html.Div([
     value=[0, df['Total Bathrooms'].max()], 
     id='bathrooms_slider'
   ),
+  # Create a range slider for square footage
+  html.H5("Square Footage"),
+  dcc.RangeSlider(
+    min=df['Sqft'].min(), 
+    max=df['Sqft'].max(),
+    value=[df['Sqft'].min(), df['Sqft'].max()], 
+    id='sqft_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    }
+  ),
   html.H5("Pet Policy"),
   # Create a checklist for pet policy
   dcc.Checklist(
@@ -271,9 +284,10 @@ app.layout = html.Div([
     Input(component_id='rental_price_slider', component_property='value'),
     Input(component_id='bedrooms_slider', component_property='value'),
     Input(component_id='bathrooms_slider', component_property='value'),
+    Input(component_id='sqft_slider', component_property='value'),
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -285,7 +299,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     # Repeat but for rental price
     (df['L/C Price'].between(rental_price[0], rental_price[1])) &
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
-    (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1]))
+    (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
+    (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1]))
   ]
 
   # Create markers & associated popups from dataframe
