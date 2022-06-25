@@ -249,7 +249,8 @@ app.layout = html.Div([
   dl.Map(
     [dl.TileLayer(), dl.LayerGroup(id="cluster")],
     id='map',
-    zoom=3,
+    zoom=9,
+    minZoom=9,
     center=(lat_mean, long_mean),
     style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
   )
@@ -285,13 +286,6 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
 
   # Create markers & associated popups from dataframe
   markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df_filtered.itertuples()]
-
-  # Add them to a MarkerCluster
-  cluster = dl.MarkerClusterGroup(id="markers", children=markers)
-
-  # Get the means so we can center the map
-  lat_mean = df['Latitude'].mean()
-  long_mean = df['Longitude'].mean()
 
   # Generate the map
   return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
