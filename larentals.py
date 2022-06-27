@@ -79,8 +79,9 @@ df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
 df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
-# Remove the square footage abbreviations
+# Remove the square footage & YrBuilt abbreviations
 df['Sqft'] = df['Sqft'].str.split('/').str[0]
+df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0]
 
 # Convert a few columns into integers 
 # To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
@@ -88,6 +89,7 @@ df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric)
+df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric)
 
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
@@ -261,6 +263,29 @@ app.layout = html.Div([
       "always_visible": True
     }
   ),
+  html.H5("Year Built"),
+  # Create a range slider for year built
+  dcc.RangeSlider(
+    min=df['YrBuilt'].min(),
+    max=df['YrBuilt'].max(),
+    value=[0, df['YrBuilt'].max()],
+    id='yrbuilt_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
+    marks = { # Create custom tick marks
+        f"{df['YrBuilt'].min()}": f"{df['YrBuilt'].min()}", # first mark is oldest house
+        int(f"{df['YrBuilt'].min()}") + 20: str(int(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years. The left column should be integers, the right column should be strings.
+        int(f"{df['YrBuilt'].min()}") + 40: str(int(f"{df['YrBuilt'].min()}") + 40),
+        int(f"{df['YrBuilt'].min()}") + 60: str(int(f"{df['YrBuilt'].min()}") + 60),
+        int(f"{df['YrBuilt'].min()}") + 80: str(int(f"{df['YrBuilt'].min()}") + 80),
+        int(f"{df['YrBuilt'].min()}") + 100: str(int(f"{df['YrBuilt'].min()}") + 100),
+        int(f"{df['YrBuilt'].min()}") + 120: str(int(f"{df['YrBuilt'].min()}") + 120),
+        int(f"{df['YrBuilt'].min()}") + 140: str(int(f"{df['YrBuilt'].min()}") + 140),
+        f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
+    }
+  ),
 
   # Generate the map
   dl.Map(
@@ -285,9 +310,10 @@ app.layout = html.Div([
     Input(component_id='bedrooms_slider', component_property='value'),
     Input(component_id='bathrooms_slider', component_property='value'),
     Input(component_id='sqft_slider', component_property='value'),
+    Input(component_id='yrbuilt_slider', component_property='value'),
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -300,7 +326,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (df['L/C Price'].between(rental_price[0], rental_price[1])) &
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1]))
+    (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
+    (df['YrBuilt'].between(years_chosen[0], years_chosen[1]))
   ]
 
   # Create markers & associated popups from dataframe
