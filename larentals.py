@@ -197,7 +197,8 @@ app.layout = html.Div([
     max=df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
     step=1, 
     value=[0, df['Bedrooms'].max()], 
-    id='bedrooms_slider'
+    id='bedrooms_slider',
+    updatemode='drag'
   ),
   html.H5("Bathrooms"),
   # Create a range slider for # of total bathrooms
@@ -206,7 +207,8 @@ app.layout = html.Div([
     max=df['Total Bathrooms'].max(), 
     step=1, 
     value=[0, df['Total Bathrooms'].max()], 
-    id='bathrooms_slider'
+    id='bathrooms_slider',
+    updatemode='drag'
   ),
   # Create a range slider for square footage
   html.H5("Square Footage"),
@@ -218,7 +220,8 @@ app.layout = html.Div([
     tooltip={
       "placement": "bottom",
       "always_visible": True
-    }
+    },
+    updatemode='drag'
   ),
   html.H5("Pet Policy"),
   # Create a checklist for pet policy
@@ -249,7 +252,8 @@ app.layout = html.Div([
     max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
     step=1, 
     value=[0, df['Garage Spaces'].max()], 
-    id='garage_spaces_slider'
+    id='garage_spaces_slider',
+    updatemode='drag'
   ),
   html.H5("Price (Monthly)"),
   # Create a range slider for rental price
@@ -261,7 +265,8 @@ app.layout = html.Div([
     tooltip={
       "placement": "bottom",
       "always_visible": True
-    }
+    },
+    updatemode='drag'
   ),
   html.H5("Year Built"),
   # Create a range slider for year built
@@ -284,7 +289,8 @@ app.layout = html.Div([
         int(f"{df['YrBuilt'].min()}") + 120: str(int(f"{df['YrBuilt'].min()}") + 120),
         int(f"{df['YrBuilt'].min()}") + 140: str(int(f"{df['YrBuilt'].min()}") + 140),
         f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
-    }
+    },
+    updatemode='drag'
   ),
 
   # Generate the map
