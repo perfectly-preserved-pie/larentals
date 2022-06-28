@@ -280,8 +280,9 @@ app.layout = html.Div([
       "always_visible": True
     },
     marks = { # Create custom tick marks
+        # The left column should be integers, the right column should be strings
         f"{df['YrBuilt'].min()}": f"{df['YrBuilt'].min()}", # first mark is oldest house
-        int(f"{df['YrBuilt'].min()}") + 20: str(int(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years. The left column should be integers, the right column should be strings.
+        int(f"{df['YrBuilt'].min()}") + 20: str(int(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years
         int(f"{df['YrBuilt'].min()}") + 40: str(int(f"{df['YrBuilt'].min()}") + 40),
         int(f"{df['YrBuilt'].min()}") + 60: str(int(f"{df['YrBuilt'].min()}") + 60),
         int(f"{df['YrBuilt'].min()}") + 80: str(int(f"{df['YrBuilt'].min()}") + 80),
