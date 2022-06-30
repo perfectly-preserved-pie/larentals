@@ -1,16 +1,9 @@
-from defusedxml import DTDForbidden
-from requests import options
-from sympy import sqf
-from yaml import compose
-import plotly.express as px
 from jupyter_dash import JupyterDash
 import dash_core_components as dcc
 from dash.dependencies import Input, Output
-import dash
 from dash import dcc
 import dash_html_components as html
 import dash_leaflet as dl
-import folium
 import pandas as pd
 from geopy.geocoders import GoogleV3
 from dotenv import load_dotenv, find_dotenv
@@ -27,12 +20,19 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 df = pd.read_csv("larentals.csv", float_precision="round_trip")
 pd.set_option("display.precision", 10)
 
-# Create a new column with the full street address
-# Also strip whitespace from the St Name column
-df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
+# Create a new column with the Street Number & Street Name
+df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip()
 
-# Drop any rows with invalid data
-df = df.dropna()
+# Drop all rows that don't have a MLS Listing ID (aka misc data we don't care about)
+# https://stackoverflow.com/a/13413845
+df = df[df['Listing ID (MLS#)'].notna()]
+
+# Replace any fields that are empty with 'Unknown'
+# https://stackoverflow.com/a/38571108
+df.fillna('Unknown', inplace=True)
+
+# Drop all rows that don't have a city. Fuck this shit I'm too lazy to code around bad data input.
+df = df[~df['City'].str.contains("Unknown")]
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -47,7 +47,29 @@ def return_coordinates(address):
     except Exception:
         lat = "NO COORDINATES FOUND"
         lon = "NO COORDINATES FOUND"
+        coords = "NO COORDINATES FOUND"
     return lat, lon, coords
+
+# Create a function to find missing cities and postal codes
+def return_postalcode(address):
+    try:
+        geocode_info = g.geocode(address)
+        postalcode = geocode_info.raw['address_components'][7]['long_name']
+    except Exception:
+        postalcode = "NO POSTAL CODE FOUND"
+    return postalcode
+
+# Filter the dataframe and return only rows with an unknown postal code
+# For some reason some Postal Codes are "Assessor" :|
+# Then iterate through this filtered dataframe and input the right info we get using geocoding
+for row in df.loc[(df['PostalCode'] == 'Unknown') | (df['PostalCode'] == 'Assessor')].itertuples():
+    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'] == 'Unknown') | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
+    df.at[row.Index, 'PostalCode'] = missing_postalcode[0]
+
+# Now that we have street addresses and postal codes, we can put them together
+# Create a new column with the full street address
+# Also strip whitespace from the St Name column
+df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
 
 # Fetch coordinates for every row
 for row in df.itertuples():
