@@ -20,19 +20,19 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 df = pd.read_csv("larentals.csv", float_precision="round_trip")
 pd.set_option("display.precision", 10)
 
-# Create a new column with the full street address
-# Also strip whitespace from the St Name column
-df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
-
-# Create a new column with the Street Number & Street Name
-df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip()
+# Drop all rows that don't have a city. Fuck this shit I'm too lazy to code around bad data input.
+df = df[df['City'].notna()]
 
 # Drop all rows that don't have a MLS Listing ID (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
 df = df[df['Listing ID (MLS#)'].notna()]
 
-# Drop all rows that don't have a city. Fuck this shit I'm too lazy to code around bad data input.
-df = df[df['City'].notna()]
+# Create a new column with the full street address
+# Also strip whitespace from the St Name column
+df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
+
+# Create a new column with the Street Number & Street Name
+df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
@@ -69,7 +69,7 @@ def return_postalcode(address):
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
 for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
-    df.at[row.Index, 'PostalCode'] = missing_postalcode[0]
+    df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 # Now that we have street addresses and postal codes, we can put them together
 # Create a new column with the full street address
@@ -117,6 +117,7 @@ df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0]
 df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
+df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
