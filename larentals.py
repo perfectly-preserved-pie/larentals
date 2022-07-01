@@ -1,81 +1,127 @@
-import plotly.express as px
 from jupyter_dash import JupyterDash
 import dash_core_components as dcc
-import dash_html_components as html
 from dash.dependencies import Input, Output
-import folium
+from dash import dcc
+import dash_html_components as html
+import dash_leaflet as dl
 import pandas as pd
 from geopy.geocoders import GoogleV3
 from dotenv import load_dotenv, find_dotenv
 import os
+import uuid
 
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv(GOOGLE_API_KEY)) # https://github.com/geopy/geopy/issues/171
 
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
 # import the csv
-df = pd.read_csv("~/rentals.csv")
+# Don't round the float. See https://stackoverflow.com/a/68027847
+df = pd.read_csv("larentals.csv", float_precision="round_trip")
+pd.set_option("display.precision", 10)
 
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
 df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
 
-# Drop any rows with invalid data
-df = df.dropna()
+# Create a new column with the Street Number & Street Name
+df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip()
 
-# Reindex the dataframe
-df.reset_index(drop=True, inplace=True)
+# Drop all rows that don't have a MLS Listing ID (aka misc data we don't care about)
+# https://stackoverflow.com/a/13413845
+df = df[df['Listing ID (MLS#)'].notna()]
+
+# Drop all rows that don't have a city. Fuck this shit I'm too lazy to code around bad data input.
+df = df[df['City'].notna()]
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
     try:
-        lat = g.geocode(address).latitude
-        lon = g.geocode(address).longitude
+        geocode_info = g.geocode(address)
+        lat = geocode_info.latitude
+        lon = geocode_info.longitude
+        coords = f"{lat}, {lon}"
     except Exception:
         lat = "NO COORDINATES FOUND"
         lon = "NO COORDINATES FOUND"
-    return lat, lon
+        coords = "NO COORDINATES FOUND"
+    return lat, lon, coords
+
+# Create a function to find missing postal codes
+def return_postalcode(address):
+    try:
+        geocode_info = g.geocode(address)
+        postalcode = geocode_info.raw['address_components'][7]['long_name']
+    except Exception:
+        postalcode = "NO POSTAL CODE FOUND"
+    return postalcode
+
+# Filter the dataframe and return only rows with a NaN postal code
+# For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
+# Then iterate through this filtered dataframe and input the right info we get using geocoding
+for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
+    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
+    df.at[row.Index, 'PostalCode'] = missing_postalcode[0]
+
+# Now that we have street addresses and postal codes, we can put them together
+# Create a new column with the full street address
+# Also strip whitespace from the St Name column
+df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
 
 # Fetch coordinates for every row
 for row in df.itertuples():
     coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
     df.at[row.Index, 'Latitude'] = coordinates[0]
     df.at[row.Index, 'Longitude'] = coordinates[1]
+    df.at[row.Index, 'Coordinates'] = coordinates[2]
 
-# Convert the string of coordinates into a list
-# So that folium can understand it when we plot it later
-# https://stackoverflow.com/a/64232799
-df['Full Coordinates'] = df['Full Coordinates'].str.split(',')
+# Add an extra column for simply saying either Yes or No if pets are allowed
+# We need this because there are many ways of saying "Yes":
+# i.e "Call", "Small Dogs OK", "Breed Restrictions", "Cats Only", etc.
+# To be used later in the Dash callback function
+for row in df.itertuples():
+    if row.PetsAllowed != 'No':
+        df.at[row.Index, "PetsAllowedSimple"] = 'True'
+    elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
+        df.at[row.Index, "PetsAllowedSimple"] = 'False'
 
-# Split out the lat and lon
-# And remove the comma in the latitude
-# And strip whitespaces
-# https://www.skytowner.com/explore/removing_characters_from_columns_in_pandas_dataframe
-# https://datascienceparichay.com/article/pandas-split-column-by-delimiter/
-#df['Latitude'] = 
-#df['Longitude'] = df['Coordinates'][1].str.strip()
+# Remove the leading $ symbol and comma in the cost field
+df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
+# Remove the leading $ symbol in the ppsqft field
+df['Price Per Square Foot'] = df['Price Per Square Foot'].str.replace("$","")
 
+# Split the Bedroom/Bathrooms column into separate columns based on delimiters
+# Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
+# Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
+# TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than that, and you can’t officially consider it a full bath.
+df['Bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
+df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
+df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
+df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
+df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
+# Remove the square footage & YrBuilt abbreviations
+df['Sqft'] = df['Sqft'].str.split('/').str[0]
+df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0]
 
-# Convert lat and lon columns to integers
-# https://www.geeksforgeeks.org/python-pandas-to_numeric-method/
-#df['Latitude'] = df['Latitude'].apply(pd.to_numeric)
-#df['Longitude'] = df['Longitude'].apply(pd.to_numeric)
+# Convert a few columns into integers 
+# To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
+df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
+df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
+df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
+df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 
-# Get the means so we can center the map
-#lat_mean = df['Latitude'].mean()
-#long_mean = df['Longitude'].mean()
-
-# Count how many we couldn't get coords for
-#df['Coordinates'].value_counts()['NO COORDINATES FOUND']
+# Reindex the dataframe
+df.reset_index(drop=True, inplace=True)
 
 # Define HTML code for the popup so it looks pretty and nice
-# https://gist.githubusercontent.com/insightsbees/f984e5b739010fe42f5cff6f66bee822/raw/8fe8d18992cde0b4776b1a6750a4e4e19d9acb46/Define%20popup_html%20function.py
-# https://towardsdatascience.com/folium-map-how-to-create-a-table-style-pop-up-with-html-code-76903706b88a
-# Generate an HTML table using https://www.tablesgenerator.com/html_tables
 def popup_html(row):
     i = row.Index
     street_address=df['Full Street Address'].iloc[i] 
     mls_number=df['Listing ID (MLS#)'].iloc[i]
+    mls_number_hyperlink=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/"
     lc_price = df['L/C Price'].iloc[i] 
     price_per_sqft=df['Price Per Square Foot'].iloc[i]                  
     brba = df['Br/Ba'].iloc[i]
@@ -86,257 +132,244 @@ def popup_html(row):
     phone = df['List Office Phone'].iloc[i]
     terms = df['Terms'].iloc[i]
     sub_type = df['Sub Type'].iloc[i]
+    # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
+    return [
+      html.Table([ # Create the table
+        html.Tbody([ # Create the table body
+          html.Tr([ # Start row #1
+            html.Td("Street Address"), html.Td(f"{street_address}")
+          ]), # end row #1
+          html.Tr([ # Start row #2
+            # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
+            # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
+            html.Td("Listing ID (MLS#)"), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
+          ]), # end row #2
+          html.Tr([ # Start row #3
+            html.Td("L/C Price"), html.Td(f"${lc_price}")
+          ]), # end row #3
+          html.Tr([
+            html.Td("Price Per Square Foot"), html.Td(f"${price_per_sqft}")
+          ]),
+          html.Tr([
+            html.Td("Bedrooms/Bathrooms"), html.Td(f"{brba}")
+          ]),
+          html.Tr([
+            html.Td("Square Feet"), html.Td(f"{square_ft}")
+          ]),
+          html.Tr([
+            html.Td("Year Built"), html.Td(f"{year}")
+          ]),
+          html.Tr([
+            html.Td("Garage Spaces"), html.Td(f"{garage}"),
+          ]),
+          html.Tr([
+            html.Td("Pets Allowed?"), html.Td(f"{pets}"),
+          ]),
+          html.Tr([
+            html.Td("List Office Phone"), html.Td(f"{phone}"),
+          ]),
+          html.Tr([
+            html.Td("Rental Terms"), html.Td(f"{terms}"),
+          ]),
+          html.Tr([                                                                                            
+            html.Td("Physical Sub Type"), html.Td(f"{sub_type}")                                                                                    
+          ]), # end rows
+        ]), # end body
+      ]), # end table
+    ]
 
-    html = f"""<!DOCTYPE html>
-<table style="undefined;table-layout: fixed; width: 777px">
-<colgroup>
-<col style="width: 188px">
-<col style="width: 589px">
-</colgroup>
-<tbody>
-  <tr>
-    <td>Street Address</td>
-    <td>{street_address}</td>
-  </tr>
-  <tr>
-    <td>Listing ID (MLS#)</td>
-    <td><a href="https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/" rel="noreferrer">{mls_number}</a></td>
-  </tr>
-  <tr>
-    <td>Rent (per month)</td>
-    <td>{lc_price}</td>
-  </tr>
-  <tr>
-    <td>Square Feet</td>
-    <td>{square_ft}</td>
-  </tr>
-  <tr>
-    <td>Price Per Square Foot</td>
-    <td>{price_per_sqft}</td>
-  </tr>
-  <tr>
-    <td>Bedrooms/Bathrooms</td>
-    <td>{brba}</td>
-  </tr>
-  <tr>
-    <td>Year Built</td>
-    <td>{year}</td>
-  </tr>
-  <tr>
-    <td>Garage Spaces<br></td>
-    <td>{garage}</td>
-  </tr>
-  <tr>
-    <td>Pets Allowed?<br></td>
-    <td>{pets}</td>
-  </tr>
-  <tr>
-    <td>List Office Phone Number<br></td>
-    <td>{phone}</td>
-  </tr>
-  <tr>
-    <td>Rental Terms</td>
-    <td>{terms}</td>
-  </tr>
-  <tr>
-    <td>Rental Unit Type<br></td>
-    <td>{sub_type}</td>
-  </tr>
-</tbody>
-</table>
-"""
-    return html
+# Create markers & associated popups from dataframe
+markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
 
-# Dynamically generate the Folium HTML popup code for each row
-for row in df.itertuples():
-    df.at[row.Index, 'Folium HTML Snippet'] = popup_html(row)
+# Get the means so we can center the map
+lat_mean = df['Latitude'].mean()
+long_mean = df['Longitude'].mean()
 
-# Set up a Folium map
-# Use the mean of the latitude and longitude coords to center the map
-map = folium.Map(location=[34.02865653675504, -118.42546831279408], zoom_start=14, control_scale=True)
+# Add them to a MarkerCluster
+cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
-### Now we need to add markers for every group
-# Create a Folium feature group for pets
-pets_fg = folium.FeatureGroup(name="Pets Allowed")
-# Iterate over only the rows that allow pets and add markers to the feature group
-for row in df.loc[df['PetsAllowed'] != 'No'].itertuples():
-    pets_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(pets_fg)
+app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
-# Create a Folium feature group for pets
-no_pets_fg = folium.FeatureGroup(name="Pets Not Allowed")
-# Iterate over only the rows that allow pets and add markers to the feature group
-for row in df.loc[df['PetsAllowed'] == 'No'].itertuples():
-    no_pets_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(no_pets_fg)
+app.layout = html.Div([
+  # Title this section
+  html.H5("Subtypes"), 
+  # Create a checklist of options for the user
+  # https://dash.plotly.com/dash-core-components/checklist
+  dcc.Checklist( 
+      id = 'subtype_checklist',
+      options=[
+        {'label': 'Apartment (Attached)', 'value': 'APT/A'},
+        {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+        {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+        {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
+        {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
+        {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
+        {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+        {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
+        {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
+        {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+        {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
+        {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
+        {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
+        {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
+      ],
+      value=['APT/A'] # Set the default value
+  ),
+  html.H5("Bedrooms"),
+  # Create a range slider for # of bedrooms
+  dcc.RangeSlider(
+    min=0, 
+    max=df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+    step=1, 
+    value=[0, df['Bedrooms'].max()], 
+    id='bedrooms_slider',
+    updatemode='drag'
+  ),
+  html.H5("Bathrooms"),
+  # Create a range slider for # of total bathrooms
+  dcc.RangeSlider(
+    min=0, 
+    max=df['Total Bathrooms'].max(), 
+    step=1, 
+    value=[0, df['Total Bathrooms'].max()], 
+    id='bathrooms_slider',
+    updatemode='drag'
+  ),
+  # Create a range slider for square footage
+  html.H5("Square Footage"),
+  dcc.RangeSlider(
+    min=df['Sqft'].min(), 
+    max=df['Sqft'].max(),
+    value=[df['Sqft'].min(), df['Sqft'].max()], 
+    id='sqft_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
+    updatemode='drag'
+  ),
+  html.H5("Pet Policy"),
+  # Create a checklist for pet policy
+  dcc.Checklist(
+    id = 'pets_checklist',
+    options=[
+      {'label': 'Pets Allowed', 'value': 'True'},
+      {'label': 'Pets NOT Allowed', 'value': 'False'}
+    ],
+      value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+  ),
+  html.H5("Lease Length"),
+  # Create a checklist for rental terms
+  dcc.Checklist(
+    id = 'terms_checklist',
+    options = [
+      {'label': 'Monthly', 'value': 'MO'},
+      {'label': '12 Months', 'value': '12M'},
+      {'label': '24 Months', 'value': '24M'},
+      {'label': 'Negotiable', 'value': 'NG'}
+    ],
+      value=['MO', '12M', '24M', 'NG']
+  ),
+  html.H5("Garage Spaces"),
+  # Create a range slider for # of garage spaces
+  dcc.RangeSlider(
+    min=0, 
+    max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
+    step=1, 
+    value=[0, df['Garage Spaces'].max()], 
+    id='garage_spaces_slider',
+    updatemode='drag'
+  ),
+  html.H5("Price (Monthly)"),
+  # Create a range slider for rental price
+  dcc.RangeSlider(
+    min=df['L/C Price'].min(),
+    max=df['L/C Price'].max(),
+    value=[0, df['L/C Price'].max()],
+    id='rental_price_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
+    updatemode='drag'
+  ),
+  html.H5("Year Built"),
+  # Create a range slider for year built
+  dcc.RangeSlider(
+    min=df['YrBuilt'].min(),
+    max=df['YrBuilt'].max(),
+    value=[0, df['YrBuilt'].max()],
+    id='yrbuilt_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
+    marks = { # Create custom tick marks
+        # The left column should be floats, the right column should be strings
+        f"{df['YrBuilt'].min()}": f"{df['YrBuilt'].min()}", # first mark is oldest house
+        float(f"{df['YrBuilt'].min()}") + 20: str(float(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years
+        float(f"{df['YrBuilt'].min()}") + 40: str(float(f"{df['YrBuilt'].min()}") + 40),
+        float(f"{df['YrBuilt'].min()}") + 60: str(float(f"{df['YrBuilt'].min()}") + 60),
+        float(f"{df['YrBuilt'].min()}") + 80: str(float(f"{df['YrBuilt'].min()}") + 80),
+        float(f"{df['YrBuilt'].min()}") + 100: str(float(f"{df['YrBuilt'].min()}") + 100),
+        float(f"{df['YrBuilt'].min()}") + 120: str(float(f"{df['YrBuilt'].min()}") + 120),
+        float(f"{df['YrBuilt'].min()}") + 140: str(float(f"{df['YrBuilt'].min()}") + 140),
+        f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
+    },
+    updatemode='drag'
+  ),
 
-## RENTAL TERMS ##
-# Create a Folium group for month-to-month rental terms
-terms_mo_fg = folium.FeatureGroup(name="Lease Length: Monthly")
-# Iterate over only the rows that have monthly terms and add markers to the feature group
-for row in df.loc[df['Terms'] == 'MO'].itertuples():
-    terms_mo_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-map.add_child(terms_mo_fg)
+  # Generate the map
+  dl.Map(
+    [dl.TileLayer(), dl.LayerGroup(id="cluster")],
+    id='map',
+    zoom=9,
+    minZoom=9,
+    center=(lat_mean, long_mean),
+    style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
+  )
 
-# Create a Folium feature group for yearly rental terms
-terms_12mo_fg = folium.FeatureGroup(name="Lease Length: 12 Months")
-# Iterate over only the rows that have yearly terms and add markers to the feature group
-for row in df.loc[df['Terms'] == '12M'].itertuples():
-    terms_12mo_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(terms_12mo_fg)
+])
 
-# Create a Folium group for 2 year rental terms
-terms_2yr_fg = folium.FeatureGroup(name="Lease Length: 24 Months")
-# Iterate over only the rows that have 2 year terms and add markers to the feature group
-for row in df.loc[df['Terms'] == '24M'].itertuples():
-    terms_2yr_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))  
-map.add_child(terms_2yr_fg)
+@app.callback(
+  Output(component_id='cluster', component_property='children'),
+  [
+    Input(component_id='subtype_checklist', component_property='value'),
+    Input(component_id='pets_checklist', component_property='value'),
+    Input(component_id='terms_checklist', component_property='value'),
+    Input(component_id='garage_spaces_slider', component_property='value'),
+    Input(component_id='rental_price_slider', component_property='value'),
+    Input(component_id='bedrooms_slider', component_property='value'),
+    Input(component_id='bathrooms_slider', component_property='value'),
+    Input(component_id='sqft_slider', component_property='value'),
+    Input(component_id='yrbuilt_slider', component_property='value'),
+  ]
+)
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen):
+  df_filtered = df[
+    (df['Sub Type'].isin(subtypes_chosen)) &
+    (df['PetsAllowedSimple'].isin(pets_chosen)) &
+    (df['Terms'].isin(terms_chosen)) &
+    # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
+    # To do this, we can use the Pandas .between function
+    # See https://stackoverflow.com/a/40442778
+    (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) &
+    # Repeat but for rental price
+    (df['L/C Price'].between(rental_price[0], rental_price[1])) &
+    (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
+    (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
+    (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
+    (df['YrBuilt'].between(years_chosen[0], years_chosen[1]))
+  ]
 
-# Create a Folium group for negotiable rental terms
-terms_ng_fg = folium.FeatureGroup(name="Lease Length: Negotiable")
-# Iterate over only the rows that have negotiable terms and add markers to the feature group
-for row in df.loc[df['Terms'] == 'NG'].itertuples():
-    terms_ng_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))  
-map.add_child(terms_ng_fg)
-## RENTAL TERMS END ##
+  # Create markers & associated popups from dataframe
+  markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df_filtered.itertuples()]
 
-## SUB TYPES ##
-# Create a Folium feature group for apartments
-apt_fg = folium.FeatureGroup(name="Apartment")
-# Iterate over only the rows that are apartments and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'APT/A'].itertuples():
-    apt_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(apt_fg)
-
-# Create a Folium feature group for studios
-studio_fg = folium.FeatureGroup(name="Studio")
-# Iterate over only the rows that are apartments and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'STUD/A'].itertuples():
-    studio_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(studio_fg)
-
-# Create a Folium feature group for attached SFRs and misc??? SFRs
-sfr_fg = folium.FeatureGroup(name="Single Family Residence")
-# Iterate over only the rows that are SFR and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'SFR'].itertuples():
-    sfr_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Iterate over only the rows that are SFR/A and add markers to the feature group too
-for row in df.loc[df['Sub Type'] == 'SFR/A'].itertuples():
-    sfr_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(sfr_fg)
-
-# Create a Folium feature group for detached SFRs
-sfr_a_fg = folium.FeatureGroup(name="Single Family Residence (Attached)")
-# Iterate over only the rows that are apartments and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'SFR/D'].itertuples():
-    sfr_a_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(sfr_a_fg)
-
-# Create a Folium feature group for attached and misc??? condos
-condo_fg = folium.FeatureGroup(name="Condo (Attached)")
-# Iterate over only the rows that are attached condos and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'CONDO/A'].itertuples():
-    condo_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Iterate over only the rows that are CONDO and add markers to the feature group too
-for row in df.loc[df['Sub Type'] == 'CONDO'].itertuples():
-    condo_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] )) 
-# Add this feature group to the map
-map.add_child(condo_fg)
-
-# Create a Folium feature group for detached condos
-condo_d_fg = folium.FeatureGroup(name="Condo (Detached)")
-# Iterate over only the rows that are detached condos and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'CONDO/D'].itertuples():
-    condo_d_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(condo_d_fg)
-
-# Create a Folium feature group for attached quadplexes
-quad_fg = folium.FeatureGroup(name="Quadplex (Attached)")
-# Iterate over only the rows that are attached quadplexes and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'QUAD/A'].itertuples():
-    quad_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(quad_fg)
-
-# Create a Folium feature group for detached quadplexes
-quad_d_fg = folium.FeatureGroup(name="Quadplex (Detached)")
-# Iterate over only the rows that are detached quadplexes and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'QUAD/D'].itertuples():
-    quad_d_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(quad_d_fg)
-
-# Create a Folium feature group for attached triplexes
-triplex_fg = folium.FeatureGroup(name="Triplex (Attached)")
-# Iterate over only the rows that are attached triplexes and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'TPLX/A'].itertuples():
-    triplex_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(triplex_fg)
-
-# Create a Folium feature group for attached townhouses
-townhouse_a_fg = folium.FeatureGroup(name="Townhouse (Attached)")
-# Iterate over only the rows that are attached townhouses and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'TWNHS/A'].itertuples():
-    townhouse_a_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(townhouse_a_fg)
-
-# Create a Folium feature group for detached townhouses
-townhouse_d_fg = folium.FeatureGroup(name="Townhouse (Detached)")
-# Iterate over only the rows that are detached townhouses and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'TWNHS/D'].itertuples():
-    townhouse_d_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(townhouse_d_fg)
-
-# Create a Folium feature group for attached duplexes
-duplex_a_fg = folium.FeatureGroup(name="Duplex (Attached)")
-# Iterate over only the rows that are attached duplexes and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'DPLX/A'].itertuples():
-    duplex_a_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(duplex_a_fg)
-
-# Create a Folium feature group for detached duplexes
-duplex_d_fg = folium.FeatureGroup(name="Duplex (Detached)")
-# Iterate over only the rows that are detached duplexes and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'DPLX/D'].itertuples():
-    duplex_d_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(duplex_d_fg)
-
-# Create a Folium feature group for detached ranch style house
-ranch_d_fg = folium.FeatureGroup(name="Ranch House (Detached)")
-# Iterate over only the rows that are detached ranch style houses and add markers to the feature group
-for row in df.loc[df['Sub Type'] == 'RMRT/D'].itertuples():
-    ranch_d_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
-# Add this feature group to the map
-map.add_child(ranch_d_fg)
-
-# Iterate over the new dataframe and add all the markers to the pets feature group
-# https://github.com/BenjaRogers/Police-Violence/blob/0a3aab9f777283cb8c94902268a5689e284b89c1/shootings/shootings/shootings%2040.py
-#for row in df_pets.itertuples():
-#    pets_fg.add_child(folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ))
+  # Generate the map
+  return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
 
 
 
-#for row in df.loc[df['PetsAllowed'] != 'No'].itertuples():
-#    folium.Marker(location=[df.at[row.Index, 'Coordinates'][0], df.at[row.Index, 'Coordinates'][1]], popup = df.at[row.Index, 'Folium HTML Snippet'] ).add_to(map)    
-
-
-
-# Add a layer control panel to the map
-map.add_child(folium.LayerControl())
-
-
-
-app = JupyterDash(__name__)
+# Launch the Flask app
+if __name__ == '__main__':
+    app.run_server(mode='external', host='192.168.4.196', port='9208', debug='false')
