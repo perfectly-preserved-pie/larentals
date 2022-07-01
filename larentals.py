@@ -163,7 +163,7 @@ def popup_html(row):
             html.Td("Bedrooms/Bathrooms"), html.Td(f"{brba}")
           ]),
           html.Tr([
-            html.Td("Square Feet"), html.Td(float(f"{square_ft}"))
+            html.Td("Square Feet"), html.Td(float(f"{square_ft} sq. ft"))
           ]),
           html.Tr([
             html.Td("Year Built"), html.Td(float(f"{year}"))
