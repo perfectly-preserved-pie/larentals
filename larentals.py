@@ -52,7 +52,7 @@ def return_postalcode(address):
     try:
         # Forward geocoding the short address so we can get coordinates
         geocode_info = g.geocode(address)
-        # Reverse geocoding the coordinates so we can get the postal code
+        # Reverse geocoding the coordinates so we can get the address object components
         components = g.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
         # Create a dataframe from this list of dictionaries
         components_df = pd.DataFrame(components)
