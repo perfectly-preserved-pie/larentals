@@ -47,11 +47,12 @@ def return_coordinates(address):
         coords = "NO COORDINATES FOUND"
     return lat, lon, coords
 
-# Create a function to find missing postal codes based on coordinates
+# Create a function to find missing postal codes based on short address
 def return_postalcode(address):
     try:
+        # Forward geocoding the short address so we can get coordinates
         geocode_info = g.geocode(address)
-        # Get geocoding components
+        # Reverse geocoding the coordinates so we can get the postal code
         components = g.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
         # Create a dataframe from this list of dictionaries
         components_df = pd.DataFrame(components)
