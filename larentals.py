@@ -141,6 +141,19 @@ def popup_html(row):
     phone = df['List Office Phone'].iloc[i]
     terms = df['Terms'].iloc[i]
     sub_type = df['Sub Type'].iloc[i]
+    # If there's no square footage, set it to "Unknown" to display for the user
+    # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
+    if pd.isna(square_ft) == True:
+        square_ft = 'Unknown'
+    # If there IS a square footage, convert it into an integer (round number)
+    elif pd.isna(square_ft) == False:
+        square_ft = f"{int(square_ft)} sq. ft"
+    # Repeat above for Year Built
+    if pd.isna(year) == True:
+        year = 'Unknown'
+    # If there IS a square footage, convert it into an integer (round number)
+    elif pd.isna(year) == False:
+        year = f"{int(year)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
@@ -163,10 +176,10 @@ def popup_html(row):
             html.Td("Bedrooms/Bathrooms"), html.Td(f"{brba}")
           ]),
           html.Tr([
-            html.Td("Square Feet"), html.Td(float(f"{square_ft} sq. ft"))
+            html.Td("Square Feet"), html.Td(f"{square_ft}")
           ]),
           html.Tr([
-            html.Td("Year Built"), html.Td(float(f"{year}"))
+            html.Td("Year Built"), html.Td(f"{year}")
           ]),
           html.Tr([
             html.Td("Garage Spaces"), html.Td(f"{garage}"),
