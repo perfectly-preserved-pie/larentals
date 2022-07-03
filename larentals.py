@@ -104,11 +104,6 @@ df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
 df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
-# Keep rows with less than 6 bedrooms
-# 6 bedrooms and above are probably multi family investments and not actual rentals
-# And skew the outliers, causing the sliders to go way up
-df = df[df.Bedrooms < 6]
-
 # Remove the square footage & YrBuilt abbreviations
 df['Sqft'] = df['Sqft'].str.split('/').str[0]
 df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0]
@@ -123,6 +118,11 @@ df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-inte
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+
+# Keep rows with less than 6 bedrooms
+# 6 bedrooms and above are probably multi family investments and not actual rentals
+# And skew the outliers, causing the sliders to go way up
+df = df[df.Bedrooms < 6]
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
