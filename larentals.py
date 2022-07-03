@@ -27,10 +27,6 @@ df = df[df['City'].notna()]
 # https://stackoverflow.com/a/13413845
 df = df[df['Listing ID (MLS#)'].notna()]
 
-# Create a new column with the full street address
-# Also strip whitespace from the St Name column
-df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
-
 # Create a new column with the Street Number & Street Name
 df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
 
