@@ -11,7 +11,7 @@ import os
 import uuid
 
 load_dotenv(find_dotenv())
-g = GoogleV3(api_key=os.getenv(GOOGLE_API_KEY)) # https://github.com/geopy/geopy/issues/171
+g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
