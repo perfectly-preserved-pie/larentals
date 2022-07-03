@@ -122,6 +122,7 @@ df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce') # conv
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -155,6 +156,16 @@ def popup_html(row):
     # If there IS a square footage, convert it into an integer (round number)
     elif pd.isna(year) == False:
         year = f"{int(year)}"
+    # Repeat above for garage spaces
+    if pd.isna(garage) == True:
+        garage = 'Unknown'
+    elif pd.isna(garage) == False:
+        garage = f"{int(garage)}"
+    # Repeat for ppsqft
+    if pd.isna(price_per_sqft) == True:
+        price_per_sqft = 'Unknown'
+    elif pd.isna(price_per_sqft) == False:
+        price_per_sqft = f"{int(price_per_sqft)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
