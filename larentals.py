@@ -9,6 +9,8 @@ from geopy.geocoders import GoogleV3
 from dotenv import load_dotenv, find_dotenv
 import os
 import uuid
+import requests
+from bs4 import BeautifulSoup as bs4
 
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
@@ -60,12 +62,30 @@ def return_postalcode(address):
         postalcode = "NO POSTAL CODE FOUND"
     return postalcode
 
+# Webscraping Time
+# Create a function to scrape the listing's BHHS page and extract the listed date
+def get_listed_date(url):
+    try:
+        response = requests.get(url)
+        soup = bs4(response.text, 'html.parser')
+        # Split the p class into strings and get the last element in the list
+        # https://stackoverflow.com/a/64976919
+        listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
+    except AttributeError:
+        listed_date = "Unknown"
+    return listed_date
+
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
 for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
+
+# Iterate through the dataframe and get the listed date
+for row in df.itertuples():
+    mls_number = row[1]
+    df.at[row.Index, 'Listed Date'] = get_listed_date(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
 
 # Now that we have street addresses and postal codes, we can put them together
 # Create a new column with the full street address
@@ -143,6 +163,7 @@ def popup_html(row):
     phone = df['List Office Phone'].iloc[i]
     terms = df['Terms'].iloc[i]
     sub_type = df['Sub Type'].iloc[i]
+    listed_date = df['Listed Date'].iloc[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -171,16 +192,19 @@ def popup_html(row):
       html.Table([ # Create the table
         html.Tbody([ # Create the table body
           html.Tr([ # Start row #1
-            html.Td("Street Address"), html.Td(f"{street_address}")
+            html.Td("Listed Date"), html.Td(f"{listed_date}")
           ]), # end row #1
-          html.Tr([ # Start row #2
+          html.Tr([ 
+            html.Td("Street Address"), html.Td(f"{street_address}")
+          ]),
+          html.Tr([ 
             # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
             # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
             html.Td("Listing ID (MLS#)"), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
-          ]), # end row #2
-          html.Tr([ # Start row #3
+          ]),
+          html.Tr([ 
             html.Td("L/C Price"), html.Td(f"${lc_price}")
-          ]), # end row #3
+          ]),
           html.Tr([
             html.Td("Price Per Square Foot"), html.Td(f"${price_per_sqft}")
           ]),
