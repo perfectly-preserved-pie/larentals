@@ -108,6 +108,32 @@ for row in df.itertuples():
         df.at[row.Index, "PetsAllowedSimple"] = 'True'
     elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
         df.at[row.Index, "PetsAllowedSimple"] = 'False'
+    # Repeat but for columns with NaNs
+    # Sqft
+    if pd.isna(row.Sqft) == True:
+        df.at[row.Index, "SqftPresent"] = 'False'
+    elif pd.isna(row.Sqft) == False:
+      df.at[row.Index, "SqftPresent"] = 'True'
+    # Year Built
+    if pd.isna(row.YrBuilt) == True:
+        df.at[row.Index, "YrBuiltPresent"] = 'False'
+    elif pd.isna(row.YrBuilt) == False:
+      df.at[row.Index, "YrBuiltPresent"] = 'True'
+    # PP/sqft
+    if pd.isna(row['Price Per Square Foot']) == True:
+        df.at[row.Index, "PpsqftPresent"] = 'False'
+    elif pd.isna(row['Price Per Square Foot']) == False:
+      df.at[row.Index, "PpsqftPresent"] = 'True'
+    # Garage Spaces
+    if pd.isna(row['Garage Spaces']) == True:
+        df.at[row.Index, "GarageSpacesPresent"] = 'False'
+    elif pd.isna(row['Garage Spaces']) == False:
+      df.at[row.Index, "GarageSpacesPresent"] = 'True'
+    # Listed Date
+    if pd.isna(row['Listed Date']) == True:
+        df.at[row.Index, "ListedDatePresent"] = 'False'
+    elif pd.isna(row['Listed Date']) == False:
+      df.at[row.Index, "ListedDatePresent"] = 'True'
 
 # Remove the leading $ symbol and comma in the cost field
 df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
@@ -312,6 +338,16 @@ app.layout = html.Div([
     },
     updatemode='drag'
   ),
+  html.H6("Include properties with an unknown square footage?"),
+  html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
+  dcc.RadioItems(
+    id='sqft_missing_include',
+    options=[
+        {'label': 'Yes', 'value': 'True'},
+        {'label': 'No', 'value': 'False'}
+    ],
+    value=['True']
+  ),
   html.H5("Pet Policy"),
   # Create a checklist for pet policy
   dcc.Checklist(
@@ -407,9 +443,10 @@ app.layout = html.Div([
     Input(component_id='bathrooms_slider', component_property='value'),
     Input(component_id='sqft_slider', component_property='value'),
     Input(component_id='yrbuilt_slider', component_property='value'),
+    Input(component_id='sqft_missing_include', component_property='value'),
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_include):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -423,7 +460,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
-    (df['YrBuilt'].between(years_chosen[0], years_chosen[1]))
+    (df['YrBuilt'].between(years_chosen[0], years_chosen[1])) &
+    (df['SqftPresent'].isin(sqft_missing_include))
   ]
 
   # Create markers & associated popups from dataframe
