@@ -138,6 +138,7 @@ df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-inte
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['Listed Date'] = df['Listed Date'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
@@ -187,6 +188,11 @@ def popup_html(row):
         price_per_sqft = 'Unknown'
     elif pd.isna(price_per_sqft) == False:
         price_per_sqft = f"{int(price_per_sqft)}"
+    # Repeat for listed date
+    if pd.isna(listed_date) == True:
+        listed_date = 'Unknown'
+    elif pd.isna(listed_date) == False:
+        listed_date = f"{int(listed_date)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
