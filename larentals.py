@@ -99,6 +99,15 @@ for row in df.itertuples():
     df.at[row.Index, 'Longitude'] = coordinates[1]
     df.at[row.Index, 'Coordinates'] = coordinates[2]
 
+# Rename some columns
+# https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.rename.html
+df = df.rename(columns={
+  "Price Per Square Foot": "ppsqft",
+  "Garage Spaces": "garage_spaces",
+  "Listed Date": "listed_date"
+  }
+  )
+
 # Add an extra column for simply saying either Yes or No if pets are allowed
 # We need this because there are many ways of saying "Yes":
 # i.e "Call", "Small Dogs OK", "Breed Restrictions", "Cats Only", etc.
@@ -108,37 +117,11 @@ for row in df.itertuples():
         df.at[row.Index, "PetsAllowedSimple"] = 'True'
     elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
         df.at[row.Index, "PetsAllowedSimple"] = 'False'
-    # Repeat but for columns with NaNs
-    # Sqft
-    if pd.isna(row.Sqft) == True:
-        df.at[row.Index, "SqftPresent"] = 'False'
-    elif pd.isna(row.Sqft) == False:
-      df.at[row.Index, "SqftPresent"] = 'True'
-    # Year Built
-    if pd.isna(row.YrBuilt) == True:
-        df.at[row.Index, "YrBuiltPresent"] = 'False'
-    elif pd.isna(row.YrBuilt) == False:
-      df.at[row.Index, "YrBuiltPresent"] = 'True'
-    # PP/sqft
-    if pd.isna(row['Price Per Square Foot']) == True:
-        df.at[row.Index, "PpsqftPresent"] = 'False'
-    elif pd.isna(row['Price Per Square Foot']) == False:
-      df.at[row.Index, "PpsqftPresent"] = 'True'
-    # Garage Spaces
-    if pd.isna(row['Garage Spaces']) == True:
-        df.at[row.Index, "GarageSpacesPresent"] = 'False'
-    elif pd.isna(row['Garage Spaces']) == False:
-      df.at[row.Index, "GarageSpacesPresent"] = 'True'
-    # Listed Date
-    if pd.isna(row['Listed Date']) == True:
-        df.at[row.Index, "ListedDatePresent"] = 'False'
-    elif pd.isna(row['Listed Date']) == False:
-      df.at[row.Index, "ListedDatePresent"] = 'True'
 
 # Remove the leading $ symbol and comma in the cost field
 df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
 # Remove the leading $ symbol in the ppsqft field
-df['Price Per Square Foot'] = df['Price Per Square Foot'].str.replace("$","")
+df['ppsqft'] = df['ppsqft'].str.replace("$","")
 
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
@@ -162,14 +145,43 @@ df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
-df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
-df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
-df['Listed Date'] = df['Listed Date'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['ppqsft'] = df['ppsqft'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['listed_date'] = df['listed_date'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
 # And skew the outliers, causing the sliders to go way up
 df = df[df.Bedrooms < 6]
+
+# Create additional columns for booleans for properties with missing info
+for row in df.itertuples():
+    # Repeat but for columns with NaNs
+    # Sqft
+    if pd.isna(row.Sqft) == True:
+        df.at[row.Index, "SqftPresent"] = 'False'
+    elif pd.isna(row.Sqft) == False:
+      df.at[row.Index, "SqftPresent"] = 'True'
+    # Year Built
+    if pd.isna(row.YrBuilt) == True:
+        df.at[row.Index, "YrBuiltPresent"] = 'False'
+    elif pd.isna(row.YrBuilt) == False:
+      df.at[row.Index, "YrBuiltPresent"] = 'True'
+    # PP/sqft
+    if pd.isna(row.ppsqft) == True:
+        df.at[row.Index, "PpsqftPresent"] = 'False'
+    elif pd.isna(row.ppsqft) == False:
+      df.at[row.Index, "PpsqftPresent"] = 'True'
+    # Garage Spaces
+    if pd.isna(row.garage_spaces) == True:
+        df.at[row.Index, "GarageSpacesPresent"] = 'False'
+    elif pd.isna(row.garage_spaces) == False:
+      df.at[row.Index, "GarageSpacesPresent"] = 'True'
+    # Listed Date
+    if pd.isna(row.listed_date) == True:
+        df.at[row.Index, "ListedDatePresent"] = 'False'
+    elif pd.isna(row.listed_date) == False:
+      df.at[row.Index, "ListedDatePresent"] = 'True'
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -181,16 +193,16 @@ def popup_html(row):
     mls_number=df['Listing ID (MLS#)'].iloc[i]
     mls_number_hyperlink=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/"
     lc_price = df['L/C Price'].iloc[i] 
-    price_per_sqft=df['Price Per Square Foot'].iloc[i]                  
+    price_per_sqft=df['ppsqft'].iloc[i]                  
     brba = df['Br/Ba'].iloc[i]
     square_ft = df['Sqft'].iloc[i]
     year = df['YrBuilt'].iloc[i]
-    garage = df['Garage Spaces'].iloc[i]
+    garage = df['garage_spaces'].iloc[i]
     pets = df['PetsAllowed'].iloc[i]
     phone = df['List Office Phone'].iloc[i]
     terms = df['Terms'].iloc[i]
     sub_type = df['Sub Type'].iloc[i]
-    listed_date = df['Listed Date'].iloc[i]
+    listed_date = df['listed_date'].iloc[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -213,7 +225,7 @@ def popup_html(row):
     if pd.isna(price_per_sqft) == True:
         price_per_sqft = 'Unknown'
     elif pd.isna(price_per_sqft) == False:
-        price_per_sqft = f"{int(price_per_sqft)}"
+        price_per_sqft = f"{float(price_per_sqft)}"
     # Repeat for listed date
     if pd.isna(listed_date) == True:
         listed_date = 'Unknown'
@@ -346,7 +358,7 @@ app.layout = html.Div([
         {'label': 'Yes', 'value': 'True'},
         {'label': 'No', 'value': 'False'}
     ],
-    value=['True']
+    value='True'
   ),
   html.H5("Pet Policy"),
   # Create a checklist for pet policy
@@ -374,9 +386,9 @@ app.layout = html.Div([
   # Create a range slider for # of garage spaces
   dcc.RangeSlider(
     min=0, 
-    max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
+    max=df['garage_spaces'].max(), # Dynamically calculate the maximum number of garage spaces
     step=1, 
-    value=[0, df['Garage Spaces'].max()], 
+    value=[0, df['garage_spaces'].max()], 
     id='garage_spaces_slider',
     updatemode='drag'
   ),
@@ -454,14 +466,14 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
-    (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) &
+    (df['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) &
     # Repeat but for rental price
     (df['L/C Price'].between(rental_price[0], rental_price[1])) &
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
     (df['YrBuilt'].between(years_chosen[0], years_chosen[1])) &
-    (df['SqftPresent'].isin(sqft_missing_include))
+    (df['SqftPresent'].isin([sqft_missing_include]))
   ]
 
   # Create markers & associated popups from dataframe
