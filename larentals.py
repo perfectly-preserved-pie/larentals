@@ -350,6 +350,7 @@ app.layout = html.Div([
     },
     updatemode='drag'
   ),
+<<<<<<< HEAD
   html.H6("Include properties with an unknown square footage?"),
   html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
   dcc.RadioItems(
@@ -360,6 +361,8 @@ app.layout = html.Div([
     ],
     value='True'
   ),
+=======
+>>>>>>> parent of 5fcf184... Add an option to include properties with a missing square footage
   html.H5("Pet Policy"),
   # Create a checklist for pet policy
   dcc.Checklist(
@@ -455,10 +458,9 @@ app.layout = html.Div([
     Input(component_id='bathrooms_slider', component_property='value'),
     Input(component_id='sqft_slider', component_property='value'),
     Input(component_id='yrbuilt_slider', component_property='value'),
-    Input(component_id='sqft_missing_include', component_property='value'),
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_include):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
