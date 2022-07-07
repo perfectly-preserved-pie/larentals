@@ -257,11 +257,11 @@ cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 def sqft_radio_button(boolean):
   if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
     # Then we want nulls OR not-nulls
-    sqft_choice = ((df['Sqft'].isnull()) | (df['Sqft'].notnull()))
+    sqft_choice = (df['Sqft'].isnull()) | (df['Sqft'].notnull())
   elif boolean == 'False':
     # We only want not-nulls
-    sqft_choice = (df['Sqft'].notnull())
-  return sqft_choice
+    sqft_choice = df['Sqft'].notnull()
+  return (sqft_choice)
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
