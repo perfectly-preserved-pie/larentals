@@ -17,6 +17,9 @@ g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geo
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+# Make the dataframe a global variable
+global df
+
 # import the csv
 # Don't round the float. See https://stackoverflow.com/a/68027847
 df = pd.read_csv("larentals.csv", float_precision="round_trip")
@@ -190,7 +193,7 @@ def popup_html(row):
     if pd.isna(listed_date) == True:
         listed_date = 'Unknown'
     elif pd.isna(listed_date) == False:
-        listed_date = f"{int(listed_date)}"
+        listed_date = f"{listed_date}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
@@ -249,6 +252,16 @@ long_mean = df['Longitude'].mean()
 
 # Add them to a MarkerCluster
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
+
+# Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
+def sqft_radio_button(boolean):
+  if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
+    # Then we want nulls OR not-nulls
+    sqft_choice = ((df['Sqft'].isnull()) | (df['Sqft'].notnull()))
+  elif boolean == 'False':
+    # We only want not-nulls
+    sqft_choice = (df['Sqft'].notnull())
+  return sqft_choice
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
@@ -309,6 +322,16 @@ app.layout = html.Div([
       "always_visible": True
     },
     updatemode='drag'
+  ),
+  html.H6("Include properties with an unknown square footage?"),
+  html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
+  dcc.RadioItems(
+    id='sqft_missing_radio',
+    options=[
+        {'label': 'Yes', 'value': 'True'},
+        {'label': 'No', 'value': 'False'}
+    ],
+    value='True'
   ),
   html.H5("Pet Policy"),
   # Create a checklist for pet policy
@@ -405,9 +428,10 @@ app.layout = html.Div([
     Input(component_id='bathrooms_slider', component_property='value'),
     Input(component_id='sqft_slider', component_property='value'),
     Input(component_id='yrbuilt_slider', component_property='value'),
+    Input(component_id='sqft_missing_radio', component_property='value')
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -421,7 +445,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
-    (df['YrBuilt'].between(years_chosen[0], years_chosen[1]))
+    (df['YrBuilt'].between(years_chosen[0], years_chosen[1])) &
+    sqft_radio_button(sqft_missing_radio)
   ]
 
   # Create markers & associated popups from dataframe
