@@ -258,7 +258,7 @@ def sqft_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
     # Then we want nulls to be included in the final dataframe
     sqft_choice = df['Sqft'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     sqft_choice = df['Sqft'].between(slider_begin, slider_end)
   return (sqft_choice)
 
@@ -267,7 +267,7 @@ def yrbuilt_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a year built listed"
     # Then we want nulls to be included in the final dataframe
     yrbuilt_choice = df['YrBuilt'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     yrbuilt_choice = df['YrBuilt'].between(slider_begin, slider_end)
   return (yrbuilt_choice)
 
@@ -276,7 +276,7 @@ def garage_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
     # Then we want nulls to be included in the final dataframe 
     garage_choice = df['Garage Spaces'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     garage_choice = df['Garage Spaces'].between(slider_begin, slider_end)
   return (garage_choice)
 
