@@ -188,7 +188,7 @@ def popup_html(row):
     if pd.isna(price_per_sqft) == True:
         price_per_sqft = 'Unknown'
     elif pd.isna(price_per_sqft) == False:
-        price_per_sqft = f"{int(price_per_sqft)}"
+        price_per_sqft = f"{float(price_per_sqft)}"
     # Repeat for listed date
     if pd.isna(listed_date) == True:
         listed_date = 'Unknown'
@@ -280,6 +280,15 @@ def garage_radio_button(boolean, slider_begin, slider_end):
     garage_choice = df['Garage Spaces'].between(slider_begin, slider_end)
   return (garage_choice)
 
+# Create a function to return a dataframe filter for missing ppqsft
+def ppsqft_radio_button(boolean, slider_begin, slider_end):
+  if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
+    # Then we want nulls to be included in the final dataframe 
+    ppsqft_choice = df['Price Per Square Foot'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    ppsqft_choice = df['Price Per Square Foot'].between(slider_begin, slider_end)
+  return (ppsqft_choice)
+
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
@@ -347,6 +356,29 @@ app.layout = html.Div([
   html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
   dcc.RadioItems(
     id='sqft_missing_radio',
+    options=[
+        {'label': 'Yes', 'value': 'True'},
+        {'label': 'No', 'value': 'False'}
+    ],
+    value='True'
+  ),
+  # Create a range slider for ppsqft
+  html.H5("Price Per Square Foot"),
+  dcc.RangeSlider(
+    min=df['Price Per Square Foot'].min(), 
+    max=df['Price Per Square Foot'].max(),
+    value=[df['Price Per Square Foot'].min(), df['Price Per Square Foot'].max()], 
+    id='ppsqft_slider',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
+    updatemode='drag'
+  ),
+  html.H6("Include properties with an unknown price per square footage?"),
+  html.P("⚠ Some properties aren't listed with a price square footage for various reasons. Do you want to include them in your search?"),
+  dcc.RadioItems(
+    id='ppsqft_missing_radio',
     options=[
         {'label': 'Yes', 'value': 'True'},
         {'label': 'No', 'value': 'False'}
@@ -471,12 +503,14 @@ app.layout = html.Div([
     Input(component_id='yrbuilt_slider', component_property='value'),
     Input(component_id='sqft_missing_radio', component_property='value'),
     Input(component_id='yrbuilt_missing_radio', component_property='value'),
-    Input(component_id='garage_missing_radio', component_property='value')
+    Input(component_id='garage_missing_radio', component_property='value'),
+    Input(component_id='ppsqft_slider', component_property='value'),
+    Input(component_id='ppsqft_missing_radio', component_property='value')
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -490,7 +524,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
-    (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) 
+    (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
+    (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])))
   ]
 
   # Create markers & associated popups from dataframe
