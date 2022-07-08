@@ -254,33 +254,30 @@ long_mean = df['Longitude'].mean()
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
 # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-def sqft_radio_button(boolean):
+def sqft_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
-    # Then we want nulls OR not-nulls
-    sqft_choice = (df['Sqft'].isnull()) | (df['Sqft'].notnull())
-  elif boolean == 'False':
-    # We only want not-nulls
-    sqft_choice = df['Sqft'].notnull()
+    # Then we want nulls to be included in the final dataframe
+    sqft_choice = df['Sqft'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would
+    sqft_choice = df['Sqft'].between(slider_begin, slider_end)
   return (sqft_choice)
 
 # Create a function to return a dataframe filter for missing year built
-def yrbuilt_radio_button(boolean):
+def yrbuilt_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a year built listed"
-    # Then we want nulls OR not-nulls
-    yrbuilt_choice = (df['YrBuilt'].isnull()) | (df['YrBuilt'].notnull())
-  elif boolean == 'False':
-    # We only want not-nulls
-    yrbuilt_choice = df['YrBuilt'].notnull()
+    # Then we want nulls to be included in the final dataframe
+    yrbuilt_choice = df['YrBuilt'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would
+    yrbuilt_choice = df['YrBuilt'].between(slider_begin, slider_end)
   return (yrbuilt_choice)
 
 # Create a function to return a dataframe filter for missing garage spaces
-def garage_radio_button(boolean):
+def garage_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
-    # Then we want nulls OR not-nulls
-    garage_choice = (df['Garage Spaces'].isnull()) | (df['Garage Spaces'].notnull())
-  elif boolean == 'False':
-    # We only want not-nulls
-    garage_choice = df['Garage Spaces'].notnull()
+    # Then we want nulls to be included in the final dataframe 
+    garage_choice = df['Garage Spaces'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would
+    garage_choice = df['Garage Spaces'].between(slider_begin, slider_end)
   return (garage_choice)
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
@@ -293,10 +290,13 @@ app.layout = html.Div([
   dcc.Checklist( 
       id = 'subtype_checklist',
       options=[
+        {'label': 'Apartment (Unspecified)', 'value': 'APT'},
         {'label': 'Apartment (Attached)', 'value': 'APT/A'},
         {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+        {'label': 'Single Family Residence (Unspecified)', 'value': 'SFR'},
         {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
         {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
+        {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
         {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
         {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
         {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
@@ -474,7 +474,9 @@ app.layout = html.Div([
     Input(component_id='garage_missing_radio', component_property='value')
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio, yrbuilt_missing_radio, garage_missing_radio):
+# The following function arguments are positional related to the Inputs in the callback above
+# Their order must match
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -482,16 +484,13 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
-    (df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) &
+    (((df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) | garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1]))) & # for this one, combine a dataframe of both the slider inputs and the radio button input
     # Repeat but for rental price
     (df['L/C Price'].between(rental_price[0], rental_price[1])) &
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
-    (df['YrBuilt'].between(years_chosen[0], years_chosen[1])) &
-    sqft_radio_button(sqft_missing_radio) &
-    yrbuilt_radio_button(yrbuilt_missing_radio) &
-    garage_radio_button(garage_missing_radio)
+    (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
+    (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) 
   ]
 
   # Create markers & associated popups from dataframe
