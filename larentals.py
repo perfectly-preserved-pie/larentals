@@ -11,10 +11,12 @@ import os
 import uuid
 import requests
 from bs4 import BeautifulSoup as bs4
+import dash_bootstrap_components as dbc
 
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
+#external_stylesheets=[dbc.themes.DARKLY]
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 # Make the dataframe a global variable
@@ -292,32 +294,36 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
-  # Title this section
-  html.H5("Subtypes"), 
-  # Create a checklist of options for the user
-  # https://dash.plotly.com/dash-core-components/checklist
-  dcc.Checklist( 
-      id = 'subtype_checklist',
-      options=[
-        {'label': 'Apartment (Unspecified)', 'value': 'APT'},
-        {'label': 'Apartment (Attached)', 'value': 'APT/A'},
-        {'label': 'Studio (Attached)', 'value': 'STUD/A'},
-        {'label': 'Single Family Residence (Unspecified)', 'value': 'SFR'},
-        {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
-        {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
-        {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
-        {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
-        {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
-        {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
-        {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
-        {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
-        {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
-        {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
-        {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
-        {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
-        {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
-      ],
-      value=['APT/A'] # Set the default value
+  html.Div([ 
+      # Title this section
+      html.H5("Subtypes"), 
+      # Create a checklist of options for the user
+      # https://dash.plotly.com/dash-core-components/checklist
+      dcc.Checklist( 
+          id = 'subtype_checklist',
+          options=[
+            {'label': 'Apartment (Unspecified)', 'value': 'APT'},
+            {'label': 'Apartment (Attached)', 'value': 'APT/A'},
+            {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+            {'label': 'Single Family Residence (Unspecified)', 'value': 'SFR'},
+            {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+            {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
+            {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
+            {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
+            {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
+            {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+            {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
+            {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
+            {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+            {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
+            {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
+            {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
+            {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
+          ],
+          value=['APT/A'], # Set the default value
+      ),
+  ],
+  id = 'subtypes',
   ),
   html.H5("Bedrooms"),
   # Create a range slider for # of bedrooms
@@ -487,7 +493,8 @@ app.layout = html.Div([
     style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
   )
 
-])
+],
+)
 
 @app.callback(
   Output(component_id='cluster', component_property='children'),
