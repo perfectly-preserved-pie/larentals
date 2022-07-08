@@ -273,6 +273,16 @@ def yrbuilt_radio_button(boolean):
     yrbuilt_choice = df['YrBuilt'].notnull()
   return (yrbuilt_choice)
 
+# Create a function to return a dataframe filter for missing garage spaces
+def garage_radio_button(boolean):
+  if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
+    # Then we want nulls OR not-nulls
+    garage_choice = (df['Garage Spaces'].isnull()) | (df['Garage Spaces'].notnull())
+  elif boolean == 'False':
+    # We only want not-nulls
+    garage_choice = df['Garage Spaces'].notnull()
+  return (garage_choice)
+
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
@@ -375,6 +385,16 @@ app.layout = html.Div([
     id='garage_spaces_slider',
     updatemode='drag'
   ),
+  html.H6("Include properties with unknown garage spaces?"),
+  html.P("⚠ Some properties aren't listed with garage spaces for various reasons. Do you want to include them in your search?"),
+  dcc.RadioItems(
+    id='garage_missing_radio',
+    options=[
+        {'label': 'Yes', 'value': 'True'},
+        {'label': 'No', 'value': 'False'}
+    ],
+    value='True'
+  ),
   html.H5("Price (Monthly)"),
   # Create a range slider for rental price
   dcc.RangeSlider(
@@ -450,10 +470,11 @@ app.layout = html.Div([
     Input(component_id='sqft_slider', component_property='value'),
     Input(component_id='yrbuilt_slider', component_property='value'),
     Input(component_id='sqft_missing_radio', component_property='value'),
-    Input(component_id='yrbuilt_missing_radio', component_property='value')
+    Input(component_id='yrbuilt_missing_radio', component_property='value'),
+    Input(component_id='garage_missing_radio', component_property='value')
   ]
 )
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio, yrbuilt_missing_radio):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio, yrbuilt_missing_radio, garage_missing_radio):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     (df['PetsAllowedSimple'].isin(pets_chosen)) &
@@ -469,7 +490,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) &
     (df['YrBuilt'].between(years_chosen[0], years_chosen[1])) &
     sqft_radio_button(sqft_missing_radio) &
-    yrbuilt_radio_button(yrbuilt_missing_radio)
+    yrbuilt_radio_button(yrbuilt_missing_radio) &
+    garage_radio_button(garage_missing_radio)
   ]
 
   # Create markers & associated popups from dataframe
