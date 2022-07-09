@@ -323,164 +323,215 @@ app.layout = html.Div([
           value=['APT/A'], # Set the default value
       ),
   ],
-  id = 'subtypes',
+  id = 'subtypes_div',
   ),
-  html.H5("Bedrooms"),
-  # Create a range slider for # of bedrooms
-  dcc.RangeSlider(
-    min=0, 
-    max=df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
-    step=1, 
-    value=[0, df['Bedrooms'].max()], 
-    id='bedrooms_slider',
-    updatemode='drag'
+  html.Div([
+    html.H5("Bedrooms"),
+    # Create a range slider for # of bedrooms
+    dcc.RangeSlider(
+      min=0, 
+      max=df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+      step=1, 
+      value=[0, df['Bedrooms'].max()], 
+      id='bedrooms_slider',
+      updatemode='drag'
+    ),
+  ],
+  id = 'bedrooms_div'
   ),
-  html.H5("Bathrooms"),
-  # Create a range slider for # of total bathrooms
-  dcc.RangeSlider(
-    min=0, 
-    max=df['Total Bathrooms'].max(), 
-    step=1, 
-    value=[0, df['Total Bathrooms'].max()], 
-    id='bathrooms_slider',
-    updatemode='drag'
+  html.Div([
+    html.H5("Bathrooms"),
+    # Create a range slider for # of total bathrooms
+    dcc.RangeSlider(
+      min=0, 
+      max=df['Total Bathrooms'].max(), 
+      step=1, 
+      value=[0, df['Total Bathrooms'].max()], 
+      id='bathrooms_slider',
+      updatemode='drag'
+    ),
+  ],
+  id = 'bathrooms_div'
   ),
   # Create a range slider for square footage
-  html.H5("Square Footage"),
-  dcc.RangeSlider(
-    min=df['Sqft'].min(), 
-    max=df['Sqft'].max(),
-    value=[df['Sqft'].min(), df['Sqft'].max()], 
-    id='sqft_slider',
-    tooltip={
-      "placement": "bottom",
-      "always_visible": True
-    },
-    updatemode='drag'
+  html.Div([
+    html.H5("Square Footage"),
+    dcc.RangeSlider(
+      min=df['Sqft'].min(), 
+      max=df['Sqft'].max(),
+      value=[df['Sqft'].min(), df['Sqft'].max()], 
+      id='sqft_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+  ],
+  id = 'square_footage_div'
   ),
-  html.H6("Include properties with an unknown square footage?"),
-  html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
-  dcc.RadioItems(
-    id='sqft_missing_radio',
-    options=[
-        {'label': 'Yes', 'value': 'True'},
-        {'label': 'No', 'value': 'False'}
-    ],
-    value='True'
+  html.Div([
+    html.H6("Include properties with an unknown square footage?"),
+    html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
+    dcc.RadioItems(
+      id='sqft_missing_radio',
+      options=[
+          {'label': 'Yes', 'value': 'True'},
+          {'label': 'No', 'value': 'False'}
+      ],
+      value='True'
+    ),
+  ],
+  id = 'unknown_sqft_div'
   ),
   # Create a range slider for ppsqft
-  html.H5("Price Per Square Foot"),
-  dcc.RangeSlider(
-    min=df['Price Per Square Foot'].min(), 
-    max=df['Price Per Square Foot'].max(),
-    value=[df['Price Per Square Foot'].min(), df['Price Per Square Foot'].max()], 
-    id='ppsqft_slider',
-    tooltip={
-      "placement": "bottom",
-      "always_visible": True
-    },
-    updatemode='drag'
+  html.Div([
+    html.H5("Price Per Square Foot"),
+    dcc.RangeSlider(
+      min=df['Price Per Square Foot'].min(), 
+      max=df['Price Per Square Foot'].max(),
+      value=[df['Price Per Square Foot'].min(), df['Price Per Square Foot'].max()], 
+      id='ppsqft_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+  ],
+  id = 'ppsqft_div'
   ),
-  html.H6("Include properties with an unknown price per square footage?"),
-  html.P("⚠ Some properties aren't listed with a price square footage for various reasons. Do you want to include them in your search?"),
-  dcc.RadioItems(
-    id='ppsqft_missing_radio',
-    options=[
-        {'label': 'Yes', 'value': 'True'},
-        {'label': 'No', 'value': 'False'}
-    ],
-    value='True'
+  html.Div([
+    html.H6("Include properties with an unknown price per square footage?"),
+    html.P("⚠ Some properties aren't listed with a price square footage for various reasons. Do you want to include them in your search?"),
+    dcc.RadioItems(
+      id='ppsqft_missing_radio',
+      options=[
+          {'label': 'Yes', 'value': 'True'},
+          {'label': 'No', 'value': 'False'}
+      ],
+      value='True'
+    ),
+  ],
+  id = 'unknown_ppsqft_div'
   ),
-  html.H5("Pet Policy"),
-  # Create a checklist for pet policy
-  dcc.Checklist(
-    id = 'pets_checklist',
-    options=[
-      {'label': 'Pets Allowed', 'value': 'True'},
-      {'label': 'Pets NOT Allowed', 'value': 'False'}
-    ],
-      value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+  html.Div([
+    html.H5("Pet Policy"),
+    # Create a checklist for pet policy
+    dcc.Checklist(
+      id = 'pets_checklist',
+      options=[
+        {'label': 'Pets Allowed', 'value': 'True'},
+        {'label': 'Pets NOT Allowed', 'value': 'False'}
+      ],
+        value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+    ),
+  ],
+  id = 'pet_policy_div'
   ),
-  html.H5("Lease Length"),
-  # Create a checklist for rental terms
-  dcc.Checklist(
-    id = 'terms_checklist',
-    options = [
-      {'label': 'Monthly', 'value': 'MO'},
-      {'label': '12 Months', 'value': '12M'},
-      {'label': '24 Months', 'value': '24M'},
-      {'label': 'Negotiable', 'value': 'NG'}
-    ],
-      value=['MO', '12M', '24M', 'NG']
+  html.Div([
+    html.H5("Lease Length"),
+    # Create a checklist for rental terms
+    dcc.Checklist(
+      id = 'terms_checklist',
+      options = [
+        {'label': 'Monthly', 'value': 'MO'},
+        {'label': '12 Months', 'value': '12M'},
+        {'label': '24 Months', 'value': '24M'},
+        {'label': 'Negotiable', 'value': 'NG'}
+      ],
+        value=['MO', '12M', '24M', 'NG']
+    ),
+  ],
+  id = 'rental_terms_div'
   ),
-  html.H5("Garage Spaces"),
-  # Create a range slider for # of garage spaces
-  dcc.RangeSlider(
-    min=0, 
-    max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
-    step=1, 
-    value=[0, df['Garage Spaces'].max()], 
-    id='garage_spaces_slider',
-    updatemode='drag'
+  html.Div([
+    html.H5("Garage Spaces"),
+    # Create a range slider for # of garage spaces
+    dcc.RangeSlider(
+      min=0, 
+      max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
+      step=1, 
+      value=[0, df['Garage Spaces'].max()], 
+      id='garage_spaces_slider',
+      updatemode='drag'
+    ),
+  ],
+  id = 'garage_div'
   ),
-  html.H6("Include properties with unknown garage spaces?"),
-  html.P("⚠ Some properties aren't listed with garage spaces for various reasons. Do you want to include them in your search?"),
-  dcc.RadioItems(
-    id='garage_missing_radio',
-    options=[
-        {'label': 'Yes', 'value': 'True'},
-        {'label': 'No', 'value': 'False'}
-    ],
-    value='True'
+  html.Div([
+    html.H6("Include properties with unknown garage spaces?"),
+    html.P("⚠ Some properties aren't listed with garage spaces for various reasons. Do you want to include them in your search?"),
+    dcc.RadioItems(
+      id='garage_missing_radio',
+      options=[
+          {'label': 'Yes', 'value': 'True'},
+          {'label': 'No', 'value': 'False'}
+      ],
+      value='True'
+    ),
+  ],
+  id = 'unknown_garage_spaces_div'
   ),
-  html.H5("Price (Monthly)"),
-  # Create a range slider for rental price
-  dcc.RangeSlider(
-    min=df['L/C Price'].min(),
-    max=df['L/C Price'].max(),
-    value=[0, df['L/C Price'].max()],
-    id='rental_price_slider',
-    tooltip={
-      "placement": "bottom",
-      "always_visible": True
-    },
-    updatemode='drag'
+  html.Div([ 
+    html.H5("Price (Monthly)"),
+    # Create a range slider for rental price
+    dcc.RangeSlider(
+      min=df['L/C Price'].min(),
+      max=df['L/C Price'].max(),
+      value=[0, df['L/C Price'].max()],
+      id='rental_price_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+  ],
+  id = 'price_div'
   ),
-  html.H5("Year Built"),
-  # Create a range slider for year built
-  dcc.RangeSlider(
-    min=df['YrBuilt'].min(),
-    max=df['YrBuilt'].max(),
-    value=[0, df['YrBuilt'].max()],
-    id='yrbuilt_slider',
-    tooltip={
-      "placement": "bottom",
-      "always_visible": True
-    },
-    marks = { # Create custom tick marks
-        # The left column should be floats, the right column should be strings
-        f"{df['YrBuilt'].min()}": f"{df['YrBuilt'].min()}", # first mark is oldest house
-        float(f"{df['YrBuilt'].min()}") + 20: str(float(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years
-        float(f"{df['YrBuilt'].min()}") + 40: str(float(f"{df['YrBuilt'].min()}") + 40),
-        float(f"{df['YrBuilt'].min()}") + 60: str(float(f"{df['YrBuilt'].min()}") + 60),
-        float(f"{df['YrBuilt'].min()}") + 80: str(float(f"{df['YrBuilt'].min()}") + 80),
-        float(f"{df['YrBuilt'].min()}") + 100: str(float(f"{df['YrBuilt'].min()}") + 100),
-        float(f"{df['YrBuilt'].min()}") + 120: str(float(f"{df['YrBuilt'].min()}") + 120),
-        float(f"{df['YrBuilt'].min()}") + 140: str(float(f"{df['YrBuilt'].min()}") + 140),
-        f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
-    },
-    updatemode='drag'
+  html.Div([
+    html.H5("Year Built"),
+    # Create a range slider for year built
+    dcc.RangeSlider(
+      min=df['YrBuilt'].min(),
+      max=df['YrBuilt'].max(),
+      value=[0, df['YrBuilt'].max()],
+      id='yrbuilt_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      marks = { # Create custom tick marks
+          # The left column should be floats, the right column should be strings
+          f"{df['YrBuilt'].min()}": f"{df['YrBuilt'].min()}", # first mark is oldest house
+          float(f"{df['YrBuilt'].min()}") + 20: str(float(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years
+          float(f"{df['YrBuilt'].min()}") + 40: str(float(f"{df['YrBuilt'].min()}") + 40),
+          float(f"{df['YrBuilt'].min()}") + 60: str(float(f"{df['YrBuilt'].min()}") + 60),
+          float(f"{df['YrBuilt'].min()}") + 80: str(float(f"{df['YrBuilt'].min()}") + 80),
+          float(f"{df['YrBuilt'].min()}") + 100: str(float(f"{df['YrBuilt'].min()}") + 100),
+          float(f"{df['YrBuilt'].min()}") + 120: str(float(f"{df['YrBuilt'].min()}") + 120),
+          float(f"{df['YrBuilt'].min()}") + 140: str(float(f"{df['YrBuilt'].min()}") + 140),
+          f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
+      },
+      updatemode='drag'
+    ),
+  ],
+  id = 'yrbuilt_div'
   ),
-
-  html.H6("Include properties with an unknown year built?"),
-  html.P("⚠ Some properties aren't listed with a year built for various reasons. Do you want to include them in your search?"),
-  dcc.RadioItems(
-    id='yrbuilt_missing_radio',
-    options=[
-        {'label': 'Yes', 'value': 'True'},
-        {'label': 'No', 'value': 'False'}
-    ],
-    value='True'
+  html.Div([
+    html.H6("Include properties with an unknown year built?"),
+    html.P("⚠ Some properties aren't listed with a year built for various reasons. Do you want to include them in your search?"),
+    dcc.RadioItems(
+      id='yrbuilt_missing_radio',
+      options=[
+          {'label': 'Yes', 'value': 'True'},
+          {'label': 'No', 'value': 'False'}
+      ],
+      value='True'
+    ),
+  ],
+  id = 'yrbuilt_missing_div'
   ),
 
   # Generate the map
