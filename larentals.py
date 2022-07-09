@@ -540,16 +540,19 @@ app.layout = html.Div([
   ],
   id = 'yrbuilt_missing_div'
   ),
-
-  # Generate the map
-  dl.Map(
-    [dl.TileLayer(), dl.LayerGroup(id="cluster")],
-    id='map',
-    zoom=9,
-    minZoom=9,
-    center=(lat_mean, long_mean),
-    style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
-  )
+  html.Div([
+    # Generate the map
+    dl.Map(
+      [dl.TileLayer(), dl.LayerGroup(id="cluster")],
+      id='map',
+      zoom=9,
+      minZoom=9,
+      center=(lat_mean, long_mean),
+      style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
+    )
+  ],
+  id = 'map_div'
+  ),
 
 ],
 )
