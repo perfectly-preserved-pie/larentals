@@ -337,6 +337,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'},
   id = 'bedrooms_div'
   ),
   html.Div([
@@ -351,6 +352,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'}, 
   id = 'bathrooms_div'
   ),
   # Create a range slider for square footage
@@ -368,6 +370,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'}, 
   id = 'square_footage_div'
   ),
   html.Div([
@@ -399,6 +402,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'}, 
   id = 'ppsqft_div'
   ),
   html.Div([
@@ -457,6 +461,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'}, 
   id = 'garage_div'
   ),
   html.Div([
@@ -488,6 +493,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'}, 
   id = 'price_div'
   ),
   html.Div([
@@ -517,6 +523,7 @@ app.layout = html.Div([
       updatemode='drag'
     ),
   ],
+  style = {'width' : '40%'}, 
   id = 'yrbuilt_div'
   ),
   html.Div([
