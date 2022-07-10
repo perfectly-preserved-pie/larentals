@@ -548,7 +548,7 @@ app.layout = html.Div([
       zoom=9,
       minZoom=9,
       center=(lat_mean, long_mean),
-      style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "block"}
+      style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "inline-block"}
     )
   ],
   id = 'map_div'
