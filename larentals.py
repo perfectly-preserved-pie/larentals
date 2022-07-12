@@ -41,8 +41,8 @@ df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + 
 def return_coordinates(address):
     try:
         geocode_info = g.geocode(address)
-        lat = geocode_info.latitude
-        lon = geocode_info.longitude
+        lat = float(geocode_info.latitude)
+        lon = float(geocode_info.longitude)
         coords = f"{lat}, {lon}"
     except Exception:
         lat = "NO COORDINATES FOUND"
@@ -143,6 +143,8 @@ df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce') # convert non-inte
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
 # And skew the outliers, causing the sliders to go way up
@@ -293,8 +295,7 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
-app.layout = html.Div([
-  html.Div([ 
+subtype_checklist = html.Div([ 
       # Title this section
       html.H5("Subtypes"), 
       # Create a checklist of options for the user
@@ -324,8 +325,9 @@ app.layout = html.Div([
       ),
   ],
   id = 'subtypes_div',
-  ),
-  html.Div([
+  )
+
+bedrooms_slider = html.Div([
     html.H5("Bedrooms"),
     # Create a range slider for # of bedrooms
     dcc.RangeSlider(
@@ -339,8 +341,9 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'},
   id = 'bedrooms_div'
-  ),
-  html.Div([
+  )
+
+bathrooms_slider = html.Div([
     html.H5("Bathrooms"),
     # Create a range slider for # of total bathrooms
     dcc.RangeSlider(
@@ -354,9 +357,10 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'}, 
   id = 'bathrooms_div'
-  ),
-  # Create a range slider for square footage
-  html.Div([
+  )
+
+# Create a range slider for square footage
+square_footage_slider = html.Div([
     html.H5("Square Footage"),
     dcc.RangeSlider(
       min=df['Sqft'].min(), 
@@ -372,8 +376,9 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'}, 
   id = 'square_footage_div'
-  ),
-  html.Div([
+  )
+
+square_footage_radio = html.Div([
     html.H6("Include properties with an unknown square footage?"),
     html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
     dcc.RadioItems(
@@ -386,9 +391,10 @@ app.layout = html.Div([
     ),
   ],
   id = 'unknown_sqft_div'
-  ),
-  # Create a range slider for ppsqft
-  html.Div([
+  )
+
+# Create a range slider for ppsqft
+ppsqft_slider = html.Div([
     html.H5("Price Per Square Foot"),
     dcc.RangeSlider(
       min=df['Price Per Square Foot'].min(), 
@@ -404,8 +410,9 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'}, 
   id = 'ppsqft_div'
-  ),
-  html.Div([
+  )
+  
+ppsqft_radio = html.Div([
     html.H6("Include properties with an unknown price per square footage?"),
     html.P("⚠ Some properties aren't listed with a price square footage for various reasons. Do you want to include them in your search?"),
     dcc.RadioItems(
@@ -418,8 +425,9 @@ app.layout = html.Div([
     ),
   ],
   id = 'unknown_ppsqft_div'
-  ),
-  html.Div([
+  )
+
+pets_slider = html.Div([
     html.H5("Pet Policy"),
     # Create a checklist for pet policy
     dcc.Checklist(
@@ -432,8 +440,9 @@ app.layout = html.Div([
     ),
   ],
   id = 'pet_policy_div'
-  ),
-  html.Div([
+  )
+
+rental_terms_slider = html.Div([
     html.H5("Lease Length"),
     # Create a checklist for rental terms
     dcc.Checklist(
@@ -448,8 +457,9 @@ app.layout = html.Div([
     ),
   ],
   id = 'rental_terms_div'
-  ),
-  html.Div([
+  )
+
+garage_spaces_slider =  html.Div([
     html.H5("Garage Spaces"),
     # Create a range slider for # of garage spaces
     dcc.RangeSlider(
@@ -463,8 +473,9 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'}, 
   id = 'garage_div'
-  ),
-  html.Div([
+  )
+
+unknown_sqft_radio = html.Div([
     html.H6("Include properties with unknown garage spaces?"),
     html.P("⚠ Some properties aren't listed with garage spaces for various reasons. Do you want to include them in your search?"),
     dcc.RadioItems(
@@ -477,8 +488,9 @@ app.layout = html.Div([
     ),
   ],
   id = 'unknown_garage_spaces_div'
-  ),
-  html.Div([ 
+  )
+
+rental_price_slider = html.Div([ 
     html.H5("Price (Monthly)"),
     # Create a range slider for rental price
     dcc.RangeSlider(
@@ -495,8 +507,9 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'}, 
   id = 'price_div'
-  ),
-  html.Div([
+  )
+
+year_built_slider = html.Div([
     html.H5("Year Built"),
     # Create a range slider for year built
     dcc.RangeSlider(
@@ -525,8 +538,9 @@ app.layout = html.Div([
   ],
   style = {'width' : '40%'}, 
   id = 'yrbuilt_div'
-  ),
-  html.Div([
+  )
+
+unknown_year_built_radio = html.Div([
     html.H6("Include properties with an unknown year built?"),
     html.P("⚠ Some properties aren't listed with a year built for various reasons. Do you want to include them in your search?"),
     dcc.RadioItems(
@@ -539,22 +553,49 @@ app.layout = html.Div([
     ),
   ],
   id = 'yrbuilt_missing_div'
-  ),
-  html.Div([
-    # Generate the map
-    dl.Map(
-      [dl.TileLayer(), dl.LayerGroup(id="cluster")],
-      id='map',
-      zoom=9,
-      minZoom=9,
-      center=(lat_mean, long_mean),
-      style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "inline-block"}
-    )
-  ],
-  id = 'map_div'
-  ),
+  )
 
-],
+# Generate the map
+map = dl.Map(
+  [dl.TileLayer(), dl.LayerGroup(id="cluster")],
+  id='map',
+  zoom=9,
+  minZoom=9,
+  center=(lat_mean, long_mean),
+  style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "inline-block"}
+)
+
+
+user_options_card = dbc.Card(
+  [
+    subtype_checklist,
+    bedrooms_slider,
+    bathrooms_slider,
+    square_footage_slider,
+    square_footage_radio,
+    ppsqft_slider,
+    ppsqft_radio,
+    pets_slider,
+    rental_terms_slider,
+    garage_spaces_slider,
+    unknown_sqft_radio,
+    rental_price_slider,
+    year_built_slider,
+    unknown_year_built_radio
+  ],
+  body=True
+)
+
+map_card = dbc.Card([map], body = True)
+
+app.layout = dbc.Container([
+  dbc.Row(
+    [dbc.Col([user_options_card], width = 4),
+    dbc.Col([map_card], width = 8)]
+  ),
+  ],
+  fluid = True,
+  className = "dbc"
 )
 
 @app.callback(
