@@ -1,7 +1,2 @@
 env
 .env
-<<<<<<< HEAD
-.csv
-larentals.csv
-=======
->>>>>>> parent of 4018b2a... Add CSV to gitignore
