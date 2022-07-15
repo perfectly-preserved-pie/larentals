@@ -454,7 +454,13 @@ pets_slider = html.Div([
         {'label': 'Pets Allowed', 'value': 'True'},
         {'label': 'Pets NOT Allowed', 'value': 'False'}
       ],
-        value=['True', 'False'] # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+      value=['True', 'False'], # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+      # add some spacing in between the checkbox and the label
+      # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+      inputStyle = {
+        "margin-right": "5px",
+        "margin-left": "5px"
+      },    
     ),
   ],
   id = 'pet_policy_div'
@@ -471,7 +477,13 @@ rental_terms_slider = html.Div([
         {'label': '24 Months', 'value': '24M'},
         {'label': 'Negotiable', 'value': 'NG'}
       ],
-        value=['MO', '12M', '24M', 'NG']
+      value=['MO', '12M', '24M', 'NG'],
+      # add some spacing in between the checkbox and the label
+      # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+      inputStyle = {
+        "margin-right": "5px",
+        "margin-left": "5px"
+      },
     ),
   ],
   id = 'rental_terms_div'
