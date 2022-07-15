@@ -12,7 +12,6 @@ import uuid
 import requests
 from bs4 import BeautifulSoup as bs4
 import dash_bootstrap_components as dbc
-from functions import *
 
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
