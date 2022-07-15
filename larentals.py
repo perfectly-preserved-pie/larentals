@@ -324,6 +324,12 @@ subtype_checklist = html.Div([
             {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
           ],
           value=['APT/A'], # Set the default value
+          # add some spacing in between the checkbox and the label
+          # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+          inputStyle = {
+            "margin-right": "5px",
+            "margin-left": "5px"
+          },
       ),
   ],
   id = 'subtypes_div',
@@ -389,7 +395,13 @@ square_footage_radio = html.Div([
           {'label': 'Yes', 'value': 'True'},
           {'label': 'No', 'value': 'False'}
       ],
-      value='True'
+      value='True',
+      # add some spacing in between the checkbox and the label
+      # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+      inputStyle = {
+        "margin-right": "5px",
+        "margin-left": "5px"
+      },
     ),
   ],
   id = 'unknown_sqft_div'
@@ -423,7 +435,11 @@ ppsqft_radio = html.Div([
           {'label': 'Yes', 'value': 'True'},
           {'label': 'No', 'value': 'False'}
       ],
-      value='True'
+      value='True',
+      inputStyle = {
+        "margin-right": "5px",
+        "margin-left": "5px"
+      },
     ),
   ],
   id = 'unknown_ppsqft_div'
@@ -486,7 +502,11 @@ unknown_sqft_radio = html.Div([
           {'label': 'Yes', 'value': 'True'},
           {'label': 'No', 'value': 'False'}
       ],
-      value='True'
+      value='True',
+      inputStyle = {
+        "margin-right": "5px",
+        "margin-left": "5px"
+      },
     ),
   ],
   id = 'unknown_garage_spaces_div'
@@ -551,7 +571,11 @@ unknown_year_built_radio = html.Div([
           {'label': 'Yes', 'value': 'True'},
           {'label': 'No', 'value': 'False'}
       ],
-      value='True'
+      value='True',
+      inputStyle = {
+        "margin-right": "5px",
+        "margin-left": "5px"
+      },
     ),
   ],
   id = 'yrbuilt_missing_div'
