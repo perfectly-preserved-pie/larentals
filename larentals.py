@@ -298,32 +298,34 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 subtype_checklist = html.Div([ 
+# TODO: https://stackoverflow.com/questions/56847745/how-to-divide-a-python-dash-checklist-into-several-columns
       # Title this section
       html.H5("Subtypes"), 
       # Create a checklist of options for the user
       # https://dash.plotly.com/dash-core-components/checklist
       dcc.Checklist( 
           id = 'subtype_checklist',
-          options=[
-            {'label': 'Apartment (Unspecified)', 'value': 'APT'},
+          options = [
             {'label': 'Apartment (Attached)', 'value': 'APT/A'},
-            {'label': 'Studio (Attached)', 'value': 'STUD/A'},
-            {'label': 'Single Family Residence (Unspecified)', 'value': 'SFR'},
-            {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
-            {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
-            {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
+            {'label': 'Apartment (Unspecified)', 'value': 'APT'},
             {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
             {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
-            {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
-            {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
-            {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
-            {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
-            {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
+            {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
             {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
             {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
-            {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'}
+            {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+            {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
+            {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'},
+            {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+            {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
+            {'label': 'Single Family Residence (Unspecified)', 'value': 'SFR'},
+            {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+            {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+            {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
+            {'label': 'Triplex (Attached)', 'value': 'TPLX/A'}
           ],
           value=['APT/A'], # Set the default value
+          labelStyle = {'display': 'block'},
           # add some spacing in between the checkbox and the label
           # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
           inputStyle = {

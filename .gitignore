@@ -1,3 +1,4 @@
 env
 .env
 larentals.csv
+larentals-checkpoint.py
