@@ -459,7 +459,7 @@ ppsqft_radio = html.Div([
 id = 'unknown_ppsqft_div'
 )
 
-pets_slider = html.Div([
+pets_checklist = html.Div([
     html.H5("Pet Policy"),
     # Create a checklist for pet policy
     dcc.Checklist(
@@ -480,7 +480,7 @@ pets_slider = html.Div([
   id = 'pet_policy_div'
   )
 
-rental_terms_slider = html.Div([
+rental_terms_checklist = html.Div([
     html.H5("Lease Length"),
     # Create a checklist for rental terms
     dcc.Checklist(
@@ -633,19 +633,19 @@ map = dl.Map(
 user_options_card = dbc.Card(
   [
     subtype_checklist,
+    rental_price_slider,
     bedrooms_slider,
     bathrooms_slider,
     square_footage_slider,
     square_footage_radio,
     ppsqft_slider,
     ppsqft_radio,
-    pets_slider,
-    rental_terms_slider,
     garage_spaces_slider,
     unknown_sqft_radio,
-    rental_price_slider,
     year_built_slider,
-    unknown_year_built_radio
+    unknown_year_built_radio,
+    pets_checklist,
+    rental_terms_checklist,
   ],
   body=True
 )
