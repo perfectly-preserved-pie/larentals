@@ -17,7 +17,7 @@ load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
 #external_stylesheets=[dbc.themes.DARKLY]
-external_stylesheets = [dbc.themes.DARKLY]
+external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP]
 
 # Make the dataframe a global variable
 global df
@@ -389,25 +389,31 @@ square_footage_slider = html.Div([
   )
 
 square_footage_radio = html.Div([
-    html.H6("Include properties with an unknown square footage?"),
-    html.P("⚠ Some properties aren't listed with a square footage for various reasons. Do you want to include them in your search?"),
-    dcc.RadioItems(
-      id='sqft_missing_radio',
-      options=[
-          {'label': 'Yes', 'value': 'True'},
-          {'label': 'No', 'value': 'False'}
-      ],
-      value='True',
-      # add some spacing in between the checkbox and the label
-      # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-      inputStyle = {
-        "margin-right": "5px",
-        "margin-left": "5px"
-      },
-    ),
-  ],
-  id = 'unknown_sqft_div'
-  )
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with a square footage for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='sqft_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },        
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_sqft_div',
+)
 
 # Create a range slider for ppsqft
 ppsqft_slider = html.Div([
@@ -429,23 +435,29 @@ ppsqft_slider = html.Div([
   )
   
 ppsqft_radio = html.Div([
-    html.H6("Include properties with an unknown price per square footage?"),
-    html.P("⚠ Some properties aren't listed with a price square footage for various reasons. Do you want to include them in your search?"),
-    dcc.RadioItems(
-      id='ppsqft_missing_radio',
-      options=[
-          {'label': 'Yes', 'value': 'True'},
-          {'label': 'No', 'value': 'False'}
-      ],
-      value='True',
-      inputStyle = {
-        "margin-right": "5px",
-        "margin-left": "5px"
-      },
-    ),
-  ],
-  id = 'unknown_ppsqft_div'
-  )
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with a price per square foot for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='ppsqft_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },
+      ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_ppsqft_div'
+)
 
 pets_slider = html.Div([
     html.H5("Pet Policy"),
@@ -508,8 +520,11 @@ garage_spaces_slider =  html.Div([
   )
 
 unknown_sqft_radio = html.Div([
-    html.H6("Include properties with unknown garage spaces?"),
-    html.P("⚠ Some properties aren't listed with garage spaces for various reasons. Do you want to include them in your search?"),
+  dbc.Alert(
+    [
+    # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+    html.I(className="bi bi-info-circle-fill me-2"),
+    ("Some properties aren't listed with garage spaces for various reasons. Do you still want to include them in your search?"),
     dcc.RadioItems(
       id='garage_missing_radio',
       options=[
@@ -522,9 +537,12 @@ unknown_sqft_radio = html.Div([
         "margin-left": "5px"
       },
     ),
-  ],
-  id = 'unknown_garage_spaces_div'
-  )
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_garage_spaces_div'
+)
 
 rental_price_slider = html.Div([ 
     html.H5("Price (Monthly)"),
@@ -577,23 +595,29 @@ year_built_slider = html.Div([
   )
 
 unknown_year_built_radio = html.Div([
-    html.H6("Include properties with an unknown year built?"),
-    html.P("⚠ Some properties aren't listed with a year built for various reasons. Do you want to include them in your search?"),
-    dcc.RadioItems(
-      id='yrbuilt_missing_radio',
-      options=[
-          {'label': 'Yes', 'value': 'True'},
-          {'label': 'No', 'value': 'False'}
-      ],
-      value='True',
-      inputStyle = {
-        "margin-right": "5px",
-        "margin-left": "5px"
-      },
-    ),
-  ],
-  id = 'yrbuilt_missing_div'
-  )
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),      
+      ("Some properties aren't listed with a year built for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='yrbuilt_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },
+      ),
+    ],
+  color="info",
+  ),
+],
+id = 'yrbuilt_missing_div'
+)
 
 # Generate the map
 map = dl.Map(
