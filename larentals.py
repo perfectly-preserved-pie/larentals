@@ -384,7 +384,10 @@ square_footage_slider = html.Div([
       updatemode='drag'
     ),
   ],
-  style = {'width' : '40%'}, 
+  style = {
+    'width' : '40%',
+    'margin-bottom' : '10px',
+  }, 
   id = 'square_footage_div'
   )
 
@@ -430,7 +433,10 @@ ppsqft_slider = html.Div([
       updatemode='drag'
     ),
   ],
-  style = {'width' : '40%'}, 
+  style = {
+    'width' : '40%',
+    'margin-bottom' : '10px',
+  },
   id = 'ppsqft_div'
   )
   
@@ -590,7 +596,10 @@ year_built_slider = html.Div([
       updatemode='drag'
     ),
   ],
-  style = {'width' : '40%'}, 
+  style = {
+    'width' : '40%',
+    'margin-bottom' : '10px',
+  },
   id = 'yrbuilt_div'
   )
 
