@@ -638,7 +638,6 @@ map = dl.Map(
   style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "inline-block"}
 )
 
-
 user_options_card = dbc.Card(
   [
     subtype_checklist,
@@ -661,10 +660,25 @@ user_options_card = dbc.Card(
 
 map_card = dbc.Card([map], body = True)
 
+title_card = dbc.Card(
+  [
+    html.H3("WhereToLive.LA", className="card-title"),
+    html.P("An interactive map of rental properties in Los Angeles County.")
+  ],
+  body = True
+)
+
 app.layout = dbc.Container([
-  dbc.Row(
-    [dbc.Col([user_options_card], width = 4),
-    dbc.Col([map_card], width = 8)]
+  dbc.Row( # First row: title card
+    [
+      dbc.Col([title_card]),
+    ]
+  ),
+  dbc.Row( # Second row: the rest
+    [
+      dbc.Col([user_options_card], width = 4),
+      dbc.Col([map_card], width = 8)
+    ]
   ),
   ],
   fluid = True,
