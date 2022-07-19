@@ -670,7 +670,13 @@ user_options_card = dbc.Card(
   body=True
 )
 
-map_card = dbc.Card([map], body = True)
+map_card = dbc.Card(
+    [map], 
+    body = True,
+    # Make the graph stay in view as the page is scrolled down
+    # https://getbootstrap.com/docs/4.0/utilities/position/
+    className = 'sticky-top'
+)
 
 title_card = dbc.Card(
   [
