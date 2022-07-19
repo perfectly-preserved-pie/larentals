@@ -294,6 +294,17 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
     ppsqft_choice = df['Price Per Square Foot'].between(slider_begin, slider_end)
   return (ppsqft_choice)
 
+# Create a function to return a dataframe filter for pet policy
+def pets_radio_button(choice):
+  if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
+    # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
+    pets_radio_choice = ~df['PetsAllowed'].isin(['No', 'No, Size Limit'])
+  elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
+    pets_radio_choice = df['PetsAllowed'].isin(['No', 'No, Size Limit'])
+  elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
+    pets_radio_choice = df['PetsAllowed']
+  return (pets_radio_choice)
+
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
@@ -465,16 +476,17 @@ ppsqft_radio = html.Div([
 id = 'unknown_ppsqft_div'
 )
 
-pets_checklist = html.Div([
+pets_radio = html.Div([
     html.H5("Pet Policy"),
     # Create a checklist for pet policy
-    dcc.Checklist(
-      id = 'pets_checklist',
+    dcc.RadioItems(
+      id = 'pets_radio',
       options=[
-        {'label': 'Pets Allowed', 'value': 'True'},
-        {'label': 'Pets NOT Allowed', 'value': 'False'}
+        {'label': 'Pets Allowed', 'value': 'Yes'},
+        {'label': 'Pets NOT Allowed', 'value': 'No'},
+        {'label': 'Both', 'value': 'Both'}
       ],
-      value=['True', 'False'], # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+      value='Both', # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
       # add some spacing in between the checkbox and the label
       # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
       inputStyle = {
@@ -652,7 +664,7 @@ user_options_card = dbc.Card(
     unknown_sqft_radio,
     year_built_slider,
     unknown_year_built_radio,
-    pets_checklist,
+    pets_radio,
     rental_terms_checklist,
   ],
   body=True
@@ -689,7 +701,7 @@ app.layout = dbc.Container([
   Output(component_id='cluster', component_property='children'),
   [
     Input(component_id='subtype_checklist', component_property='value'),
-    Input(component_id='pets_checklist', component_property='value'),
+    Input(component_id='pets_radio', component_property='value'),
     Input(component_id='terms_checklist', component_property='value'),
     Input(component_id='garage_spaces_slider', component_property='value'),
     Input(component_id='rental_price_slider', component_property='value'),
@@ -709,7 +721,7 @@ app.layout = dbc.Container([
 def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
-    (df['PetsAllowedSimple'].isin(pets_chosen)) &
+    pets_radio_button(pets_chosen) &
     (df['Terms'].isin(terms_chosen)) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
