@@ -105,16 +105,6 @@ for row in df.itertuples():
     df.at[row.Index, 'Longitude'] = coordinates[1]
     df.at[row.Index, 'Coordinates'] = coordinates[2]
 
-# Add an extra column for simply saying either Yes or No if pets are allowed
-# We need this because there are many ways of saying "Yes":
-# i.e "Call", "Small Dogs OK", "Breed Restrictions", "Cats Only", etc.
-# To be used later in the Dash callback function
-for row in df.itertuples():
-    if row.PetsAllowed != 'No':
-        df.at[row.Index, "PetsAllowedSimple"] = 'True'
-    elif row.PetsAllowed == 'No' or row.PetsAllowed == 'No, Size Limit':
-        df.at[row.Index, "PetsAllowedSimple"] = 'False'
-
 # Remove the leading $ symbol and comma in the cost field
 df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
 # Remove the leading $ symbol in the ppsqft field
