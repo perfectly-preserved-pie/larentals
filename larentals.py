@@ -653,11 +653,11 @@ furnished_checklist = html.Div([
           id = 'furnished_checklist',
           options = [
             #TODO: Dynamically populate the labels and values with a for loop
-            {'label': 'Unfurnished', 'value': 'Unfurnished'},
-            {'label': 'Furnished', 'value': 'Furnished'},
             {'label': 'Furnished Or Unfurnished', 'value': 'Furnished Or Unfurnished'},
+            {'label': 'Furnished', 'value': 'Furnished'},
             {'label': 'Negotiable', 'value': 'Negotiable'},
             {'label': 'Partially', 'value': 'Partially'},
+            {'label': 'Unfurnished', 'value': 'Unfurnished'},
             {'label': 'Unknown', 'value': ''},
           ],
           value=['Unfurnished'], # Set the default value
