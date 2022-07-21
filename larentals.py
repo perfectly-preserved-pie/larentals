@@ -24,8 +24,13 @@ global df
 
 # import the csv
 # Don't round the float. See https://stackoverflow.com/a/68027847
-df = pd.read_csv("larentals.csv", float_precision="round_trip")
+# Convert all empty strings into NaNs. See https://stackoverflow.com/a/53075732
+df = pd.read_csv("larentals.csv", float_precision="round_trip", skipinitialspace=True)
 pd.set_option("display.precision", 10)
+
+# Strip leading and trailing whitespaces from the column names
+# https://stackoverflow.com/a/36082588
+df.columns = df.columns.str.strip()
 
 # Drop all rows that don't have a city. Fuck this shit I'm too lazy to code around bad data input.
 df = df[df['City'].notna()]
@@ -106,7 +111,7 @@ for row in df.itertuples():
     df.at[row.Index, 'Coordinates'] = coordinates[2]
 
 # Remove the leading $ symbol and comma in the cost field
-df['L/C Price'] = df['L/C Price'].str.replace("$","").str.replace(",","")
+df['List Price'] = df['List Price'].str.replace("$","").str.replace(",","")
 # Remove the leading $ symbol in the ppsqft field
 df['Price Per Square Foot'] = df['Price Per Square Foot'].str.replace("$","")
 
@@ -126,7 +131,7 @@ df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0]
 
 # Convert a few columns into integers 
 # To prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
-df['L/C Price'] = df['L/C Price'].apply(pd.to_numeric)
+df['List Price'] = df['List Price'].apply(pd.to_numeric)
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric)
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
@@ -150,7 +155,7 @@ def popup_html(row):
     street_address=df['Full Street Address'].iloc[i] 
     mls_number=df['Listing ID (MLS#)'].iloc[i]
     mls_number_hyperlink=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/"
-    lc_price = df['L/C Price'].iloc[i] 
+    lc_price = df['List Price'].iloc[i] 
     price_per_sqft=df['Price Per Square Foot'].iloc[i]                  
     brba = df['Br/Ba'].iloc[i]
     square_ft = df['Sqft'].iloc[i]
@@ -161,6 +166,7 @@ def popup_html(row):
     terms = df['Terms'].iloc[i]
     sub_type = df['Sub Type'].iloc[i]
     listed_date = df['Listed Date'].iloc[i]
+    furnished = df['Furnished'].iloc[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -189,6 +195,11 @@ def popup_html(row):
         listed_date = 'Unknown'
     elif pd.isna(listed_date) == False:
         listed_date = f"{listed_date}"
+    # Repeat for furnished
+    if pd.isna(furnished) == True:
+        furnished = 'Unknown'
+    elif pd.isna(listed_date) == False:
+        furnished = f"{furnished}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
@@ -205,7 +216,7 @@ def popup_html(row):
             html.Td("Listing ID (MLS#)"), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]),
           html.Tr([ 
-            html.Td("L/C Price"), html.Td(f"${lc_price}")
+            html.Td("List Price"), html.Td(f"${lc_price}")
           ]),
           html.Tr([
             html.Td("Price Per Square Foot"), html.Td(f"${price_per_sqft}")
@@ -230,6 +241,9 @@ def popup_html(row):
           ]),
           html.Tr([
             html.Td("Rental Terms"), html.Td(f"{terms}"),
+          ]),
+          html.Tr([
+            html.Td("Furnished?"), html.Td(f"{furnished}"),
           ]),
           html.Tr([                                                                                            
             html.Td("Physical Sub Type"), html.Td(f"{sub_type}")                                                                                    
@@ -556,9 +570,9 @@ rental_price_slider = html.Div([
     html.H5("Price (Monthly)"),
     # Create a range slider for rental price
     dcc.RangeSlider(
-      min=df['L/C Price'].min(),
-      max=df['L/C Price'].max(),
-      value=[0, df['L/C Price'].max()],
+      min=df['List Price'].min(),
+      max=df['List Price'].max(),
+      value=[0, df['List Price'].max()],
       id='rental_price_slider',
       tooltip={
         "placement": "bottom",
@@ -630,6 +644,35 @@ unknown_year_built_radio = html.Div([
 id = 'yrbuilt_missing_div'
 )
 
+furnished_checklist = html.Div([ 
+      # Title this section
+      html.H5("Furnished/Unfurnished"), 
+      # Create a checklist of options for the user
+      # https://dash.plotly.com/dash-core-components/checklist
+      dcc.Checklist( 
+          id = 'furnished_checklist',
+          options = [
+            #TODO: Dynamically populate the labels and values with a for loop
+            {'label': 'Unfurnished', 'value': 'Unfurnished'},
+            {'label': 'Furnished', 'value': 'Furnished'},
+            {'label': 'Furnished Or Unfurnished', 'value': 'Furnished Or Unfurnished'},
+            {'label': 'Negotiable', 'value': 'Negotiable'},
+            {'label': 'Partially', 'value': 'Partially'},
+            {'label': 'Unknown', 'value': ''},
+          ],
+          value=['Unfurnished'], # Set the default value
+          labelStyle = {'display': 'block'},
+          # add some spacing in between the checkbox and the label
+          # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+          inputStyle = {
+            "margin-right": "5px",
+            "margin-left": "5px"
+          },
+      ),
+  ],
+  id = 'furnished_div',
+  )
+
 # Generate the map
 map = dl.Map(
   [dl.TileLayer(), dl.LayerGroup(id="cluster")],
@@ -656,6 +699,7 @@ user_options_card = dbc.Card(
     unknown_year_built_radio,
     pets_radio,
     rental_terms_checklist,
+    furnished_checklist,
   ],
   body=True
 )
@@ -709,12 +753,13 @@ app.layout = dbc.Container([
     Input(component_id='yrbuilt_missing_radio', component_property='value'),
     Input(component_id='garage_missing_radio', component_property='value'),
     Input(component_id='ppsqft_slider', component_property='value'),
-    Input(component_id='ppsqft_missing_radio', component_property='value')
+    Input(component_id='ppsqft_missing_radio', component_property='value'),
+    Input(component_id='furnished_checklist', component_property='value'),
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     pets_radio_button(pets_chosen) &
@@ -724,12 +769,13 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     # See https://stackoverflow.com/a/40442778
     (((df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) | garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1]))) & # for this one, combine a dataframe of both the slider inputs and the radio button input
     # Repeat but for rental price
-    (df['L/C Price'].between(rental_price[0], rental_price[1])) &
+    (df['List Price'].between(rental_price[0], rental_price[1])) &
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
     (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
-    (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])))
+    (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
+    (df['Furnished'].isin(furnished_choice))
   ]
 
   # Create markers & associated popups from dataframe

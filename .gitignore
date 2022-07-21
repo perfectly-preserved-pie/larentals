@@ -1,4 +1,5 @@
 env
 .env
-larentals.csv
 larentals-checkpoint.py
+*.csv
+larentals.csv
