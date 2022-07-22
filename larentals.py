@@ -356,9 +356,9 @@ subtype_checklist = html.Div([
             "margin-left": "5px"
           },
       ),
-  ],
-  id = 'subtypes_div',
-  )
+],
+id = 'subtypes_div',
+)
 
 bedrooms_slider = html.Div([
     html.H5("Bedrooms"),
@@ -371,10 +371,10 @@ bedrooms_slider = html.Div([
       id='bedrooms_slider',
       updatemode='drag'
     ),
-  ],
-  style = {'width' : '40%'},
-  id = 'bedrooms_div'
-  )
+],
+style = {'width' : '40%'},
+id = 'bedrooms_div'
+)
 
 bathrooms_slider = html.Div([
     html.H5("Bathrooms"),
@@ -387,10 +387,10 @@ bathrooms_slider = html.Div([
       id='bathrooms_slider',
       updatemode='drag'
     ),
-  ],
-  style = {'width' : '40%'}, 
-  id = 'bathrooms_div'
-  )
+],
+style = {'width' : '40%'}, 
+id = 'bathrooms_div'
+)
 
 # Create a range slider for square footage
 square_footage_slider = html.Div([
@@ -406,13 +406,13 @@ square_footage_slider = html.Div([
       },
       updatemode='drag'
     ),
-  ],
-  style = {
-    'width' : '40%',
-    'margin-bottom' : '10px',
-  }, 
-  id = 'square_footage_div'
-  )
+],
+style = {
+  'width' : '40%',
+  'margin-bottom' : '10px',
+}, 
+id = 'square_footage_div'
+)
 
 square_footage_radio = html.Div([
   dbc.Alert(
@@ -455,13 +455,13 @@ ppsqft_slider = html.Div([
       },
       updatemode='drag'
     ),
-  ],
-  style = {
-    'width' : '40%',
-    'margin-bottom' : '10px',
-  },
-  id = 'ppsqft_div'
-  )
+],
+style = {
+  'width' : '40%',
+  'margin-bottom' : '10px',
+},
+id = 'ppsqft_div'
+)
   
 ppsqft_radio = html.Div([
   dbc.Alert(
@@ -506,9 +506,9 @@ pets_radio = html.Div([
         "margin-left": "5px"
       },    
     ),
-  ],
-  id = 'pet_policy_div'
-  )
+],
+id = 'pet_policy_div'
+)
 
 rental_terms_checklist = html.Div([
     html.H5("Lease Length"),
@@ -529,9 +529,9 @@ rental_terms_checklist = html.Div([
         "margin-left": "5px"
       },
     ),
-  ],
-  id = 'rental_terms_div'
-  )
+],
+id = 'rental_terms_div'
+)
 
 garage_spaces_slider =  html.Div([
     html.H5("Garage Spaces"),
@@ -544,10 +544,10 @@ garage_spaces_slider =  html.Div([
       id='garage_spaces_slider',
       updatemode='drag'
     ),
-  ],
-  style = {'width' : '40%'}, 
-  id = 'garage_div'
-  )
+],
+style = {'width' : '40%'}, 
+id = 'garage_div'
+)
 
 unknown_sqft_radio = html.Div([
   dbc.Alert(
@@ -588,10 +588,10 @@ rental_price_slider = html.Div([
       },
       updatemode='drag'
     ),
-  ],
-  style = {'width' : '40%'}, 
-  id = 'price_div'
-  )
+],
+style = {'width' : '40%'}, 
+id = 'price_div'
+)
 
 year_built_slider = html.Div([
     html.H5("Year Built"),
@@ -619,13 +619,13 @@ year_built_slider = html.Div([
       },
       updatemode='drag'
     ),
-  ],
-  style = {
-    'width' : '40%',
-    'margin-bottom' : '10px',
-  },
-  id = 'yrbuilt_div'
-  )
+],
+style = {
+  'width' : '40%',
+  'margin-bottom' : '10px',
+},
+id = 'yrbuilt_div'
+)
 
 unknown_year_built_radio = html.Div([
   dbc.Alert(
@@ -677,9 +677,9 @@ furnished_checklist = html.Div([
             "margin-left": "5px"
           },
       ),
-  ],
-  id = 'furnished_div',
-  )
+],
+id = 'furnished_div',
+)
 
 # Generate the map
 map = dl.Map(
