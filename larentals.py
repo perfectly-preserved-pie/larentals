@@ -309,6 +309,14 @@ def pets_radio_button(choice):
     pets_radio_choice = df['PetsAllowed']
   return (pets_radio_choice)
 
+# Create a function to return a dataframe filter for furnished dwellings
+def furnished_checklist_function(choice):
+  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+    furnished_checklist_filter = (df['Furnished'].isnull()) | (df['Furnished'].isin(choice))
+  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+    furnished_checklist_filter = df['Furnished'].isin(choice)
+  return (furnished_checklist_filter)
+
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
@@ -658,7 +666,7 @@ furnished_checklist = html.Div([
             {'label': 'Negotiable', 'value': 'Negotiable'},
             {'label': 'Partially', 'value': 'Partially'},
             {'label': 'Unfurnished', 'value': 'Unfurnished'},
-            {'label': 'Unknown', 'value': ''},
+            {'label': 'Unknown', 'value': 'Unknown'},
           ],
           value=['Unfurnished'], # Set the default value
           labelStyle = {'display': 'block'},
@@ -775,7 +783,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
     (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
     (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
-    (df['Furnished'].isin(furnished_choice))
+    furnished_checklist_function(furnished_choice)
   ]
 
   # Create markers & associated popups from dataframe
