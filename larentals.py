@@ -110,11 +110,12 @@ for row in df.itertuples():
     df.at[row.Index, 'Longitude'] = coordinates[1]
     df.at[row.Index, 'Coordinates'] = coordinates[2]
 
-# Remove all $ and , symbols from specific columns
+# Remove all $ and , symbols
 # https://stackoverflow.com/a/46430853
-cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'List Price', 'Price Per Square Foot', 'Sqft']
+# if you want to operate on multiple columns, put them in a list like so:
+cols = list(df.columns)
 # pass them to df.replace(), specifying each char and it's replacement:
-df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
+df[cols].replace({'\$': '', ',': ''}, regex=True, inplace=True)
 
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
@@ -142,6 +143,11 @@ df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, e
 df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce') # convert non-integers into NaNs
+df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce')
+df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce')
+df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce')
+df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce')
+
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
 # And skew the outliers, causing the sliders to go way up
@@ -168,6 +174,10 @@ def popup_html(row):
     sub_type = df['Sub Type'].iloc[i]
     listed_date = df['Listed Date'].iloc[i]
     furnished = df['Furnished'].iloc[i]
+    key_deposit = df['DepositKey'].iloc[i]
+    other_deposit = df['DepositOther'].iloc[i]
+    pet_deposit = df['DepositPets'].iloc[i]
+    security_deposit = df['DepositSecurity'].iloc[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -199,8 +209,25 @@ def popup_html(row):
     # Repeat for furnished
     if pd.isna(furnished) == True:
         furnished = 'Unknown'
-    elif pd.isna(listed_date) == False:
+    elif pd.isna(furnished) == False:
         furnished = f"{furnished}"
+    # Repeat for the deposits
+    if pd.isna(key_deposit) == True:
+        key_deposit = 'Unknown'
+    elif pd.isna(key_deposit) == False:
+        key_deposit = f"{key_deposit}"
+    if pd.isna(pet_deposit) == True:
+        pet_deposit = 'Unknown'
+    elif pd.isna(pet_deposit) == False:
+        pet_deposit = f"{pet_deposit}"
+    if pd.isna(security_deposit) == True:
+        security_deposit = 'Unknown'
+    elif pd.isna(security_deposit) == False:
+        security_deposit = f"{security_deposit}"
+    if pd.isna(other_deposit) == True:
+        other_deposit = 'Unknown'
+    elif pd.isna(other_deposit) == False:
+        other_deposit = f"{other_deposit}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
@@ -245,6 +272,18 @@ def popup_html(row):
           ]),
           html.Tr([
             html.Td("Furnished?"), html.Td(f"{furnished}"),
+          ]),
+          html.Tr([
+            html.Td("Security Deposit"), html.Td(f"{security_deposit}"),
+          ]),
+          html.Tr([
+            html.Td("Pet Deposit"), html.Td(f"{pet_deposit}"),
+          ]),
+          html.Tr([
+            html.Td("Key Deposit"), html.Td(f"{key_deposit}"),
+          ]),
+          html.Tr([
+            html.Td("Other Deposit"), html.Td(f"{other_deposit}"),
           ]),
           html.Tr([                                                                                            
             html.Td("Physical Sub Type"), html.Td(f"{sub_type}")                                                                                    
