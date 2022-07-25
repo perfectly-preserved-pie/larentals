@@ -110,12 +110,11 @@ for row in df.itertuples():
     df.at[row.Index, 'Longitude'] = coordinates[1]
     df.at[row.Index, 'Coordinates'] = coordinates[2]
 
-# Remove all $ and , symbols
+# Remove all $ and , symbols from specific columns
 # https://stackoverflow.com/a/46430853
-# if you want to operate on multiple columns, put them in a list like so:
-cols = list(df.columns)
+cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'List Price', 'Price Per Square Foot', 'Sqft']
 # pass them to df.replace(), specifying each char and it's replacement:
-df[cols].replace({'\$': '', ',': ''}, regex=True, inplace=True)
+df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
 
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
