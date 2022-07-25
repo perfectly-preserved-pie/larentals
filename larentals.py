@@ -214,19 +214,19 @@ def popup_html(row):
     if pd.isna(key_deposit) == True:
         key_deposit = 'Unknown'
     elif pd.isna(key_deposit) == False:
-        key_deposit = f"{key_deposit}"
+        key_deposit = f"{int(key_deposit)}"
     if pd.isna(pet_deposit) == True:
         pet_deposit = 'Unknown'
     elif pd.isna(pet_deposit) == False:
-        pet_deposit = f"{pet_deposit}"
+        pet_deposit = f"{int(pet_deposit)}"
     if pd.isna(security_deposit) == True:
         security_deposit = 'Unknown'
     elif pd.isna(security_deposit) == False:
-        security_deposit = f"{security_deposit}"
+        security_deposit = f"{int(security_deposit)}"
     if pd.isna(other_deposit) == True:
         other_deposit = 'Unknown'
     elif pd.isna(other_deposit) == False:
-        other_deposit = f"{other_deposit}"
+        other_deposit = f"{int(other_deposit)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
