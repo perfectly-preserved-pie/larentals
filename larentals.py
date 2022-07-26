@@ -416,7 +416,7 @@ subtype_checklist = html.Div([
           options = [
             {'label': 'Apartment (Attached)', 'value': 'APT/A'},
             {'label': 'Apartment (Unspecified)', 'value': 'APT'},
-            {'label': 'Condo (Attached)', 'value': 'CONDO/A)'},
+            {'label': 'Condo (Attached)', 'value': 'CONDO/A'},
             {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
             {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
             {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
