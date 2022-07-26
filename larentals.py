@@ -356,6 +356,42 @@ def furnished_checklist_function(choice):
     furnished_checklist_filter = df['Furnished'].isin(choice)
   return (furnished_checklist_filter)
 
+## Create functions to return a dataframe filter for the various types of deposits
+# Security
+def security_deposit_function(boolean, slider_begin, slider_end):
+  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
+    # Then we want nulls to be included in the final dataframe 
+    security_deposit_filter = df['DepositSecurity'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    security_deposit_filter = df['DepositSecurity'].between(slider_begin, slider_end)
+  return (security_deposit_filter)
+
+# Pets
+def pet_deposit_function(boolean, slider_begin, slider_end):
+  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
+    # Then we want nulls to be included in the final dataframe 
+    pet_deposit_filter = df['DepositPets'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    pet_deposit_filter = df['DepositPets'].between(slider_begin, slider_end)
+  return (pet_deposit_filter)
+
+# Keys
+def key_deposit_function(boolean, slider_begin, slider_end):
+  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
+    # Then we want nulls to be included in the final dataframe 
+    key_deposit_filter = df['DepositKey'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    key_deposit_filter = df['DepositKey'].between(slider_begin, slider_end)
+  return (key_deposit_filter)
+
+# Other
+def other_deposit_function(boolean, slider_begin, slider_end):
+  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
+    # Then we want nulls to be included in the final dataframe 
+    other_deposit_filter = df['DepositOther'].isnull()
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    other_deposit_filter = df['DepositOther'].between(slider_begin, slider_end)
+  return (other_deposit_filter)
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
@@ -720,6 +756,191 @@ furnished_checklist = html.Div([
 id = 'furnished_div',
 )
 
+security_deposit_slider =  html.Div([
+    html.H5("Security Deposit"),
+    # Create a range slider for security deposit cost
+    dcc.RangeSlider(
+      min=df['DepositSecurity'].min(), # Dynamically calculate the minimum security deposit
+      max=df['DepositSecurity'].max(), # Dynamically calculate the maximum security deposit
+      value=[df['DepositSecurity'].min(), df['DepositSecurity'].max()], 
+      id='security_deposit_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+],
+style = {'width' : '40%'}, 
+id = 'security_deposit_slider_div'
+)
+
+security_deposit_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with a security deposit for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='security_deposit_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },        
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_security_deposit_div',
+)
+
+pet_deposit_slider =  html.Div([
+    html.H5("Pet Deposit"),
+    # Create a range slider for pet deposit cost
+    dcc.RangeSlider(
+      min=df['DepositPets'].min(), # Dynamically calculate the minimum pet deposit
+      max=df['DepositPets'].max(), # Dynamically calculate the maximum pet deposit
+      value=[df['DepositPets'].min(), df['DepositPets'].max()], 
+      id='pet_deposit_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+],
+style = {'width' : '40%'}, 
+id = 'pet_deposit_slider_div'
+)
+
+pet_deposit_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with a pet deposit for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='pet_deposit_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },        
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_pet_deposit_div',
+)
+
+key_deposit_slider =  html.Div([
+    html.H5("Key Deposit"),
+    # Create a range slider for key deposit cost
+    dcc.RangeSlider(
+      min=df['DepositKey'].min(), # Dynamically calculate the minimum key deposit
+      max=df['DepositKey'].max(), # Dynamically calculate the maximum key deposit
+      value=[df['DepositKey'].min(), df['DepositKey'].max()], 
+      id='key_deposit_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+],
+style = {'width' : '40%'}, 
+id = 'key_deposit_slider_div'
+)
+
+key_deposit_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with a key deposit for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='key_deposit_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },        
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_key_deposit_div',
+)
+
+other_deposit_slider =  html.Div([
+    html.H5("Other Deposit"),
+    # Create a range slider for other deposit cost
+    dcc.RangeSlider(
+      min=df['DepositOther'].min(), # Dynamically calculate the minimum other deposit
+      max=df['DepositOther'].max(), # Dynamically calculate the maximum other deposit
+      value=[df['DepositOther'].min(), df['DepositOther'].max()], 
+      id='other_deposit_slider',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
+      updatemode='drag'
+    ),
+],
+style = {'width' : '40%'}, 
+id = 'other_deposit_slider_div'
+)
+
+other_deposit_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with an 'other' deposit for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='other_deposit_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },        
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_other_deposit_div',
+)
+
+
 # Generate the map
 map = dl.Map(
   [dl.TileLayer(), dl.LayerGroup(id="cluster")],
@@ -747,6 +968,14 @@ user_options_card = dbc.Card(
     pets_radio,
     rental_terms_checklist,
     furnished_checklist,
+    security_deposit_slider,
+    security_deposit_radio,
+    pet_deposit_slider,
+    pet_deposit_radio,
+    key_deposit_slider,
+    key_deposit_radio,
+    other_deposit_slider,
+    other_deposit_radio
   ],
   body=True
 )
@@ -802,11 +1031,19 @@ app.layout = dbc.Container([
     Input(component_id='ppsqft_slider', component_property='value'),
     Input(component_id='ppsqft_missing_radio', component_property='value'),
     Input(component_id='furnished_checklist', component_property='value'),
+    Input(component_id='security_deposit_slider', component_property='value'),
+    Input(component_id='security_deposit_missing_radio', component_property='value'),
+    Input(component_id='pet_deposit_slider', component_property='value'),
+    Input(component_id='pet_deposit_missing_radio', component_property='value'),
+    Input(component_id='key_deposit_slider', component_property='value'),
+    Input(component_id='key_deposit_missing_radio', component_property='value'),
+    Input(component_id='other_deposit_slider', component_property='value'),
+    Input(component_id='other_deposit_missing_radio', component_property='value'),
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     pets_radio_button(pets_chosen) &
@@ -822,7 +1059,11 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
     (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
     (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
-    furnished_checklist_function(furnished_choice)
+    furnished_checklist_function(furnished_choice) &
+    (((df['DepositSecurity'].between(security_deposit_chosen[0], security_deposit_chosen[1])) | security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]))) &
+    (((df['DepositPets'].between(pet_deposit_chosen[0], pet_deposit_chosen[1])) | pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]))) &
+    (((df['DepositKey'].between(key_deposit_chosen[0], key_deposit_chosen[1])) | key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]))) &
+    (((df['DepositOther'].between(other_deposit_chosen[0], other_deposit_chosen[1])) | other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1])))
   ]
 
   # Create markers & associated popups from dataframe
