@@ -1,6 +1,6 @@
 from jupyter_dash import JupyterDash
 import dash_core_components as dcc
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State, callback_context
 from dash import dcc
 import dash_html_components as html
 import dash_leaflet as dl
@@ -405,6 +405,7 @@ def other_deposit_function(boolean, slider_begin, slider_end):
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
+# TODO: implement a Select All checkbox: https://dash.plotly.com/advanced-callbacks#synchronizing-two-checklists
 subtype_checklist = html.Div([ 
       # Title this section
       html.H5("Subtypes"), 
@@ -431,7 +432,25 @@ subtype_checklist = html.Div([
             {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
             {'label': 'Triplex (Attached)', 'value': 'TPLX/A'}
           ],
-          value=['APT/A'], # Set the default value
+          value=[
+            'APT/A',
+            'APT',
+            'CONDO/A',
+            'CONDO/D',
+            'CONDO',
+            'DPLX/A',
+            'DPLX/D',
+            'QUAD/A',
+            'QUAD/D',
+            'RMRT/D',
+            'SFR/A',
+            'SFR/D',
+            'SFR',
+            'STUD/A',
+            'TWNHS/A',
+            'TWNHS/D',
+            'TPLX/A',
+          ], # Set the default values
           labelStyle = {'display': 'block'},
           # add some spacing in between the checkbox and the label
           # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
