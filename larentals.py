@@ -1105,7 +1105,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df_filtered.itertuples()]
 
   # Debug print a statement to check if we have all markers in the dataframe displayed
-  print(f"There are {len(df.index)} rows in the dataframe. There are {len(markers)} markers on the map.")
+  print(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
 
   # Generate the map
   return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
