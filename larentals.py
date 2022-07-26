@@ -147,6 +147,16 @@ df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce')
 df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce')
 df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce')
 
+# Per CA law, ANY type of deposit is capped at rent * 3 months
+# It doesn't matter the type of deposit, they all have the same cap
+# Despite that, some landlords/realtors will list the property with an absurd deposit (100k? wtf) so let's rewrite those
+# Use numpy .values to rewrite anything greater than $18000 ($6000 rent * 3 months) into $18000
+# https://stackoverflow.com/a/54426197
+df['DepositSecurity'].values[df['DepositSecurity'] > 18000] = 18000
+df['DepositPets'].values[df['DepositPets'] > 18000] = 18000
+df['DepositOther'].values[df['DepositOther'] > 18000] = 18000
+df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
+
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
 # And skew the outliers, causing the sliders to go way up
