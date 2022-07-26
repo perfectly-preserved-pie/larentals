@@ -396,7 +396,6 @@ def other_deposit_function(boolean, slider_begin, slider_end):
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
 subtype_checklist = html.Div([ 
-# TODO: https://stackoverflow.com/questions/56847745/how-to-divide-a-python-dash-checklist-into-several-columns
       # Title this section
       html.H5("Subtypes"), 
       # Create a checklist of options for the user
