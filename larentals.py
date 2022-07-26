@@ -209,7 +209,7 @@ def popup_html(row):
     if pd.isna(price_per_sqft) == True:
         price_per_sqft = 'Unknown'
     elif pd.isna(price_per_sqft) == False:
-        price_per_sqft = f"{float(price_per_sqft)}"
+        price_per_sqft = f"${float(price_per_sqft)}"
     # Repeat for listed date
     if pd.isna(listed_date) == True:
         listed_date = 'Unknown'
@@ -224,19 +224,19 @@ def popup_html(row):
     if pd.isna(key_deposit) == True:
         key_deposit = 'Unknown'
     elif pd.isna(key_deposit) == False:
-        key_deposit = f"{int(key_deposit)}"
+        key_deposit = f"${int(key_deposit)}"
     if pd.isna(pet_deposit) == True:
         pet_deposit = 'Unknown'
     elif pd.isna(pet_deposit) == False:
-        pet_deposit = f"{int(pet_deposit)}"
+        pet_deposit = f"${int(pet_deposit)}"
     if pd.isna(security_deposit) == True:
         security_deposit = 'Unknown'
     elif pd.isna(security_deposit) == False:
-        security_deposit = f"{int(security_deposit)}"
+        security_deposit = f"${int(security_deposit)}"
     if pd.isna(other_deposit) == True:
         other_deposit = 'Unknown'
     elif pd.isna(other_deposit) == False:
-        other_deposit = f"{int(other_deposit)}"
+        other_deposit = f"${int(other_deposit)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Table([ # Create the table
@@ -256,7 +256,7 @@ def popup_html(row):
             html.Td("List Price"), html.Td(f"${lc_price}")
           ]),
           html.Tr([
-            html.Td("Price Per Square Foot"), html.Td(f"${price_per_sqft}")
+            html.Td("Price Per Square Foot"), html.Td(f"{price_per_sqft}")
           ]),
           html.Tr([
             html.Td("Bedrooms/Bathrooms"), html.Td(f"{brba}")
