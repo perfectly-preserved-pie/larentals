@@ -771,7 +771,14 @@ furnished_checklist = html.Div([
             {'label': 'Unfurnished', 'value': 'Unfurnished'},
             {'label': 'Unknown', 'value': 'Unknown'},
           ],
-          value=['Unfurnished'], # Set the default value
+          value=[ # Set the default value
+            'Furnished Or Unfurnished',
+            'Furnished',
+            'Negotiable',
+            'Partially',
+            'Unfurnished',
+            'Unknown',
+          ],
           labelStyle = {'display': 'block'},
           # add some spacing in between the checkbox and the label
           # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
