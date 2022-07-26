@@ -283,16 +283,16 @@ def popup_html(row):
             html.Td("Furnished?"), html.Td(f"{furnished}"),
           ]),
           html.Tr([
-            html.Td("Security Deposit"), html.Td(f"{security_deposit}"),
+            html.Td("Security Deposit"), html.Td(f"${security_deposit}"),
           ]),
           html.Tr([
-            html.Td("Pet Deposit"), html.Td(f"{pet_deposit}"),
+            html.Td("Pet Deposit"), html.Td(f"${pet_deposit}"),
           ]),
           html.Tr([
-            html.Td("Key Deposit"), html.Td(f"{key_deposit}"),
+            html.Td("Key Deposit"), html.Td(f"${key_deposit}"),
           ]),
           html.Tr([
-            html.Td("Other Deposit"), html.Td(f"{other_deposit}"),
+            html.Td("Other Deposit"), html.Td(f"${other_deposit}"),
           ]),
           html.Tr([                                                                                            
             html.Td("Physical Sub Type"), html.Td(f"{sub_type}")                                                                                    
