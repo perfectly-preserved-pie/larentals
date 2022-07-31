@@ -989,7 +989,7 @@ map = dl.Map(
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
-  style={'width': '100%', 'height': '50vh', 'margin': "auto", "display": "inline-block"}
+  style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
 user_options_card = dbc.Card(
