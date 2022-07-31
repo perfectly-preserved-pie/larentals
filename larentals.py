@@ -244,7 +244,18 @@ def popup_html(row):
         other_deposit = f"${int(other_deposit)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
-      html.Img(src=f'{mls_photo}'),
+      html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
+          html.Img(
+              src=f'{mls_photo}',
+              style={
+                'display':'block',
+                'width':'100%',
+                'margin-left':'auto',
+                'margin-right':'auto'
+              },
+              id='mls_photo_div'
+          ),
+      ]),
       html.Table([ # Create the table
         html.Tbody([ # Create the table body
           html.Tr([ # Start row #1
