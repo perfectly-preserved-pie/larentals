@@ -1,6 +1,6 @@
 from jupyter_dash import JupyterDash
 import dash_core_components as dcc
-from dash.dependencies import Input, Output, State, callback_context
+from dash.dependencies import Input, Output
 from dash import dcc
 import dash_html_components as html
 import dash_leaflet as dl
