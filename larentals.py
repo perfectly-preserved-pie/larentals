@@ -74,16 +74,18 @@ def return_postalcode(address):
 
 # Webscraping Time
 # Create a function to scrape the listing's BHHS page and extract the listed date
-def get_listed_date(url):
+def get_listed_date_and_photo(url):
     try:
         response = requests.get(url)
         soup = bs4(response.text, 'html.parser')
         # Split the p class into strings and get the last element in the list
         # https://stackoverflow.com/a/64976919
         listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
+        photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
     except AttributeError:
         listed_date = "Unknown"
-    return listed_date
+        photo = ""
+    return listed_date, photo
 
 
 # Filter the dataframe and return only rows with a NaN postal code
@@ -93,10 +95,12 @@ for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
-# Iterate through the dataframe and get the listed date
+# Iterate through the dataframe and get the listed date and photo
 for row in df.itertuples():
     mls_number = row[1]
-    df.at[row.Index, 'Listed Date'] = get_listed_date(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
+    webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
+    df.at[row.Index, 'Listed Date'] = webscrape[0]
+    df.at[row.Index, 'MLS Photo'] = webscrape[1]
 
 # Now that we have street addresses and postal codes, we can put them together
 # Create a new column with the full street address
@@ -171,6 +175,7 @@ def popup_html(row):
     street_address=df['Full Street Address'].iloc[i] 
     mls_number=df['Listing ID (MLS#)'].iloc[i]
     mls_number_hyperlink=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/"
+    mls_photo = df['MLS Photo'].iloc[i]
     lc_price = df['List Price'].iloc[i] 
     price_per_sqft=df['Price Per Square Foot'].iloc[i]                  
     brba = df['Br/Ba'].iloc[i]
@@ -239,6 +244,7 @@ def popup_html(row):
         other_deposit = f"${int(other_deposit)}"
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
+      html.Img(src=f'{mls_photo}'),
       html.Table([ # Create the table
         html.Tbody([ # Create the table body
           html.Tr([ # Start row #1
