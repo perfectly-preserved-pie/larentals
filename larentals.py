@@ -247,6 +247,7 @@ def popup_html(row):
       html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
           html.Img(
               src=f'{mls_photo}',
+              referrerPolicy='noreferrer',
               style={
                 'display':'block',
                 'width':'100%',
