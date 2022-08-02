@@ -493,7 +493,7 @@ bedrooms_slider = html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'},
+style = {'width' : '70%'},
 id = 'bedrooms_div'
 )
 
@@ -509,7 +509,7 @@ bathrooms_slider = html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'bathrooms_div'
 )
 
@@ -529,7 +529,7 @@ square_footage_slider = html.Div([
     ),
 ],
 style = {
-  'width' : '40%',
+  'width' : '70%',
   'margin-bottom' : '10px',
 }, 
 id = 'square_footage_div'
@@ -578,7 +578,7 @@ ppsqft_slider = html.Div([
     ),
 ],
 style = {
-  'width' : '40%',
+  'width' : '70%',
   'margin-bottom' : '10px',
 },
 id = 'ppsqft_div'
@@ -666,7 +666,7 @@ garage_spaces_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'garage_div'
 )
 
@@ -710,7 +710,7 @@ rental_price_slider = html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'price_div'
 )
 
@@ -742,7 +742,7 @@ year_built_slider = html.Div([
     ),
 ],
 style = {
-  'width' : '40%',
+  'width' : '70%',
   'margin-bottom' : '10px',
 },
 id = 'yrbuilt_div'
@@ -824,7 +824,7 @@ security_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'security_deposit_slider_div'
 )
 
@@ -870,7 +870,7 @@ pet_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'pet_deposit_slider_div'
 )
 
@@ -916,7 +916,7 @@ key_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'key_deposit_slider_div'
 )
 
@@ -962,7 +962,7 @@ other_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '40%'}, 
+style = {'width' : '70%'}, 
 id = 'other_deposit_slider_div'
 )
 
