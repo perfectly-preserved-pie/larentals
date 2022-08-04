@@ -1,6 +1,7 @@
 from jupyter_dash import JupyterDash
 from dash.dependencies import Input, Output
 from dash import dcc, html
+from datetime import date
 import dash_leaflet as dl
 import pandas as pd
 from geopy.geocoders import GoogleV3
@@ -148,6 +149,10 @@ df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce')
 df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce')
 df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce')
 df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce')
+
+# Convert the listed date into DateTime and set missing values to be NaT
+# https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
+df['Listed Date'] = pd.to_datetime(df['Listed Date'], errors='coerce')
 
 # Per CA law, ANY type of deposit is capped at rent * 3 months
 # It doesn't matter the type of deposit, they all have the same cap
@@ -418,6 +423,15 @@ def other_deposit_function(boolean, slider_begin, slider_end):
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     other_deposit_filter = df['DepositOther'].between(slider_begin, slider_end)
   return (other_deposit_filter)
+
+# Listed Date
+def listed_date_function(boolean, start_date, end_date):
+  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
+    # Then we want nulls to be included in the final dataframe 
+    listed_date_filter = (df['Listed Date'].isnull()) | (df['Listed Date'].between(start_date, end_date))
+  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    listed_date_filter = df['Listed Date'].between(start_date, end_date)
+  return (listed_date_filter)
 
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 
@@ -991,6 +1005,46 @@ other_deposit_radio = html.Div([
 id = 'unknown_other_deposit_div',
 )
 
+# Get today's date and set it as the end date for the date picker
+today = date.today()
+listed_date_datepicker = html.Div([
+    html.H5("Listed Date Range"),
+    # Create a range slider for the listed date
+    dcc.DatePickerRange(
+      id='listed_date_datepicker',
+      max_date_allowed=today,
+      end_date=today
+    ),
+],
+id = 'listed_date_datepicker_div'
+)
+
+listed_date_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Some properties aren't listed with a listed date for various reasons. Do you still want to include them in your search?"),
+      dcc.RadioItems(
+        id='listed_date_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },        
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'listed_date_radio_div',
+)
 
 # Generate the map
 map = dl.Map(
@@ -1004,6 +1058,8 @@ map = dl.Map(
 
 user_options_card = dbc.Card(
   [
+    listed_date_datepicker,
+    listed_date_radio,
     subtype_checklist,
     rental_price_slider,
     bedrooms_slider,
@@ -1090,11 +1146,14 @@ app.layout = dbc.Container([
     Input(component_id='key_deposit_missing_radio', component_property='value'),
     Input(component_id='other_deposit_slider', component_property='value'),
     Input(component_id='other_deposit_missing_radio', component_property='value'),
+    Input(component_id='listed_date_datepicker', component_property='start_date'),
+    Input(component_id='listed_date_datepicker', component_property='end_date'),
+    Input(component_id='listed_date_radio', component_property='value'),
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio):
   df_filtered = df[
     (df['Sub Type'].isin(subtypes_chosen)) &
     pets_radio_button(pets_chosen) &
@@ -1114,7 +1173,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (((df['DepositSecurity'].between(security_deposit_chosen[0], security_deposit_chosen[1])) | security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]))) &
     (((df['DepositPets'].between(pet_deposit_chosen[0], pet_deposit_chosen[1])) | pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]))) &
     (((df['DepositKey'].between(key_deposit_chosen[0], key_deposit_chosen[1])) | key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]))) &
-    (((df['DepositOther'].between(other_deposit_chosen[0], other_deposit_chosen[1])) | other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1])))
+    (((df['DepositOther'].between(other_deposit_chosen[0], other_deposit_chosen[1])) | other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]))) &
+    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end)
   ]
 
   # Create markers & associated popups from dataframe
