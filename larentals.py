@@ -1115,9 +1115,9 @@ app.layout = dbc.Container([
       dbc.Col([map_card], width = 8)
     ]
   ),
-  ],
-  fluid = True,
-  className = "dbc"
+],
+fluid = True,
+className = "dbc"
 )
 
 @app.callback(
