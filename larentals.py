@@ -1,16 +1,16 @@
-from jupyter_dash import JupyterDash
-from dash.dependencies import Input, Output
-from dash import dcc, html
-from datetime import date
-import dash_leaflet as dl
-import pandas as pd
-from geopy.geocoders import GoogleV3
-from dotenv import load_dotenv, find_dotenv
-import os
-import uuid
-import requests
 from bs4 import BeautifulSoup as bs4
+from dash import dcc, html
+from dash.dependencies import Input, Output
+from datetime import date
+from dotenv import load_dotenv, find_dotenv
+from geopy.geocoders import GoogleV3
+from jupyter_dash import JupyterDash
 import dash_bootstrap_components as dbc
+import dash_leaflet as dl
+import os
+import pandas as pd
+import requests
+import uuid
 
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
