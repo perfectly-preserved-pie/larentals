@@ -151,8 +151,9 @@ df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce')
 df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce')
 
 # Convert the listed date into DateTime and set missing values to be NaT
+# Infer datetime format for faster parsing
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
-df['Listed Date'] = pd.to_datetime(df['Listed Date'], errors='coerce')
+df['Listed Date'] = pd.to_datetime(df['Listed Date'], errors='coerce', infer_datetime_format=True)
 
 # Per CA law, ANY type of deposit is capped at rent * 3 months
 # It doesn't matter the type of deposit, they all have the same cap
@@ -1007,6 +1008,7 @@ id = 'unknown_other_deposit_div',
 
 # Get today's date and set it as the end date for the date picker
 today = date.today()
+earliest_date = df['Listed Date'].min()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
     # Create a range slider for the listed date
