@@ -31,7 +31,7 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip()
 
-# Drop all rows that don't have a city. Fuck this shit I'm too lazy to code around bad data input.
+# Drop all rows that don't have a city. # TODO: figure out a workaround
 df = df[df['City'].notna()]
 
 # Drop all rows that don't have a MLS Listing ID (aka misc data we don't care about)
