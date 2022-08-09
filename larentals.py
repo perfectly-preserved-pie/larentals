@@ -190,7 +190,7 @@ def popup_html(row):
     phone = df['List Office Phone'].at[i]
     terms = df['Terms'].at[i]
     sub_type = df['Sub Type'].at[i]
-    listed_date = df['Listed Date'].at[i]
+    listed_date = pd.to_datetime(df['Listed Date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
     furnished = df['Furnished'].at[i]
     key_deposit = df['DepositKey'].at[i]
     other_deposit = df['DepositOther'].at[i]
