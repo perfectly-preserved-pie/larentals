@@ -837,7 +837,10 @@ security_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '70%'}, 
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
 id = 'security_deposit_slider_div'
 )
 
@@ -883,7 +886,10 @@ pet_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '70%'}, 
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
 id = 'pet_deposit_slider_div'
 )
 
@@ -929,7 +935,10 @@ key_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '70%'}, 
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
 id = 'key_deposit_slider_div'
 )
 
@@ -975,7 +984,10 @@ other_deposit_slider =  html.Div([
       updatemode='drag'
     ),
 ],
-style = {'width' : '70%'}, 
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
 id = 'other_deposit_slider_div'
 )
 
