@@ -1008,13 +1008,15 @@ id = 'unknown_other_deposit_div',
 
 # Get today's date and set it as the end date for the date picker
 today = date.today()
-earliest_date = df['Listed Date'].min()
+# Get the earliest date and convert it to to Pythonic datetime for Dash
+earliest_date = (df['Listed Date'].min()).to_pydatetime()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
     # Create a range slider for the listed date
     dcc.DatePickerRange(
       id='listed_date_datepicker',
       max_date_allowed=today,
+      start_date=earliest_date,
       end_date=today
     ),
 ],
