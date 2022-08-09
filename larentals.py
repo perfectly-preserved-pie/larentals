@@ -393,7 +393,7 @@ def furnished_checklist_function(choice):
 def security_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    security_deposit_filter = df['DepositSecurity'].isnull()
+    security_deposit_filter = df['DepositSecurity'].isnull() | (df['DepositSecurity'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     security_deposit_filter = df['DepositSecurity'].between(slider_begin, slider_end)
   return (security_deposit_filter)
@@ -402,7 +402,7 @@ def security_deposit_function(boolean, slider_begin, slider_end):
 def pet_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    pet_deposit_filter = df['DepositPets'].isnull()
+    pet_deposit_filter = df['DepositPets'].isnull() | (df['DepositPets'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     pet_deposit_filter = df['DepositPets'].between(slider_begin, slider_end)
   return (pet_deposit_filter)
@@ -411,7 +411,7 @@ def pet_deposit_function(boolean, slider_begin, slider_end):
 def key_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    key_deposit_filter = df['DepositKey'].isnull()
+    key_deposit_filter = df['DepositKey'].isnull() | (df['DepositKey'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     key_deposit_filter = df['DepositKey'].between(slider_begin, slider_end)
   return (key_deposit_filter)
@@ -420,7 +420,7 @@ def key_deposit_function(boolean, slider_begin, slider_end):
 def other_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    other_deposit_filter = df['DepositOther'].isnull()
+    other_deposit_filter = df['DepositOther'].isnull() | (df['DepositOther'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     other_deposit_filter = df['DepositOther'].between(slider_begin, slider_end)
   return (other_deposit_filter)
@@ -1174,10 +1174,10 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
     (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
     furnished_checklist_function(furnished_choice) &
-    (((df['DepositSecurity'].between(security_deposit_chosen[0], security_deposit_chosen[1])) | security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]))) &
-    (((df['DepositPets'].between(pet_deposit_chosen[0], pet_deposit_chosen[1])) | pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]))) &
-    (((df['DepositKey'].between(key_deposit_chosen[0], key_deposit_chosen[1])) | key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]))) &
-    (((df['DepositOther'].between(other_deposit_chosen[0], other_deposit_chosen[1])) | other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]))) &
+    security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
+    pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
+    key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]) &
+    other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
     listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end)
   ]
 
