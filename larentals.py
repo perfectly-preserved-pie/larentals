@@ -435,7 +435,8 @@ def listed_date_function(boolean, start_date, end_date):
   return (listed_date_filter)
 
 app = JupyterDash(
-  __name__, external_stylesheets=external_stylesheets,
+  __name__, 
+  external_stylesheets=external_stylesheets,
   # Add meta tags for mobile devices
   # https://community.plotly.com/t/reorder-website-for-mobile-view/33669/5?
   meta_tags = [
