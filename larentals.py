@@ -1136,8 +1136,10 @@ app.layout = dbc.Container([
   ),
   dbc.Row( # Second row: the rest
     [
-      dbc.Col([user_options_card], width = 4),
-      dbc.Col([map_card], width = 8)
+      # Use column width properties to dynamically resize the cards based on screen size
+      # https://community.plotly.com/t/layout-changes-with-screen-size-and-resolution/27530/6
+      dbc.Col([map_card], lg = 8),
+      dbc.Col([user_options_card], lg = 4),
     ]
   ),
 ],
