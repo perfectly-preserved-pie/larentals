@@ -8,10 +8,12 @@ from jupyter_dash import JupyterDash
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import os
+from numpy import NaN
 import pandas as pd
 import requests
 import uuid
 
+## SETUP AND VARIABLES
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
@@ -21,6 +23,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP]
 # Make the dataframe a global variable
 global df
 
+### PANDAS DATAFRAME OPERATIONS
 # import the csv
 # Don't round the float. See https://stackoverflow.com/a/68027847
 # Convert all empty strings into NaNs. See https://stackoverflow.com/a/53075732
@@ -49,9 +52,9 @@ def return_coordinates(address):
         lon = float(geocode_info.longitude)
         coords = f"{lat}, {lon}"
     except Exception:
-        lat = "NO COORDINATES FOUND"
-        lon = "NO COORDINATES FOUND"
-        coords = "NO COORDINATES FOUND"
+        lat = NaN
+        lon = NaN
+        coords = NaN
     return lat, lon, coords
 
 # Create a function to find missing postal codes based on short address
@@ -68,7 +71,7 @@ def return_postalcode(address):
             if row.types == ['postal_code']:
                 postalcode = row.long_name
     except Exception:
-        postalcode = "NO POSTAL CODE FOUND"
+        postalcode = NaN
     return postalcode
 
 # Webscraping Time
@@ -82,8 +85,8 @@ def get_listed_date_and_photo(url):
         listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
         photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
     except AttributeError:
-        listed_date = "Unknown"
-        photo = ""
+        listed_date = pd.NaT
+        photo = NaN
     return listed_date, photo
 
 
@@ -173,6 +176,7 @@ df = df[df.Bedrooms < 6]
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
+### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
     i = row.Index
@@ -246,6 +250,12 @@ def popup_html(row):
         other_deposit = 'Unknown'
     elif pd.isna(other_deposit) == False:
         other_deposit = f"${int(other_deposit)}"
+   # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
+    if pd.isna(mls_photo) == True:
+        mls_photo = ''
+    # If there IS an MLS photo, just set it to itself
+    elif pd.isna(mls_photo) == False:
+        mls_photo = mls_photo
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
