@@ -8,7 +8,6 @@ from jupyter_dash import JupyterDash
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import os
-from numpy import NaN
 import pandas as pd
 import requests
 import uuid
@@ -69,7 +68,7 @@ def return_postalcode(address):
             if row.types == ['postal_code']:
                 postalcode = row.long_name
     except Exception:
-        postalcode = NaN
+        postalcode = "NO POSTAL CODE FOUND"
     return postalcode
 
 # Webscraping Time
@@ -83,8 +82,8 @@ def get_listed_date_and_photo(url):
         listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
         photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
     except AttributeError:
-        listed_date = NaN
-        photo = NaN
+        listed_date = "Unknown"
+        photo = ""
     return listed_date, photo
 
 
@@ -95,8 +94,8 @@ for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
-# Iterate through the dataframe of rows without a listed date OR photo and get the listed date and photo
-for row in df.loc[((df['Listed Date'].isnull()) | (df['MLS Photo'].isnull()))].itertuples():
+# Iterate through the dataframe and get the listed date and photo
+for row in df.itertuples():
     mls_number = row[1]
     webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
     df.at[row.Index, 'Listed Date'] = webscrape[0]
@@ -107,8 +106,8 @@ for row in df.loc[((df['Listed Date'].isnull()) | (df['MLS Photo'].isnull()))].i
 # Also strip whitespace from the St Name column
 df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
 
-# Fetch coordinates for every row that doesn't have it
-for row in df.loc[df['Coordinates'].isnull()].itertuples():
+# Fetch coordinates for every row
+for row in df.itertuples():
     coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
     df.at[row.Index, 'Latitude'] = coordinates[0]
     df.at[row.Index, 'Longitude'] = coordinates[1]
@@ -247,12 +246,6 @@ def popup_html(row):
         other_deposit = 'Unknown'
     elif pd.isna(other_deposit) == False:
         other_deposit = f"${int(other_deposit)}"
-    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
-    if pd.isna(mls_photo) == True:
-        mls_photo = ''
-    # If there IS an MLS photo, just set it to itself
-    elif pd.isna(mls_photo) == False:
-        mls_photo = mls_photo
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
