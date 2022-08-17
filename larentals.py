@@ -39,7 +39,7 @@ df = df[df['City'].notna()]
 
 # Drop all rows that don't have a MLS Listing ID (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
-df = df[df['Listing ID (MLS#)'].notna()]
+df = df[df['Listing ID'].notna()]
 
 # Create a new column with the Street Number & Street Name
 df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
