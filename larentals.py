@@ -1,8 +1,6 @@
-from dash import dcc, html
+from dash import Dash, html, dcc
 from dash.dependencies import Input, Output
 from datetime import date
-from dotenv import load_dotenv, find_dotenv
-from jupyter_dash import JupyterDash
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import pandas as pd
@@ -285,7 +283,7 @@ def listed_date_function(boolean, start_date, end_date):
     listed_date_filter = df['Listed Date'].between(start_date, end_date)
   return (listed_date_filter)
 
-app = JupyterDash(
+app = Dash(
   __name__, 
   external_stylesheets=external_stylesheets,
   # Add meta tags for mobile devices
@@ -1068,4 +1066,4 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
 
 # Launch the Flask app
 if __name__ == '__main__':
-    app.run_server(mode='external', host='192.168.4.196', port='9208', debug='false')
+  app.run_server(debug=True)
