@@ -363,7 +363,7 @@ bedrooms_slider = html.Div([
       step=1, 
       value=[0, df['Bedrooms'].max()], 
       id='bedrooms_slider',
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {'width' : '70%'},
@@ -379,7 +379,7 @@ bathrooms_slider = html.Div([
       step=1, 
       value=[0, df['Total Bathrooms'].max()], 
       id='bathrooms_slider',
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {'width' : '70%'}, 
@@ -398,7 +398,7 @@ square_footage_slider = html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
@@ -447,7 +447,7 @@ ppsqft_slider = html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
@@ -536,7 +536,7 @@ garage_spaces_slider =  html.Div([
       step=1, 
       value=[0, df['Garage Spaces'].max()], 
       id='garage_spaces_slider',
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {'width' : '70%'}, 
@@ -580,7 +580,7 @@ rental_price_slider = html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {'width' : '70%'}, 
@@ -611,7 +611,7 @@ year_built_slider = html.Div([
           float(f"{df['YrBuilt'].min()}") + 140: str(float(f"{df['YrBuilt'].min()}") + 140),
           f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
@@ -694,7 +694,7 @@ security_deposit_slider =  html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
@@ -743,7 +743,7 @@ pet_deposit_slider =  html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
@@ -792,7 +792,7 @@ key_deposit_slider =  html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
@@ -841,7 +841,7 @@ other_deposit_slider =  html.Div([
         "placement": "bottom",
         "always_visible": True
       },
-      updatemode='drag'
+      updatemode='mouseup'
     ),
 ],
 style = {
