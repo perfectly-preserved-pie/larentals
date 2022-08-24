@@ -963,31 +963,6 @@ user_options_card = dbc.Card(
   body=True
 )
 
-# Create a simple navigation bar
-# https://dash-bootstrap-components.opensource.faculty.ai/docs/components/navbar/
-navbar = dbc.NavbarSimple(
-    children=[
-        dbc.NavItem(dbc.NavLink("About This Website", href="#")),
-        dbc.NavItem(dbc.NavLink("How To", href="#")),
-        dbc.NavItem(dbc.NavLink("Credits", href="#")),
-        dbc.DropdownMenu(
-            children=[
-                dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("Page 2", href="#"),
-                dbc.DropdownMenuItem("Page 3", href="#"),
-            ],
-            nav=True,
-            in_navbar=True,
-            label="More",
-        ),
-    ],
-    brand="WhereToLive.LA - An interactive map of rental properties in Los Angeles County.",
-    brand_href="/",
-    color="dark",
-    dark=True,
-    class_name = "card-title"
-)
-
 map_card = dbc.Card(
     [map], 
     body = True,
@@ -996,10 +971,18 @@ map_card = dbc.Card(
     className = 'sticky-top'
 )
 
+title_card = dbc.Card(
+  [
+    html.H3("WhereToLive.LA", className="card-title"),
+    html.P("An interactive map of rental properties in Los Angeles County.")
+  ],
+  body = True
+)
+
 app.layout = dbc.Container([
-  dbc.Row(
+  dbc.Row( # First row: title card
     [
-      navbar
+      dbc.Col([title_card]),
     ]
   ),
   dbc.Row( # Second row: the rest
