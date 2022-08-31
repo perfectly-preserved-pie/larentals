@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
+from imagekitio import ImageKit
 from numpy import NaN
 import os
 import pandas as pd
@@ -9,6 +10,15 @@ import requests
 ## SETUP AND VARIABLES
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
+
+# ImageKit.IO
+# https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
+# Create keys at https://imagekit.io/dashboard/developer/api-keys
+imagekit = ImageKit(
+    public_key=os.getenv('IMAGEKIT_PUBLIC_KEY'),
+    private_key=os.getenv('IMAGEKIT_PRIVATE_KEY'),
+    url_endpoint = os.getenv('IMAGEKIT_URL_ENDPOINT')
+)
 
 # Make the dataframe a global variable
 global df
@@ -64,7 +74,29 @@ def return_postalcode(address):
         postalcode = NaN
     return postalcode
 
-# Webscraping Time
+## Webscraping Time
+# Create a function to upload the file to ImageKit and then transform it
+# https://github.com/imagekit-developer/imagekit-python#file-upload
+def imagekit_transform(url, mls):
+    uploaded_image = imagekit.upload_file(
+        file= f"{url}", # required
+        file_name= f"{mls}.jpg", # required
+        options= {
+            "is_private_file": False,
+            "use_unique_file_name": False,
+        }
+    )
+    # Now transform the uploaded image
+    # https://github.com/imagekit-developer/imagekit-python#url-generation
+    transformed_image = imagekit.url({
+        "src": f"{uploaded_image['response']['url']}",
+        "transformation" : [{
+            "height": "300",
+            "width": "400"
+        }]
+    })
+    return transformed_image
+
 # Create a function to scrape the listing's BHHS page and extract the listed date
 def get_listed_date_and_photo(url):
     try:
@@ -101,14 +133,14 @@ if 'Listed Date' in df.columns:
         mls_number = row[1]
         webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
         df.at[row.Index, 'Listed Date'] = webscrape[0]
-        df.at[row.Index, 'MLS Photo'] = webscrape[1]
+        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Listed Date' not in df.columns:
     for row in df.itertuples():
         mls_number = row[1]
         webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
         df.at[row.Index, 'Listed Date'] = webscrape[0]
-        df.at[row.Index, 'MLS Photo'] = webscrape[1]
+        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Coordinates column is already present, iterate through the null cells
