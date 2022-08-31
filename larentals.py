@@ -6,7 +6,7 @@ import dash_leaflet as dl
 import pandas as pd
 import uuid
 
-external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP]
+external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
 # Make the dataframe a global variable
 global df
@@ -173,7 +173,7 @@ def popup_html(row):
     ]
 
 # Create markers & associated popups from dataframe
-markers = [dl.Marker(children=dl.Popup(popup_html(row)), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+markers = [dl.Marker(children=dl.Popup(popup_html(row), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
 
 # Get the means so we can center the map
 lat_mean = df['Latitude'].mean()
@@ -924,7 +924,7 @@ id = 'listed_date_radio_div',
 
 # Generate the map
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="cluster")],
+  [dl.TileLayer(), dl.LayerGroup(id="cluster"), dl.FullscreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
