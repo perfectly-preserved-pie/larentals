@@ -116,6 +116,7 @@ def get_listed_date_and_photo(url):
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
 for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
+    print(f"Grabbing postal code for row #{row.Index}...")
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
@@ -130,6 +131,7 @@ df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + 
 # This assumption will reduce the number of HTTP requests we send to BHHS
 if 'Listed Date' in df.columns:
     for row in df.loc[df['Listed Date'].isnull()].itertuples():
+        print(f"Grabbing Listed Date and MLS Photo for row #{row.Index}...")
         mls_number = row[1]
         webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
         df.at[row.Index, 'Listed Date'] = webscrape[0]
@@ -137,6 +139,7 @@ if 'Listed Date' in df.columns:
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Listed Date' not in df.columns:
     for row in df.itertuples():
+        print(f"Grabbing Listed Date and MLS Photo for row #{row.Index}...")
         mls_number = row[1]
         webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
         df.at[row.Index, 'Listed Date'] = webscrape[0]
@@ -148,6 +151,7 @@ elif 'Listed Date' not in df.columns:
 # This assumption will reduce the number of API calls to Google Maps
 if 'Coordinates' in df.columns:
     for row in df['Coordinates'].isnull().itertuples():
+        print(f"Grabbing coordinates for row #{row.Index}...")
         coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
@@ -155,6 +159,7 @@ if 'Coordinates' in df.columns:
 # If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Coordinates' not in df.columns:
     for row in df.itertuples():
+        print(f"Grabbing coordinates for row #{row.Index}...")
         coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
