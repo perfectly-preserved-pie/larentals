@@ -1,3 +1,5 @@
+from distutils.command.upload import upload
+from turtle import up
 from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
@@ -78,23 +80,36 @@ def return_postalcode(address):
 # Create a function to upload the file to ImageKit and then transform it
 # https://github.com/imagekit-developer/imagekit-python#file-upload
 def imagekit_transform(url, mls):
-    uploaded_image = imagekit.upload_file(
-        file= f"{url}", # required
-        file_name= f"{mls}.jpg", # required
-        options= {
-            "is_private_file": False,
-            "use_unique_file_name": False,
-        }
-    )
+    try:
+        uploaded_image = imagekit.upload_file(
+            file= f"{url}", # required
+            file_name= f"{mls}.jpg", # required
+            options= {
+                "is_private_file": False,
+                "use_unique_file_name": False,
+            }
+        )
+    except Exception as e:
+        print(f"Couldn't upload image to ImageKit because {e}. Passing on...")
+        uploaded_image = 'ERROR'
+        pass
     # Now transform the uploaded image
     # https://github.com/imagekit-developer/imagekit-python#url-generation
-    transformed_image = imagekit.url({
-        "src": f"{uploaded_image['response']['url']}",
-        "transformation" : [{
-            "height": "300",
-            "width": "400"
-        }]
-    })
+    if uploaded_image is not 'ERROR': # Make sure an uploaded image exists that can be transformed
+        try:
+            transformed_image = imagekit.url({
+                "src": f"{uploaded_image['response']['url']}",
+                "transformation" : [{
+                    "height": "300",
+                    "width": "400"
+                }]
+            })
+        except Exception as e:
+            print(f"Couldn't transform image because {e}. Passing on...")
+            transformed_image = NaN
+            pass
+    elif uploaded_image is 'ERROR':
+        transformed_image = NaN
     return transformed_image
 
 # Create a function to scrape the listing's BHHS page and extract the listed date
