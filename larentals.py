@@ -173,7 +173,7 @@ def popup_html(row):
     ]
 
 # Create markers & associated popups from dataframe
-markers = [dl.Marker(children=dl.Popup(popup_html(row), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+markers = [dl.Marker(children=dl.Popup(popup_html(row), closeButton=True, maxHeight=100, maxWidth=5), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
 
 # Get the means so we can center the map
 lat_mean = df['Latitude'].mean()
