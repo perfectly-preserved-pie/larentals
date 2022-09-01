@@ -811,8 +811,8 @@ key_deposit_radio = html.Div([
       dcc.RadioItems(
         id='key_deposit_missing_radio',
         options=[
-            {'label': 'Yes, include properties without a key deposit.', 'value': 'True'},
-            {'label': 'No, only include properties that have a key deposit.', 'value': 'False'}
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
         ],
         value='True',
         # add some spacing in between the checkbox and the label
