@@ -413,7 +413,7 @@ square_footage_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with a square footage. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a square footage listed?"),
       dcc.RadioItems(
         id='sqft_missing_radio',
         options=[
@@ -462,7 +462,7 @@ ppsqft_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with a price per square foot. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a price per square foot listed?"),
       dcc.RadioItems(
         id='ppsqft_missing_radio',
         options=[
@@ -548,7 +548,7 @@ unknown_sqft_radio = html.Div([
     [
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
     html.I(className="bi bi-info-circle-fill me-2"),
-    ("Some properties aren't listed with garage spaces. Do you still want to include them in your search?"),
+    ("Should we include properties that don't have a square footage listed?"),
     dcc.RadioItems(
       id='garage_missing_radio',
       options=[
@@ -626,7 +626,7 @@ unknown_year_built_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),      
-      ("Some properties aren't listed with a year built. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have the year built listed?"),
       dcc.RadioItems(
         id='yrbuilt_missing_radio',
         options=[
@@ -709,7 +709,7 @@ security_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with a security deposit. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a security deposit listed?"),
       dcc.RadioItems(
         id='security_deposit_missing_radio',
         options=[
@@ -758,7 +758,7 @@ pet_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with a pet deposit. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a pet deposit listed?"),
       dcc.RadioItems(
         id='pet_deposit_missing_radio',
         options=[
@@ -807,7 +807,7 @@ key_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with a key deposit. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a key deposit listed?"),
       dcc.RadioItems(
         id='key_deposit_missing_radio',
         options=[
@@ -856,7 +856,7 @@ other_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with an 'other' deposit. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a miscellaneous/other deposit listed?"),
       dcc.RadioItems(
         id='other_deposit_missing_radio',
         options=[
@@ -900,7 +900,7 @@ listed_date_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Some properties aren't listed with a listed date. Do you still want to include them in your search?"),
+      ("Should we include properties that don't have a listed date?"),
       dcc.RadioItems(
         id='listed_date_radio',
         options=[
