@@ -121,7 +121,7 @@ def webscrape_bhhs(url):
         # Now find the URL for the "feature" photo of the listing
         photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
         # Now find the URL to the actual listing instead of just the search result page
-        link = 'https://www.bhhscalifornia.com/' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
+        link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
     except AttributeError:
         listed_date = pd.NaT
         photo = NaN
