@@ -21,7 +21,7 @@ def popup_html(row):
     i = row.Index
     street_address=df['Full Street Address'].at[i] 
     mls_number=df['Listing ID'].at[i]
-    mls_number_hyperlink=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/"
+    mls_number_hyperlink=df['bhhs_url'].at[i]
     mls_photo = df['MLS Photo'].at[i]
     lc_price = df['List Price'].at[i] 
     price_per_sqft=df['Price Per Square Foot'].at[i]                  

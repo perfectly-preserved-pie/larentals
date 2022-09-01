@@ -1,5 +1,3 @@
-from distutils.command.upload import upload
-from turtle import up
 from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
@@ -95,7 +93,7 @@ def imagekit_transform(url, mls):
         pass
     # Now transform the uploaded image
     # https://github.com/imagekit-developer/imagekit-python#url-generation
-    if uploaded_image is not 'ERROR': # Make sure an uploaded image exists that can be transformed
+    if uploaded_image != 'ERROR': # Make sure an uploaded image exists that can be transformed
         try:
             transformed_image = imagekit.url({
                 "src": f"{uploaded_image['response']['url']}",
@@ -108,23 +106,27 @@ def imagekit_transform(url, mls):
             print(f"Couldn't transform image because {e}. Passing on...")
             transformed_image = NaN
             pass
-    elif uploaded_image is 'ERROR':
+    elif uploaded_image == 'ERROR':
         transformed_image = NaN
     return transformed_image
 
-# Create a function to scrape the listing's BHHS page and extract the listed date
-def get_listed_date_and_photo(url):
+# Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
+def webscrape_bhhs(url):
     try:
         response = requests.get(url)
         soup = bs4(response.text, 'html.parser')
         # Split the p class into strings and get the last element in the list
         # https://stackoverflow.com/a/64976919
         listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
+        # Now find the URL for the "feature" photo of the listing
         photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
+        # Now find the URL to the actual listing instead of just the search result page
+        link = 'https://www.bhhscalifornia.com/' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
     except AttributeError:
         listed_date = pd.NaT
         photo = NaN
-    return listed_date, photo
+        link = NaN
+    return listed_date, photo, link
 
 
 # Filter the dataframe and return only rows with a NaN postal code
@@ -146,19 +148,21 @@ df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + 
 # This assumption will reduce the number of HTTP requests we send to BHHS
 if 'Listed Date' in df.columns:
     for row in df.loc[df['Listed Date'].isnull()].itertuples():
-        print(f"Grabbing Listed Date and MLS Photo for row #{row.Index}...")
+        print(f"Grabbing Listed Date, MLS Photo, and BHHS link for row #{row.Index}...")
         mls_number = row[1]
-        webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
         df.at[row.Index, 'Listed Date'] = webscrape[0]
         df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
+        df.at[row.Index, 'bhhs_url'] = webscrape[2]
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Listed Date' not in df.columns:
     for row in df.itertuples():
-        print(f"Grabbing Listed Date and MLS Photo for row #{row.Index}...")
+        print(f"Grabbing Listed Date, MLS Photo, and BHHS link for row #{row.Index}...")
         mls_number = row[1]
-        webscrape = get_listed_date_and_photo(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
         df.at[row.Index, 'Listed Date'] = webscrape[0]
         df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
+        df.at[row.Index, 'bhhs_url'] = webscrape[2]
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Coordinates column is already present, iterate through the null cells
