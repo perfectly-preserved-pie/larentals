@@ -98,7 +98,8 @@ def popup_html(row):
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
-          html.Img(
+          html.A( # wrap the Img inside a parent <a href> tag so the image will be clickable
+            html.Img(
               src=f'{mls_photo}',
               referrerPolicy='noreferrer',
               style={
@@ -108,6 +109,10 @@ def popup_html(row):
                 'margin-right':'auto'
               },
               id='mls_photo_div'
+            ),
+          href=f"{mls_number_hyperlink}",
+          referrerPolicy='noreferrer',
+          target='_blank'
           ),
       ]),
       html.Table([ # Create the table
