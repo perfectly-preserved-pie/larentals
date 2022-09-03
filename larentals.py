@@ -988,6 +988,14 @@ title_card = dbc.Card(
       },
     ),
     html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
+    html.I( # Add an icon for my blog
+      className="fa-solid fa-blog",
+      style = {
+        "margin-right": "5px",
+        "margin-left": "15px"
+      },
+    ),
+    html.A("About This Project", href='https://google.com', target='_blank'),
   ],
   body = True
 )
