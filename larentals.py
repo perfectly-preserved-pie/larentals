@@ -126,7 +126,7 @@ def popup_html(row):
           html.Tr([ 
             # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
             # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-            html.Td("Listing ID"), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
+            html.Td(html.A("Listing ID", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]),
           html.Tr([ 
             html.Td("List Price"), html.Td(f"${lc_price}")
@@ -135,7 +135,7 @@ def popup_html(row):
             html.Td("Price Per Square Foot"), html.Td(f"{price_per_sqft}")
           ]),
           html.Tr([
-            html.Td("Bedrooms/Bathrooms"), html.Td(f"{brba}")
+            html.Td(html.A("Bedrooms/Bathrooms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms", target='_blank')), html.Td(f"{brba}")
           ]),
           html.Tr([
             html.Td("Square Feet"), html.Td(f"{square_ft}")
@@ -153,7 +153,7 @@ def popup_html(row):
             html.Td("List Office Phone"), html.Td(f"{phone}"),
           ]),
           html.Tr([
-            html.Td("Rental Terms"), html.Td(f"{terms}"),
+            html.Td(html.A("Rental Terms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms", target='_blank')), html.Td(f"{terms}"),
           ]),
           html.Tr([
             html.Td("Furnished?"), html.Td(f"{furnished}"),
@@ -171,7 +171,7 @@ def popup_html(row):
             html.Td("Other Deposit"), html.Td(f"{other_deposit}"),
           ]),
           html.Tr([                                                                                            
-            html.Td("Physical Sub Type"), html.Td(f"{sub_type}")                                                                                    
+            html.Td(html.A("Physical Sub Type", href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type", target='_blank')), html.Td(f"{sub_type}")                                                                                    
           ]), # end rows
         ]), # end body
       ]), # end table
