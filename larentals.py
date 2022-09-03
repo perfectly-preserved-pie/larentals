@@ -129,7 +129,7 @@ def popup_html(row):
             html.Td(html.A("Listing ID", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]),
           html.Tr([ 
-            html.Td("List Price"), html.Td(f"${lc_price}")
+            html.Td("Rental Price"), html.Td(f"${lc_price}")
           ]),
           html.Tr([
             html.Td("Price Per Square Foot"), html.Td(f"{price_per_sqft}")
