@@ -3,6 +3,7 @@ from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from numpy import NaN
+from os.path import exists
 import os
 import pandas as pd
 import requests
@@ -24,10 +25,12 @@ imagekit = ImageKit(
 global df
 
 ### PANDAS DATAFRAME OPERATIONS
+# Prompt user for the CSV filename
+csv = input('Enter the CSV filename.\n')
 # import the csv
 # Don't round the float. See https://stackoverflow.com/a/68027847
 # Convert all empty strings into NaNs. See https://stackoverflow.com/a/53075732
-df = pd.read_csv("larentals.csv", float_precision="round_trip", skipinitialspace=True)
+df = pd.read_csv(f"./{csv}", float_precision="round_trip", skipinitialspace=True)
 pd.set_option("display.precision", 10)
 
 # Strip leading and trailing whitespaces from the column names
@@ -144,6 +147,10 @@ for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
+# Cast the PostalCode column as string
+# Yes, postal codes are all integers but we're not doing any mathematical operations on them so a performance hit is irrelevant here
+df['PostalCode'] = df['PostalCode'].astype(str)
+
 # Now that we have street addresses and postal codes, we can put them together
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
@@ -249,6 +256,19 @@ df = df[df.Bedrooms < 6]
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
-# Export the dataframe as an HDF5 file to be ingested later by the Dash app (app.py)
-# https://www.numpyninja.com/post/hdf5-file-format-with-pandas
-df.to_hdf("dataframe.hdf5", "/d1")
+# Depending if an HDF5 file exists already, either create a new one or append the dataframe to an existing HDF5 file
+hdf5_path = './dataframe.hdf5'
+if exists(hdf5_path) == False:
+    # Export the dataframe as an HDF5 file to be ingested later by the Dash app (app.py)
+    # https://www.numpyninja.com/post/hdf5-file-format-with-pandas
+    # Format the HDF5 as a table so Pandas doesn't throw a hissy fit when we write to or read it later
+    # https://stackoverflow.com/a/44986234
+    # There's a performance penalty to storing the dataframe as a table
+    # But FUCK IT i'm drunk and confident enough to know this will perform exactly as fast as i need it to
+    df.to_hdf("dataframe.hdf5", "/d1", format='table')
+elif exists(hdf5_path == True):
+    # Use the append option
+    # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_hdf.html
+    # Format the HDF5 so it doesn't throw a hissy fit when we write or read it later
+    # https://stackoverflow.com/a/44986234
+    df.to_hdf("dataframe.hdf5", "/d1", format='table', append=True)
