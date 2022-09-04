@@ -75,44 +75,10 @@ def return_postalcode(address):
     return postalcode
 
 ## Webscraping Time
-# Create a function to upload the file to ImageKit and then transform it
-# https://github.com/imagekit-developer/imagekit-python#file-upload
-def imagekit_transform(url, mls):
-    try:
-        uploaded_image = imagekit.upload_file(
-            file= f"{url}", # required
-            file_name= f"{mls}.jpg", # required
-            options= {
-                "is_private_file": False,
-                "use_unique_file_name": False,
-            }
-        )
-    except Exception as e:
-        print(f"Couldn't upload image to ImageKit because {e}. Passing on...")
-        uploaded_image = 'ERROR'
-        pass
-    # Now transform the uploaded image
-    # https://github.com/imagekit-developer/imagekit-python#url-generation
-    if uploaded_image != 'ERROR': # Make sure an uploaded image exists that can be transformed
-        try:
-            transformed_image = imagekit.url({
-                "src": f"{uploaded_image['response']['url']}",
-                "transformation" : [{
-                    "height": "300",
-                    "width": "400"
-                }]
-            })
-        except Exception as e:
-            print(f"Couldn't transform image because {e}. Passing on...")
-            transformed_image = NaN
-            pass
-    elif uploaded_image == 'ERROR':
-        transformed_image = NaN
-    return transformed_image
-
 # Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
-def webscrape_bhhs(url):
+def webscrape_bhhs(url, row_index):
     try:
+        print(f"Grabbing Listed Date, MLS Photo, and BHHS link for row #{row_index}...")
         response = requests.get(url)
         soup = bs4(response.text, 'html.parser')
         # Split the p class into strings and get the last element in the list
@@ -128,6 +94,47 @@ def webscrape_bhhs(url):
         link = NaN
     return listed_date, photo, link
 
+# Create a function to upload the file to ImageKit and then transform it
+# https://github.com/imagekit-developer/imagekit-python#file-upload
+def imagekit_transform(bhhs_url, mls):
+    # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
+    if pd.isnull(bhhs_url) == False:
+        try:
+            uploaded_image = imagekit.upload_file(
+                file= f"{bhhs_url}", # required
+                file_name= f"{mls}.jpg", # required
+                options= {
+                    "is_private_file": False,
+                    "use_unique_file_name": False,
+                }
+            )
+        except Exception as e:
+            print(f"Couldn't upload image to ImageKit because {e}. Passing on...")
+            uploaded_image = 'ERROR'
+            pass
+    elif pd.isnull(bhhs_url) == True:
+        uploaded_image = 'ERROR'
+        print(f"No image URL found. Not uploading anything to ImageKit.")
+    # Now transform the uploaded image
+    # https://github.com/imagekit-developer/imagekit-python#url-generation
+    if 'ERROR' not in uploaded_image:
+        try:
+            global transformed_image
+            transformed_image = imagekit.url({
+                "src": f"{uploaded_image['response']['url']}",
+                "transformation" : [{
+                    "height": "300",
+                    "width": "400"
+                }]
+            })
+        except Exception as e:
+            print(f"Couldn't transform image because {e}. Passing on...")
+            transformed_image = None
+            pass
+    elif 'ERROR' in uploaded_image:
+        print(f"No image URL found. Not transforming anything.")
+        transformed_image = None
+    return transformed_image
 
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
@@ -148,18 +155,16 @@ df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + 
 # This assumption will reduce the number of HTTP requests we send to BHHS
 if 'Listed Date' in df.columns:
     for row in df.loc[df['Listed Date'].isnull()].itertuples():
-        print(f"Grabbing Listed Date, MLS Photo, and BHHS link for row #{row.Index}...")
         mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
         df.at[row.Index, 'Listed Date'] = webscrape[0]
         df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
         df.at[row.Index, 'bhhs_url'] = webscrape[2]
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Listed Date' not in df.columns:
     for row in df.itertuples():
-        print(f"Grabbing Listed Date, MLS Photo, and BHHS link for row #{row.Index}...")
         mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/")
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
         df.at[row.Index, 'Listed Date'] = webscrape[0]
         df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
         df.at[row.Index, 'bhhs_url'] = webscrape[2]

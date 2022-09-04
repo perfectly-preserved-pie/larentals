@@ -90,15 +90,23 @@ def popup_html(row):
     elif pd.isna(other_deposit) == False:
         other_deposit = f"${int(other_deposit)}"
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
+   # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
-        mls_photo = ''
+        mls_photo_html_block = html.Img(
+          src='',
+          referrerPolicy='noreferrer',
+          style={
+            'display':'block',
+            'width':'100%',
+            'margin-left':'auto',
+            'margin-right':'auto'
+          },
+          id='mls_photo_div'
+        )
     # If there IS an MLS photo, just set it to itself
+    # The HTML block should be an Img tag wrapped inside a parent <a href> tag so the image will be clickable
     elif pd.isna(mls_photo) == False:
-        mls_photo = mls_photo
-    # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
-    return [
-      html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
-          html.A( # wrap the Img inside a parent <a href> tag so the image will be clickable
+        mls_photo_html_block = html.A( # wrap the Img inside a parent <a href> tag 
             html.Img(
               src=f'{mls_photo}',
               referrerPolicy='noreferrer',
@@ -113,7 +121,11 @@ def popup_html(row):
           href=f"{mls_number_hyperlink}",
           referrerPolicy='noreferrer',
           target='_blank'
-          ),
+        )
+    # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
+    return [
+      html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
+          mls_photo_html_block
       ]),
       html.Table([ # Create the table
         html.Tbody([ # Create the table body
