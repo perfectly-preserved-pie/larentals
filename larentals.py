@@ -1007,7 +1007,7 @@ title_card = dbc.Card(
         "margin-left": "15px"
       },
     ),
-    html.A("About This Project", href='https://google.com', target='_blank'),
+    html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
   ],
   body = True
 )
