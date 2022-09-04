@@ -1,9 +1,9 @@
 beautifulsoup4==4.11.1
-dash==2.6.1
 dash_bootstrap_components==1.2.1
 dash_core_components==2.0.0
 dash_html_components==2.0.0
 dash_leaflet==0.1.23
+dash==2.6.1
 geopy==2.2.0
 imagekitio==2.2.8
 jupyter_dash==0.4.2
