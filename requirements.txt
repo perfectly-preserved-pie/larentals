@@ -12,3 +12,4 @@ pandas==1.4.1
 python-dotenv==0.21.0
 requests==2.22.0
 tables
+gunicorn
