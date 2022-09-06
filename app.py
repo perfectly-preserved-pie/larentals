@@ -724,6 +724,7 @@ id = 'unknown_other_deposit_div',
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
+df['Listed Date'] = pd.to_datetime(df['Listed Date'], errors='coerce', infer_datetime_format=True)
 earliest_date = (df['Listed Date'].min()).to_pydatetime()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
