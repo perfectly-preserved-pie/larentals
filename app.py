@@ -21,7 +21,6 @@ markers = [dl.Marker(children=dl.Popup(row.popup_html, closeButton=True, maxHeig
 # Add them to a MarkerCluster
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
-
 # Get the means so we can center the map
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
