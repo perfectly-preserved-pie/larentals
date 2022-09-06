@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
+from dash import html
 from numpy import NaN
 from os.path import exists
 import os
@@ -46,6 +47,179 @@ df = df[df['Listing ID'].notna()]
 
 # Create a new column with the Street Number & Street Name
 df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
+
+# Define HTML code for the popup so it looks pretty and nice
+def popup_html(row):
+    i = row.Index
+    street_address=df['Full Street Address'].at[i] 
+    mls_number=df['Listing ID'].at[i]
+    mls_number_hyperlink=df['bhhs_url'].at[i]
+    mls_photo = df['MLS Photo'].at[i]
+    lc_price = df['List Price'].at[i] 
+    price_per_sqft=df['Price Per Square Foot'].at[i]                  
+    brba = df['Br/Ba'].at[i]
+    square_ft = df['Sqft'].at[i]
+    year = df['YrBuilt'].at[i]
+    garage = df['Garage Spaces'].at[i]
+    pets = df['PetsAllowed'].at[i]
+    phone = df['List Office Phone'].at[i]
+    terms = df['Terms'].at[i]
+    sub_type = df['Sub Type'].at[i]
+    listed_date = pd.to_datetime(df['Listed Date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
+    furnished = df['Furnished'].at[i]
+    key_deposit = df['DepositKey'].at[i]
+    other_deposit = df['DepositOther'].at[i]
+    pet_deposit = df['DepositPets'].at[i]
+    security_deposit = df['DepositSecurity'].at[i]
+    # If there's no square footage, set it to "Unknown" to display for the user
+    # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
+    if pd.isna(square_ft) == True:
+        square_ft = 'Unknown'
+    # If there IS a square footage, convert it into an integer (round number)
+    elif pd.isna(square_ft) == False:
+        square_ft = f"{int(square_ft)} sq. ft"
+    # Repeat above for Year Built
+    if pd.isna(year) == True:
+        year = 'Unknown'
+    # If there IS a square footage, convert it into an integer (round number)
+    elif pd.isna(year) == False:
+        year = f"{int(year)}"
+    # Repeat above for garage spaces
+    if pd.isna(garage) == True:
+        garage = 'Unknown'
+    elif pd.isna(garage) == False:
+        garage = f"{int(garage)}"
+    # Repeat for ppsqft
+    if pd.isna(price_per_sqft) == True:
+        price_per_sqft = 'Unknown'
+    elif pd.isna(price_per_sqft) == False:
+        price_per_sqft = f"${float(price_per_sqft)}"
+    # Repeat for listed date
+    if pd.isna(listed_date) == True:
+        listed_date = 'Unknown'
+    elif pd.isna(listed_date) == False:
+        listed_date = f"{listed_date}"
+    # Repeat for furnished
+    if pd.isna(furnished) == True:
+        furnished = 'Unknown'
+    elif pd.isna(furnished) == False:
+        furnished = f"{furnished}"
+    # Repeat for the deposits
+    if pd.isna(key_deposit) == True:
+        key_deposit = 'Unknown'
+    elif pd.isna(key_deposit) == False:
+        key_deposit = f"${int(key_deposit)}"
+    if pd.isna(pet_deposit) == True:
+        pet_deposit = 'Unknown'
+    elif pd.isna(pet_deposit) == False:
+        pet_deposit = f"${int(pet_deposit)}"
+    if pd.isna(security_deposit) == True:
+        security_deposit = 'Unknown'
+    elif pd.isna(security_deposit) == False:
+        security_deposit = f"${int(security_deposit)}"
+    if pd.isna(other_deposit) == True:
+        other_deposit = 'Unknown'
+    elif pd.isna(other_deposit) == False:
+        other_deposit = f"${int(other_deposit)}"
+   # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
+   # Basically, the HTML block should just be an empty Img tag
+    if pd.isna(mls_photo) == True:
+        mls_photo_html_block = html.Img(
+          src='',
+          referrerPolicy='noreferrer',
+          style={
+            'display':'block',
+            'width':'100%',
+            'margin-left':'auto',
+            'margin-right':'auto'
+          },
+          id='mls_photo_div'
+        )
+    # If there IS an MLS photo, just set it to itself
+    # The HTML block should be an Img tag wrapped inside a parent <a href> tag so the image will be clickable
+    elif pd.isna(mls_photo) == False:
+        mls_photo_html_block = html.A( # wrap the Img inside a parent <a href> tag 
+            html.Img(
+              src=f'{mls_photo}',
+              referrerPolicy='noreferrer',
+              style={
+                'display':'block',
+                'width':'100%',
+                'margin-left':'auto',
+                'margin-right':'auto'
+              },
+              id='mls_photo_div'
+            ),
+          href=f"{mls_number_hyperlink}",
+          referrerPolicy='noreferrer',
+          target='_blank'
+        )
+    # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
+    return [
+      html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
+          mls_photo_html_block
+      ]),
+      html.Table([ # Create the table
+        html.Tbody([ # Create the table body
+          html.Tr([ # Start row #1
+            html.Td("Listed Date"), html.Td(f"{listed_date}")
+          ]), # end row #1
+          html.Tr([ 
+            html.Td("Street Address"), html.Td(f"{street_address}")
+          ]),
+          html.Tr([ 
+            # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
+            # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
+            html.Td(html.A("Listing ID", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
+          ]),
+          html.Tr([ 
+            html.Td("Rental Price"), html.Td(f"${lc_price}")
+          ]),
+          html.Tr([
+            html.Td("Price Per Square Foot"), html.Td(f"{price_per_sqft}")
+          ]),
+          html.Tr([
+            html.Td(html.A("Bedrooms/Bathrooms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms", target='_blank')), html.Td(f"{brba}")
+          ]),
+          html.Tr([
+            html.Td("Square Feet"), html.Td(f"{square_ft}")
+          ]),
+          html.Tr([
+            html.Td("Year Built"), html.Td(f"{year}")
+          ]),
+          html.Tr([
+            html.Td("Garage Spaces"), html.Td(f"{garage}"),
+          ]),
+          html.Tr([
+            html.Td("Pets Allowed?"), html.Td(f"{pets}"),
+          ]),
+          html.Tr([
+            html.Td("List Office Phone"), html.Td(f"{phone}"),
+          ]),
+          html.Tr([
+            html.Td(html.A("Rental Terms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms", target='_blank')), html.Td(f"{terms}"),
+          ]),
+          html.Tr([
+            html.Td("Furnished?"), html.Td(f"{furnished}"),
+          ]),
+          html.Tr([
+            html.Td("Security Deposit"), html.Td(f"{security_deposit}"),
+          ]),
+          html.Tr([
+            html.Td("Pet Deposit"), html.Td(f"{pet_deposit}"),
+          ]),
+          html.Tr([
+            html.Td("Key Deposit"), html.Td(f"{key_deposit}"),
+          ]),
+          html.Tr([
+            html.Td("Other Deposit"), html.Td(f"{other_deposit}"),
+          ]),
+          html.Tr([                                                                                            
+            html.Td(html.A("Physical Sub Type", href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type", target='_blank')), html.Td(f"{sub_type}")                                                                                    
+          ]), # end rows
+        ]), # end body
+      ]), # end table
+    ]
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
@@ -167,6 +341,7 @@ if 'Listed Date' in df.columns:
         df.at[row.Index, 'Listed Date'] = webscrape[0]
         df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
         df.at[row.Index, 'bhhs_url'] = webscrape[2]
+        df.at[row.Index, 'popup_html'] = popup_html(row)
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Listed Date' not in df.columns:
     for row in df.itertuples():
@@ -175,6 +350,7 @@ elif 'Listed Date' not in df.columns:
         df.at[row.Index, 'Listed Date'] = webscrape[0]
         df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
         df.at[row.Index, 'bhhs_url'] = webscrape[2]
+        df.at[row.Index, 'popup_html'] = popup_html(row)
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Coordinates column is already present, iterate through the null cells
