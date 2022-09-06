@@ -16,14 +16,15 @@ df = pd.read_hdf("dataframe.hdf5", "/d1")
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
+# Create markers & associated popups from dataframe
 markers = [dl.Marker(children=dl.Popup(row.popup_html, closeButton=True, maxHeight=100, maxWidth=5), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+# Add them to a MarkerCluster
+cluster = dl.MarkerClusterGroup(id="markers", children=markers)
+
 
 # Get the means so we can center the map
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
-
-# Add them to a MarkerCluster
-cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
 # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
 def sqft_radio_button(boolean, slider_begin, slider_end):
