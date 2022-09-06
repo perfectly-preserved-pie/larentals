@@ -12,7 +12,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe HDF5 file
-df = pd.read_hdf("dataframe.hdf5", "/d1")
+df = pd.read_csv("dataframe.csv")
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
