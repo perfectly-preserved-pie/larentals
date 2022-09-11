@@ -11,13 +11,15 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 # Make the dataframe a global variable
 global df
 
-# import the dataframe HDF5 file
-df = pd.read_csv("dataframe.csv")
+# import the dataframe CSV file and use a converter on the popup_html column to prevent it from being read into memory as a string (it should be a list)
+# https://stackoverflow.com/a/57373513
+df = pd.read_pickle('dataframe.pickle')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
 # Create markers & associated popups from dataframe
-markers = [dl.Marker(children=dl.Popup(row.popup_html, closeButton=True, maxHeight=15), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+
 # Add them to a MarkerCluster
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
 
@@ -916,7 +918,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   ]
 
   # Create markers & associated popups from dataframe
-  markers = [dl.Marker(children=dl.Popup(row.popup_html, closeButton=True, maxHeight=15), position=[row.Latitude, row.Longitude]) for row in df_filtered.itertuples()]
+  markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude])  for row in df_filtered.itertuples(index=False)]
 
   # Debug print a statement to check if we have all markers in the dataframe displayed
   print(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")

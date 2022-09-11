@@ -613,10 +613,8 @@ elif 'popup_html' not in df.columns:
     for row in df.itertuples():
         df.at[row.Index, 'popup_html'] = popup_html(row)
 
-# Depending if a CSV file exists already, either create a new one or append the dataframe to an existing CSV file
-csv_path = './dataframe.csv'
-if exists(csv_path) == False:
-    df.to_csv("dataframe.csv")
-elif exists(csv_path) == True:
-    # Use the append mode option
-    df.to_csv("dataframe.csv", mode='a')
+# Depending if a pickle file exists already, either create a new one or append the dataframe to an existing pickle file
+path = './dataframe.pickle'
+#if exists(path) == False:
+#    df.to_pickle("dataframe.pickle")
+df.to_pickle("./dataframe.pickle")
