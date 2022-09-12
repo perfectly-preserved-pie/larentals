@@ -1,10 +1,11 @@
 from bs4 import BeautifulSoup as bs4
+from dash import html
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
-from dash import html
 from numpy import NaN
 from os.path import exists
+from datetime import date, timedelta, datetime
 import os
 import pandas as pd
 import requests
@@ -421,6 +422,17 @@ df['DepositSecurity'].values[df['DepositSecurity'] > 18000] = 18000
 df['DepositPets'].values[df['DepositPets'] > 18000] = 18000
 df['DepositOther'].values[df['DepositOther'] > 18000] = 18000
 df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
+
+# Tag each row with the date it was generated
+for row in df.itertuples():
+  if 'date_generated' in df.columns:
+    pass
+  elif 'date_generated' not in df.columns:
+    df.at[row.Index, 'date_generated'] = datetime.now().date()
+
+# The rental marker is hot and properties go off market fast
+# Keep all rows less than a "month" old (31 days)
+df['date_generated'] = df['date_generated'] >= date.today() - timedelta(31)
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
