@@ -436,7 +436,7 @@ df['date_generated'] = df['date_generated'] >= date.today() - timedelta(31)
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
-# And skew the outliers, causing the sliders to go way up
+# They also skew the outliers, causing the sliders to go way up
 df = df[df.Bedrooms < 6]
 
 # Reindex the dataframe
