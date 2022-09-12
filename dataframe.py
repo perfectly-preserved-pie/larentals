@@ -41,9 +41,9 @@ df.columns = df.columns.str.strip()
 # Drop all rows that don't have a city. # TODO: figure out a workaround
 df = df[df['City'].notna()]
 
-# Drop all rows that don't have a MLS Listing ID (aka misc data we don't care about)
+# Drop all rows that don't have a MLS Listing ID (MLS#) (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
-df = df[df['Listing ID'].notna()]
+df = df[df['Listing ID (MLS#)'].notna()]
 
 # Create a new column with the Street Number & Street Name
 df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
@@ -52,7 +52,7 @@ df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + 
 def popup_html(row):
     i = row.Index
     street_address=df['Full Street Address'].at[i] 
-    mls_number=df['Listing ID'].at[i]
+    mls_number=df['Listing ID (MLS#)'].at[i]
     mls_number_hyperlink=df['bhhs_url'].at[i]
     mls_photo = df['MLS Photo'].at[i]
     lc_price = df['List Price'].at[i] 
@@ -170,7 +170,7 @@ def popup_html(row):
           html.Tr([ 
             # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
             # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-            html.Td(html.A("Listing ID", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
+            html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]),
           html.Tr([ 
             html.Td("Rental Price"), html.Td(f"${lc_price}")
@@ -434,7 +434,7 @@ df.reset_index(drop=True, inplace=True)
 def popup_html(row):
     i = row.Index
     street_address=df['Full Street Address'].at[i] 
-    mls_number=df['Listing ID'].at[i]
+    mls_number=df['Listing ID (MLS#)'].at[i]
     mls_number_hyperlink=df['bhhs_url'].at[i]
     mls_photo = df['MLS Photo'].at[i]
     lc_price = df['List Price'].at[i] 
@@ -552,7 +552,7 @@ def popup_html(row):
           html.Tr([ 
             # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
             # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-            html.Td(html.A("Listing ID", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
+            html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
           ]),
           html.Tr([ 
             html.Td("Rental Price"), html.Td(f"${lc_price}")
@@ -613,8 +613,16 @@ elif 'popup_html' not in df.columns:
     for row in df.itertuples():
         df.at[row.Index, 'popup_html'] = popup_html(row)
 
+# Pickle the dataframe for later ingestion by app.py
+# https://www.youtube.com/watch?v=yYey8ntlK_E
 # Depending if a pickle file exists already, either create a new one or append the dataframe to an existing pickle file
 path = './dataframe.pickle'
-#if exists(path) == False:
-#    df.to_pickle("dataframe.pickle")
-df.to_pickle("./dataframe.pickle")
+if exists(path) == False:
+  df.to_pickle("dataframe.pickle")
+elif exists(path) == True:
+  # Load the old dataframe into memory
+  df_old = pd.read_pickle("dataframe.pickle")
+  # Combine both old and new dataframes
+  df_new = pd.concat(df, df_old)
+  # Pickle the new dataframe
+  df_new.to_pickle("dataframe.pickle")
