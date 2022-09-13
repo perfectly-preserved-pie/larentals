@@ -197,8 +197,8 @@ def popup_html(row):
           html.Tr([
             html.Td("Pets Allowed?"), html.Td(f"{pets}"),
           ]),
-          html.Tr([
-            html.Td("List Office Phone"), html.Td(f"{phone}"),
+          html.Tr([ # https://www.elegantthemes.com/blog/wordpress/call-link-html-phone-number
+            html.Td("List Office Phone"), html.Td(html.A(f"{phone}", href=f"tel:{phone}")),
           ]),
           html.Tr([
             html.Td(html.A("Rental Terms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms", target='_blank')), html.Td(f"{terms}"),
