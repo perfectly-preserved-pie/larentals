@@ -11,3 +11,9 @@ Some additional capabilities are offered, such as a featured MLS photo for the p
 *    [GeoPy](https://geopy.readthedocs.io/en/stable/) (geocoding coordinates via the Google Maps API)
 *    [ImageKit](https://github.com/imagekit-developer/imagekit-python) (resizing MLS photos into a standard size on the fly)
 *    [Pandas](https://pandas.pydata.org/) (handling and manipulating the rental property data for each address)
+
+## How to Build and Run
+1. Clone this repo: `git clone https://github.com/perfectly-preserved-pie/larentals.git`
+2. Build the Docker image: `docker build -t where2livedotla ./`
+3. Run the Docker image: `docker run -p 1337:80 where2livedotla`
+4. The Dash app will be accessible at `$HOST:1337`
