@@ -138,6 +138,7 @@ app = Dash(
   ],
 )
 
+# For Gunicorn
 server = app.server
 
 
