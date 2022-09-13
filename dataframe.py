@@ -1,11 +1,12 @@
 from bs4 import BeautifulSoup as bs4
 from dash import html
+from datetime import date, timedelta, datetime
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from numpy import NaN
 from os.path import exists
-from datetime import date, timedelta, datetime
+import logging
 import os
 import pandas as pd
 import requests
@@ -13,6 +14,8 @@ import requests
 ## SETUP AND VARIABLES
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
+
+logging.getLogger().setLevel(logging.INFO)
 
 # ImageKit.IO
 # https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
@@ -229,10 +232,13 @@ def return_coordinates(address):
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
         coords = f"{lat}, {lon}"
-    except Exception:
+    except Exception as e:
         lat = NaN
         lon = NaN
         coords = NaN
+        logging.warn(f"Couldn't fetch coordinates because of {e}.")
+        pass
+    logging.info(f"Fetched coordinates ({coords}) for {address}.")
     return lat, lon, coords
 
 # Create a function to find missing postal codes based on short address
@@ -250,13 +256,14 @@ def return_postalcode(address):
                 postalcode = row.long_name
     except Exception:
         postalcode = NaN
+        pass
+    logging.info(f"Fetched postal code {postalcode} for {address}.")
     return postalcode
 
 ## Webscraping Time
 # Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
 def webscrape_bhhs(url, row_index):
     try:
-        print(f"Grabbing Listed Date, MLS Photo, and BHHS link for row #{row_index}...")
         response = requests.get(url)
         soup = bs4(response.text, 'html.parser')
         # Split the p class into strings and get the last element in the list
@@ -266,10 +273,13 @@ def webscrape_bhhs(url, row_index):
         photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
         # Now find the URL to the actual listing instead of just the search result page
         link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
-    except AttributeError:
+    except AttributeError as e:
         listed_date = pd.NaT
         photo = NaN
         link = NaN
+        logging.warn(f"Couldn't fetch some BHHS webscraping info because of {e}.")
+        pass
+    logging.info(f"Fetched Listed Date, MLS Photo, and BHHS link for row {row_index}...")
     return listed_date, photo, link
 
 # Create a function to upload the file to ImageKit and then transform it
@@ -287,12 +297,12 @@ def imagekit_transform(bhhs_url, mls):
                 }
             )
         except Exception as e:
-            print(f"Couldn't upload image to ImageKit because {e}. Passing on...")
+            logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
             uploaded_image = 'ERROR'
             pass
     elif pd.isnull(bhhs_url) == True:
         uploaded_image = 'ERROR'
-        print(f"No image URL found. Not uploading anything to ImageKit.")
+        logging.info(f"No image URL found. Not uploading anything to ImageKit.")
     # Now transform the uploaded image
     # https://github.com/imagekit-developer/imagekit-python#url-generation
     if 'ERROR' not in uploaded_image:
@@ -306,11 +316,11 @@ def imagekit_transform(bhhs_url, mls):
                 }]
             })
         except Exception as e:
-            print(f"Couldn't transform image because {e}. Passing on...")
+            logging.warning(f"Couldn't transform image because {e}. Passing on...")
             transformed_image = None
             pass
     elif 'ERROR' in uploaded_image:
-        print(f"No image URL found. Not transforming anything.")
+        logging.info(f"No image URL found. Not transforming anything.")
         transformed_image = None
     return transformed_image
 
@@ -318,7 +328,6 @@ def imagekit_transform(bhhs_url, mls):
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
 for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
-    print(f"Grabbing postal code for row #{row.Index}...")
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
@@ -357,7 +366,6 @@ elif 'Listed Date' not in df.columns:
 # This assumption will reduce the number of API calls to Google Maps
 if 'Coordinates' in df.columns:
     for row in df['Coordinates'].isnull().itertuples():
-        print(f"Grabbing coordinates for row #{row.Index}...")
         coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
@@ -365,7 +373,6 @@ if 'Coordinates' in df.columns:
 # If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Coordinates' not in df.columns:
     for row in df.itertuples():
-        print(f"Grabbing coordinates for row #{row.Index}...")
         coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
