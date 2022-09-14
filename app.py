@@ -781,6 +781,11 @@ map = dl.Map(
 
 user_options_card = dbc.Card(
   [
+    html.P(
+      "Use the options below to filter the map "
+      "according to your needs.",
+      className="card-text",
+    ),
     listed_date_datepicker,
     listed_date_radio,
     subtype_checklist,
