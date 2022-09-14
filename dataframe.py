@@ -263,6 +263,12 @@ df['DepositPets'].values[df['DepositPets'] > 18000] = 18000
 df['DepositOther'].values[df['DepositOther'] > 18000] = 18000
 df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
 
+# Rewrite anything greater than 5000 square feet as NaN
+# Because there's no fucking way there's a RENTAL PROPERTY that is 5000+ sqft in this city
+# It clearly must be some kind of clerical error so a NaN (unknown) is more appropriate
+# All that being said, I should peruse new spreadsheets to make sure there isn't actually a valid property exceeds 5000 sqft
+df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
+
 # Tag each row with the date it was generated
 for row in df.itertuples():
   if 'date_generated' in df.columns:
