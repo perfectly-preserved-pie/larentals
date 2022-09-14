@@ -159,6 +159,8 @@ for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 # Now that we have street addresses and postal codes, we can put them together
+# But first we need to cast the PostalCode column as string so we don't get concat errors
+df['PostalCode'] = df['PostalCode'].astype(str)
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
 df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
@@ -238,7 +240,6 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 # We don't really have a need for floats here, just ints
 # And this will prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
 # And this will also convert non-integers into NaNs
-df['PostalCode'] = df['PostalCode'].astype(pd.Int64Dtype())
 df['Sqft'] = df['Sqft'].astype(pd.Int64Dtype())
 df['YrBuilt'] = df['YrBuilt'].astype(pd.Int64Dtype())
 df['Garage Spaces'] = df['Garage Spaces'].astype(pd.Int64Dtype())
