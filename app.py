@@ -141,6 +141,29 @@ app = Dash(
 # For Gunicorn
 server = app.server
 
+# Plausible analytics
+# https://community.plotly.com/t/tracking-application-analytics-with-google-analytics/38946/2?u=the.oldest.house
+app.index_string = """<!DOCTYPE html>
+<html>
+
+  <head>
+    <script defer data-api="/api/event" data-domain="wheretolive.la" src="/js/script.js"></script>
+    {%metas%}
+    <title>{%title%}</title>
+    {%favicon%}
+    {%css%}
+  </head>
+
+  <body>
+    {%app_entry%}
+    <footer>
+      {%config%}
+      {%scripts%}
+      {%renderer%}
+    </footer>
+  </body>
+
+</html>"""
 
 # TODO: implement a Select All checkbox: https://dash.plotly.com/advanced-callbacks#synchronizing-two-checklists
 subtype_checklist = html.Div([ 
