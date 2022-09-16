@@ -142,7 +142,10 @@ app = Dash(
 server = app.server
 
 # Plausible analytics
-# https://community.plotly.com/t/tracking-application-analytics-with-google-analytics/38946/2?u=the.oldest.house
+# https://community.plotly.com/t/tracking-application-analytics-with-google-analytics/38946/2?
+# This only works if there's an NGINX reverse proxy in front
+# https://plausible.io/docs/proxy/introduction
+
 app.index_string = """<!DOCTYPE html>
 <html>
 
