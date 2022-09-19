@@ -30,12 +30,12 @@ imagekit = ImageKit(
 global df
 
 ### PANDAS DATAFRAME OPERATIONS
-# Prompt user for the CSV filename
-csv = input('Enter the CSV filename.\n')
-# import the csv
-# Don't round the float. See https://stackoverflow.com/a/68027847
-# Convert all empty strings into NaNs. See https://stackoverflow.com/a/53075732
-df = pd.read_csv(f"./{csv}", float_precision="round_trip", skipinitialspace=True)
+# Load all CSVs and concat into one dataframe
+# https://stackoverflow.com/a/21232849
+path = "."
+all_files = glob.glob(os.path.join(path, "*.csv"))
+df = pd.concat((pd.read_csv(f, float_precision="round_trip", skipinitialspace=True) for f in all_files), ignore_index=True)
+
 pd.set_option("display.precision", 10)
 
 # Strip leading and trailing whitespaces from the column names
