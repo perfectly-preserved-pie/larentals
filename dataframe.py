@@ -3,6 +3,7 @@ from dash import html
 from datetime import date, timedelta, datetime
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
+import glob
 from imagekitio import ImageKit
 from numpy import NaN
 from os.path import exists
@@ -154,7 +155,7 @@ def imagekit_transform(bhhs_url, mls):
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
+for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')) & (df['date_generated'].isnull())].itertuples():
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
@@ -170,7 +171,7 @@ df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + 
 # We can use the presence of a Listed Date as a proxy for MLS Photo; generally, either both or neither exist/don't exist together
 # This assumption will reduce the number of HTTP requests we send to BHHS
 if 'Listed Date' in df.columns:
-    for row in df.loc[df['Listed Date'].isnull()].itertuples():
+    for row in df.loc[(df['Listed Date'].isnull()) & df['date_generated'].isnull()].itertuples():
         mls_number = row[1]
         webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
         df.at[row.Index, 'Listed Date'] = webscrape[0]
@@ -240,13 +241,13 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 # We don't really have a need for floats here, just ints
 # And this will prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
 # And this will also convert non-integers into NaNs
-df['Sqft'] = df['Sqft'].astype(pd.Int64Dtype())
-df['YrBuilt'] = df['YrBuilt'].astype(pd.Int64Dtype())
-df['Garage Spaces'] = df['Garage Spaces'].astype(pd.Int64Dtype())
-df['DepositKey'] = df['DepositKey'].astype(pd.Int64Dtype())
-df['DepositOther'] = df['DepositOther'].astype(pd.Int64Dtype())
-df['DepositPets'] = df['DepositPets'].astype(pd.Int64Dtype())
-df['DepositSecurity'] = df['DepositSecurity'].astype(pd.Int64Dtype())
+df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
@@ -481,6 +482,6 @@ elif exists(path) == True:
   # Load the old dataframe into memory
   df_old = pd.read_pickle("dataframe.pickle")
   # Combine both old and new dataframes
-  df_new = pd.concat(df, df_old)
+  df_new = pd.concat([df, df_old])
   # Pickle the new dataframe
   df_new.to_pickle("dataframe.pickle")
