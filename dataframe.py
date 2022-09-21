@@ -82,11 +82,11 @@ def return_postalcode(address):
             # Select the row that has the postal_code list
             if row.types == ['postal_code']:
                 postalcode = row.long_name
-    except Exception:
-        postalcode = NaN
-        pass
+    except Exception as e:
+        logging.warning(f"Couldn't fetch postal code for {address} because {e}.")
+        return pd.NA
     logging.info(f"Fetched postal code {postalcode} for {address}.")
-    return postalcode
+    return int(postalcode)
 
 ## Webscraping Time
 # Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
@@ -155,16 +155,15 @@ def imagekit_transform(bhhs_url, mls):
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')) & (df['date_generated'].isnull())].itertuples():
+for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'))].itertuples():
     missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
-# Now that we have street addresses and postal codes, we can put them together
-# But first we need to cast the PostalCode column as string so we don't get concat errors
-df['PostalCode'] = df['PostalCode'].astype(str)
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
-df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
+# Convert the postal code into a string so we can combine string and int
+# https://stackoverflow.com/a/11858532
+df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].map(str)
 
 # Iterate through the dataframe and get the listed date and photo for rows that don't have them
 # If the Listed Date column is already present, iterate through the null cells
@@ -241,6 +240,7 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 # We don't really have a need for floats here, just ints
 # And this will prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
 # And this will also convert non-integers into NaNs
+df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
@@ -482,6 +482,6 @@ elif exists(path) == True:
   # Load the old dataframe into memory
   df_old = pd.read_pickle("dataframe.pickle")
   # Combine both old and new dataframes
-  df_new = pd.concat([df, df_old])
+  df = pd.append([df_old])
   # Pickle the new dataframe
-  df_new.to_pickle("dataframe.pickle")
+  df.to_pickle("dataframe.pickle")
