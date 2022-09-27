@@ -13,7 +13,7 @@ global df
 
 # import the dataframe CSV file
 # https://stackoverflow.com/a/57373513
-df = pd.read_pickle('dataframe.pickle')
+df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
