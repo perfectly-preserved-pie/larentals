@@ -12,7 +12,8 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
+#df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
+df = pd.read_pickle('dataframe.pickle')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
@@ -48,18 +49,18 @@ def yrbuilt_radio_button(boolean, slider_begin, slider_end):
 def garage_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
     # Then we want nulls to be included in the final dataframe 
-    garage_choice = df['Garage Spaces'].isnull()
+    garage_choice = df['garage_spaces'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    garage_choice = df['Garage Spaces'].between(slider_begin, slider_end)
+    garage_choice = df['garage_spaces'].between(slider_begin, slider_end)
   return (garage_choice)
 
 # Create a function to return a dataframe filter for missing ppqsft
 def ppsqft_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
     # Then we want nulls to be included in the final dataframe 
-    ppsqft_choice = df['Price Per Square Foot'].isnull()
+    ppsqft_choice = df['ppsqft'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    ppsqft_choice = df['Price Per Square Foot'].between(slider_begin, slider_end)
+    ppsqft_choice = df['ppsqft'].between(slider_begin, slider_end)
   return (ppsqft_choice)
 
 # Create a function to return a dataframe filter for pet policy
@@ -122,9 +123,9 @@ def other_deposit_function(boolean, slider_begin, slider_end):
 def listed_date_function(boolean, start_date, end_date):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    listed_date_filter = (df['Listed Date'].isnull()) | (df['Listed Date'].between(start_date, end_date))
+    listed_date_filter = (df['listed_date'].isnull()) | (df['listed_date'].between(start_date, end_date))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    listed_date_filter = df['Listed Date'].between(start_date, end_date)
+    listed_date_filter = df['listed_date'].between(start_date, end_date)
   return (listed_date_filter)
 
 app = Dash(
@@ -310,9 +311,9 @@ id = 'unknown_sqft_div',
 ppsqft_slider = html.Div([
     html.H5("Price Per Square Foot"),
     dcc.RangeSlider(
-      min=df['Price Per Square Foot'].min(), 
-      max=df['Price Per Square Foot'].max(),
-      value=[df['Price Per Square Foot'].min(), df['Price Per Square Foot'].max()], 
+      min=df['ppsqft'].min(), 
+      max=df['ppsqft'].max(),
+      value=[df['ppsqft'].min(), df['ppsqft'].max()], 
       id='ppsqft_slider',
       tooltip={
         "placement": "bottom",
@@ -403,9 +404,9 @@ garage_spaces_slider =  html.Div([
     # Create a range slider for # of garage spaces
     dcc.RangeSlider(
       min=0, 
-      max=df['Garage Spaces'].max(), # Dynamically calculate the maximum number of garage spaces
+      max=df['garage_spaces'].max(), # Dynamically calculate the maximum number of garage spaces
       step=1, 
-      value=[0, df['Garage Spaces'].max()], 
+      value=[0, df['garage_spaces'].max()], 
       id='garage_spaces_slider',
       updatemode='mouseup'
     ),
@@ -443,9 +444,9 @@ rental_price_slider = html.Div([
     html.H5("Price (Monthly)"),
     # Create a range slider for rental price
     dcc.RangeSlider(
-      min=df['List Price'].min(),
-      max=df['List Price'].max(),
-      value=[0, df['List Price'].max()],
+      min=df['list_price'].min(),
+      max=df['list_price'].max(),
+      value=[0, df['list_price'].max()],
       id='rental_price_slider',
       tooltip={
         "placement": "bottom",
@@ -752,8 +753,8 @@ id = 'unknown_other_deposit_div',
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
-df['Listed Date'] = pd.to_datetime(df['Listed Date'], errors='coerce', infer_datetime_format=True)
-earliest_date = (df['Listed Date'].min()).to_pydatetime()
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
+earliest_date = (df['listed_date'].min()).to_pydatetime()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
     # Create a range slider for the listed date
@@ -926,20 +927,20 @@ className = "dbc"
 # Their order must match
 def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio):
   df_filtered = df[
-    (df['Sub Type'].isin(subtypes_chosen)) &
+    (df['subtype'].isin(subtypes_chosen)) &
     pets_radio_button(pets_chosen) &
     (df['Terms'].isin(terms_chosen)) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
-    (((df['Garage Spaces'].between(garage_spaces[0], garage_spaces[1])) | garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1]))) & # for this one, combine a dataframe of both the slider inputs and the radio button input
+    (((df['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1]))) & # for this one, combine a dataframe of both the slider inputs and the radio button input
     # Repeat but for rental price
-    (df['List Price'].between(rental_price[0], rental_price[1])) &
+    (df['list_price'].between(rental_price[0], rental_price[1])) &
     (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
     (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
-    (((df['Price Per Square Foot'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
+    (((df['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
     furnished_checklist_function(furnished_choice) &
     security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
     pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &

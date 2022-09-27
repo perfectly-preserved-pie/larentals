@@ -43,9 +43,45 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip()
 
-# Drop all rows that don't have a MLS Listing ID (MLS#) (aka misc data we don't care about)
+# Standardize the column names by renaminmg them
+# https://stackoverflow.com/a/65332240
+df = df.rename(columns=lambda c: 'mls_number' if c.startswith('Listing') else c)
+df = df.rename(columns=lambda c: 'subtype' if c.startswith('Sub Type') else c)
+df = df.rename(columns=lambda c: 'street_number' if c.startswith('St#') else c)
+df = df.rename(columns=lambda c: 'street_name' if c.startswith('St Name') else c)
+df = df.rename(columns=lambda c: 'list_price' if c.startswith('List Price') else c)
+df = df.rename(columns=lambda c: 'garage_spaces' if c.startswith('Garage Spaces') else c)
+df = df.rename(columns=lambda c: 'phone_number' if c.startswith('List Office Phone') else c)
+df = df.rename(columns=lambda c: 'ppsqft' if c.startswith('Price Per') else c)
+
+# Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
-df = df[df['Listing ID (MLS#)'].notna()]
+df = df[df['mls_number'].notna()]
+
+# Remove all $ and , symbols from specific columns
+# https://stackoverflow.com/a/46430853
+if 'ppsqft' in df.columns:
+  cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'ppsqft', 'Sqft']
+elif 'ppsqft' not in df.columns:
+  cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft']
+# pass them to df.replace(), specifying each char and it's replacement:
+df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
+
+# Remove the square footage & YrBuilt abbreviations and cast as nullable Integer type
+df['Sqft'] = df['Sqft'].str.split('/').str[0].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+
+# Cast the list price column as integers
+df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
+
+# Calculate the price per square foot if the column doesn't already exist
+# Round the decimal to two places
+if 'ppsqft' or 'Price Per Square Foot' not in df.columns:
+  for row in df.itertuples():
+    try:
+      df.at[row.Index, 'ppsqft'] = (row.list_price / row.Sqft).round(2)
+    except Exception:
+      df.at[row.Index, 'ppsqft'] = pd.NA
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
@@ -86,7 +122,7 @@ for row in missing_city_dataframe.itertuples():
   missing_city_dataframe.at[row.Index, 'City'] = fetch_missing_city(row[3] + ' ' + row[4] + ' ' + str(int(row[6])))
 
 # Create a new column with the Street Number & Street Name
-df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
+df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City']
 
 # Create a function to find missing postal codes based on short address
 def return_postalcode(address):
@@ -111,7 +147,7 @@ def return_postalcode(address):
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
 for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'))].itertuples():
-    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
+    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'short_address'])
     df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 ## Webscraping Time
@@ -182,26 +218,26 @@ def imagekit_transform(bhhs_url, mls):
 # Also strip whitespace from the St Name column
 # Convert the postal code into a string so we can combine string and int
 # https://stackoverflow.com/a/11858532
-df["Full Street Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].map(str)
+df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].map(str)
 
 # Iterate through the dataframe and get the listed date and photo for rows that don't have them
 # If the Listed Date column is already present, iterate through the null cells
 # We can use the presence of a Listed Date as a proxy for MLS Photo; generally, either both or neither exist/don't exist together
 # This assumption will reduce the number of HTTP requests we send to BHHS
-if 'Listed Date' in df.columns:
-    for row in df.loc[(df['Listed Date'].isnull()) & df['date_generated'].isnull()].itertuples():
+if 'listed_date' in df.columns:
+    for row in df.loc[(df['listed_date'].isnull()) & df['date_generated'].isnull()].itertuples():
         mls_number = row[1]
         webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
-        df.at[row.Index, 'Listed Date'] = webscrape[0]
-        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
+        df.at[row.Index, 'listed_date'] = webscrape[0]
+        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'bhhs_url'] = webscrape[2]
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
-elif 'Listed Date' not in df.columns:
+elif 'listed_date' not in df.columns:
     for row in df.itertuples():
         mls_number = row[1]
         webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
-        df.at[row.Index, 'Listed Date'] = webscrape[0]
-        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row._1)
+        df.at[row.Index, 'listed_date'] = webscrape[0]
+        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'bhhs_url'] = webscrape[2]
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
@@ -210,46 +246,35 @@ elif 'Listed Date' not in df.columns:
 # This assumption will reduce the number of API calls to Google Maps
 if 'Coordinates' in df.columns:
     for row in df['Coordinates'].isnull().itertuples():
-        coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
+        coordinates = return_coordinates(df.at[row.Index, 'full_street_address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
         df.at[row.Index, 'Coordinates'] = coordinates[2]
 # If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Coordinates' not in df.columns:
     for row in df.itertuples():
-        coordinates = return_coordinates(df.at[row.Index, 'Full Street Address'])
+        coordinates = return_coordinates(df.at[row.Index, 'full_street_address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
         df.at[row.Index, 'Coordinates'] = coordinates[2]
 
-# Remove all $ and , symbols from specific columns
-# https://stackoverflow.com/a/46430853
-cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'List Price', 'Price Per Square Foot', 'Sqft']
-# pass them to df.replace(), specifying each char and it's replacement:
-df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
-
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
-# TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than that, and you can’t officially consider it a full bath.
+# TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than thpdat, and you can’t officially consider it a full bath.
 df['Bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
 df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
 df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
 df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
-# Remove the square footage & YrBuilt abbreviations
-df['Sqft'] = df['Sqft'].str.split('/').str[0]
-df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0]
-
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
-df['List Price'] = df['List Price'].apply(pd.to_numeric, errors='coerce')
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric, errors='coerce')
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 # These columns should stay floats
-df['Price Per Square Foot'] = df['Price Per Square Foot'].apply(pd.to_numeric, errors='coerce')
+df['ppsqft'] = df['ppsqft'].apply(pd.to_numeric, errors='coerce')
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 # Convert the rest into nullable integer data types
@@ -262,7 +287,7 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['Garage Spaces'] = df['Garage Spaces'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
@@ -271,7 +296,7 @@ df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerc
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
-df['Listed Date'] = pd.to_datetime(df['Listed Date'], errors='coerce', infer_datetime_format=True)
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
 
 # Per CA law, ANY type of deposit is capped at rent * 3 months
 # It doesn't matter the type of deposit, they all have the same cap
@@ -311,21 +336,21 @@ df.reset_index(drop=True, inplace=True)
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
     i = row.Index
-    street_address=df['Full Street Address'].at[i] 
-    mls_number=df['Listing ID (MLS#)'].at[i]
+    street_address=df['full_street_address'].at[i] 
+    mls_number=df['mls_number'].at[i]
     mls_number_hyperlink=df['bhhs_url'].at[i]
     mls_photo = df['MLS Photo'].at[i]
-    lc_price = df['List Price'].at[i] 
-    price_per_sqft=df['Price Per Square Foot'].at[i]                  
+    lc_price = df['list_price'].at[i] 
+    price_per_sqft=df['ppsqft'].at[i]                  
     brba = df['Br/Ba'].at[i]
     square_ft = df['Sqft'].at[i]
     year = df['YrBuilt'].at[i]
-    garage = df['Garage Spaces'].at[i]
+    garage = df['garage_spaces'].at[i]
     pets = df['PetsAllowed'].at[i]
-    phone = df['List Office Phone'].at[i]
+    phone = df['phone_number'].at[i]
     terms = df['Terms'].at[i]
-    sub_type = df['Sub Type'].at[i]
-    listed_date = pd.to_datetime(df['Listed Date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
+    sub_type = df['subtype'].at[i]
+    listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
     furnished = df['Furnished'].at[i]
     key_deposit = df['DepositKey'].at[i]
     other_deposit = df['DepositOther'].at[i]
