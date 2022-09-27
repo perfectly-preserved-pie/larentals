@@ -43,15 +43,9 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip()
 
-# Drop all rows that don't have a city. # TODO: figure out a workaround
-df = df[df['City'].notna()]
-
 # Drop all rows that don't have a MLS Listing ID (MLS#) (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
 df = df[df['Listing ID (MLS#)'].notna()]
-
-# Create a new column with the Street Number & Street Name
-df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
@@ -64,10 +58,35 @@ def return_coordinates(address):
         lat = NaN
         lon = NaN
         coords = NaN
-        logging.warn(f"Couldn't fetch coordinates because of {e}.")
+        logging.warning(f"Couldn't fetch geocode information for {address} because of {e}.")
         pass
     logging.info(f"Fetched coordinates ({coords}) for {address}.")
     return lat, lon, coords
+
+# Create a function to get a missing city
+def fetch_missing_city(address):
+    try:
+        geocode_info = g.geocode(address)
+        # Get the city by using a ??? whatever method this is
+        # https://gis.stackexchange.com/a/326076
+        # First get the raw geocode information
+        raw = geocode_info.raw['address_components']
+        # Then dig down to find the 'locality' aka city
+        city = [addr['long_name'] for addr in raw if 'locality' in addr['types']][0]
+    except Exception as e:
+        city = NaN
+        logging.warning(f"Couldn't fetch city for {address} because of {e}.")
+        pass
+    logging.info(f"Fetched city ({city}) for {address}.")
+    return  city
+
+# Fetch missing city names
+missing_city_dataframe = df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())]
+for row in missing_city_dataframe.itertuples():
+  missing_city_dataframe.at[row.Index, 'City'] = fetch_missing_city(row[3] + ' ' + row[4] + ' ' + str(int(row[6])))
+
+# Create a new column with the Street Number & Street Name
+df["Short Address"] = df["St#"] + ' ' + df["St Name"].str.strip() + ',' + ' ' + df['City']
 
 # Create a function to find missing postal codes based on short address
 def return_postalcode(address):
@@ -87,6 +106,13 @@ def return_postalcode(address):
         return pd.NA
     logging.info(f"Fetched postal code {postalcode} for {address}.")
     return int(postalcode)
+
+# Filter the dataframe and return only rows with a NaN postal code
+# For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
+# Then iterate through this filtered dataframe and input the right info we get using geocoding
+for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'))].itertuples():
+    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
+    df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 ## Webscraping Time
 # Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
@@ -151,13 +177,6 @@ def imagekit_transform(bhhs_url, mls):
         logging.info(f"No image URL found. Not transforming anything.")
         transformed_image = None
     return transformed_image
-
-# Filter the dataframe and return only rows with a NaN postal code
-# For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
-# Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'))].itertuples():
-    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'Short Address'])
-    df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
