@@ -11,8 +11,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 # Make the dataframe a global variable
 global df
 
-# import the dataframe CSV file
-# https://stackoverflow.com/a/57373513
+# import the dataframe pickle file
 df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
 pd.set_option("display.precision", 10)
 
