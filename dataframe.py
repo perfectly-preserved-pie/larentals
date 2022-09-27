@@ -336,7 +336,9 @@ df.reset_index(drop=True, inplace=True)
 # Define HTML code for the popup so it looks pretty and nice
 def popup_html(row):
     i = row.Index
-    street_address=df['full_street_address'].at[i] 
+    short_address = df['short_address'].at[i]
+    postalcode = df['PostalCode'].at[i]
+    full_address = f"{short_address} {postalcode}"
     mls_number=df['mls_number'].at[i]
     mls_number_hyperlink=df['bhhs_url'].at[i]
     mls_photo = df['MLS Photo'].at[i]
@@ -450,7 +452,7 @@ def popup_html(row):
             html.Td("Listed Date"), html.Td(f"{listed_date}")
           ]), # end row #1
           html.Tr([ 
-            html.Td("Street Address"), html.Td(f"{street_address}")
+            html.Td("Street Address"), html.Td(f"{full_address}")
           ]),
           html.Tr([ 
             # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
