@@ -11,7 +11,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 # Make the dataframe a global variable
 global df
 
-# import the dataframe CSV file and use a converter on the popup_html column to prevent it from being read into memory as a string (it should be a list)
+# import the dataframe CSV file
 # https://stackoverflow.com/a/57373513
 df = pd.read_pickle('dataframe.pickle')
 pd.set_option("display.precision", 10)
