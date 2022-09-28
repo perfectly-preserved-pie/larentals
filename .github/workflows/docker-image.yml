@@ -19,7 +19,7 @@ jobs:
         DOCKER_USER: ${{secrets.DOCKER_USERNAME}}
         DOCKER_PASSWORD: ${{secrets.DOCKER_PAT}}    
       run: |
-        echo "$MY_PASSWORD" | docker login --username $DOCKER_USE --password-stdin
+        echo "$DOCKER_PASSWORD" | docker login --username $DOCKER_USER --password-stdin
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag larentals:$(date +%s)
 
