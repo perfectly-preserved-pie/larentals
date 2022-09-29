@@ -3,6 +3,11 @@ name: Build and Publish
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - '*.md'
+      - 'dataframe.py'
+      - 'dataframe.pickle'
+      - '.gitignore'
   pull_request:
     branches: [ "master" ]
 
