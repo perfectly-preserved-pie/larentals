@@ -14,6 +14,11 @@ name: "CodeQL"
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - '*.md'
+      - 'dataframe.py'
+      - 'dataframe.pickle'
+      - '.gitignore'    
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "master" ]
