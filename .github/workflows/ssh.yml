@@ -17,5 +17,5 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+        #fingerprint: ${{ secrets.SSH_FINGERPRINT }}
         script: docker pull strayingfromthepath/larentals && docker restart wheretolivedotla
