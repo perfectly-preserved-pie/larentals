@@ -1,15 +1,11 @@
 name: Build and Publish
 
 on:
-  push:
-    branches: [ "master" ]
-    paths-ignore:
-      - '*.md'
-      - 'dataframe.py'
-      - 'dataframe.pickle'
-      - '.gitignore'
-  pull_request:
-    branches: [ "master" ]
+ # Only trigger when the CodeQL workflow succeeds
+  workflow_run:
+    workflows: ["CodeQL"]
+    types:
+      - completed
 
 jobs:
   # define job to build and publish docker image
