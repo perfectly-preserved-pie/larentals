@@ -1,7 +1,9 @@
 # WhereToLive.LA
-[![Build and Publish](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml)
-
 [![CodeQL](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/codeql-analysis.yml)
+
+[![Build image and publish to DockerHub](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml)
+
+[![Pull latest image and restart container](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/ssh.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/ssh.yml)
 
 This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of new rental listings in the /r/LArentals subreddit. Just like the actual spreadsheet, you can filter the map based on different criteria.
 
