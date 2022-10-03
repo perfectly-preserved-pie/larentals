@@ -388,9 +388,10 @@ rental_terms_checklist = html.Div([
         {'label': 'Monthly', 'value': 'MO'},
         {'label': '12 Months', 'value': '12M'},
         {'label': '24 Months', 'value': '24M'},
-        {'label': 'Negotiable', 'value': 'NG'}
+        {'label': 'Negotiable', 'value': 'NG'},
+        {'label': 'Unknown', 'value': '<NA>'}
       ],
-      value=['MO', '12M', '24M', 'NG'],
+      value=['MO', '12M', '24M', 'NG', '<NA>'],
       # add some spacing in between the checkbox and the label
       # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
       inputStyle = {
