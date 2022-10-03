@@ -293,9 +293,10 @@ df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce').as
 df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
-# Replace all empty values in the Terms column with NaN
+# Replace all empty values in the following columns with NaN and cast the column as dtype string
 # https://stackoverflow.com/a/47810911
-df.Terms.replace(r'^\s*$', pd.NA, regex=True, inplace=True)
+df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
+df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True)
 
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
