@@ -520,14 +520,9 @@ elif 'popup_html' not in df.columns:
 
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
-# Depending if a pickle file exists already, either create a new one or append the dataframe to an existing pickle file
-path = './dataframe.pickle'
-if exists(path) == False:
-  df.to_pickle("dataframe.pickle")
-elif exists(path) == True:
-  # Load the old dataframe into memory
-  df_old = pd.read_pickle("dataframe.pickle")
-  # Combine both old and new dataframes
-  df = pd.append([df_old])
-  # Pickle the new dataframe
-  df.to_pickle("dataframe.pickle")
+# Read the old dataframe in
+df_old = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
+# Combine both old and new dataframes
+df_combined = pd.concat([df, df_old])
+# Pickle the new combined dataframe
+df_combined.to_pickle("dataframe.pickle")
