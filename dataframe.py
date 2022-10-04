@@ -92,15 +92,13 @@ def return_coordinates(address):
         geocode_info = g.geocode(address)
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
-        coords = f"{lat}, {lon}"
     except Exception as e:
         lat = NaN
         lon = NaN
-        coords = NaN
         logging.warning(f"Couldn't fetch geocode information for {address} because of {e}.")
         pass
-    logging.info(f"Fetched coordinates ({coords}) for {address}.")
-    return lat, lon, coords
+    logging.info(f"Fetched coordinates {lat}, {lon} for {address}.")
+    return lat, lon
 
 # Create a function to get a missing city
 def fetch_missing_city(address):
@@ -250,14 +248,12 @@ if 'Latitude' in df.columns:
         coordinates = return_coordinates(df.at[row.Index, 'full_street_address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
-        df.at[row.Index, 'Coordinates'] = coordinates[2]
 # If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Latitude' not in df.columns:
     for row in df.itertuples():
         coordinates = return_coordinates(df.at[row.Index, 'full_street_address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
-        df.at[row.Index, 'Coordinates'] = coordinates[2]
 
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
