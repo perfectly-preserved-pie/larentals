@@ -96,7 +96,6 @@ def return_coordinates(address):
         lat = NaN
         lon = NaN
         logging.warning(f"Couldn't fetch geocode information for {address} because of {e}.")
-        pass
     logging.info(f"Fetched coordinates {lat}, {lon} for {address}.")
     return lat, lon
 
@@ -113,7 +112,6 @@ def fetch_missing_city(address):
     except Exception as e:
         city = NaN
         logging.warning(f"Couldn't fetch city for {address} because of {e}.")
-        pass
     logging.info(f"Fetched city ({city}) for {address}.")
     return  city
 
@@ -167,8 +165,7 @@ def webscrape_bhhs(url, row_index):
         listed_date = pd.NaT
         photo = NaN
         link = NaN
-        logging.warn(f"Couldn't fetch some BHHS webscraping info because of {e}.")
-        pass
+        logging.warn(f"Couldn't fetch some BHHS webscraping info because of {e}.")        
     logging.info(f"Fetched Listed Date, MLS Photo, and BHHS link for row {row_index}...")
     return listed_date, photo, link
 
@@ -189,7 +186,6 @@ def imagekit_transform(bhhs_url, mls):
         except Exception as e:
             logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
             uploaded_image = 'ERROR'
-            pass
     elif pd.isnull(bhhs_url) == True:
         uploaded_image = 'ERROR'
         logging.info(f"No image URL found. Not uploading anything to ImageKit.")
@@ -208,7 +204,6 @@ def imagekit_transform(bhhs_url, mls):
         except Exception as e:
             logging.warning(f"Couldn't transform image because {e}. Passing on...")
             transformed_image = None
-            pass
     elif 'ERROR' in uploaded_image:
         logging.info(f"No image URL found. Not transforming anything.")
         transformed_image = None
