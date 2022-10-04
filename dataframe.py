@@ -6,7 +6,6 @@ from geopy.geocoders import GoogleV3
 import glob
 from imagekitio import ImageKit
 from numpy import NaN
-from os.path import exists
 import logging
 import os
 import pandas as pd
@@ -57,6 +56,10 @@ df = df.rename(columns=lambda c: 'ppsqft' if c.startswith('Price Per') else c)
 # Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
 df = df[df['mls_number'].notna()]
+
+# Drop all duplicate rows based on MLS number
+# Keep the last duplicate in case of updated listing details
+df = df.drop_duplicates(subset='mls_number', keep="last")
 
 # Remove all $ and , symbols from specific columns
 # https://stackoverflow.com/a/46430853
@@ -523,9 +526,15 @@ elif 'popup_html' not in df.columns:
 
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
-# Read the old dataframe in
-df_old = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
-# Combine both old and new dataframes
-df_combined = pd.concat([df, df_old], ignore_index=True)
-# Pickle the new combined dataframe
-df_combined.to_pickle("dataframe.pickle")
+# If there's no pickle file on GitHub, then make one
+pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle'
+if requests.head(pickle_url).status_code == 404:
+  df.to_pickle("dataframe.pickle")
+# Otherwise load in the old pickle file and concat it with the new dataframe\
+elif requests.head(pickle_url).status_code == 200:
+  # Read the old dataframe in
+  df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
+  # Combine both old and new dataframes
+  df_combined = pd.concat([df, df_old], ignore_index=True)
+  # Pickle the new combined dataframe
+  df_combined.to_pickle("dataframe.pickle")
