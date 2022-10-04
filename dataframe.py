@@ -117,9 +117,8 @@ def fetch_missing_city(address):
     return  city
 
 # Fetch missing city names
-missing_city_dataframe = df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())]
-for row in missing_city_dataframe.itertuples():
-  missing_city_dataframe.at[row.Index, 'City'] = fetch_missing_city(row[3] + ' ' + row[4] + ' ' + str(int(row[6])))
+for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
+  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}")
 
 # Create a new column with the Street Number & Street Name
 df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City']
@@ -241,17 +240,16 @@ elif 'listed_date' not in df.columns:
         df.at[row.Index, 'bhhs_url'] = webscrape[2]
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
-# If the Coordinates column is already present, iterate through the null cells
-# Similiar to above, we can use the presence of the Coordinates column as a proxy for Longitude and Latitude; all 3 should exist together or none at all
+# If the Latitude column is already present, iterate through the null cells
 # This assumption will reduce the number of API calls to Google Maps
-if 'Coordinates' in df.columns:
-    for row in df['Coordinates'].isnull().itertuples():
+if 'Latitude' in df.columns:
+    for row in df['Latitude'].isnull().itertuples():
         coordinates = return_coordinates(df.at[row.Index, 'full_street_address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
         df.at[row.Index, 'Coordinates'] = coordinates[2]
 # If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
-elif 'Coordinates' not in df.columns:
+elif 'Latitude' not in df.columns:
     for row in df.itertuples():
         coordinates = return_coordinates(df.at[row.Index, 'full_street_address'])
         df.at[row.Index, 'Latitude'] = coordinates[0]
@@ -528,6 +526,6 @@ elif 'popup_html' not in df.columns:
 # Read the old dataframe in
 df_old = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
 # Combine both old and new dataframes
-df_combined = pd.concat([df, df_old])
+df_combined = pd.concat([df, df_old], ignore_index=True)
 # Pickle the new combined dataframe
 df_combined.to_pickle("dataframe.pickle")
