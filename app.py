@@ -17,7 +17,7 @@ pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
 # Create markers & associated popups from dataframe
-markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df.itertuples()]
+markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df.Latitude.notnull().itertuples()]
 
 # Add them to a MarkerCluster
 cluster = dl.MarkerClusterGroup(id="markers", children=markers)
@@ -954,11 +954,11 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   ]
 
   # Create markers & associated popups from dataframe
-  markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude])  for row in df_filtered.itertuples(index=False)]
+  markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df_filtered.Latitude.notnull().itertuples()]
 
   # Debug print a statement to check if we have all markers in the dataframe displayed
   print(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
-
+  print(f"IMPORTANT! The original dataframe has {len(df.Latitude.isnull())} rows with a missing Latitude. There are {len(df_filtered.Latitude.isnull())} rows with a missing Latitude in the filtered dataframe.")
   # Generate the map
   return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
 
