@@ -209,6 +209,14 @@ def imagekit_transform(bhhs_url, mls):
         transformed_image = None
     return transformed_image
 
+# Tag each row with the date it was processed
+if 'date_processed' in df.columns:
+  for row in df[df.date_processed.isnull()].itertuples():
+    df.at[row.Index, 'date_processed'] = datetime.now().date()
+elif 'date_processed' not in df.columns:
+    for row in df.itertuples():
+      df.at[row.Index, 'date_processed'] = datetime.now().date()
+
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
 # Convert the postal code into a string so we can combine string and int
@@ -220,7 +228,7 @@ df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.st
 # We can use the presence of a Listed Date as a proxy for MLS Photo; generally, either both or neither exist/don't exist together
 # This assumption will reduce the number of HTTP requests we send to BHHS
 if 'listed_date' in df.columns:
-    for row in df.loc[(df['listed_date'].isnull()) & df['date_generated'].isnull()].itertuples():
+    for row in df.loc[(df['listed_date'].isnull()) & df['date_processed'].isnull()].itertuples():
         mls_number = row[1]
         webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
         df.at[row.Index, 'listed_date'] = webscrape[0]
@@ -311,16 +319,9 @@ df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
 # All that being said, I should peruse new spreadsheets to make sure there isn't actually a valid property exceeds 5000 sqft
 df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
 
-# Tag each row with the date it was generated
-for row in df.itertuples():
-  if 'date_generated' in df.columns:
-    pass
-  elif 'date_generated' not in df.columns:
-    df.at[row.Index, 'date_generated'] = datetime.now().date()
-
 # The rental marker is hot and properties go off market fast
 # Keep all rows less than a "month" old (31 days)
-df['date_generated'] = df['date_generated'] >= date.today() - timedelta(31)
+df['date_processed'] = df['date_processed'] >= date.today() - timedelta(31)
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
