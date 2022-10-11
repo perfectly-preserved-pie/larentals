@@ -516,6 +516,9 @@ elif 'popup_html' not in df.columns:
     for row in df.itertuples():
         df.at[row.Index, 'popup_html'] = popup_html(row)
 
+# Drop any dupes again
+df = df.drop_duplicates(subset='mls_number', keep="last")
+
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
