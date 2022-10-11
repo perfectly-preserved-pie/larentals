@@ -520,10 +520,10 @@ elif 'popup_html' not in df.columns:
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
 pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle'
-if requests.head(pickle_url).status_code == 404:
+if requests.head(pickle_url).ok == False:
   df.to_pickle("dataframe.pickle")
 # Otherwise load in the old pickle file and concat it with the new dataframe\
-elif requests.head(pickle_url).status_code == 200:
+elif requests.head(pickle_url).ok == True:
   # Read the old dataframe in
   df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
   # Combine both old and new dataframes
