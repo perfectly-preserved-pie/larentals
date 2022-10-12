@@ -153,7 +153,7 @@ app.index_string = """
 <!DOCTYPE html>
 <html>
   <head>
-    <script defer data-api="/api/event" data-domain="wheretolive.la" src="/js/script.js"></script>
+    <script defer data-api="/api/event" data-domain="wheretolive.la" src="/js/script.js" type="application/javascript"></script>
     {%metas%}
     <title>{%title%}</title>
     {%favicon%}
