@@ -149,11 +149,10 @@ server = app.server
 # This only works if there's an NGINX reverse proxy in front
 # https://plausible.io/docs/proxy/introduction
 
-app.index_string = """
-<!DOCTYPE html>
+app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <script defer data-api="/api/event" data-domain="wheretolive.la" src="/js/script.js" type="application/javascript"></script>
+    <script defer data-api="/api/event" data-domain="wheretolive.la" src="/js/script.js" type="javascript"></script>
     {%metas%}
     <title>{%title%}</title>
     {%favicon%}
