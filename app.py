@@ -152,7 +152,7 @@ server = app.server
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <script defer data-api="/api/event" data-domain="wheretolive.la" src="/js/script.js" type="javascript"></script>
+    <script defer data-domain="wheretolive.la" data-api="https://steep-lab-ecee.automateordie.workers.dev/wheretolivedotla/event" src="https://steep-lab-ecee.automateordie.workers.dev/wheretolivedotla/script.js" type="javascript"></script>
     {%metas%}
     <title>{%title%}</title>
     {%favicon%}
