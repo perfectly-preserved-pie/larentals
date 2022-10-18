@@ -517,7 +517,7 @@ elif 'popup_html' not in df.columns:
         df.at[row.Index, 'popup_html'] = popup_html(row)
 
 # Drop any dupes again
-df = df.drop_duplicates(subset='mls_number', keep="last")
+df = df.drop_duplicates(subset=['mls_number'], keep="last")
 
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
