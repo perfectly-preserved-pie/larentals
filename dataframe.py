@@ -525,7 +525,8 @@ elif 'popup_html' not in df.columns:
 # Drop any dupes again
 df = df.drop_duplicates(subset=['mls_number'], keep="last")
 
-# Convert
+# Do another pass to convert the date_processed column to datetime64 dtype
+df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
