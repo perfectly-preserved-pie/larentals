@@ -525,6 +525,8 @@ elif 'popup_html' not in df.columns:
 # Drop any dupes again
 df = df.drop_duplicates(subset=['mls_number'], keep="last")
 
+# Convert
+
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
