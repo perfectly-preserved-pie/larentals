@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs4
 from dash import html
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 import glob
@@ -303,6 +303,9 @@ df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
 df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
 
+# Convert date_processed into DateTime
+df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
+
 # Per CA law, ANY type of deposit is capped at rent * 3 months
 # It doesn't matter the type of deposit, they all have the same cap
 # Despite that, some landlords/realtors will list the property with an absurd deposit (100k? wtf) so let's rewrite those
@@ -321,7 +324,10 @@ df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
 
 # The rental marker is hot and properties go off market fast
 # Keep all rows less than a "month" old (31 days)
-df['date_processed'] = df['date_processed'] >= date.today() - timedelta(31)
+# Filter data between two dates
+# https://www.saltycrane.com/blog/2010/10/how-get-date-n-days-ago-python/
+cutoff = format(datetime.now() - timedelta(days=31), '%Y-%m-%d')
+df = df.loc[df['date_processed'] >= cutoff]
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
