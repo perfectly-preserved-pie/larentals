@@ -3,6 +3,7 @@ from dash.dependencies import Input, Output
 from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import logging
 import pandas as pd
 import uuid
 
@@ -954,9 +955,9 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Create markers & associated popups from dataframe
   markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df_filtered[df_filtered.Latitude.notnull()].itertuples()]
 
-  # Debug print a statement to check if we have all markers in the dataframe displayed
-  print(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
-  print(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
+  # Log statements to check if we have all markers in the dataframe displayed
+  logging.info(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
+  logging.info(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
   # Generate the map
   return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
 
