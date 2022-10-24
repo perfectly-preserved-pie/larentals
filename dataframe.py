@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs4
 from dash import html
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 import glob
@@ -212,10 +212,10 @@ def imagekit_transform(bhhs_url, mls):
 # Tag each row with the date it was processed
 if 'date_processed' in df.columns:
   for row in df[df.date_processed.isnull()].itertuples():
-    df.at[row.Index, 'date_processed'] = datetime.now().date()
+    df.at[row.Index, 'date_processed'] = date.today().isoformat()
 elif 'date_processed' not in df.columns:
     for row in df.itertuples():
-      df.at[row.Index, 'date_processed'] = datetime.now().date()
+      df.at[row.Index, 'date_processed'] = date.today().isoformat()
 
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
