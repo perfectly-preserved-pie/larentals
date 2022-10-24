@@ -7,6 +7,8 @@ import logging
 import pandas as pd
 import uuid
 
+logging.getLogger().setLevel(logging.INFO)
+
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
 # Make the dataframe a global variable
