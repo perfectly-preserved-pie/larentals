@@ -522,9 +522,6 @@ elif 'popup_html' not in df.columns:
     for row in df.itertuples():
         df.at[row.Index, 'popup_html'] = popup_html(row)
 
-# Drop any dupes again
-df = df.drop_duplicates(subset=['mls_number'], keep="last")
-
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
@@ -533,6 +530,8 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', inf
 # If there's no pickle file on GitHub, then make one
 pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle'
 if requests.head(pickle_url).ok == False:
+  # Drop any dupes again
+  df = df.drop_duplicates(subset=['mls_number'], keep="last")
   df.to_pickle("dataframe.pickle")
 # Otherwise load in the old pickle file and concat it with the new dataframe\
 elif requests.head(pickle_url).ok == True:
@@ -540,5 +539,7 @@ elif requests.head(pickle_url).ok == True:
   df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
   # Combine both old and new dataframes
   df_combined = pd.concat([df, df_old], ignore_index=True)
+  # Drop any dupes again
+  df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
   # Pickle the new combined dataframe
   df_combined.to_pickle("dataframe.pickle")
