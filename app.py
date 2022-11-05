@@ -854,10 +854,15 @@ map_card = dbc.Card(
     className = 'sticky-top'
 )
 
+# Get the latest date of a rental property and then convert it to American date format
+# https://pandas.pydata.org/docs/reference/api/pandas.Timestamp.strftime.html
+last_updated = df['date_processed'].max().strftime('%m/%d/%Y')
+
 title_card = dbc.Card(
   [
     html.H3("WhereToLive.LA", className="card-title"),
-    html.P("An interactive map of rental properties in Los Angeles County."),
+    html.P("An interactive map of rental properties in Los Angeles County. Updated weekly."),
+    html.P(f"Last updated: {last_updated}"),
     html.I( # use a GitHub icon for my repo
       className="bi bi-github",
       style = {
