@@ -155,7 +155,7 @@ server = app.server
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <script defer data-domain="wheretolive.la" src="https://plausible.io/js/script.js"></script>
+    <script defer data-domain="wheretolive.la" data-api="https://steep-lab-ecee.automateordie.workers.dev/wheretolivedotla/event" src="https://steep-lab-ecee.automateordie.workers.dev/wheretolivedotla/script.js" type="javascript"></script>
     {%metas%}
     <title>{%title%}</title>
     {%favicon%}
