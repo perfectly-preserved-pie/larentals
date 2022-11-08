@@ -3,9 +3,10 @@ from dash import html
 from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
-import glob
 from imagekitio import ImageKit
+from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from numpy import NaN
+import glob
 import logging
 import os
 import pandas as pd
@@ -161,53 +162,57 @@ def webscrape_bhhs(url, row_index):
         photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
         # Now find the URL to the actual listing instead of just the search result page
         link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
+        logging.info(f"Fetched Listed Date, MLS Photo, and BHHS link for row {row_index}...")
     except AttributeError as e:
         listed_date = pd.NaT
         photo = NaN
         link = NaN
-        logging.warn(f"Couldn't fetch some BHHS webscraping info because of {e}.")        
-    logging.info(f"Fetched Listed Date, MLS Photo, and BHHS link for row {row_index}...")
+        logging.warning(f"Couldn't fetch BHHS webscraping info for {row_index} because of {e}.")        
     return listed_date, photo, link
 
 # Create a function to upload the file to ImageKit and then transform it
 # https://github.com/imagekit-developer/imagekit-python#file-upload
 def imagekit_transform(bhhs_url, mls):
-    # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
-    if pd.isnull(bhhs_url) == False:
-        try:
-            uploaded_image = imagekit.upload_file(
-                file= f"{bhhs_url}", # required
-                file_name= f"{mls}.jpg", # required
-                options= {
-                    "is_private_file": False,
-                    "use_unique_file_name": False,
-                }
-            )
-        except Exception as e:
-            logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
-            uploaded_image = 'ERROR'
-    elif pd.isnull(bhhs_url) == True:
-        uploaded_image = 'ERROR'
-        logging.info(f"No image URL found. Not uploading anything to ImageKit.")
-    # Now transform the uploaded image
-    # https://github.com/imagekit-developer/imagekit-python#url-generation
-    if 'ERROR' not in uploaded_image:
-        try:
-            global transformed_image
-            transformed_image = imagekit.url({
-                "src": f"{uploaded_image['response']['url']}",
-                "transformation" : [{
-                    "height": "300",
-                    "width": "400"
-                }]
-            })
-        except Exception as e:
-            logging.warning(f"Couldn't transform image because {e}. Passing on...")
-            transformed_image = None
-    elif 'ERROR' in uploaded_image:
-        logging.info(f"No image URL found. Not transforming anything.")
-        transformed_image = None
-    return transformed_image
+  # Set up options per https://github.com/imagekit-developer/imagekit-python/issues/31#issuecomment-1278883286
+  options = UploadFileRequestOptions(
+    is_private_file=False,
+    use_unique_file_name=False,
+    folder='wheretolivedotla'
+  )
+  # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
+  if pd.isnull(bhhs_url) == False:
+      try:
+        uploaded_image = imagekit.upload_file(
+          file = f"{bhhs_url}", # required
+          file_name = f"{mls}.jpg", # required
+          options = options
+        ).url
+      except Exception as e:
+        uploaded_image = None
+        logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
+  elif pd.isnull(bhhs_url) == True:
+    uploaded_image = None
+    logging.info(f"No image URL found on BHHS for {bhhs_url}. Not uploading anything to ImageKit. Passing on...")
+    pass
+  # Now transform the uploaded image
+  # https://github.com/imagekit-developer/imagekit-python#url-generation
+  if uploaded_image is not None:
+    try:
+      global transformed_image
+      transformed_image = imagekit.url({
+        "src": uploaded_image,
+        "transformation" : [{
+          "height": "300",
+          "width": "400"
+        }]
+      })
+    except Exception as e:
+      transformed_image = None
+      logging.warning(f"Couldn't transform image because {e}. Passing on...")
+      pass
+  elif uploaded_image is None:
+    transformed_image = None
+  return transformed_image
 
 # Tag each row with the date it was processed
 if 'date_processed' in df.columns:
