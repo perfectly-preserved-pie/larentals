@@ -78,15 +78,6 @@ df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors=
 # Cast the list price column as integers
 df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
 
-# Calculate the price per square foot if the column doesn't already exist
-# Round the decimal to two places
-if 'ppsqft' or 'Price Per Square Foot' not in df.columns:
-  for row in df.itertuples():
-    try:
-      df.at[row.Index, 'ppsqft'] = (row.list_price / row.Sqft).round(2)
-    except Exception:
-      df.at[row.Index, 'ppsqft'] = pd.NA
-
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
     try:
@@ -157,17 +148,35 @@ def webscrape_bhhs(url, row_index):
         soup = bs4(response.text, 'html.parser')
         # Split the p class into strings and get the last element in the list
         # https://stackoverflow.com/a/64976919
-        listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
+        try:
+          listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
+          logging.info(f"Successfully fetched listed date for {row_index}.")
+        except AttributeError as e:
+          listed_date = pd.NaT
+          logging.warning(f"Couldn't fetch listed date for {row_index}. Passing on...")
+          pass
         # Now find the URL for the "feature" photo of the listing
-        photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
+        try:
+          photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
+          logging.info(f"Successfully fetched MLS photo for {row_index}.")
+        except AttributeError as e:
+          photo = None
+          logging.warning(f"Couldn't fetch MLS photo for {row_index}. Passing on...")
+          pass
         # Now find the URL to the actual listing instead of just the search result page
-        link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
-        logging.info(f"Fetched Listed Date, MLS Photo, and BHHS link for row {row_index}...")
-    except AttributeError as e:
-        listed_date = pd.NaT
-        photo = NaN
-        link = NaN
-        logging.warning(f"Couldn't fetch BHHS webscraping info for {row_index} because of {e}.")        
+        try:
+          link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
+          logging.info(f"Successfully fetched listing URL for {row_index}.")
+        except AttributeError as e:
+          link = None
+          logging.warning(f"Couldn't fetch listing URL for {row_index}. Passing on...")
+          pass
+    except Exception as e:
+      listed_date = pd.NaT
+      photo = NaN
+      link = NaN
+      logging.warning(f"Couldn't scrape BHHS page for {row_index} because of {e}. Passing on...")
+      pass
     return listed_date, photo, link
 
 # Create a function to upload the file to ImageKit and then transform it
