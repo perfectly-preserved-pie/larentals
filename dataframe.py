@@ -191,6 +191,7 @@ def imagekit_transform(bhhs_mls_photo_url, mls):
   options = UploadFileRequestOptions(
     is_private_file=False,
     use_unique_file_name=False,
+    folder = 'wheretolivedotla'
   )
   # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
   if pd.isnull(bhhs_mls_photo_url) == False:
