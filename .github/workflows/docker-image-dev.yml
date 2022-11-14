@@ -1,0 +1,48 @@
+name: Build and Publish - Dev Build
+
+on:
+  push:
+    branches-ignore: [ "master" ]
+    paths-ignore:
+      - '*.md'
+      - 'dataframe.pickle'
+      - '.gitignore'    
+  schedule:
+    - cron: '35 10 * * 5'
+
+jobs:
+  # define job to build and publish docker image
+  build-and-push-docker-image:
+    name: Build Docker image and push to repositories
+    # run only when code is compiling and tests are passing
+    runs-on: ubuntu-latest
+
+    # steps to perform in job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # setup Docker buld action
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PAT }}
+
+      - name: Build image and push to Docker Hub 
+        uses: docker/build-push-action@v2
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          # Note: tags has to be all lower-case
+          tags: |
+            strayingfromthepath/larentals:dev
+          # build on feature branches, push only on main branch
+          push: true
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

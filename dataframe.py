@@ -3,9 +3,10 @@ from dash import html
 from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
-import glob
 from imagekitio import ImageKit
+from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from numpy import NaN
+import glob
 import logging
 import os
 import pandas as pd
@@ -77,15 +78,6 @@ df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors=
 # Cast the list price column as integers
 df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
 
-# Calculate the price per square foot if the column doesn't already exist
-# Round the decimal to two places
-if 'ppsqft' or 'Price Per Square Foot' not in df.columns:
-  for row in df.itertuples():
-    try:
-      df.at[row.Index, 'ppsqft'] = (row.list_price / row.Sqft).round(2)
-    except Exception:
-      df.at[row.Index, 'ppsqft'] = pd.NA
-
 # Create a function to get coordinates from the full street address
 def return_coordinates(address):
     try:
@@ -154,60 +146,87 @@ def webscrape_bhhs(url, row_index):
     try:
         response = requests.get(url)
         soup = bs4(response.text, 'html.parser')
-        # Split the p class into strings and get the last element in the list
-        # https://stackoverflow.com/a/64976919
-        listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
-        # Now find the URL for the "feature" photo of the listing
-        photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
-        # Now find the URL to the actual listing instead of just the search result page
-        link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
-    except AttributeError as e:
-        listed_date = pd.NaT
-        photo = NaN
-        link = NaN
-        logging.warn(f"Couldn't fetch some BHHS webscraping info because of {e}.")        
-    logging.info(f"Fetched Listed Date, MLS Photo, and BHHS link for row {row_index}...")
+        # First find the URL to the actual listing instead of just the search result page
+        try:
+          link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
+          logging.info(f"Successfully fetched listing URL for {row_index}.")
+        except AttributeError as e:
+          link = None
+          logging.warning(f"Couldn't fetch listing URL for {row_index}. Passing on...")
+          pass
+        # If the URL is available, fetch the MLS photo and listed date
+        if link is not None:
+          # Now find the MLS photo URL
+          # https://stackoverflow.com/a/44293555
+          try:
+            photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
+            logging.info(f"Successfully fetched MLS photo for {row_index}.")
+          except AttributeError as e:
+            photo = None
+            logging.warning(f"Couldn't fetch MLS photo for {row_index}. Passing on...")
+            pass
+          # For the list date, split the p class into strings and get the last element in the list
+          # https://stackoverflow.com/a/64976919
+          try:
+            listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
+            logging.info(f"Successfully fetched listed date for {row_index}.")
+          except AttributeError as e:
+            listed_date = pd.NaT
+            logging.warning(f"Couldn't fetch listed date for {row_index}. Passing on...")
+            pass
+        elif link is None:
+          pass
+    except Exception as e:
+      listed_date = pd.NaT
+      photo = NaN
+      link = NaN
+      logging.warning(f"Couldn't scrape BHHS page for {row_index} because of {e}. Passing on...")
+      pass
     return listed_date, photo, link
 
 # Create a function to upload the file to ImageKit and then transform it
 # https://github.com/imagekit-developer/imagekit-python#file-upload
-def imagekit_transform(bhhs_url, mls):
-    # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
-    if pd.isnull(bhhs_url) == False:
-        try:
-            uploaded_image = imagekit.upload_file(
-                file= f"{bhhs_url}", # required
-                file_name= f"{mls}.jpg", # required
-                options= {
-                    "is_private_file": False,
-                    "use_unique_file_name": False,
-                }
-            )
-        except Exception as e:
-            logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
-            uploaded_image = 'ERROR'
-    elif pd.isnull(bhhs_url) == True:
-        uploaded_image = 'ERROR'
-        logging.info(f"No image URL found. Not uploading anything to ImageKit.")
-    # Now transform the uploaded image
-    # https://github.com/imagekit-developer/imagekit-python#url-generation
-    if 'ERROR' not in uploaded_image:
-        try:
-            global transformed_image
-            transformed_image = imagekit.url({
-                "src": f"{uploaded_image['response']['url']}",
-                "transformation" : [{
-                    "height": "300",
-                    "width": "400"
-                }]
-            })
-        except Exception as e:
-            logging.warning(f"Couldn't transform image because {e}. Passing on...")
-            transformed_image = None
-    elif 'ERROR' in uploaded_image:
-        logging.info(f"No image URL found. Not transforming anything.")
-        transformed_image = None
-    return transformed_image
+def imagekit_transform(bhhs_mls_photo_url, mls):
+  # Set up options per https://github.com/imagekit-developer/imagekit-python/issues/31#issuecomment-1278883286
+  options = UploadFileRequestOptions(
+    is_private_file=False,
+    use_unique_file_name=False,
+    #folder = 'wheretolivedotla'
+  )
+  # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
+  if pd.isnull(bhhs_mls_photo_url) == False:
+      try:
+        uploaded_image = imagekit.upload_file(
+          file = f"{bhhs_mls_photo_url}", # required
+          file_name = f"{mls}", # required
+          options = options
+        ).url
+      except Exception as e:
+        uploaded_image = None
+        logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
+  elif pd.isnull(bhhs_mls_photo_url) == True:
+    uploaded_image = None
+    logging.info(f"No image URL found on BHHS for {bhhs_mls_photo_url}. Not uploading anything to ImageKit. Passing on...")
+    pass
+  # Now transform the uploaded image
+  # https://github.com/imagekit-developer/imagekit-python#url-generation
+  if uploaded_image is not None:
+    try:
+      global transformed_image
+      transformed_image = imagekit.url({
+        "src": uploaded_image,
+        "transformation" : [{
+          "height": "300",
+          "width": "400"
+        }]
+      })
+    except Exception as e:
+      transformed_image = None
+      logging.warning(f"Couldn't transform image because {e}. Passing on...")
+      pass
+  elif uploaded_image is None:
+    transformed_image = None
+  return transformed_image
 
 # Tag each row with the date it was processed
 if 'date_processed' in df.columns:
@@ -232,16 +251,16 @@ if 'listed_date' in df.columns:
         mls_number = row[1]
         webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
         df.at[row.Index, 'listed_date'] = webscrape[0]
-        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row[1])
-        df.at[row.Index, 'bhhs_url'] = webscrape[2]
+        df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
+        df.at[row.Index, 'listing_url'] = webscrape[2]
 # if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
 elif 'listed_date' not in df.columns:
     for row in df.itertuples():
         mls_number = row[1]
         webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
         df.at[row.Index, 'listed_date'] = webscrape[0]
-        df.at[row.Index, 'MLS Photo'] = imagekit_transform(webscrape[1], row[1])
-        df.at[row.Index, 'bhhs_url'] = webscrape[2]
+        df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
+        df.at[row.Index, 'listing_url'] = webscrape[2]
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Latitude column is already present, iterate through the null cells
@@ -344,8 +363,8 @@ def popup_html(row):
     postalcode = df['PostalCode'].at[i]
     full_address = f"{short_address} {postalcode}"
     mls_number=df['mls_number'].at[i]
-    mls_number_hyperlink=df['bhhs_url'].at[i]
-    mls_photo = df['MLS Photo'].at[i]
+    mls_number_hyperlink=df['listing_url'].at[i]
+    mls_photo = df['mls_photo'].at[i]
     lc_price = df['list_price'].at[i] 
     price_per_sqft=df['ppsqft'].at[i]                  
     brba = df['Br/Ba'].at[i]
