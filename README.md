@@ -15,6 +15,9 @@ Some additional capabilities are offered, such as a featured MLS photo for the p
 *    [ImageKit](https://github.com/imagekit-developer/imagekit-python) (resizing MLS photos into a standard size on the fly)
 *    [Pandas](https://pandas.pydata.org/) (handling and manipulating the rental property data for each address)
 
+## The Blog Post
+[I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/wheretolivedotla/)
+
 ## How to Build and Run
 1. Pull the Docker image: `docker pull strayingfromthepath:larentals`
 3. Run the Docker image: `docker run -p 1337:80 larentals`
