@@ -147,15 +147,13 @@ app.description = "An interactive map of rental properties in Los Angeles County
 # For Gunicorn
 server = app.server
 
-# Plausible analytics
-# https://community.plotly.com/t/tracking-application-analytics-with-google-analytics/38946/2?
-# This only works if there's an NGINX reverse proxy in front
-# https://plausible.io/docs/proxy/introduction
-
+# Plausible privacy-friendly analytics
+# https://dash.plotly.com/external-resources#usage (Option 1)
+# Probably won't get past adblockers and NoScript but whatever, good enough
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <script defer data-domain="plausible.automateordie.io" data-api="https://steep-lab-ecee.automateordie.workers.dev/wheretolivedotla/event" src="https://steep-lab-ecee.automateordie.workers.dev/wheretolivedotla/script.js" type="application/javascript"></script>
+    <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.io/js/plausible.js" type="application/javascript"></script>
     {%metas%}
     <title>{%title%}</title>
     {%favicon%}
