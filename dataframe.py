@@ -80,7 +80,7 @@ df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors=
 df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
 
 # Create a function to get coordinates from the full street address
-def return_coordinates(address):
+def return_coordinates(address, row_index):
     try:
         geocode_info = g.geocode(address)
         lat = float(geocode_info.latitude)
@@ -88,8 +88,8 @@ def return_coordinates(address):
     except Exception as e:
         lat = NaN
         lon = NaN
-        logging.warning(f"Couldn't fetch geocode information for {address} because of {e}.")
-    logging.info(f"Fetched coordinates {lat}, {lon} for {address}.")
+        logging.warning(f"Couldn't fetch geocode information for {address} (row {row.Index} of {len(df)}) because of {e}.")
+    logging.info(f"Fetched coordinates {lat}, {lon} for {address} (row {row.Index} of {len(df)}).")
     return lat, lon
 
 # Create a function to get a missing city
@@ -143,17 +143,17 @@ for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'
 
 ## Webscraping Time
 # Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
-def webscrape_bhhs(url, row_index):
+def webscrape_bhhs(url, row_index, mls_number):
     try:
         response = requests.get(url)
         soup = bs4(response.text, 'html.parser')
         # First find the URL to the actual listing instead of just the search result page
         try:
           link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
-          logging.info(f"Successfully fetched listing URL for {row_index}.")
+          logging.info(f"Successfully fetched listing URL for {mls_number} (row {row_index} out of {len(df)}).")
         except AttributeError as e:
           link = None
-          logging.warning(f"Couldn't fetch listing URL for {row_index}. Passing on...")
+          logging.warning(f"Couldn't fetch listing URL for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
           pass
         # If the URL is available, fetch the MLS photo and listed date
         if link is not None:
@@ -161,19 +161,19 @@ def webscrape_bhhs(url, row_index):
           # https://stackoverflow.com/a/44293555
           try:
             photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
-            logging.info(f"Successfully fetched MLS photo for {row_index}.")
+            logging.info(f"Successfully fetched MLS photo for {mls_number} (row {row_index} out of {len(df)}).")
           except AttributeError as e:
             photo = None
-            logging.warning(f"Couldn't fetch MLS photo for {row_index}. Passing on...")
+            logging.warning(f"Couldn't fetch MLS photo for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
             pass
           # For the list date, split the p class into strings and get the last element in the list
           # https://stackoverflow.com/a/64976919
           try:
             listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
-            logging.info(f"Successfully fetched listed date for {row_index}.")
+            logging.info(f"Successfully fetched listed date for {mls_number} (row {row_index} out of {len(df)}).")
           except AttributeError as e:
             listed_date = pd.NaT
-            logging.warning(f"Couldn't fetch listed date for {row_index}. Passing on...")
+            logging.warning(f"Couldn't fetch listed date for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
             pass
         elif link is None:
           pass
@@ -181,7 +181,7 @@ def webscrape_bhhs(url, row_index):
       listed_date = pd.NaT
       photo = NaN
       link = NaN
-      logging.warning(f"Couldn't scrape BHHS page for {row_index} because of {e}. Passing on...")
+      logging.warning(f"Couldn't scrape BHHS page for {mls_number} (row {row_index} out of {len(df)}) because of {e}. Passing on...")
       pass
     return listed_date, photo, link
 
@@ -250,7 +250,7 @@ df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.st
 if 'listed_date' in df.columns:
     for row in df.loc[(df['listed_date'].isnull()) & df['date_processed'].isnull()].itertuples():
         mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
         df.at[row.Index, 'listed_date'] = webscrape[0]
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
@@ -258,7 +258,7 @@ if 'listed_date' in df.columns:
 elif 'listed_date' not in df.columns:
     for row in df.itertuples():
         mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index})
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
         df.at[row.Index, 'listed_date'] = webscrape[0]
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
