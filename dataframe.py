@@ -53,6 +53,7 @@ df = df.rename(columns=lambda c: 'list_price' if c.startswith('List Price') else
 df = df.rename(columns=lambda c: 'garage_spaces' if c.startswith('Garage Spaces') else c)
 df = df.rename(columns=lambda c: 'phone_number' if c.startswith('List Office Phone') else c)
 df = df.rename(columns=lambda c: 'ppsqft' if c.startswith('Price Per') else c)
+df = df.rename(columns=lambda c: 'YrBuilt' if c.startswith('Yr') else c)
 
 # Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
