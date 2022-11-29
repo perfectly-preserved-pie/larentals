@@ -826,7 +826,7 @@ user_options_card = dbc.Card(
     ppsqft_slider,
     ppsqft_radio,
     garage_spaces_slider,
-    unknown_sqft_radio,
+    unknown_garage_radio, 
     year_built_slider,
     unknown_year_built_radio,
     pets_radio,
