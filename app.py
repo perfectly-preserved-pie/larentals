@@ -418,12 +418,12 @@ style = {'width' : '70%'},
 id = 'garage_div'
 )
 
-unknown_sqft_radio = html.Div([
+unknown_garage_radio = html.Div([
   dbc.Alert(
     [
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
     html.I(className="bi bi-info-circle-fill me-2"),
-    ("Should we include properties that don't have a square footage listed?"),
+    ("Should we include properties that don't have the number of garage spaces listed?"),
     dcc.RadioItems(
       id='garage_missing_radio',
       options=[
