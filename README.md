@@ -7,6 +7,9 @@ This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of n
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
+# ⚠ I highly recommended using website on a tablet, laptop, or monitor screen. The UI experience on mobile devices is... pretty terrible due to their small screen size. ⚠
+If you have any ideas on how I can resize dl.Popup on mobile devices, please let me know 👀
+
 ## The Tech Stack
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
 *    [Dash Leaflet](https://dash-leaflet.herokuapp.com/) (displaying the map and graphing the markers)
