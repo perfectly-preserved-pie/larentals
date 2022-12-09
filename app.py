@@ -67,8 +67,6 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
 
 # Create a function to return a dataframe filter for pet policy
 def pets_radio_button(choice):
-  # Presort the list first for faster performance
-  choice.sort()
   if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
     # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
     pets_radio_choice = ~df['PetsAllowed'].isin(['No', 'No, Size Limit'])
