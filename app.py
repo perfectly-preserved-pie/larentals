@@ -35,7 +35,7 @@ def sqft_radio_button(boolean, slider_begin, slider_end):
     # Then we want nulls to be included in the final dataframe
     sqft_choice = df['Sqft'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    sqft_choice = df['Sqft'].between(slider_begin, slider_end)
+    sqft_choice = df.sort_values(by='Sqft')['Sqft'].between(slider_begin, slider_end)
   return (sqft_choice)
 
 # Create a function to return a dataframe filter for missing year built
@@ -44,7 +44,7 @@ def yrbuilt_radio_button(boolean, slider_begin, slider_end):
     # Then we want nulls to be included in the final dataframe
     yrbuilt_choice = df['YrBuilt'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    yrbuilt_choice = df['YrBuilt'].between(slider_begin, slider_end)
+    yrbuilt_choice = df.sort_values(by='YrBuilt')['YrBuilt'].between(slider_begin, slider_end)
   return (yrbuilt_choice)
 
 # Create a function to return a dataframe filter for missing garage spaces
@@ -53,7 +53,7 @@ def garage_radio_button(boolean, slider_begin, slider_end):
     # Then we want nulls to be included in the final dataframe 
     garage_choice = df['garage_spaces'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    garage_choice = df['garage_spaces'].between(slider_begin, slider_end)
+    garage_choice = df.sort_values(by='garage_spaces')['garage_spaces'].between(slider_begin, slider_end)
   return (garage_choice)
 
 # Create a function to return a dataframe filter for missing ppqsft
@@ -62,7 +62,7 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
     # Then we want nulls to be included in the final dataframe 
     ppsqft_choice = df['ppsqft'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    ppsqft_choice = df['ppsqft'].between(slider_begin, slider_end)
+    ppsqft_choice = df.sort_values(by='ppsqft')['ppsqft'].between(slider_begin, slider_end)
   return (ppsqft_choice)
 
 # Create a function to return a dataframe filter for pet policy
@@ -89,36 +89,36 @@ def furnished_checklist_function(choice):
 def security_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    security_deposit_filter = df['DepositSecurity'].isnull() | (df['DepositSecurity'].between(slider_begin, slider_end))
+    security_deposit_filter = df['DepositSecurity'].isnull() | (df.sort_values(by='DepositSecurity')['DepositSecurity'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    security_deposit_filter = df['DepositSecurity'].between(slider_begin, slider_end)
+    security_deposit_filter = df.sort_values(by='DepositSecurity')['DepositSecurity'].between(slider_begin, slider_end)
   return (security_deposit_filter)
 
 # Pets
 def pet_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    pet_deposit_filter = df['DepositPets'].isnull() | (df['DepositPets'].between(slider_begin, slider_end))
+    pet_deposit_filter = df['DepositPets'].isnull() | (df.sort_values(by='DepositPets')['DepositPets'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    pet_deposit_filter = df['DepositPets'].between(slider_begin, slider_end)
+    pet_deposit_filter = df.sort_values(by='DepositPets')['DepositPets'].between(slider_begin, slider_end)
   return (pet_deposit_filter)
 
 # Keys
 def key_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    key_deposit_filter = df['DepositKey'].isnull() | (df['DepositKey'].between(slider_begin, slider_end))
+    key_deposit_filter = df['DepositKey'].isnull() | (df.sort_values(by='DepositKey')['DepositKey'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    key_deposit_filter = df['DepositKey'].between(slider_begin, slider_end)
+    key_deposit_filter = df.sort_values(by='DepositKey')['DepositKey'].between(slider_begin, slider_end)
   return (key_deposit_filter)
 
 # Other
 def other_deposit_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
     # Then we want nulls to be included in the final dataframe 
-    other_deposit_filter = df['DepositOther'].isnull() | (df['DepositOther'].between(slider_begin, slider_end))
+    other_deposit_filter = df['DepositOther'].isnull() | (df.sort_values(by='DepositOther')['DepositOther'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    other_deposit_filter = df['DepositOther'].between(slider_begin, slider_end)
+    other_deposit_filter = df.sort_values(by='DepositOther')['DepositOther'].between(slider_begin, slider_end)
   return (other_deposit_filter)
 
 # Listed Date
@@ -941,14 +941,14 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
-    (((df['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1]))) & # for this one, combine a dataframe of both the slider inputs and the radio button input
+    (df.sort_values(by='garage_spaces')['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) &
     # Repeat but for rental price
-    (df['list_price'].between(rental_price[0], rental_price[1])) &
-    (df['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
-    (df['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    (((df['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]))) &
-    (((df['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]))) &
-    (((df['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1]))) &
+    (df.sort_values(by='list_price')['list_price'].between(rental_price[0], rental_price[1])) &
+    (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
+    (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
+    ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
+    ((df.sort_values(by='YrBuilt')['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
+    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
     furnished_checklist_function(furnished_choice) &
     security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
     pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
