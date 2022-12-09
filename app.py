@@ -67,6 +67,8 @@ def ppsqft_radio_button(boolean, slider_begin, slider_end):
 
 # Create a function to return a dataframe filter for pet policy
 def pets_radio_button(choice):
+  # Presort the list first for faster performance
+  choice.sort()
   if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
     # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
     pets_radio_choice = ~df['PetsAllowed'].isin(['No', 'No, Size Limit'])
@@ -78,6 +80,8 @@ def pets_radio_button(choice):
 
 # Create a function to return a dataframe filter for furnished dwellings
 def furnished_checklist_function(choice):
+  # Presort the list first for faster performance
+  choice.sort()
   if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
     furnished_checklist_filter = (df['Furnished'].isnull()) | (df['Furnished'].isin(choice))
   elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
@@ -934,6 +938,9 @@ className = "dbc"
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
 def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio):
+  # Pre-sort our various lists of strings for faster performance
+  subtypes_chosen.sort()
+  terms_chosen.sort()
   df_filtered = df[
     (df['subtype'].isin(subtypes_chosen)) &
     pets_radio_button(pets_chosen) &
@@ -943,6 +950,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     # See https://stackoverflow.com/a/40442778
     (df.sort_values(by='garage_spaces')['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) &
     # Repeat but for rental price
+    # Also pre-sort our lists of values to improve the performance of .between()
     (df.sort_values(by='list_price')['list_price'].between(rental_price[0], rental_price[1])) &
     (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
