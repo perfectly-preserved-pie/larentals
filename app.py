@@ -807,6 +807,7 @@ map = dl.Map(
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
+  preferCanvas=True,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
