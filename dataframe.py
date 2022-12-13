@@ -465,6 +465,18 @@ def popup_html(row):
           referrerPolicy='noreferrer',
           target='_blank'
         )
+    # If the MLS hyperlink is empty, that means there isn't a BHHS webpage to redirect to. Do not hyperlink to it.
+    if pd.isna(mls_number_hyperlink) == True:
+      listing_url_block = html.Tr([ 
+        html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(f"{mls_number}")
+      ])
+    # If the hyperlink exists, hyperlink it
+    elif pd.isna(mls_number_hyperlink) == False:
+      listing_url_block = html.Tr([ 
+        # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
+        # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
+        html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
+      ])
     # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
     return [
       html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
@@ -478,11 +490,7 @@ def popup_html(row):
           html.Tr([ 
             html.Td("Street Address"), html.Td(f"{full_address}")
           ]),
-          html.Tr([ 
-            # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
-            # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-            html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
-          ]),
+          listing_url_block,
           html.Tr([ # https://www.elegantthemes.com/blog/wordpress/call-link-html-phone-number
             html.Td("List Office Phone"), html.Td(html.A(f"{phone}", href=f"tel:{phone}")),
           ]),          
