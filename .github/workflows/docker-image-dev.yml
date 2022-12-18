@@ -5,6 +5,7 @@ on:
     branches-ignore: [ "master" ]
     paths-ignore:
       - '*.md'
+      - 'dataframe.pickle'
       - '.gitignore'    
   schedule:
     - cron: '35 10 * * 5'
