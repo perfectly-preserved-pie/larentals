@@ -7,7 +7,7 @@ This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of n
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
-## ⚠ I highly recommended using the website on a tablet, laptop, or monitor screen. The UI experience on mobile devices is... pretty terrible due to their small screen size. 
+## ⚠ I highly recommended using the website on a tablet, laptop, or monitor screen. The UI experience on smartphones is... pretty terrible due to their small screen size. 
 If you have any ideas on how I can dynamically resize dl.Popup on mobile devices, please let me know 👀
 
 ## The Tech Stack
