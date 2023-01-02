@@ -185,6 +185,21 @@ def webscrape_bhhs(url, row_index, mls_number):
       pass
     return listed_date, photo, link
 
+# Create a function to check for expired listings based on the presence of a string
+def check_expired_listing(url, mls_number):
+  try:
+    response = requests.get(url, timeout=5)
+    soup = bs4(response.text, 'html.parser')
+    # Detect if the listing has expired. Remove \t, \n, etc. and strip whitespaces
+    try:
+      soup.find('div', class_='page-description').text.replace("\r", "").replace("\n", "").replace("\t", "").strip()
+      return True
+    except AttributeError:
+      return False
+  except Exception as e:
+    logging.warning(f"Couldn't detect if the listing for {mls_number} has expired because {e}.")
+    return False
+
 # Create a function to upload the file to ImageKit and then transform it
 # https://github.com/imagekit-developer/imagekit-python#file-upload
 def imagekit_transform(bhhs_mls_photo_url, mls):
@@ -262,6 +277,12 @@ elif 'listed_date' not in df.columns:
         df.at[row.Index, 'listed_date'] = webscrape[0]
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
+
+# Iterate through the dataframe and drop rows with expired listings
+for row in df.loc[df.listing_url.notnull()].itertuples():
+  if check_expired_listing(row.listing_url, row.mls_number) == True:
+    df = df.drop(row.Index)
+    logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
 
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Latitude column is already present, iterate through the null cells
@@ -341,13 +362,6 @@ df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
 # It clearly must be some kind of clerical error so a NaN (unknown) is more appropriate
 # All that being said, I should peruse new spreadsheets to make sure there isn't actually a valid property exceeds 5000 sqft
 df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
-
-# The rental marker is hot and properties go off market fast
-# Keep all rows less than a "month" old (31 days)
-# Filter data between two dates
-# https://www.saltycrane.com/blog/2010/10/how-get-date-n-days-ago-python/
-cutoff = format(datetime.now() - timedelta(days=31), '%Y-%m-%d')
-df = df.loc[df['date_processed'] >= cutoff]
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
