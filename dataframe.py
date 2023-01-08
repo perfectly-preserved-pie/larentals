@@ -548,9 +548,7 @@ def popup_html(row):
             <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
             <td>{sub_type}</td>
           </tr>
-        # close tbody
         </tbody>
-      # close table
       </table>
       """
 
