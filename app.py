@@ -6,6 +6,7 @@ import dash_leaflet as dl
 import dash_leaflet.express as dlx
 import logging
 import pandas as pd
+import uuid
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -976,7 +977,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   logging.info(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
   logging.info(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
   # Generate the map
-  return dl.GeoJSON(data=geojson, id="geojson", cluster=True, zoomToBoundsOnClick=True, spiderfyOnMaxZoom=True)
+  return dl.GeoJSON(id=str(uuid.uuid4()), data=geojson, cluster=True, zoomToBoundsOnClick=True, spiderfyOnMaxZoom=True)
 
 # Launch the Flask app
 if __name__ == '__main__':
