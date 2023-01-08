@@ -494,7 +494,7 @@ def popup_html(row):
           </tr>
           <tr>
             <td>Rental Price</td>
-            <td>{lc_price}</td>
+            <td>${lc_price}</td>
           </tr>
           <tr>
             <td>Security Deposit</td>
