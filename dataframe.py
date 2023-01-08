@@ -545,7 +545,7 @@ def popup_html(row):
             <td>{year}</td>
           </tr>
           <tr>
-            <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms" target="_blank">Rental Terms></a></td>
+            <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms" target="_blank">Rental Terms</a></td>
             <td>{terms}</td>
           </tr>
           <tr>
