@@ -477,16 +477,12 @@ def popup_html(row):
       """
     # Return the HTML snippet as a string
     return f"""<div>{mls_photo_html_block}</div>
-      # Create the table
       <table>
-        # Create the table body
         <tbody>
-          # Start row #1
           <tr>
             <td>Listed Date</td>
             <td>{listed_date}</td>
           </tr>
-          # end row #1
           <tr>
             <td>Street Address</td>
             <td>{full_address}</td>
