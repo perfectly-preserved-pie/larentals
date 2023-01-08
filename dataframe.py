@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup as bs4
-from dash import html
 from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
@@ -477,9 +476,7 @@ def popup_html(row):
         </tr>
       """
     # Return the HTML snippet as a string
-    return f"""
-      # This is where the MLS photo will go (at the top and centered of the tooltip)
-      <div>{mls_photo_html_block}</div>
+    return f"""<div>{mls_photo_html_block}</div>
       # Create the table
       <table>
         # Create the table body
@@ -497,7 +494,6 @@ def popup_html(row):
           {listing_url_block}
           <tr>
             <td>List Office Phone</td>
-            # https://www.elegantthemes.com/blog/wordpress/call-link-html-phone-number
             <td><a href="tel:{phone}">{phone}</a></td>
           </tr>
           <tr>
@@ -578,7 +574,7 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', inf
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
-pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle'
+pickle_url = 'https://github.com/perfectly-preserved-pie/laredddddntals/raw/master/dataframe.pickle'
 if requests.head(pickle_url).ok == False:
   # Drop any dupes again
   df = df.drop_duplicates(subset=['mls_number'], keep="last")
