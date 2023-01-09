@@ -278,12 +278,6 @@ elif 'listed_date' not in df.columns:
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
 
-# Iterate through the dataframe and drop rows with expired listings
-for row in df.loc[df.listing_url.notnull()].itertuples():
-  if check_expired_listing(row.listing_url, row.mls_number) == True:
-    df = df.drop(row.Index)
-    logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
-
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Latitude column is already present, iterate through the null cells
 # This assumption will reduce the number of API calls to Google Maps
@@ -583,5 +577,10 @@ elif requests.head(pickle_url).ok == True:
   df_combined = pd.concat([df, df_old], ignore_index=True)
   # Drop any dupes again
   df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
+  # Iterate through the dataframe and drop rows with expired listings
+  for row in df_combined.loc[df_combined.listing_url.notnull()].itertuples():
+    if check_expired_listing(row.listing_url, row.mls_number) == True:
+      df_combined = df_combined.drop(row.Index)
+      logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
   # Pickle the new combined dataframe
   df_combined.to_pickle("dataframe.pickle")
