@@ -978,7 +978,16 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   logging.info(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
   logging.info(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
   # Generate the map
-  return dl.GeoJSON(id=str(uuid.uuid4()), data=geojson, cluster=True, zoomToBoundsOnClick=True, spiderfyOnMaxZoom=True)
+  return dl.GeoJSON(
+    id=str(uuid.uuid4()),
+    data=geojson,
+    cluster=True,
+    zoomToBoundsOnClick=True,
+    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+      'radius': 160,
+      'minZoom': 3,
+    }
+  )
 
 # Launch the Flask app
 if __name__ == '__main__':
