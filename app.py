@@ -898,7 +898,10 @@ app.layout = dbc.Container([
       # https://community.plotly.com/t/layout-changes-with-screen-size-and-resolution/27530/6
       dbc.Col([user_options_card], lg = 3, md = 6, sm = 4),
       dbc.Col([map_card], lg = 9, md = 6, sm = 8),
-    ]
+    ],
+    # Remove the whitespace/padding between the two cards (aka the gutters)
+    # https://stackoverflow.com/a/70495385
+    className="g-0",
   ),
 ],
 fluid = True,
