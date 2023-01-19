@@ -2,11 +2,14 @@ name: Build and Publish - Dev Build
 
 on:
   push:
-    branches-ignore: [ "master" ]
+    branches: [ "dev" ]
     paths-ignore:
       - '*.md'
       - 'dataframe.pickle'
-      - '.gitignore'    
+      - '.gitignore'
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "dev" ]
   schedule:
     - cron: '35 10 * * 5'
 

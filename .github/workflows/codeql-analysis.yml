@@ -17,7 +17,8 @@ on:
     paths-ignore:
       - '*.md'
       - 'dataframe.pickle'
-      - '.gitignore'    
+      - '.gitignore'
+      - '*.yml'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "master" ]
