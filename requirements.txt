@@ -10,6 +10,7 @@ imagekitio==3.0.1
 numpy==1.24.1
 orjson==3.8.4
 pandas==1.5.2
+protobuf==4.21.12
 python-dotenv==0.21.0
 requests==2.28.1
 tables
