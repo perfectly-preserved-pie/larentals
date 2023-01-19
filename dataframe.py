@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup as bs4
-from dash import html
 from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
@@ -449,110 +448,109 @@ def popup_html(row):
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
    # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
-        mls_photo_html_block = html.Img(
-          src='',
-          referrerPolicy='noreferrer',
-          style={
-            'display':'block',
-            'width':'100%',
-            'margin-left':'auto',
-            'margin-right':'auto'
-          },
-          id='mls_photo_div'
-        )
+        mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
     # If there IS an MLS photo, just set it to itself
     # The HTML block should be an Img tag wrapped inside a parent <a href> tag so the image will be clickable
     elif pd.isna(mls_photo) == False:
-        mls_photo_html_block = html.A( # wrap the Img inside a parent <a href> tag 
-            html.Img(
-              src=f'{mls_photo}',
-              referrerPolicy='noreferrer',
-              style={
-                'display':'block',
-                'width':'100%',
-                'margin-left':'auto',
-                'margin-right':'auto'
-              },
-              id='mls_photo_div'
-            ),
-          href=f"{mls_number_hyperlink}",
-          referrerPolicy='noreferrer',
-          target='_blank'
-        )
+        mls_photo_html_block = f"""
+          <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
+          <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
+          </a>
+        """
     # If the MLS hyperlink is empty, that means there isn't a BHHS webpage to redirect to. Do not hyperlink to it.
     if pd.isna(mls_number_hyperlink) == True:
-      listing_url_block = html.Tr([ 
-        html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(f"{mls_number}")
-      ])
+      listing_url_block = f"""
+        <tr>
+          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
+          <td>{mls_number}</td>
+        </tr>
+      """
     # If the hyperlink exists, hyperlink it
+    # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
+    # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
     elif pd.isna(mls_number_hyperlink) == False:
-      listing_url_block = html.Tr([ 
-        # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
-        # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-        html.Td(html.A("Listing ID (MLS#)", href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id", target='_blank')), html.Td(html.A(f"{mls_number}", href=f"{mls_number_hyperlink}", referrerPolicy='noreferrer', target='_blank'))
-      ])
-    # Return the HTML snippet but NOT as a string. See https://github.com/thedirtyfew/dash-leaflet/issues/142#issuecomment-1157890463 
-    return [
-      html.Div([ # This is where the MLS photo will go (at the top and centered of the tooltip)
-          mls_photo_html_block
-      ]),
-      html.Table([ # Create the table
-        html.Tbody([ # Create the table body
-          html.Tr([ # Start row #1
-            html.Td("Listed Date"), html.Td(f"{listed_date}")
-          ]), # end row #1
-          html.Tr([ 
-            html.Td("Street Address"), html.Td(f"{full_address}")
-          ]),
-          listing_url_block,
-          html.Tr([ # https://www.elegantthemes.com/blog/wordpress/call-link-html-phone-number
-            html.Td("List Office Phone"), html.Td(html.A(f"{phone}", href=f"tel:{phone}")),
-          ]),          
-          html.Tr([ 
-            html.Td("Rental Price"), html.Td(f"${lc_price}")
-          ]),
-          html.Tr([
-            html.Td("Security Deposit"), html.Td(f"{security_deposit}"),
-          ]),
-          html.Tr([
-            html.Td("Pet Deposit"), html.Td(f"{pet_deposit}"),
-          ]),
-          html.Tr([
-            html.Td("Key Deposit"), html.Td(f"{key_deposit}"),
-          ]),
-          html.Tr([
-            html.Td("Other Deposit"), html.Td(f"{other_deposit}"),
-          ]),          
-          html.Tr([
-            html.Td("Square Feet"), html.Td(f"{square_ft}")
-          ]),
-          html.Tr([
-            html.Td("Price Per Square Foot"), html.Td(f"{price_per_sqft}")
-          ]),
-          html.Tr([
-            html.Td(html.A("Bedrooms/Bathrooms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms", target='_blank')), html.Td(f"{brba}")
-          ]),
-          html.Tr([
-            html.Td("Garage Spaces"), html.Td(f"{garage}"),
-          ]),
-          html.Tr([
-            html.Td("Pets Allowed?"), html.Td(f"{pets}"),
-          ]),
-          html.Tr([
-            html.Td("Furnished?"), html.Td(f"{furnished}"),
-          ]),
-          html.Tr([
-            html.Td("Year Built"), html.Td(f"{year}")
-          ]),
-          html.Tr([
-            html.Td(html.A("Rental Terms", href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms", target='_blank')), html.Td(f"{terms}"),
-          ]),             
-          html.Tr([                                                                                            
-            html.Td(html.A("Physical Sub Type", href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type", target='_blank')), html.Td(f"{sub_type}")                                                                                    
-          ]), # end rows
-        ]), # end body
-      ]), # end table
-    ]
+      listing_url_block = f"""
+        <tr>
+          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
+          <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
+        </tr>
+      """
+    # Return the HTML snippet as a string
+    return f"""<div>{mls_photo_html_block}</div>
+      <table>
+        <tbody>
+          <tr>
+            <td>Listed Date</td>
+            <td>{listed_date}</td>
+          </tr>
+          <tr>
+            <td>Street Address</td>
+            <td>{full_address}</td>
+          </tr>
+          {listing_url_block}
+          <tr>
+            <td>List Office Phone</td>
+            <td><a href="tel:{phone}">{phone}</a></td>
+          </tr>
+          <tr>
+            <td>Rental Price</td>
+            <td>${lc_price}</td>
+          </tr>
+          <tr>
+            <td>Security Deposit</td>
+            <td>{security_deposit}</td>
+          </tr>
+          <tr>
+            <td>Pet Deposit</td>
+            <td>{pet_deposit}</td>
+          </tr>
+          <tr>
+            <td>Key Deposit</td>
+            <td>{key_deposit}</td>
+          </tr>
+          <tr>
+            <td>Other Deposit</td>
+            <td>{other_deposit}</td>
+          </tr>
+          <tr>
+            <td>Square Feet</td>
+            <td>{square_ft}</td>
+          </tr>
+          <tr>
+            <td>Price Per Square Foot</td>
+            <td>{price_per_sqft}</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
+            <td>{brba}</td>
+          </tr>
+          <tr>
+            <td>Garage Spaces</td>
+            <td>{garage}</td>
+          </tr>
+          <tr>
+            <td>Pets Allowed?</td>
+            <td>{pets}</td>
+          </tr>
+          <tr>
+            <td>Furnished?</td>
+            <td>{furnished}</td>
+          </tr>
+          <tr>
+            <td>Year Built</td>
+            <td>{year}</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms" target="_blank">Rental Terms</a></td>
+            <td>{terms}</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
+            <td>{sub_type}</td>
+          </tr>
+        </tbody>
+      </table>
+      """
 
 # Iterate through and generate the HTML code
 if 'popup_html' in df.columns:
