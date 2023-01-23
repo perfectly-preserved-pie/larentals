@@ -750,6 +750,57 @@ other_deposit_radio = html.Div([
 id = 'unknown_other_deposit_div',
 )
 
+laundry_checklist = html.Div([
+  dbc.Alert(
+    [
+      dcc.Checklist(
+        id='laundry_checklist',
+        # Iterate through the LaundryFeatures column and create a list of unique values
+        options=[{'label': i, 'value': i} for i in df['LaundryFeatures'].unique()],
+        # Set the default value to be all of the laundry options
+        value=df['LaundryFeatures'].unique(),
+        labelStyle = {
+          'display': 'block'
+        },
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },
+      ),
+    ],
+  color="info",
+  ),
+],
+id = 'laundry_checklist_div',
+)
+
+laundry_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Should we include properties that don't have a laundry option listed?"),
+      dcc.RadioItems(
+        id='laundry_missing_radio',
+        options=[
+            {'label': 'Yes', 'value': 'True'},
+            {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        # add some spacing in between the checkbox and the label
+        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },
+        ),
+    ],
+  color="info",
+  ),
+],
+id = 'unknown_laundry_div',
+)
+
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash

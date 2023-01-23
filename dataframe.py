@@ -337,6 +337,7 @@ df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerc
 # https://stackoverflow.com/a/47810911
 df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
 df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True)
+df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', pd.NA, regex=True)
 
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
@@ -395,6 +396,7 @@ def popup_html(row):
     other_deposit = df['DepositOther'].at[i]
     pet_deposit = df['DepositPets'].at[i]
     security_deposit = df['DepositSecurity'].at[i]
+    laundry = df['LaundryFeatures'].at[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -445,6 +447,10 @@ def popup_html(row):
         other_deposit = 'Unknown'
     elif pd.isna(other_deposit) == False:
         other_deposit = f"${int(other_deposit)}"
+    if pd.isna(laundry) == True:
+        laundry = 'Unknown'
+    elif pd.isna(laundry) == False:
+        laundry = f"{laundry}"
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
    # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
@@ -535,6 +541,10 @@ def popup_html(row):
           <tr>
             <td>Furnished?</td>
             <td>{furnished}</td>
+          </tr>
+          <tr>
+            <td>Laundry</td>
+            <td>{laundry}</td>
           </tr>
           <tr>
             <td>Year Built</td>
