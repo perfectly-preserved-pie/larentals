@@ -857,10 +857,8 @@ last_updated = df['date_processed'].max().strftime('%m/%d/%Y')
 
 title_card = dbc.Card(
   [
-    html.H3("WhereToLive.LA - DEVELOPMENT & TEST INSTANCE", className="card-title"),
+    html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of rental properties in Los Angeles County. Updated weekly."),
-    html.P("⚠ WARNING: This is a TEST version of WhereToLive.LA. Information here may be missing, incomplete, or inaccurate. Or parts of the website may not work at all. ⚠", style={"color": "red"}),
-    html.P(["⚠ Please use the main website at ", html.A("https://wheretolive.LA", href="https://wheretolive.LA"), " for the most up-to-date information. ⚠"], style={"color": "red"}),
     html.P(f"Last updated: {last_updated}"),
     html.I( # use a GitHub icon for my repo
       className="bi bi-github",
