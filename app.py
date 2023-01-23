@@ -138,7 +138,7 @@ app = Dash(
 )
 
 # Set the page title
-app.title = "WhereToLive.LA - DEVELOPMENT & TEST INSTANCE"
+app.title = "WhereToLive.LA"
 app.description = "An interactive map of rental properties in Los Angeles County."
 
 # For Gunicorn
