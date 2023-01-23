@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup as bs4
-from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -246,10 +245,10 @@ def imagekit_transform(bhhs_mls_photo_url, mls):
 # Tag each row with the date it was processed
 if 'date_processed' in df.columns:
   for row in df[df.date_processed.isnull()].itertuples():
-    df.at[row.Index, 'date_processed'] = date.today().isoformat()
+    df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
 elif 'date_processed' not in df.columns:
     for row in df.itertuples():
-      df.at[row.Index, 'date_processed'] = date.today().isoformat()
+      df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
 
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
@@ -575,6 +574,9 @@ elif 'popup_html' not in df.columns:
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
+# Fill in any NaNs in the Laundry column with "Unknown"
+df.LaundryFeatures = df.LaundryFeatures.fillna(value="Unknown")
+
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
@@ -591,5 +593,11 @@ elif requests.head(pickle_url).ok == True:
   df_combined = pd.concat([df, df_old], ignore_index=True)
   # Drop any dupes again
   df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
+  # Iterate through the dataframe and drop rows with expired listings
+  logging.info("Checking for expired listings...")
+  for row in df.loc[df.listing_url.notnull()].itertuples():
+    if check_expired_listing(row.listing_url, row.mls_number) == True:
+      df = df.drop(row.Index)
+      logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
   # Pickle the new combined dataframe
   df_combined.to_pickle("dataframe.pickle")
