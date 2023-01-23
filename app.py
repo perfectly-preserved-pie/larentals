@@ -3,6 +3,7 @@ from dash.dependencies import Input, Output
 from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import dash_leaflet.express as dlx
 import logging
 import pandas as pd
 import uuid
@@ -19,12 +20,6 @@ df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-p
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
-# Create markers & associated popups from dataframe
-markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df[df.Latitude.notnull()].itertuples()]
-
-# Add them to a MarkerCluster
-cluster = dl.MarkerClusterGroup(id="markers", children=markers)
-
 # Get the means so we can center the map
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
@@ -143,7 +138,7 @@ app = Dash(
 )
 
 # Set the page title
-app.title = "WhereToLive.LA"
+app.title = "WhereToLive.LA - DEVELOPMENT & TEST INSTANCE"
 app.description = "An interactive map of rental properties in Los Angeles County."
 
 # For Gunicorn
@@ -802,12 +797,13 @@ id = 'listed_date_radio_div',
 
 # Generate the map
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="cluster"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="geojson"), dl.FullscreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
   preferCanvas=True,
+  closePopupOnClick=False,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -907,7 +903,7 @@ className = "dbc"
 )
 
 @app.callback(
-  Output(component_id='cluster', component_property='children'),
+  Output(component_id='geojson', component_property='children'),
   [
     Input(component_id='subtype_checklist', component_property='value'),
     Input(component_id='pets_radio', component_property='value'),
@@ -967,14 +963,34 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end)
   ]
 
-  # Create markers & associated popups from dataframe
-  markers = [dl.Marker(children=dl.Popup((row.popup_html), closeButton=True), position=[row.Latitude, row.Longitude]) for row in df_filtered[df_filtered.Latitude.notnull()].itertuples()]
+  # Create an empty list for the markers
+  markers = []
+  # Iterate through the dataframe, create a marker for each row, and append it to the list
+  for row in df_filtered.itertuples():
+    markers.append(
+      dict(
+        lat=row.Latitude,
+        lon=row.Longitude,
+        popup=row.popup_html
+        )
+    )
+  # Generate geojson with a marker for each listing
+  geojson = dlx.dicts_to_geojson([{**m} for m in markers])
 
   # Log statements to check if we have all markers in the dataframe displayed
   logging.info(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
   logging.info(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
   # Generate the map
-  return dl.MarkerClusterGroup(id=str(uuid.uuid4()), children=markers)
+  return dl.GeoJSON(
+    id=str(uuid.uuid4()),
+    data=geojson,
+    cluster=True,
+    zoomToBoundsOnClick=True,
+    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+      'radius': 160,
+      'minZoom': 3,
+    }
+  )
 
 # Launch the Flask app
 if __name__ == '__main__':
