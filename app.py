@@ -131,9 +131,9 @@ def listed_date_function(boolean, start_date, end_date):
 def laundry_checklist_function(choice):
   # Presort the list first for faster performance
   choice.sort()
-  if '<NA>' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+  if 'Unknown' in choice: # If Unknown is selected, return all rows with Unknown OR the selected choices
     laundry_features_filter = (df['LaundryFeatures'].isnull()) | (df['LaundryFeatures'].isin(choice))
-  elif '<NA>' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
     laundry_features_filter = df['LaundryFeatures'].isin(choice)
   return (laundry_features_filter)
 
