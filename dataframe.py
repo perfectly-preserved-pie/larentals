@@ -595,9 +595,9 @@ elif requests.head(pickle_url).ok == True:
   df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
   # Iterate through the dataframe and drop rows with expired listings
   logging.info("Checking for expired listings...")
-  for row in df.loc[df.listing_url.notnull()].itertuples():
+  for row in df_combined[df_combined.listing_url.notnull()].itertuples():
     if check_expired_listing(row.listing_url, row.mls_number) == True:
-      df = df.drop(row.Index)
+      df_combined = df_combined.drop(row.Index)
       logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
   # Pickle the new combined dataframe
   df_combined.to_pickle("dataframe.pickle")
