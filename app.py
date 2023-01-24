@@ -12,6 +12,16 @@ logging.getLogger().setLevel(logging.INFO)
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
+external_scripts=[
+  # Plausible analytics
+  {
+    'src': "https://plausible.automateordie.io/js/plausible.js",
+    'data-domain': "wheretolive.LA",
+    'defer': True,
+    'type': 'application/javascript'
+  },
+],
+
 # Make the dataframe a global variable
 global df
 
@@ -130,6 +140,7 @@ def listed_date_function(boolean, start_date, end_date):
 app = Dash(
   __name__, 
   external_stylesheets=external_stylesheets,
+  external_scripts=external_scripts,
   # Add meta tags for mobile devices
   # https://community.plotly.com/t/reorder-website-for-mobile-view/33669/5?
   meta_tags = [
@@ -143,29 +154,6 @@ app.description = "An interactive map of rental properties in Los Angeles County
 
 # For Gunicorn
 server = app.server
-
-# Plausible privacy-friendly analytics
-# https://dash.plotly.com/external-resources#usage (Option 1)
-# Probably won't get past adblockers and NoScript but whatever, good enough
-app.index_string = """<!DOCTYPE html>
-<html>
-  <head>
-    <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.io/js/plausible.js" type="application/javascript"></script>
-    {%metas%}
-    <title>{%title%}</title>
-    {%favicon%}
-    {%css%}
-  </head>
-  <body>
-    {%app_entry%}
-    <footer>
-      {%config%}
-      {%scripts%}
-      {%renderer%}
-    </footer>
-  </body>
-</html>
-"""
 
 # TODO: implement a Select All checkbox: https://dash.plotly.com/advanced-callbacks#synchronizing-two-checklists
 subtype_checklist = html.Div([ 
