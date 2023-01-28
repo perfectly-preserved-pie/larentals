@@ -336,7 +336,17 @@ df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerc
 # https://stackoverflow.com/a/47810911
 df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
 df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True)
-df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', pd.NA, regex=True)
+## Laundry Features ##
+# Replace all empty values in the following column with "Unknown" and cast the column as dtype string
+df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', "Unknown", regex=True)
+# Fill in any NaNs in the Laundry column with "Unknown"
+df.LaundryFeatures = df.LaundryFeatures.fillna(value="Unknown")
+# Any string containing "Community" in the Laundry column should be replaced with "Community Laundry"
+df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community", "Community Laundry")
+# Any string containing "Common" in the Laundry column should be replaced with "Community Laundry"
+df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Common", "Community Laundry")
+# Replace "Community Laundry Area" with "Community Laundry"
+df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community Laundry Area", "Community Laundry")
 
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
@@ -573,9 +583,6 @@ elif 'popup_html' not in df.columns:
 
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
-
-# Fill in any NaNs in the Laundry column with "Unknown"
-df.LaundryFeatures = df.LaundryFeatures.fillna(value="Unknown")
 
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
