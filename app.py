@@ -16,7 +16,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
+df = pd.read_pickle(filepath_or_buffer='dataframe2')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
@@ -128,13 +128,59 @@ def listed_date_function(boolean, start_date, end_date):
   return (listed_date_filter)
 
 # Laundry Features
+# First define a list of all the laundry features
+# Create a list of options for the first drop-down menu
+laundry_categories = [
+  'Washer & Dryer Included',
+  'Dryer Hookup',
+  'Dryer Included',
+  'Washer Hookup',
+  'Washer Included',
+  'Community Laundry',
+  'Other',
+  'Unknown',
+  'None',
+  ]
+# We need to create a function to return a dataframe filter for laundry features
+# Partly because the user can select multiple options; we need to account for the "Unknown" option
+# "None" is its own value (string) in the dataframe, so we don't need to account for it
 def laundry_checklist_function(choice):
-  # Presort the list first for faster performance
-  choice.sort()
-  if 'Unknown' in choice: # If Unknown is selected, return all rows with Unknown OR the selected choices
-    laundry_features_filter = (df['LaundryFeatures'].isnull()) | (df['LaundryFeatures'].isin(choice))
-  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+  # If Unknown is selected only, return all rows with Unknown only
+  if 'Unknown' in choice and len(choice) == 1: 
+    laundry_features_filter = df['LaundryFeatures'].isnull() | df['LaundryFeatures'].isin(choice)
+  # If Unknown is selected with other choices, return all rows with Unknown OR the selected choices
+  elif 'Unknown' in choice and len(choice) > 1:
+    laundry_features_filter = df['LaundryFeatures'].isnull() | df['LaundryFeatures'].isin(choice)
+  # If Unknown is NOT selected at all, return the selected choices only, which implies .notnull()
+  elif 'Unknown' not in choice: 
     laundry_features_filter = df['LaundryFeatures'].isin(choice)
+  # If Other is selected only, return all rows with all choices that aren't in the list of laundry categories
+  if 'Other' in choice and len(choice) == 1:
+    laundry_features_filter = ~df['LaundryFeatures'].isin(laundry_categories)
+  # If Other is selected with other choices, return all rows with all choices that aren't in the list of laundry categories OR the selected choices
+  elif 'Other' in choice and len(choice) > 1:
+    laundry_features_filter = df['LaundryFeatures'].isin(choice) | ~df['LaundryFeatures'].str.contains('Other')
+  # If the user selects only "Washer & Dryer Included", return all rows with "Washer Included" AND "Dryer Included" OR "Stackable"
+  # Stackable implies Washer & Dryer Included (my assumption)
+  if 'Washer & Dryer Included' in choice and len(choice) == 1:
+    laundry_features_filter = (df['LaundryFeatures'].str.contains('Washer Included') & df['LaundryFeatures'].str.contains('Dryer Included')) | df['LaundryFeatures'].str.contains('Stackable')
+  # If the user selects "Washer & Dryer Included" with other choices, return all rows with "Washer Included" AND "Dryer Included" OR "Stackable" OR the selected choices
+  elif 'Washer & Dryer Included' in choice and len(choice) > 1:
+    laundry_features_filter = (df['LaundryFeatures'].str.contains('Washer Included') & (df['LaundryFeatures'].str.contains('Dryer Included'))) | df['LaundryFeatures'].str.contains('Stackable') | df['LaundryFeatures'].isin(choice)
+  # If the user selects "Washer Included" only, return all rows with "Washer Included" OR "Stackable"
+  # "Stackable" implies there are already stacked washers and dryers in the unit
+  if 'Washer Included' in choice and len(choice) == 1:
+    laundry_features_filter = df['LaundryFeatures'].str.contains('Washer Included') | df['LaundryFeatures'].str.contains('Stackable')
+  # If the user selects "Washer Included" with other choices, return all rows with "Washer Included" OR "Stackable" OR the selected choices
+  elif 'Washer Included' in choice and len(choice) > 1:
+    laundry_features_filter = df['LaundryFeatures'].str.contains('Washer Included') | df['LaundryFeatures'].isin(choice) | (df['LaundryFeatures'].str.contains('Stackable'))
+  # If the user selects "Dryer Included" only, return all rows with "Dryer Included" OR "Stackable"
+  # "Stackable" implies there are already stacked washers and dryers in the unit
+  if 'Dryer Included' in choice and len(choice) == 1:
+    laundry_features_filter = df['LaundryFeatures'].str.contains('Dryer Included') | df['LaundryFeatures'].str.contains('Stackable')
+  # If the user selects "Dryer Included" with other choices, return all rows with "Dryer Included" OR "Stackable" OR the selected choices
+  elif 'Dryer Included' in choice and len(choice) > 1:
+    laundry_features_filter = df['LaundryFeatures'].str.contains('Dryer Included') | df['LaundryFeatures'].isin(choice) | df['LaundryFeatures'].str.contains('Stackable')
   return (laundry_features_filter)
 
 app = Dash(
@@ -761,27 +807,23 @@ id = 'unknown_other_deposit_div',
 )
 
 laundry_checklist = html.Div([
-  dbc.Alert(
-    [
-      dcc.Checklist(
-        id='laundry_checklist',
-        # Iterate through the LaundryFeatures column and create a list of unique values
-        options=[{'label': i, 'value': i} for i in df['LaundryFeatures'].unique()],
-        # Set the default value to be a list of all the unique values
-        value=df.LaundryFeatures.unique().tolist(),
-        labelStyle = {
-          'display': 'block'
-        },
-        inputStyle = {
-          "margin-right": "5px",
-          "margin-left": "5px"
-        },
-      ),
-    ],
-  color="info",
+  html.H5("Laundry Features"),
+  # Create a checklist for laundry features
+  dcc.Checklist(
+    id='laundry_checklist',
+    options=[{'label': i, 'value': i} for i in laundry_categories],
+    # Set the default value to all of the options
+    value=laundry_categories,
+    labelStyle = {'display': 'block'},
+    # add some spacing in between the checkbox and the label
+    # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+    inputStyle = {
+      "margin-right": "5px",
+      "margin-left": "5px"
+    },
   ),
 ],
-id = 'laundry_checklist_div',
+id = 'laundry_checklist_div'
 )
 
 # Get today's date and set it as the end date for the date picker
