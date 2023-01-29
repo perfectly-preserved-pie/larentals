@@ -131,7 +131,6 @@ def listed_date_function(boolean, start_date, end_date):
 # First define a list of all the laundry features
 # Create a list of options for the first drop-down menu
 laundry_categories = [
-  'Washer & Dryer Included',
   'Dryer Hookup',
   'Dryer Included',
   'Washer Hookup',
@@ -160,13 +159,6 @@ def laundry_checklist_function(choice):
   # If Other is selected with other choices, return all rows with all choices that aren't in the list of laundry categories OR the selected choices
   elif 'Other' in choice and len(choice) > 1:
     laundry_features_filter = df['LaundryFeatures'].isin(choice) | ~df['LaundryFeatures'].isin(laundry_categories)
-  # If the user selects only "Washer & Dryer Included", return all rows with "Washer Included" AND "Dryer Included" OR "Stackable"
-  # Stackable implies Washer & Dryer Included (my assumption)
-  if 'Washer & Dryer Included' in choice and len(choice) == 1:
-    laundry_features_filter = (df['LaundryFeatures'].str.contains('Washer Included') & df['LaundryFeatures'].str.contains('Dryer Included')) | df['LaundryFeatures'].str.contains('Stackable')
-  # If the user selects "Washer & Dryer Included" with other choices, return all rows with "Washer Included" AND "Dryer Included" OR "Stackable" OR the selected choices
-  elif 'Washer & Dryer Included' in choice and len(choice) > 1:
-    laundry_features_filter = (df['LaundryFeatures'].str.contains('Washer Included') & (df['LaundryFeatures'].str.contains('Dryer Included'))) | df['LaundryFeatures'].str.contains('Stackable') | df['LaundryFeatures'].isin(choice)
   # If the user selects "Washer Included" only, return all rows with "Washer Included" OR "Stackable"
   # "Stackable" implies there are already stacked washers and dryers in the unit
   if 'Washer Included' in choice and len(choice) == 1:
