@@ -571,16 +571,6 @@ def popup_html(row):
       </table>
       """
 
-# Iterate through and generate the HTML code
-if 'popup_html' in df.columns:
-    for row in df['popup_html'].isnull().itertuples():
-        df.at[row.Index, 'popup_html'] = popup_html(row)
-# If the popup_html column doesn't exist (i.e this is a first run), create it using df.at
-elif 'popup_html' not in df.columns:
-    df['popup_html'] = ''
-    for row in df.itertuples():
-        df.at[row.Index, 'popup_html'] = popup_html(row)
-
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
@@ -606,5 +596,8 @@ elif requests.head(pickle_url).ok == True:
     if check_expired_listing(row.listing_url, row.mls_number) == True:
       df_combined = df_combined.drop(row.Index)
       logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
+  # Iterate through the dataframe and (re)generate the popup_html column
+  for row in df_combined.itertuples():
+    df_combined.at[row.Index, 'popup_html'] = popup_html(row)
   # Pickle the new combined dataframe
   df_combined.to_pickle("dataframe.pickle")
