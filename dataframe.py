@@ -552,7 +552,7 @@ def popup_html(row):
             <td>{furnished}</td>
           </tr>
           <tr>
-            <td>Laundry</td>
+            <td>Laundry Features</td>
             <td>{laundry}</td>
           </tr>
           <tr>
