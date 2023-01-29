@@ -147,10 +147,10 @@ laundry_categories = [
 def laundry_checklist_function(choice):
   # If Unknown is selected only, return all rows with Unknown only
   if 'Unknown' in choice and len(choice) == 1: 
-    laundry_features_filter = df['LaundryFeatures'].isnull() | df['LaundryFeatures'].isin(choice)
+    laundry_features_filter = df['LaundryFeatures'].str.contains("Unknown")
   # If Unknown is selected with other choices, return all rows with Unknown OR the selected choices
   elif 'Unknown' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].isnull() | df['LaundryFeatures'].isin(choice)
+    laundry_features_filter = df['LaundryFeatures'].str.contains("Unknown") | df['LaundryFeatures'].isin(choice)
   # If Unknown is NOT selected at all, return the selected choices only, which implies .notnull()
   elif 'Unknown' not in choice: 
     laundry_features_filter = df['LaundryFeatures'].isin(choice)
