@@ -142,13 +142,17 @@ laundry_categories = [
   ]
 # We need to create a function to return a dataframe filter for laundry features
 # We need to account for every possible combination of choices
-# So this is going to fucking suck
 def laundry_checklist_function(choice):
+    # First, create a filter for the first choice
     laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0]))
+    # Then, loop through the rest of the choices
     for i in range(1, len(choice)):
+        # If the user selects "Other", we want to return all the properties that don't have any the strings in the laundry_categories list
         if choice[i] == 'Other':
             other = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+            # Then, we want to add the other filter to the laundry_features_filter
             laundry_features_filter = laundry_features_filter | other
+        # If the user doesn't select "Other", we want to return all the properties that have the first choice, the second choice, etc.
         elif choice[i] != 'Other':
             laundry_features_filter = laundry_features_filter | df['LaundryFeatures'].str.contains(str(choice[i]))
     return (laundry_features_filter)
