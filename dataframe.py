@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup as bs4
-from datetime import date, datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -246,10 +245,10 @@ def imagekit_transform(bhhs_mls_photo_url, mls):
 # Tag each row with the date it was processed
 if 'date_processed' in df.columns:
   for row in df[df.date_processed.isnull()].itertuples():
-    df.at[row.Index, 'date_processed'] = date.today().isoformat()
+    df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
 elif 'date_processed' not in df.columns:
     for row in df.itertuples():
-      df.at[row.Index, 'date_processed'] = date.today().isoformat()
+      df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
 
 # Create a new column with the full street address
 # Also strip whitespace from the St Name column
@@ -331,6 +330,17 @@ df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerc
 # https://stackoverflow.com/a/47810911
 df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
 df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True)
+## Laundry Features ##
+# Replace all empty values in the following column with "Unknown" and cast the column as dtype string
+df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', "Unknown", regex=True)
+# Fill in any NaNs in the Laundry column with "Unknown"
+df.LaundryFeatures = df.LaundryFeatures.fillna(value="Unknown")
+# Any string containing "Community" in the Laundry column should be replaced with "Community Laundry"
+df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community", "Community Laundry")
+# Any string containing "Common" in the Laundry column should be replaced with "Community Laundry"
+df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Common", "Community Laundry")
+# Replace "Community Laundry Area" with "Community Laundry"
+df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community Laundry Area", "Community Laundry")
 
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
@@ -392,6 +402,7 @@ def popup_html(row):
     other_deposit = df['DepositOther'].at[i]
     pet_deposit = df['DepositPets'].at[i]
     security_deposit = df['DepositSecurity'].at[i]
+    laundry = df['LaundryFeatures'].at[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -442,6 +453,10 @@ def popup_html(row):
         other_deposit = 'Unknown'
     elif pd.isna(other_deposit) == False:
         other_deposit = f"${int(other_deposit)}"
+    if pd.isna(laundry) == True:
+        laundry = 'Unknown'
+    elif pd.isna(laundry) == False:
+        laundry = f"{laundry}"
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
    # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
@@ -534,6 +549,10 @@ def popup_html(row):
             <td>{furnished}</td>
           </tr>
           <tr>
+            <td>Laundry Features</td>
+            <td>{laundry}</td>
+          </tr>
+          <tr>
             <td>Year Built</td>
             <td>{year}</td>
           </tr>
@@ -548,16 +567,6 @@ def popup_html(row):
         </tbody>
       </table>
       """
-
-# Iterate through and generate the HTML code
-if 'popup_html' in df.columns:
-    for row in df['popup_html'].isnull().itertuples():
-        df.at[row.Index, 'popup_html'] = popup_html(row)
-# If the popup_html column doesn't exist (i.e this is a first run), create it using df.at
-elif 'popup_html' not in df.columns:
-    df['popup_html'] = ''
-    for row in df.itertuples():
-        df.at[row.Index, 'popup_html'] = popup_html(row)
 
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
@@ -579,9 +588,13 @@ elif requests.head(pickle_url).ok == True:
   # Drop any dupes again
   df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
   # Iterate through the dataframe and drop rows with expired listings
-  for row in df_combined.loc[df_combined.listing_url.notnull()].itertuples():
+  logging.info("Checking for expired listings...")
+  for row in df_combined[df_combined.listing_url.notnull()].itertuples():
     if check_expired_listing(row.listing_url, row.mls_number) == True:
       df_combined = df_combined.drop(row.Index)
       logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
+  # Iterate through the dataframe and (re)generate the popup_html column
+  for row in df_combined.itertuples():
+    df_combined.at[row.Index, 'popup_html'] = popup_html(row)
   # Pickle the new combined dataframe
   df_combined.to_pickle("dataframe.pickle")

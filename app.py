@@ -127,6 +127,43 @@ def listed_date_function(boolean, start_date, end_date):
     listed_date_filter = df['listed_date'].between(start_date, end_date)
   return (listed_date_filter)
 
+# Laundry Features
+# First define a list of all the laundry features
+# Create a list of options for the first drop-down menu
+laundry_categories = [
+  'Dryer Hookup',
+  'Dryer Included',
+  'Washer Hookup',
+  'Washer Included',
+  'Community Laundry',
+  'Other',
+  'Unknown',
+  'None',
+  ]
+# We need to create a function to return a dataframe filter for laundry features
+# We need to account for every possible combination of choices
+def laundry_checklist_function(choice):
+  # Return an empty dataframe if the choice list is empty
+  if len(choice) == 0:
+    return pd.DataFrame()
+  # If the user selects only 'Other', return the properties that don't have any of the strings in the laundry_categories list
+  if len(choice) == 1 and choice[0] == 'Other':
+    laundry_features_filter = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+    return laundry_features_filter
+  # First, create a filter for the first choice
+  laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0]))
+  # Then, loop through the rest of the choices
+  for i in range(1, len(choice)):
+    # If the user selects "Other", we want to return all the properties that don't have any the strings in the laundry_categories list
+    if choice[i] == 'Other':
+      other = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+      # Then, we want to add the other filter to the laundry_features_filter
+      laundry_features_filter = laundry_features_filter | other
+    # If the user doesn't select "Other", we want to return all the properties that have the first choice, the second choice, etc.
+    elif choice[i] != 'Other':
+      laundry_features_filter = laundry_features_filter | df['LaundryFeatures'].str.contains(str(choice[i]))
+  return (laundry_features_filter)
+
 app = Dash(
   __name__, 
   external_stylesheets=external_stylesheets,
@@ -750,6 +787,26 @@ other_deposit_radio = html.Div([
 id = 'unknown_other_deposit_div',
 )
 
+laundry_checklist = html.Div([
+  html.H5("Laundry Features"),
+  # Create a checklist for laundry features
+  dcc.Checklist(
+    id='laundry_checklist',
+    options=[{'label': i, 'value': i} for i in laundry_categories],
+    # Set the default value to all of the options
+    value=laundry_categories,
+    labelStyle = {'display': 'block'},
+    # add some spacing in between the checkbox and the label
+    # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+    inputStyle = {
+      "margin-right": "5px",
+      "margin-left": "5px"
+    },
+  ),
+],
+id = 'laundry_checklist_div'
+)
+
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
@@ -831,6 +888,7 @@ user_options_card = dbc.Card(
     pets_radio,
     rental_terms_checklist,
     furnished_checklist,
+    laundry_checklist,
     security_deposit_slider,
     security_deposit_radio,
     pet_deposit_slider,
@@ -931,11 +989,12 @@ className = "dbc"
     Input(component_id='listed_date_datepicker', component_property='start_date'),
     Input(component_id='listed_date_datepicker', component_property='end_date'),
     Input(component_id='listed_date_radio', component_property='value'),
+    Input(component_id='laundry_checklist', component_property='value'),
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio):
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio, laundry_chosen):
   # Pre-sort our various lists of strings for faster performance
   subtypes_chosen.sort()
   terms_chosen.sort()
@@ -960,7 +1019,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
     key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]) &
     other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
-    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end)
+    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
+    laundry_checklist_function(laundry_chosen)
   ]
 
   # Create an empty list for the markers
