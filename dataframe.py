@@ -276,12 +276,6 @@ elif 'listed_date' not in df.columns:
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
 
-# Iterate through the dataframe and drop rows with expired listings
-for row in df.loc[df.listing_url.notnull()].itertuples():
-  if check_expired_listing(row.listing_url, row.mls_number) == True:
-    df = df.drop(row.Index)
-    logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
-
 # Iterate through the dataframe and fetch coordinates for rows that don't have them
 # If the Latitude column is already present, iterate through the null cells
 # This assumption will reduce the number of API calls to Google Maps
@@ -316,6 +310,7 @@ df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 df['ppsqft'] = df['ppsqft'].apply(pd.to_numeric, errors='coerce')
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
+df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce')
 # Convert the rest into nullable integer data types
 # We should do this because these fields will often have missing data, forcing a conversion to float64 
 # https://pandas.pydata.org/docs/user_guide/integer_na.html
@@ -326,7 +321,6 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
@@ -371,6 +365,9 @@ df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
 # It clearly must be some kind of clerical error so a NaN (unknown) is more appropriate
 # All that being said, I should peruse new spreadsheets to make sure there isn't actually a valid property exceeds 5000 sqft
 df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
+
+# Rewrite anything with >5 garage spaces as None
+df['garage_spaces'].values[df['garage_spaces'] > 5] = None
 
 # Keep rows with less than 6 bedrooms
 # 6 bedrooms and above are probably multi family investments and not actual rentals
@@ -423,7 +420,7 @@ def popup_html(row):
     if pd.isna(garage) == True:
         garage = 'Unknown'
     elif pd.isna(garage) == False:
-        garage = f"{int(garage)}"
+        garage = f"{garage}"
     # Repeat for ppsqft
     if pd.isna(price_per_sqft) == True:
         price_per_sqft = 'Unknown'

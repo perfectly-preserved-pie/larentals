@@ -16,7 +16,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='dataframe.pickle')
+df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
@@ -175,7 +175,7 @@ app = Dash(
 )
 
 # Set the page title
-app.title = "WhereToLive.LA - DEVELOPMENT & TEST INSTANCE"
+app.title = "WhereToLive.LA"
 app.description = "An interactive map of rental properties in Los Angeles County."
 
 # For Gunicorn
@@ -860,7 +860,7 @@ map = dl.Map(
   minZoom=9,
   center=(lat_mean, long_mean),
   preferCanvas=True,
-  closePopupOnClick=False,
+  closePopupOnClick=True,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -915,10 +915,8 @@ last_updated = df['date_processed'].max().strftime('%m/%d/%Y')
 
 title_card = dbc.Card(
   [
-    html.H3("WhereToLive.LA - DEVELOPMENT & TEST INSTANCE", className="card-title"),
+    html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of rental properties in Los Angeles County. Updated weekly."),
-    html.P("⚠ WARNING: This is a TEST version of WhereToLive.LA. Information here may be missing, incomplete, or inaccurate. Or parts of the website may not work at all. ⚠", style={"color": "red"}),
-    html.P(["⚠ Please use the main website at ", html.A("https://wheretolive.LA", href="https://wheretolive.LA"), " for the most up-to-date information. ⚠"], style={"color": "red"}),
     html.P(f"Last updated: {last_updated}"),
     html.I( # use a GitHub icon for my repo
       className="bi bi-github",
