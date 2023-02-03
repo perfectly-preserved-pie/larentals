@@ -144,22 +144,15 @@ laundry_categories = [
 # We need to account for every possible combination of choices
 # So this is going to fucking suck
 def laundry_checklist_function(choice):
-  # If there's only one choice, return the selected choice only
-  if len(choice) == 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice))
-  # If more than one feature is selected, return all rows with any of the selected choices
-  elif len(choice) > 1:
-    if 'Other' in choice:
-      other = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
-      # Iterate through the list of choices starting and add each one to the filter
-      for i in range(0,len(choice)):
+    laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0]))
+    for i in range(1, len(choice)):
         if choice[i] == 'Other':
-          laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0])) | df['LaundryFeatures'].str.contains(str(choice[i])) | other
-    elif 'Other' not in choice:
-      for i in range(0,len(choice)):
-        if choice[i] != 'Other':
-          laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0])) | df['LaundryFeatures'].str.contains(str(choice[i]))
-  return (laundry_features_filter)
+            other = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+            laundry_features_filter = laundry_features_filter | other
+        elif choice[i] != 'Other':
+            laundry_features_filter = laundry_features_filter | df['LaundryFeatures'].str.contains(str(choice[i]))
+    return (laundry_features_filter)
+
 
 app = Dash(
   __name__, 
