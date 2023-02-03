@@ -143,6 +143,9 @@ laundry_categories = [
 # We need to create a function to return a dataframe filter for laundry features
 # We need to account for every possible combination of choices
 def laundry_checklist_function(choice):
+  # Return an empty dataframe if the choice list is empty
+  if len(choice) == 0:
+    return pd.DataFrame()
   # If the user selects only 'Other', return the properties that don't have any of the strings in the laundry_categories list
   if len(choice) == 1 and choice[0] == 'Other':
     laundry_features_filter = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
