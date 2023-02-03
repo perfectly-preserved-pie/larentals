@@ -141,68 +141,24 @@ laundry_categories = [
   'None',
   ]
 # We need to create a function to return a dataframe filter for laundry features
-# Partly because the user can select multiple options; we need to account for the "Unknown" option
-# "None" is its own value (string) in the dataframe, so we don't need to account for it
+# We need to account for every possible combination of choices
+# So this is going to fucking suck
 def laundry_checklist_function(choice):
-  # If Unknown is selected only, return all rows with Unknown only
-  if 'Unknown' in choice and len(choice) == 1: 
-    laundry_features_filter = df['LaundryFeatures'].str.contains("Unknown")
-  # If Unknown is selected with other choices, return all rows with Unknown OR the selected choices
-  elif 'Unknown' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains("Unknown") | df['LaundryFeatures'].isin(choice)
-  # If Unknown is NOT selected at all, return the selected choices only, which implies .notnull()
-  elif 'Unknown' not in choice: 
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
-  # If Other is selected only, return all rows with all choices that aren't in the list of laundry categories
-  if 'Other' in choice and len(choice) == 1:
-    laundry_features_filter = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
-  # If Other is selected with other choices, return all rows with all choices that aren't in the list of laundry categories OR the selected choices
-  elif 'Other' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice) | ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
-  elif 'Other' not in choice:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
-  # If the user selects "Washer Included" only, return all rows with "Washer Included" OR "Stackable"
-  # "Stackable" implies there are already stacked washers and dryers in the unit
-  if 'Washer Included' in choice and len(choice) == 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Washer Included') | df['LaundryFeatures'].str.contains('Stackable')
-  # If the user selects "Washer Included" with other choices, return all rows with "Washer Included" OR "Stackable" OR the selected choices
-  elif 'Washer Included' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Washer Included') | df['LaundryFeatures'].isin(choice) | (df['LaundryFeatures'].str.contains('Stackable'))
-  elif 'Washer Included' not in choice:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
-  # If the user selects "Dryer Included" only, return all rows with "Dryer Included" OR "Stackable"
-  # "Stackable" implies there are already stacked washers and dryers in the unit
-  if 'Dryer Included' in choice and len(choice) == 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Dryer Included') | df['LaundryFeatures'].str.contains('Stackable')
-  # If the user selects "Dryer Included" with other choices, return all rows with "Dryer Included" OR "Stackable" OR the selected choices
-  elif 'Dryer Included' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Dryer Included') | df['LaundryFeatures'].isin(choice) | df['LaundryFeatures'].str.contains('Stackable')
-  elif 'Dryer Included' not in choice:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
-  # If the user selects "Washer Hookup" only, return all rows with "Washer Hookup"
-  if 'Washer Hookup' in choice and len(choice) == 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Washer Hookup')
-  # If the user selects "Washer Hookup" with other choices, return all rows with "Washer Hookup" OR the selected choices
-  elif 'Washer Hookup' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Washer Hookup') | df['LaundryFeatures'].isin(choice)
-  elif 'Washer Hookup' not in choice:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
-  # If the user selects "Dryer Hookup" only, return all rows with "Dryer Hookup"
-  if 'Dryer Hookup' in choice and len(choice) == 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Dryer Hookup')
-  # If the user selects "Dryer Hookup" with other choices, return all rows with "Dryer Hookup" OR the selected choices
-  elif 'Dryer Hookup' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Dryer Hookup') | df['LaundryFeatures'].isin(choice)
-  elif 'Dryer Hookup' not in choice:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
-  # If the user selects "Community Laundry" only, return all rows with "Community Laundry"
-  if 'Community Laundry' in choice and len(choice) == 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Community Laundry')
-  # If the user selects "Community Laundry" with other choices, return all rows with "Community Laundry" OR the selected choices
-  elif 'Community Laundry' in choice and len(choice) > 1:
-    laundry_features_filter = df['LaundryFeatures'].str.contains('Community Laundry') | df['LaundryFeatures'].isin(choice)
-  elif 'Community Laundry' not in choice:
-    laundry_features_filter = df['LaundryFeatures'].isin(choice)
+  # If there's only one choice, return the selected choice only
+  if len(choice) == 1:
+    laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice))
+  # If more than one feature is selected, return all rows with any of the selected choices
+  elif len(choice) > 1:
+    if 'Other' in choice:
+      other = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+      # Iterate through the list of choices starting and add each one to the filter
+      for i in range(0,len(choice)):
+        if choice[i] == 'Other':
+          laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0])) | df['LaundryFeatures'].str.contains(str(choice[i])) | other
+    elif 'Other' not in choice:
+      for i in range(0,len(choice)):
+        if choice[i] != 'Other':
+          laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0])) | df['LaundryFeatures'].str.contains(str(choice[i]))
   return (laundry_features_filter)
 
 app = Dash(
