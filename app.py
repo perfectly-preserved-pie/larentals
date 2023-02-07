@@ -16,7 +16,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle')
+df = pd.read_pickle(filepath_or_buffer='dataframe.pickle')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
@@ -148,7 +148,7 @@ def laundry_checklist_function(choice):
     return pd.DataFrame()
   # If the user selects only 'Other', return the properties that don't have any of the strings in the laundry_categories list
   if len(choice) == 1 and choice[0] == 'Other':
-    laundry_features_filter = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+    laundry_features_filter = ~df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
     return laundry_features_filter
   # First, create a filter for the first choice
   laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0]))
@@ -156,7 +156,7 @@ def laundry_checklist_function(choice):
   for i in range(1, len(choice)):
     # If the user selects "Other", we want to return all the properties that don't have any the strings in the laundry_categories list
     if choice[i] == 'Other':
-      other = ~df['LaundryFeatures'].apply(lambda x: any([cat in x for cat in laundry_categories]))
+      other = ~df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
       # Then, we want to add the other filter to the laundry_features_filter
       laundry_features_filter = laundry_features_filter | other
     # If the user doesn't select "Other", we want to return all the properties that have the first choice, the second choice, etc.
