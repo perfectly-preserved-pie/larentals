@@ -32,7 +32,7 @@ global df
 # Load all CSVs and concat into one dataframe
 # https://stackoverflow.com/a/21232849
 path = "."
-all_files = glob.glob(os.path.join(path, "*.csv"))
+all_files = glob.glob(os.path.join(path, "*lacountyrentals*.csv"))
 df = pd.concat((pd.read_csv(f, float_precision="round_trip", skipinitialspace=True) for f in all_files), ignore_index=True)
 
 pd.set_option("display.precision", 10)
@@ -599,4 +599,4 @@ elif requests.head(pickle_url).ok == True:
   for row in df_combined.itertuples():
     df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
   # Pickle the new combined dataframe
-  df_combined.to_pickle("dataframe.pickle")
+  df_combined.to_pickle("rental_dataframe.pickle")
