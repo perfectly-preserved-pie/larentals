@@ -311,26 +311,12 @@ df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric, errors='coerce')
-df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
+df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric, errors='coerce')
 # These columns should stay floats
-df['ppsqft'] = df['ppsqft'].apply(pd.to_numeric, errors='coerce')
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
-df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce')
-# Convert the rest into nullable integer data types
-# We should do this because these fields will often have missing data, forcing a conversion to float64 
-# https://pandas.pydata.org/docs/user_guide/integer_na.html
-# https://medium.com/when-i-work-data/nullable-integers-4060089f92ec
-# We don't really have a need for floats here, just ints
-# And this will prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
-# And this will also convert non-integers into NaNs
+# Convert PostalCode into nullable integer dtype
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
 # Replace all empty values in the following columns with NaN and cast the column as dtype string
 # https://stackoverflow.com/a/47810911
