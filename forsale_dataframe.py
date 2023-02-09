@@ -318,22 +318,6 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 # Convert PostalCode into nullable integer dtype
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
-# Replace all empty values in the following columns with NaN and cast the column as dtype string
-# https://stackoverflow.com/a/47810911
-df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
-df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True)
-## Laundry Features ##
-# Replace all empty values in the following column with "Unknown" and cast the column as dtype string
-df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', "Unknown", regex=True)
-# Fill in any NaNs in the Laundry column with "Unknown"
-df.LaundryFeatures = df.LaundryFeatures.fillna(value="Unknown")
-# Any string containing "Community" in the Laundry column should be replaced with "Community Laundry"
-df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community", "Community Laundry")
-# Any string containing "Common" in the Laundry column should be replaced with "Community Laundry"
-df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Common", "Community Laundry")
-# Replace "Community Laundry Area" with "Community Laundry"
-df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community Laundry Area", "Community Laundry")
-
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
@@ -341,30 +325,6 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_dat
 
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
-
-# Per CA law, ANY type of deposit is capped at rent * 3 months
-# It doesn't matter the type of deposit, they all have the same cap
-# Despite that, some landlords/realtors will list the property with an absurd deposit (100k? wtf) so let's rewrite those
-# Use numpy .values to rewrite anything greater than $18000 ($6000 rent * 3 months) into $18000
-# https://stackoverflow.com/a/54426197
-df['DepositSecurity'].values[df['DepositSecurity'] > 18000] = 18000
-df['DepositPets'].values[df['DepositPets'] > 18000] = 18000
-df['DepositOther'].values[df['DepositOther'] > 18000] = 18000
-df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
-
-# Rewrite anything greater than 5000 square feet as NaN
-# Because there's no fucking way there's a RENTAL PROPERTY that is 5000+ sqft in this city
-# It clearly must be some kind of clerical error so a NaN (unknown) is more appropriate
-# All that being said, I should peruse new spreadsheets to make sure there isn't actually a valid property exceeds 5000 sqft
-df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
-
-# Rewrite anything with >5 garage spaces as None
-df['garage_spaces'].values[df['garage_spaces'] > 5] = None
-
-# Keep rows with less than 6 bedrooms
-# 6 bedrooms and above are probably multi family investments and not actual rentals
-# They also skew the outliers, causing the sliders to go way up
-df = df[df.Bedrooms < 6]
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -383,19 +343,10 @@ def popup_html(dataframe, row):
     price_per_sqft=df['ppsqft'].at[i]                  
     brba = df['Br/Ba'].at[i]
     square_ft = df['Sqft'].at[i]
-    year = df['YrBuilt'].at[i]
-    garage = df['garage_spaces'].at[i]
+    year = df['year_built'].at[i]
     pets = df['PetsAllowed'].at[i]
-    phone = df['phone_number'].at[i]
-    terms = df['Terms'].at[i]
     sub_type = df['subtype'].at[i]
     listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
-    furnished = df['Furnished'].at[i]
-    key_deposit = df['DepositKey'].at[i]
-    other_deposit = df['DepositOther'].at[i]
-    pet_deposit = df['DepositPets'].at[i]
-    security_deposit = df['DepositSecurity'].at[i]
-    laundry = df['LaundryFeatures'].at[i]
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
     if pd.isna(square_ft) == True:
@@ -409,11 +360,6 @@ def popup_html(dataframe, row):
     # If there IS a square footage, convert it into an integer (round number)
     elif pd.isna(year) == False:
         year = f"{int(year)}"
-    # Repeat above for garage spaces
-    if pd.isna(garage) == True:
-        garage = 'Unknown'
-    elif pd.isna(garage) == False:
-        garage = f"{garage}"
     # Repeat for ppsqft
     if pd.isna(price_per_sqft) == True:
         price_per_sqft = 'Unknown'
@@ -424,32 +370,6 @@ def popup_html(dataframe, row):
         listed_date = 'Unknown'
     elif pd.isna(listed_date) == False:
         listed_date = f"{listed_date}"
-    # Repeat for furnished
-    if pd.isna(furnished) == True:
-        furnished = 'Unknown'
-    elif pd.isna(furnished) == False:
-        furnished = f"{furnished}"
-    # Repeat for the deposits
-    if pd.isna(key_deposit) == True:
-        key_deposit = 'Unknown'
-    elif pd.isna(key_deposit) == False:
-        key_deposit = f"${int(key_deposit)}"
-    if pd.isna(pet_deposit) == True:
-        pet_deposit = 'Unknown'
-    elif pd.isna(pet_deposit) == False:
-        pet_deposit = f"${int(pet_deposit)}"
-    if pd.isna(security_deposit) == True:
-        security_deposit = 'Unknown'
-    elif pd.isna(security_deposit) == False:
-        security_deposit = f"${int(security_deposit)}"
-    if pd.isna(other_deposit) == True:
-        other_deposit = 'Unknown'
-    elif pd.isna(other_deposit) == False:
-        other_deposit = f"${int(other_deposit)}"
-    if pd.isna(laundry) == True:
-        laundry = 'Unknown'
-    elif pd.isna(laundry) == False:
-        laundry = f"{laundry}"
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
    # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
@@ -502,22 +422,6 @@ def popup_html(dataframe, row):
             <td>${lc_price}</td>
           </tr>
           <tr>
-            <td>Security Deposit</td>
-            <td>{security_deposit}</td>
-          </tr>
-          <tr>
-            <td>Pet Deposit</td>
-            <td>{pet_deposit}</td>
-          </tr>
-          <tr>
-            <td>Key Deposit</td>
-            <td>{key_deposit}</td>
-          </tr>
-          <tr>
-            <td>Other Deposit</td>
-            <td>{other_deposit}</td>
-          </tr>
-          <tr>
             <td>Square Feet</td>
             <td>{square_ft}</td>
           </tr>
@@ -530,28 +434,12 @@ def popup_html(dataframe, row):
             <td>{brba}</td>
           </tr>
           <tr>
-            <td>Garage Spaces</td>
-            <td>{garage}</td>
-          </tr>
-          <tr>
             <td>Pets Allowed?</td>
             <td>{pets}</td>
           </tr>
           <tr>
-            <td>Furnished?</td>
-            <td>{furnished}</td>
-          </tr>
-          <tr>
-            <td>Laundry Features</td>
-            <td>{laundry}</td>
-          </tr>
-          <tr>
             <td>Year Built</td>
             <td>{year}</td>
-          </tr>
-          <tr>
-            <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms" target="_blank">Rental Terms</a></td>
-            <td>{terms}</td>
           </tr>
           <tr>
             <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
@@ -567,7 +455,7 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', inf
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
-pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/dataframe.pickle'
+pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/forsale_dataframe.pickle'
 if requests.head(pickle_url).ok == False:
   # Drop any dupes again
   df = df.drop_duplicates(subset=['mls_number'], keep="last")
