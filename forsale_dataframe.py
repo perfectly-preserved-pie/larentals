@@ -51,7 +51,11 @@ df = df.rename(columns=lambda c: 'street_name' if c.startswith('St Name') else c
 df = df.rename(columns=lambda c: 'list_price' if c.startswith('List Price') else c)
 df = df.rename(columns=lambda c: 'garage_spaces' if c.startswith('Garage Spaces') else c)
 df = df.rename(columns=lambda c: 'ppsqft' if c.startswith('Price Per') else c)
-df = df.rename(columns=lambda c: 'YrBuilt' if c.startswith('Yr') else c)
+df = df.rename(columns=lambda c: 'year_built' if c.startswith('Yr') else c)
+df = df.rename(columns=lambda c: 'hoa_fee' if c.startswith('HOA Fee') else c)
+df = df.rename(columns=lambda c: 'hoa_fee_frequency' if c.startswith('HOA Frequency') else c)
+df = df.rename(columns=lambda c: 'space_rent' if c.startswith('Space') else c)
+df = df.rename(columns=lambda c: 'park_name' if c.startswith('Park') else c)
 
 # Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
@@ -61,21 +65,23 @@ df = df[df['mls_number'].notna()]
 # Keep the last duplicate in case of updated listing details
 df = df.drop_duplicates(subset='mls_number', keep="last")
 
-# Remove all $ and , symbols from specific columns
-# https://stackoverflow.com/a/46430853
-if 'ppsqft' in df.columns:
-  cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'ppsqft', 'Sqft']
-elif 'ppsqft' not in df.columns:
-  cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft']
-# pass them to df.replace(), specifying each char and it's replacement:
-df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
+# Define columns to remove all non-numeric characters from
+cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'space_rent', 'Sqft', 'year_built']
+# Loop through the columns and remove all non-numeric characters
+for col in cols:
+  df[col] = df[col].replace({r'[^\d]':''}, regex=True)
 
-# Remove the square footage & YrBuilt abbreviations and cast as nullable Integer type
-df['Sqft'] = df['Sqft'].str.split('/').str[0].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+# Loop through the columns and cast them as nullable integer types if they contain only integers
+for col in cols:
+  try:
+    df[col] = df[col].apply(pd.to_numeric, errors='raise')
+    df[col] = df[col].astype('Int64')
+  except TypeError:
+    logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
 
-# Cast the list price column as integers
-df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
+# Loop through the object columns and cast them as string dtypes
+for col in df.select_dtypes(include='object').columns:
+  df[col] = df[col].astype('string')
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
