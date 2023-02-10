@@ -575,11 +575,11 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', inf
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
 # If there's no pickle file on GitHub, then make one
-pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/forlease.pickle'
+pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/lease.pickle'
 if requests.head(pickle_url).ok == False:
   # Drop any dupes again
   df = df.drop_duplicates(subset=['mls_number'], keep="last")
-  df.to_pickle("forlease.pickle")
+  df.to_pickle("lease.pickle")
 # Otherwise load in the old pickle file and concat it with the new dataframe\
 elif requests.head(pickle_url).ok == True:
   # Read the old dataframe in
@@ -599,4 +599,4 @@ elif requests.head(pickle_url).ok == True:
   for row in df_combined.itertuples():
     df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
   # Pickle the new combined dataframe
-  df_combined.to_pickle("forlease.pickle")
+  df_combined.to_pickle("lease.pickle")

@@ -26,7 +26,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='forsale.pickle')
+df = pd.read_pickle(filepath_or_buffer='buy.pickle')
 pd.set_option("display.precision", 10)
 
 title_card = dbc.Card(

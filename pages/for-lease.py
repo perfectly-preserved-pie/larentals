@@ -26,7 +26,7 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 global df
 
 # import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='forlease.pickle')
+df = pd.read_pickle(filepath_or_buffer='lease.pickle')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
