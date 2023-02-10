@@ -521,4 +521,4 @@ elif requests.head(pickle_url).ok == True:
   for row in df_combined.itertuples():
     df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
   # Pickle the new combined dataframe
-  df_combined.to_pickle("forsale_dataframe.pickle")
+  df_combined.to_pickle("forsale.pickle")
