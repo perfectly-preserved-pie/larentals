@@ -12,8 +12,8 @@ import uuid
 dash.register_page(
   __name__,
   path='/',
-  name='WhereToLive.LA - For Rent',
-  title='WhereToLive.LA - For Rent',
+  name='WhereToLive.LA - For Lease',
+  title='WhereToLive.LA - For Lease',
   description='An interactive map of available rentals in Los Angeles County. Updated weekly.',
 )
 
