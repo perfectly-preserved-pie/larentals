@@ -44,9 +44,9 @@ def sqft_radio_button(boolean, slider_begin, slider_end):
 def yrbuilt_radio_button(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a year built listed"
     # Then we want nulls to be included in the final dataframe
-    yrbuilt_choice = df['YrBuilt'].isnull()
+    yrbuilt_choice = df['year_built'].isnull()
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    yrbuilt_choice = df.sort_values(by='YrBuilt')['YrBuilt'].between(slider_begin, slider_end)
+    yrbuilt_choice = df.sort_values(by='year_built')['year_built'].between(slider_begin, slider_end)
   return (yrbuilt_choice)
 
 # Create a function to return a dataframe filter for missing ppqsft
@@ -300,7 +300,7 @@ hoa_fee_slider = html.Div([
     # Set the step to 100
     step = 100,
     # Set the marks to be every 1000
-    marks = {i: f'{i}' for i in range(df['hoa_fee'].min(), df['hoa_fee'].max(), 1000)},
+    #marks = {i: f'{i}' for i in range(df['hoa_fee'].min(), df['hoa_fee'].max(), 1000)},
     # Set the tooltip to be the value of the slider
     tooltip = {'always_visible': True, 'placement': 'bottom'},
   ),
@@ -360,7 +360,7 @@ space_rent_slider = html.Div([
     # Set the step to 100
     step = 100,
     # Set the marks to be every 1000
-    marks = {i: f'{i}' for i in range(df['space_rent'].min(), df['space_rent'].max(), 1000)},
+    #marks = {i: f'{i}' for i in range(df['space_rent'].min(), df['space_rent'].max(), 1000)},
     # Set the tooltip to be the value of the slider
     tooltip = {'always_visible': True, 'placement': 'bottom'},
   ),
@@ -429,9 +429,9 @@ year_built_slider = html.Div([
     html.H5("Year Built"),
     # Create a range slider for year built
     dcc.RangeSlider(
-      min=df['YrBuilt'].min(),
-      max=df['YrBuilt'].max(),
-      value=[0, df['YrBuilt'].max()],
+      min=df['year_built'].min(),
+      max=df['year_built'].max(),
+      value=[0, df['year_built'].max()],
       id='yrbuilt_slider',
       tooltip={
         "placement": "bottom",
@@ -439,15 +439,15 @@ year_built_slider = html.Div([
       },
       marks = { # Create custom tick marks
           # The left column should be floats, the right column should be strings
-          f"{df['YrBuilt'].min()}": f"{df['YrBuilt'].min()}", # first mark is oldest house
-          float(f"{df['YrBuilt'].min()}") + 20: str(float(f"{df['YrBuilt'].min()}") + 20), # next mark is oldest house + 20 years
-          float(f"{df['YrBuilt'].min()}") + 40: str(float(f"{df['YrBuilt'].min()}") + 40),
-          float(f"{df['YrBuilt'].min()}") + 60: str(float(f"{df['YrBuilt'].min()}") + 60),
-          float(f"{df['YrBuilt'].min()}") + 80: str(float(f"{df['YrBuilt'].min()}") + 80),
-          float(f"{df['YrBuilt'].min()}") + 100: str(float(f"{df['YrBuilt'].min()}") + 100),
-          float(f"{df['YrBuilt'].min()}") + 120: str(float(f"{df['YrBuilt'].min()}") + 120),
-          float(f"{df['YrBuilt'].min()}") + 140: str(float(f"{df['YrBuilt'].min()}") + 140),
-          f"{df['YrBuilt'].max()}": str(f"{df['YrBuilt'].max()}") # last mark is newest house
+          f"{df['year_built'].min()}": f"{df['year_built'].min()}", # first mark is oldest house
+          float(f"{df['year_built'].min()}") + 20: str(float(f"{df['year_built'].min()}") + 20), # next mark is oldest house + 20 years
+          float(f"{df['year_built'].min()}") + 40: str(float(f"{df['year_built'].min()}") + 40),
+          float(f"{df['year_built'].min()}") + 60: str(float(f"{df['year_built'].min()}") + 60),
+          float(f"{df['year_built'].min()}") + 80: str(float(f"{df['year_built'].min()}") + 80),
+          float(f"{df['year_built'].min()}") + 100: str(float(f"{df['year_built'].min()}") + 100),
+          float(f"{df['year_built'].min()}") + 120: str(float(f"{df['year_built'].min()}") + 120),
+          float(f"{df['year_built'].min()}") + 140: str(float(f"{df['year_built'].min()}") + 140),
+          f"{df['year_built'].max()}": str(f"{df['year_built'].max()}") # last mark is newest house
       },
       updatemode='mouseup'
     ),
@@ -691,7 +691,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, rental_price, bedroom
     (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
-    ((df.sort_values(by='YrBuilt')['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
+    ((df.sort_values(by='year_built')['year_built'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
     ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
     listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
     hoa_fee_function(hoa_fee[0], hoa_fee[1]) &
