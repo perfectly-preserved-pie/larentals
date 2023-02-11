@@ -824,7 +824,7 @@ id = 'listed_date_radio_div',
 
 # Generate the map
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="geojson"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullscreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
@@ -941,7 +941,7 @@ className = "dbc"
 )
 
 @callback(
-  Output(component_id='geojson', component_property='children'),
+  Output(component_id='lease_geojson', component_property='children'),
   [
     Input(component_id='subtype_checklist', component_property='value'),
     Input(component_id='pets_radio', component_property='value'),

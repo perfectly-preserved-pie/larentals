@@ -534,7 +534,7 @@ id = 'listed_date_radio_div',
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="geojson"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullscreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
@@ -646,12 +646,10 @@ className = "dbc"
 
 ## BEGIN CALLBACKS ##
 @callback(
-  Output(component_id='geojson', component_property='children'),
+  Output(component_id='buy_geojson', component_property='children'),
   [
     Input(component_id='subtype_checklist', component_property='value'),
     Input(component_id='pets_radio', component_property='value'),
-    Input(component_id='terms_checklist', component_property='value'),
-    Input(component_id='garage_spaces_slider', component_property='value'),
     Input(component_id='rental_price_slider', component_property='value'),
     Input(component_id='bedrooms_slider', component_property='value'),
     Input(component_id='bathrooms_slider', component_property='value'),
@@ -659,13 +657,11 @@ className = "dbc"
     Input(component_id='yrbuilt_slider', component_property='value'),
     Input(component_id='sqft_missing_radio', component_property='value'),
     Input(component_id='yrbuilt_missing_radio', component_property='value'),
-    Input(component_id='garage_missing_radio', component_property='value'),
     Input(component_id='ppsqft_slider', component_property='value'),
     Input(component_id='ppsqft_missing_radio', component_property='value'),
     Input(component_id='listed_date_datepicker', component_property='start_date'),
     Input(component_id='listed_date_datepicker', component_property='end_date'),
     Input(component_id='listed_date_radio', component_property='value'),
-    Input(component_id='laundry_checklist', component_property='value'),
     Input(component_id='hoa_fee_slider', component_property='value'),
     Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
     Input(component_id='space_rent_slider', component_property='value'),
