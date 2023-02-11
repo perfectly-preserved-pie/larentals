@@ -568,8 +568,6 @@ user_options_card = dbc.Card(
     year_built_slider,
     unknown_year_built_radio,
     pets_radio,
-    pet_deposit_slider,
-    pet_deposit_radio,
   ],
   body=True
 )
