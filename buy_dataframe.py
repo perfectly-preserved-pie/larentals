@@ -269,7 +269,7 @@ df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.st
 if 'listed_date' in df.columns:
     for row in df.loc[(df['listed_date'].isnull()) & df['date_processed'].isnull()].itertuples():
         mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
         df.at[row.Index, 'listed_date'] = webscrape[0]
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
@@ -277,7 +277,7 @@ if 'listed_date' in df.columns:
 elif 'listed_date' not in df.columns:
     for row in df.itertuples():
         mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
+        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
         df.at[row.Index, 'listed_date'] = webscrape[0]
         df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
         df.at[row.Index, 'listing_url'] = webscrape[2]
