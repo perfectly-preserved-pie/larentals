@@ -71,19 +71,19 @@ def listed_date_function(boolean, start_date, end_date):
 def hoa_fee_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a HOA fee listed" (NaN)
     # Then we want nulls to be included in the final dataframe 
-    security_deposit_filter = df['hoa_fee'].isnull() | (df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end))
+    hoa_fee_filter = df['hoa_fee'].isnull() | (df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    security_deposit_filter = df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end)
-  return (security_deposit_filter)
+    hoa_fee_filter = df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end)
+  return (hoa_fee_filter)
 
 # Create a function to return a dataframe filter for space rent
 def space_rent_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a HOA fee listed" (NaN)
     # Then we want nulls to be included in the final dataframe 
-    security_deposit_filter = df['space_rent'].isnull() | (df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end))
+    space_rent_filter = df['space_rent'].isnull() | (df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    security_deposit_filter = df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end)
-  return (security_deposit_filter)
+    space_rent_filter = df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end)
+  return (space_rent_filter)
 
 # Create a function to return a dataframe filter for pet policy
 def pet_policy_function(choice):
@@ -95,6 +95,17 @@ def pet_policy_function(choice):
   elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
     pets_radio_choice = df['PetsAllowed']
   return (pets_radio_choice)
+
+# Create a function to return a dataframe filter for senior community status
+def senior_community_function(choice):
+  if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
+    # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
+    senior_community_radio_choice = ~df['SeniorCommunityYN'].isin(['Y'])
+  elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
+    senior_community_radio_choice = df['SeniorCommunityYN'].isin(['N'])
+  elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
+    senior_community_radio_choice = df['SeniorCommunityYN']
+  return (senior_community_radio_choice)
 
 ## END FUNCTIONS ##
 
@@ -473,55 +484,6 @@ unknown_year_built_radio = html.Div([
 id = 'yrbuilt_missing_div'
 )
 
-pet_deposit_slider =  html.Div([
-    html.H5("Pet Deposit"),
-    # Create a range slider for pet deposit cost
-    dcc.RangeSlider(
-      min=df['DepositPets'].min(), # Dynamically calculate the minimum pet deposit
-      max=df['DepositPets'].max(), # Dynamically calculate the maximum pet deposit
-      value=[df['DepositPets'].min(), df['DepositPets'].max()], 
-      id='pet_deposit_slider',
-      tooltip={
-        "placement": "bottom",
-        "always_visible": True
-      },
-      updatemode='mouseup'
-    ),
-],
-style = {
-  'width' : '70%',
-  'margin-bottom' : '10px',
-},
-id = 'pet_deposit_slider_div'
-)
-
-pet_deposit_radio = html.Div([
-  dbc.Alert(
-    [
-      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
-      html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a pet deposit listed?"),
-      dcc.RadioItems(
-        id='pet_deposit_missing_radio',
-        options=[
-            {'label': 'Yes', 'value': 'True'},
-            {'label': 'No', 'value': 'False'}
-        ],
-        value='True',
-        # add some spacing in between the checkbox and the label
-        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-        inputStyle = {
-          "margin-right": "5px",
-          "margin-left": "5px"
-        },        
-        ),
-    ],
-  color="info",
-  ),
-],
-id = 'unknown_pet_deposit_div',
-)
-
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
@@ -683,3 +645,87 @@ layout = dbc.Container([
 fluid = True,
 className = "dbc"
 )
+
+## BEGIN CALLBACKS ##
+@callback(
+  Output(component_id='geojson', component_property='children'),
+  [
+    Input(component_id='subtype_checklist', component_property='value'),
+    Input(component_id='pets_radio', component_property='value'),
+    Input(component_id='terms_checklist', component_property='value'),
+    Input(component_id='garage_spaces_slider', component_property='value'),
+    Input(component_id='rental_price_slider', component_property='value'),
+    Input(component_id='bedrooms_slider', component_property='value'),
+    Input(component_id='bathrooms_slider', component_property='value'),
+    Input(component_id='sqft_slider', component_property='value'),
+    Input(component_id='yrbuilt_slider', component_property='value'),
+    Input(component_id='sqft_missing_radio', component_property='value'),
+    Input(component_id='yrbuilt_missing_radio', component_property='value'),
+    Input(component_id='garage_missing_radio', component_property='value'),
+    Input(component_id='ppsqft_slider', component_property='value'),
+    Input(component_id='ppsqft_missing_radio', component_property='value'),
+    Input(component_id='listed_date_datepicker', component_property='start_date'),
+    Input(component_id='listed_date_datepicker', component_property='end_date'),
+    Input(component_id='listed_date_radio', component_property='value'),
+    Input(component_id='laundry_checklist', component_property='value'),
+    Input(component_id='hoa_fee_slider', component_property='value'),
+    Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
+    Input(component_id='space_rent_slider', component_property='value'),
+    Input(component_id='senior_community_radio', component_property='value'),
+  ]
+)
+# The following function arguments are positional related to the Inputs in the callback above
+# Their order must match
+def update_map(subtypes_chosen, pets_chosen, terms_chosen, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio, hoa_fee, space_rent, senior_community_radio_choice):
+  # Pre-sort our various lists of strings for faster performance
+  subtypes_chosen.sort()
+  terms_chosen.sort()
+  df_filtered = df[
+    (df['subtype'].isin(subtypes_chosen)) &
+    pet_policy_function(pets_chosen) &
+    (df['Terms'].isin(terms_chosen)) &
+    # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
+    # To do this, we can use the Pandas .between function
+    # See https://stackoverflow.com/a/40442778
+    # Repeat but for rental price
+    # Also pre-sort our lists of values to improve the performance of .between()
+    (df.sort_values(by='list_price')['list_price'].between(rental_price[0], rental_price[1])) &
+    (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
+    (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
+    ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
+    ((df.sort_values(by='YrBuilt')['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
+    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
+    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
+    hoa_fee_function(hoa_fee[0], hoa_fee[1]) &
+    space_rent_function(space_rent[0], space_rent[1]) &
+    senior_community_function(senior_community_radio_choice)
+  ]
+
+  # Create an empty list for the markers
+  markers = []
+  # Iterate through the dataframe, create a marker for each row, and append it to the list
+  for row in df_filtered.itertuples():
+    markers.append(
+      dict(
+        lat=row.Latitude,
+        lon=row.Longitude,
+        popup=row.popup_html
+        )
+    )
+  # Generate geojson with a marker for each listing
+  geojson = dlx.dicts_to_geojson([{**m} for m in markers])
+
+  # Log statements to check if we have all markers in the dataframe displayed
+  logging.info(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
+  logging.info(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
+  # Generate the map
+  return dl.GeoJSON(
+    id=str(uuid.uuid4()),
+    data=geojson,
+    cluster=True,
+    zoomToBoundsOnClick=True,
+    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+      'radius': 160,
+      'minZoom': 3,
+    }
+  )
