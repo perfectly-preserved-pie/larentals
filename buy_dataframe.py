@@ -92,8 +92,8 @@ def return_coordinates(address, row_index):
     except Exception as e:
         lat = NaN
         lon = NaN
-        logging.warning(f"Couldn't fetch geocode information for {address} (row {row.Index} of {len(df)}) because of {e}.")
-    logging.info(f"Fetched coordinates {lat}, {lon} for {address} (row {row.Index} of {len(df)}).")
+        logging.warning(f"Couldn't fetch geocode information for {address} (row {row_index} of {len(df)}) because of {e}.")
+    logging.info(f"Fetched coordinates {lat}, {lon} for {address} (row {row_index} of {len(df)}).")
     return lat, lon
 
 # Create a function to get a missing city
