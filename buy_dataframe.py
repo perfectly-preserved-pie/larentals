@@ -79,10 +79,6 @@ for col in cols:
   except TypeError:
     logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
 
-# Loop through the object columns and cast them as string dtypes
-for col in df.select_dtypes(include='object').columns:
-  df[col] = df[col].astype('string')
-
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
