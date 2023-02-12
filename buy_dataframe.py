@@ -448,14 +448,14 @@ def popup_html(dataframe, row):
     elif df['park_name'].at[i] == 'Unknown':
       park_name = None
     # If it's a senior community, display it
-    if df['senior_community'].at[i] != 'Unknown':
+    if df['SeniorCommunityYN'].at[i] != 'Unknown':
       senior_community = f"""
         <tr>
           <td>Senior Community</td>
-          <td>{df['senior_community'].at[i]}</td>
+          <td>{df['SeniorCommunityYN'].at[i]}</td>
         </tr>
       """
-    elif df['senior_community'].at[i] == 'Unknown':
+    elif df['SeniorCommunityYN'].at[i] == 'Unknown':
       senior_community = None
     # Return the HTML snippet as a string
     return f"""<div>{mls_photo_html_block}</div>
