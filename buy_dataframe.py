@@ -119,6 +119,11 @@ def fetch_missing_city(address):
 for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
   df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}")
 
+# Cast these columns as strings so we can concatenate them
+cols = ['street_number', 'street_name', 'City']
+for col in cols:
+  df[col] = df[col].astype("string")
+
 # Create a new column with the Street Number & Street Name
 df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City']
 
