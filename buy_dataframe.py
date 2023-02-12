@@ -65,6 +65,7 @@ df = df[df['mls_number'].notna()]
 # Keep the last duplicate in case of updated listing details
 df = df.drop_duplicates(subset='mls_number', keep="last")
 
+## CASTING COLUMN TYPES ##
 # Define columns to remove all non-numeric characters from
 cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'space_rent', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters
@@ -78,6 +79,12 @@ for col in cols:
     df[col] = df[col].astype('Int64')
   except TypeError:
     logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
+
+# Replace None with N/A for the some columns
+df['subtype'] = df['subtype'].replace({None: 'N/A'})
+df['hoa_fee_frequency'] = df['hoa_fee_frequency'].replace({None: 'N/A'})
+
+## END CASTING COLUMN TYPES ##
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
@@ -349,10 +356,10 @@ def popup_html(dataframe, row):
     elif pd.isna(square_ft) == False:
         square_ft = f"{int(square_ft)} sq. ft"
     # Repeat above for Year Built
-    if pd.isna(year) == True:
+    if year == 'Unknown':
         year = 'Unknown'
     # If there IS a square footage, convert it into an integer (round number)
-    elif pd.isna(year) == False:
+    elif year != 'Unknown':
         year = f"{int(year)}"
     # Repeat for ppsqft
     if pd.isna(price_per_sqft) == True:
@@ -395,7 +402,7 @@ def popup_html(dataframe, row):
         </tr>
       """
     # If there is a HOA fee, display it
-    if pd.isna(df['hoa_fee'].at[i]) == False:
+    if df['hoa_fee'].at[i] != 'Unknown':
       hoa_fee = f"""
         <tr>
           <td>HOA Fee</td>
@@ -403,47 +410,47 @@ def popup_html(dataframe, row):
         </tr>
       """
     # If there is no HOA fee, let it be None
-    elif pd.isna(df['hoa_fee'].at[i]) == True:
+    elif df['hoa_fee'].at[i] == 'Unknown':
       hoa_fee = None
     # If there is a sub-type, display it
-    if pd.isna(df['subtype'].at[i]) == False:
+    if df['subtype'].at[i] != 'Unknown':
       sub_type = f"""
         <tr>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
           <td>{df['subtype'].at[i]}</td>
         </tr>
       """
-    elif pd.isna(df['subtype'].at[i]) == True:
+    elif df['subtype'].at[i] == 'Unknown':
       sub_type = None
     # If there is a space rent, display it
-    if pd.isna(df['space_rent'].at[i]) == False:
+    if df['space_rent'].at[i] != 'Unknown':
       space_rent = f"""
         <tr>
           <td>Space Rent</td>
           <td>{df['space_rent'].at[i]}</td>
         </tr>
       """
-    elif pd.isna(df['space_rent'].at[i]) == True:
+    elif df['space_rent'].at[i] == 'Unknown':
       space_rent = None 
     # If there is a park name, display it
-    if pd.isna(df['park_name'].at[i]) == False:
+    if df['park_name'].at[i] != 'Unknown':
       park_name = f"""
         <tr>
           <td>Park Name</td>
           <td>{df['park_name'].at[i]}</td>
         </tr>
       """
-    elif pd.isna(df['park_name'].at[i]) == True:
+    elif df['park_name'].at[i] == 'Unknown':
       park_name = None
     # If it's a senior community, display it
-    if pd.isna(df['senior_community'].at[i]) == False:
+    if df['senior_community'].at[i] != 'Unknown':
       senior_community = f"""
         <tr>
           <td>Senior Community</td>
           <td>{df['senior_community'].at[i]}</td>
         </tr>
       """
-    elif pd.isna(df['senior_community'].at[i]) == True:
+    elif df['senior_community'].at[i] == 'Unknown':
       senior_community = None
     # Return the HTML snippet as a string
     return f"""<div>{mls_photo_html_block}</div>
@@ -497,6 +504,8 @@ pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/bu
 if requests.head(pickle_url).ok == False:
   # Drop any dupes again
   df = df.drop_duplicates(subset=['mls_number'], keep="last")
+  for row in df.itertuples():
+    df.at[row.Index, 'popup_html'] = popup_html(df, row)
   df.to_pickle("buy.pickle")
 # Otherwise load in the old pickle file and concat it with the new dataframe\
 elif requests.head(pickle_url).ok == True:
