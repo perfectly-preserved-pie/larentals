@@ -32,22 +32,22 @@ pd.set_option("display.precision", 10)
 ## FUNCTIONS ##
 
 # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-def sqft_radio_button(boolean, slider_begin, slider_end):
+def sqft_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
     # Then we want nulls to be included in the final dataframe
-    sqft_choice = df['Sqft'].isnull()
+    sqft_choice = df['Sqft'].isnull() | df.sort_values(by='Sqft')['Sqft'].between(slider_begin, slider_end)
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     sqft_choice = df.sort_values(by='Sqft')['Sqft'].between(slider_begin, slider_end)
   return (sqft_choice)
 
 # Create a function to return a dataframe filter for missing year built
-def yrbuilt_radio_button(boolean, slider_begin, slider_end):
+def yrbuilt_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a year built listed"
     # Then we want nulls to be included in the final dataframe
-    yrbuilt_choice = df['year_built'].isnull()
+    yrbuilt_filter = df['year_built'].isnull() | df.sort_values(by='year_built')['year_built'].between(slider_begin, slider_end)
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    yrbuilt_choice = df.sort_values(by='year_built')['year_built'].between(slider_begin, slider_end)
-  return (yrbuilt_choice)
+    yrbuilt_filter = df.sort_values(by='year_built')['year_built'].between(slider_begin, slider_end)
+  return (yrbuilt_filter)
 
 # Create a function to return a dataframe filter for missing ppqsft
 def ppsqft_radio_button(boolean, slider_begin, slider_end):
@@ -98,10 +98,10 @@ def pet_policy_function(choice):
 
 # Create a function to return a dataframe filter for senior community status
 def senior_community_function(choice):
-  if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
+  if choice == 'True': # If the user says "yes, I ONLY want properties that allow pets"
     # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
-    senior_community_radio_choice = ~df['SeniorCommunityYN'].isin(['Y'])
-  elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
+    senior_community_radio_choice = df['SeniorCommunityYN'].isin(['Y'])
+  elif choice == 'False': # If the user says "No, I don't want properties where pets are allowed"
     senior_community_radio_choice = df['SeniorCommunityYN'].isin(['N'])
   elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
     senior_community_radio_choice = df['SeniorCommunityYN']
@@ -394,8 +394,9 @@ senior_community_radio = html.Div([
     options = [
       {'label': 'Include properties in Senior Communities', 'value': 'True'},
       {'label': 'Exclude properties in Senior Communities', 'value': 'False'},
+      {'label': 'Both', 'value': 'Both'},
     ],
-    value = 'True',
+    value = 'Both',
     labelStyle = {'display': 'block'},
     inputStyle = {
       "margin-right": "5px",
@@ -653,31 +654,48 @@ className = "dbc"
     Input(component_id='rental_price_slider', component_property='value'),
     Input(component_id='bedrooms_slider', component_property='value'),
     Input(component_id='bathrooms_slider', component_property='value'),
+    Input(component_id='sqft_missing_radio', component_property='value'),
     Input(component_id='sqft_slider', component_property='value'),
     Input(component_id='yrbuilt_slider', component_property='value'),
-    Input(component_id='sqft_missing_radio', component_property='value'),
     Input(component_id='yrbuilt_missing_radio', component_property='value'),
-    Input(component_id='ppsqft_slider', component_property='value'),
-    Input(component_id='ppsqft_missing_radio', component_property='value'),
-    Input(component_id='listed_date_datepicker', component_property='start_date'),
-    Input(component_id='listed_date_datepicker', component_property='end_date'),
-    Input(component_id='listed_date_radio', component_property='value'),
-    Input(component_id='hoa_fee_slider', component_property='value'),
-    Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
-    Input(component_id='space_rent_slider', component_property='value'),
-    Input(component_id='senior_community_radio', component_property='value'),
+    #Input(component_id='ppsqft_slider', component_property='value'),
+    #Input(component_id='ppsqft_missing_radio', component_property='value'),
+    #Input(component_id='listed_date_datepicker', component_property='start_date'),
+    #Input(component_id='listed_date_datepicker', component_property='end_date'),
+    #Input(component_id='listed_date_radio', component_property='value'),
+    #Input(component_id='hoa_fee_slider', component_property='value'),
+    #Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
+    #Input(component_id='space_rent_slider', component_property='value'),
+    #Input(component_id='senior_community_radio', component_property='value'),
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
 # Their order must match
-def update_map(subtypes_chosen, pets_chosen, terms_chosen, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio, hoa_fee, space_rent, senior_community_radio_choice):
+def update_map(
+  subtypes_chosen,
+  pets_chosen,
+  rental_price,
+  bedrooms_chosen,
+  bathrooms_chosen,
+  sqft_missing_radio_choice,
+  sqft_chosen, years_chosen,
+  yrbuilt_missing_radio_choice,
+  #ppsqft_chosen,
+  #ppsqft_missing_radio_choice,
+  #listed_date_datepicker_start,
+  #listed_date_datepicker_end,
+  #listed_date_radio,
+  #hoa_fee,
+  #hoa_fee_radio,
+  #hoa_fee_frequency_chosen,
+  #space_rent,
+  #senior_community_radio_choice
+):
   # Pre-sort our various lists of strings for faster performance
   subtypes_chosen.sort()
-  terms_chosen.sort()
   df_filtered = df[
     (df['subtype'].isin(subtypes_chosen)) &
     pet_policy_function(pets_chosen) &
-    (df['Terms'].isin(terms_chosen)) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
@@ -686,13 +704,14 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, rental_price, bedroom
     (df.sort_values(by='list_price')['list_price'].between(rental_price[0], rental_price[1])) &
     (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
-    ((df.sort_values(by='year_built')['year_built'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
-    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
-    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
-    hoa_fee_function(hoa_fee[0], hoa_fee[1]) &
-    space_rent_function(space_rent[0], space_rent[1]) &
-    senior_community_function(senior_community_radio_choice)
+    sqft_function(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]) &
+    yrbuilt_function(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]) 
+    #((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
+    #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
+    #hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
+    #(df['hoa_fee_frequency'].isin(hoa_fee_frequency_chosen)) &
+    #space_rent_function(space_rent[0], space_rent[1]) &
+    #senior_community_function(senior_community_radio_choice)
   ]
 
   # Create an empty list for the markers
