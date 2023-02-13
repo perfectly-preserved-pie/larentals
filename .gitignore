@@ -7,3 +7,4 @@ hdf
 *.pyc
 *.cpython
 __pycache__/larentals.cpython-310.pyc
+*.xlsx
