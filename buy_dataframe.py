@@ -80,9 +80,18 @@ for col in cols:
   except TypeError:
     logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
 
-# Replace None with N/A for the some columns
-df['subtype'] = df['subtype'].replace({None: 'N/A'})
-df['hoa_fee_frequency'] = df['hoa_fee_frequency'].replace({None: 'N/A'})
+# Between SFRs, Condos/Townhomes/etc, and Manufactured Homes there are some columns that are Not Applicable to all subtypes
+# We need to make a rule here: N/A means "not applicable" while NaN means "applicable, but Unknown for some reason (i.e. missing data))"
+# Using boolean indexing, for rows with a Space rent (i.e manufactured homes), set their HOA fee to N/A and their HOA fee frequency to N/A
+df.loc[df['space_rent'].notna(), 'hoa_fee'] = 'N/A'
+df.loc[df['space_rent'].notna(), 'hoa_fee_frequency'] = 'N/A'
+# For rows with a HOA fee (i.e condos/SFRs), set their Space Rent to N/A and their Park Name to N/A
+df.loc[df['hoa_fee'].notna(), 'Space Rent'] = 'N/A'
+df.loc[df['hoa_fee'].notna(), 'Park Name'] = 'N/A'
+# For rows WITHOUT a Space rent (i.e condos/SFRs), set their PetsAllowed to N/A
+df.loc[df['space_rent'].isna(), 'PetsAllowed'] = 'N/A'
+# Now fill all NaN values with "Unknown"
+df.fillna(value="Unknown", inplace=True)
 
 ## END CASTING COLUMN TYPES ##
 
@@ -352,6 +361,10 @@ def popup_html(dataframe, row):
     brba = df['Br/Ba'].at[i]
     square_ft = df['Sqft'].at[i]
     year = df['year_built'].at[i]
+    park_name = df['park_name'].at[i]
+    hoa_fee = df['hoa_fee'].at[i]
+    hoa_fee_frequency = df['hoa_fee_frequency'].at[i]
+    space_rent = df['space_rent'].at[i]
     listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
@@ -406,57 +419,6 @@ def popup_html(dataframe, row):
           <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
         </tr>
       """
-    # If there is a HOA fee, display it
-    if df['hoa_fee'].at[i] != 'Unknown':
-      hoa_fee = f"""
-        <tr>
-          <td>HOA Fee</td>
-          <td>{df['hoa_fee'].at[i]}</td>
-        </tr>
-      """
-    # If there is no HOA fee, let it be None
-    elif df['hoa_fee'].at[i] == 'Unknown':
-      hoa_fee = None
-    # If there is a sub-type, display it
-    if df['subtype'].at[i] != 'Unknown':
-      sub_type = f"""
-        <tr>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
-          <td>{df['subtype'].at[i]}</td>
-        </tr>
-      """
-    elif df['subtype'].at[i] == 'Unknown':
-      sub_type = None
-    # If there is a space rent, display it
-    if df['space_rent'].at[i] != 'Unknown':
-      space_rent = f"""
-        <tr>
-          <td>Space Rent</td>
-          <td>{df['space_rent'].at[i]}</td>
-        </tr>
-      """
-    elif df['space_rent'].at[i] == 'Unknown':
-      space_rent = None 
-    # If there is a park name, display it
-    if df['park_name'].at[i] != 'Unknown':
-      park_name = f"""
-        <tr>
-          <td>Park Name</td>
-          <td>{df['park_name'].at[i]}</td>
-        </tr>
-      """
-    elif df['park_name'].at[i] == 'Unknown':
-      park_name = None
-    # If it's a senior community, display it
-    if df['SeniorCommunityYN'].at[i] != 'Unknown':
-      senior_community = f"""
-        <tr>
-          <td>Senior Community</td>
-          <td>{df['SeniorCommunityYN'].at[i]}</td>
-        </tr>
-      """
-    elif df['SeniorCommunityYN'].at[i] == 'Unknown':
-      senior_community = None
     # Return the HTML snippet as a string
     return f"""<div>{mls_photo_html_block}</div>
       <table>
@@ -467,6 +429,10 @@ def popup_html(dataframe, row):
           </tr>
           <tr>
             <td>Street Address</td>
+            <td>{full_address}</td>
+          </tr>
+          <tr>
+            <td>Park Name</td>
             <td>{full_address}</td>
           </tr>
           {park_name}
