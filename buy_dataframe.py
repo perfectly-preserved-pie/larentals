@@ -365,6 +365,8 @@ def popup_html(dataframe, row):
     hoa_fee = df['hoa_fee'].at[i]
     hoa_fee_frequency = df['hoa_fee_frequency'].at[i]
     space_rent = df['space_rent'].at[i]
+    senior_community = df['senior_community'].at[i]
+    subtype = df['subtype'].at[i]
     listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
@@ -435,18 +437,31 @@ def popup_html(dataframe, row):
             <td>Park Name</td>
             <td>{full_address}</td>
           </tr>
-          {park_name}
+          <tr>
+            <td>Park Name</td>
+            <td>{park_name}</td>
+          </tr>
           {listing_url_block}
           <tr>
             <td>Rental Price</td>
             <td>${lc_price}</td>
           </tr>
-          {hoa_fee}
+          <tr>
+            <td>HOA Fee</td>
+            <td>${hoa_fee}</td>
+          </tr>
+          <tr>
+            <td>HOA Fee Frequency</td>
+            <td>{hoa_fee_frequency}</td>
+          </tr>
           <tr>
             <td>Square Feet</td>
             <td>{square_ft}</td>
           </tr>
-          {space_rent}
+          <tr>
+            <td>Space Rent</td>
+            <td>${space_rent}</td>
+          </tr>
           <tr>
             <td>Price Per Square Foot</td>
             <td>{price_per_sqft}</td>
@@ -459,8 +474,14 @@ def popup_html(dataframe, row):
             <td>Year Built</td>
             <td>{year}</td>
           </tr>
-          {senior_community}
-          {sub_type}
+          <tr>
+            <td>Senior Community</td>
+            <td>{senior_community}</td>
+          </tr>
+          <tr>
+            <td>Sub Type</td>
+            <td>{subtype}</td>
+          </tr>
         </tbody>
       </table>
       """
