@@ -80,6 +80,8 @@ for col in cols:
   except TypeError:
     logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
 
+## END CASTING COLUMN TYPES ##
+
 # Between SFRs, Condos/Townhomes/etc, and Manufactured Homes there are some columns that are Not Applicable to all subtypes
 # We need to make a rule here: N/A means "not applicable" while NaN means "applicable, but Unknown for some reason (i.e. missing data))"
 # Using boolean indexing, for rows with a Space rent (i.e manufactured homes), set their HOA fee to N/A and their HOA fee frequency to N/A
@@ -88,16 +90,16 @@ df.loc[df['space_rent'].notna(), 'hoa_fee_frequency'] = 'N/A'
 # For rows with a HOA fee (i.e condos/SFRs), set their Space Rent to N/A and their Park Name to N/A
 df.loc[df['hoa_fee'].notna(), 'space_rent'] = 'N/A'
 df.loc[df['hoa_fee'].notna(), 'park_name'] = 'N/A'
-# For rows WITHOUT a Space rent (i.e condos/SFRs), set their PetsAllowed to N/A
-df.loc[df['space_rent'].isna(), 'PetsAllowed'] = 'N/A'
+# For rows that have their space rent set to N/A (i.e condos/SFRs), set their PetsAllowed to N/A
+df.loc[df["space_rent"].str.contains('N/A', na=False), "PetsAllowed"] = 'N/A'
 # For rows WITHOUT a senior community (i.e condos/SFRs), set their Senior Community to N/A
 df.loc[df['SeniorCommunityYN'].isna(), 'SeniorCommunityYN'] = 'N/A'
-# For rows that don't have "CONDO" or "TWNHS" in their subtype (i.e SFRs and MHs), set their subtype to N/A
-df.loc[~df['subtype'].str.contains('CONDO|TWNHS', na=False), 'subtype'] = 'N/A'
-# Now fill all NaN values with "Unknown"
-df.fillna(value="Unknown", inplace=True)
-
-## END CASTING COLUMN TYPES ##
+# For rows that don't have "CONDO" or "TWNHS" in their subtype and have their space rent set to N/A and have their SeniorCommunity set to N/A, set their subtype to SFR
+df.loc[(df["subtype"] != "CONDO") & (df["subtype"] != "TWNHS") & (df["space_rent"] == "N/A") & (df["SeniorCommunityYN"] == "N/A"), "subtype"] = "SFR"
+# For rows that don't have their SeniorCommunity set to N/A (i.e MHs), set their SFR to MH
+df.loc[df["SeniorCommunityYN"] != "N/A", "subtype"] = "MH"
+# Use boolean indexing to set the subtype of rows where subtype doesn't contain 'MH', 'CONDO', or 'TWNHS' to "SFR"
+df.loc[~df["subtype"].str.contains("MH|CONDO|TWNHS", case=False, na=False), "subtype"] = "SFR"
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
