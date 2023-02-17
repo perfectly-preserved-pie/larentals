@@ -90,6 +90,8 @@ df.loc[df['hoa_fee'].notna(), 'Space Rent'] = 'N/A'
 df.loc[df['hoa_fee'].notna(), 'Park Name'] = 'N/A'
 # For rows WITHOUT a Space rent (i.e condos/SFRs), set their PetsAllowed to N/A
 df.loc[df['space_rent'].isna(), 'PetsAllowed'] = 'N/A'
+# For rows WITHOUT a senior community (i.e condos/SFRs), set their Senior Community to N/A
+df.loc[df['SeniorCommunityYN'].isna(), 'SeniorCommunityYN'] = 'N/A'
 # Now fill all NaN values with "Unknown"
 df.fillna(value="Unknown", inplace=True)
 
