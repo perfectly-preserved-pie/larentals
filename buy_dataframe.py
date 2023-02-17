@@ -92,6 +92,8 @@ df.loc[df['hoa_fee'].notna(), 'Park Name'] = 'N/A'
 df.loc[df['space_rent'].isna(), 'PetsAllowed'] = 'N/A'
 # For rows WITHOUT a senior community (i.e condos/SFRs), set their Senior Community to N/A
 df.loc[df['SeniorCommunityYN'].isna(), 'SeniorCommunityYN'] = 'N/A'
+# For rows that don't have "CONDO" or "TWNHS" in their subtype (i.e SFRs and MHs), set their subtype to N/A
+df.loc[~df['subtype'].str.contains('CONDO|TWNHS', na=False), 'subtype'] = 'N/A'
 # Now fill all NaN values with "Unknown"
 df.fillna(value="Unknown", inplace=True)
 
