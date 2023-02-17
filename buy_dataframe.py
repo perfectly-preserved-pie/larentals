@@ -94,11 +94,9 @@ df.loc[df['hoa_fee'].notna(), 'park_name'] = 'N/A'
 df.loc[df["space_rent"].str.contains('N/A', na=False), "PetsAllowed"] = 'N/A'
 # For rows WITHOUT a senior community (i.e condos/SFRs), set their Senior Community to N/A
 df.loc[df['SeniorCommunityYN'].isna(), 'SeniorCommunityYN'] = 'N/A'
-# For rows that don't have "CONDO" or "TWNHS" in their subtype and have their space rent set to N/A and have their SeniorCommunity set to N/A, set their subtype to SFR
-df.loc[(df["subtype"] != "CONDO") & (df["subtype"] != "TWNHS") & (df["space_rent"] == "N/A") & (df["SeniorCommunityYN"] == "N/A"), "subtype"] = "SFR"
-# For rows that don't have their SeniorCommunity set to N/A (i.e MHs), set their SFR to MH
+# For rows WITH SeniorCommunity, set their SFR to MH
 df.loc[df["SeniorCommunityYN"] != "N/A", "subtype"] = "MH"
-# Use boolean indexing to set the subtype of rows where subtype doesn't contain 'MH', 'CONDO', or 'TWNHS' to "SFR"
+# For rows that don't contain "CONDO" or "TWNHS" or "MH" in their subtype, set their subtype to SFR
 df.loc[~df["subtype"].str.contains("MH|CONDO|TWNHS", case=False, na=False), "subtype"] = "SFR"
 
 # Create a function to get coordinates from the full street address
