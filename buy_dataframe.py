@@ -86,8 +86,8 @@ for col in cols:
 df.loc[df['space_rent'].notna(), 'hoa_fee'] = 'N/A'
 df.loc[df['space_rent'].notna(), 'hoa_fee_frequency'] = 'N/A'
 # For rows with a HOA fee (i.e condos/SFRs), set their Space Rent to N/A and their Park Name to N/A
-df.loc[df['hoa_fee'].notna(), 'Space Rent'] = 'N/A'
-df.loc[df['hoa_fee'].notna(), 'Park Name'] = 'N/A'
+df.loc[df['hoa_fee'].notna(), 'space_rent'] = 'N/A'
+df.loc[df['hoa_fee'].notna(), 'park_name'] = 'N/A'
 # For rows WITHOUT a Space rent (i.e condos/SFRs), set their PetsAllowed to N/A
 df.loc[df['space_rent'].isna(), 'PetsAllowed'] = 'N/A'
 # For rows WITHOUT a senior community (i.e condos/SFRs), set their Senior Community to N/A
