@@ -92,7 +92,6 @@ cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters except for the string "N/A"
 for col in cols:
   df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or x == 'N/A'))
-
 # Fill in missing values with NaN
 for col in cols:
   df[col] = df[col].replace('', NaN)
