@@ -89,17 +89,13 @@ df = df.drop_duplicates(subset='mls_number', keep="last")
 ## CASTING COLUMN TYPES ##
 # Define columns to remove all non-numeric characters from
 cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
-# Loop through the columns and remove all non-numeric characters
+# Loop through the columns and remove all non-numeric characters except for the string "N/A"
 for col in cols:
-  df[col] = df[col].replace({r'[^\d]':''}, regex=True)
+  df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or x == 'N/A'))
 
-# Loop through the columns and cast them as nullable integer types if they contain only integers
+# Fill in missing values with NaN
 for col in cols:
-  try:
-    df[col] = df[col].apply(pd.to_numeric, errors='raise')
-    df[col] = df[col].astype('Int64')
-  except TypeError:
-    logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
+  df[col] = df[col].replace('', NaN)
 
 ## END CASTING COLUMN TYPES ##
 
