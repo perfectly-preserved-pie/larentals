@@ -88,7 +88,7 @@ df = df.drop_duplicates(subset='mls_number', keep="last")
 
 ## CASTING COLUMN TYPES ##
 # Define columns to remove all non-numeric characters from
-cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'space_rent', 'Sqft', 'year_built']
+cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters
 for col in cols:
   df[col] = df[col].replace({r'[^\d]':''}, regex=True)
