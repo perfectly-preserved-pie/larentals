@@ -33,6 +33,27 @@ global df
 excel_file = glob.glob('*homes*.xlsx')[0]
 xlsx = pd.read_excel(excel_file, sheet_name=None)
 
+## Remember: N/A = Not Applicable to this home type while NaN = Unknown for some reason (missing data)
+# Assuming first sheet is single-family homes, second sheet is condos/townhouses, and third sheet is mobile homes
+# Set the subtype of every row in the first sheet to "SFR"
+xlsx[list(xlsx.keys())[0]]["Sub Type"] = "SFR"
+# Set the subtype of every row in the third sheet to "MH"
+xlsx[list(xlsx.keys())[2]]["Sub Type"] = "MH"
+# Set the HOA fee and HOA fee frequency of every row in the third sheet to "N/A"
+xlsx[list(xlsx.keys())[2]]["HOA Fee"] = "N/A"
+xlsx[list(xlsx.keys())[2]]["HOA Frequency"] = "N/A"
+# Set the space rent and park name of every row in the first and second sheets to "N/A"
+xlsx[list(xlsx.keys())[0]]["Space Rent"] = "N/A"
+xlsx[list(xlsx.keys())[0]]["Park Name"] = "N/A"
+xlsx[list(xlsx.keys())[1]]["Space Rent"] = "N/A"
+xlsx[list(xlsx.keys())[1]]["Park Name"] = "N/A"
+# Set the PetsAllowed of every row in the first and second sheets to "N/A"
+xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = "N/A"
+xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = "N/A"
+# Set the SeniorCommunityYN of every row in the first and second sheets to "N/A"
+xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = "N/A"
+xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = "N/A"
+
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
 
@@ -81,23 +102,6 @@ for col in cols:
     logging.info(f"Column {col} contains float values and will not be cast as a nullable integer dtype.")
 
 ## END CASTING COLUMN TYPES ##
-
-# Between SFRs, Condos/Townhomes/etc, and Manufactured Homes there are some columns that are Not Applicable to all subtypes
-# We need to make a rule here: N/A means "not applicable" while NaN means "applicable, but Unknown for some reason (i.e. missing data))"
-# Using boolean indexing, for rows with a Space rent (i.e manufactured homes), set their HOA fee to N/A and their HOA fee frequency to N/A
-df.loc[df['space_rent'].notna(), 'hoa_fee'] = 'N/A'
-df.loc[df['space_rent'].notna(), 'hoa_fee_frequency'] = 'N/A'
-# For rows with a HOA fee (i.e condos/SFRs), set their Space Rent to N/A and their Park Name to N/A
-df.loc[df['hoa_fee'].notna(), 'space_rent'] = 'N/A'
-df.loc[df['hoa_fee'].notna(), 'park_name'] = 'N/A'
-# For rows that have their space rent set to N/A (i.e condos/SFRs), set their PetsAllowed to N/A
-df.loc[df["space_rent"].str.contains('N/A', na=False), "PetsAllowed"] = 'N/A'
-# For rows WITHOUT a senior community (i.e condos/SFRs), set their Senior Community to N/A
-df.loc[df['SeniorCommunityYN'].isna(), 'SeniorCommunityYN'] = 'N/A'
-# For rows WITH SeniorCommunity, set their SFR to MH
-df.loc[df["SeniorCommunityYN"] != "N/A", "subtype"] = "MH"
-# For rows that don't contain "CONDO" or "TWNHS" or "MH" in their subtype, set their subtype to SFR
-df.loc[~df["subtype"].str.contains("MH|CONDO|TWNHS", case=False, na=False), "subtype"] = "SFR"
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
