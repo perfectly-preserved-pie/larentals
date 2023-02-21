@@ -1,3 +1,6 @@
 .git
 .env
 .cache
+*.xlsx
+*.csv
+*.pyc
