@@ -382,10 +382,10 @@ def popup_html(dataframe, row):
     elif pd.isna(square_ft) == False:
         square_ft = f"{int(square_ft)} sq. ft"
     # Repeat above for Year Built
-    if year == 'Unknown':
+    if pd. isna(year) == True:
         year = 'Unknown'
     # If there IS a square footage, convert it into an integer (round number)
-    elif year != 'Unknown':
+    elif pd.isna(year) == False:
         year = f"{int(year)}"
     # Repeat for ppsqft
     if pd.isna(price_per_sqft) == True:
