@@ -63,7 +63,7 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip()
 
-# Standardize the column names by renaminmg them
+# Standardize the column names by renaming them
 # https://stackoverflow.com/a/65332240
 df = df.rename(columns=lambda c: 'mls_number' if c.startswith('Listing') else c)
 df = df.rename(columns=lambda c: 'subtype' if c.startswith('Sub Type') else c)
@@ -77,6 +77,8 @@ df = df.rename(columns=lambda c: 'hoa_fee' if c.startswith('HOA Fee') else c)
 df = df.rename(columns=lambda c: 'hoa_fee_frequency' if c.startswith('HOA Frequency') else c)
 df = df.rename(columns=lambda c: 'space_rent' if c.startswith('Space') else c)
 df = df.rename(columns=lambda c: 'park_name' if c.startswith('Park') else c)
+df = df.rename(columns=lambda c: 'senior_community' if c.startswith('Senior') else c)
+df = df.rename(columns=lambda c: 'pets_allowed' if c.startswith('Pets') else c)
 
 # Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
@@ -370,6 +372,7 @@ def popup_html(dataframe, row):
     space_rent = df['space_rent'].at[i]
     senior_community = df['senior_community'].at[i]
     subtype = df['subtype'].at[i]
+    pets = df['pets_allowed'].at[i]
     listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
     # If there's no square footage, set it to "Unknown" to display for the user
     # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
@@ -394,6 +397,16 @@ def popup_html(dataframe, row):
         listed_date = 'Unknown'
     elif pd.isna(listed_date) == False:
         listed_date = f"{listed_date}"
+    # Repeat for pets
+    if pd.isna(pets) == True:
+      pets = 'Unknown'
+    elif pd.isna(pets) == False:
+      pets = f"{pets}"
+    # Repeat for senior community
+    if pd.isna(senior_community) == True:
+      senior_community = 'Unknown'
+    elif pd.isna(senior_community) == False:
+      senior_community = f"{senior_community}"
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
    # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
@@ -476,6 +489,10 @@ def popup_html(dataframe, row):
           <tr>
             <td>Year Built</td>
             <td>{year}</td>
+          </tr>
+          <tr>
+            <td>Pets Allowed?</td>
+            <td>{pets}</td>
           </tr>
           <tr>
             <td>Senior Community</td>
