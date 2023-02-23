@@ -346,7 +346,7 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_dat
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
 # Cast these columns as nullable integers
-cols = ['full_bathrooms', 'bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
+cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
 for col in cols:
   df[col] = df[col].astype('Int64')
 # Cast these columns as nullable floats
