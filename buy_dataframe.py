@@ -97,6 +97,9 @@ for col in cols:
 for col in cols:
   df[col] = df[col].replace('', NaN)
 
+# Reindex the dataframe
+df.reset_index(drop=True, inplace=True)
+
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
