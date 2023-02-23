@@ -306,13 +306,13 @@ elif 'listed_date' not in df.columns:
 # This assumption will reduce the number of API calls to Google Maps
 if 'Latitude' in df.columns:
     for row in df['Latitude'].isnull().itertuples():
-        coordinates = return_coordinates(df.at[row.Index, 'full_street_address'], row.Index)
+        coordinates = return_coordinates(row.full_street_address, row.Index)
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
 # If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
 elif 'Latitude' not in df.columns:
     for row in df.itertuples():
-        coordinates = return_coordinates(df.at[row.Index, 'full_street_address'], row.Index)
+        coordinates = return_coordinates(row.full_street_address, row.Index)
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
 
@@ -350,7 +350,7 @@ cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total
 for col in cols:
   df[col] = df[col].astype('Int64')
 # Cast these columns as nullable floats
-cols ['ppsqft', 'latitude', 'longitude', 'hoa_fee', 'space_rent']
+cols = ['ppsqft', 'latitude', 'longitude', 'hoa_fee', 'space_rent']
 for col in cols:
   df[col] = df[col].astype('float64')
 
