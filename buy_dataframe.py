@@ -40,19 +40,19 @@ xlsx[list(xlsx.keys())[0]]["Sub Type"] = "SFR"
 # Set the subtype of every row in the third sheet to "MH"
 xlsx[list(xlsx.keys())[2]]["Sub Type"] = "MH"
 # Set the HOA fee and HOA fee frequency of every row in the third sheet to NaN
-xlsx[list(xlsx.keys())[2]]["HOA Fee"] = pd.NaN
-xlsx[list(xlsx.keys())[2]]["HOA Frequency"] = pd.NaN
+xlsx[list(xlsx.keys())[2]]["HOA Fee"] = NaN
+xlsx[list(xlsx.keys())[2]]["HOA Frequency"] = NaN
 # Set the space rent and park name of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["Space Rent"] = pd.NaN
-xlsx[list(xlsx.keys())[0]]["Park Name"] = pd.NaN
-xlsx[list(xlsx.keys())[1]]["Space Rent"] = pd.NaN
-xlsx[list(xlsx.keys())[1]]["Park Name"] = pd.NaN
+xlsx[list(xlsx.keys())[0]]["Space Rent"] = NaN
+xlsx[list(xlsx.keys())[0]]["Park Name"] = NaN
+xlsx[list(xlsx.keys())[1]]["Space Rent"] = NaN
+xlsx[list(xlsx.keys())[1]]["Park Name"] = NaN
 # Set the PetsAllowed of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = pd.NaN
-xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = pd.NaN
+xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = NaN
+xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = NaN
 # Set the SeniorCommunityYN of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = pd.NaN
-xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = pd.NaN
+xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = NaN
+xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
 
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
