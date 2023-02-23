@@ -353,7 +353,7 @@ cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total
 for col in cols:
   df[col] = df[col].astype('Int64')
 # Cast these columns as nullable floats
-cols = ['ppsqft', 'latitude', 'longitude', 'hoa_fee', 'space_rent']
+cols = ['ppsqft', 'Latitude', 'Longitude', 'hoa_fee', 'space_rent']
 for col in cols:
   df[col] = df[col].astype('float64')
 
@@ -428,20 +428,20 @@ def popup_html(dataframe, row):
       senior_community = "N/A"
     # Repeat for HOA fee
     # If HOA fee is MISSING and the subtype contains MH or CONDO, set it to Unknown
-    if pd.isna(hoa_fee) == True and (subtype == 'MH' or subtype.str.contains['CONDO']):
+    if pd.isna(hoa_fee) == True and (subtype == 'MH' or 'CONDO' in subtype):
       hoa_fee = 'Unknown'
     # If HOA fee is PRESENT and the subtype contains MH or CONDO, set it to the value
-    elif pd.isna(hoa_fee) == False and (subtype == 'MH' or subtype.str.contains['CONDO']):
+    elif pd.isna(hoa_fee) == False and (subtype == 'MH' or 'CONDO' in subtype):
       hoa_fee = f"${float(hoa_fee)}"
     # If HOA fee is MISSING and the subtype is SFR, set it to N/A
     elif pd.isna(hoa_fee) == True and subtype == 'SFR':
       hoa_fee = "N/A"
     # Repeat for HOA fee frequency
     # If HOA fee frequency is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
-    if pd.isna(hoa_fee_frequency) == True and (subtype == 'SFR' or subtype.str.contains['CONDO']):
+    if pd.isna(hoa_fee_frequency) == True and (subtype == 'SFR' or 'CONDO' in subtype):
       hoa_fee_frequency = 'Unknown'
     # If HOA fee frequency is PRESENT and the subtype is SFR or contains CONDO, set it to the value
-    elif pd.isna(hoa_fee_frequency) == False and (subtype == 'SFR' or subtype.str.contains['CONDO']):
+    elif pd.isna(hoa_fee_frequency) == False and (subtype == 'SFR' or 'CONDO' in subtype):
       hoa_fee_frequency = f"{hoa_fee_frequency}"
     # If HOA fee frequency is MISSING and the subtype is MH, set it to N/A
     elif pd.isna(hoa_fee_frequency) == True and subtype == 'MH':
