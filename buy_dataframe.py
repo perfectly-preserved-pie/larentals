@@ -39,20 +39,20 @@ xlsx = pd.read_excel(excel_file, sheet_name=None)
 xlsx[list(xlsx.keys())[0]]["Sub Type"] = "SFR"
 # Set the subtype of every row in the third sheet to "MH"
 xlsx[list(xlsx.keys())[2]]["Sub Type"] = "MH"
-# Set the HOA fee and HOA fee frequency of every row in the third sheet to "N/A"
-xlsx[list(xlsx.keys())[2]]["HOA Fee"] = "N/A"
-xlsx[list(xlsx.keys())[2]]["HOA Frequency"] = "N/A"
-# Set the space rent and park name of every row in the first and second sheets to "N/A"
-xlsx[list(xlsx.keys())[0]]["Space Rent"] = "N/A"
-xlsx[list(xlsx.keys())[0]]["Park Name"] = "N/A"
-xlsx[list(xlsx.keys())[1]]["Space Rent"] = "N/A"
-xlsx[list(xlsx.keys())[1]]["Park Name"] = "N/A"
-# Set the PetsAllowed of every row in the first and second sheets to "N/A"
-xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = "N/A"
-xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = "N/A"
-# Set the SeniorCommunityYN of every row in the first and second sheets to "N/A"
-xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = "N/A"
-xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = "N/A"
+# Set the HOA fee and HOA fee frequency of every row in the third sheet to NaN
+xlsx[list(xlsx.keys())[2]]["HOA Fee"] = pd.NaN
+xlsx[list(xlsx.keys())[2]]["HOA Frequency"] = pd.NaN
+# Set the space rent and park name of every row in the first and second sheets to NaN
+xlsx[list(xlsx.keys())[0]]["Space Rent"] = pd.NaN
+xlsx[list(xlsx.keys())[0]]["Park Name"] = pd.NaN
+xlsx[list(xlsx.keys())[1]]["Space Rent"] = pd.NaN
+xlsx[list(xlsx.keys())[1]]["Park Name"] = pd.NaN
+# Set the PetsAllowed of every row in the first and second sheets to NaN
+xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = pd.NaN
+xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = pd.NaN
+# Set the SeniorCommunityYN of every row in the first and second sheets to NaN
+xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = pd.NaN
+xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = pd.NaN
 
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
@@ -88,7 +88,6 @@ df = df[df['mls_number'].notna()]
 # Keep the last duplicate in case of updated listing details
 df = df.drop_duplicates(subset='mls_number', keep="last")
 
-## CASTING COLUMN TYPES ##
 # Define columns to remove all non-numeric characters from
 cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters except for the string "N/A"
@@ -97,8 +96,6 @@ for col in cols:
 # Fill in missing values with NaN
 for col in cols:
   df[col] = df[col].replace('', NaN)
-
-## END CASTING COLUMN TYPES ##
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
@@ -348,6 +345,15 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_dat
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
+# Cast these columns as nullable integers
+cols = ['full_bathrooms', 'bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
+for col in cols:
+  df[col] = df[col].astype('Int64')
+# Cast these columns as nullable floats
+cols ['ppsqft', 'latitude', 'longitude', 'hoa_fee', 'space_rent']
+for col in cols:
+  df[col] = df[col].astype('float64')
+
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
@@ -398,15 +404,66 @@ def popup_html(dataframe, row):
     elif pd.isna(listed_date) == False:
         listed_date = f"{listed_date}"
     # Repeat for pets
-    if pd.isna(pets) == True:
+    # If pet policy is MISSING and the subtype is MH, set it to Unknown
+    if pd.isna(pets) == True and subtype == 'MH':
       pets = 'Unknown'
-    elif pd.isna(pets) == False:
+    # If pet policy is PRESENT and the subtype is MH, set it to the value
+    elif pd.isna(pets) == False and subtype == 'MH':
       pets = f"{pets}"
+    # If pet policy is MISSING and the subtype is NOT MH, set it to N/A
+    elif pd.isna(pets) == True and subtype != 'MH':
+      pets = "N/A"
     # Repeat for senior community
-    if pd.isna(senior_community) == True:
+    # If senior community is MISSING and the subtype is MH, set it to Unknown
+    if pd.isna(senior_community) == True and subtype == 'MH':
       senior_community = 'Unknown'
-    elif pd.isna(senior_community) == False:
+    # If senior community is PRESENT and the subtype is MH, set it to the value
+    elif pd.isna(senior_community) == False and subtype == 'MH':
       senior_community = f"{senior_community}"
+    # If senior community is MISSING and the subtype is NOT MH, set it to N/A
+    elif pd.isna(senior_community) == True and subtype != 'MH':
+      senior_community = "N/A"
+    # Repeat for HOA fee
+    # If HOA fee is MISSING and the subtype contains MH or CONDO, set it to Unknown
+    if pd.isna(hoa_fee) == True and (subtype == 'MH' or subtype.str.contains['CONDO']):
+      hoa_fee = 'Unknown'
+    # If HOA fee is PRESENT and the subtype contains MH or CONDO, set it to the value
+    elif pd.isna(hoa_fee) == False and (subtype == 'MH' or subtype.str.contains['CONDO']):
+      hoa_fee = f"${float(hoa_fee)}"
+    # If HOA fee is MISSING and the subtype is SFR, set it to N/A
+    elif pd.isna(hoa_fee) == True and subtype == 'SFR':
+      hoa_fee = "N/A"
+    # Repeat for HOA fee frequency
+    # If HOA fee frequency is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
+    if pd.isna(hoa_fee_frequency) == True and (subtype == 'SFR' or subtype.str.contains['CONDO']):
+      hoa_fee_frequency = 'Unknown'
+    # If HOA fee frequency is PRESENT and the subtype is SFR or contains CONDO, set it to the value
+    elif pd.isna(hoa_fee_frequency) == False and (subtype == 'SFR' or subtype.str.contains['CONDO']):
+      hoa_fee_frequency = f"{hoa_fee_frequency}"
+    # If HOA fee frequency is MISSING and the subtype is MH, set it to N/A
+    elif pd.isna(hoa_fee_frequency) == True and subtype == 'MH':
+      hoa_fee_frequency = "N/A"
+    # Repeat for space rent
+    # If space rent is MISSING and the subtype is MH, set it to Unknown
+    if pd.isna(space_rent) == True and subtype == 'MH':
+      space_rent = 'Unknown'
+    # If space rent is PRESENT and the subtype is MH, set it to the value
+    elif pd.isna(space_rent) == False and subtype == 'MH':
+      space_rent = f"${float(space_rent)}"
+    # If space rent is MISSING and the subtype is NOT MH, set it to N/A
+    elif pd.isna(space_rent) == True and subtype != 'MH':
+      space_rent = "N/A"
+    # Repeat for park name
+    # If park name is MISSING and the subtype is MH, set it to Unknown
+    if pd.isna(park_name) == True and subtype == 'MH':
+      park_name = 'Unknown'
+    # If park name is PRESENT and the subtype is MH, set it to the value
+    elif pd.isna(park_name) == False and subtype == 'MH':
+      park_name = f"{park_name}"
+    # If park name is MISSING and the subtype is NOT MH, set it to N/A
+    elif pd.isna(park_name) == True and subtype != 'MH':
+      park_name = "N/A"
+
    # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
    # Basically, the HTML block should just be an empty Img tag
     if pd.isna(mls_photo) == True:
