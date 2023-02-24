@@ -520,7 +520,7 @@ def popup_html(dataframe, row):
           </tr>
           <tr>
             <td>HOA Fee</td>
-            <td>${hoa_fee}</td>
+            <td>{hoa_fee}</td>
           </tr>
           <tr>
             <td>HOA Fee Frequency</td>
