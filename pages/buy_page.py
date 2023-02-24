@@ -89,22 +89,22 @@ def space_rent_function(boolean, slider_begin, slider_end):
 def pet_policy_function(choice):
   if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
     # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
-    pets_radio_choice = ~df['PetsAllowed'].isin(['No', 'No, Size Limit'])
+    pets_radio_choice = ~df['pets_allowed'].isin(['No', 'No, Size Limit'])
   elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
-    pets_radio_choice = df['PetsAllowed'].isin(['No', 'No, Size Limit'])
+    pets_radio_choice = df['pets_allowed'].isin(['No', 'No, Size Limit'])
   elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-    pets_radio_choice = df['PetsAllowed']
+    pets_radio_choice = df['pets_allowed']
   return (pets_radio_choice)
 
 # Create a function to return a dataframe filter for senior community status
 def senior_community_function(choice):
   if choice == 'True': # If the user says "yes, I ONLY want properties that allow pets"
     # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
-    senior_community_radio_choice = df['SeniorCommunityYN'].isin(['Y'])
+    senior_community_radio_choice = df['senior_community'].isin(['Y'])
   elif choice == 'False': # If the user says "No, I don't want properties where pets are allowed"
-    senior_community_radio_choice = df['SeniorCommunityYN'].isin(['N'])
+    senior_community_radio_choice = df['senior_community'].isin(['N'])
   elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-    senior_community_radio_choice = df['SeniorCommunityYN']
+    senior_community_radio_choice = df['senior_community']
   return (senior_community_radio_choice)
 
 ## END FUNCTIONS ##
@@ -324,25 +324,25 @@ id = 'hoa_fee_div',
 )
 
 # Create a checklist for HOA fee frequency
-hoa_fee_frequency_checklist = html.Div([
+#hoa_fee_frequency_checklist = html.Div([
   # Title this section
-  html.H5("HOA Fee Frequency"),
+#  html.H5("HOA Fee Frequency"),
   # Create a checklist for the user to select the frequency of HOA fees they want to see
-  dcc.Checklist(
-    id = 'hoa_fee_frequency_checklist',
-    # Loop through the list of HOA fee frequencies and create a dictionary of options
-    options = [{'label': i, 'value': i} for i in df['hoa_fee_frequency'].unique()],
-    # Set the default values to all of the HOA fee frequencies
-    value = df['hoa_fee_frequency'].unique(),
-    labelStyle = {'display': 'block'},
-    inputStyle = {
-      "margin-right": "5px",
-      "margin-left": "5px"
-    },
-  ),
-],
-id = 'hoa_fee_frequency_div',
-)
+#  dcc.Checklist(
+#    id = 'hoa_fee_frequency_checklist',
+    # Loop through the list of HOA fee frequencies and create a dictionary of options. If the value is None, set the label to 'N/A'
+#    options = [{'label': i if i else 'N/A', 'value': i} for i in df['hoa_fee_frequency'].unique()],
+#    # Set the default values to all of the HOA fee frequencies
+#    value = df['hoa_fee_frequency'].unique(),
+#    labelStyle = {'display': 'block'},
+#    inputStyle = {
+#      "margin-right": "5px",
+#      "margin-left": "5px"
+#    },
+#  ),
+#],
+#id = 'hoa_fee_frequency_div',
+#)
 
 # Create a slider for space rent
 space_rent_slider = html.Div([
@@ -557,7 +557,7 @@ user_options_card = dbc.Card(
     subtype_checklist,
     rental_price_slider,
     hoa_fee_slider,
-    hoa_fee_frequency_checklist,
+    #hoa_fee_frequency_checklist,
     space_rent_slider,
     senior_community_radio,
     bedrooms_slider,
