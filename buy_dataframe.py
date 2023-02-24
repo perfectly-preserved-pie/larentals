@@ -427,14 +427,14 @@ def popup_html(dataframe, row):
     elif pd.isna(senior_community) == True and subtype != 'MH':
       senior_community = "N/A"
     # Repeat for HOA fee
-    # If HOA fee is MISSING and the subtype contains MH or CONDO, set it to Unknown
-    if pd.isna(hoa_fee) == True and (subtype == 'MH' or 'CONDO' in subtype):
+    # If HOA fee is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
+    if pd.isna(hoa_fee) == True and (subtype == 'SFR' or 'CONDO' in subtype):
       hoa_fee = 'Unknown'
-    # If HOA fee is PRESENT and the subtype contains MH or CONDO, set it to the value
-    elif pd.isna(hoa_fee) == False and (subtype == 'MH' or 'CONDO' in subtype):
+    # If HOA fee is PRESENT and the subtype is SFR or contains CONDO, set it to the value
+    elif pd.isna(hoa_fee) == False and (subtype == 'SFR' or 'CONDO' in subtype):
       hoa_fee = f"${float(hoa_fee)}"
-    # If HOA fee is MISSING and the subtype is SFR, set it to N/A
-    elif pd.isna(hoa_fee) == True and subtype == 'SFR':
+    # If HOA fee is MISSING and the subtype is MH, set it to N/A
+    elif pd.isna(hoa_fee) == True and subtype == 'MH':
       hoa_fee = "N/A"
     # Repeat for HOA fee frequency
     # If HOA fee frequency is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
