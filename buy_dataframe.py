@@ -357,7 +357,7 @@ cols = ['ppsqft', 'Latitude', 'Longitude', 'hoa_fee', 'space_rent']
 for col in cols:
   df[col] = df[col].astype('float64')
 # Cast these columns as nullable strings
-cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'Br/Ba']
+cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'Br/Ba', 'pets_allowed']
 for col in cols:
   df[col] = df[col].astype('string')
 
