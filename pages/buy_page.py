@@ -658,11 +658,11 @@ className = "dbc"
     Input(component_id='sqft_slider', component_property='value'),
     Input(component_id='yrbuilt_slider', component_property='value'),
     Input(component_id='yrbuilt_missing_radio', component_property='value'),
-    #Input(component_id='ppsqft_slider', component_property='value'),
-    #Input(component_id='ppsqft_missing_radio', component_property='value'),
-    #Input(component_id='listed_date_datepicker', component_property='start_date'),
-    #Input(component_id='listed_date_datepicker', component_property='end_date'),
-    #Input(component_id='listed_date_radio', component_property='value'),
+    Input(component_id='ppsqft_slider', component_property='value'),
+    Input(component_id='ppsqft_missing_radio', component_property='value'),
+    Input(component_id='listed_date_datepicker', component_property='start_date'),
+    Input(component_id='listed_date_datepicker', component_property='end_date'),
+    Input(component_id='listed_date_radio', component_property='value'),
     #Input(component_id='hoa_fee_slider', component_property='value'),
     #Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
     #Input(component_id='space_rent_slider', component_property='value'),
@@ -678,13 +678,14 @@ def update_map(
   bedrooms_chosen,
   bathrooms_chosen,
   sqft_missing_radio_choice,
-  sqft_chosen, years_chosen,
+  sqft_chosen,
+  years_chosen,
   yrbuilt_missing_radio_choice,
-  #ppsqft_chosen,
-  #ppsqft_missing_radio_choice,
-  #listed_date_datepicker_start,
-  #listed_date_datepicker_end,
-  #listed_date_radio,
+  ppsqft_chosen,
+  ppsqft_missing_radio_choice,
+  listed_date_datepicker_start,
+  listed_date_datepicker_end,
+  listed_date_radio,
   #hoa_fee,
   #hoa_fee_radio,
   #hoa_fee_frequency_chosen,
@@ -707,10 +708,10 @@ def update_map(
     sqft_function(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]) &
     yrbuilt_function(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]) 
     #((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
-    #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
+    #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) 
     #hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
     #(df['hoa_fee_frequency'].isin(hoa_fee_frequency_chosen)) &
-    #space_rent_function(space_rent[0], space_rent[1]) &
+    #space_rent_function(space_rent[0], space_rent[1])
     #senior_community_function(senior_community_radio_choice)
   ]
 
