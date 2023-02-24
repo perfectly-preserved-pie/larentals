@@ -532,7 +532,7 @@ def popup_html(dataframe, row):
           </tr>
           <tr>
             <td>Space Rent</td>
-            <td>${space_rent}</td>
+            <td>{space_rent}</td>
           </tr>
           <tr>
             <td>Price Per Square Foot</td>
