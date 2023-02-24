@@ -511,10 +511,6 @@ def popup_html(dataframe, row):
           </tr>
           <tr>
             <td>Park Name</td>
-            <td>{full_address}</td>
-          </tr>
-          <tr>
-            <td>Park Name</td>
             <td>{park_name}</td>
           </tr>
           {listing_url_block}
