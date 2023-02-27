@@ -86,11 +86,16 @@ def space_rent_function(boolean, slider_begin, slider_end):
   return (space_rent_filter)
 
 # Create a function to return a dataframe filter for pet policy
-def pet_policy_function(choice):
-  if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
+def pet_policy_function(choice, subtype_selected):
+  pets_radio_choice = df['pets_allowed'] # initialize with a default value
+  # We need to make sure this function only applies if the subtype is MH since that's the only property type that has a pet policy
+  if subtype_selected != 'MH':
+    pass
+  elif subtype_selected == 'MH' and choice == 'Yes':
     # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
     pets_radio_choice = ~df['pets_allowed'].isin(['No', 'No, Size Limit'])
-  elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
+  elif subtype_selected == 'MH' and choice == 'No':
+    # Then we want every row where the pet policy is "No" or "No, Size Limit"
     pets_radio_choice = df['pets_allowed'].isin(['No', 'No, Size Limit'])
   elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
     pets_radio_choice = df['pets_allowed']
@@ -114,7 +119,7 @@ def subtype_function(subtype_list):
     subtypes_choice = df['subtype']
   # If the user has not selected all of the subtypes, return a dataframe with only the selected subtypes
   else:
-    subtypes_choice = df['subtype'].isin(subtype_list)
+    subtypes_choice = df['subtype'].contains(subtype_list)
   return (subtypes_choice)
 
 ## END FUNCTIONS ##
@@ -704,7 +709,7 @@ def update_map(
 ):
   df_filtered = df[
     subtype_function(subtypes_chosen) &
-    pet_policy_function(pets_chosen) &
+    pet_policy_function(pets_chosen, subtypes_chosen) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
