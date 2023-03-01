@@ -112,16 +112,6 @@ def senior_community_function(choice):
     senior_community_radio_choice = df['senior_community']
   return (senior_community_radio_choice)
 
-# Create a function to return a dataframe filter for subtypes
-def subtype_function(subtype_list):
-  # If the user has selected all of the subtypes, return the entire dataframe
-  if len(subtype_list) == len(df['subtype'].unique()):
-    subtypes_choice = df['subtype']
-  # If the user has not selected all of the subtypes, return a dataframe with only the selected subtypes
-  else:
-    subtypes_choice = df['subtype'].contains(subtype_list)
-  return (subtypes_choice)
-
 ## END FUNCTIONS ##
 
 ## BEGIN DASH BOOTSTRAP COMPONENTS ##
@@ -708,8 +698,8 @@ def update_map(
   #senior_community_radio_choice
 ):
   df_filtered = df[
-    subtype_function(subtypes_chosen) &
-    pet_policy_function(pets_chosen, subtypes_chosen) &
+    (df['subtype'].isin(subtypes_chosen)) &
+    #pet_policy_function(pets_chosen, subtypes_chosen) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
