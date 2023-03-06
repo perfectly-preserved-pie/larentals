@@ -86,19 +86,21 @@ def space_rent_function(boolean, slider_begin, slider_end):
   return (space_rent_filter)
 
 # Create a function to return a dataframe filter for pet policy
+
+## should I have it return an empty dataframe in the else: statement?
 def pet_policy_function(choice, subtype_selected):
   pets_radio_choice = df['pets_allowed'] # initialize with a default value
   # We need to make sure this function only applies if the subtype is MH since that's the only property type that has a pet policy
-  if subtype_selected != 'MH':
+  if 'MH' not in subtype_selected:
     pass
-  elif subtype_selected == 'MH' and choice == 'Yes':
-    # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
-    pets_radio_choice = ~df['pets_allowed'].isin(['No', 'No, Size Limit'])
-  elif subtype_selected == 'MH' and choice == 'No':
-    # Then we want every row where the pet policy is "No" or "No, Size Limit"
-    pets_radio_choice = df['pets_allowed'].isin(['No', 'No, Size Limit'])
-  elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-    pets_radio_choice = df['pets_allowed']
+  elif 'MH' in subtype_selected and choice == 'Yes':
+    # If they want pets then we want every row where the pet policy does NOT contain "No"
+    pets_radio_choice = ~df['pets_allowed'].str.contains('No')
+  elif 'MH' in subtype_selected and choice == 'No':
+    # If they DON'T want pets then we want every row where the pet policy DOES contain "No"
+    pets_radio_choice = df['pets_allowed'].str.contains('No')
+  elif 'MH' in subtype_selected and choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
+    pets_radio_choice = (df['pets_allowed'].str.contains('No')) & (~df['pets_allowed'].str.contains('No'))
   return (pets_radio_choice)
 
 # Create a function to return a dataframe filter for senior community status
@@ -699,7 +701,7 @@ def update_map(
 ):
   df_filtered = df[
     (df['subtype'].isin(subtypes_chosen)) &
-    #pet_policy_function(pets_chosen, subtypes_chosen) &
+    pet_policy_function(pets_chosen, subtypes_chosen) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
