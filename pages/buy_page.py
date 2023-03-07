@@ -71,7 +71,7 @@ def listed_date_function(boolean, start_date, end_date):
 def hoa_fee_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a HOA fee listed" (NaN)
     # Then we want nulls to be included in the final dataframe 
-    hoa_fee_filter = df['hoa_fee'].isnull() | (df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end))
+    hoa_fee_filter = (df['hoa_fee'].isnull()) | (df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end))
   elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
     hoa_fee_filter = df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end)
   return (hoa_fee_filter)
@@ -305,30 +305,42 @@ hoa_fee_slider = html.Div([
     max = df['hoa_fee'].max(),
     # Set the default values to the min and max of the HOA fee column
     value = [df['hoa_fee'].min(), df['hoa_fee'].max()],
-    # Set the step to 100
-    step = 100,
-    # Set the marks to be every 1000
-    #marks = {i: f'{i}' for i in range(df['hoa_fee'].min(), df['hoa_fee'].max(), 1000)},
     # Set the tooltip to be the value of the slider
     tooltip = {'always_visible': True, 'placement': 'bottom'},
   ),
   # Create a radio button for the user to select whether they want to include properties with no HOA fee listed
   # https://dash.plotly.com/dash-core-components/radioitems
-  dcc.RadioItems(
-    id = 'hoa_fee_radio',
-    options = [
-      {'label': 'Include properties without an HOA fee listed', 'value': 'True'},
-      {'label': 'Exclude properties without an HOA fee listed', 'value': 'False'},
+],
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
+id = 'hoa_fee_div',
+)
+
+hoa_fee_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Should we include properties that don't have a HOA fee listed?"),
+      dcc.RadioItems(
+        id='hoa_fee_missing_radio',
+        options=[
+          {'label': 'Yes', 'value': 'True'},
+          {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },
+      ),
     ],
-    value = 'True',
-    labelStyle = {'display': 'block'},
-    inputStyle = {
-      "margin-right": "5px",
-      "margin-left": "5px"
-    },
+  color="info",
   ),
 ],
-id = 'hoa_fee_div',
+id = 'unknown_hoa_fee_div'
 )
 
 # Create a checklist for HOA fee frequency
@@ -565,6 +577,7 @@ user_options_card = dbc.Card(
     subtype_checklist,
     rental_price_slider,
     hoa_fee_slider,
+    hoa_fee_radio,
     #hoa_fee_frequency_checklist,
     space_rent_slider,
     senior_community_radio,
@@ -671,7 +684,8 @@ className = "dbc"
     Input(component_id='listed_date_datepicker', component_property='start_date'),
     Input(component_id='listed_date_datepicker', component_property='end_date'),
     Input(component_id='listed_date_radio', component_property='value'),
-    #Input(component_id='hoa_fee_slider', component_property='value'),
+    Input(component_id='hoa_fee_slider', component_property='value'),
+    Input(component_id='hoa_fee_missing_radio', component_property='value'),
     #Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
     #Input(component_id='space_rent_slider', component_property='value'),
     #Input(component_id='senior_community_radio', component_property='value'),
@@ -694,8 +708,8 @@ def update_map(
   listed_date_datepicker_start,
   listed_date_datepicker_end,
   listed_date_radio,
-  #hoa_fee,
-  #hoa_fee_radio,
+  hoa_fee,
+  hoa_fee_radio,
   #hoa_fee_frequency_chosen,
   #space_rent,
   #senior_community_radio_choice
@@ -712,10 +726,10 @@ def update_map(
     (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     sqft_function(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]) &
-    yrbuilt_function(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]) 
+    yrbuilt_function(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]) &
     #((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
     #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) 
-    #hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
+    hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) 
     #(df['hoa_fee_frequency'].isin(hoa_fee_frequency_chosen)) &
     #space_rent_function(space_rent[0], space_rent[1])
     #senior_community_function(senior_community_radio_choice)
