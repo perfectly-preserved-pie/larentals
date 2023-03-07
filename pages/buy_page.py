@@ -377,30 +377,42 @@ space_rent_slider = html.Div([
     max = df['space_rent'].max(),
     # Set the default values to the min and max of the space rent column
     value = [df['space_rent'].min(), df['space_rent'].max()],
-    # Set the step to 100
-    step = 100,
-    # Set the marks to be every 1000
-    #marks = {i: f'{i}' for i in range(df['space_rent'].min(), df['space_rent'].max(), 1000)},
     # Set the tooltip to be the value of the slider
     tooltip = {'always_visible': True, 'placement': 'bottom'},
   ),
-  # Create a radio button for the user to select whether they want to include properties with no space rent listed
-  # https://dash.plotly.com/dash-core-components/radioitems
-  dcc.RadioItems(
-    id = 'space_rent_radio',
-    options = [
-      {'label': 'Include properties without a space rent listed', 'value': 'True'},
-      {'label': 'Exclude properties without a space rent listed', 'value': 'False'},
+],
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
+id = 'space_rent_div',
+)
+
+# Create a radio button for the user to select whether they want to include properties with no space rent listed
+# https://dash.plotly.com/dash-core-components/radioitems
+space_rent_radio = html.Div([
+  dbc.Alert(
+    [
+      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
+      html.I(className="bi bi-info-circle-fill me-2"),
+      ("Should we include properties that don't have a space rent listed?"),
+      dcc.RadioItems(
+        id='space_rent_missing_radio',
+        options=[
+          {'label': 'Yes', 'value': 'True'},
+          {'label': 'No', 'value': 'False'}
+        ],
+        value='True',
+        inputStyle = {
+          "margin-right": "5px",
+          "margin-left": "5px"
+        },
+      ),
     ],
-    value = 'True',
-    labelStyle = {'display': 'block'},
-    inputStyle = {
-      "margin-right": "5px",
-      "margin-left": "5px"
-    },
+  color="info",
   ),
 ],
-id = 'space_rent_div',
+id = 'unknown_space_rent_div'
 )
 
 # Create a radio button for Senior Community
@@ -580,6 +592,7 @@ user_options_card = dbc.Card(
     hoa_fee_radio,
     #hoa_fee_frequency_checklist,
     space_rent_slider,
+    space_rent_radio,
     senior_community_radio,
     bedrooms_slider,
     bathrooms_slider,
@@ -687,7 +700,8 @@ className = "dbc"
     Input(component_id='hoa_fee_slider', component_property='value'),
     Input(component_id='hoa_fee_missing_radio', component_property='value'),
     #Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
-    #Input(component_id='space_rent_slider', component_property='value'),
+    Input(component_id='space_rent_slider', component_property='value'),
+    Input(component_id='space_rent_missing_radio', component_property='value'),
     #Input(component_id='senior_community_radio', component_property='value'),
   ]
 )
@@ -711,7 +725,8 @@ def update_map(
   hoa_fee,
   hoa_fee_radio,
   #hoa_fee_frequency_chosen,
-  #space_rent,
+  space_rent,
+  space_rent_radio,
   #senior_community_radio_choice
 ):
   df_filtered = df[
@@ -729,9 +744,9 @@ def update_map(
     yrbuilt_function(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]) &
     #((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
     #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) 
-    hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) 
+    hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
     #(df['hoa_fee_frequency'].isin(hoa_fee_frequency_chosen)) &
-    #space_rent_function(space_rent[0], space_rent[1])
+    space_rent_function(space_rent_radio, space_rent[0], space_rent[1])
     #senior_community_function(senior_community_radio_choice)
   ]
 
