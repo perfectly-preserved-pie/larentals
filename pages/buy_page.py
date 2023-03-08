@@ -139,12 +139,12 @@ def senior_community_function(choice, subtype_selected):
   # Return every row where the pet policy is Yes, No, or null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
     senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
-  # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y" or is null (non-MH properties)
+  # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y"
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-    senior_community_choice = (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
-  # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N" or is null (non-MH properties)
+    senior_community_choice = (df['senior_community'].str.contains('Y'))
+  # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N"
   elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].isnull()) 
+    senior_community_choice = (df['senior_community'].str.contains('N'))
   # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
     senior_community_choice = df['senior_community'].isnull() | df['senior_community'].notnull()
