@@ -128,7 +128,7 @@ def pet_policy_function(choice, subtype_selected):
 def senior_community_function(choice, subtype_selected):
   # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
   if 'MH' not in subtype_selected:
-    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
+    senior_community_choice = df['senior_community'].notnull() | df['senior_community'].isnull()
   # If MH is the only subtype selected and they want a senior community then we want every row where the senior community DOES contain "Y"
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
     senior_community_choice = df['senior_community'].str.contains('Y')
