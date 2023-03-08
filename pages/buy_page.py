@@ -748,6 +748,26 @@ def update_pet_policy_div(selected_subtype):
     return {'display': 'block'}
   else:
     return {'display': 'none'}
+  
+# Define callback to update the style property of the space rent div based on the selected subtype value
+@callback(Output('space_rent_div', 'style'), Input('selected_subtype', 'data'))
+def update_space_rent_div(selected_subtype):
+  if 'MH' in selected_subtype:
+    return {
+      'display': 'block',
+      'width' : '70%',
+      'margin-bottom' : '10px',
+    }
+  else:
+    return {'display': 'none'}
+  
+# Define callback to update the style property of the unknown space rent div based on the selected subtype value
+@callback(Output('unknown_space_rent_div', 'style'), Input('selected_subtype', 'data'))
+def update_unknown_space_rent_div(selected_subtype):
+  if 'MH' in selected_subtype:
+    return {'display': 'block'}
+  else:
+    return {'display': 'none'}
 
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
