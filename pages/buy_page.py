@@ -122,9 +122,6 @@ def pet_policy_function(choice, subtype_selected):
   # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
     pets_radio_choice = df['pets_allowed'].isnull() | df['pets_allowed'].notnull()
-  # If they select N/A, return every row where the pet policy is null
-  elif choice == 'N/A':
-    pets_radio_choice = df['pets_allowed'].isnull()
   return (pets_radio_choice)
 
 # Create a function to return a dataframe filter for senior community status
@@ -151,9 +148,6 @@ def senior_community_function(choice, subtype_selected):
   # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
     senior_community_choice = df['senior_community'].isnull() | df['senior_community'].notnull()
-  # If they select N/A, return every row where the senior community is null
-  elif choice == 'N/A':
-    senior_community_choice = df['senior_community'].isnull()
   return (senior_community_choice)
 
 ## END FUNCTIONS ##
@@ -319,8 +313,7 @@ pets_radio = html.Div([
     options=[
       {'label': 'Pets Allowed', 'value': 'True'},
       {'label': 'Pets NOT Allowed', 'value': 'False'},
-      {'label': 'Both', 'value': 'Both'},
-      {'label': 'N/A', 'value': 'N/A'}
+      {'label': 'Both', 'value': 'Both'}
     ],
     value='Both', # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
     # add some spacing in between the checkbox and the label
@@ -468,8 +461,7 @@ senior_community_radio = html.Div([
     options=[
       {'label': 'Yes', 'value': 'True'},
       {'label': 'No', 'value': 'False'},
-      {'label': 'Both', 'value': 'Both'},
-      {'label': 'N/A', 'value': 'N/A'}
+      {'label': 'Both', 'value': 'Both'}
     ],
     value='Both',
     # add some spacing in between the checkbox and the label
