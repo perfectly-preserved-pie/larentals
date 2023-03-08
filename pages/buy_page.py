@@ -76,6 +76,19 @@ def hoa_fee_function(boolean, slider_begin, slider_end):
     hoa_fee_filter = df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end)
   return (hoa_fee_filter)
 
+# Create a function to return a dataframe filter for HOA fee frequency
+def hoa_fee_frequency_function(choice):
+  # If the selection is "N/A" only, then we want to return a filter that contains all nulls
+  if 'N/A' in choice and len(choice) == 1:
+    hoa_fee_frequency_filter = df['hoa_fee_frequency'].isnull()
+  # If the selection is "Monthly" only, then we want to return a filter that contains all "Monthly" values
+  elif 'Monthly' in choice and len(choice) == 1:
+    hoa_fee_frequency_filter = df['hoa_fee_frequency'].str.contains('Monthly')
+  # If there is more than 1 selection, then we want to return a filter that contains all nulls and "Monthly" values
+  elif len(choice) > 1:
+    hoa_fee_frequency_filter = df['hoa_fee_frequency'].isnull() | df['hoa_fee_frequency'].str.contains('Monthly')
+  return (hoa_fee_frequency_filter)
+
 # Create a function to return a dataframe filter for space rent
 def space_rent_function(boolean, slider_begin, slider_end):
   if boolean == 'True': # If the user says "yes, I want properties without a HOA fee listed" (NaN)
@@ -366,25 +379,27 @@ id = 'unknown_hoa_fee_div'
 )
 
 # Create a checklist for HOA fee frequency
-#hoa_fee_frequency_checklist = html.Div([
+hoa_fee_frequency_checklist = html.Div([
   # Title this section
-#  html.H5("HOA Fee Frequency"),
+  html.H5("HOA Fee Frequency"),
   # Create a checklist for the user to select the frequency of HOA fees they want to see
-#  dcc.Checklist(
-#    id = 'hoa_fee_frequency_checklist',
-    # Loop through the list of HOA fee frequencies and create a dictionary of options. If the value is None, set the label to 'N/A'
-#    options = [{'label': i if i else 'N/A', 'value': i} for i in df['hoa_fee_frequency'].unique()],
-#    # Set the default values to all of the HOA fee frequencies
-#    value = df['hoa_fee_frequency'].unique(),
-#    labelStyle = {'display': 'block'},
-#    inputStyle = {
-#      "margin-right": "5px",
-#      "margin-left": "5px"
-#    },
-#  ),
-#],
-#id = 'hoa_fee_frequency_div',
-#)
+  dcc.Checklist(
+    id = 'hoa_fee_frequency_checklist',
+    options=[
+      {'label': 'N/A', 'value': 'N/A'},
+      {'label': 'Monthly', 'value': 'Monthly'}
+    ],
+    # Set the value to all of the values in options
+    value = ['N/A', 'Monthly'],
+    labelStyle = {'display': 'block'},
+    inputStyle = {
+      "margin-right": "5px",
+      "margin-left": "5px"
+    },
+  ),
+],
+id = 'hoa_fee_frequency_div',
+)
 
 # Create a slider for space rent
 space_rent_slider = html.Div([
@@ -611,7 +626,7 @@ user_options_card = dbc.Card(
     rental_price_slider,
     hoa_fee_slider,
     hoa_fee_radio,
-    #hoa_fee_frequency_checklist,
+    hoa_fee_frequency_checklist,
     space_rent_slider,
     space_rent_radio,
     bedrooms_slider,
@@ -720,7 +735,7 @@ className = "dbc"
     Input(component_id='listed_date_radio', component_property='value'),
     Input(component_id='hoa_fee_slider', component_property='value'),
     Input(component_id='hoa_fee_missing_radio', component_property='value'),
-    #Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
+    Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
     Input(component_id='space_rent_slider', component_property='value'),
     Input(component_id='space_rent_missing_radio', component_property='value'),
     Input(component_id='senior_community_radio', component_property='value'),
@@ -745,7 +760,7 @@ def update_map(
   listed_date_radio,
   hoa_fee,
   hoa_fee_radio,
-  #hoa_fee_frequency_chosen,
+  hoa_fee_frequency_chosen,
   space_rent,
   space_rent_radio,
   senior_community_radio_choice
@@ -766,7 +781,7 @@ def update_map(
     #((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
     #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) 
     hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
-    #(df['hoa_fee_frequency'].isin(hoa_fee_frequency_chosen)) &
+    hoa_fee_frequency_function(hoa_fee_frequency_chosen) &
     space_rent_function(space_rent_radio, space_rent[0], space_rent[1]) &
     senior_community_function(senior_community_radio_choice, subtypes_chosen)
   ]
