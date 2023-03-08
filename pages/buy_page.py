@@ -719,6 +719,7 @@ className = "dbc"
 
 
 ## BEGIN CALLBACKS ##
+# First, we want to hide the pet policy and senior community options if the user selects a property type that doesn't have those options (anything other than a mobile home)
 # Define callback to update selected_subtype store with the value of the subtype radio button
 @callback(Output('selected_subtype', 'data'), Input('subtype_checklist', 'value'))
 def update_selected_subtype(value):
