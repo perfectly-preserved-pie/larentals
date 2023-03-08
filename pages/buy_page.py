@@ -110,15 +110,15 @@ def pet_policy_function(choice, subtype_selected):
   elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
     pets_radio_choice = df['pets_allowed'].str.contains('No')
   # If the user says "I don't care, I want both kinds of properties"
-  # Return every row where the pet policy is Yes, No, or null
+  # Return every row where the pet policy is Yes or No
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
-    pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull())
-  # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" or is null (non-MH properties)
+    pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].str.contains('No'))
+  # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" 
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-    pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull())
-  # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No" or is null (non-MH properties)
+    pets_radio_choice = (~df['pets_allowed'].str.contains('No'))
+  # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No"
   elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-    pets_radio_choice = (df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull()) 
+    pets_radio_choice = (df['pets_allowed'].str.contains('No')) 
   # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
     pets_radio_choice = df['pets_allowed'].isnull() | df['pets_allowed'].notnull()
@@ -136,9 +136,9 @@ def senior_community_function(choice, subtype_selected):
   elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
     senior_community_choice = df['senior_community'].str.contains('N')
   # If the user says "I don't care, I want both kinds of properties"
-  # Return every row where the pet policy is Yes, No, or null
+  # Return every row where the pet policy is Yes or No
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
-    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
+    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) 
   # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y"
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
     senior_community_choice = (df['senior_community'].str.contains('Y'))
