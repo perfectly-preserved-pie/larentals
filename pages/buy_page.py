@@ -718,12 +718,28 @@ layout = dbc.Container([
     # https://stackoverflow.com/a/70495385
     className="g-0",
   ),
+  # Create a hidden Store to store the selected subtype value
+  dcc.Store(id='selected_subtype', data='SFR'),
 ],
 fluid = True,
 className = "dbc"
-)
+),
+
 
 ## BEGIN CALLBACKS ##
+# Define callback to update selected_subtype store with the value of the subtype radio button
+@callback(Output('selected_subtype', 'data'), Input('subtype_checklist', 'value'))
+def update_selected_subtype(value):
+    return value
+
+# Define callback to update the style property of the senior community div based on the selected subtype value
+@callback(Output('senior_community_div', 'style'), Input('selected_subtype', 'data'))
+def update_senior_community_div(selected_subtype):
+    if 'MH' in selected_subtype:
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
   [
