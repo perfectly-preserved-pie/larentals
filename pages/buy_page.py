@@ -102,7 +102,7 @@ def space_rent_function(boolean, slider_begin, slider_end):
 def pet_policy_function(choice, subtype_selected):
   # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
   if 'MH' not in subtype_selected:
-    pets_radio_choice = (~df['pets_allowed'].str.contains('Yes')) | (df['pets_allowed'].str.contains('Yes')) | (df['pets_allowed'].isnull())
+    pets_radio_choice = df['pets_allowed'].notnull() | df['pets_allowed'].isnull()
   # If MH is the only subtype selected and they want pets then we want every row where the pet policy DOES NOT contain "No"
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
     pets_radio_choice = ~df['pets_allowed'].str.contains('No')
