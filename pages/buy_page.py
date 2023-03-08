@@ -735,10 +735,18 @@ def update_selected_subtype(value):
 # Define callback to update the style property of the senior community div based on the selected subtype value
 @callback(Output('senior_community_div', 'style'), Input('selected_subtype', 'data'))
 def update_senior_community_div(selected_subtype):
-    if 'MH' in selected_subtype:
-        return {'display': 'block'}
-    else:
-        return {'display': 'none'}
+  if 'MH' in selected_subtype:
+    return {'display': 'block'}
+  else:
+    return {'display': 'none'}
+    
+# Define callback to update the style property of the pet policy div based on the selected subtype value
+@callback(Output('pet_policy_div', 'style'), Input('selected_subtype', 'data'))
+def update_pet_policy_div(selected_subtype):
+  if 'MH' in selected_subtype:
+    return {'display': 'block'}
+  else:
+    return {'display': 'none'}
 
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
