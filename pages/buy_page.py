@@ -89,19 +89,26 @@ def space_rent_function(boolean, slider_begin, slider_end):
 def pet_policy_function(choice, subtype_selected):
   # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
   if 'MH' not in subtype_selected:
-    pets_radio_choice = (df['pets_allowed'].str.contains('No')) | (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull())
-  # If they want pets then we want every row where the pet policy does NOT contain "No"
-  elif 'MH' in subtype_selected and choice == 'Yes':
+    pets_radio_choice = (~df['pets_allowed'].str.contains('Yes')) | (df['pets_allowed'].str.contains('Yes')) | (df['pets_allowed'].isnull())
+  # If MH is the only subtype selected and they want pets then we want every row where the pet policy DOES NOT contain "No"
+  elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
     pets_radio_choice = ~df['pets_allowed'].str.contains('No')
-  # If they DON'T want pets then we want every row where the pet policy DOES contain "No"
-  elif 'MH' in subtype_selected and choice == 'No':
+  # If MH is the only subtype selected and they DON'T want pets then we want every row where the pet policy DOES NOT contain "No"
+  elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
     pets_radio_choice = df['pets_allowed'].str.contains('No')
   # If the user says "I don't care, I want both kinds of properties"
   # Return every row where the pet policy is Yes, No, or null
-  elif 'MH' in subtype_selected and choice == 'Both': 
-    pets_radio_choice = (df['pets_allowed'].str.contains('No')) | (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull())
-  if len(subtype_selected) > 1 and 'MH' in subtype_selected and choice == 'Yes':
+  elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
+    pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull())
+  # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" or is null (non-MH properties)
+  elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
     pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull())
+  # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No" or is null (non-MH properties)
+  elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
+    pets_radio_choice = (df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].isnull()) 
+  # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
+  elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
+    pets_radio_choice = df['pets_allowed'].isnull() | df['pets_allowed'].notnull()
   return (pets_radio_choice)
 
 # Create a function to return a dataframe filter for senior community status
@@ -291,8 +298,8 @@ pets_radio = html.Div([
   dcc.RadioItems(
     id = 'pets_radio',
     options=[
-      {'label': 'Pets Allowed', 'value': 'Yes'},
-      {'label': 'Pets NOT Allowed', 'value': 'No'},
+      {'label': 'Pets Allowed', 'value': 'True'},
+      {'label': 'Pets NOT Allowed', 'value': 'False'},
       {'label': 'Both', 'value': 'Both'}
     ],
     value='Both', # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
