@@ -105,15 +105,30 @@ def pet_policy_function(choice, subtype_selected):
   return (pets_radio_choice)
 
 # Create a function to return a dataframe filter for senior community status
-def senior_community_function(choice):
-  if choice == 'True': # If the user says "yes, I ONLY want properties that allow pets"
-    # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
-    senior_community_radio_choice = df['senior_community'].isin(['Y'])
-  elif choice == 'False': # If the user says "No, I don't want properties where pets are allowed"
-    senior_community_radio_choice = df['senior_community'].isin(['N'])
-  elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-    senior_community_radio_choice = df['senior_community']
-  return (senior_community_radio_choice)
+def senior_community_function(choice, subtype_selected):
+  # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
+  if 'MH' not in subtype_selected:
+    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
+  # If MH is the only subtype selected and they want a senior community then we want every row where the senior community DOES contain "Y"
+  elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
+    senior_community_choice = df['senior_community'].str.contains('Y')
+  # If MH is the only subtype selected and they DON'T want a senior community then we want every row where the senior community DOES contain "N"
+  elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
+    senior_community_choice = df['senior_community'].str.contains('N')
+  # If the user says "I don't care, I want both kinds of properties"
+  # Return every row where the pet policy is Yes, No, or null
+  elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
+    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
+  # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y" or is null (non-MH properties)
+  elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
+    senior_community_choice = (df['senior_community'].str.contains('Y')) | (df['senior_community'].isnull())
+  # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N" or is null (non-MH properties)
+  elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
+    senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].isnull()) 
+  # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
+  elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
+    senior_community_choice = df['senior_community'].isnull() | df['senior_community'].notnull()
+  return (senior_community_choice)
 
 ## END FUNCTIONS ##
 
@@ -272,7 +287,7 @@ id = 'unknown_ppsqft_div'
 
 pets_radio = html.Div([
   html.H5("Pet Policy"),
-  # Create a checklist for pet policy
+  # Create a radio button for pet policy
   dcc.RadioItems(
     id = 'pets_radio',
     options=[
@@ -415,28 +430,27 @@ space_rent_radio = html.Div([
 id = 'unknown_space_rent_div'
 )
 
-# Create a radio button for Senior Community
+# Create a radio button for the user to select whether they want to see properties in Senior Communities
+# https://dash.plotly.com/dash-core-components/radioitems
 senior_community_radio = html.Div([
-  # Title this section
   html.H5("Senior Community"),
-  # Create a radio button for the user to select whether they want to see properties in Senior Communities
-  # https://dash.plotly.com/dash-core-components/radioitems
   dcc.RadioItems(
     id = 'senior_community_radio',
-    options = [
-      {'label': 'Include properties in Senior Communities', 'value': 'True'},
-      {'label': 'Exclude properties in Senior Communities', 'value': 'False'},
-      {'label': 'Both', 'value': 'Both'},
+    options=[
+      {'label': 'Yes', 'value': 'True'},
+      {'label': 'No', 'value': 'False'},
+      {'label': 'Both', 'value': 'Both'}
     ],
-    value = 'Both',
-    labelStyle = {'display': 'block'},
+    value='Both',
+    # add some spacing in between the checkbox and the label
+    # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
     inputStyle = {
       "margin-right": "5px",
       "margin-left": "5px"
-    },
+    },    
   ),
 ],
-id = 'senior_community_div',
+id = 'senior_community_div'
 )
 
 rental_price_slider = html.Div([ 
@@ -593,7 +607,6 @@ user_options_card = dbc.Card(
     #hoa_fee_frequency_checklist,
     space_rent_slider,
     space_rent_radio,
-    senior_community_radio,
     bedrooms_slider,
     bathrooms_slider,
     square_footage_slider,
@@ -603,6 +616,7 @@ user_options_card = dbc.Card(
     year_built_slider,
     unknown_year_built_radio,
     pets_radio,
+    senior_community_radio,
   ],
   body=True
 )
@@ -702,7 +716,7 @@ className = "dbc"
     #Input(component_id='hoa_fee_frequency_checklist', component_property='value'),
     Input(component_id='space_rent_slider', component_property='value'),
     Input(component_id='space_rent_missing_radio', component_property='value'),
-    #Input(component_id='senior_community_radio', component_property='value'),
+    Input(component_id='senior_community_radio', component_property='value'),
   ]
 )
 # The following function arguments are positional related to the Inputs in the callback above
@@ -727,7 +741,7 @@ def update_map(
   #hoa_fee_frequency_chosen,
   space_rent,
   space_rent_radio,
-  #senior_community_radio_choice
+  senior_community_radio_choice
 ):
   df_filtered = df[
     (df['subtype'].isin(subtypes_chosen)) &
@@ -746,8 +760,8 @@ def update_map(
     #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) 
     hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
     #(df['hoa_fee_frequency'].isin(hoa_fee_frequency_chosen)) &
-    space_rent_function(space_rent_radio, space_rent[0], space_rent[1])
-    #senior_community_function(senior_community_radio_choice)
+    space_rent_function(space_rent_radio, space_rent[0], space_rent[1]) &
+    senior_community_function(senior_community_radio_choice, subtypes_chosen)
   ]
 
   # Create an empty list for the markers
