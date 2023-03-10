@@ -113,18 +113,15 @@ def pet_policy_function(choice, subtype_selected):
   # Return every row where the pet policy is Yes or No
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
     pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | (df['pets_allowed'].str.contains('No'))
-  # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" 
+  # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" or is null
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-    pets_radio_choice = (~df['pets_allowed'].str.contains('No'))
-  # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No"
+    pets_radio_choice = (~df['pets_allowed'].str.contains('No')) | df['pets_allowed'].isnull()
+  # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No" or is null
   elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-    pets_radio_choice = (df['pets_allowed'].str.contains('No')) 
+    pets_radio_choice = (df['pets_allowed'].str.contains('No')) | df['pets_allowed'].isnull()
   # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
     pets_radio_choice = df['pets_allowed'].isnull() | df['pets_allowed'].notnull()
-  # If they select N/A, return every row where the pet policy is null
-  elif choice == 'N/A':
-    pets_radio_choice = df['pets_allowed'].isnull()
   return (pets_radio_choice)
 
 # Create a function to return a dataframe filter for senior community status
@@ -142,18 +139,15 @@ def senior_community_function(choice, subtype_selected):
   # Return every row where the pet policy is Yes or No
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
     senior_community_choice = (df['senior_community'].str.contains('N')) | (df['senior_community'].str.contains('Y')) 
-  # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y"
+  # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y" or is null
   elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-    senior_community_choice = (df['senior_community'].str.contains('Y'))
-  # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N"
+    senior_community_choice = (df['senior_community'].str.contains('Y')) | df['pets_allowed'].isnull()
+  # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N" or is null
   elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-    senior_community_choice = (df['senior_community'].str.contains('N'))
+    senior_community_choice = (df['senior_community'].str.contains('N')) | df['pets_allowed'].isnull()
   # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
   elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
     senior_community_choice = df['senior_community'].isnull() | df['senior_community'].notnull()
-  # If they select N/A, return every row where the senior community is null
-  elif choice == 'N/A':
-    senior_community_choice = df['senior_community'].isnull()
   return (senior_community_choice)
 
 ## END FUNCTIONS ##
@@ -313,6 +307,7 @@ id = 'unknown_ppsqft_div'
 
 pets_radio = html.Div([
   html.H5("Pet Policy"),
+  html.H6("Applies only to Manufactured Homes (MH)."),
   # Create a radio button for pet policy
   dcc.RadioItems(
     id = 'pets_radio',
@@ -320,7 +315,6 @@ pets_radio = html.Div([
       {'label': 'Pets Allowed', 'value': 'True'},
       {'label': 'Pets NOT Allowed', 'value': 'False'},
       {'label': 'Both', 'value': 'Both'},
-      {'label': 'N/A', 'value': 'N/A'}
     ],
     value='Both', # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
     # add some spacing in between the checkbox and the label
@@ -412,6 +406,7 @@ id = 'hoa_fee_frequency_div',
 space_rent_slider = html.Div([
   # Title this section
   html.H5("Space Rent"),
+  html.H6("Applies only to Manufactured Homes (MH)."),
   # Create a slider for the user to select the range of space rent they want to see
   # https://dash.plotly.com/dash-core-components/slider
   dcc.RangeSlider(
@@ -463,13 +458,13 @@ id = 'unknown_space_rent_div'
 # https://dash.plotly.com/dash-core-components/radioitems
 senior_community_radio = html.Div([
   html.H5("Senior Community"),
+  html.H6("Applies only to Manufactured Homes (MH)."),
   dcc.RadioItems(
     id = 'senior_community_radio',
     options=[
       {'label': 'Yes', 'value': 'True'},
       {'label': 'No', 'value': 'False'},
       {'label': 'Both', 'value': 'Both'},
-      {'label': 'N/A', 'value': 'N/A'}
     ],
     value='Both',
     # add some spacing in between the checkbox and the label
