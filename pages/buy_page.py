@@ -508,6 +508,9 @@ rental_price_slider = html.Div([
       updatemode='mouseup'
     ),
 ],
+style = {
+  'margin-bottom' : '10px',
+},
 id = 'price_div'
 )
 
