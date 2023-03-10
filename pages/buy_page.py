@@ -475,7 +475,7 @@ id = 'senior_community_div'
 )
 
 rental_price_slider = html.Div([ 
-    html.H5("Price (Monthly)"),
+    html.H5("List Price"),
     # Create a range slider for rental price
     dcc.RangeSlider(
       min=df['list_price'].min(),

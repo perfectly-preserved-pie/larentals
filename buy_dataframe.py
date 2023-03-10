@@ -520,7 +520,7 @@ def popup_html(dataframe, row):
           </tr>
           {listing_url_block}
           <tr>
-            <td>Rental Price</td>
+            <td>List Price</td>
             <td>${lc_price}</td>
           </tr>
           <tr>
