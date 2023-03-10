@@ -681,7 +681,7 @@ title_card = dbc.Card(
   [
     html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."),
-    html.P(f"Last updated: yeah uhhhh lol what"),
+    html.P(f"Last updated: {last_updated}"),
     # Add an icon for the for-sale page
     html.I(
         className="fa-building fa",
