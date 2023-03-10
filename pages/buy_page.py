@@ -750,7 +750,6 @@ def update_space_rent_div(selected_subtype):
   if 'MH' in selected_subtype:
     return {
       'display': 'block',
-      'width' : '70%',
       'margin-bottom' : '10px',
     }
   else:
@@ -774,7 +773,6 @@ def update_hoa_fee_div(selected_subtype):
   else:
     return {
       'display': 'block',
-      'width' : '70%',
       'margin-bottom' : '10px',
     }
 
@@ -786,7 +784,10 @@ def update_unknown_hoa_fee_div(selected_subtype):
       'display': 'none',
     }
   else:
-    return {'display': 'none'}
+    return {
+      'display': 'block',
+      'margin-bottom' : '10px',
+    }
   
 # Define callback to update the style property of the HOA Fee frequency div based on the selected subtype value
 @callback(Output('hoa_fee_frequency_div', 'style'), Input('selected_subtype', 'data'))
@@ -796,7 +797,10 @@ def update_hoa_fee_frequency_div(selected_subtype):
       'display': 'none',
     }
   else:
-    return {'display': 'none'}
+    return {
+      'display': 'block',
+      'margin-bottom' : '10px',
+    }
   
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
