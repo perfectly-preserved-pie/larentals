@@ -197,7 +197,11 @@ bedrooms_slider = html.Div([
     step=1, 
     value=[0, df['Bedrooms'].max()], 
     id='bedrooms_slider',
-    updatemode='mouseup'
+    updatemode='mouseup',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
   ),
 ],
 id = 'bedrooms_div'
@@ -212,7 +216,11 @@ bathrooms_slider = html.Div([
     step=1, 
     value=[0, df['Total Bathrooms'].max()], 
     id='bathrooms_slider',
-    updatemode='mouseup'
+    updatemode='mouseup',
+    tooltip={
+      "placement": "bottom",
+      "always_visible": True
+    },
   ),
 ],
 id = 'bathrooms_div'
