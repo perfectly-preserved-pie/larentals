@@ -189,7 +189,6 @@ bedrooms_slider = html.Div([
     updatemode='mouseup'
   ),
 ],
-style = {'width' : '70%'},
 id = 'bedrooms_div'
 )
 
@@ -205,7 +204,6 @@ bathrooms_slider = html.Div([
     updatemode='mouseup'
   ),
 ],
-style = {'width' : '70%'}, 
 id = 'bathrooms_div'
 )
 
@@ -225,7 +223,6 @@ square_footage_slider = html.Div([
   ),
 ],
 style = {
-  'width' : '70%',
   'margin-bottom' : '10px',
 }, 
 id = 'square_footage_div'
@@ -274,7 +271,6 @@ ppsqft_slider = html.Div([
   ),
 ],
 style = {
-  'width' : '70%',
   'margin-bottom' : '10px',
 },
 id = 'ppsqft_div'
@@ -348,7 +344,6 @@ hoa_fee_slider = html.Div([
   # https://dash.plotly.com/dash-core-components/radioitems
 ],
 style = {
-  'width' : '70%',
   'margin-bottom' : '10px',
 },
 id = 'hoa_fee_div',
@@ -421,7 +416,6 @@ space_rent_slider = html.Div([
   ),
 ],
 style = {
-  'width' : '70%',
   'margin-bottom' : '10px',
 },
 id = 'space_rent_div',
@@ -493,7 +487,6 @@ rental_price_slider = html.Div([
       updatemode='mouseup'
     ),
 ],
-style = {'width' : '70%'}, 
 id = 'price_div'
 )
 
@@ -525,7 +518,6 @@ year_built_slider = html.Div([
     ),
 ],
 style = {
-  'width' : '70%',
   'margin-bottom' : '10px',
 },
 id = 'yrbuilt_div'
