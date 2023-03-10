@@ -153,6 +153,17 @@ def senior_community_function(choice, subtype_selected):
 ## END FUNCTIONS ##
 
 ## BEGIN DASH BOOTSTRAP COMPONENTS ##
+# Define a dictionary that maps each subtype to its corresponding meaning
+subtype_meaning = {
+  'SFR': 'Single Family Residence',
+  'CONDO/A': 'Condo (Attached)',
+  'CONDO': 'Condo',
+  'TWNHS/A': 'Townhouse (Attached)',
+  'TWNHS': 'Townhouse',
+  'CONDO/D': 'Condo (Detached)',
+  'TWNHS/D': 'Townhouse (Detached)',
+  'MH': 'Mobile Home'
+}
 # Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
   # Title this section
@@ -162,7 +173,7 @@ subtype_checklist = html.Div([
   dcc.Checklist( 
     id = 'subtype_checklist',
     # Loop through the list of subtypes and create a dictionary of options
-    options = [{'label': i, 'value': i} for i in df['subtype'].unique()],
+    options = [{'label': f"{i} - {subtype_meaning[i]}", 'value': i} for i in df['subtype'].unique()],
     # Set the default values to all of the subtypes
     value = df['subtype'].unique(),
     labelStyle = {'display': 'block'},
@@ -303,7 +314,7 @@ id = 'unknown_ppsqft_div'
 
 pets_radio = html.Div([
   html.H5("Pet Policy"),
-  html.H6("Applies only to Manufactured Homes (MH)."),
+  html.H6("Applies only to Mobile Homes (MH)."),
   # Create a radio button for pet policy
   dcc.RadioItems(
     id = 'pets_radio',
@@ -403,7 +414,7 @@ id = 'hoa_fee_frequency_div',
 space_rent_slider = html.Div([
   # Title this section
   html.H5("Space Rent"),
-  html.H6("Applies only to Manufactured Homes (MH)."),
+  html.H6("Applies only to Mobile Homes (MH)."),
   # Create a slider for the user to select the range of space rent they want to see
   # https://dash.plotly.com/dash-core-components/slider
   dcc.RangeSlider(
@@ -454,7 +465,7 @@ id = 'unknown_space_rent_div'
 # https://dash.plotly.com/dash-core-components/radioitems
 senior_community_radio = html.Div([
   html.H5("Senior Community"),
-  html.H6("Applies only to Manufactured Homes (MH)."),
+  html.H6("Applies only to Mobile Homes (MH)."),
   dcc.RadioItems(
     id = 'senior_community_radio',
     options=[
