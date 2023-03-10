@@ -328,6 +328,7 @@ id = 'pet_policy_div'
 hoa_fee_slider = html.Div([
   # Title this section
   html.H5("HOA Fee"),
+  html.H6("Applies only to SFR and CONDO/TWNHS."),
   # Create a slider for the user to select the range of HOA fees they want to see
   # https://dash.plotly.com/dash-core-components/slider
   dcc.RangeSlider(
@@ -378,6 +379,7 @@ id = 'unknown_hoa_fee_div'
 hoa_fee_frequency_checklist = html.Div([
   # Title this section
   html.H5("HOA Fee Frequency"),
+  html.H6("Applies only to SFR and CONDO/TWNHS."),
   # Create a checklist for the user to select the frequency of HOA fees they want to see
   dcc.Checklist(
     id = 'hoa_fee_frequency_checklist',
