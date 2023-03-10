@@ -322,7 +322,7 @@ id = 'unknown_ppsqft_div'
 
 pets_radio = html.Div([
   html.H5("Pet Policy"),
-  html.H6("Applies only to Mobile Homes (MH)."),
+  html.H6([html.Em("Applies only to Mobile Homes (MH).")]),
   # Create a radio button for pet policy
   dcc.RadioItems(
     id = 'pets_radio',
@@ -347,7 +347,7 @@ id = 'pet_policy_div'
 hoa_fee_slider = html.Div([
   # Title this section
   html.H5("HOA Fee"),
-  html.H6("Applies only to SFR and CONDO/TWNHS."),
+  html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")]),
   # Create a slider for the user to select the range of HOA fees they want to see
   # https://dash.plotly.com/dash-core-components/slider
   dcc.RangeSlider(
@@ -398,7 +398,7 @@ id = 'unknown_hoa_fee_div'
 hoa_fee_frequency_checklist = html.Div([
   # Title this section
   html.H5("HOA Fee Frequency"),
-  html.H6("Applies only to SFR and CONDO/TWNHS."),
+  html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")]),
   # Create a checklist for the user to select the frequency of HOA fees they want to see
   dcc.Checklist(
     id = 'hoa_fee_frequency_checklist',
@@ -422,7 +422,7 @@ id = 'hoa_fee_frequency_div',
 space_rent_slider = html.Div([
   # Title this section
   html.H5("Space Rent"),
-  html.H6("Applies only to Mobile Homes (MH)."),
+  html.H6([html.Em("Applies only to Mobile Homes (MH).")]),
   # Create a slider for the user to select the range of space rent they want to see
   # https://dash.plotly.com/dash-core-components/slider
   dcc.RangeSlider(
@@ -473,7 +473,7 @@ id = 'unknown_space_rent_div'
 # https://dash.plotly.com/dash-core-components/radioitems
 senior_community_radio = html.Div([
   html.H5("Senior Community"),
-  html.H6("Applies only to Mobile Homes (MH)."),
+  html.H6([html.Em("Applies only to Mobile Homes (MH).")]),
   dcc.RadioItems(
     id = 'senior_community_radio',
     options=[
