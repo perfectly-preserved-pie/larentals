@@ -1,12 +1,15 @@
-import dash
 from dash import html, dcc, callback
 from dash.dependencies import Input, Output
 from datetime import date
+from flask import request
+from loguru import logger
+from user_agents import parse
+import dash
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_leaflet.express as dlx
-import logging
 import pandas as pd
+import sys
 import uuid
 
 dash.register_page(
@@ -18,7 +21,7 @@ dash.register_page(
 )
 
 
-logging.getLogger().setLevel(logging.INFO)
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
@@ -902,9 +905,28 @@ def update_map(
   # Generate geojson with a marker for each listing
   geojson = dlx.dicts_to_geojson([{**m} for m in markers])
 
-  # Log statements to check if we have all markers in the dataframe displayed
-  logging.info(f"The original dataframe has {len(df.index)} rows. There are {len(df_filtered.index)} rows in the filtered dataframe. There are {len(markers)} markers on the map.")
-  logging.info(f"IMPORTANT! The original dataframe has {df.Latitude.isnull().sum()} rows with a missing Latitude. There are {df_filtered.Latitude.isnull().sum()} rows with a missing Latitude in the filtered dataframe.")
+  # Logging
+  user_agent_string = request.headers.get('User-Agent')
+  user_agent = parse(user_agent_string)
+  ip_address = request.remote_addr
+  logger.info(f"""User {ip_address} is using {user_agent.browser.family} on {user_agent.get_device()}. 
+  They have chosen the following filters: 
+    Subtypes: {subtypes_chosen}.
+    Pet policy: {pets_chosen}.
+    List price: {rental_price}.
+    Bedrooms: {bedrooms_chosen}.
+    Bbathrooms: {bathrooms_chosen}.
+    Square footage: {sqft_chosen}.
+    Year built: {years_chosen}.
+    Price per square foot: {ppsqft_chosen}.
+    Listed date range: {listed_date_datepicker_start} to {listed_date_datepicker_end}.
+    HOA fee range: {hoa_fee}.
+    HOA fee frequency: {hoa_fee_frequency_chosen}.
+    Space rent: {space_rent}.
+    Senior community: {senior_community_radio_choice}.
+  
+  The resulting filtered datarame has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
+
   # Generate the map
   return dl.GeoJSON(
     id=str(uuid.uuid4()),
