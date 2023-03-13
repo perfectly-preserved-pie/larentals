@@ -16,7 +16,7 @@ on:
     branches: [ "master" ]
     paths-ignore:
       - '*.md'
-      - 'dataframe.pickle'
+      #- 'dataframe.pickle'
       - '.gitignore'
       - '*.yml'
   pull_request:
