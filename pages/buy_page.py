@@ -925,7 +925,7 @@ def update_map(
     Space rent: {space_rent}.
     Senior community: {senior_community_radio_choice}.
   
-  The resulting filtered datarame has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
+  The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
 
   # Generate the map
   return dl.GeoJSON(
