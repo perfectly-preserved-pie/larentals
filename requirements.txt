@@ -17,5 +17,4 @@ python-dotenv==0.21.0
 pyyaml 
 requests==2.28.1
 tables
-ua-parser
-user-agents
+user_agents==0.10.0
