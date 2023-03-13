@@ -3,18 +3,19 @@ from dotenv import load_dotenv, find_dotenv
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
+from loguru import logger
 from numpy import NaN
 import glob
-import logging
 import os
 import pandas as pd
 import requests
+import sys
 
 ## SETUP AND VARIABLES
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
-logging.getLogger().setLevel(logging.INFO)
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 # ImageKit.IO
 # https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
@@ -86,8 +87,8 @@ def return_coordinates(address, row_index):
     except Exception as e:
         lat = NaN
         lon = NaN
-        logging.warning(f"Couldn't fetch geocode information for {address} (row {row.Index} of {len(df)}) because of {e}.")
-    logging.info(f"Fetched coordinates {lat}, {lon} for {address} (row {row.Index} of {len(df)}).")
+        logger.warning(f"Couldn't fetch geocode information for {address} (row {row.Index} of {len(df)}) because of {e}.")
+    logger.success(f"Fetched coordinates {lat}, {lon} for {address} (row {row.Index} of {len(df)}).")
     return lat, lon
 
 # Create a function to get a missing city
@@ -102,8 +103,8 @@ def fetch_missing_city(address):
         city = [addr['long_name'] for addr in raw if 'locality' in addr['types']][0]
     except Exception as e:
         city = NaN
-        logging.warning(f"Couldn't fetch city for {address} because of {e}.")
-    logging.info(f"Fetched city ({city}) for {address}.")
+        logger.warning(f"Couldn't fetch city for {address} because of {e}.")
+    logger.success(f"Fetched city ({city}) for {address}.")
     return  city
 
 # Fetch missing city names
@@ -127,9 +128,9 @@ def return_postalcode(address):
             if row.types == ['postal_code']:
                 postalcode = row.long_name
     except Exception as e:
-        logging.warning(f"Couldn't fetch postal code for {address} because {e}.")
+        logger.warning(f"Couldn't fetch postal code for {address} because {e}.")
         return pd.NA
-    logging.info(f"Fetched postal code {postalcode} for {address}.")
+    logger.success(f"Fetched postal code {postalcode} for {address}.")
     return int(postalcode)
 
 # Filter the dataframe and return only rows with a NaN postal code
@@ -148,10 +149,10 @@ def webscrape_bhhs(url, row_index, mls_number):
         # First find the URL to the actual listing instead of just the search result page
         try:
           link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
-          logging.info(f"Successfully fetched listing URL for {mls_number} (row {row_index} out of {len(df)}).")
+          logger.success(f"Successfully fetched listing URL for {mls_number} (row {row_index} out of {len(df)}).")
         except AttributeError as e:
           link = None
-          logging.warning(f"Couldn't fetch listing URL for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
+          logger.warning(f"Couldn't fetch listing URL for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
           pass
         # If the URL is available, fetch the MLS photo and listed date
         if link is not None:
@@ -159,19 +160,19 @@ def webscrape_bhhs(url, row_index, mls_number):
           # https://stackoverflow.com/a/44293555
           try:
             photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
-            logging.info(f"Successfully fetched MLS photo for {mls_number} (row {row_index} out of {len(df)}).")
+            logger.success(f"Successfully fetched MLS photo for {mls_number} (row {row_index} out of {len(df)}).")
           except AttributeError as e:
             photo = None
-            logging.warning(f"Couldn't fetch MLS photo for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
+            logger.warning(f"Couldn't fetch MLS photo for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
             pass
           # For the list date, split the p class into strings and get the last element in the list
           # https://stackoverflow.com/a/64976919
           try:
             listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
-            logging.info(f"Successfully fetched listed date for {mls_number} (row {row_index} out of {len(df)}).")
+            logger.success(f"Successfully fetched listed date for {mls_number} (row {row_index} out of {len(df)}).")
           except AttributeError as e:
             listed_date = pd.NaT
-            logging.warning(f"Couldn't fetch listed date for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
+            logger.warning(f"Couldn't fetch listed date for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
             pass
         elif link is None:
           pass
@@ -179,7 +180,7 @@ def webscrape_bhhs(url, row_index, mls_number):
       listed_date = pd.NaT
       photo = NaN
       link = NaN
-      logging.warning(f"Couldn't scrape BHHS page for {mls_number} (row {row_index} out of {len(df)}) because of {e}. Passing on...")
+      logger.warning(f"Couldn't scrape BHHS page for {mls_number} (row {row_index} out of {len(df)}) because of {e}. Passing on...")
       pass
     return listed_date, photo, link
 
@@ -195,7 +196,7 @@ def check_expired_listing(url, mls_number):
     except AttributeError:
       return False
   except Exception as e:
-    logging.warning(f"Couldn't detect if the listing for {mls_number} has expired because {e}.")
+    logger.warning(f"Couldn't detect if the listing for {mls_number} has expired because {e}.")
     return False
 
 # Create a function to upload the file to ImageKit and then transform it
@@ -217,10 +218,10 @@ def imagekit_transform(bhhs_mls_photo_url, mls):
         ).url
       except Exception as e:
         uploaded_image = None
-        logging.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
+        logger.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
   elif pd.isnull(bhhs_mls_photo_url) == True:
     uploaded_image = None
-    logging.info(f"No image URL found on BHHS for {bhhs_mls_photo_url}. Not uploading anything to ImageKit. Passing on...")
+    logger.info(f"No image URL found on BHHS for {bhhs_mls_photo_url}. Not uploading anything to ImageKit. Passing on...")
     pass
   # Now transform the uploaded image
   # https://github.com/imagekit-developer/imagekit-python#url-generation
@@ -236,7 +237,7 @@ def imagekit_transform(bhhs_mls_photo_url, mls):
       })
     except Exception as e:
       transformed_image = None
-      logging.warning(f"Couldn't transform image because {e}. Passing on...")
+      logger.warning(f"Couldn't transform image because {e}. Passing on...")
       pass
   elif uploaded_image is None:
     transformed_image = None
@@ -574,29 +575,22 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', inf
 
 # Pickle the dataframe for later ingestion by app.py
 # https://www.youtube.com/watch?v=yYey8ntlK_E
-# If there's no pickle file on GitHub, then make one
-pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/lease.pickle'
-if requests.head(pickle_url).ok == False:
-  # Drop any dupes again
-  df = df.drop_duplicates(subset=['mls_number'], keep="last")
-  df.to_pickle("lease.pickle")
-# Otherwise load in the old pickle file and concat it with the new dataframe\
-elif requests.head(pickle_url).ok == True:
-  # Read the old dataframe in
-  df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
-  # Combine both old and new dataframes
-  df_combined = pd.concat([df, df_old], ignore_index=True)
-  # Drop any dupes again
-  df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
-  # Iterate through the dataframe and drop rows with expired listings
-  for row in df_combined[df_combined.listing_url.notnull()].itertuples():
-   if check_expired_listing(row.listing_url, row.mls_number) == True:
+pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle'
+# Read the old dataframe in
+df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
+# Combine both old and new dataframes
+df_combined = pd.concat([df, df_old], ignore_index=True)
+# Drop any dupes again
+df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
+# Iterate through the dataframe and drop rows with expired listings
+for row in df_combined[df_combined.listing_url.notnull()].itertuples():
+  if check_expired_listing(row.listing_url, row.mls_number) == True:
     df_combined = df_combined.drop(row.Index)
-    logging.info(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
-  # Reset the index
-  df_combined = df_combined.reset_index(drop=True)
-  # Iterate through the combined dataframe and (re)generate the popup_html column
-  for row in df_combined.itertuples():
-    df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
-  # Pickle the new combined dataframe
-  df_combined.to_pickle("datasets/lease.pickle")
+    logger.success(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
+# Reset the index
+df_combined = df_combined.reset_index(drop=True)
+# Iterate through the combined dataframe and (re)generate the popup_html column
+for row in df_combined.itertuples():
+  df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
+# Pickle the new combined dataframe
+df_combined.to_pickle("datasets/lease.pickle")
