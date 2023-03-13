@@ -1036,7 +1036,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     Price per square foot: {ppsqft_chosen}.
     Listed date range: {listed_date_datepicker_start} to {listed_date_datepicker_end}.
   
-  The resulting filtered datarame has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
+  The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
 
   # Generate the map
   return dl.GeoJSON(
