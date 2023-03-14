@@ -323,7 +323,7 @@ id = 'unknown_sqft_div',
 
 # Create a range slider for ppsqft
 ppsqft_slider = html.Div([
-    html.H5("Price Per Square Foot"),
+    html.H5("Price Per Square Foot ($)"),
     dcc.RangeSlider(
       min=df['ppsqft'].min(), 
       max=df['ppsqft'].max(),
