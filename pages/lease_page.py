@@ -244,7 +244,11 @@ bedrooms_slider = html.Div([
       step=1, 
       value=[0, df['Bedrooms'].max()], 
       id='bedrooms_slider',
-      updatemode='mouseup'
+      updatemode='mouseup',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
     ),
 ],
 style = {'width' : '70%'},
@@ -260,7 +264,11 @@ bathrooms_slider = html.Div([
       step=1, 
       value=[0, df['Total Bathrooms'].max()], 
       id='bathrooms_slider',
-      updatemode='mouseup'
+      updatemode='mouseup',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
     ),
 ],
 style = {'width' : '70%'}, 
@@ -418,10 +426,17 @@ garage_spaces_slider =  html.Div([
       step=1, 
       value=[0, df['garage_spaces'].max()], 
       id='garage_spaces_slider',
-      updatemode='mouseup'
+      updatemode='mouseup',
+      tooltip={
+        "placement": "bottom",
+        "always_visible": True
+      },
     ),
 ],
-style = {'width' : '70%'}, 
+style = {
+  'width' : '70%',
+  'margin-bottom' : '10px',
+},
 id = 'garage_div'
 )
 
