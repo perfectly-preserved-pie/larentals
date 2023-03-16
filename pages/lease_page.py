@@ -140,6 +140,16 @@ def listed_date_function(boolean, start_date, end_date):
     listed_date_filter = df['listed_date'].between(start_date, end_date)
   return (listed_date_filter)
 
+# Terms
+def terms_function(choice):
+  # Presort the list first for faster performance
+  choice.sort()
+  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+    terms_filter = df['Terms'].isnull() | df['Terms'].isin(choice)
+  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+    terms_filter = df['Terms'].isin(choice)
+  return (terms_filter)
+
 # Laundry Features
 # First define a list of all the laundry features
 # Create a list of options for the first drop-down menu
@@ -394,14 +404,11 @@ rental_terms_checklist = html.Div([
     # Create a checklist for rental terms
     dcc.Checklist(
       id = 'terms_checklist',
-      options = [
-        {'label': 'Monthly', 'value': 'MO'},
-        {'label': '12 Months', 'value': '12M'},
-        {'label': '24 Months', 'value': '24M'},
-        {'label': 'Negotiable', 'value': 'NG'},
-        {'label': 'Unknown', 'value': '<NA>'}
-      ],
-      value=['MO', '12M', '24M', 'NG', '<NA>'],
+      # Create a dictionary for each unique value in 'Terms', replacing null values with the string "Unknown"
+      # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
+      options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
+      # Set the default value to be the value of all the dictionaries in options
+      value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()]],
       # add some spacing in between the checkbox and the label
       # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
       inputStyle = {
@@ -984,11 +991,10 @@ className = "dbc"
 def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio, laundry_chosen):
   # Pre-sort our various lists of strings for faster performance
   subtypes_chosen.sort()
-  terms_chosen.sort()
   df_filtered = df[
     (df['subtype'].isin(subtypes_chosen)) &
     pets_radio_button(pets_chosen) &
-    (df['Terms'].isin(terms_chosen)) &
+    terms_function(terms_chosen) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
