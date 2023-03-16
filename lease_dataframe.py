@@ -459,6 +459,10 @@ def popup_html(dataframe, row):
       laundry = 'Unknown'
   elif pd.isna(laundry) == False:
       laundry = f"{laundry}"
+  if pd.isna(terms) == True:
+      terms = 'Unknown'
+  elif pd.isna(terms) == False:
+      terms = f"{terms}"
   # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
   # Basically, the HTML block should just be an empty Img tag
   if pd.isna(mls_photo) == True:
