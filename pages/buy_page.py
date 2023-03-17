@@ -279,7 +279,7 @@ id = 'unknown_sqft_div',
 
 # Create a range slider for ppsqft
 ppsqft_slider = html.Div([
-  html.H5("Price Per Square Foot"),
+  html.H5("Price Per Square Foot ($)"),
   dcc.RangeSlider(
     min=df['ppsqft'].min(), 
     max=df['ppsqft'].max(),
@@ -883,8 +883,8 @@ def update_map(
     (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
     sqft_function(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1]) &
     yrbuilt_function(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1]) &
-    #((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
-    #listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) 
+    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
+    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
     hoa_fee_function(hoa_fee_radio, hoa_fee[0], hoa_fee[1]) &
     hoa_fee_frequency_function(hoa_fee_frequency_chosen) &
     space_rent_function(space_rent_radio, space_rent[0], space_rent[1]) &
