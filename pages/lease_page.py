@@ -187,60 +187,66 @@ def laundry_checklist_function(choice):
       laundry_features_filter = laundry_features_filter | df['LaundryFeatures'].str.contains(str(choice[i]))
   return (laundry_features_filter)
 
-# TODO: implement a Select All checkbox: https://dash.plotly.com/advanced-callbacks#synchronizing-two-checklists
+# Subtype
+def subtype_function(choice):
+  # Presort the list first for faster performance
+  choice.sort()
+  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+    subtype_filter = df['subtype'].isnull() | df['subtype'].isin(choice)
+  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+    subtype_filter = df['subtype'].isin(choice)
+  return (subtype_filter)
+
+# Define a dictionary that maps each subtype to its corresponding meaning
+subtype_meaning = {
+  'APT': 'Apartment (Unspecified)',
+  'APT/A': 'Apartment (Attached)',
+  'APT/D': 'Apartment (Detached)',
+  'CABIN/D': 'Cabin (Detached)',
+  'CONDO': 'Condo (Unspecified)',
+  'CONDO/A': 'Condo (Attached)',
+  'CONDO/D': 'Condo (Detached)',
+  'DPLX/A': 'Duplex (Attached)',
+  'DPLX/D': 'Duplex (Detached)',
+  'MANL/D': '??? (Detached)',
+  'MH': 'Mobile Home',
+  'QUAD/A': 'Quadplex (Attached)',
+  'QUAD/D': 'Quadplex (Detached)',
+  'RMRT/A': '??? (Attached)',
+  'RMRT/D': '??? (Detached)',
+  'SFR': 'Single Family Residence (Unspecified)',
+  'SFR/A': 'Single Family Residence (Attached)',
+  'SFR/D': 'Single Family Residence (Detached)',
+  'STUD/A': 'Studio (Attached)',
+  'STUD/D': 'Studio (Detached)',
+  'TPLX/A': 'Triplex (Attached)',
+  'TPLX/D': 'Triplex (Detached)',
+  'TWNHS': 'Townhouse (Unspecified)',
+  'TWNHS/A': 'Townhouse (Attached)',
+  'TWNHS/D': 'Townhouse (Detached)',
+  'Unknown': 'Unknown',
+}
+# Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
-      # Title this section
-      html.H5("Subtypes"), 
-      # Create a checklist of options for the user
-      # https://dash.plotly.com/dash-core-components/checklist
-      dcc.Checklist( 
-          id = 'subtype_checklist',
-          options = [
-            {'label': 'Apartment (Attached)', 'value': 'APT/A'},
-            {'label': 'Apartment (Unspecified)', 'value': 'APT'},
-            {'label': 'Condo (Attached)', 'value': 'CONDO/A'},
-            {'label': 'Condo (Detached)', 'value': 'CONDO/D'},
-            {'label': 'Condo (Unspecified)', 'value': 'CONDO'},
-            {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
-            {'label': 'Duplex (Detached)', 'value': 'DPLX/D'},
-            {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
-            {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'},
-            {'label': 'Ranch House (Detached)', 'value': 'RMRT/D'},
-            {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
-            {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'},
-            {'label': 'Single Family Residence (Unspecified)', 'value': 'SFR'},
-            {'label': 'Studio (Attached)', 'value': 'STUD/A'},
-            {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
-            {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'},
-            {'label': 'Triplex (Attached)', 'value': 'TPLX/A'}
-          ],
-          value=[
-            'APT/A',
-            'APT',
-            'CONDO/A',
-            'CONDO/D',
-            'CONDO',
-            'DPLX/A',
-            'DPLX/D',
-            'QUAD/A',
-            'QUAD/D',
-            'RMRT/D',
-            'SFR/A',
-            'SFR/D',
-            'SFR',
-            'STUD/A',
-            'TWNHS/A',
-            'TWNHS/D',
-            'TPLX/A',
-          ], # Set the default values
-          labelStyle = {'display': 'block'},
-          # add some spacing in between the checkbox and the label
-          # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-          inputStyle = {
-            "margin-right": "5px",
-            "margin-left": "5px"
-          },
-      ),
+  # Title this section
+  html.H5("Subtypes"), 
+  # Create a checklist of options for the user
+  # https://dash.plotly.com/dash-core-components/checklist
+  dcc.Checklist( 
+    id = 'subtype_checklist',
+    # Create a dictionary for each unique value in 'Subtype', replacing null values with the string "Unknown" and sort it alphabetically
+    # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
+    options = sorted([{'label': f"{i} - {subtype_meaning[i]}", 'value': i} if not pd.isnull(i) else {'label': "Unknown", 'value': "Unknown"} for i in df['subtype'].unique()], key=lambda x: x['label']),
+    # Set the default value to be the value of all the dictionaries in options
+    value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['subtype'].unique()]],
+    labelStyle = {'display': 'block'},
+    # add some spacing in between the checkbox and the label
+    # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+    inputStyle = {
+      "margin-right": "5px",
+      "margin-left": "5px"
+    },
+  ),
 ],
 id = 'subtypes_div',
 )
@@ -992,7 +998,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Pre-sort our various lists of strings for faster performance
   subtypes_chosen.sort()
   df_filtered = df[
-    (df['subtype'].isin(subtypes_chosen)) &
+    subtype_function(subtypes_chosen) &
     pets_radio_button(pets_chosen) &
     terms_function(terms_chosen) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
