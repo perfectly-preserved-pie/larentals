@@ -249,6 +249,13 @@ subtype_checklist = html.Div([
   ),
 ],
 id = 'subtypes_div',
+# Make the checklist scrollable since there are so many options
+# https://stackoverflow.com/a/69546868
+style = {
+  "overflow-y":"scroll",
+  "overflow-x":'hidden',
+  "height": '220px'
+}
 )
 
 bedrooms_slider = html.Div([
