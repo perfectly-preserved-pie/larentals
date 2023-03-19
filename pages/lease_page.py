@@ -229,7 +229,8 @@ subtype_meaning = {
 # Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
   # Title this section
-  html.H5("Subtypes"), 
+  html.H5("Subtypes"),
+  html.H6([html.Em("Use the scrollbar on the right to view more subtype options.")]),
   # Create a checklist of options for the user
   # https://dash.plotly.com/dash-core-components/checklist
   dcc.Checklist( 
