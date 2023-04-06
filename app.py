@@ -1,5 +1,6 @@
 from dash import Dash
 import dash
+import dash_html_components as html
 import dash_bootstrap_components as dbc
 import logging
 
@@ -58,9 +59,10 @@ app.layout = dbc.Container([
     # https://stackoverflow.com/a/70495385
     className="g-0",
   ),
+html.Link(href='/assets/style.css', rel='stylesheet'),
 ],
 fluid = True,
-className = "dbc"
+className = "dbc",
 )
 
 if __name__ == '__main__':
