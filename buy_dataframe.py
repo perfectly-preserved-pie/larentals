@@ -567,10 +567,10 @@ def popup_html(dataframe, row):
     """
 
 # Define a lambda function to replace the <table> tag
-replace_table_tag = lambda html: html.replace("<table>", "<table height='200' width='20%'>", 1)
+#replace_table_tag = lambda html: html.replace("<table>", "<table id='popup_table'>", 1)
 
 # Apply the lambda function to create the popup_html_mobile column
-df['popup_html_mobile'] = df['popup_html'].apply(replace_table_tag)
+#df['popup_html_mobile'] = df['popup_html'].apply(replace_table_tag)
 
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
