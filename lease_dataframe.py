@@ -495,78 +495,78 @@ def popup_html(dataframe, row):
     """
   # Return the HTML snippet as a string
   return f"""<div>{mls_photo_html_block}</div>
-    <table>
-      <tbody>
-        <tr>
+    <table id='popup_html_table'>
+      <tbody id='popup_html_table_body'>
+        <tr id='listed_date'>
           <td>Listed Date</td>
           <td>{listed_date}</td>
         </tr>
-        <tr>
+        <tr id='street_address'>
           <td>Street Address</td>
           <td>{full_address}</td>
         </tr>
         {listing_url_block}
-        <tr>
+        <tr id='list_office_phone'>
           <td>List Office Phone</td>
           <td><a href="tel:{phone}">{phone}</a></td>
         </tr>
-        <tr>
+        <tr id='rental_price'>
           <td>Rental Price</td>
           <td>${lc_price:,.0f}</td>
         </tr>
-        <tr>
+        <tr id='security_deposit'>
           <td>Security Deposit</td>
           <td>{security_deposit}</td>
         </tr>
-        <tr>
+        <tr id='pet_deposit'>
           <td>Pet Deposit</td>
           <td>{pet_deposit}</td>
         </tr>
-        <tr>
+        <tr id='key_deposit'>
           <td>Key Deposit</td>
           <td>{key_deposit}</td>
         </tr>
-        <tr>
+        <tr id='other_deposit'>
           <td>Other Deposit</td>
           <td>{other_deposit}</td>
         </tr>
-        <tr>
+        <tr id='square_feet'>
           <td>Square Feet</td>
           <td>{square_ft}</td>
         </tr>
-        <tr>
+        <tr id='price_per_sqft'>
           <td>Price Per Square Foot</td>
           <td>{price_per_sqft}</td>
         </tr>
-        <tr>
+        <tr id='bedrooms_bathrooms'>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
           <td>{brba}</td>
         </tr>
-        <tr>
+        <tr id='garage_spaces'>
           <td>Garage Spaces</td>
           <td>{garage}</td>
         </tr>
-        <tr>
+        <tr id='pets_allowed'>
           <td>Pets Allowed?</td>
           <td>{pets}</td>
         </tr>
-        <tr>
+        <tr id='furnished'>
           <td>Furnished?</td>
           <td>{furnished}</td>
         </tr>
-        <tr>
+        <tr id='laundry_features'>
           <td>Laundry Features</td>
           <td>{laundry}</td>
         </tr>
-        <tr>
+        <tr id='year_built'>
           <td>Year Built</td>
           <td>{year}</td>
         </tr>
-        <tr>
+        <tr id='rental_terms'>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms" target="_blank">Rental Terms</a></td>
           <td>{terms}</td>
         </tr>
-        <tr>
+        <tr id='subtype'>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
           <td>{sub_type}</td>
         </tr>
