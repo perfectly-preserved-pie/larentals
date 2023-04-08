@@ -1,15 +1,22 @@
-/* This file is used to style the popup window that appears when you click on a marker on the map. */
-/* Apply only to screens smaller than 768px. */
+/* This file is used to style the Leaflet popup window that appears when you click on a marker on the map. */
+/* Apply the following modifications only to screens smaller than 768px. */
 @media screen and (max-width: 768px) {
+    /* This is the Leaflet popup wrapper. */
+    .leaflet-popup-content-wrapper {
+        width: 100% !important;
+        padding: 0 !important;
+    }
     /* This is the Leaflet popup window. */
     .leaflet-popup-content {
         width: 75% !important;
         font-size: x-small !important;
-        padding: 0 !important;
     }
     /* This is the div that contains the MLS photo. */
     #mls_photo_div {
-        width: 75% !important;
-        padding: 0 !important;
+        width: 100% !important;
     }  
+    /* This moves the close button down 8 pixels. */
+    .leaflet-popup-close-button {
+        transform: translateY(8px);
+    }
 }
