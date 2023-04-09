@@ -206,6 +206,7 @@ subtype_meaning = {
   'CONDO': 'Condo (Unspecified)',
   'CONDO/A': 'Condo (Attached)',
   'CONDO/D': 'Condo (Detached)',
+  'COOP/A': 'Cooperative (Attached)',
   'DPLX/A': 'Duplex (Attached)',
   'DPLX/D': 'Duplex (Detached)',
   'MANL/D': '??? (Detached)',
