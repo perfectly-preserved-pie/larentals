@@ -58,9 +58,10 @@ app.layout = dbc.Container([
     # https://stackoverflow.com/a/70495385
     className="g-0",
   ),
+#html.Link(href='/assets/style.css', rel='stylesheet'),
 ],
 fluid = True,
-className = "dbc"
+className = "dbc",
 )
 
 if __name__ == '__main__':

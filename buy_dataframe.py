@@ -503,68 +503,74 @@ def popup_html(dataframe, row):
     """
   # Return the HTML snippet as a string
   return f"""<div>{mls_photo_html_block}</div>
-    <table>
-      <tbody>
-        <tr>
+    <table id='popup_html_table'>
+      <tbody id='popup_html_table_body'>
+        <tr id='listed_date'>
           <td>Listed Date</td>
           <td>{listed_date}</td>
         </tr>
-        <tr>
+        <tr id='street_address'>
           <td>Street Address</td>
           <td>{full_address}</td>
         </tr>
-        <tr>
+        <tr id='park_name'>
           <td>Park Name</td>
           <td>{park_name}</td>
         </tr>
         {listing_url_block}
-        <tr>
+        <tr id='list_price'>
           <td>List Price</td>
           <td>${lc_price:,.0f}</td>
         </tr>
-        <tr>
+        <tr id='hoa_fee'>
           <td>HOA Fee</td>
           <td>{hoa_fee}</td>
         </tr>
-        <tr>
+        <tr id='hoa_fee_frequency'>
           <td>HOA Fee Frequency</td>
           <td>{hoa_fee_frequency}</td>
         </tr>
-        <tr>
+        <tr id='square_feet'>
           <td>Square Feet</td>
           <td>{square_ft}</td>
         </tr>
-        <tr>
+        <tr id='space_rent'>
           <td>Space Rent</td>
           <td>{space_rent}</td>
         </tr>
-        <tr>
+        <tr id='price_per_sqft'>
           <td>Price Per Square Foot</td>
           <td>{price_per_sqft}</td>
         </tr>
-        <tr>
+        <tr id='bedrooms_bathrooms'>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
           <td>{brba}</td>
         </tr>
-        <tr>
+        <tr id='year_built'>
           <td>Year Built</td>
           <td>{year}</td>
         </tr>
-        <tr>
+        <tr id='pets_allowed'>
           <td>Pets Allowed?</td>
           <td>{pets}</td>
         </tr>
-        <tr>
+        <tr id='senior_community'>
           <td>Senior Community</td>
           <td>{senior_community}</td>
         </tr>
-        <tr>
+        <tr id='subtype'>
           <td>Sub Type</td>
           <td>{subtype}</td>
         </tr>
       </tbody>
     </table>
     """
+
+# Define a lambda function to replace the <table> tag
+#replace_table_tag = lambda html: html.replace("<table>", "<table id='popup_table'>", 1)
+
+# Apply the lambda function to create the popup_html_mobile column
+#df['popup_html_mobile'] = df['popup_html'].apply(replace_table_tag)
 
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
