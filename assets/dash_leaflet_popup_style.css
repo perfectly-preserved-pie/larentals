@@ -6,7 +6,7 @@
         width: 100% !important;
         /*padding: 0 !important; */
         overflow: auto !important;
-        height: 150px !important;
+        height: 350px !important;
     }
     /* This is the Leaflet popup window. */
     .leaflet-popup-content {
