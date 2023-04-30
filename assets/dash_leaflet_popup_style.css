@@ -17,8 +17,30 @@
     #mls_photo_div {
         width: 100% !important;
     } 
-    /* This moves the close button down 8 pixels. */
+    /* This moves the close button down 8 pixels and 10 pixels to the left. */
     .leaflet-popup-close-button {
         transform: translateY(8px);
+        transform: translateX(-10px);
+    }
+    /* Style the scrollbar */
+    .leaflet-popup-content-wrapper::-webkit-scrollbar {
+        width: 5px !important;
+        background-color: #f5f5f5;
+    }
+    .leaflet-popup-content-wrapper::-webkit-scrollbar-thumb {
+        background-color: #0074d9;
+        border-radius: 5px;
+    }
+    .leaflet-popup-content-wrapper::-webkit-scrollbar-thumb:hover {
+        background-color: #0063a7;
+    }
+    .leaflet-popup-content-wrapper::-webkit-scrollbar-track {
+        background-color: #f5f5f5;
+        border-radius: 5px;
+    }
+    /* Vendor prefixes for Firefox */
+    .leaflet-popup-content-wrapper {
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: #0074d9 #f5f5f5; /* Firefox */
     }
 }
