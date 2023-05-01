@@ -337,7 +337,8 @@ square_footage_radio = html.Div([
         inputStyle = {
           "margin-right": "5px",
           "margin-left": "5px"
-        },        
+        },
+        inline=True     
         ),
     ],
   color="info",
@@ -384,6 +385,7 @@ ppsqft_radio = html.Div([
           "margin-right": "5px",
           "margin-left": "5px"
         },
+        inline=True
       ),
     ],
   color="info",
@@ -408,7 +410,8 @@ pets_radio = html.Div([
       inputStyle = {
         "margin-right": "5px",
         "margin-left": "5px"
-      },    
+      },
+      inline=True
     ),
 ],
 id = 'pet_policy_div'
@@ -430,6 +433,7 @@ rental_terms_checklist = html.Div([
         "margin-right": "5px",
         "margin-left": "5px"
       },
+      inline=False
     ),
 ],
 id = 'rental_terms_div'
@@ -474,6 +478,7 @@ unknown_garage_radio = html.Div([
         "margin-right": "5px",
         "margin-left": "5px"
       },
+      inline=True
     ),
     ],
   color="info",
@@ -550,6 +555,7 @@ unknown_year_built_radio = html.Div([
           "margin-right": "5px",
           "margin-left": "5px"
         },
+        inline=True
       ),
     ],
   color="info",
@@ -633,7 +639,8 @@ security_deposit_radio = html.Div([
         inputStyle = {
           "margin-right": "5px",
           "margin-left": "5px"
-        },        
+        },
+        inline=True     
         ),
     ],
   color="info",
@@ -681,7 +688,8 @@ pet_deposit_radio = html.Div([
         inputStyle = {
           "margin-right": "5px",
           "margin-left": "5px"
-        },        
+        },
+        inline=True      
         ),
     ],
   color="info",
@@ -729,7 +737,8 @@ key_deposit_radio = html.Div([
         inputStyle = {
           "margin-right": "5px",
           "margin-left": "5px"
-        },        
+        },
+        inline=True       
         ),
     ],
   color="info",
@@ -777,7 +786,8 @@ other_deposit_radio = html.Div([
         inputStyle = {
           "margin-right": "5px",
           "margin-left": "5px"
-        },        
+        },
+        inline=True       
         ),
     ],
   color="info",
@@ -842,7 +852,8 @@ listed_date_radio = html.Div([
         inputStyle = {
           "margin-right": "5px",
           "margin-left": "5px"
-        },        
+        },
+        inline=True     
         ),
     ],
   color="info",
