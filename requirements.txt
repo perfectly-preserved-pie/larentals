@@ -10,7 +10,7 @@ imagekitio==3.0.1
 loguru==0.7.0
 numpy==1.24.2
 openpyxl==3.1.2
-orjson==3.8.10
+orjson==3.8.11
 pandas==2.0.1
 protobuf==3.20.*
 python-dotenv==1.0.0
