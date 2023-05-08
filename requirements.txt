@@ -15,6 +15,6 @@ pandas==2.0.1
 protobuf==3.20.*
 python-dotenv==1.0.0
 pyyaml 
-requests==2.28.1
+requests==2.30.0
 tables
 user_agents==2.2.0
