@@ -66,7 +66,7 @@ df.columns = df.columns.str.strip()
 
 # Standardize the column names by renaming them
 # https://stackoverflow.com/a/65332240
-df = df.rename(columns=lambda c: 'mls_number' if c.startswith('Listing') else c)
+df = df.rename(columns=lambda c: 'mls_number' if c.startswith('Listing') and 'MLS' in c else c)
 df = df.rename(columns=lambda c: 'subtype' if c.startswith('Sub Type') else c)
 df = df.rename(columns=lambda c: 'street_number' if c.startswith('St#') else c)
 df = df.rename(columns=lambda c: 'street_name' if c.startswith('St Name') else c)
