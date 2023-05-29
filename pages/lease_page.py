@@ -222,6 +222,7 @@ subtype_meaning = {
   'SFR/D': 'Single Family Residence (Detached)',
   'STUD/A': 'Studio (Attached)',
   'STUD/D': 'Studio (Detached)',
+  'TPLX': 'Triplex (Unspecified)',
   'TPLX/A': 'Triplex (Attached)',
   'TPLX/D': 'Triplex (Detached)',
   'TWNHS': 'Townhouse (Unspecified)',
