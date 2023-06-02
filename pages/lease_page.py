@@ -144,10 +144,13 @@ def listed_date_function(boolean, start_date, end_date):
 def terms_function(choice):
   # Presort the list first for faster performance
   choice.sort()
-  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
-    terms_filter = df['Terms'].isnull() | df['Terms'].isin(choice)
-  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
-    terms_filter = df['Terms'].isin(choice)
+  choice_regex = '|'.join(choice)  # Create a regex from choice
+  if 'Unknown' in choice: 
+    # If Unknown is selected, return all rows with NaN OR the selected choices
+    terms_filter = df['Terms'].isnull() | df['Terms'].str.contains(choice_regex, na=False)
+  elif 'Unknown' not in choice: 
+    # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+    terms_filter = df['Terms'].str.contains(choice_regex, na=False)
   return (terms_filter)
 
 # Laundry Features
@@ -420,16 +423,21 @@ pets_radio = html.Div([
 id = 'pet_policy_div'
 )
 
+# First fillna with a string 'Unknown' and then split the comma-separated strings into individual terms
+unique_terms = pd.Series([term for sublist in df['Terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
+# Sort the terms alphabetically
+unique_terms = sorted(unique_terms)
 rental_terms_checklist = html.Div([
     html.H5("Lease Length"),
     # Create a checklist for rental terms
     dcc.Checklist(
       id = 'terms_checklist',
+      options = [{'label': term, 'value': term} for term in unique_terms],
       # Create a dictionary for each unique value in 'Terms', replacing null values with the string "Unknown"
       # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
-      options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
+      #options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
       # Set the default value to be the value of all the dictionaries in options
-      value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()]],
+      value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in unique_terms]],
       # add some spacing in between the checkbox and the label
       # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
       inputStyle = {
