@@ -151,6 +151,9 @@ def terms_function(choice):
   elif 'Unknown' not in choice: 
     # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
     terms_filter = df['Terms'].str.contains(choice_regex, na=False)
+  # If there is no choice, return an empty dataframe
+  if len(choice) == 0:
+    terms_filter = pd.DataFrame()
   return (terms_filter)
 
 # Laundry Features
