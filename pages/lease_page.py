@@ -430,12 +430,27 @@ id = 'pet_policy_div'
 unique_terms = pd.Series([term for sublist in df['Terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
 # Sort the terms alphabetically
 unique_terms = sorted(unique_terms)
+# Create a list of what each abbreviation means
+term_abbreviations = {
+  '12M': '12 Months',
+  '24M': '24 Months',
+  '6M': '6 Months',
+  'MO': 'Month-to-Month',
+  'NG': 'Negotiable',
+  'SN': 'Seasonal',
+  'STL': 'Short Term Lease',
+  'Unknown': 'Unknown',
+  'VR': 'Vacation Rental',
+}
+# Create a dictionary of the abbreviations and their meanings
+terms = {k: term_abbreviations[k] for k in sorted(term_abbreviations)}
 rental_terms_checklist = html.Div([
     html.H5("Lease Length"),
     # Create a checklist for rental terms
     dcc.Checklist(
       id = 'terms_checklist',
-      options = [{'label': term, 'value': term} for term in unique_terms],
+      # Set the labels to be the expanded terms and their abbreviations
+      options = [{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
       # Create a dictionary for each unique value in 'Terms', replacing null values with the string "Unknown"
       # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
       #options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
