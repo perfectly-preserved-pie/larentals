@@ -333,7 +333,7 @@ square_footage_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a square footage listed?"),
+      ("Should we include properties with an unknown square footage?"),
       dcc.RadioItems(
         id='sqft_missing_radio',
         options=[
@@ -382,7 +382,7 @@ ppsqft_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a price per square foot listed?"),
+      ("Should we include properties with an unknown price per square foot?"),
       dcc.RadioItems(
         id='ppsqft_missing_radio',
         options=[
@@ -495,7 +495,7 @@ unknown_garage_radio = html.Div([
     [
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
     html.I(className="bi bi-info-circle-fill me-2"),
-    ("Should we include properties that don't have the number of garage spaces listed?"),
+    ("Should we include properties with an unknown number of garage spaces?"),
     dcc.RadioItems(
       id='garage_missing_radio',
       options=[
@@ -572,7 +572,7 @@ unknown_year_built_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),      
-      ("Should we include properties that don't have the year built listed?"),
+      ("Should we include properties with an unknown year built?"),
       dcc.RadioItems(
         id='yrbuilt_missing_radio',
         options=[
@@ -655,7 +655,7 @@ security_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a security deposit listed?"),
+      ("Should we include properties with an unknown security deposit?"),
       dcc.RadioItems(
         id='security_deposit_missing_radio',
         options=[
@@ -704,7 +704,7 @@ pet_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a pet deposit listed?"),
+      ("Should we include properties with an unknown pet deposit?"),
       dcc.RadioItems(
         id='pet_deposit_missing_radio',
         options=[
@@ -753,7 +753,7 @@ key_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a key deposit listed?"),
+      ("Should we include properties with an unknown key deposit?"),
       dcc.RadioItems(
         id='key_deposit_missing_radio',
         options=[
@@ -802,7 +802,7 @@ other_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a miscellaneous/other deposit listed?"),
+      ("Should we include properties with an unknown misc/other deposit?"),
       dcc.RadioItems(
         id='other_deposit_missing_radio',
         options=[
@@ -868,7 +868,7 @@ listed_date_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a listed date?"),
+      ("Should we include properties with an unknown listed date?"),
       dcc.RadioItems(
         id='listed_date_radio',
         options=[
