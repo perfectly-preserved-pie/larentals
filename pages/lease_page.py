@@ -144,10 +144,16 @@ def listed_date_function(boolean, start_date, end_date):
 def terms_function(choice):
   # Presort the list first for faster performance
   choice.sort()
-  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
-    terms_filter = df['Terms'].isnull() | df['Terms'].isin(choice)
-  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
-    terms_filter = df['Terms'].isin(choice)
+  choice_regex = '|'.join(choice)  # Create a regex from choice
+  if 'Unknown' in choice: 
+    # If Unknown is selected, return all rows with NaN OR the selected choices
+    terms_filter = df['Terms'].isnull() | df['Terms'].str.contains(choice_regex, na=False)
+  elif 'Unknown' not in choice: 
+    # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+    terms_filter = df['Terms'].str.contains(choice_regex, na=False)
+  # If there is no choice, return an empty dataframe
+  if len(choice) == 0:
+    terms_filter = pd.DataFrame()
   return (terms_filter)
 
 # Laundry Features
@@ -327,7 +333,7 @@ square_footage_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a square footage listed?"),
+      ("Should we include properties with an unknown square footage?"),
       dcc.RadioItems(
         id='sqft_missing_radio',
         options=[
@@ -376,7 +382,7 @@ ppsqft_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a price per square foot listed?"),
+      ("Should we include properties with an unknown price per square foot?"),
       dcc.RadioItems(
         id='ppsqft_missing_radio',
         options=[
@@ -420,16 +426,36 @@ pets_radio = html.Div([
 id = 'pet_policy_div'
 )
 
+# First fillna with a string 'Unknown' and then split the comma-separated strings into individual terms
+unique_terms = pd.Series([term for sublist in df['Terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
+# Sort the terms alphabetically
+unique_terms = sorted(unique_terms)
+# Create a list of what each abbreviation means
+term_abbreviations = {
+  '12M': '12 Months',
+  '24M': '24 Months',
+  '6M': '6 Months',
+  'MO': 'Month-to-Month',
+  'NG': 'Negotiable',
+  'SN': 'Seasonal',
+  'STL': 'Short Term Lease',
+  'Unknown': 'Unknown',
+  'VR': 'Vacation Rental',
+}
+# Create a dictionary of the abbreviations and their meanings
+terms = {k: term_abbreviations[k] for k in sorted(term_abbreviations)}
 rental_terms_checklist = html.Div([
     html.H5("Lease Length"),
     # Create a checklist for rental terms
     dcc.Checklist(
       id = 'terms_checklist',
+      # Set the labels to be the expanded terms and their abbreviations
+      options = [{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
       # Create a dictionary for each unique value in 'Terms', replacing null values with the string "Unknown"
       # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
-      options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
+      #options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
       # Set the default value to be the value of all the dictionaries in options
-      value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()]],
+      value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in unique_terms]],
       # add some spacing in between the checkbox and the label
       # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
       inputStyle = {
@@ -469,7 +495,7 @@ unknown_garage_radio = html.Div([
     [
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
     html.I(className="bi bi-info-circle-fill me-2"),
-    ("Should we include properties that don't have the number of garage spaces listed?"),
+    ("Should we include properties with an unknown number of garage spaces?"),
     dcc.RadioItems(
       id='garage_missing_radio',
       options=[
@@ -546,7 +572,7 @@ unknown_year_built_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),      
-      ("Should we include properties that don't have the year built listed?"),
+      ("Should we include properties with an unknown year built?"),
       dcc.RadioItems(
         id='yrbuilt_missing_radio',
         options=[
@@ -629,7 +655,7 @@ security_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a security deposit listed?"),
+      ("Should we include properties with an unknown security deposit?"),
       dcc.RadioItems(
         id='security_deposit_missing_radio',
         options=[
@@ -678,7 +704,7 @@ pet_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a pet deposit listed?"),
+      ("Should we include properties with an unknown pet deposit?"),
       dcc.RadioItems(
         id='pet_deposit_missing_radio',
         options=[
@@ -727,7 +753,7 @@ key_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a key deposit listed?"),
+      ("Should we include properties with an unknown key deposit?"),
       dcc.RadioItems(
         id='key_deposit_missing_radio',
         options=[
@@ -776,7 +802,7 @@ other_deposit_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a miscellaneous/other deposit listed?"),
+      ("Should we include properties with an unknown misc/other deposit?"),
       dcc.RadioItems(
         id='other_deposit_missing_radio',
         options=[
@@ -822,7 +848,7 @@ id = 'laundry_checklist_div'
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
-df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce')
 earliest_date = (df['listed_date'].min()).to_pydatetime()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
@@ -842,7 +868,7 @@ listed_date_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a listed date?"),
+      ("Should we include properties with an unknown listed date?"),
       dcc.RadioItems(
         id='listed_date_radio',
         options=[

@@ -255,7 +255,7 @@ square_footage_radio = html.Div([
   [
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
     html.I(className="bi bi-info-circle-fill me-2"),
-    ("Should we include properties that don't have a square footage listed?"),
+    ("Should we include properties with an unknown square footage?"),
     dcc.RadioItems(
       id='sqft_missing_radio',
       options=[
@@ -304,7 +304,7 @@ ppsqft_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a price per square foot listed?"),
+      ("Should we include properties with an unknown price per square foot?"),
       dcc.RadioItems(
         id='ppsqft_missing_radio',
         options=[
@@ -380,7 +380,7 @@ hoa_fee_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a HOA fee listed?"),
+      ("Should we include properties with an unknown HOA fee?"),
       dcc.RadioItems(
         id='hoa_fee_missing_radio',
         options=[
@@ -456,7 +456,7 @@ space_rent_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a space rent listed?"),
+      ("Should we include properties with an unknown space rent?"),
       dcc.RadioItems(
         id='space_rent_missing_radio',
         options=[
@@ -561,7 +561,7 @@ unknown_year_built_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),      
-      ("Should we include properties that don't have the year built listed?"),
+      ("Should we include properties with an unknown year built?"),
       dcc.RadioItems(
         id='yrbuilt_missing_radio',
         options=[
@@ -585,7 +585,7 @@ id = 'yrbuilt_missing_div'
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
-df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce')
 earliest_date = (df['listed_date'].min()).to_pydatetime()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
@@ -605,7 +605,7 @@ listed_date_radio = html.Div([
     [
       # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
       html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties that don't have a listed date?"),
+      ("Should we include properties with an unknown listed date?"),
       dcc.RadioItems(
         id='listed_date_radio',
         options=[
