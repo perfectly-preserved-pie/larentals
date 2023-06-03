@@ -585,7 +585,7 @@ id = 'yrbuilt_missing_div'
 # Get today's date and set it as the end date for the date picker
 today = date.today()
 # Get the earliest date and convert it to to Pythonic datetime for Dash
-df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce')
 earliest_date = (df['listed_date'].min()).to_pydatetime()
 listed_date_datepicker = html.Div([
     html.H5("Listed Date Range"),
