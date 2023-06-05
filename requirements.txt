@@ -11,7 +11,7 @@ loguru==0.7.0
 numpy==1.24.3
 openpyxl==3.1.2
 orjson==3.9.0
-pandas==2.0.1
+pandas==2.0.2
 protobuf==3.20.*
 python-dotenv==1.0.0
 pyyaml 
