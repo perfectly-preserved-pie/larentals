@@ -900,6 +900,7 @@ map = dl.Map(
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
+  tap=True,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -1110,9 +1111,11 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   #  logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
   #  missing_df.to_csv('missing_rows.csv', index=False)
 
+  
   # Generate the map
   return dl.GeoJSON(
     id=str(uuid.uuid4()),
+    #children=[dl.Popup(id='2popup')],
     data=geojson,
     cluster=True,
     zoomToBoundsOnClick=True,
