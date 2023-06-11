@@ -1,6 +1,7 @@
 beautifulsoup4==4.12.2
 dash_bootstrap_components==1.4.1
 dash_core_components==2.0.0
+dash_extensions==1.0.1
 dash_html_components==2.0.0
 dash_leaflet==0.1.23
 dash==2.10.0
