@@ -22,7 +22,7 @@ I also have a page for for-sale properties based on [the same kind of spreadshee
 Or you can click the "[Looking to buy a property instead?](https://wheretolive.LA/for-sale)" hyperlink: ![image](https://github.com/perfectly-preserved-pie/larentals/assets/28774550/78621a27-07d4-432b-a48a-c772c8804bae)
 
 
-**⚠ This website is "slightly" mobile-optizmized: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**
+**⚠ This website is "slightly" mobile-optimized: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**
 
 ## The Tech Stack
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
@@ -41,7 +41,7 @@ Or you can click the "[Looking to buy a property instead?](https://wheretolive.L
 3. Run the Docker image: `docker run -p 1337:80 larentals`
 4. The Dash app will be accessible at `$HOST:1337`
 
-### Git
+### Non-Docker
 1. Clone the repo `git clone https://github.com/perfectly-preserved-pie/larentals.git`
 2. `cd` into the new directory
 3. Install requirements with `pip install -r requirements.txt`
