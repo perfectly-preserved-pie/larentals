@@ -5,11 +5,24 @@
 
 [![Build and Publish - Dev Build](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image-dev.yml/badge.svg?branch=dev)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image-dev.yml)
 
-This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of new rental listings in the /r/LArentals subreddit. Just like the actual spreadsheet, you can filter the map based on different criteria.
+This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of new rental & for-sale listings in the /r/LArentals & /r/LosAngelesRealEstate subreddits. Just like the actual spreadsheets, you can filter the map based on different criteria, such as
+* Monthly rent/List price
+* Security deposit cost
+* Number of bedrooms
+* Number of garage spaces
+* Pet Policy
+* Square footage
+* HOA fees (for-sale properties only)
+* and more!
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
-## ⚠ I highly recommended using the website on a tablet, laptop, or monitor screen. The UI experience on smartphones is... pretty terrible due to their small screen size. 
+I also have a page for for-sale properties based on [the same kind of spreadsheets posted in /r/LosAngelesRealEstate](https://www.reddit.com/r/LosAngelesRealEstate/comments/1419741/new_la_county_home_listings_under_1_mil_week_of/): https://wheretolive.LA/for-sale
+
+Or you can click the "[Looking to buy a property instead?](https://wheretolive.LA/for-sale)" hyperlink: ![image](https://github.com/perfectly-preserved-pie/larentals/assets/28774550/78621a27-07d4-432b-a48a-c772c8804bae)
+
+
+**⚠ This website is "slightly" mobile-optimized: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**
 
 ## The Tech Stack
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
@@ -23,6 +36,14 @@ Some additional capabilities are offered, such as a featured MLS photo for the p
 [I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/wheretolivedotla/)
 
 ## How to Build and Run
+### Docker
 1. Pull the Docker image: `docker pull strayingfromthepath:larentals`
 3. Run the Docker image: `docker run -p 1337:80 larentals`
 4. The Dash app will be accessible at `$HOST:1337`
+
+### Non-Docker
+1. Clone the repo `git clone https://github.com/perfectly-preserved-pie/larentals.git`
+2. `cd` into the new directory
+3. Install requirements with `pip install -r requirements.txt`
+4. Launch the webserver with `gunicorn -b 0.0.0.0:8050 --workers=4 app:server` or `python3 app.py` for the default Dash webserver.
+6. Have fun
