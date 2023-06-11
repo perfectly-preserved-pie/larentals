@@ -1,4 +1,5 @@
 from dash import html, dcc, callback
+from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output
 from datetime import date
 from flask import request
@@ -1122,5 +1123,6 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
       'minZoom': 3,
-    }
+    },
+    options=dict(onEachFeature=ns("on_each_feature"))
   )
