@@ -1112,7 +1112,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   #  logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
   #  missing_df.to_csv('missing_rows.csv', index=False)
 
-  
+  ns = Namespace("dash_props", "module")
   # Generate the map
   return dl.GeoJSON(
     id=str(uuid.uuid4()),
