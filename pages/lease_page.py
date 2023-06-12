@@ -1,4 +1,5 @@
 from dash import html, dcc, callback
+from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output
 from datetime import date
 from flask import request
@@ -900,6 +901,7 @@ map = dl.Map(
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
+  tap=True,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -1110,14 +1112,17 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   #  logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
   #  missing_df.to_csv('missing_rows.csv', index=False)
 
+  ns = Namespace("dash_props", "module")
   # Generate the map
   return dl.GeoJSON(
     id=str(uuid.uuid4()),
+    #children=[dl.Popup(id='2popup')],
     data=geojson,
     cluster=True,
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
       'minZoom': 3,
-    }
+    },
+    options=dict(onEachFeature=ns("on_each_feature"))
   )
