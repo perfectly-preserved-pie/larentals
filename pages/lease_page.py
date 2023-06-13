@@ -901,7 +901,7 @@ map = dl.Map(
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
-  tap=True,
+  tap=False,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
