@@ -727,18 +727,9 @@ title_card = dbc.Card(
 layout = dbc.Container([
   dbc.Row( # First row: title card
     [
-      dbc.Col([title_card]),
-    ]
-  ),
-  dbc.Row( # Second row: the rest
-    [
-      # Use column width properties to dynamically resize the cards based on screen size
-      # https://community.plotly.com/t/layout-changes-with-screen-size-and-resolution/27530/6
-      dbc.Col([user_options_card], lg = 3, md = 6, sm = 4),
-      dbc.Col([map_card], lg = 9, md = 6, sm = 8),
+      dbc.Col([title_card, user_options_card], lg=3, md=6, sm=4),
+      dbc.Col([map_card], lg=9, md=6, sm=8),
     ],
-    # Remove the whitespace/padding between the two cards (aka the gutters)
-    # https://stackoverflow.com/a/70495385
     className="g-0",
   ),
   # Create a hidden Store to store the selected subtype value
@@ -747,7 +738,6 @@ layout = dbc.Container([
 fluid = True,
 className = "dbc"
 ),
-
 
 ## BEGIN CALLBACKS ##
 # First, we want to hide the pet policy and senior community options if the user selects a property type that doesn't have those options (anything other than a mobile home)
