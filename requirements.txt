@@ -9,7 +9,7 @@ geopy==2.3.0
 gunicorn==20.1.0
 imagekitio==3.0.1
 loguru==0.7.0
-numpy==1.24.3
+numpy==1.25.0
 openpyxl==3.1.2
 orjson==3.9.0
 pandas==2.0.1
