@@ -210,6 +210,7 @@ subtype_meaning = {
   'APT/A': 'Apartment (Attached)',
   'APT/D': 'Apartment (Detached)',
   'CABIN/D': 'Cabin (Detached)',
+  'COMRES/A': 'Commercial/Residential (Attached)',
   'COMRES/D': 'Commercial/Residential (Detached)',
   'CONDO': 'Condo (Unspecified)',
   'CONDO/A': 'Condo (Attached)',
