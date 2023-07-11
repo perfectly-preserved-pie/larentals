@@ -220,6 +220,7 @@ subtype_meaning = {
   'LOFT/A': 'Loft (Attached)',
   'MANL/D': '??? (Detached)',
   'MH': 'Mobile Home',
+  'OYO/D': 'Own-Your-Own (Detached)',
   'QUAD/A': 'Quadplex (Attached)',
   'QUAD/D': 'Quadplex (Detached)',
   'RMRT/A': '??? (Attached)',
