@@ -58,6 +58,9 @@ xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
 
+# Drop the LSqft/Ac column
+df = df.drop(columns=['LSqft/Ac'])
+
 pd.set_option("display.precision", 10)
 
 # Strip leading and trailing whitespaces from the column names
@@ -575,11 +578,10 @@ def popup_html(dataframe, row):
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
-# Pickle the dataframe for later ingestion by app.py
-# https://www.youtube.com/watch?v=yYey8ntlK_E
-pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.pickle'
+# Save the dataframe for later ingestion by app.py
+parquet_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.parquet'
 # Read the old dataframe in
-df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
+df_old = pd.read_parquet(path=parquet_url)
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
@@ -595,4 +597,4 @@ df_combined = df_combined.reset_index(drop=True)
 for row in df_combined.itertuples():
   df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
 # Pickle the new combined dataframe
-df_combined.to_pickle("datasets/buy.pickle")
+df_combined.to_parquet(path="datasets/buy.parquet")

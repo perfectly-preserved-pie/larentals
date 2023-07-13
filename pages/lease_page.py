@@ -29,8 +29,8 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 # Make the dataframe a global variable
 global df
 
-# import the dataframe pickle file
-df = pd.read_pickle(filepath_or_buffer='datasets/lease.pickle')
+# import the dataframe
+df = pd.read_parquet(path='datasets/lease.parquet')
 pd.set_option("display.precision", 10)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
