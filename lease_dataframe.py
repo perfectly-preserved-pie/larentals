@@ -81,7 +81,7 @@ df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downca
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
     except Exception as e:
