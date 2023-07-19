@@ -94,7 +94,7 @@ def return_coordinates(address, row_index):
 # Create a function to get a missing city
 def fetch_missing_city(address):
     try:
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
         # Get the city by using a ??? whatever method this is
         # https://gis.stackexchange.com/a/326076
         # First get the raw geocode information
