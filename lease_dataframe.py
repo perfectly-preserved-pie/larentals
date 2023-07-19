@@ -81,7 +81,7 @@ df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downca
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
     except Exception as e:
@@ -94,7 +94,7 @@ def return_coordinates(address, row_index):
 # Create a function to get a missing city
 def fetch_missing_city(address):
     try:
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
         # Get the city by using a ??? whatever method this is
         # https://gis.stackexchange.com/a/326076
         # First get the raw geocode information
@@ -330,7 +330,11 @@ df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerc
 # Replace all empty values in the following columns with NaN and cast the column as dtype string
 # https://stackoverflow.com/a/47810911
 df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
-df.Furnished = df.Furnished.astype("string").replace(r'^\s*$', pd.NA, regex=True)
+if 'Furnished' in df.columns:
+    df['Furnished'] = df['Furnished'].replace(r'^\s*$', pd.NA, regex=True).astype(pd.StringDtype())
+else:
+    df['Furnished'] = pd.NA
+    df['Furnished'] = df['Furnished'].astype(pd.StringDtype())
 ## Laundry Features ##
 # Replace all empty values in the following column with "Unknown" and cast the column as dtype string
 df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', "Unknown", regex=True)
@@ -583,11 +587,14 @@ def popup_html(dataframe, row):
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
-# Pickle the dataframe for later ingestion by app.py
-# https://www.youtube.com/watch?v=yYey8ntlK_E
-pickle_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle'
-# Read the old dataframe in
-df_old = pd.read_pickle(filepath_or_buffer=pickle_url)
+# Save the dataframe for later ingestion by app.py
+# Read the old dataframe in depending if it's a pickle (old) or parquet (new)
+# If the pickle URL returns a 200 OK, read it in
+if requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle').status_code == 200:
+  df_old = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle')
+# If the pickle URL returns a 404 Not Found, read in the parquet file instead
+elif requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle').status_code == 404:
+  df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.parquet')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
@@ -602,5 +609,5 @@ df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
   df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
-# Pickle the new combined dataframe
-df_combined.to_pickle("datasets/lease.pickle")
+# Save the new dataframe
+df_combined.to_parquet(path="datasets/lease.parquet")
