@@ -96,10 +96,10 @@ df = df.drop_duplicates(subset='mls_number', keep="last")
 cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters except for the string "N/A"
 for col in cols:
-  df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or x == 'N/A'))
+    df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or str(x) == 'N/A'))
 # Fill in missing values with NaN
 for col in cols:
-  df[col] = df[col].replace('', NaN)
+  df[col] = df[col].replace('', pd.NA)
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -359,7 +359,11 @@ for col in cols:
 # Cast these columns as nullable floats
 cols = ['ppsqft', 'Latitude', 'Longitude', 'hoa_fee', 'space_rent']
 for col in cols:
-  df[col] = df[col].astype('float64')
+  df[col] = df[col].astype(str).replace('N/A', pd.NA)
+  df[col] = df[col].str.replace(',', '')  # remove commas
+  df[col] = df[col].str.replace(r'[^0-9\.]', '', regex=True)  # remove any other non-numeric characters
+  df[col] = df[col].replace('', pd.NA)  # replace empty strings with np.nan
+  df[col] = pd.to_numeric(df[col], errors='coerce')
 # Cast these columns as nullable strings
 cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'Br/Ba', 'pets_allowed', 'senior_community', 'hoa_fee_frequency']
 for col in cols:
@@ -394,11 +398,11 @@ def popup_html(dataframe, row):
   listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
   # If there's no square footage, set it to "Unknown" to display for the user
   # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
-  if pd.isna(square_ft) == True:
+  if pd.isna(square_ft) == True or square_ft is pd.NA:
       square_ft = 'Unknown'
   # If there IS a square footage, convert it into an integer (round number)
   elif pd.isna(square_ft) == False:
-      square_ft = f"{square_ft:,.0f} sq. ft"
+      square_ft = f"{int(square_ft):,d} sq. ft"
   # Repeat above for Year Built
   if pd.isna(year) == True:
       year = 'Unknown'
@@ -579,13 +583,19 @@ def popup_html(dataframe, row):
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
 # Save the dataframe for later ingestion by app.py
-parquet_url = 'https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.parquet'
-# Read the old dataframe in
-df_old = pd.read_parquet(path=parquet_url)
+# Read the old dataframe in depending if it's a pickle (old) or parquet (new)
+# If the pickle URL returns a 200 OK, read it in
+if requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.pickle').status_code == 200:
+  df_old = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.pickle')
+# If the pickle URL returns a 404 Not Found, read in the parquet file instead
+elif requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.pickle').status_code == 404:
+  df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/buy.parquet')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
+# Drop the LSqft/Ac column
+df_combined = df_combined.drop(columns=['LSqft/Ac'])
 # Iterate through the dataframe and drop rows with expired listings
 for row in df_combined[df_combined.listing_url.notnull()].itertuples():
   if check_expired_listing(row.listing_url, row.mls_number) == True:
@@ -596,5 +606,5 @@ df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
   df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
-# Pickle the new combined dataframe
+# Save the new combined dataframe
 df_combined.to_parquet(path="datasets/buy.parquet")
