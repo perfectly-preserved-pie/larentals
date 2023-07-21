@@ -694,13 +694,12 @@ title_card = dbc.Card(
   [
     html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."),
-    html.P(f"Last updated: {last_updated}"),
+    html.P(f"Last updated: {last_updated}", style={'margin-bottom': '5px'}),
     # Use a GitHub icon for my repo
     html.I(
       className="bi bi-github",
       style = {
         "margin-right": "5px",
-        "margin-left": "15px"
       },
     ),
     html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),

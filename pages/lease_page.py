@@ -961,7 +961,7 @@ title_card = dbc.Card(
   [
     html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of available rentals in Los Angeles County. Updated weekly."),
-    html.P(f"Last updated: {last_updated}"),
+    html.P(f"Last updated: {last_updated}", style={'margin-bottom': '5px'}),
     # Use a GitHub icon for my repo
     html.I(
       className="bi bi-github",
