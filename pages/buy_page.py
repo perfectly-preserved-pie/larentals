@@ -695,14 +695,6 @@ title_card = dbc.Card(
     html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."),
     html.P(f"Last updated: {last_updated}"),
-    # Add an icon for the for-sale page
-    html.I(
-        className="fa-building fa",
-        style = {
-            "margin-right": "5px",
-        },
-    ),
-    html.A("Looking to rent a property instead?", href='/'),
     # Use a GitHub icon for my repo
     html.I(
       className="bi bi-github",
@@ -721,6 +713,13 @@ title_card = dbc.Card(
       },
     ),
     html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+    dbc.Button(
+      " Looking to rent a property instead?",
+      href="/",
+      color="primary",
+      external_link=True,
+      className="bi bi-building-fill w-100 mt-2",
+    ),
   ],
   body = True
 )
