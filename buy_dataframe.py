@@ -107,7 +107,7 @@ df.reset_index(drop=True, inplace=True)
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
     except Exception as e:
@@ -120,7 +120,7 @@ def return_coordinates(address, row_index):
 # Create a function to get a missing city
 def fetch_missing_city(address):
     try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         # Get the city by using a ??? whatever method this is
         # https://gis.stackexchange.com/a/326076
         # First get the raw geocode information
@@ -594,8 +594,9 @@ elif requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/mast
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
-# Drop the LSqft/Ac column
-df_combined = df_combined.drop(columns=['LSqft/Ac'])
+# Drop the LSqft/Ac column if it exists
+if 'LSqft/Ac' in df_combined.columns:
+  df_combined = df_combined.drop(columns=['LSqft/Ac'])
 # Iterate through the dataframe and drop rows with expired listings
 for row in df_combined[df_combined.listing_url.notnull()].itertuples():
   if check_expired_listing(row.listing_url, row.mls_number) == True:
