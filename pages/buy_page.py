@@ -159,14 +159,16 @@ def senior_community_function(choice, subtype_selected):
 ## BEGIN DASH BOOTSTRAP COMPONENTS ##
 # Define a dictionary that maps each subtype to its corresponding meaning
 subtype_meaning = {
-  'SFR': 'Single Family Residence',
+  'CONDO': 'Condo (Unspecified)',
   'CONDO/A': 'Condo (Attached)',
-  'CONDO': 'Condo',
-  'TWNHS/A': 'Townhouse (Attached)',
-  'TWNHS': 'Townhouse',
   'CONDO/D': 'Condo (Detached)',
+  'MH': 'Mobile Home',
+  'SFR': 'Single Family Residence (Unspecified)',
+  'SFR/A': 'Single Family Residence (Attached)',
+  'SFR/D': 'Single Family Residence (Detached)',
+  'TWNHS': 'Townhouse (Unspecified)',
+  'TWNHS/A': 'Townhouse (Attached)',
   'TWNHS/D': 'Townhouse (Detached)',
-  'MH': 'Mobile Home'
 }
 # Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
@@ -177,7 +179,7 @@ subtype_checklist = html.Div([
   dcc.Checklist( 
     id = 'subtype_checklist',
     # Loop through the list of subtypes and create a dictionary of options
-    options = [{'label': f"{i} - {subtype_meaning[i]}", 'value': i} for i in df['subtype'].unique()],
+    options = sorted([{'label': f"{i} - {subtype_meaning[i]}", 'value': i} for i in df['subtype'].unique()], key=lambda x: x['label']),
     # Set the default values to all of the subtypes
     value = df['subtype'].unique(),
     labelStyle = {'display': 'block'},
