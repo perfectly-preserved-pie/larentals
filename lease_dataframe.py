@@ -118,7 +118,7 @@ df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() 
 def return_postalcode(address):
     try:
         # Forward geocoding the short address so we can get coordinates
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         # Reverse geocoding the coordinates so we can get the address object components
         components = g.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
         # Create a dataframe from this list of dictionaries
