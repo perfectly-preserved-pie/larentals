@@ -52,8 +52,13 @@ xlsx[list(xlsx.keys())[1]]["Park Name"] = NaN
 xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = NaN
 xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = NaN
 # Set the SeniorCommunityYN of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = NaN
-xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
+# If "SeniorCommunity" is in the columns, set it to NaN
+if "SeniorCommunity" in xlsx[list(xlsx.keys())[0]].columns:
+  xlsx[list(xlsx.keys())[0]]["SeniorCommunity"] = NaN
+  xlsx[list(xlsx.keys())[1]]["SeniorCommunity"] = NaN
+elif "SeniorCommunityYN" in xlsx[list(xlsx.keys())[0]].columns:
+  xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = NaN
+  xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
 
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
