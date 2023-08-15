@@ -573,5 +573,21 @@ df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
   df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
+# Filter the dataframe for rows outside of California
+outside_ca_rows = df_combined[
+  (df_combined['Latitude'] < 32.5) | 
+  (df_combined['Latitude'] > 42) | 
+  (df_combined['Longitude'] < -124) | 
+  (df_combined['Longitude'] > -114)
+]
+total_outside_ca = len(outside_ca_rows)
+counter = 0
+for row in outside_ca_rows.itertuples():
+  counter += 1
+  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
+  # Re-geocode the row
+  coordinates = return_coordinates(row.full_street_address, row.Index)
+  df_combined.at[row.Index, 'Latitude'] = coordinates[0]
+  df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new combined dataframe
 df_combined.to_parquet(path="datasets/buy.parquet")
