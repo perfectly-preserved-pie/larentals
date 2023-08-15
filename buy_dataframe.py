@@ -400,183 +400,144 @@ def popup_html(dataframe, row):
   senior_community = df['senior_community'].at[i]
   subtype = df['subtype'].at[i]
   pets = df['pets_allowed'].at[i]
-  listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
-  # If there's no square footage, set it to "Unknown" to display for the user
-  # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
-  if pd.isna(square_ft) == True or square_ft is pd.NA:
+  listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
+  if pd.isna(square_ft):
       square_ft = 'Unknown'
-  # If there IS a square footage, convert it into an integer (round number)
-  elif pd.isna(square_ft) == False:
+  else:
       square_ft = f"{int(square_ft):,d} sq. ft"
-  # Repeat above for Year Built
-  if pd.isna(year) == True:
+  if pd.isna(year):
       year = 'Unknown'
-  elif pd.isna(year) == False:
+  else:
       year = f"{int(year)}"
-  # Repeat for ppsqft
-  if pd.isna(price_per_sqft) == True:
+  if pd.isna(price_per_sqft):
       price_per_sqft = 'Unknown'
-  elif pd.isna(price_per_sqft) == False:
+  else:
       price_per_sqft = f"${price_per_sqft:,.2f}"
-  # Repeat for listed date
-  if pd.isna(listed_date) == True:
+  if pd.isna(listed_date):
       listed_date = 'Unknown'
-  elif pd.isna(listed_date) == False:
+  else:
       listed_date = f"{listed_date}"
-  # Repeat for pets
-  # If pet policy is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(pets) == True and subtype == 'MH':
-    pets = 'Unknown'
-  # If pet policy is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(pets) == False and subtype == 'MH':
-    pets = f"{pets}"
-  # If pet policy is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(pets) == True and subtype != 'MH':
-    pets = "N/A"
-  # Repeat for senior community
-  # If senior community is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(senior_community) == True and subtype == 'MH':
-    senior_community = 'Unknown'
-  # If senior community is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(senior_community) == False and subtype == 'MH':
-    senior_community = f"{senior_community}"
-  # If senior community is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(senior_community) == True and subtype != 'MH':
-    senior_community = "N/A"
-  # Repeat for HOA fee
-  # If HOA fee is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
-  if pd.isna(hoa_fee) == True and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee = 'Unknown'
-  # If HOA fee is PRESENT and the subtype is SFR or contains CONDO, set it to the value
-  elif pd.isna(hoa_fee) == False and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee = f"${hoa_fee:,.2f}"
-  # If HOA fee is MISSING and the subtype is MH, set it to N/A
-  elif pd.isna(hoa_fee) == True and subtype == 'MH':
-    hoa_fee = "N/A"
-  # Repeat for HOA fee frequency
-  # If HOA fee frequency is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
-  if pd.isna(hoa_fee_frequency) == True and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee_frequency = 'Unknown'
-  # If HOA fee frequency is PRESENT and the subtype is SFR or contains CONDO, set it to the value
-  elif pd.isna(hoa_fee_frequency) == False and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee_frequency = f"{hoa_fee_frequency}"
-  # If HOA fee frequency is MISSING and the subtype is MH, set it to N/A
-  elif pd.isna(hoa_fee_frequency) == True and subtype == 'MH':
-    hoa_fee_frequency = "N/A"
-  # Repeat for space rent
-  # If space rent is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(space_rent) == True and subtype == 'MH':
-    space_rent = 'Unknown'
-  # If space rent is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(space_rent) == False and subtype == 'MH':
-    space_rent = f"${space_rent:,.2f}"
-  # If space rent is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(space_rent) == True and subtype != 'MH':
-    space_rent = "N/A"
-  # Repeat for park name
-  # If park name is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(park_name) == True and subtype == 'MH':
-    park_name = 'Unknown'
-  # If park name is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(park_name) == False and subtype == 'MH':
-    park_name = f"{park_name}"
-  # If park name is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(park_name) == True and subtype != 'MH':
-    park_name = "N/A"
-  # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
-  # Basically, the HTML block should just be an empty Img tag
-  if pd.isna(mls_photo) == True:
+  if pd.isna(pets) and not pd.isna(subtype) and subtype == 'MH':
+      pets = 'Unknown'
+  elif not pd.isna(pets) and not pd.isna(subtype) and subtype == 'MH':
+      pets = f"{pets}"
+  elif pd.isna(pets) and not pd.isna(subtype) and subtype != 'MH':
+      pets = "N/A"
+  if pd.isna(senior_community) and not pd.isna(subtype) and subtype == 'MH':
+      senior_community = 'Unknown'
+  elif not pd.isna(senior_community) and not pd.isna(subtype) and subtype == 'MH':
+      senior_community = senior_community
+  elif pd.isna(senior_community) and not pd.isna(subtype) and subtype != 'MH':
+      senior_community = "N/A"
+  if pd.isna(hoa_fee) == True and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee = 'Unknown'
+  elif pd.isna(hoa_fee) == False and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee = f"${hoa_fee:,.2f}"
+  elif pd.isna(hoa_fee) == True and not pd.isna(subtype) and subtype == 'MH':
+      hoa_fee = "N/A"
+  if pd.isna(hoa_fee_frequency) == True and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee_frequency = 'Unknown'
+  elif pd.isna(hoa_fee_frequency) == False and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee_frequency = f"{hoa_fee_frequency}"
+  elif pd.isna(hoa_fee_frequency) == True and not pd.isna(subtype) and subtype == 'MH':
+      hoa_fee_frequency = "N/A"
+  if pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
+      space_rent = 'Unknown'
+  elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
+      space_rent = f"${space_rent:,.2f}"
+  elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype != 'MH':
+      space_rent = "N/A"
+  if pd.isna(park_name) == True and not pd.isna(subtype) and subtype == 'MH':
+      park_name = 'Unknown'
+  elif pd.isna(park_name) == False and not pd.isna(subtype) and subtype == 'MH':
+      park_name = f"{park_name}"
+  elif pd.isna(park_name) == True and not pd.isna(subtype) and subtype != 'MH':
+      park_name = "N/A"
+  if pd.isna(mls_photo):
       mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
-  # If there IS an MLS photo, just set it to itself
-  # The HTML block should be an Img tag wrapped inside a parent <a href> tag so the image will be clickable
-  elif pd.isna(mls_photo) == False:
+  else:
       mls_photo_html_block = f"""
-        <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
-        <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
-        </a>
+      <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
+      <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
+      </a>
       """
-  # If the MLS hyperlink is empty, that means there isn't a BHHS webpage to redirect to. Do not hyperlink to it.
-  if pd.isna(mls_number_hyperlink) == True:
-    listing_url_block = f"""
+  if pd.isna(mls_number_hyperlink):
+      listing_url_block = f"""
       <tr>
-        <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-        <td>{mls_number}</td>
+          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
+          <td>{mls_number}</td>
       </tr>
-    """
-  # If the hyperlink exists, hyperlink it
-  # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
-  # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-  elif pd.isna(mls_number_hyperlink) == False:
-    listing_url_block = f"""
+      """
+  else:
+      listing_url_block = f"""
       <tr>
-        <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-        <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
+          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
+          <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
       </tr>
-    """
-  # Return the HTML snippet as a string
+      """
   return f"""<div>{mls_photo_html_block}</div>
-    <table id='popup_html_table'>
-      <tbody id='popup_html_table_body'>
-        <tr id='listed_date'>
+  <table id='popup_html_table'>
+    <tbody id='popup_html_table_body'>
+      <tr id='listed_date'>
           <td>Listed Date</td>
           <td>{listed_date}</td>
-        </tr>
-        <tr id='street_address'>
+      </tr>
+      <tr id='street_address'>
           <td>Street Address</td>
           <td>{full_address}</td>
-        </tr>
-        <tr id='park_name'>
+      </tr>
+      <tr id='park_name'>
           <td>Park Name</td>
           <td>{park_name}</td>
-        </tr>
-        {listing_url_block}
-        <tr id='list_price'>
+      </tr>
+      {listing_url_block}
+      <tr id='list_price'>
           <td>List Price</td>
           <td>${lc_price:,.0f}</td>
-        </tr>
-        <tr id='hoa_fee'>
+      </tr>
+      <tr id='hoa_fee'>
           <td>HOA Fee</td>
           <td>{hoa_fee}</td>
-        </tr>
-        <tr id='hoa_fee_frequency'>
+      </tr>
+      <tr id='hoa_fee_frequency'>
           <td>HOA Fee Frequency</td>
           <td>{hoa_fee_frequency}</td>
-        </tr>
-        <tr id='square_feet'>
+      </tr>
+      <tr id='square_feet'>
           <td>Square Feet</td>
           <td>{square_ft}</td>
-        </tr>
-        <tr id='space_rent'>
+      </tr>
+      <tr id='space_rent'>
           <td>Space Rent</td>
           <td>{space_rent}</td>
-        </tr>
-        <tr id='price_per_sqft'>
+      </tr>
+      <tr id='price_per_sqft'>
           <td>Price Per Square Foot</td>
           <td>{price_per_sqft}</td>
-        </tr>
-        <tr id='bedrooms_bathrooms'>
+      </tr>
+      <tr id='bedrooms_bathrooms'>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
           <td>{brba}</td>
-        </tr>
-        <tr id='year_built'>
+      </tr>
+      <tr id='year_built'>
           <td>Year Built</td>
           <td>{year}</td>
-        </tr>
-        <tr id='pets_allowed'>
+      </tr>
+      <tr id='pets_allowed'>
           <td>Pets Allowed?</td>
           <td>{pets}</td>
-        </tr>
-        <tr id='senior_community'>
+      </tr>
+      <tr id='senior_community'>
           <td>Senior Community</td>
           <td>{senior_community}</td>
-        </tr>
-        <tr id='subtype'>
+      </tr>
+      <tr id='subtype'>
           <td>Sub Type</td>
           <td>{subtype}</td>
-        </tr>
-      </tbody>
-    </table>
-    """
+      </tr>
+    </tbody>
+  </table>
+  """
 
 # Define a lambda function to replace the <table> tag
 #replace_table_tag = lambda html: html.replace("<table>", "<table id='popup_table'>", 1)
