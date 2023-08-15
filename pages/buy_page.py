@@ -169,6 +169,7 @@ subtype_meaning = {
   'TWNHS': 'Townhouse (Unspecified)',
   'TWNHS/A': 'Townhouse (Attached)',
   'TWNHS/D': 'Townhouse (Detached)',
+  'Unknown': 'Unknown'
 }
 # Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
@@ -179,9 +180,18 @@ subtype_checklist = html.Div([
   dcc.Checklist( 
     id = 'subtype_checklist',
     # Loop through the list of subtypes and create a dictionary of options
-    options = sorted([{'label': f"{i} - {subtype_meaning[i]}", 'value': i} for i in df['subtype'].unique()], key=lambda x: x['label']),
-    # Set the default values to all of the subtypes
-    value = df['subtype'].unique(),
+    options = sorted(
+    [
+        {
+            'label': f"{i if not pd.isna(i) else 'Unknown'} - {subtype_meaning.get(i if not pd.isna(i) else 'Unknown', 'Unknown')}", 
+            'value': i if not pd.isna(i) else 'Unknown'
+        }
+        for i in df['subtype'].unique()
+    ], 
+    key=lambda x: x['label']
+    ), 
+    # Set the default values to all of the subtypes while handling nulls
+    value = [i if not pd.isna(i) else 'Unknown' for i in df['subtype'].unique()],
     labelStyle = {'display': 'block'},
     # add some spacing in between the checkbox and the label
     # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
