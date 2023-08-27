@@ -1096,9 +1096,6 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   
   The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
 
-  # print the Dash Leaflet version for debugging
-  logger.debug(f"""Dash Leaflet version: {dl.__version__}""")
-
   # Now check for missing rows
   #if len(df) != len(df_filtered):
     # Merge the two dataframes to find rows that are not common in both dataframes
