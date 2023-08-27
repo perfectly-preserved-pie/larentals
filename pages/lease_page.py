@@ -897,14 +897,13 @@ id = 'listed_date_radio_div',
 
 # Generate the map
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullScreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
-  tap=False,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -1097,6 +1096,9 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   
   The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
 
+  # print the Dash Leaflet version for debugging
+  logger.debug(f"""Dash Leaflet version: {dl.__version__}""")
+
   # Now check for missing rows
   #if len(df) != len(df_filtered):
     # Merge the two dataframes to find rows that are not common in both dataframes
@@ -1116,5 +1118,5 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
+    #options=dict(onEachFeature=ns("on_each_feature"))
   )

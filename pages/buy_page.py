@@ -646,14 +646,13 @@ id = 'listed_date_radio_div',
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullScreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
-  tap=False,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -955,5 +954,5 @@ def update_map(
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
+    #options=dict(onEachFeature=ns("on_each_feature"))
   )
