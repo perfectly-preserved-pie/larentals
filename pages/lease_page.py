@@ -897,14 +897,13 @@ id = 'listed_date_radio_div',
 
 # Generate the map
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullScreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
-  tap=False,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -961,21 +960,12 @@ title_card = dbc.Card(
   [
     html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of available rentals in Los Angeles County. Updated weekly."),
-    html.P(f"Last updated: {last_updated}"),
-    # Add an icon for the for-sale page
-    html.I(
-        className="bi bi-house-door-fill",
-        style = {
-            "margin-right": "5px",
-        },
-    ),
-    html.A("Looking to buy a property instead?", href='/for-sale'),
+    html.P(f"Last updated: {last_updated}", style={'margin-bottom': '5px'}),
     # Use a GitHub icon for my repo
     html.I(
       className="bi bi-github",
       style = {
         "margin-right": "5px",
-        "margin-left": "15px"
       },
     ),
     html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
@@ -988,6 +978,13 @@ title_card = dbc.Card(
       },
     ),
     html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+    dbc.Button(
+      " Looking to buy a property instead?",
+      href="/for-sale",
+      color="primary",
+      external_link=True,
+      className="bi bi-house-door-fill w-100 mt-2",
+    ),
   ],
   body = True
 )
@@ -1118,5 +1115,5 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
+    #options=dict(onEachFeature=ns("on_each_feature"))
   )

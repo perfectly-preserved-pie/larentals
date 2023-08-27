@@ -159,14 +159,17 @@ def senior_community_function(choice, subtype_selected):
 ## BEGIN DASH BOOTSTRAP COMPONENTS ##
 # Define a dictionary that maps each subtype to its corresponding meaning
 subtype_meaning = {
-  'SFR': 'Single Family Residence',
+  'CONDO': 'Condo (Unspecified)',
   'CONDO/A': 'Condo (Attached)',
-  'CONDO': 'Condo',
-  'TWNHS/A': 'Townhouse (Attached)',
-  'TWNHS': 'Townhouse',
   'CONDO/D': 'Condo (Detached)',
+  'MH': 'Mobile Home',
+  'SFR': 'Single Family Residence (Unspecified)',
+  'SFR/A': 'Single Family Residence (Attached)',
+  'SFR/D': 'Single Family Residence (Detached)',
+  'TWNHS': 'Townhouse (Unspecified)',
+  'TWNHS/A': 'Townhouse (Attached)',
   'TWNHS/D': 'Townhouse (Detached)',
-  'MH': 'Mobile Home'
+  'Unknown': 'Unknown'
 }
 # Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
@@ -177,9 +180,18 @@ subtype_checklist = html.Div([
   dcc.Checklist( 
     id = 'subtype_checklist',
     # Loop through the list of subtypes and create a dictionary of options
-    options = [{'label': f"{i} - {subtype_meaning[i]}", 'value': i} for i in df['subtype'].unique()],
-    # Set the default values to all of the subtypes
-    value = df['subtype'].unique(),
+    options = sorted(
+    [
+        {
+            'label': f"{i if not pd.isna(i) else 'Unknown'} - {subtype_meaning.get(i if not pd.isna(i) else 'Unknown', 'Unknown')}", 
+            'value': i if not pd.isna(i) else 'Unknown'
+        }
+        for i in df['subtype'].unique()
+    ], 
+    key=lambda x: x['label']
+    ), 
+    # Set the default values to all of the subtypes while handling nulls
+    value = [i if not pd.isna(i) else 'Unknown' for i in df['subtype'].unique()],
     labelStyle = {'display': 'block'},
     # add some spacing in between the checkbox and the label
     # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
@@ -634,14 +646,13 @@ id = 'listed_date_radio_div',
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
 map = dl.Map(
-  [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullscreenControl()],
+  [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullScreenControl()],
   id='map',
   zoom=9,
   minZoom=9,
   center=(lat_mean, long_mean),
   preferCanvas=True,
   closePopupOnClick=True,
-  tap=False,
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
@@ -694,21 +705,12 @@ title_card = dbc.Card(
   [
     html.H3("WhereToLive.LA", className="card-title"),
     html.P("An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."),
-    html.P(f"Last updated: {last_updated}"),
-    # Add an icon for the for-sale page
-    html.I(
-        className="fa-building fa",
-        style = {
-            "margin-right": "5px",
-        },
-    ),
-    html.A("Looking to rent a property instead?", href='/'),
+    html.P(f"Last updated: {last_updated}", style={'margin-bottom': '5px'}),
     # Use a GitHub icon for my repo
     html.I(
       className="bi bi-github",
       style = {
         "margin-right": "5px",
-        "margin-left": "15px"
       },
     ),
     html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
@@ -721,6 +723,13 @@ title_card = dbc.Card(
       },
     ),
     html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+    dbc.Button(
+      " Looking to rent a property instead?",
+      href="/",
+      color="primary",
+      external_link=True,
+      className="bi bi-building-fill w-100 mt-2",
+    ),
   ],
   body = True
 )
@@ -945,5 +954,5 @@ def update_map(
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
+    #options=dict(onEachFeature=ns("on_each_feature"))
   )

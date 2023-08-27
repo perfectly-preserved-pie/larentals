@@ -81,7 +81,7 @@ df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downca
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
     except Exception as e:
@@ -94,7 +94,7 @@ def return_coordinates(address, row_index):
 # Create a function to get a missing city
 def fetch_missing_city(address):
     try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         # Get the city by using a ??? whatever method this is
         # https://gis.stackexchange.com/a/326076
         # First get the raw geocode information
@@ -118,7 +118,7 @@ df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() 
 def return_postalcode(address):
     try:
         # Forward geocoding the short address so we can get coordinates
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         # Reverse geocoding the coordinates so we can get the address object components
         components = g.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
         # Create a dataframe from this list of dictionaries
@@ -609,5 +609,21 @@ df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
   df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
+# Filter the dataframe for rows outside of California
+outside_ca_rows = df_combined[
+  (df_combined['Latitude'] < 32.5) | 
+  (df_combined['Latitude'] > 42) | 
+  (df_combined['Longitude'] < -124) | 
+  (df_combined['Longitude'] > -114)
+]
+total_outside_ca = len(outside_ca_rows)
+counter = 0
+for row in outside_ca_rows.itertuples():
+  counter += 1
+  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
+  # Re-geocode the row
+  coordinates = return_coordinates(row.full_street_address, row.Index)
+  df_combined.at[row.Index, 'Latitude'] = coordinates[0]
+  df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new dataframe
 df_combined.to_parquet(path="datasets/lease.parquet")

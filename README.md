@@ -17,9 +17,10 @@ This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of n
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
-I also have a page for for-sale properties based on [the same kind of spreadsheets posted in /r/LosAngelesRealEstate](https://www.reddit.com/r/LosAngelesRealEstate/comments/1419741/new_la_county_home_listings_under_1_mil_week_of/): https://wheretolive.LA/for-sale
+I also have a page for for-sale properties based on [the same kind of spreadsheets posted in /r/LosAngelesRealEstate](https://wheretolive.LA/for-sale).
 
-Or you can click the "[Looking to buy a property instead?](https://wheretolive.LA/for-sale)" hyperlink: ![image](https://github.com/perfectly-preserved-pie/larentals/assets/28774550/78621a27-07d4-432b-a48a-c772c8804bae)
+Or you can click the _Looking to buy a property instead?_ button: ![image](https://github.com/perfectly-preserved-pie/larentals/assets/28774550/3087b191-cde3-4b05-8f31-4abfa832607f)
+
 
 
 **⚠ This website is "slightly" mobile-optimized: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**

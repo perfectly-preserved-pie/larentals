@@ -52,8 +52,13 @@ xlsx[list(xlsx.keys())[1]]["Park Name"] = NaN
 xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = NaN
 xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = NaN
 # Set the SeniorCommunityYN of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = NaN
-xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
+# If "SeniorCommunity" is in the columns, set it to NaN
+if "SeniorCommunity" in xlsx[list(xlsx.keys())[0]].columns:
+  xlsx[list(xlsx.keys())[0]]["SeniorCommunity"] = NaN
+  xlsx[list(xlsx.keys())[1]]["SeniorCommunity"] = NaN
+elif "SeniorCommunityYN" in xlsx[list(xlsx.keys())[0]].columns:
+  xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = NaN
+  xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
 
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
@@ -107,7 +112,7 @@ df.reset_index(drop=True, inplace=True)
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
     try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         lat = float(geocode_info.latitude)
         lon = float(geocode_info.longitude)
     except Exception as e:
@@ -120,7 +125,7 @@ def return_coordinates(address, row_index):
 # Create a function to get a missing city
 def fetch_missing_city(address):
     try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA'})
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         # Get the city by using a ??? whatever method this is
         # https://gis.stackexchange.com/a/326076
         # First get the raw geocode information
@@ -149,7 +154,7 @@ df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() 
 def return_postalcode(address):
     try:
         # Forward geocoding the short address so we can get coordinates
-        geocode_info = g.geocode(address)
+        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
         # Reverse geocoding the coordinates so we can get the address object components
         components = g.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
         # Create a dataframe from this list of dictionaries
@@ -395,183 +400,144 @@ def popup_html(dataframe, row):
   senior_community = df['senior_community'].at[i]
   subtype = df['subtype'].at[i]
   pets = df['pets_allowed'].at[i]
-  listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
-  # If there's no square footage, set it to "Unknown" to display for the user
-  # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
-  if pd.isna(square_ft) == True or square_ft is pd.NA:
+  listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
+  if pd.isna(square_ft):
       square_ft = 'Unknown'
-  # If there IS a square footage, convert it into an integer (round number)
-  elif pd.isna(square_ft) == False:
+  else:
       square_ft = f"{int(square_ft):,d} sq. ft"
-  # Repeat above for Year Built
-  if pd.isna(year) == True:
+  if pd.isna(year):
       year = 'Unknown'
-  elif pd.isna(year) == False:
+  else:
       year = f"{int(year)}"
-  # Repeat for ppsqft
-  if pd.isna(price_per_sqft) == True:
+  if pd.isna(price_per_sqft):
       price_per_sqft = 'Unknown'
-  elif pd.isna(price_per_sqft) == False:
+  else:
       price_per_sqft = f"${price_per_sqft:,.2f}"
-  # Repeat for listed date
-  if pd.isna(listed_date) == True:
+  if pd.isna(listed_date):
       listed_date = 'Unknown'
-  elif pd.isna(listed_date) == False:
+  else:
       listed_date = f"{listed_date}"
-  # Repeat for pets
-  # If pet policy is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(pets) == True and subtype == 'MH':
-    pets = 'Unknown'
-  # If pet policy is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(pets) == False and subtype == 'MH':
-    pets = f"{pets}"
-  # If pet policy is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(pets) == True and subtype != 'MH':
-    pets = "N/A"
-  # Repeat for senior community
-  # If senior community is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(senior_community) == True and subtype == 'MH':
-    senior_community = 'Unknown'
-  # If senior community is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(senior_community) == False and subtype == 'MH':
-    senior_community = f"{senior_community}"
-  # If senior community is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(senior_community) == True and subtype != 'MH':
-    senior_community = "N/A"
-  # Repeat for HOA fee
-  # If HOA fee is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
-  if pd.isna(hoa_fee) == True and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee = 'Unknown'
-  # If HOA fee is PRESENT and the subtype is SFR or contains CONDO, set it to the value
-  elif pd.isna(hoa_fee) == False and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee = f"${hoa_fee:,.2f}"
-  # If HOA fee is MISSING and the subtype is MH, set it to N/A
-  elif pd.isna(hoa_fee) == True and subtype == 'MH':
-    hoa_fee = "N/A"
-  # Repeat for HOA fee frequency
-  # If HOA fee frequency is MISSING and the subtype is SFR or contains CONDO, set it to Unknown
-  if pd.isna(hoa_fee_frequency) == True and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee_frequency = 'Unknown'
-  # If HOA fee frequency is PRESENT and the subtype is SFR or contains CONDO, set it to the value
-  elif pd.isna(hoa_fee_frequency) == False and (subtype == 'SFR' or 'CONDO' in subtype):
-    hoa_fee_frequency = f"{hoa_fee_frequency}"
-  # If HOA fee frequency is MISSING and the subtype is MH, set it to N/A
-  elif pd.isna(hoa_fee_frequency) == True and subtype == 'MH':
-    hoa_fee_frequency = "N/A"
-  # Repeat for space rent
-  # If space rent is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(space_rent) == True and subtype == 'MH':
-    space_rent = 'Unknown'
-  # If space rent is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(space_rent) == False and subtype == 'MH':
-    space_rent = f"${space_rent:,.2f}"
-  # If space rent is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(space_rent) == True and subtype != 'MH':
-    space_rent = "N/A"
-  # Repeat for park name
-  # If park name is MISSING and the subtype is MH, set it to Unknown
-  if pd.isna(park_name) == True and subtype == 'MH':
-    park_name = 'Unknown'
-  # If park name is PRESENT and the subtype is MH, set it to the value
-  elif pd.isna(park_name) == False and subtype == 'MH':
-    park_name = f"{park_name}"
-  # If park name is MISSING and the subtype is NOT MH, set it to N/A
-  elif pd.isna(park_name) == True and subtype != 'MH':
-    park_name = "N/A"
-  # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
-  # Basically, the HTML block should just be an empty Img tag
-  if pd.isna(mls_photo) == True:
+  if pd.isna(pets) and not pd.isna(subtype) and subtype == 'MH':
+      pets = 'Unknown'
+  elif not pd.isna(pets) and not pd.isna(subtype) and subtype == 'MH':
+      pets = f"{pets}"
+  elif pd.isna(pets) and not pd.isna(subtype) and subtype != 'MH':
+      pets = "N/A"
+  if pd.isna(senior_community) and not pd.isna(subtype) and subtype == 'MH':
+      senior_community = 'Unknown'
+  elif not pd.isna(senior_community) and not pd.isna(subtype) and subtype == 'MH':
+      senior_community = senior_community
+  elif pd.isna(senior_community) and not pd.isna(subtype) and subtype != 'MH':
+      senior_community = "N/A"
+  if pd.isna(hoa_fee) == True and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee = 'Unknown'
+  elif pd.isna(hoa_fee) == False and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee = f"${hoa_fee:,.2f}"
+  elif pd.isna(hoa_fee) == True and not pd.isna(subtype) and subtype == 'MH':
+      hoa_fee = "N/A"
+  if pd.isna(hoa_fee_frequency) == True and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee_frequency = 'Unknown'
+  elif pd.isna(hoa_fee_frequency) == False and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
+      hoa_fee_frequency = f"{hoa_fee_frequency}"
+  elif pd.isna(hoa_fee_frequency) == True and not pd.isna(subtype) and subtype == 'MH':
+      hoa_fee_frequency = "N/A"
+  if pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
+      space_rent = 'Unknown'
+  elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
+      space_rent = f"${space_rent:,.2f}"
+  elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype != 'MH':
+      space_rent = "N/A"
+  if pd.isna(park_name) == True and not pd.isna(subtype) and subtype == 'MH':
+      park_name = 'Unknown'
+  elif pd.isna(park_name) == False and not pd.isna(subtype) and subtype == 'MH':
+      park_name = f"{park_name}"
+  elif pd.isna(park_name) == True and not pd.isna(subtype) and subtype != 'MH':
+      park_name = "N/A"
+  if pd.isna(mls_photo):
       mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
-  # If there IS an MLS photo, just set it to itself
-  # The HTML block should be an Img tag wrapped inside a parent <a href> tag so the image will be clickable
-  elif pd.isna(mls_photo) == False:
+  else:
       mls_photo_html_block = f"""
-        <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
-        <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
-        </a>
+      <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
+      <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
+      </a>
       """
-  # If the MLS hyperlink is empty, that means there isn't a BHHS webpage to redirect to. Do not hyperlink to it.
-  if pd.isna(mls_number_hyperlink) == True:
-    listing_url_block = f"""
+  if pd.isna(mls_number_hyperlink):
+      listing_url_block = f"""
       <tr>
-        <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-        <td>{mls_number}</td>
+          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
+          <td>{mls_number}</td>
       </tr>
-    """
-  # If the hyperlink exists, hyperlink it
-  # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
-  # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-  elif pd.isna(mls_number_hyperlink) == False:
-    listing_url_block = f"""
+      """
+  else:
+      listing_url_block = f"""
       <tr>
-        <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-        <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
+          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
+          <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
       </tr>
-    """
-  # Return the HTML snippet as a string
+      """
   return f"""<div>{mls_photo_html_block}</div>
-    <table id='popup_html_table'>
-      <tbody id='popup_html_table_body'>
-        <tr id='listed_date'>
+  <table id='popup_html_table'>
+    <tbody id='popup_html_table_body'>
+      <tr id='listed_date'>
           <td>Listed Date</td>
           <td>{listed_date}</td>
-        </tr>
-        <tr id='street_address'>
+      </tr>
+      <tr id='street_address'>
           <td>Street Address</td>
           <td>{full_address}</td>
-        </tr>
-        <tr id='park_name'>
+      </tr>
+      <tr id='park_name'>
           <td>Park Name</td>
           <td>{park_name}</td>
-        </tr>
-        {listing_url_block}
-        <tr id='list_price'>
+      </tr>
+      {listing_url_block}
+      <tr id='list_price'>
           <td>List Price</td>
           <td>${lc_price:,.0f}</td>
-        </tr>
-        <tr id='hoa_fee'>
+      </tr>
+      <tr id='hoa_fee'>
           <td>HOA Fee</td>
           <td>{hoa_fee}</td>
-        </tr>
-        <tr id='hoa_fee_frequency'>
+      </tr>
+      <tr id='hoa_fee_frequency'>
           <td>HOA Fee Frequency</td>
           <td>{hoa_fee_frequency}</td>
-        </tr>
-        <tr id='square_feet'>
+      </tr>
+      <tr id='square_feet'>
           <td>Square Feet</td>
           <td>{square_ft}</td>
-        </tr>
-        <tr id='space_rent'>
+      </tr>
+      <tr id='space_rent'>
           <td>Space Rent</td>
           <td>{space_rent}</td>
-        </tr>
-        <tr id='price_per_sqft'>
+      </tr>
+      <tr id='price_per_sqft'>
           <td>Price Per Square Foot</td>
           <td>{price_per_sqft}</td>
-        </tr>
-        <tr id='bedrooms_bathrooms'>
+      </tr>
+      <tr id='bedrooms_bathrooms'>
           <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
           <td>{brba}</td>
-        </tr>
-        <tr id='year_built'>
+      </tr>
+      <tr id='year_built'>
           <td>Year Built</td>
           <td>{year}</td>
-        </tr>
-        <tr id='pets_allowed'>
+      </tr>
+      <tr id='pets_allowed'>
           <td>Pets Allowed?</td>
           <td>{pets}</td>
-        </tr>
-        <tr id='senior_community'>
+      </tr>
+      <tr id='senior_community'>
           <td>Senior Community</td>
           <td>{senior_community}</td>
-        </tr>
-        <tr id='subtype'>
+      </tr>
+      <tr id='subtype'>
           <td>Sub Type</td>
           <td>{subtype}</td>
-        </tr>
-      </tbody>
-    </table>
-    """
+      </tr>
+    </tbody>
+  </table>
+  """
 
 # Define a lambda function to replace the <table> tag
 #replace_table_tag = lambda html: html.replace("<table>", "<table id='popup_table'>", 1)
@@ -594,8 +560,9 @@ elif requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/mast
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
-# Drop the LSqft/Ac column
-df_combined = df_combined.drop(columns=['LSqft/Ac'])
+# Drop the LSqft/Ac column if it exists
+if 'LSqft/Ac' in df_combined.columns:
+  df_combined = df_combined.drop(columns=['LSqft/Ac'])
 # Iterate through the dataframe and drop rows with expired listings
 for row in df_combined[df_combined.listing_url.notnull()].itertuples():
   if check_expired_listing(row.listing_url, row.mls_number) == True:
@@ -606,5 +573,21 @@ df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
   df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
+# Filter the dataframe for rows outside of California
+outside_ca_rows = df_combined[
+  (df_combined['Latitude'] < 32.5) | 
+  (df_combined['Latitude'] > 42) | 
+  (df_combined['Longitude'] < -124) | 
+  (df_combined['Longitude'] > -114)
+]
+total_outside_ca = len(outside_ca_rows)
+counter = 0
+for row in outside_ca_rows.itertuples():
+  counter += 1
+  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
+  # Re-geocode the row
+  coordinates = return_coordinates(row.full_street_address, row.Index)
+  df_combined.at[row.Index, 'Latitude'] = coordinates[0]
+  df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new combined dataframe
 df_combined.to_parquet(path="datasets/buy.parquet")
