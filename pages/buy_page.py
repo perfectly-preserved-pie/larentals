@@ -1,6 +1,6 @@
 from dash import html, dcc, callback
 from dash_extensions.javascript import Namespace
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from datetime import date
 from flask import request
 from loguru import logger
@@ -656,6 +656,28 @@ map = dl.Map(
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
+# Create a state for the collapsed section in the user options card
+collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
+
+# Create a button to toggle the collapsed section in the user options card
+# https://dash-bootstrap-components.opensource.faculty.ai/docs/components/collapse/
+more_options = dbc.Collapse(
+  [
+    ppsqft_slider,
+    ppsqft_radio,
+    hoa_fee_slider,
+    hoa_fee_radio,
+    hoa_fee_frequency_checklist,
+    space_rent_slider,
+    space_rent_radio,
+    year_built_slider,
+    unknown_year_built_radio,
+    pets_radio,
+    senior_community_radio,
+  ],
+  id='more-options-collapse-buy'
+)
+
 user_options_card = dbc.Card(
   [
     html.P(
@@ -667,21 +689,12 @@ user_options_card = dbc.Card(
     listed_date_radio,
     subtype_checklist,
     rental_price_slider,
-    hoa_fee_slider,
-    hoa_fee_radio,
-    hoa_fee_frequency_checklist,
-    space_rent_slider,
-    space_rent_radio,
     bedrooms_slider,
     bathrooms_slider,
     square_footage_slider,
     square_footage_radio,
-    ppsqft_slider,
-    ppsqft_radio,
-    year_built_slider,
-    unknown_year_built_radio,
-    pets_radio,
-    senior_community_radio,
+    dbc.Button("More Options", id='more-options-button-buy', className='mt-2'),
+    more_options,
   ],
   body=True
 )
@@ -735,6 +748,7 @@ title_card = dbc.Card(
 )
 
 layout = dbc.Container([
+  collapse_store,
   dbc.Row( # First row: title card
     [
       dbc.Col([title_card, user_options_card], lg=3, md=6, sm=4),
@@ -829,6 +843,22 @@ def update_hoa_fee_frequency_div(selected_subtype):
       'display': 'block',
       'margin-bottom' : '10px',
     }
+  
+# Define a callback to manage the collapsing behavior
+@callback(
+  [Output('more-options-collapse-buy', 'is_open'),
+    Output('more-options-button-buy', 'children')],
+  [Input('more-options-button-buy', 'n_clicks')],
+  [State('more-options-collapse-buy', 'is_open')]
+)
+def toggle_collapse(n, is_open):
+  if not n:
+    return False, "More Options"
+
+  if is_open:
+    return False, "More Options"
+  else:
+    return True, "Less Options"
   
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
