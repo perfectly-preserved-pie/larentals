@@ -954,5 +954,5 @@ def update_map(
       'radius': 160,
       'minZoom': 3,
     },
-    #options=dict(onEachFeature=ns("on_each_feature"))
+    options=dict(onEachFeature=ns("on_each_feature"))
   )
