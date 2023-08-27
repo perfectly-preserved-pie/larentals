@@ -1,6 +1,6 @@
 from dash import html, dcc, callback
 from dash_extensions.javascript import Namespace
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from datetime import date
 from flask import request
 from loguru import logger
@@ -907,6 +907,37 @@ map = dl.Map(
   style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
 )
 
+# Create a state for the collapsed section in the user options card
+collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
+
+# Create a button to toggle the collapsed section in the user options card
+# https://dash-bootstrap-components.opensource.faculty.ai/docs/components/collapse/
+more_options = dbc.Collapse(
+  [
+    square_footage_slider,
+    square_footage_radio,
+    ppsqft_slider,
+    ppsqft_radio,
+    garage_spaces_slider,
+    unknown_garage_radio, 
+    year_built_slider,
+    unknown_year_built_radio,
+    rental_terms_checklist,
+    furnished_checklist,
+    laundry_checklist,
+    security_deposit_slider,
+    security_deposit_radio,
+    pet_deposit_slider,
+    pet_deposit_radio,
+    key_deposit_slider,
+    key_deposit_radio,
+    other_deposit_slider,
+    other_deposit_radio,
+  ],
+  id='more-options-collapse-lease'
+)
+
+# Create a card for the user options
 user_options_card = dbc.Card(
   [
     html.P(
@@ -920,26 +951,9 @@ user_options_card = dbc.Card(
     rental_price_slider,
     bedrooms_slider,
     bathrooms_slider,
-    square_footage_slider,
-    square_footage_radio,
-    ppsqft_slider,
-    ppsqft_radio,
-    garage_spaces_slider,
-    unknown_garage_radio, 
-    year_built_slider,
-    unknown_year_built_radio,
     pets_radio,
-    rental_terms_checklist,
-    furnished_checklist,
-    laundry_checklist,
-    security_deposit_slider,
-    security_deposit_radio,
-    pet_deposit_slider,
-    pet_deposit_radio,
-    key_deposit_slider,
-    key_deposit_radio,
-    other_deposit_slider,
-    other_deposit_radio
+    dbc.Button("More Options", id='more-options-button-lease', className='mt-2'),
+    more_options,
   ],
   body=True
 )
@@ -990,6 +1004,7 @@ title_card = dbc.Card(
 )
 
 layout = dbc.Container([
+  collapse_store,
   dbc.Row(
     [
       dbc.Col([title_card, user_options_card], lg=3, md=6, sm=4),
@@ -1117,3 +1132,19 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     },
     options=dict(onEachFeature=ns("on_each_feature"))
   )
+
+# Create a callback to manage the collapsing behavior
+@callback(
+  [Output('more-options-collapse-lease', 'is_open'),
+    Output('more-options-button-lease', 'children')],
+  [Input('more-options-button-lease', 'n_clicks')],
+  [State('more-options-collapse-lease', 'is_open')]
+)
+def toggle_collapse(n, is_open):
+  if not n:
+    return False, "More Options"
+
+  if is_open:
+    return False, "More Options"
+  else:
+    return True, "Less Options"
