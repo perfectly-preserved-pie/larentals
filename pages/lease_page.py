@@ -240,6 +240,12 @@ subtype_meaning = {
   'TWNHS/D': 'Townhouse (Detached)',
   'Unknown': 'Unknown',
 }
+# Get unique scalar values from the dataframe column
+unique_values = df['subtype'].dropna().unique().tolist()
+# Replace null values and values that just contain "/D" with the string "Unknown"
+unique_values = ["Unknown" if i == "/D" else i for i in unique_values]
+if "Unknown" not in unique_values:
+  unique_values.append("Unknown")
 # Create a checklist for the user to select the subtypes they want to see
 subtype_checklist = html.Div([ 
   # Title this section
@@ -249,9 +255,18 @@ subtype_checklist = html.Div([
   # https://dash.plotly.com/dash-core-components/checklist
   dcc.Checklist( 
     id = 'subtype_checklist',
-    # Create a dictionary for each unique value in 'Subtype', replacing null values with the string "Unknown" and sort it alphabetically
+    # Create a dictionary for each unique value in 'Subtype', replacing null values and values that just contain "/D" with the string "Unknown" and sort it alphabetically
     # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
-    options = sorted([{'label': f"{i} - {subtype_meaning[i]}", 'value': i} if not pd.isnull(i) else {'label': "Unknown", 'value': "Unknown"} for i in df['subtype'].unique()], key=lambda x: x['label']),
+    options = sorted(
+      [
+        {
+          'label': f"{i} - {subtype_meaning.get(i, 'Unknown')}", 
+          'value': i
+        }
+        for i in set(unique_values)  # convert to set to ensure uniqueness, then iterate
+      ], 
+      key=lambda x: x['label']
+    ),
     # Set the default value to be the value of all the dictionaries in options
     value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['subtype'].unique()]],
     labelStyle = {'display': 'block'},
