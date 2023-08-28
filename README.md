@@ -5,7 +5,7 @@
 
 [![Build and Publish - Dev Build](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image-dev.yml/badge.svg?branch=dev)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image-dev.yml)
 
-This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of new rental & for-sale listings in the /r/LArentals & /r/LosAngelesRealEstate subreddits. Just like the actual spreadsheets, you can filter the map based on different criteria, such as
+This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of new rental & for-sale listings in the /r/LArentals & /r/LosAngelesRealEstate subreddits and at https://www.freelarentals.com/. Just like the actual spreadsheets, you can filter the map based on different criteria, such as
 * Monthly rent/List price
 * Security deposit cost
 * Number of bedrooms
@@ -23,7 +23,7 @@ Or you can click the _Looking to buy a property instead?_ button: ![image](https
 
 
 
-**⚠ This website is "slightly" mobile-optimized: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**
+**⚠ This website is "slightly" mobile-friendly: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**
 
 ## The Tech Stack
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
