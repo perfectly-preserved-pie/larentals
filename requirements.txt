@@ -5,7 +5,7 @@ dash_extensions==1.0.3
 dash_html_components==2.0.0
 dash-leaflet==1.0.5rc1
 dash==2.12.1
-geopy==2.3.0
+geopy==2.4.0
 gunicorn==21.2.0
 imagekitio==3.1.0
 loguru==0.7.0
