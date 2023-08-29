@@ -849,7 +849,7 @@ laundry_checklist = html.Div([
   # Create a checklist for laundry features
   dcc.Checklist(
     id='laundry_checklist',
-    options=[{'label': i, 'value': i} for i in laundry_categories],
+    options=sorted([{'label': i, 'value': i} for i in laundry_categories], key=lambda x: x['label']),
     # Set the default value to all of the options
     value=laundry_categories,
     labelStyle = {'display': 'block'},
