@@ -1,4 +1,5 @@
 from .filters import *
+from .components import *
 from dash import html, dcc, callback
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
@@ -32,6 +33,7 @@ df = pd.read_parquet(path='datasets/lease.parquet')
 pd.set_option("display.precision", 10)
 
 lease_filters = LeaseFilters(df)
+lease_components = LeaseComponents(df)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
 # Get the means so we can center the map
@@ -43,288 +45,11 @@ long_mean = df['Longitude'].mean()
 
 
 
-# Define a dictionary that maps each subtype to its corresponding meaning
-subtype_meaning = {
-  'APT': 'Apartment (Unspecified)',
-  'APT/A': 'Apartment (Attached)',
-  'APT/D': 'Apartment (Detached)',
-  'CABIN/D': 'Cabin (Detached)',
-  'COMRES/A': 'Commercial/Residential (Attached)',
-  'COMRES/D': 'Commercial/Residential (Detached)',
-  'CONDO': 'Condo (Unspecified)',
-  'CONDO/A': 'Condo (Attached)',
-  'CONDO/D': 'Condo (Detached)',
-  'COOP/A': 'Cooperative (Attached)',
-  'DPLX/A': 'Duplex (Attached)',
-  'DPLX/D': 'Duplex (Detached)',
-  'LOFT/A': 'Loft (Attached)',
-  'MANL/D': '??? (Detached)',
-  'MH': 'Mobile Home',
-  'OYO/D': 'Own-Your-Own (Detached)',
-  'QUAD': 'Quadplex (Unspecified)',
-  'QUAD/A': 'Quadplex (Attached)',
-  'QUAD/D': 'Quadplex (Detached)',
-  'RMRT/A': '??? (Attached)',
-  'RMRT/D': '??? (Detached)',
-  'SFR': 'Single Family Residence (Unspecified)',
-  'SFR/A': 'Single Family Residence (Attached)',
-  'SFR/D': 'Single Family Residence (Detached)',
-  'STUD/A': 'Studio (Attached)',
-  'STUD/D': 'Studio (Detached)',
-  'TPLX': 'Triplex (Unspecified)',
-  'TPLX/A': 'Triplex (Attached)',
-  'TPLX/D': 'Triplex (Detached)',
-  'TWNHS': 'Townhouse (Unspecified)',
-  'TWNHS/A': 'Townhouse (Attached)',
-  'TWNHS/D': 'Townhouse (Detached)',
-  'Unknown': 'Unknown',
-}
-# Get unique scalar values from the dataframe column
-unique_values = df['subtype'].dropna().unique().tolist()
-# Replace null values and values that just contain "/D" with the string "Unknown"
-unique_values = ["Unknown" if i == "/D" else i for i in unique_values]
-if "Unknown" not in unique_values:
-  unique_values.append("Unknown")
-# Create a checklist for the user to select the subtypes they want to see
-subtype_checklist = html.Div([ 
-  # Title this section
-  html.H5("Subtypes"),
-  html.H6([html.Em("Use the scrollbar on the right to view more subtype options.")]),
-  # Create a checklist of options for the user
-  # https://dash.plotly.com/dash-core-components/checklist
-  dcc.Checklist( 
-    id = 'subtype_checklist',
-    # Create a dictionary for each unique value in 'Subtype', replacing null values and values that just contain "/D" with the string "Unknown" and sort it alphabetically
-    # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
-    options = sorted(
-      [
-        {
-          'label': f"{i} - {subtype_meaning.get(i, 'Unknown')}", 
-          'value': i
-        }
-        for i in set(unique_values)  # convert to set to ensure uniqueness, then iterate
-      ], 
-      key=lambda x: x['label']
-    ),
-    # Set the default value to be the value of all the dictionaries in options
-    value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['subtype'].unique()]],
-    labelStyle = {'display': 'block'},
-    # add some spacing in between the checkbox and the label
-    # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-    inputStyle = {
-      "margin-right": "5px",
-      "margin-left": "5px"
-    },
-  ),
-],
-id = 'subtypes_div',
-# Make the checklist scrollable since there are so many options
-# https://stackoverflow.com/a/69546868
-style = {
-  "overflow-y":"scroll",
-  "overflow-x":'hidden',
-  "height": '220px'
-}
-)
 
-bedrooms_slider = html.Div([
-    html.H5("Bedrooms"),
-    # Create a range slider for # of bedrooms
-    dcc.RangeSlider(
-      min=0, 
-      max=df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
-      step=1, 
-      value=[0, df['Bedrooms'].max()], 
-      id='bedrooms_slider',
-      updatemode='mouseup',
-      tooltip={
-        "placement": "bottom",
-        "always_visible": True
-      },
-    ),
-],
-id = 'bedrooms_div'
-)
 
-bathrooms_slider = html.Div([
-    html.H5("Bathrooms"),
-    # Create a range slider for # of total bathrooms
-    dcc.RangeSlider(
-      min=0, 
-      max=df['Total Bathrooms'].max(), 
-      step=1, 
-      value=[0, df['Total Bathrooms'].max()], 
-      id='bathrooms_slider',
-      updatemode='mouseup',
-      tooltip={
-        "placement": "bottom",
-        "always_visible": True
-      },
-    ),
-],
-id = 'bathrooms_div'
-)
 
-# Create a range slider for square footage
-square_footage_slider = html.Div([
-    html.H5("Square Footage"),
-    dcc.RangeSlider(
-      min=df['Sqft'].min(), 
-      max=df['Sqft'].max(),
-      value=[df['Sqft'].min(), df['Sqft'].max()], 
-      id='sqft_slider',
-      tooltip={
-        "placement": "bottom",
-        "always_visible": True
-      },
-      updatemode='mouseup'
-    ),
-],
-style = {
-  'margin-bottom' : '10px',
-}, 
-id = 'square_footage_div'
-)
 
-square_footage_radio = html.Div([
-  dbc.Alert(
-    [
-      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
-      html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties with an unknown square footage?"),
-      dcc.RadioItems(
-        id='sqft_missing_radio',
-        options=[
-            {'label': 'Yes', 'value': 'True'},
-            {'label': 'No', 'value': 'False'}
-        ],
-        value='True',
-        # add some spacing in between the checkbox and the label
-        # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-        inputStyle = {
-          "margin-right": "5px",
-          "margin-left": "5px"
-        },
-        inline=True     
-        ),
-    ],
-  color="info",
-  ),
-],
-id = 'unknown_sqft_div',
-)
 
-# Create a range slider for ppsqft
-ppsqft_slider = html.Div([
-    html.H5("Price Per Square Foot ($)"),
-    dcc.RangeSlider(
-      min=df['ppsqft'].min(), 
-      max=df['ppsqft'].max(),
-      value=[df['ppsqft'].min(), df['ppsqft'].max()], 
-      id='ppsqft_slider',
-      tooltip={
-        "placement": "bottom",
-        "always_visible": True
-      },
-      updatemode='mouseup'
-    ),
-],
-style = {
-  'margin-bottom' : '10px',
-},
-id = 'ppsqft_div'
-)
-  
-ppsqft_radio = html.Div([
-  dbc.Alert(
-    [
-      # https://dash-bootstrap-components.opensource.faculty.ai/docs/icons/
-      html.I(className="bi bi-info-circle-fill me-2"),
-      ("Should we include properties with an unknown price per square foot?"),
-      dcc.RadioItems(
-        id='ppsqft_missing_radio',
-        options=[
-            {'label': 'Yes', 'value': 'True'},
-            {'label': 'No', 'value': 'False'}
-        ],
-        value='True',
-        inputStyle = {
-          "margin-right": "5px",
-          "margin-left": "5px"
-        },
-        inline=True
-      ),
-    ],
-  color="info",
-  ),
-],
-id = 'unknown_ppsqft_div'
-)
-
-pets_radio = html.Div([
-    html.H5("Pet Policy"),
-    # Create a checklist for pet policy
-    dcc.RadioItems(
-      id = 'pets_radio',
-      options=[
-        {'label': 'Pets Allowed', 'value': 'Yes'},
-        {'label': 'Pets NOT Allowed', 'value': 'No'},
-        {'label': 'Both', 'value': 'Both'}
-      ],
-      value='Both', # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
-      # add some spacing in between the checkbox and the label
-      # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-      inputStyle = {
-        "margin-right": "5px",
-        "margin-left": "5px"
-      },
-      inline=True
-    ),
-],
-id = 'pet_policy_div'
-)
-
-# First fillna with a string 'Unknown' and then split the comma-separated strings into individual terms
-unique_terms = pd.Series([term for sublist in df['Terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
-# Sort the terms alphabetically
-unique_terms = sorted(unique_terms)
-# Create a list of what each abbreviation means
-term_abbreviations = {
-  '12M': '12 Months',
-  '24M': '24 Months',
-  '6M': '6 Months',
-  'MO': 'Month-to-Month',
-  'NG': 'Negotiable',
-  'SN': 'Seasonal',
-  'STL': 'Short Term Lease',
-  'Unknown': 'Unknown',
-  'VR': 'Vacation Rental',
-}
-# Create a dictionary of the abbreviations and their meanings
-terms = {k: term_abbreviations[k] for k in sorted(term_abbreviations)}
-rental_terms_checklist = html.Div([
-    html.H5("Lease Length"),
-    # Create a checklist for rental terms
-    dcc.Checklist(
-      id = 'terms_checklist',
-      # Set the labels to be the expanded terms and their abbreviations
-      options = [{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
-      # Create a dictionary for each unique value in 'Terms', replacing null values with the string "Unknown"
-      # We need to do this because Dash (specifically JSON) doesn't support NATypes apparently
-      #options = [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in df['Terms'].unique()],
-      # Set the default value to be the value of all the dictionaries in options
-      value = [term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in unique_terms]],
-      # add some spacing in between the checkbox and the label
-      # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
-      inputStyle = {
-        "margin-right": "5px",
-        "margin-left": "5px"
-      },
-      inline=False
-    ),
-],
-id = 'rental_terms_div'
-)
 
 garage_spaces_slider =  html.Div([
     html.H5("Garage Spaces"),
@@ -779,15 +504,15 @@ collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
 # https://dash-bootstrap-components.opensource.faculty.ai/docs/components/collapse/
 more_options = dbc.Collapse(
   [
-    square_footage_slider,
-    square_footage_radio,
-    ppsqft_slider,
-    ppsqft_radio,
+    lease_components.square_footage_slider,
+    lease_components.square_footage_radio,
+    lease_components.ppsqft_slider,
+    lease_components.ppsqft_radio,
     garage_spaces_slider,
     unknown_garage_radio, 
     year_built_slider,
     unknown_year_built_radio,
-    rental_terms_checklist,
+    lease_components.rental_terms_checklist,
     furnished_checklist,
     laundry_checklist,
     security_deposit_slider,
@@ -812,11 +537,11 @@ user_options_card = dbc.Card(
     ),
     listed_date_datepicker,
     listed_date_radio,
-    subtype_checklist,
+    lease_components.subtype_checklist,
     rental_price_slider,
-    bedrooms_slider,
-    bathrooms_slider,
-    pets_radio,
+    lease_components.bedrooms_slider,
+    lease_components.bathrooms_slider,
+    lease_components.pets_radio,
     dbc.Button("More Options", id='more-options-button-lease', className='mt-2'),
     more_options,
   ],
