@@ -1,3 +1,4 @@
+from .filters import *
 from dash import html, dcc, callback
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
@@ -26,183 +27,21 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# Make the dataframe a global variable
-global df
-
 # import the dataframe
 df = pd.read_parquet(path='datasets/lease.parquet')
 pd.set_option("display.precision", 10)
+
+lease_filters = LeaseFilters(df)
 
 ### DASH LEAFLET AND DASH BOOTSTRAP COMPONENTS SECTION BEGINS!
 # Get the means so we can center the map
 lat_mean = df['Latitude'].mean()
 long_mean = df['Longitude'].mean()
 
-# Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-def sqft_radio_button(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
-    # Then we want nulls to be included in the final dataframe
-    sqft_choice = df['Sqft'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    sqft_choice = df.sort_values(by='Sqft')['Sqft'].between(slider_begin, slider_end)
-  return (sqft_choice)
 
-# Create a function to return a dataframe filter for missing year built
-def yrbuilt_radio_button(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a year built listed"
-    # Then we want nulls to be included in the final dataframe
-    yrbuilt_choice = df['YrBuilt'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    yrbuilt_choice = df.sort_values(by='YrBuilt')['YrBuilt'].between(slider_begin, slider_end)
-  return (yrbuilt_choice)
 
-# Create a function to return a dataframe filter for missing garage spaces
-def garage_radio_button(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
-    # Then we want nulls to be included in the final dataframe 
-    garage_choice = df['garage_spaces'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    garage_choice = df.sort_values(by='garage_spaces')['garage_spaces'].between(slider_begin, slider_end)
-  return (garage_choice)
 
-# Create a function to return a dataframe filter for missing ppqsft
-def ppsqft_radio_button(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
-    # Then we want nulls to be included in the final dataframe 
-    ppsqft_choice = df['ppsqft'].isnull()
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    ppsqft_choice = df.sort_values(by='ppsqft')['ppsqft'].between(slider_begin, slider_end)
-  return (ppsqft_choice)
 
-# Create a function to return a dataframe filter for pet policy
-def pets_radio_button(choice):
-  if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
-    # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
-    pets_radio_choice = ~df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-  elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
-    pets_radio_choice = df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-  elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-    pets_radio_choice = df['PetsAllowed']
-  return (pets_radio_choice)
-
-# Create a function to return a dataframe filter for furnished dwellings
-def furnished_checklist_function(choice):
-  # Presort the list first for faster performance
-  choice.sort()
-  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
-    furnished_checklist_filter = (df['Furnished'].isnull()) | (df['Furnished'].isin(choice))
-  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
-    furnished_checklist_filter = df['Furnished'].isin(choice)
-  return (furnished_checklist_filter)
-
-## Create functions to return a dataframe filter for the various types of deposits
-# Security
-def security_deposit_function(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-    # Then we want nulls to be included in the final dataframe 
-    security_deposit_filter = df['DepositSecurity'].isnull() | (df.sort_values(by='DepositSecurity')['DepositSecurity'].between(slider_begin, slider_end))
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    security_deposit_filter = df.sort_values(by='DepositSecurity')['DepositSecurity'].between(slider_begin, slider_end)
-  return (security_deposit_filter)
-
-# Pets
-def pet_deposit_function(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-    # Then we want nulls to be included in the final dataframe 
-    pet_deposit_filter = df['DepositPets'].isnull() | (df.sort_values(by='DepositPets')['DepositPets'].between(slider_begin, slider_end))
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    pet_deposit_filter = df.sort_values(by='DepositPets')['DepositPets'].between(slider_begin, slider_end)
-  return (pet_deposit_filter)
-
-# Keys
-def key_deposit_function(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-    # Then we want nulls to be included in the final dataframe 
-    key_deposit_filter = df['DepositKey'].isnull() | (df.sort_values(by='DepositKey')['DepositKey'].between(slider_begin, slider_end))
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    key_deposit_filter = df.sort_values(by='DepositKey')['DepositKey'].between(slider_begin, slider_end)
-  return (key_deposit_filter)
-
-# Other
-def other_deposit_function(boolean, slider_begin, slider_end):
-  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-    # Then we want nulls to be included in the final dataframe 
-    other_deposit_filter = df['DepositOther'].isnull() | (df.sort_values(by='DepositOther')['DepositOther'].between(slider_begin, slider_end))
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    other_deposit_filter = df.sort_values(by='DepositOther')['DepositOther'].between(slider_begin, slider_end)
-  return (other_deposit_filter)
-
-# Listed Date
-def listed_date_function(boolean, start_date, end_date):
-  if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-    # Then we want nulls to be included in the final dataframe 
-    listed_date_filter = (df['listed_date'].isnull()) | (df['listed_date'].between(start_date, end_date))
-  elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
-    listed_date_filter = df['listed_date'].between(start_date, end_date)
-  return (listed_date_filter)
-
-# Terms
-def terms_function(choice):
-  # Presort the list first for faster performance
-  choice.sort()
-  choice_regex = '|'.join(choice)  # Create a regex from choice
-  if 'Unknown' in choice: 
-    # If Unknown is selected, return all rows with NaN OR the selected choices
-    terms_filter = df['Terms'].isnull() | df['Terms'].str.contains(choice_regex, na=False)
-  elif 'Unknown' not in choice: 
-    # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
-    terms_filter = df['Terms'].str.contains(choice_regex, na=False)
-  # If there is no choice, return an empty dataframe
-  if len(choice) == 0:
-    terms_filter = pd.DataFrame()
-  return (terms_filter)
-
-# Laundry Features
-# First define a list of all the laundry features
-# Create a list of options for the first drop-down menu
-laundry_categories = [
-  'Dryer Hookup',
-  'Dryer Included',
-  'Washer Hookup',
-  'Washer Included',
-  'Community Laundry',
-  'Other',
-  'Unknown',
-  'None',
-  ]
-# We need to create a function to return a dataframe filter for laundry features
-# We need to account for every possible combination of choices
-def laundry_checklist_function(choice):
-  # Return an empty dataframe if the choice list is empty
-  if len(choice) == 0:
-    return pd.DataFrame()
-  # If the user selects only 'Other', return the properties that don't have any of the strings in the laundry_categories list
-  if len(choice) == 1 and choice[0] == 'Other':
-    laundry_features_filter = ~df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
-    return laundry_features_filter
-  # First, create a filter for the first choice
-  laundry_features_filter = df['LaundryFeatures'].str.contains(str(choice[0]))
-  # Then, loop through the rest of the choices
-  for i in range(1, len(choice)):
-    # If the user selects "Other", we want to return all the properties that don't have any the strings in the laundry_categories list
-    if choice[i] == 'Other':
-      other = ~df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
-      # Then, we want to add the other filter to the laundry_features_filter
-      laundry_features_filter = laundry_features_filter | other
-    # If the user doesn't select "Other", we want to return all the properties that have the first choice, the second choice, etc.
-    elif choice[i] != 'Other':
-      laundry_features_filter = laundry_features_filter | df['LaundryFeatures'].str.contains(str(choice[i]))
-  return (laundry_features_filter)
-
-# Subtype
-def subtype_function(choice):
-  # Presort the list first for faster performance
-  choice.sort()
-  if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
-    subtype_filter = df['subtype'].isnull() | df['subtype'].isin(choice)
-  elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
-    subtype_filter = df['subtype'].isin(choice)
-  return (subtype_filter)
 
 # Define a dictionary that maps each subtype to its corresponding meaning
 subtype_meaning = {
@@ -844,6 +683,17 @@ other_deposit_radio = html.Div([
 id = 'unknown_other_deposit_div',
 )
 
+laundry_categories = [
+            'Dryer Hookup',
+            'Dryer Included',
+            'Washer Hookup',
+            'Washer Included',
+            'Community Laundry',
+            'Other',
+            'Unknown',
+            'None',
+        ]
+
 laundry_checklist = html.Div([
   html.H5("Laundry Features"),
   # Create a checklist for laundry features
@@ -1070,28 +920,28 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Pre-sort our various lists of strings for faster performance
   subtypes_chosen.sort()
   df_filtered = df[
-    subtype_function(subtypes_chosen) &
-    pets_radio_button(pets_chosen) &
-    terms_function(terms_chosen) &
+    lease_filters.subtype_checklist_function(subtypes_chosen) &
+    lease_filters.pets_radio_button(pets_chosen) &
+    lease_filters.terms_function(terms_chosen) &
     # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
     # To do this, we can use the Pandas .between function
     # See https://stackoverflow.com/a/40442778
-    ((df.sort_values(by='garage_spaces')['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1])) &
+    ((df.sort_values(by='garage_spaces')['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | lease_filters.garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1])) &
     # Repeat but for rental price
     # Also pre-sort our lists of values to improve the performance of .between()
     (df.sort_values(by='list_price')['list_price'].between(rental_price[0], rental_price[1])) &
     (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
     (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
-    ((df.sort_values(by='YrBuilt')['YrBuilt'].between(years_chosen[0], years_chosen[1])) | yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
-    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
-    furnished_checklist_function(furnished_choice) &
-    security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
-    pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
-    key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]) &
-    other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
-    listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
-    laundry_checklist_function(laundry_chosen)
+    ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | lease_filters.sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
+    ((df.sort_values(by='YrBuilt')['YrBuilt'].between(years_chosen[0], years_chosen[1])) | lease_filters.yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
+    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | lease_filters.ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
+    lease_filters.furnished_checklist_function(furnished_choice) &
+    lease_filters.security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
+    lease_filters.pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
+    lease_filters.key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]) &
+    lease_filters.other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
+    lease_filters.listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
+    lease_filters.laundry_checklist_function(laundry_chosen)
   ]
 
   # Create an empty list for the markers
