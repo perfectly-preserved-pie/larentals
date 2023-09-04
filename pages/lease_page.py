@@ -1,9 +1,8 @@
 from .filters import *
 from .components import *
-from dash import html, dcc, callback
+from dash import dcc, callback
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
-from datetime import date
 from flask import request
 from loguru import logger
 from user_agents import parse

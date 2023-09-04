@@ -54,40 +54,43 @@ class LeaseComponents:
     ]
 
     def __init__(self, df):
-        self.df = df
-        # You can call the method to initialize the component
-        self.subtype_checklist = self.create_subtype_checklist()
-        self.bedrooms_slider = self.create_bedrooms_slider()
+        # Initalize these first because they are used in other components
+        self.df = df 
+
         self.bathrooms_slider = self.create_bathrooms_slider()
-        self.square_footage_slider = self.create_sqft_slider()
-        self.square_footage_radio = self.create_sqft_radio_button()
-        self.ppsqft_slider = self.create_ppsqft_slider()
-        self.ppsqft_radio = self.create_ppsqft_radio_button()
-        self.pets_radio = self.create_pets_radio_button()
-        self.rental_terms_checklist = self.create_rental_terms_checklist()
-        self.garage_spaces_slider = self.create_garage_spaces_slider()
-        self.unknown_garage_radio = self.create_unknown_garage_radio_button()
-        self.rental_price_slider = self.create_rental_price_slider()
-        self.year_built_slider = self.create_year_built_slider()
-        self.unknown_year_built_radio = self.create_unknown_year_built_radio_button()
+        self.bedrooms_slider = self.create_bedrooms_slider()
         self.furnished_checklist = self.create_furnished_checklist()
-        self.security_deposit_slider = self.create_security_deposit_slider()
-        self.unknown_security_deposit_radio = self.create_unknown_security_deposit_radio_button()
-        self.pet_deposit_slider = self.create_pet_deposit_slider()
-        self.unknown_pet_deposit_radio = self.create_unknown_pet_deposit_radio_button()
+        self.garage_spaces_slider = self.create_garage_spaces_slider()
         self.key_deposit_slider = self.create_key_deposit_slider()
-        self.unknown_key_deposit_radio = self.create_unknown_key_deposit_radio_button()
-        self.other_deposit_slider = self.create_other_deposit_slider()
-        self.unknown_other_deposit_radio = self.create_unknown_other_deposit_radio_button()
+        self.last_updated = self.df['date_processed'].max().strftime('%m/%d/%Y')
         self.laundry_checklist = self.create_laundry_checklist()
         self.listed_date_datepicker = self.create_listed_date_datepicker()
         self.listed_date_radio = self.create_listed_date_radio_button()
         self.map = self.create_map()
         self.map_card = self.create_map_card()
+        self.other_deposit_slider = self.create_other_deposit_slider()
+        self.pet_deposit_slider = self.create_pet_deposit_slider()
+        self.pets_radio = self.create_pets_radio_button()
+        self.ppsqft_radio = self.create_ppsqft_radio_button()
+        self.ppsqft_slider = self.create_ppsqft_slider()
+        self.rental_price_slider = self.create_rental_price_slider()
+        self.rental_terms_checklist = self.create_rental_terms_checklist()
+        self.security_deposit_slider = self.create_security_deposit_slider()
+        self.square_footage_radio = self.create_sqft_radio_button()
+        self.square_footage_slider = self.create_sqft_slider()
+        self.subtype_checklist = self.create_subtype_checklist()
+        self.title_card = self.create_title_card()
+        self.unknown_garage_radio = self.create_unknown_garage_radio_button()
+        self.unknown_key_deposit_radio = self.create_unknown_key_deposit_radio_button()
+        self.unknown_other_deposit_radio = self.create_unknown_other_deposit_radio_button()
+        self.unknown_pet_deposit_radio = self.create_unknown_pet_deposit_radio_button()
+        self.unknown_security_deposit_radio = self.create_unknown_security_deposit_radio_button()
+        self.unknown_year_built_radio = self.create_unknown_year_built_radio_button()
+        self.year_built_slider = self.create_year_built_slider()
+
+        # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-        self.last_updated = self.df['date_processed'].max().strftime('%m/%d/%Y')
-        self.title_card = self.create_title_card()
         
     def create_subtype_checklist(self):
         # Instance Variable
@@ -773,10 +776,10 @@ class LeaseComponents:
             html.H5("Listed Date Range"),
             # Create a range slider for the listed date
             dcc.DatePickerRange(
-            id='listed_date_datepicker',
-            max_date_allowed=today,
-            start_date=earliest_date,
-            end_date=today
+                id='listed_date_datepicker',
+                max_date_allowed=today,
+                start_date=earliest_date,
+                end_date=today
             ),
         ],
         id = 'listed_date_datepicker_div'
@@ -922,6 +925,686 @@ class LeaseComponents:
                 ),
             ],
             body = True
+        )
+
+        return title_card
+
+# Create a class to hold all the components for the for-sale page
+class BuyComponents:
+    # Class Variables
+    subtype_meaning = { # Define a dictionary that maps each subtype to its corresponding meaning
+        'CONDO': 'Condo (Unspecified)',
+        'CONDO/A': 'Condo (Attached)',
+        'CONDO/D': 'Condo (Detached)',
+        'MH': 'Mobile Home',
+        'SFR': 'Single Family Residence (Unspecified)',
+        'SFR/A': 'Single Family Residence (Attached)',
+        'SFR/D': 'Single Family Residence (Detached)',
+        'TWNHS': 'Townhouse (Unspecified)',
+        'TWNHS/A': 'Townhouse (Attached)',
+        'TWNHS/D': 'Townhouse (Detached)',
+        'Unknown': 'Unknown'
+    }
+
+    def __init__(self, df):
+        # Initalize these first because they are used in other components
+        self.df = df
+
+        self.bathrooms_slider = self.create_bathrooms_slider()
+        self.bedrooms_slider = self.create_bedrooms_slider()
+        self.df['listed_date'] = pd.to_datetime(self.df['listed_date'], errors='coerce')
+        self.earliest_date = (self.df['listed_date'].min()).to_pydatetime()
+        self.hoa_fee_frequncy_checklist = self.create_hoa_fee_frequency_checklist()
+        self.hoa_fee_slider = self.create_hoa_fee_slider()
+        self.last_updated = self.df['date_processed'].max().strftime('%m/%d/%Y')
+        self.list_price_slider = self.create_list_price_slider()
+        self.listed_date_datepicker = self.create_listed_date_datepicker()
+        self.listed_date_radio_button = self.create_unknown_listed_date_radio_button()
+        self.map = self.create_map()
+        self.map_card = self.create_map_card()
+        self.pet_policy_radio_button = self.create_pets_radio_button()
+        self.ppsqft_radio_button = self.create_unknown_ppsqft_radio_button()
+        self.ppsqft_slider = self.create_ppsqft_slider()
+        self.senior_community_radio_button = self.create_senior_community_radio_button()
+        self.space_rent_slider = self.create_space_rent_slider()
+        self.square_footage_radio_button = self.create_unknown_square_footage_radio_button()
+        self.square_footage_slider = self.create_square_footage_slider()
+        self.subtype_checklist = self.create_subtype_checklist()
+        self.title_card = self.create_title_card()
+        self.unknown_hoa_fee_radio_button = self.create_unknown_hoa_fee_radio_button()
+        self.unknown_space_rent_radio_button = self.create_unknown_space_rent_radio_button()
+        self.unknown_year_built_radio_button = self.create_unknown_year_built_radio_button()
+        self.year_built_slider = self.create_year_built_slider()
+
+        # Initialize these last because they depend on other components
+        self.more_options = self.create_more_options()
+        self.user_options_card = self.create_user_options_card()
+
+    # Create a checklist for the user to select the subtypes they want to see
+    def create_subtype_checklist(self):
+        subtype_checklist = html.Div([ 
+            # Title this section
+            html.H5("Subtypes"), 
+            # Create a checklist of options for the user
+            # https://dash.plotly.com/dash-core-components/checklist
+            dcc.Checklist( 
+                id = 'subtype_checklist',
+                # Loop through the list of subtypes and create a dictionary of options
+                options = sorted(
+                [
+                    {
+                        'label': f"{i if not pd.isna(i) else 'Unknown'} - {self.subtype_meaning.get(i if not pd.isna(i) else 'Unknown', 'Unknown')}", 
+                        'value': i if not pd.isna(i) else 'Unknown'
+                    }
+                    for i in self.df['subtype'].unique()
+                ], 
+                key=lambda x: x['label']
+                ), 
+                # Set the default values to all of the subtypes while handling nulls
+                value = [i if not pd.isna(i) else 'Unknown' for i in self.df['subtype'].unique()],
+                labelStyle = {'display': 'block'},
+                # add some spacing in between the checkbox and the label
+                # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+                inputStyle = {
+                "margin-right": "5px",
+                "margin-left": "5px"
+                },
+        ),
+        ],
+        id = 'subtypes_div',
+        )
+
+        return subtype_checklist
+    
+    def create_bedrooms_slider(self):
+        bedrooms_slider = html.Div([
+            html.H5("Bedrooms"),
+            # Create a range slider for # of bedrooms
+            dcc.RangeSlider(
+            min=0, 
+            max=self.df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+            step=1, 
+            value=[0, self.df['Bedrooms'].max()], 
+            id='bedrooms_slider',
+            updatemode='mouseup',
+            tooltip={
+                "placement": "bottom",
+                "always_visible": True
+            },
+            ),
+        ],
+        id = 'bedrooms_div'
+        )
+        
+        return bedrooms_slider
+    
+    def create_bathrooms_slider(self):
+        bathrooms_slider = html.Div([
+            html.H5("Bathrooms"),
+            # Create a range slider for # of total bathrooms
+            dcc.RangeSlider(
+            min=0, 
+            max=self.df['Total Bathrooms'].max(), 
+            step=1, 
+            value=[0, self.df['Total Bathrooms'].max()], 
+            id='bathrooms_slider',
+            updatemode='mouseup',
+            tooltip={
+                "placement": "bottom",
+                "always_visible": True
+            },
+            ),
+        ],
+        id = 'bathrooms_div'
+        )
+
+        return bathrooms_slider
+    
+    def create_square_footage_slider(self):
+        # Create a range slider for square footage
+        square_footage_slider = html.Div([
+        html.H5("Square Footage"),
+        dcc.RangeSlider(
+            min=self.df['Sqft'].min(), 
+            max=self.df['Sqft'].max(),
+            value=[self.df['Sqft'].min(), self.df['Sqft'].max()], 
+            id='sqft_slider',
+            tooltip={
+            "placement": "bottom",
+            "always_visible": True
+            },
+            updatemode='mouseup'
+        ),
+        ],
+        style = {
+        'margin-bottom' : '10px',
+        }, 
+        id = 'square_footage_div'
+        )
+
+        return square_footage_slider
+    
+    def create_unknown_square_footage_radio_button(self):
+        unknown_square_footage_radio = html.Div([
+        dbc.Alert(
+            [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            ("Should we include properties with an unknown square footage?"),
+            dcc.RadioItems(
+                id='sqft_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+            ],
+        color="info",
+        ),
+        ],
+        id = 'unknown_square_footage_div'
+        )
+
+        return unknown_square_footage_radio
+    
+    def create_ppsqft_slider(self):
+        ppsqft_slider = html.Div([
+            html.H5("Price Per Square Foot"),
+            # Create a range slider for price per square foot
+            dcc.RangeSlider(
+            min=self.df['ppsqft'].min(), 
+            max=self.df['ppsqft'].max(),
+            value=[self.df['ppsqft'].min(), self.df['ppsqft'].max()], 
+            id='ppsqft_slider',
+            tooltip={
+                "placement": "bottom",
+                "always_visible": True
+            },
+            updatemode='mouseup'
+            ),
+        ],
+        style = {
+            'margin-bottom' : '10px',
+        },
+        id = 'ppsqft_div'
+        )
+
+        return ppsqft_slider
+    
+    def create_unknown_ppsqft_radio_button(self):
+        unknown_ppsqft_radio = html.Div([
+        dbc.Alert(
+            [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            ("Should we include properties with an unknown price per square foot?"),
+            dcc.RadioItems(
+                id='ppsqft_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+            ],
+        color="info",
+        ),
+        ],
+        id = 'unknown_ppsqft_div'
+        )
+
+        return unknown_ppsqft_radio
+    
+    def create_pets_radio_button(self):
+        pets_radio = html.Div([
+            html.H5("Pet Policy"),
+            html.H6([html.Em("Applies only to Mobile Homes (MH).")]),
+            # Create a radio button for pet policy
+            dcc.RadioItems(
+                id = 'pets_radio',
+                options=[
+                    {'label': 'Pets Allowed', 'value': 'True'},
+                    {'label': 'Pets NOT Allowed', 'value': 'False'},
+                    {'label': 'Both', 'value': 'Both'},
+                ],
+                value='Both', # A value needs to be selected upon page load otherwise we error out. See https://community.plotly.com/t/how-to-convert-a-nonetype-object-i-get-from-a-checklist-to-a-list-or-int32/26256/2
+                # add some spacing in between the checkbox and the label
+                # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True  
+            ),
+        ],
+        id = 'pet_policy_div'
+        )
+
+        return pets_radio
+
+    def create_hoa_fee_slider(self):
+        # Create a slider for HOA fees
+        hoa_fee_slider = html.Div([
+            # Title this section
+            html.H5("HOA Fee"),
+            html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")]),
+            # Create a slider for the user to select the range of HOA fees they want to see
+            # https://dash.plotly.com/dash-core-components/slider
+            dcc.RangeSlider(
+                id = 'hoa_fee_slider',
+                # Set the min and max values to the min and max of the HOA fee column
+                min = self.df['hoa_fee'].min(),
+                max = self.df['hoa_fee'].max(),
+                # Set the default values to the min and max of the HOA fee column
+                value = [self.df['hoa_fee'].min(), self.df['hoa_fee'].max()],
+                # Set the tooltip to be the value of the slider
+                tooltip = {'always_visible': True, 'placement': 'bottom'},
+            ),
+            # Create a radio button for the user to select whether they want to include properties with no HOA fee listed
+            # https://dash.plotly.com/dash-core-components/radioitems
+            dcc.RadioItems(
+                id = 'hoa_fee_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                # add some spacing in between the checkbox and the label
+                # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+        ],
+        style = {
+            'margin-bottom' : '10px',
+        },
+        id = 'hoa_fee_div',
+        )
+
+        return hoa_fee_slider
+    
+    def create_unknown_hoa_fee_radio_button(self):
+        unknown_hoa_fee_radio = html.Div([
+        dbc.Alert(
+            [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            ("Should we include properties with an unknown HOA fee?"),
+            dcc.RadioItems(
+                id='hoa_fee_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+            ],
+        color="info",
+        ),
+        ],
+        id = 'unknown_hoa_fee_div'
+        )
+
+        return unknown_hoa_fee_radio
+
+    def create_hoa_fee_frequency_checklist(self):
+        # Create a checklist for HOA fee frequency
+        hoa_fee_frequency_checklist = html.Div([
+            # Title this section
+            html.H5("HOA Fee Frequency"),
+            html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")]),
+            # Create a checklist for the user to select the frequency of HOA fees they want to see
+            dcc.Checklist(
+                id = 'hoa_fee_frequency_checklist',
+                options=[
+                    {'label': 'N/A', 'value': 'N/A'},
+                    {'label': 'Monthly', 'value': 'Monthly'}
+                ],
+                # Set the value to all of the values in options
+                value = ['N/A', 'Monthly'],
+                labelStyle = {'display': 'block'},
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+            ),
+        ],
+        id = 'hoa_fee_frequency_div',
+        )
+
+        return hoa_fee_frequency_checklist
+
+    def create_space_rent_slider(self):
+        # Create a slider for space rent
+        space_rent_slider = html.Div([
+            # Title this section
+            html.H5("Space Rent"),
+            html.H6([html.Em("Applies only to Mobile Homes (MH).")]),
+            # Create a slider for the user to select the range of space rent they want to see
+            # https://dash.plotly.com/dash-core-components/slider
+            dcc.RangeSlider(
+                id = 'space_rent_slider',
+                # Set the min and max values to the min and max of the space rent column
+                min = self.df['space_rent'].min(),
+                max = self.df['space_rent'].max(),
+                # Set the default values to the min and max of the space rent column
+                value = [self.df['space_rent'].min(), self.df['space_rent'].max()],
+                # Set the tooltip to be the value of the slider
+                tooltip = {'always_visible': True, 'placement': 'bottom'},
+            ),
+        ],
+        style = {
+            'margin-bottom' : '10px',
+        },
+        id = 'space_rent_div',
+        )
+
+        return space_rent_slider
+
+    def create_unknown_space_rent_radio_button(self):
+        unknown_space_rent_radio = html.Div([
+        dbc.Alert(
+            [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            ("Should we include properties with an unknown space rent?"),
+            dcc.RadioItems(
+                id='space_rent_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+            ],
+        color="info",
+        ),
+        ],
+        id = 'unknown_space_rent_div'
+        )
+
+        return unknown_space_rent_radio
+    
+    def create_senior_community_radio_button(self):
+        # Create a radio button for the user to select whether they want to see properties in Senior Communities
+        # https://dash.plotly.com/dash-core-components/radioitems
+        senior_community_radio = html.Div([
+            html.H5("Senior Community"),
+            html.H6([html.Em("Applies only to Mobile Homes (MH).")]),
+            dcc.RadioItems(
+                id = 'senior_community_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'},
+                    {'label': 'Both', 'value': 'Both'},
+                ],
+                value='Both',
+                # add some spacing in between the checkbox and the label
+                # https://community.plotly.com/t/styling-radio-buttons-and-checklists-spacing-between-button-checkbox-and-label/15224/4
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True   
+            ),
+        ],
+        id = 'senior_community_div'
+        )
+
+        return senior_community_radio
+    
+    def create_list_price_slider(self):
+        # Create a range slider for list price
+        list_price_slider = html.Div([ 
+        html.H5("List Price"),
+        dcc.RangeSlider(
+            min=self.df['list_price'].min(),
+            max=self.df['list_price'].max(),
+            value=[0, self.df['list_price'].max()],
+            id='list_price_slider',
+            tooltip={
+            "placement": "bottom",
+            "always_visible": True
+            },
+            updatemode='mouseup'
+        ),
+        ],
+        style = {
+        'margin-bottom' : '10px',
+        },
+        id = 'list_price_div'
+        )
+
+        return list_price_slider
+
+    def create_year_built_slider(self):
+        year_built_slider = html.Div([
+            html.H5("Year Built"),
+            # Create a range slider for year built
+            dcc.RangeSlider(
+            min=self.df['year_built'].min(),
+            max=self.df['year_built'].max(),
+            value=[0, self.df['year_built'].max()],
+            id='yrbuilt_slider',
+            tooltip={
+                "placement": "bottom",
+                "always_visible": True
+            },
+            marks = { # Create custom tick marks
+                # The left column should be floats, the right column should be strings
+                f"{self.df['year_built'].min()}": f"{self.df['year_built'].min()}", # first mark is oldest house
+                float(f"{self.df['year_built'].min()}") + 20: str(float(f"{self.df['year_built'].min()}") + 20), # next mark is oldest house + 20 years
+                float(f"{self.df['year_built'].min()}") + 40: str(float(f"{self.df['year_built'].min()}") + 40),
+                float(f"{self.df['year_built'].min()}") + 60: str(float(f"{self.df['year_built'].min()}") + 60),
+                float(f"{self.df['year_built'].min()}") + 80: str(float(f"{self.df['year_built'].min()}") + 80),
+                float(f"{self.df['year_built'].min()}") + 100: str(float(f"{self.df['year_built'].min()}") + 100),
+                float(f"{self.df['year_built'].min()}") + 120: str(float(f"{self.df['year_built'].min()}") + 120),
+                float(f"{self.df['year_built'].min()}") + 140: str(float(f"{self.df['year_built'].min()}") + 140),
+                f"{self.df['year_built'].max()}": str(f"{self.df['year_built'].max()}") # last mark is newest house
+            },
+            updatemode='mouseup'
+            ),
+        ],
+        style = {
+            'margin-bottom' : '10px',
+        },
+        id = 'yrbuilt_div'
+        )
+
+        return year_built_slider
+    
+    def create_unknown_year_built_radio_button(self):
+        unknown_year_built_radio = html.Div([
+        dbc.Alert(
+            [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            ("Should we include properties with an unknown year built?"),
+            dcc.RadioItems(
+                id='yrbuilt_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+            ],
+        color="info",
+        ),
+        ],
+        id = 'yrbuilt_missing_div'
+        )
+
+        return unknown_year_built_radio
+    
+    def create_listed_date_datepicker(self):
+        # Get today's date and set it as the end date for the date picker
+        today = date.today()
+        listed_date_datepicker = html.Div([
+            html.H5("Listed Date Range"),
+            dcc.DatePickerRange(
+                id='listed_date_datepicker',
+                max_date_allowed=today,
+                start_date=self.earliest_date,
+                end_date=today
+            ),
+        ],
+        id='listed_date_datepicker_div'
+        )
+        return listed_date_datepicker
+    
+    def create_unknown_listed_date_radio_button(self):
+        unknown_listed_date_radio = html.Div([
+        dbc.Alert(
+            [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            ("Should we include properties with an unknown listed date?"),
+            dcc.RadioItems(
+                id='listed_date_missing_radio',
+                options=[
+                    {'label': 'Yes', 'value': 'True'},
+                    {'label': 'No', 'value': 'False'}
+                ],
+                value='True',
+                inputStyle = {
+                    "margin-right": "5px",
+                    "margin-left": "5px"
+                },
+                inline=True     
+            ),
+            ],
+        color="info",
+        ),
+        ],
+        id = 'unknown_listed_date_div'
+        )
+
+        return unknown_listed_date_radio
+
+    def create_map(self):
+        map = dl.Map(
+        [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullScreenControl()],
+        id='map',
+        zoom=9,
+        minZoom=9,
+        center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+        preferCanvas=True,
+        closePopupOnClick=True,
+        style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+        )
+
+        return map
+    
+    def create_more_options(self):
+        more_options = dbc.Collapse(
+            [
+                self.ppsqft_slider,
+                self.ppsqft_radio_button,
+                self.hoa_fee_slider,
+                self.unknown_hoa_fee_radio_button,
+                self.hoa_fee_frequncy_checklist,
+                self.space_rent_slider,
+                self.unknown_space_rent_radio_button,
+                self.year_built_slider,
+                self.unknown_year_built_radio_button,
+                self.pet_policy_radio_button,
+                self.senior_community_radio_button,         
+            ],
+            id='more-options-collapse-buy'
+        )
+
+        return more_options
+    
+    def create_user_options_card(self):
+        user_options_card = dbc.Card(
+            [
+                html.P(
+                    "Use the options below to filter the map "
+                    "according to your needs.",
+                    className="card-text",
+                ),
+                self.listed_date_datepicker,
+                self.listed_date_radio_button,
+                self.subtype_checklist,
+                self.list_price_slider,
+                self.bedrooms_slider,
+                self.bathrooms_slider,
+                self.square_footage_slider,
+                self.square_footage_radio_button,
+                dbc.Button("More Options", id='more-options-button-buy', className='mt-2'),
+                self.more_options,
+            ],
+            body=True
+        )
+        return user_options_card
+    
+    def create_map_card(self):
+        map_card = dbc.Card(
+            [self.map], 
+            body = True,
+            # Make the graph stay in view as the page is scrolled down
+            # https://getbootstrap.com/docs/4.0/utilities/position/
+            className = 'sticky-top'
+        )
+    
+        return map_card
+    
+    def create_title_card(self):
+        title_card = dbc.Card(
+        [
+            html.H3("WhereToLive.LA", className="card-title"),
+            html.P("An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."),
+            html.P(f"Last updated: {self.last_updated}", style={'margin-bottom': '5px'}),
+            # Use a GitHub icon for my repo
+            html.I(
+            className="bi bi-github",
+            style = {
+                "margin-right": "5px",
+            },
+            ),
+            html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
+            # Add an icon for my blog
+            html.I(
+            className="fa-solid fa-blog",
+            style = {
+                "margin-right": "5px",
+                "margin-left": "15px"
+            },
+            ),
+            html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+            dbc.Button(
+            " Looking to rent a property instead?",
+            href="/",
+            color="primary",
+            external_link=True,
+            className="bi bi-building-fill w-100 mt-2",
+            ),
+        ],
+        body = True
         )
 
         return title_card
