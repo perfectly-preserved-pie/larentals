@@ -1,6 +1,6 @@
 from .components import *
 from .filters import *
-from dash import dcc, callback
+from dash import dcc, callback, MATCH
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
@@ -182,3 +182,22 @@ def toggle_collapse(n, is_open):
     return False, "More Options"
   else:
     return True, "Less Options"
+
+# Callback to toggle the visibility of dynamic components
+# When the toggle button with a specific index is clicked, this function toggles the visibility of the corresponding dynamic_output_div with the same index
+# If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
+# If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
+@callback(
+  [Output({'type': 'dynamic_output_div', 'index': MATCH}, 'style'),
+    Output({'type': 'dynamic_toggle_button', 'index': MATCH}, 'children')],
+  [Input({'type': 'dynamic_toggle_button', 'index': MATCH}, 'n_clicks')],
+  [State({'type': 'dynamic_output_div', 'index': MATCH}, 'style')]
+)
+def toggle_components(n, current_style):
+  if n is None:
+    raise dash.exceptions.PreventUpdate
+
+  if n % 2 == 0:
+    return {'display': 'block'}, "Hide"
+  else:
+    return {'display': 'none'}, "Show"
