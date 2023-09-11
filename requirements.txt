@@ -8,7 +8,7 @@ dash==2.12.1
 geopy==2.4.0
 gunicorn==21.2.0
 imagekitio==3.1.0
-loguru==0.7.0
+loguru==0.7.1
 numpy==1.25.2
 openpyxl==3.1.2
 orjson==3.9.5
