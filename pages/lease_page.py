@@ -188,12 +188,12 @@ def toggle_collapse(n, is_open):
 # If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
 # If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
 @callback(
-  [Output({'type': 'dynamic_output_div', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button', 'index': MATCH}, 'children')],
-  [Input({'type': 'dynamic_toggle_button', 'index': MATCH}, 'n_clicks')],
-  [State({'type': 'dynamic_output_div', 'index': MATCH}, 'style')]
+  [Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
+    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')],
+  [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
+  [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
 )
-def toggle_components(n, current_style):
+def toggle_lease_components(n, current_style):
   if n is None:
     raise dash.exceptions.PreventUpdate
 
