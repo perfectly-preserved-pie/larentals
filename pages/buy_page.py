@@ -16,9 +16,9 @@ import uuid
 
 dash.register_page(
   __name__,
-  path='/for-sale',
-  name='WhereToLive.LA - For Sale',
-  title='WhereToLive.LA - For Sale',
+  path='/buy',
+  name='LA County Homes for Sale',
+  title='Where to Buy in LA',
   description='An interactive map of available residential properties for sale in Los Angeles County. Updated weekly.',
 )
 

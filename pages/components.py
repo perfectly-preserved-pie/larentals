@@ -950,7 +950,7 @@ class LeaseComponents:
                 html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
                 dbc.Button(
                   " Looking to buy a property instead?",
-                  href="/for-sale",
+                  href="/buy",
                   color="primary",
                   external_link=True,
                   className="bi bi-house-door-fill w-100 mt-2",
@@ -961,7 +961,7 @@ class LeaseComponents:
 
         return title_card
 
-# Create a class to hold all the components for the for-sale page
+# Create a class to hold all the components for the buy page
 class BuyComponents:
     # Class Variables
     subtype_meaning = { # Define a dictionary that maps each subtype to its corresponding meaning
