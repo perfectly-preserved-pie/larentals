@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
+from functions.howloud import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
@@ -328,6 +329,17 @@ elif 'Latitude' not in df.columns:
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
 
+# Get the HowLoud score for each row
+# If the HowLoud column is already present, iterate through the null cells
+# This assumption will reduce the number of API calls to HowLoud
+if 'HowLoud' in df.columns:
+  for row in df['HowLoud'].isnull().itertuples():
+    df.at[row.Index, 'HowLoud'] = get_howloud_score(row.Latitude, row.Longitude)
+# If the HowLoud column doesn't exist (i.e this is a first run), create it using df.at
+elif 'HowLoud' not in df.columns:
+  for row in df.itertuples():
+    df.at[row.Index, 'HowLoud'] = get_howloud_score(row.Latitude, row.Longitude)
+
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
@@ -400,6 +412,13 @@ def popup_html(dataframe, row):
   senior_community = df['senior_community'].at[i]
   subtype = df['subtype'].at[i]
   pets = df['pets_allowed'].at[i]
+  airport_description = df['HowLoud'].at[i]['airporttext']
+  airport_score = df['HowLoud'].at[i]['airports']
+  local_description = df['HowLoud'].at[i]['localtext']
+  noise_score = df['HowLoud'].at[i]['score']
+  score_description = df['HowLoud'].at[i]['scoretext']
+  traffic_description = df['HowLoud'].at[i]['traffictext']
+  traffic_score = df['HowLoud'].at[i]['traffic']
   listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
   if pd.isna(square_ft):
       square_ft = 'Unknown'
@@ -535,7 +554,23 @@ def popup_html(dataframe, row):
           <td>Sub Type</td>
           <td>{subtype}</td>
       </tr>
-    </tbody>
+      <tr id='more_info_trigger'>
+        <td colspan='2'>More Info...</td>
+      </tr>
+      <tbody id='extra_info' style='display: none;'>
+          <tr id='noise_score'>
+              <td>Noise Score</td>
+              <td>{noise_score}</td>
+          </tr>
+          <tr id='airport_noise_level'>
+              <td>Airport Noise Level</td>
+              <td>{airport_description}</td>
+          </tr>
+          <tr id='traffic_score'>
+              <td>Traffic Score</td>
+              <td>{traffic_score}</td>
+          </tr>
+          </tbody>
   </table>
   """
 
