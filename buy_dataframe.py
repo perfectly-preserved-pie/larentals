@@ -334,7 +334,7 @@ elif 'Latitude' not in df.columns:
 populated_columns = set()
 # Step 1: Populate existing HowLoud related columns if they exist
 howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
-existing_howloud_columns = [f"HowLoud_{key}" for key in howloud_keys if f"HowLoud_{key}" in df.columns]
+existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
 
 if existing_howloud_columns:
   for row in df.itertuples():
