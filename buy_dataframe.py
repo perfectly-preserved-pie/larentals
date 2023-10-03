@@ -330,38 +330,42 @@ elif 'Latitude' not in df.columns:
         df.at[row.Index, 'Longitude'] = coordinates[1]
 
 # Get the HowLoud score for each row
-# A set to keep track of columns we've already populated, so we don't fetch data redundantly.
-populated_columns = set()
-# Step 1: Populate existing HowLoud related columns if they exist
-howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
-existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
+def get_score_for_row(row, existing_howloud_columns):
+  if any(pd.isna(row[col]) for col in existing_howloud_columns):
+    return get_howloud_score(row.Latitude, row.Longitude)
+  return {}
 
-if existing_howloud_columns:
-  for row in df.itertuples():
-    if any(pd.isna(getattr(row, col)) for col in existing_howloud_columns):  # check if any value is NaN
-      score_dict = get_howloud_score(row.Latitude, row.Longitude)
-      if score_dict:
-        for key, value in score_dict.items():
-          column_name = f'howloud_{key}'
-          if column_name in existing_howloud_columns:
-            df.at[row.Index, column_name] = value
-            populated_columns.add(column_name)
+# Update existing HowLoud columns
+def update_existing_howloud_columns(df, existing_howloud_columns):
+  df['howloud_data'] = df.apply(get_score_for_row, axis=1, existing_howloud_columns=existing_howloud_columns)
+  for key in existing_howloud_columns:
+    column_name = f'howloud_{key}'
+    df[column_name] = df[column_name].combine_first(df['howloud_data'].apply(lambda x: x.get(key, pd.NA)))
+  df.drop(columns='howloud_data', inplace=True)
+  return df
+
+# Cast HowLoud columns as either nullable strings or nullable integers
+def cast_howloud_columns(df):
+  howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
+  for col in howloud_columns:
+    if df[col].dropna().astype(str).str.isnumeric().all():
+      df[col] = df[col].astype(pd.Int32Dtype())
+    else:
+      df[col] = df[col].astype(pd.StringDtype())
+  return df
+
+# Update HowLoud scores
+def update_howloud_scores(df):
+  howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
+  existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
   
-# Step 2: Create and populate new columns based on HowLoud scores
-for row in df.itertuples():
-  # If we've already populated this row's HowLoud values, skip fetching again.
-  if all(column in populated_columns for column in existing_howloud_columns):
-    continue
-      
-  score_dict = get_howloud_score(row.Latitude, row.Longitude)
+  df = update_existing_howloud_columns(df, existing_howloud_columns)
+  df = cast_howloud_columns(df)
   
-  if score_dict:
-    for key, value in score_dict.items():
-      column_name = f'howloud_{key}'
-      if column_name not in df.columns:
-        df[column_name] = NaN  # Initialize the column with NaNs  
-      df.at[row.Index, column_name] = value
-      
+  return df
+
+df = update_howloud_scores(df)
+
 # Cast HowLoud columns as either nullable strings or nullable integers
 howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
 for col in howloud_columns:
@@ -443,13 +447,22 @@ def popup_html(dataframe, row):
   senior_community = df['senior_community'].at[i]
   subtype = df['subtype'].at[i]
   pets = df['pets_allowed'].at[i]
-  airport_description = df['HowLoud'].at[i]['airporttext']
-  airport_score = df['HowLoud'].at[i]['airports']
-  local_description = df['HowLoud'].at[i]['localtext']
-  noise_score = df['HowLoud'].at[i]['score']
-  score_description = df['HowLoud'].at[i]['scoretext']
-  traffic_description = df['HowLoud'].at[i]['traffictext']
-  traffic_score = df['HowLoud'].at[i]['traffic']
+  
+  # Dynamically access HowLoud columns
+  howloud_data = {}
+  for key in howloud_keys:
+    column_name = f'howloud_{key}'
+    if column_name in df.columns:
+      howloud_data[key] = df[column_name].at[i]
+  # Now, you can access the HowLoud data using the keys in howloud_data
+  airport_description = howloud_data.get('airporttext', None)
+  airport_score = howloud_data.get('airports', None)
+  local_description = howloud_data.get('localtext', None)
+  noise_score = howloud_data.get('score', None)
+  score_description = howloud_data.get('scoretext', None)
+  traffic_description = howloud_data.get('traffictext', None)
+  traffic_score = howloud_data.get('traffic', None)
+    
   listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
   if pd.isna(square_ft):
       square_ft = 'Unknown'
