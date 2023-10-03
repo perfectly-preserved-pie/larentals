@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
+from functions.howloud import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
@@ -328,6 +329,52 @@ elif 'Latitude' not in df.columns:
         df.at[row.Index, 'Latitude'] = coordinates[0]
         df.at[row.Index, 'Longitude'] = coordinates[1]
 
+# Get the HowLoud score for each row
+def get_score_for_row(row, existing_howloud_columns):
+  if any(pd.isna(row[col]) for col in existing_howloud_columns):
+    return get_howloud_score(row.Latitude, row.Longitude)
+  return {}
+
+# Update existing HowLoud columns
+def update_existing_howloud_columns(df, existing_howloud_columns):
+  df['howloud_data'] = df.apply(get_score_for_row, axis=1, existing_howloud_columns=existing_howloud_columns)
+  for key in existing_howloud_columns:
+    column_name = f'howloud_{key}'
+    df[column_name] = df[column_name].combine_first(df['howloud_data'].apply(lambda x: x.get(key, pd.NA)))
+  df.drop(columns='howloud_data', inplace=True)
+  return df
+
+# Cast HowLoud columns as either nullable strings or nullable integers
+def cast_howloud_columns(df):
+  howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
+  for col in howloud_columns:
+    if df[col].dropna().astype(str).str.isnumeric().all():
+      df[col] = df[col].astype(pd.Int32Dtype())
+    else:
+      df[col] = df[col].astype(pd.StringDtype())
+  return df
+
+# Update HowLoud scores
+def update_howloud_scores(df):
+  howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
+  existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
+  
+  df = update_existing_howloud_columns(df, existing_howloud_columns)
+  df = cast_howloud_columns(df)
+  
+  return df
+
+df = update_howloud_scores(df)
+
+# Cast HowLoud columns as either nullable strings or nullable integers
+howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
+for col in howloud_columns:
+  # Check if the content is purely numeric
+  if df[col].dropna().astype(str).str.isnumeric().all():
+    df[col] = df[col].astype(pd.Int32Dtype())  # Cast to nullable integer
+  else:
+    df[col] = df[col].astype(pd.StringDtype())  # Cast to string
+    
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
@@ -400,6 +447,22 @@ def popup_html(dataframe, row):
   senior_community = df['senior_community'].at[i]
   subtype = df['subtype'].at[i]
   pets = df['pets_allowed'].at[i]
+  
+  # Dynamically access HowLoud columns
+  howloud_data = {}
+  for key in howloud_keys:
+    column_name = f'howloud_{key}'
+    if column_name in df.columns:
+      howloud_data[key] = df[column_name].at[i]
+  # Now, you can access the HowLoud data using the keys in howloud_data
+  airport_description = howloud_data.get('airporttext', None)
+  airport_score = howloud_data.get('airports', None)
+  local_description = howloud_data.get('localtext', None)
+  noise_score = howloud_data.get('score', None)
+  score_description = howloud_data.get('scoretext', None)
+  traffic_description = howloud_data.get('traffictext', None)
+  traffic_score = howloud_data.get('traffic', None)
+    
   listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
   if pd.isna(square_ft):
       square_ft = 'Unknown'
@@ -535,7 +598,23 @@ def popup_html(dataframe, row):
           <td>Sub Type</td>
           <td>{subtype}</td>
       </tr>
-    </tbody>
+      <tr id='more_info_trigger'>
+        <td colspan='2'>More Info...</td>
+      </tr>
+      <tbody id='extra_info' style='display: none;'>
+          <tr id='noise_score'>
+              <td>Noise Score</td>
+              <td>{noise_score}</td>
+          </tr>
+          <tr id='airport_noise_level'>
+              <td>Airport Noise Level</td>
+              <td>{airport_description}</td>
+          </tr>
+          <tr id='traffic_score'>
+              <td>Traffic Score</td>
+              <td>{traffic_score}</td>
+          </tr>
+          </tbody>
   </table>
   """
 
