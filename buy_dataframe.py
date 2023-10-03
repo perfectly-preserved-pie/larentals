@@ -330,16 +330,47 @@ elif 'Latitude' not in df.columns:
         df.at[row.Index, 'Longitude'] = coordinates[1]
 
 # Get the HowLoud score for each row
-# If the HowLoud column is already present, iterate through the null cells
-# This assumption will reduce the number of API calls to HowLoud
-if 'HowLoud' in df.columns:
-  for row in df['HowLoud'].isnull().itertuples():
-    df.at[row.Index, 'HowLoud'] = get_howloud_score(row.Latitude, row.Longitude)
-# If the HowLoud column doesn't exist (i.e this is a first run), create it using df.at
-elif 'HowLoud' not in df.columns:
-  for row in df.itertuples():
-    df.at[row.Index, 'HowLoud'] = get_howloud_score(row.Latitude, row.Longitude)
+# A set to keep track of columns we've already populated, so we don't fetch data redundantly.
+populated_columns = set()
+# Step 1: Populate existing HowLoud related columns if they exist
+howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
+existing_howloud_columns = [f"HowLoud_{key}" for key in howloud_keys if f"HowLoud_{key}" in df.columns]
 
+if existing_howloud_columns:
+  for row in df.itertuples():
+    if any(pd.isna(getattr(row, col)) for col in existing_howloud_columns):  # check if any value is NaN
+      score_dict = get_howloud_score(row.Latitude, row.Longitude)
+      if score_dict:
+        for key, value in score_dict.items():
+          column_name = f'HowLoud_{key}'
+          if column_name in existing_howloud_columns:
+            df.at[row.Index, column_name] = value
+            populated_columns.add(column_name)
+  
+# Step 2: Create and populate new columns based on HowLoud scores
+for row in df.itertuples():
+  # If we've already populated this row's HowLoud values, skip fetching again.
+  if all(column in populated_columns for column in existing_howloud_columns):
+    continue
+      
+  score_dict = get_howloud_score(row.Latitude, row.Longitude)
+  
+  if score_dict:
+    for key, value in score_dict.items():
+      column_name = f'howloud_{key}'
+      if column_name not in df.columns:
+        df[column_name] = NaN  # Initialize the column with NaNs  
+      df.at[row.Index, column_name] = value
+      
+# Cast HowLoud columns as either nullable strings or nullable integers
+howloud_columns = [col for col in df.columns if col.startswith("HowLoud_")]
+for col in howloud_columns:
+  # Check if the content is purely numeric
+  if df[col].dropna().astype(str).str.isnumeric().all():
+    df[col] = df[col].astype(pd.Int32Dtype())  # Cast to nullable integer
+  else:
+    df[col] = df[col].astype(pd.StringDtype())  # Cast to string
+    
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
