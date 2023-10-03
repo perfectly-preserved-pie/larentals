@@ -342,7 +342,7 @@ if existing_howloud_columns:
       score_dict = get_howloud_score(row.Latitude, row.Longitude)
       if score_dict:
         for key, value in score_dict.items():
-          column_name = f'HowLoud_{key}'
+          column_name = f'howloud_{key}'
           if column_name in existing_howloud_columns:
             df.at[row.Index, column_name] = value
             populated_columns.add(column_name)
