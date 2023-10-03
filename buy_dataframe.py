@@ -363,7 +363,7 @@ for row in df.itertuples():
       df.at[row.Index, column_name] = value
       
 # Cast HowLoud columns as either nullable strings or nullable integers
-howloud_columns = [col for col in df.columns if col.startswith("HowLoud_")]
+howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
 for col in howloud_columns:
   # Check if the content is purely numeric
   if df[col].dropna().astype(str).str.isnumeric().all():
