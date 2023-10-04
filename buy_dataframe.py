@@ -447,22 +447,6 @@ def popup_html(dataframe, row):
   senior_community = df['senior_community'].at[i]
   subtype = df['subtype'].at[i]
   pets = df['pets_allowed'].at[i]
-  
-  # Dynamically access HowLoud columns
-  howloud_data = {}
-  for key in howloud_keys:
-    column_name = f'howloud_{key}'
-    if column_name in df.columns:
-      howloud_data[key] = df[column_name].at[i]
-  # Now, you can access the HowLoud data using the keys in howloud_data
-  airport_description = howloud_data.get('airporttext', None)
-  airport_score = howloud_data.get('airports', None)
-  local_description = howloud_data.get('localtext', None)
-  noise_score = howloud_data.get('score', None)
-  score_description = howloud_data.get('scoretext', None)
-  traffic_description = howloud_data.get('traffictext', None)
-  traffic_score = howloud_data.get('traffic', None)
-    
   listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
   if pd.isna(square_ft):
       square_ft = 'Unknown'
@@ -598,23 +582,6 @@ def popup_html(dataframe, row):
           <td>Sub Type</td>
           <td>{subtype}</td>
       </tr>
-      <tr id='more_info_trigger'>
-        <td colspan='2'>More Info...</td>
-      </tr>
-      <tbody id='extra_info' style='display: none;'>
-          <tr id='noise_score'>
-              <td>Noise Score</td>
-              <td>{noise_score}</td>
-          </tr>
-          <tr id='airport_noise_level'>
-              <td>Airport Noise Level</td>
-              <td>{airport_description}</td>
-          </tr>
-          <tr id='traffic_score'>
-              <td>Traffic Score</td>
-              <td>{traffic_score}</td>
-          </tr>
-          </tbody>
   </table>
   """
 
