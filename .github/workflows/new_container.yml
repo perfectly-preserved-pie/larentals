@@ -14,7 +14,9 @@ jobs:
     steps:
     - name: Check which workflow was run
       id: check_dev
-      run: echo "::set-output name=is_dev::${{ github.event.workflow_run.name == 'Build and Publish - Dev Build' }}"
+      env:
+        IS_DEV: ${{ github.event.workflow_run.name == 'Build and Publish - Dev Build' }}
+      run: echo "is_dev=${IS_DEV}" >> $GITHUB_ENV
 
   deploy:
     needs: check_workflow
