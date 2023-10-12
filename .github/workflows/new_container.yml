@@ -14,14 +14,11 @@ jobs:
     steps:
     - name: Check which workflow was run
       id: check_dev
-      env:
-        IS_DEV: ${{ github.event.workflow_run.name == 'Build and Publish - Dev Build' }}
-      run: echo "is_dev=${IS_DEV}" >> $GITHUB_ENV
-
+      run: echo "is_dev=${{ github.event.workflow_run.name == 'Build and Publish - Dev Build' }}" >> $GITHUB_ENV
+  
   deploy:
     needs: check_workflow
     runs-on: ubuntu-latest
-    
     steps:
     - name: Execute SSH commands on remote server for Prod
       if: needs.check_workflow.outputs.is_dev == 'false'
