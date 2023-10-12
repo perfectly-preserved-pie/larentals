@@ -1,0 +1,38 @@
+name: Pull New Image & Restart Container
+
+on:
+  workflow_run:
+    workflows: ["Build and Publish", "Build and Publish - Dev Build"]
+    types: 
+      - completed
+
+jobs:
+  check_workflow:
+    runs-on: ubuntu-latest
+    outputs:
+      is_dev: ${{ steps.check_dev.outputs.is_dev }}
+    steps:
+    - name: Check which workflow was run
+      id: check_dev
+      run: echo "::set-output name=is_dev::${{ github.event.workflow_run.name == 'Build and Publish - Dev Build' }}"
+
+  deploy:
+    needs: check_workflow
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Execute SSH commands on remote server for Prod
+      if: needs.check_workflow.outputs.is_dev == 'false'
+      uses: JimCronqvist/action-ssh@master
+      with:
+        hosts: ${{ secrets.HOST }}
+        privateKey: ${{ secrets.PRIVATE_KEY }}
+        command: docker pull strayingfromthepath/larentals && docker restart wheretolivedotla
+
+    - name: Execute SSH commands on remote server for Dev
+      if: needs.check_workflow.outputs.is_dev == 'true'
+      uses: JimCronqvist/action-ssh@master
+      with:
+        hosts: ${{ secrets.HOST }}
+        privateKey: ${{ secrets.PRIVATE_KEY }}
+        command: docker pull strayingfromthepath/larentals:dev && docker restart wheretolivedotla-dev
