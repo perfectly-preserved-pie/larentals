@@ -45,15 +45,26 @@ df.columns = df.columns.str.strip()
 
 # Standardize the column names by renaminmg them
 # https://stackoverflow.com/a/65332240
-df = df.rename(columns=lambda c: 'mls_number' if c.startswith('Listing') else c)
-df = df.rename(columns=lambda c: 'subtype' if c.startswith('Sub Type') else c)
-df = df.rename(columns=lambda c: 'street_number' if c.startswith('St#') else c)
-df = df.rename(columns=lambda c: 'street_name' if c.startswith('St Name') else c)
+# Define a renaming dictionary based on patterns
+rename_dict = {
+  'Garage Spaces': 'garage_spaces',
+  'List Office Phone': 'phone_number',
+  'Listing': 'mls_number',
+  'St Name': 'street_name',
+  'St#': 'street_number',
+  'Sub Type': 'subtype',
+  'Yr': 'YrBuilt',
+}
+
+# Check if 'Price Per' column exists and add to renaming dictionary
+if any(col.startswith('Price Per') for col in df.columns):
+  rename_dict['Price Per'] = 'ppsqft'
+
+# Rename columns
+df = df.rename(columns=lambda c: next((v for k, v in rename_dict.items() if k in c), c))
+
+# Special case for list price due to additional condition
 df = df.rename(columns=lambda c: 'list_price' if c.startswith('List') and c.endswith('Price') else c)
-df = df.rename(columns=lambda c: 'garage_spaces' if c.startswith('Garage Spaces') else c)
-df = df.rename(columns=lambda c: 'phone_number' if c.startswith('List Office Phone') else c)
-df = df.rename(columns=lambda c: 'ppsqft' if c.startswith('Price Per') else c)
-df = df.rename(columns=lambda c: 'YrBuilt' if c.startswith('Yr') else c)
 
 # Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
@@ -78,6 +89,11 @@ df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors=
 
 # Cast the list price column as integers
 df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
+
+# Check if 'ppsqft' column exists
+if 'ppsqft' not in df.columns:
+  # If it has a different name, replace 'Sqft' below with the correct column name
+  df['ppsqft'] = (df['list_price'] / df['Sqft']).round(2)
 
 # Create a function to get coordinates from the full street address
 def return_coordinates(address, row_index):
