@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import requests
 import sys
+import time
 
 ## SETUP AND VARIABLES
 load_dotenv(find_dotenv())
@@ -161,7 +162,10 @@ for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'
 # Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
 def webscrape_bhhs(url, row_index, mls_number):
     try:
-        response = requests.get(url)
+        start_time = time.time()
+        response = requests.get(url, timeout=5)
+        elapsed_time = time.time() - start_time
+        logger.info(f"HTTP request for {mls_number} took {elapsed_time:.2f} seconds.")
         soup = bs4(response.text, 'html.parser')
         # First find the URL to the actual listing instead of just the search result page
         try:
