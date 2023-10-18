@@ -75,21 +75,13 @@ df = df[df['mls_number'].notna()]
 # Keep the last duplicate in case of updated listing details
 df = df.drop_duplicates(subset='mls_number', keep="last")
 
-# Remove all $ and , symbols from specific columns
-# https://stackoverflow.com/a/46430853
+# Columns to clean
+cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft', 'YrBuilt']
 if 'ppsqft' in df.columns:
-  cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'ppsqft', 'Sqft']
-elif 'ppsqft' not in df.columns:
-  cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft']
-# pass them to df.replace(), specifying each char and it's replacement:
-df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
+  cols.append('ppsqft')
 
-# Remove the square footage & YrBuilt abbreviations and cast as nullable Integer type
-df['Sqft'] = df['Sqft'].str.split('/').str[0].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['YrBuilt'] = df['YrBuilt'].str.split('/').str[0].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-
-# Cast the list price column as integers
-df['list_price'] = df['list_price'].apply(pd.to_numeric, errors='coerce', downcast='integer')
+# Remove all non-numeric characters, convert to numeric, and cast to Nullable Integer Type
+df[cols] = df[cols].replace(to_replace='[^\d]', value='', regex=True).apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
 # Check if 'ppsqft' column exists
 if 'ppsqft' not in df.columns:
@@ -366,10 +358,9 @@ df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric, errors='coerce')
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 # These columns should stay floats
-df['ppsqft'] = df['ppsqft'].apply(pd.to_numeric, errors='coerce')
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
-df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce')
+df['garage_spaces'] = df['garage_spaces'].astype('Float64')
 # Convert the rest into nullable integer data types
 # We should do this because these fields will often have missing data, forcing a conversion to float64 
 # https://pandas.pydata.org/docs/user_guide/integer_na.html
@@ -378,12 +369,6 @@ df['garage_spaces'] = df['garage_spaces'].apply(pd.to_numeric, errors='coerce')
 # And this will prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
 # And this will also convert non-integers into NaNs
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['Sqft'] = df['Sqft'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['YrBuilt'] = df['YrBuilt'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositKey'] = df['DepositKey'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositOther'] = df['DepositOther'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositPets'] = df['DepositPets'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
-df['DepositSecurity'] = df['DepositSecurity'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
 # Replace all empty values in the following columns with NaN and cast the column as dtype string
 # https://stackoverflow.com/a/47810911
