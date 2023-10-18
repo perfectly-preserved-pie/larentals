@@ -27,7 +27,11 @@ jobs:
       with:
         hosts: ${{ secrets.HOST }}
         privateKey: ${{ secrets.PRIVATE_KEY }}
-        command: docker pull strayingfromthepath/larentals:latest && docker restart wheretolivedotla
+        command: |
+          docker stop wheretolivedotla && 
+          docker rm wheretolivedotla && 
+          docker pull strayingfromthepath/larentals &&
+          docker run --name wheretolivedotla strayingfromthepath/larentals
 
     - name: Execute SSH commands on remote server for Dev
       if: needs.check_workflow.outputs.is_dev == 'true'
@@ -36,8 +40,8 @@ jobs:
         hosts: ${{ secrets.HOST }}
         privateKey: ${{ secrets.PRIVATE_KEY }}
         command: |
-          docker stop wheretolivedotla && 
-          docker rm wheretolivedotla && 
-          docker pull strayingfromthepath/larentals &&
-          docker run --name wheretolivedotla strayingfromthepath/larentals
+          docker stop wheretolivedotla-dev && 
+          docker rm wheretolivedotl-deva && 
+          docker pull strayingfromthepath/larentals:dev &&
+          docker run --name wheretolivedotla-dev strayingfromthepath/larentals:dev
 
