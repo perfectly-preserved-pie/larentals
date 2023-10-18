@@ -35,4 +35,9 @@ jobs:
       with:
         hosts: ${{ secrets.HOST }}
         privateKey: ${{ secrets.PRIVATE_KEY }}
-        command: docker pull strayingfromthepath/larentals:dev && docker restart wheretolivedotla-dev
+        command: |
+          docker stop wheretolivedotla && 
+          docker rm wheretolivedotla && 
+          docker pull strayingfromthepath/larentals &&
+          docker run --name wheretolivedotla strayingfromthepath/larentals
+
