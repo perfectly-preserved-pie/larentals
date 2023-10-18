@@ -27,7 +27,7 @@ jobs:
       with:
         hosts: ${{ secrets.HOST }}
         privateKey: ${{ secrets.PRIVATE_KEY }}
-        command: docker pull strayingfromthepath/larentals && docker restart wheretolivedotla
+        command: docker pull strayingfromthepath/larentals:latest && docker restart wheretolivedotla
 
     - name: Execute SSH commands on remote server for Dev
       if: needs.check_workflow.outputs.is_dev == 'true'
