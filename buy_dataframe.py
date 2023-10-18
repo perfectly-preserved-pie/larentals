@@ -73,22 +73,35 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip()
 
-# Standardize the column names by renaming them
-# https://stackoverflow.com/a/65332240
-df = df.rename(columns=lambda c: 'mls_number' if c.startswith('Listing') and 'MLS' in c else c)
-df = df.rename(columns=lambda c: 'subtype' if c.startswith('Sub Type') else c)
-df = df.rename(columns=lambda c: 'street_number' if c.startswith('St#') else c)
-df = df.rename(columns=lambda c: 'street_name' if c.startswith('St Name') else c)
-df = df.rename(columns=lambda c: 'list_price' if c.startswith('List Price') else c)
-df = df.rename(columns=lambda c: 'garage_spaces' if c.startswith('Garage Spaces') else c)
-df = df.rename(columns=lambda c: 'ppsqft' if c.startswith('Price Per') else c)
-df = df.rename(columns=lambda c: 'year_built' if c.startswith('Yr') else c)
-df = df.rename(columns=lambda c: 'hoa_fee' if c.startswith('HOA Fee') else c)
-df = df.rename(columns=lambda c: 'hoa_fee_frequency' if c.startswith('HOA Frequency') else c)
-df = df.rename(columns=lambda c: 'space_rent' if c.startswith('Space') else c)
-df = df.rename(columns=lambda c: 'park_name' if c.startswith('Park') else c)
-df = df.rename(columns=lambda c: 'senior_community' if c.startswith('Senior') else c)
-df = df.rename(columns=lambda c: 'pets_allowed' if c.startswith('Pets') else c)
+# Using a dictionary for clearer column renaming
+specific_column_map = {
+  'Garage Spaces': 'garage_spaces',
+  'Hfrequency': 'hoa_fee_frequency',
+  'HOA Fee Frequency': 'hoa_fee_frequency',
+  'HOA Fee': 'hoa_fee',
+  'HOA Frequency': 'hoa_fee_frequency',
+  'List Price': 'list_price',
+  'Listing ID (MLS#)': 'mls_number',
+  'Park Name': 'park_name',
+  'PetsAllowed': 'pets_allowed',
+  'Price Per Square Foot': 'ppsqft',
+  'SeniorCommunity': 'senior_community',
+  'SeniorCommunityYN': 'senior_community',
+  'Space Rent': 'space_rent',
+  'St Name': 'street_name',
+  'St#': 'street_number',
+  'Sub Type': 'subtype',
+  'Yr Built': 'year_built',
+}
+
+# Rename columns using the specific map
+renamed_sheets_corrected = {}
+for sheet_name, sheet_df in xlsx.items():
+  sheet_df.columns = sheet_df.columns.str.strip()
+  renamed_sheets_corrected[sheet_name] = sheet_df.rename(columns=specific_column_map)
+
+# Concatenate all sheets into a single DataFrame
+df = pd.concat(renamed_sheets_corrected.values())
 
 # Drop all rows that don't have a MLS mls_number (aka misc data we don't care about)
 # https://stackoverflow.com/a/13413845
@@ -402,20 +415,23 @@ df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype
 df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
 
 # Convert date_processed into DateTime
-df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
+df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=False, format='%Y-%m-%d')
 
-# Cast these columns as nullable integers
-cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
-for col in cols:
-  df[col] = df[col].astype('Int64')
-# Cast these columns as nullable floats
-cols = ['ppsqft', 'Latitude', 'Longitude', 'hoa_fee', 'space_rent']
-for col in cols:
-  df[col] = df[col].astype(str).replace('N/A', pd.NA)
-  df[col] = df[col].str.replace(',', '')  # remove commas
-  df[col] = df[col].str.replace(r'[^0-9\.]', '', regex=True)  # remove any other non-numeric characters
-  df[col] = df[col].replace('', pd.NA)  # replace empty strings with np.nan
-  df[col] = pd.to_numeric(df[col], errors='coerce')
+cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee']
+# Convert columns to string type for string operations
+df[cols] = df[cols].astype(str)
+# Replace 'N/A' with pd.NA
+df[cols] = df[cols].replace('N/A', pd.NA)
+# Remove commas and other non-numeric characters
+df[cols] = df[cols].replace({',': '', r'[^0-9\.]': ''}, regex=True)
+# Replace empty strings with pd.NA
+df[cols] = df[cols].replace('', pd.NA)
+# Convert columns to numeric
+df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
+# Cast specified columns as nullable integers
+int_cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
+df[int_cols] = df[int_cols].astype('Int64')
+
 # Cast these columns as nullable strings
 cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'Br/Ba', 'pets_allowed', 'senior_community', 'hoa_fee_frequency']
 for col in cols:
@@ -493,6 +509,8 @@ def popup_html(dataframe, row):
   elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
       space_rent = f"${space_rent:,.2f}"
   elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype != 'MH':
+      space_rent = "N/A"
+  elif pd.isna(space_rent) and not pd.isna(subtype) and subtype != 'MH':
       space_rent = "N/A"
   if pd.isna(park_name) == True and not pd.isna(subtype) and subtype == 'MH':
       park_name = 'Unknown'
