@@ -2,6 +2,7 @@ import requests
 import os
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger
+import pandas as pd
 
 load_dotenv(find_dotenv())
 
@@ -26,3 +27,38 @@ def get_howloud_score(lat, lon):
         else:
             logger.error("Error fetching HowLoud score for {lat}, {lon}. Error: {error}. Response: {response}", lat=lat, lon=lon, error=e, response=r.text)
         return None
+    
+# Get the HowLoud score for each row
+def get_score_for_row(row, existing_howloud_columns):
+  if any(pd.isna(row[col]) for col in existing_howloud_columns):
+    return get_howloud_score(row.Latitude, row.Longitude)
+  return {}
+
+# Update existing HowLoud columns
+def update_existing_howloud_columns(df, existing_howloud_columns):
+  df['howloud_data'] = df.apply(get_score_for_row, axis=1, existing_howloud_columns=existing_howloud_columns)
+  for key in existing_howloud_columns:
+    column_name = f'howloud_{key}'
+    df[column_name] = df[column_name].combine_first(df['howloud_data'].apply(lambda x: x.get(key, pd.NA)))
+  df.drop(columns='howloud_data', inplace=True)
+  return df
+
+# Cast HowLoud columns as either nullable strings or nullable integers
+def cast_howloud_columns(df):
+  howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
+  for col in howloud_columns:
+    if df[col].dropna().astype(str).str.isnumeric().all():
+      df[col] = df[col].astype(pd.Int32Dtype())
+    else:
+      df[col] = df[col].astype(pd.StringDtype())
+  return df
+
+# Update HowLoud scores
+def update_howloud_scores(df):
+  howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
+  existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
+  
+  df = update_existing_howloud_columns(df, existing_howloud_columns)
+  df = cast_howloud_columns(df)
+  
+  return df
