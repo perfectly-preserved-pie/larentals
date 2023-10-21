@@ -6,7 +6,6 @@ from functions.noise_level_utils import *
 from functions.mls_image_processing_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
-from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
 import glob
 import os
