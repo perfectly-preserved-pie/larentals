@@ -1,17 +1,18 @@
 from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
+from functions.beautifulsoup import *
+from functions.geopy import *
 from functions.howloud import *
+from functions.imagekit import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
-from numpy import NaN
 import glob
 import os
 import pandas as pd
 import requests
 import sys
-import time
 
 ## SETUP AND VARIABLES
 load_dotenv(find_dotenv())
@@ -88,173 +89,20 @@ if 'ppsqft' not in df.columns:
   # If it has a different name, replace 'Sqft' below with the correct column name
   df['ppsqft'] = (df['list_price'] / df['Sqft']).round(2)
 
-# Create a function to get coordinates from the full street address
-def return_coordinates(address, row_index):
-    try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
-        lat = float(geocode_info.latitude)
-        lon = float(geocode_info.longitude)
-    except Exception as e:
-        lat = NaN
-        lon = NaN
-        logger.warning(f"Couldn't fetch geocode information for {address} (row {row.Index} of {len(df)}) because of {e}.")
-    logger.success(f"Fetched coordinates {lat}, {lon} for {address} (row {row.Index} of {len(df)}).")
-    return lat, lon
-
-# Create a function to get a missing city
-def fetch_missing_city(address):
-    try:
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
-        # Get the city by using a ??? whatever method this is
-        # https://gis.stackexchange.com/a/326076
-        # First get the raw geocode information
-        raw = geocode_info.raw['address_components']
-        # Then dig down to find the 'locality' aka city
-        city = [addr['long_name'] for addr in raw if 'locality' in addr['types']][0]
-    except Exception as e:
-        city = NaN
-        logger.warning(f"Couldn't fetch city for {address} because of {e}.")
-    logger.success(f"Fetched city ({city}) for {address}.")
-    return  city
-
 # Fetch missing city names
 for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
-  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}")
+  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
 
 # Create a new column with the Street Number & Street Name
 df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City']
 
-# Create a function to find missing postal codes based on short address
-def return_postalcode(address):
-    try:
-        # Forward geocoding the short address so we can get coordinates
-        geocode_info = g.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
-        # Reverse geocoding the coordinates so we can get the address object components
-        components = g.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
-        # Create a dataframe from this list of dictionaries
-        components_df = pd.DataFrame(components)
-        for row in components_df.itertuples():
-            # Select the row that has the postal_code list
-            if row.types == ['postal_code']:
-                postalcode = row.long_name
-    except Exception as e:
-        logger.warning(f"Couldn't fetch postal code for {address} because {e}.")
-        return pd.NA
-    logger.success(f"Fetched postal code {postalcode} for {address}.")
-    return int(postalcode)
-
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[((df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor'))].itertuples():
-    missing_postalcode = return_postalcode(df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].at[row.Index, 'short_address'])
-    df.at[row.Index, 'PostalCode'] = missing_postalcode
-
-## Webscraping Time
-# Create a function to scrape the listing's Berkshire Hathaway Home Services (BHHS) page using BeautifulSoup 4 and extract some info
-def webscrape_bhhs(url, row_index, mls_number):
-    try:
-        start_time = time.time()
-        response = requests.get(url, timeout=5)
-        elapsed_time = time.time() - start_time
-        logger.info(f"HTTP request for {mls_number} took {elapsed_time:.2f} seconds.")
-        soup = bs4(response.text, 'html.parser')
-        # First find the URL to the actual listing instead of just the search result page
-        try:
-          link = 'https://www.bhhscalifornia.com' + soup.find('a', attrs={'class' : 'btn cab waves-effect waves-light btn-details show-listing-details'})['href']
-          logger.success(f"Successfully fetched listing URL for {mls_number} (row {row_index} out of {len(df)}).")
-        except AttributeError as e:
-          link = None
-          logger.warning(f"Couldn't fetch listing URL for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
-          pass
-        # If the URL is available, fetch the MLS photo and listed date
-        if link is not None:
-          # Now find the MLS photo URL
-          # https://stackoverflow.com/a/44293555
-          try:
-            photo = soup.find('a', attrs={'class' : 'show-listing-details'}).contents[1]['src']
-            logger.success(f"Successfully fetched MLS photo for {mls_number} (row {row_index} out of {len(df)}).")
-          except AttributeError as e:
-            photo = None
-            logger.warning(f"Couldn't fetch MLS photo for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
-            pass
-          # For the list date, split the p class into strings and get the last element in the list
-          # https://stackoverflow.com/a/64976919
-          try:
-            listed_date = soup.find('p', attrs={'class' : 'summary-mlsnumber'}).text.split()[-1]
-            logger.success(f"Successfully fetched listed date for {mls_number} (row {row_index} out of {len(df)}).")
-          except AttributeError as e:
-            listed_date = pd.NaT
-            logger.warning(f"Couldn't fetch listed date for {mls_number} (row {row_index} out of {len(df)}). Passing on...")
-            pass
-        elif link is None:
-          pass
-    except Exception as e:
-      listed_date = pd.NaT
-      photo = NaN
-      link = NaN
-      logger.warning(f"Couldn't scrape BHHS page for {mls_number} (row {row_index} out of {len(df)}) because of {e}. Passing on...")
-      pass
-    return listed_date, photo, link
-
-# Create a function to check for expired listings based on the presence of a string
-def check_expired_listing(url, mls_number):
-  try:
-    response = requests.get(url, timeout=5)
-    soup = bs4(response.text, 'html.parser')
-    # Detect if the listing has expired. Remove \t, \n, etc. and strip whitespaces
-    try:
-      soup.find('div', class_='page-description').text.replace("\r", "").replace("\n", "").replace("\t", "").strip()
-      return True
-    except AttributeError:
-      return False
-  except Exception as e:
-    logger.warning(f"Couldn't detect if the listing for {mls_number} has expired because {e}.")
-    return False
-
-# Create a function to upload the file to ImageKit and then transform it
-# https://github.com/imagekit-developer/imagekit-python#file-upload
-def imagekit_transform(bhhs_mls_photo_url, mls):
-  # Set up options per https://github.com/imagekit-developer/imagekit-python/issues/31#issuecomment-1278883286
-  options = UploadFileRequestOptions(
-    is_private_file=False,
-    use_unique_file_name=False,
-    #folder = 'wheretolivedotla'
-  )
-  # if the MLS photo URL from BHHS isn't null (a photo IS available), then upload it to ImageKit
-  if pd.isnull(bhhs_mls_photo_url) == False:
-      try:
-        uploaded_image = imagekit.upload_file(
-          file = f"{bhhs_mls_photo_url}", # required
-          file_name = f"{mls}", # required
-          options = options
-        ).url
-      except Exception as e:
-        uploaded_image = None
-        logger.warning(f"Couldn't upload image to ImageKit because {e}. Passing on...")
-  elif pd.isnull(bhhs_mls_photo_url) == True:
-    uploaded_image = None
-    logger.info(f"No image URL found on BHHS for {bhhs_mls_photo_url}. Not uploading anything to ImageKit. Passing on...")
-    pass
-  # Now transform the uploaded image
-  # https://github.com/imagekit-developer/imagekit-python#url-generation
-  if uploaded_image is not None:
-    try:
-      global transformed_image
-      transformed_image = imagekit.url({
-        "src": uploaded_image,
-        "transformation" : [{
-          "height": "300",
-          "width": "400"
-        }]
-      })
-    except Exception as e:
-      transformed_image = None
-      logger.warning(f"Couldn't transform image because {e}. Passing on...")
-      pass
-  elif uploaded_image is None:
-    transformed_image = None
-  return transformed_image
+for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
+  short_address = df.at[row.Index, 'short_address']
+  missing_postalcode = return_postalcode(short_address, geolocator=g)
+  df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 # Tag each row with the date it was processed
 if 'date_processed' in df.columns:
@@ -270,77 +118,21 @@ elif 'date_processed' not in df.columns:
 # https://stackoverflow.com/a/11858532
 df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].map(str)
 
-# Iterate through the dataframe and get the listed date and photo for rows that don't have them
-# If the Listed Date column is already present, iterate through the null cells
-# We can use the presence of a Listed Date as a proxy for MLS Photo; generally, either both or neither exist/don't exist together
-# This assumption will reduce the number of HTTP requests we send to BHHS
-if 'listed_date' in df.columns:
-    for row in df.loc[(df['listed_date'].isnull()) & df['date_processed'].isnull()].itertuples():
-        mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
-        df.at[row.Index, 'listed_date'] = webscrape[0]
-        df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
-        df.at[row.Index, 'listing_url'] = webscrape[2]
-# if the Listed Date column doesn't exist (i.e this is a first run), create it using df.at
-elif 'listed_date' not in df.columns:
-    for row in df.itertuples():
-        mls_number = row[1]
-        webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", {row.Index}, {row.mls_number})
-        df.at[row.Index, 'listed_date'] = webscrape[0]
-        df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1])
-        df.at[row.Index, 'listing_url'] = webscrape[2]
+# Iterate through the dataframe and get the listed date and photo for rows 
+for row in df.itertuples():
+  mls_number = row[1]
+  webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", row.Index, row.mls_number, len(df))
+  df.at[row.Index, 'listed_date'] = webscrape[0]
+  df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
+  df.at[row.Index, 'listing_url'] = webscrape[2]
 
-# Iterate through the dataframe and fetch coordinates for rows that don't have them
-# If the Latitude column is already present, iterate through the null cells
-# This assumption will reduce the number of API calls to Google Maps
-if 'Latitude' in df.columns:
-    for row in df['Latitude'].isnull().itertuples():
-        coordinates = return_coordinates(df.at[row.Index, 'full_street_address'], row.Index)
-        df.at[row.Index, 'Latitude'] = coordinates[0]
-        df.at[row.Index, 'Longitude'] = coordinates[1]
-# If the Coordinates column doesn't exist (i.e this is a first run), create it using df.at
-elif 'Latitude' not in df.columns:
-    for row in df.itertuples():
-        coordinates = return_coordinates(df.at[row.Index, 'full_street_address'], row.Index)
-        df.at[row.Index, 'Latitude'] = coordinates[0]
-        df.at[row.Index, 'Longitude'] = coordinates[1]
+# Iterate through the dataframe and fetch coordinates for rows
+for row in df.itertuples():
+  coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
+  df.at[row.Index, 'Latitude'] = coordinates[0]
+  df.at[row.Index, 'Longitude'] = coordinates[1]
 
-# Get the HowLoud score for each row
-def get_score_for_row(row, existing_howloud_columns):
-  if any(pd.isna(row[col]) for col in existing_howloud_columns):
-    return get_howloud_score(row.Latitude, row.Longitude)
-  return {}
-
-# Update existing HowLoud columns
-def update_existing_howloud_columns(df, existing_howloud_columns):
-  df['howloud_data'] = df.apply(get_score_for_row, axis=1, existing_howloud_columns=existing_howloud_columns)
-  for key in existing_howloud_columns:
-    column_name = f'howloud_{key}'
-    df[column_name] = df[column_name].combine_first(df['howloud_data'].apply(lambda x: x.get(key, pd.NA)))
-  df.drop(columns='howloud_data', inplace=True)
-  return df
-
-# Cast HowLoud columns as either nullable strings or nullable integers
-def cast_howloud_columns(df):
-  howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
-  for col in howloud_columns:
-    if df[col].dropna().astype(str).str.isnumeric().all():
-      df[col] = df[col].astype(pd.Int32Dtype())
-    else:
-      df[col] = df[col].astype(pd.StringDtype())
-  return df
-
-# Update HowLoud scores
-def update_howloud_scores(df):
-  howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
-  existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
-  
-  df = update_existing_howloud_columns(df, existing_howloud_columns)
-  df = cast_howloud_columns(df)
-  
-  return df
-
-df = update_howloud_scores(df)
+#df = update_howloud_scores(df)
 
 # Split the Bedroom/Bathrooms column into separate columns based on delimiters
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
@@ -665,7 +457,7 @@ for row in outside_ca_rows.itertuples():
   counter += 1
   logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
   # Re-geocode the row
-  coordinates = return_coordinates(row.full_street_address, row.Index)
+  coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
   df_combined.at[row.Index, 'Latitude'] = coordinates[0]
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new dataframe
