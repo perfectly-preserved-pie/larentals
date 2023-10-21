@@ -146,7 +146,7 @@ for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')
   df.at[row.Index, 'PostalCode'] = missing_postalcode
 
 # Tag each row with the date it was processed
-for row in df[df.date_processed.isnull()].itertuples():
+for row in df.itertuples():
   df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
 
 # Create a new column with the full street address
