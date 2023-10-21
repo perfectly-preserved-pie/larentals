@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 
 # Initialize logging
-logger = logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def return_coordinates(address: str, row_index: int, geolocator: GoogleV3, total_rows: int) -> Tuple[Optional[float], Optional[float]]:
     """

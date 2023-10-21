@@ -7,7 +7,7 @@ import sys
 import time
 
 # Initialize logging
-logger = logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def check_expired_listing(url: str, mls_number: str) -> bool:
     """
