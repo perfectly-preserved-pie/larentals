@@ -1,6 +1,7 @@
 from imagekitio import ImageKit
+from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
-from typing import Optional, Dict
+from typing import Optional
 import pandas as pd
 import sys
 
@@ -30,10 +31,11 @@ def imagekit_transform(
     transformed_image: Optional[str] = None
     
     # Set up upload options
-    options: Dict = {
-        'is_private_file': False,
-        'use_unique_file_name': False,
-    }
+    options = UploadFileRequestOptions(
+        is_private_file=False,
+        use_unique_file_name=False,
+        #folder = 'wheretolivedotla'
+  )
     
     # Check if a photo URL is available
     if pd.notnull(bhhs_mls_photo_url):
@@ -62,4 +64,5 @@ def imagekit_transform(
         except Exception as e:
             logger.warning(f"Couldn't transform image because {e}.")
     
+    logger.success(f"Transformed photo {transformed_image} generated for {mls}.")
     return transformed_image
