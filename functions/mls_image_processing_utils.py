@@ -17,14 +17,6 @@ def imagekit_transform(
     ) -> Optional[str]:
     """
     Uploads and transforms an image using ImageKit.
-    
-    Parameters:
-    bhhs_mls_photo_url (Optional[str]): The URL of the image from BHHS MLS. Can be None.
-    mls (str): The MLS identifier for the image.
-    imagekit_instance (ImageKit): An instance of the ImageKit class for API interactions.
-    
-    Returns:
-    Optional[str]: The URL of the transformed image or None if unsuccessful.
     """
     # Initialize variables
     uploaded_image: Optional[str] = None
@@ -35,7 +27,7 @@ def imagekit_transform(
         is_private_file=False,
         use_unique_file_name=False,
         #folder = 'wheretolivedotla'
-  )
+    )
     
     # Check if a photo URL is available
     if pd.notnull(bhhs_mls_photo_url):
@@ -47,9 +39,10 @@ def imagekit_transform(
             ).url
         except Exception as e:
             logger.warning(f"Couldn't upload image to ImageKit because {e}.")
-    
+            return None  # Return early if upload fails
     else:
         logger.info(f"No image URL found on BHHS for {mls}. Not uploading anything to ImageKit.")
+        return None  # Return early if no image URL
     
     # Transform the uploaded image if it exists
     if uploaded_image:
@@ -61,8 +54,9 @@ def imagekit_transform(
                     "width": "400"
                 }]
             })
+            logger.success(f"Transformed photo {transformed_image} generated for {mls}.")  # Log success only if transform succeeds
         except Exception as e:
             logger.warning(f"Couldn't transform image because {e}.")
+            return None  # Return early if transform fails
     
-    logger.success(f"Transformed photo {transformed_image} generated for {mls}.")
     return transformed_image
