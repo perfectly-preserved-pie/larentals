@@ -63,7 +63,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         start_time = time.time()
         response = requests.get(url, timeout=5)
         elapsed_time = time.time() - start_time
-        logger.info(f"HTTP request for {mls_number} took {elapsed_time:.2f} seconds.")
+        logger.debug(f"HTTP request for {mls_number} took {elapsed_time:.2f} seconds.")
         
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -71,19 +71,19 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         link_tag = soup.find('a', attrs={'class': 'btn cab waves-effect waves-light btn-details show-listing-details'})
         if link_tag:
             link = 'https://www.bhhscalifornia.com' + link_tag['href']
-            logger.debug(f"Fetched listing URL for {mls_number} (row {row_index + 1} out of {total_rows}).")
+            logger.success(f"Fetched listing URL for {mls_number} (row {row_index + 1} out of {total_rows}).")
         
         # Fetch MLS photo URL
         photo_tag = soup.find('a', attrs={'class': 'show-listing-details'})
         if photo_tag and photo_tag.contents[1].has_attr('src'):
             photo = photo_tag.contents[1]['src']
-            logger.debug(f"Fetched MLS photo {photo} for {mls_number} (row {row_index + 1} out of {total_rows}).")
+            logger.success(f"Fetched MLS photo {photo} for {mls_number} (row {row_index + 1} out of {total_rows}).")
         
         # Fetch list date
         date_tag = soup.find('p', attrs={'class': 'summary-mlsnumber'})
         if date_tag:
             listed_date = pd.Timestamp(date_tag.text.split()[-1])
-            logger.debug(f"Fetched listed date for {mls_number} (row {row_index + 1} out of {total_rows}).")
+            logger.success(f"Fetched listed date for {mls_number} (row {row_index + 1} out of {total_rows}).")
             
     except requests.Timeout:
         logger.warning(f"Timeout occurred while scraping BHHS page for {mls_number} (row {row_index + 1} out of {total_rows}).")
