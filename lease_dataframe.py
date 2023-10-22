@@ -92,8 +92,8 @@ if 'ppsqft' not in df.columns:
 for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
   df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
   
-# Cast these columns as strings so we can concatenate them
-cols = ['street_number', 'street_name', 'City', 'mls_number']
+# Cast these columns as strings
+cols = ['street_number', 'street_name', 'City', 'mls_number', 'SeniorCommunityYN']
 for col in cols:
   df[col] = df[col].astype("string")
 

@@ -106,6 +106,7 @@ def lease_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
       <tr id='pets_allowed'><td>Pets Allowed?</td><td>{context['pets']}</td></tr>
       <tr id='furnished'><td>Furnished?</td><td>{context['furnished']}</td></tr>
       <tr id='laundry_features'><td>Laundry Features</td><td>{context['laundry']}</td></tr>
+      <tr id='senior_community'><td>Senior Community</td><td>{context['senior_community']}</td></tr>
       <tr id='year_built'><td>Year Built</td><td>{context['year']}</td></tr>
       <tr id='rental_terms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms' target='_blank'>Rental Terms</a></td><td>{context['terms']}</td></tr>
       <tr id='subtype'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type' target='_blank'>Physical Sub Type</a></td><td>{context['sub_type']}</td></tr>
