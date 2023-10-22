@@ -92,8 +92,13 @@ if 'ppsqft' not in df.columns:
 for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
   df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
 
+# Cast these columns as strings so we can concatenate them
+cols = ['street_number', 'street_name', 'City', 'mls_number']
+for col in cols:
+  df[col] = df[col].astype("string")
+
 # Create a new column with the Street Number & Street Name
-df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City']
+df["short_address"] = df["street_number"] + ' ' + df["street_name"].strip() + ',' + ' ' + df['City']
 
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation

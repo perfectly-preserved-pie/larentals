@@ -130,7 +130,7 @@ for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertupl
   df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
 
 # Cast these columns as strings so we can concatenate them
-cols = ['street_number', 'street_name', 'City']
+cols = ['street_number', 'street_name', 'City', 'mls_number']
 for col in cols:
   df[col] = df[col].astype("string")
 
