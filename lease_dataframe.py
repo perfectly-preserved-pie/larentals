@@ -221,13 +221,8 @@ df.reset_index(drop=True, inplace=True)
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
 # Save the dataframe for later ingestion by app.py
-# Read the old dataframe in depending if it's a pickle (old) or parquet (new)
-# If the pickle URL returns a 200 OK, read it in
-if requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle').status_code == 200:
-  df_old = pd.read_pickle(filepath_or_buffer='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle')
-# If the pickle URL returns a 404 Not Found, read in the parquet file instead
-elif requests.get('https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.pickle').status_code == 404:
-  df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.parquet')
+# Read in the old dataframe in depending if it's a pickle (old) or parquet (new)
+df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.parquet')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
