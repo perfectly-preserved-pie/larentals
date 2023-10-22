@@ -3,6 +3,7 @@ from dotenv import load_dotenv, find_dotenv
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
+from functions.popup_utils import *
 from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -232,174 +233,6 @@ for col in cols:
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
-# Define HTML code for the popup so it looks pretty and nice
-def popup_html(dataframe, row):
-  df = dataframe
-  i = row.Index
-  short_address = df['short_address'].at[i]
-  postalcode = df['PostalCode'].at[i]
-  full_address = f"{short_address} {postalcode}"
-  mls_number=df['mls_number'].at[i]
-  mls_number_hyperlink=df['listing_url'].at[i]
-  mls_photo = df['mls_photo'].at[i]
-  lc_price = df['list_price'].at[i] 
-  price_per_sqft=df['ppsqft'].at[i]                  
-  brba = df['Br/Ba'].at[i]
-  square_ft = df['Sqft'].at[i]
-  year = df['year_built'].at[i]
-  park_name = df['park_name'].at[i]
-  hoa_fee = df['hoa_fee'].at[i]
-  hoa_fee_frequency = df['hoa_fee_frequency'].at[i]
-  space_rent = df['space_rent'].at[i]
-  senior_community = df['senior_community'].at[i]
-  subtype = df['subtype'].at[i]
-  pets = df['pets_allowed'].at[i]
-  listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only
-  if pd.isna(square_ft):
-      square_ft = 'Unknown'
-  else:
-      square_ft = f"{int(square_ft):,d} sq. ft"
-  if pd.isna(year):
-      year = 'Unknown'
-  else:
-      year = f"{int(year)}"
-  if pd.isna(price_per_sqft):
-      price_per_sqft = 'Unknown'
-  else:
-      price_per_sqft = f"${price_per_sqft:,.2f}"
-  if pd.isna(listed_date):
-      listed_date = 'Unknown'
-  else:
-      listed_date = f"{listed_date}"
-  if pd.isna(pets) and not pd.isna(subtype) and subtype == 'MH':
-      pets = 'Unknown'
-  elif not pd.isna(pets) and not pd.isna(subtype) and subtype == 'MH':
-      pets = f"{pets}"
-  elif pd.isna(pets) and not pd.isna(subtype) and subtype != 'MH':
-      pets = "N/A"
-  if pd.isna(senior_community) and not pd.isna(subtype) and subtype == 'MH':
-      senior_community = 'Unknown'
-  elif not pd.isna(senior_community) and not pd.isna(subtype) and subtype == 'MH':
-      senior_community = senior_community
-  elif pd.isna(senior_community) and not pd.isna(subtype) and subtype != 'MH':
-      senior_community = "N/A"
-  if pd.isna(hoa_fee) == True and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
-      hoa_fee = 'Unknown'
-  elif pd.isna(hoa_fee) == False and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
-      hoa_fee = f"${hoa_fee:,.2f}"
-  elif pd.isna(hoa_fee) == True and not pd.isna(subtype) and subtype == 'MH':
-      hoa_fee = "N/A"
-  if pd.isna(hoa_fee_frequency) == True and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
-      hoa_fee_frequency = 'Unknown'
-  elif pd.isna(hoa_fee_frequency) == False and not pd.isna(subtype) and (subtype == 'SFR' or 'CONDO' in subtype):
-      hoa_fee_frequency = f"{hoa_fee_frequency}"
-  elif pd.isna(hoa_fee_frequency) == True and not pd.isna(subtype) and subtype == 'MH':
-      hoa_fee_frequency = "N/A"
-  if pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
-      space_rent = 'Unknown'
-  elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype == 'MH':
-      space_rent = f"${space_rent:,.2f}"
-  elif not pd.isna(space_rent) and not pd.isna(subtype) and subtype != 'MH':
-      space_rent = "N/A"
-  elif pd.isna(space_rent) and not pd.isna(subtype) and subtype != 'MH':
-      space_rent = "N/A"
-  if pd.isna(park_name) == True and not pd.isna(subtype) and subtype == 'MH':
-      park_name = 'Unknown'
-  elif pd.isna(park_name) == False and not pd.isna(subtype) and subtype == 'MH':
-      park_name = f"{park_name}"
-  elif pd.isna(park_name) == True and not pd.isna(subtype) and subtype != 'MH':
-      park_name = "N/A"
-  if pd.isna(mls_photo):
-      mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
-  else:
-      mls_photo_html_block = f"""
-      <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
-      <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
-      </a>
-      """
-  if pd.isna(mls_number_hyperlink):
-      listing_url_block = f"""
-      <tr>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-          <td>{mls_number}</td>
-      </tr>
-      """
-  else:
-      listing_url_block = f"""
-      <tr>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-          <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
-      </tr>
-      """
-  return f"""<div>{mls_photo_html_block}</div>
-  <table id='popup_html_table'>
-    <tbody id='popup_html_table_body'>
-      <tr id='listed_date'>
-          <td>Listed Date</td>
-          <td>{listed_date}</td>
-      </tr>
-      <tr id='street_address'>
-          <td>Street Address</td>
-          <td>{full_address}</td>
-      </tr>
-      <tr id='park_name'>
-          <td>Park Name</td>
-          <td>{park_name}</td>
-      </tr>
-      {listing_url_block}
-      <tr id='list_price'>
-          <td>List Price</td>
-          <td>${lc_price:,.0f}</td>
-      </tr>
-      <tr id='hoa_fee'>
-          <td>HOA Fee</td>
-          <td>{hoa_fee}</td>
-      </tr>
-      <tr id='hoa_fee_frequency'>
-          <td>HOA Fee Frequency</td>
-          <td>{hoa_fee_frequency}</td>
-      </tr>
-      <tr id='square_feet'>
-          <td>Square Feet</td>
-          <td>{square_ft}</td>
-      </tr>
-      <tr id='space_rent'>
-          <td>Space Rent</td>
-          <td>{space_rent}</td>
-      </tr>
-      <tr id='price_per_sqft'>
-          <td>Price Per Square Foot</td>
-          <td>{price_per_sqft}</td>
-      </tr>
-      <tr id='bedrooms_bathrooms'>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
-          <td>{brba}</td>
-      </tr>
-      <tr id='year_built'>
-          <td>Year Built</td>
-          <td>{year}</td>
-      </tr>
-      <tr id='pets_allowed'>
-          <td>Pets Allowed?</td>
-          <td>{pets}</td>
-      </tr>
-      <tr id='senior_community'>
-          <td>Senior Community</td>
-          <td>{senior_community}</td>
-      </tr>
-      <tr id='subtype'>
-          <td>Sub Type</td>
-          <td>{subtype}</td>
-      </tr>
-  </table>
-  """
-
-# Define a lambda function to replace the <table> tag
-#replace_table_tag = lambda html: html.replace("<table>", "<table id='popup_table'>", 1)
-
-# Apply the lambda function to create the popup_html_mobile column
-#df['popup_html_mobile'] = df['popup_html'].apply(replace_table_tag)
-
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
@@ -427,7 +260,7 @@ for row in df_combined[df_combined.listing_url.notnull()].itertuples():
 df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
-  df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
+  df_combined.at[row.Index, 'popup_html'] = buy_popup_html(df_combined, row)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
   (df_combined['Latitude'] < 32.5) | 

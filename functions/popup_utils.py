@@ -114,83 +114,83 @@ def lease_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
 
 
 def buy_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
+  """
+  Generates HTML code for the popup based on the given DataFrame row.
+  
+  Parameters:
+  dataframe (pd.DataFrame): The DataFrame containing all the data.
+  row (pd.Series): The row for which the popup HTML is to be generated.
+  
+  Returns:
+  str: The HTML code for the popup.
+  """
+  i = row.Index
+  df = dataframe.loc[i]
+  # Prepare all the fields for the HTML snippet
+  context = {
+    'brba': format_value_buy(df['Br/Ba']),
+    'full_address': f"{format_value_buy(df['short_address'])} {format_value_buy(df['PostalCode'])}",
+    'pets': format_value_buy(df['pets_allowed']),
+    'senior_community': format_value_buy(df['senior_community']),
+    'subtype': format_value_buy(df['subtype']),
+    'year': format_value_buy(df['year_built']),
+    'hoa_fee': format_value_buy(df['hoa_fee'], "${:,.2f}"),
+    'hoa_fee_frequency': format_value_buy(df['hoa_fee_frequency']),
+    'space_rent': format_value_buy(df['space_rent'], "${:,.2f}"),
+    'square_ft': format_value_buy(df['Sqft'], "{:,.0f} sq. ft"),
+    'listed_date': format_value_buy(pd.to_datetime(df['listed_date']).date()),
+    'mls_number': format_value_buy(df['mls_number']),
+    'mls_number_hyperlink': format_value_buy(df['listing_url']),
+    'mls_photo': format_value_buy(df['mls_photo']),
+    'lc_price': format_value_buy(df['list_price'], "${:,.0f}"),
+    'park_name': format_value_buy(df['park_name']),
+    'price_per_sqft': format_value_buy(df['ppsqft'], "${:,.2f}"),
+  }
+  
+  # Handle the MLS photo
+  if context['mls_photo'] == 'Unknown':
+    mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
+  else:
+    mls_photo_html_block = f"""
+    <a href="{context['mls_number_hyperlink']}" referrerPolicy="noreferrer" target="_blank">
+    <img src="{context['mls_photo']}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
+    </a>
     """
-    Generates HTML code for the popup based on the given DataFrame row.
-    
-    Parameters:
-    dataframe (pd.DataFrame): The DataFrame containing all the data.
-    row (pd.Series): The row for which the popup HTML is to be generated.
-    
-    Returns:
-    str: The HTML code for the popup.
+      
+  # Handle the MLS number hyperlink
+  if context['mls_number_hyperlink'] == 'Unknown':
+    listing_url_block = f"""
+      <tr>
+        <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
+        <td>{context['mls_number']}</td>
+      </tr>
     """
-    i = row.Index
-    df = dataframe.loc[i]
-    # Prepare all the fields for the HTML snippet
-    context = {
-      'brba': format_value_buy(df['Br/Ba']),
-      'full_address': f"{format_value_buy(df['short_address'])} {format_value_buy(df['PostalCode'])}",
-      'pets': format_value_buy(df['pets_allowed']),
-      'senior_community': format_value_buy(df['senior_community']),
-      'subtype': format_value_buy(df['subtype']),
-      'year': format_value_buy(df['year_built']),
-      'hoa_fee': format_value_buy(df['hoa_fee'], "${:,.2f}"),
-      'hoa_fee_frequency': format_value_buy(df['hoa_fee_frequency']),
-      'space_rent': format_value_buy(df['space_rent'], "${:,.2f}"),
-      'square_ft': format_value_buy(df['Sqft'], "{:,.0f} sq. ft"),
-      'listed_date': format_value_buy(pd.to_datetime(df['listed_date']).date()),
-      'mls_number': format_value_buy(df['mls_number']),
-      'mls_number_hyperlink': format_value_buy(df['listing_url']),
-      'mls_photo': format_value_buy(df['mls_photo']),
-      'lc_price': format_value_buy(df['list_price'], "${:,.0f}"),
-      'park_name': format_value_buy(df['park_name']),
-      'price_per_sqft': format_value_buy(df['ppsqft'], "${:,.2f}"),
-    }
-    
-    # Handle the MLS photo
-    if context['mls_photo'] == 'Unknown':
-      mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
-    else:
-      mls_photo_html_block = f"""
-      <a href="{context['mls_number_hyperlink']}" referrerPolicy="noreferrer" target="_blank">
-      <img src="{context['mls_photo']}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
-      </a>
-      """
-        
-    # Handle the MLS number hyperlink
-    if context['mls_number_hyperlink'] == 'Unknown':
-      listing_url_block = f"""
-        <tr>
-          <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-          <td>{context['mls_number']}</td>
-        </tr>
-      """
-    else:
-      listing_url_block = f"""
-        <tr>
-          <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-          <td><a href='{context['mls_number_hyperlink']}' referrerPolicy='noreferrer' target='_blank'>{context['mls_number']}</a></td>
-        </tr>
-      """
-    
-    # Generate the HTML snippet
-    return f"""<div>{mls_photo_html_block}</div>
-    <table id='popup_html_table'>
-      <tbody id='popup_html_table_body'>
-        <tr id='listed_date'><td>Listed Date</td><td>{context['listed_date']}</td></tr>
-        <tr id='street_address'><td>Street Address</td><td>{context['full_address']}</td></tr>
-        <tr id='park_name'><td>Park Name</td><td>{context['park_name']}</td></tr>
-        {listing_url_block}
-        <tr id='list_price'><td>List Price</td><td>{context['lc_price']}</td></tr>
-        <tr id='hoa_fee'><td>HOA Fee</td><td>{context['hoa_fee']}</td></tr>
-        <tr id='hoa_fee_frequency'><td>HOA Fee Frequency</td><td>{context['hoa_fee_frequency']}</td></tr>
-        <tr id='square_feet'><td>Square Feet</td><td>{context['square_ft']}</td></tr>
-        <tr id='space_rent'><td>Space Rent</td><td>{context['space_rent']}</td></tr>
-        <tr id='price_per_sqft'><td>Price Per Square Foot</td><td>{context['price_per_sqft']}</td></tr>
-        <tr id='bedrooms_bathrooms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms' target='_blank'>Bedrooms/Bathrooms</a></td><td>{context['brba']}</td></tr>
-        <tr id='year_built'><td>Year Built</td><td>{context['year']}</td></tr>
-        <tr id='pets_allowed'><td>Pets Allowed?</td><td>{context['pets']}</td></tr>
-        <tr id='senior_community'><td>Senior Community</td><td>{context['senior_community']}</td></tr>
-        <tr id='subtype'><td>Sub Type</td><td>{context['subtype']}</td></tr>
-      </tbody>
-    </table>"""
+  else:
+    listing_url_block = f"""
+      <tr>
+        <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
+        <td><a href='{context['mls_number_hyperlink']}' referrerPolicy='noreferrer' target='_blank'>{context['mls_number']}</a></td>
+      </tr>
+    """
+  
+  # Generate the HTML snippet
+  return f"""<div>{mls_photo_html_block}</div>
+  <table id='popup_html_table'>
+    <tbody id='popup_html_table_body'>
+      <tr id='listed_date'><td>Listed Date</td><td>{context['listed_date']}</td></tr>
+      <tr id='street_address'><td>Street Address</td><td>{context['full_address']}</td></tr>
+      <tr id='park_name'><td>Park Name</td><td>{context['park_name']}</td></tr>
+      {listing_url_block}
+      <tr id='list_price'><td>List Price</td><td>{context['lc_price']}</td></tr>
+      <tr id='hoa_fee'><td>HOA Fee</td><td>{context['hoa_fee']}</td></tr>
+      <tr id='hoa_fee_frequency'><td>HOA Fee Frequency</td><td>{context['hoa_fee_frequency']}</td></tr>
+      <tr id='square_feet'><td>Square Feet</td><td>{context['square_ft']}</td></tr>
+      <tr id='space_rent'><td>Space Rent</td><td>{context['space_rent']}</td></tr>
+      <tr id='price_per_sqft'><td>Price Per Square Foot</td><td>{context['price_per_sqft']}</td></tr>
+      <tr id='bedrooms_bathrooms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms' target='_blank'>Bedrooms/Bathrooms</a></td><td>{context['brba']}</td></tr>
+      <tr id='year_built'><td>Year Built</td><td>{context['year']}</td></tr>
+      <tr id='pets_allowed'><td>Pets Allowed?</td><td>{context['pets']}</td></tr>
+      <tr id='senior_community'><td>Senior Community</td><td>{context['senior_community']}</td></tr>
+      <tr id='subtype'><td>Sub Type</td><td>{context['subtype']}</td></tr>
+    </tbody>
+  </table>"""

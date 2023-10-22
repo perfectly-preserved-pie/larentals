@@ -3,6 +3,7 @@ from dotenv import load_dotenv, find_dotenv
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
+from functions.popup_utils import *
 from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -216,208 +217,6 @@ df = df[df.Bedrooms < 6]
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
-# Define HTML code for the popup so it looks pretty and nice
-def popup_html(dataframe, row):
-  df = dataframe
-  i = row.Index
-  short_address = df['short_address'].at[i]
-  postalcode = df['PostalCode'].at[i]
-  full_address = f"{short_address} {postalcode}"
-  mls_number=df['mls_number'].at[i]
-  mls_number_hyperlink=df['listing_url'].at[i]
-  mls_photo = df['mls_photo'].at[i]
-  lc_price = df['list_price'].at[i] 
-  price_per_sqft=df['ppsqft'].at[i]                  
-  brba = df['Br/Ba'].at[i]
-  square_ft = df['Sqft'].at[i]
-  year = df['YrBuilt'].at[i]
-  garage = df['garage_spaces'].at[i]
-  pets = df['PetsAllowed'].at[i]
-  phone = df['phone_number'].at[i]
-  terms = df['Terms'].at[i]
-  sub_type = df['subtype'].at[i]
-  listed_date = pd.to_datetime(df['listed_date'].at[i]).date() # Convert the full datetime into date only. See https://stackoverflow.com/a/47388569
-  furnished = df['Furnished'].at[i]
-  key_deposit = df['DepositKey'].at[i]
-  other_deposit = df['DepositOther'].at[i]
-  pet_deposit = df['DepositPets'].at[i]
-  security_deposit = df['DepositSecurity'].at[i]
-  laundry = df['LaundryFeatures'].at[i]
-  # If there's no square footage, set it to "Unknown" to display for the user
-  # https://towardsdatascience.com/5-methods-to-check-for-nan-values-in-in-python-3f21ddd17eed
-  if pd.isna(square_ft) == True:
-      square_ft = 'Unknown'
-  # If there IS a square footage, convert it into an integer (round number)
-  elif pd.isna(square_ft) == False:
-      square_ft = f"{square_ft:,.0f} sq. ft"
-  # Repeat above for Year Built
-  if pd.isna(year) == True:
-      year = 'Unknown'
-  # If there IS a square footage, convert it into an integer (round number)
-  elif pd.isna(year) == False:
-      year = f"{int(year)}"
-  # Repeat above for garage spaces
-  if pd.isna(garage) == True:
-      garage = 'Unknown'
-  elif pd.isna(garage) == False:
-      garage = f"{garage}"
-  # Repeat for ppsqft
-  if pd.isna(price_per_sqft) == True:
-      price_per_sqft = 'Unknown'
-  elif pd.isna(price_per_sqft) == False:
-      price_per_sqft = f"${price_per_sqft:,.2f}"
-  # Repeat for listed date
-  if pd.isna(listed_date) == True:
-      listed_date = 'Unknown'
-  elif pd.isna(listed_date) == False:
-      listed_date = f"{listed_date}"
-  # Repeat for furnished
-  if pd.isna(furnished) == True:
-      furnished = 'Unknown'
-  elif pd.isna(furnished) == False:
-      furnished = f"{furnished}"
-  # Repeat for the deposits
-  if pd.isna(key_deposit) == True:
-      key_deposit = 'Unknown'
-  elif pd.isna(key_deposit) == False:
-      key_deposit = f"${key_deposit:,.0f}"
-  if pd.isna(pet_deposit) == True:
-      pet_deposit = 'Unknown'
-  elif pd.isna(pet_deposit) == False:
-      pet_deposit = f"${pet_deposit:,.0f}"
-  if pd.isna(security_deposit) == True:
-      security_deposit = 'Unknown'
-  elif pd.isna(security_deposit) == False:
-      security_deposit = f"${security_deposit:,.0f}"
-  if pd.isna(other_deposit) == True:
-      other_deposit = 'Unknown'
-  elif pd.isna(other_deposit) == False:
-      other_deposit = f"${other_deposit:,.0f}"
-  if pd.isna(laundry) == True:
-      laundry = 'Unknown'
-  elif pd.isna(laundry) == False:
-      laundry = f"{laundry}"
-  if pd.isna(terms) == True:
-      terms = 'Unknown'
-  elif pd.isna(terms) == False:
-      terms = f"{terms}"
-  # If there's no MLS photo, set it to an empty string so it doesn't display on the tooltip
-  # Basically, the HTML block should just be an empty Img tag
-  if pd.isna(mls_photo) == True:
-      mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
-  # If there IS an MLS photo, just set it to itself
-  # The HTML block should be an Img tag wrapped inside a parent <a href> tag so the image will be clickable
-  elif pd.isna(mls_photo) == False:
-      mls_photo_html_block = f"""
-        <a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">
-        <img src="{mls_photo}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
-        </a>
-      """
-  # If the MLS hyperlink is empty, that means there isn't a BHHS webpage to redirect to. Do not hyperlink to it.
-  if pd.isna(mls_number_hyperlink) == True:
-    listing_url_block = f"""
-      <tr>
-        <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-        <td>{mls_number}</td>
-      </tr>
-    """
-  # If the hyperlink exists, hyperlink it
-  # Use a hyperlink to link to BHHS, don't use a referrer, and open the link in a new tab
-  # https://www.freecodecamp.org/news/how-to-use-html-to-open-link-in-new-tab/
-  elif pd.isna(mls_number_hyperlink) == False:
-    listing_url_block = f"""
-      <tr>
-        <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id" target="_blank">Listing ID (MLS#)</a></td>
-        <td><a href="{mls_number_hyperlink}" referrerPolicy="noreferrer" target="_blank">{mls_number}</a></td>
-      </tr>
-    """
-  # Return the HTML snippet as a string
-  return f"""<div>{mls_photo_html_block}</div>
-    <table id='popup_html_table'>
-      <tbody id='popup_html_table_body'>
-        <tr id='listed_date'>
-          <td>Listed Date</td>
-          <td>{listed_date}</td>
-        </tr>
-        <tr id='street_address'>
-          <td>Street Address</td>
-          <td>{full_address}</td>
-        </tr>
-        {listing_url_block}
-        <tr id='list_office_phone'>
-          <td>List Office Phone</td>
-          <td><a href="tel:{phone}">{phone}</a></td>
-        </tr>
-        <tr id='rental_price'>
-          <td>Rental Price</td>
-          <td>${lc_price:,.0f}</td>
-        </tr>
-        <tr id='security_deposit'>
-          <td>Security Deposit</td>
-          <td>{security_deposit}</td>
-        </tr>
-        <tr id='pet_deposit'>
-          <td>Pet Deposit</td>
-          <td>{pet_deposit}</td>
-        </tr>
-        <tr id='key_deposit'>
-          <td>Key Deposit</td>
-          <td>{key_deposit}</td>
-        </tr>
-        <tr id='other_deposit'>
-          <td>Other Deposit</td>
-          <td>{other_deposit}</td>
-        </tr>
-        <tr id='square_feet'>
-          <td>Square Feet</td>
-          <td>{square_ft}</td>
-        </tr>
-        <tr id='price_per_sqft'>
-          <td>Price Per Square Foot</td>
-          <td>{price_per_sqft}</td>
-        </tr>
-        <tr id='bedrooms_bathrooms'>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms" target="_blank">Bedrooms/Bathrooms</a></td>
-          <td>{brba}</td>
-        </tr>
-        <tr id='garage_spaces'>
-          <td>Garage Spaces</td>
-          <td>{garage}</td>
-        </tr>
-        <tr id='pets_allowed'>
-          <td>Pets Allowed?</td>
-          <td>{pets}</td>
-        </tr>
-        <tr id='furnished'>
-          <td>Furnished?</td>
-          <td>{furnished}</td>
-        </tr>
-        <tr id='laundry_features'>
-          <td>Laundry Features</td>
-          <td>{laundry}</td>
-        </tr>
-        <tr id='year_built'>
-          <td>Year Built</td>
-          <td>{year}</td>
-        </tr>
-        <tr id='rental_terms'>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms" target="_blank">Rental Terms</a></td>
-          <td>{terms}</td>
-        </tr>
-        <tr id='subtype'>
-          <td><a href="https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type" target="_blank">Physical Sub Type</a></td>
-          <td>{sub_type}</td>
-        </tr>
-      </tbody>
-    </table>
-    """
-
-# Define a lambda function to replace the <table> tag
-#replace_table_tag = lambda html: html.replace("<table>", "<table height='200' width='20%'>", 1)
-
-# Apply the lambda function to create the popup_html_mobile column
-#df['popup_html_mobile'] = df['popup_html'].apply(replace_table_tag)
-
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
@@ -442,7 +241,7 @@ for row in df_combined[df_combined.listing_url.notnull()].itertuples():
 df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
 for row in df_combined.itertuples():
-  df_combined.at[row.Index, 'popup_html'] = popup_html(df_combined, row)
+  df_combined.at[row.Index, 'popup_html'] = lease_popup_html(df_combined, row)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
   (df_combined['Latitude'] < 32.5) | 
