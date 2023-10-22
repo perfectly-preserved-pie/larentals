@@ -91,14 +91,14 @@ if 'ppsqft' not in df.columns:
 # Fetch missing city names
 for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
   df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
-
+  
 # Cast these columns as strings so we can concatenate them
 cols = ['street_number', 'street_name', 'City', 'mls_number']
 for col in cols:
   df[col] = df[col].astype("string")
 
 # Create a new column with the Street Number & Street Name
-df["short_address"] = df["street_number"] + ' ' + df["street_name"].strip() + ',' + ' ' + df['City']
+df["short_address"] = df["street_number"] + ' ' + df["street_name"] + ',' + ' ' + df['City']
 
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
@@ -121,7 +121,7 @@ df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.st
 # Iterate through the dataframe and get the listed date and photo for rows 
 for row in df.itertuples():
   mls_number = row[1]
-  webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", row.Index, row.mls_number, len(df))
+  webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", row.Index, row.mls_number, len(df))
   df.at[row.Index, 'listed_date'] = webscrape[0]
   df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
   df.at[row.Index, 'listing_url'] = webscrape[2]
