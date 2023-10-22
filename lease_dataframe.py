@@ -221,7 +221,7 @@ df.reset_index(drop=True, inplace=True)
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
 
 # Save the dataframe for later ingestion by app.py
-# Read in the old dataframe in depending if it's a pickle (old) or parquet (new)
+# Read in the old dataframe
 df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.parquet')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
