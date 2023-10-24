@@ -66,8 +66,8 @@ df = df.rename(columns=lambda c: next((v for k, v in rename_dict.items() if k in
 # Special case for list price due to additional condition
 df = df.rename(columns=lambda c: 'list_price' if c.startswith('List') and c.endswith('Price') else c)
 
-# Drop all rows that don't have a MLS mls_number and a street number (aka misc data we don't care about)
-df = df.query("mls_number.notna() or street_number.notna()")
+# Drop all rows with misc/irrelevant data
+df.dropna(subset=['street_name'], inplace=True)
 
 # Columns to clean
 cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft', 'YrBuilt']
