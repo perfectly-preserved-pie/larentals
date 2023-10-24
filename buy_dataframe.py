@@ -109,10 +109,6 @@ df = pd.concat(renamed_sheets_corrected.values())
 # Drop all rows that don't have a MLS mls_number and a street number (aka misc data we don't care about)
 df = df.query("mls_number.notna() or street_number.notna()")
 
-# Drop all duplicate rows based on MLS number
-# Keep the last duplicate in case of updated listing details
-df = df.drop_duplicates(subset='mls_number', keep="last")
-
 # Define columns to remove all non-numeric characters from
 cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters except for the string "N/A"

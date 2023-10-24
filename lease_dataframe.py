@@ -71,10 +71,6 @@ df = df.rename(columns=lambda c: 'list_price' if c.startswith('List') and c.ends
 # Drop all rows that don't have a MLS mls_number and a street number (aka misc data we don't care about)
 df = df.query("mls_number.notna() or street_number.notna()")
 
-# Drop all duplicate rows based on MLS number
-# Keep the last duplicate in case of updated listing details
-df = df.drop_duplicates(subset='mls_number', keep="last")
-
 # Columns to clean
 cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft', 'YrBuilt']
 if 'ppsqft' in df.columns:
