@@ -91,11 +91,19 @@ if 'ppsqft' not in df.columns:
 # Fetch missing city names
 for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
   df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
-  
-# Cast these columns as strings
-cols = ['street_number', 'street_name', 'City', 'mls_number', 'SeniorCommunityYN']
+
+# Columns to be cast as strings
+cols = ['street_number', 'street_name', 'City', 'mls_number', 'SeniorCommunityYN', 'Furnished', 'LaundryFeatures', 'subtype']
+
 for col in cols:
-  df[col] = df[col].astype("string")
+  # If the column exists, replace empty strings with NaNs
+  if col in df.columns:
+    df[col] = df[col].replace(r'^\s*$', pd.NA, regex=True)
+  # If the column does not exist, create it and fill it with NaNs
+  else:
+    df[col] = pd.NA
+  # Cast the column as a string type (NA values will remain as NA)
+  df[col] = df[col].astype(pd.StringDtype())
 
 # Create a new column with the Street Number & Street Name
 df["short_address"] = df["street_number"] + ' ' + df["street_name"] + ',' + ' ' + df['City']
@@ -116,7 +124,7 @@ for row in df.itertuples():
 # Also strip whitespace from the St Name column
 # Convert the postal code into a string so we can combine string and int
 # https://stackoverflow.com/a/11858532
-df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].map(str)
+df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
 
 # Iterate through the dataframe and get the listed date and photo for rows 
 for row in df.itertuples():
@@ -165,11 +173,7 @@ df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype
 # Replace all empty values in the following columns with NaN and cast the column as dtype string
 # https://stackoverflow.com/a/47810911
 df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
-if 'Furnished' in df.columns:
-    df['Furnished'] = df['Furnished'].replace(r'^\s*$', pd.NA, regex=True).astype(pd.StringDtype())
-else:
-    df['Furnished'] = pd.NA
-    df['Furnished'] = df['Furnished'].astype(pd.StringDtype())
+
 ## Laundry Features ##
 # Replace all empty values in the following column with "Unknown" and cast the column as dtype string
 df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', "Unknown", regex=True)

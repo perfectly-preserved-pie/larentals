@@ -1,5 +1,10 @@
-from typing import Any, Optional
+from loguru import logger
+from typing import Any
+import numpy as np
 import pandas as pd
+import sys
+
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def format_value_lease(value: Any, template: str = "{}") -> str:
   """
@@ -12,30 +17,19 @@ def format_value_lease(value: Any, template: str = "{}") -> str:
   Returns:
   str: The formatted value as a string.
   """
-  if pd.isna(value):
-    return 'Unknown'
-  else:
-    return template.format(value)
-  
-def format_value_buy(value: Any, fmt: Optional[str] = None) -> str:
-  """
-  Formats the given value based on its type and value.
-  
-  Parameters:
-  value (Any): The value to be formatted.
-  fmt (Optional[str]): Optional format string.
-  
-  Returns:
-  str: The formatted value as a string.
-  """
-  if pd.isna(value):
-    return 'Unknown'
-  elif isinstance(value, float) or isinstance(value, int):
-    return f"{value:,.0f}" if fmt is None else fmt.format(value)
-  else:
-    return str(value)
+  try:
+    if pd.isna(value):
+      return 'Unknown'
+    elif isinstance(value, (float, int, np.float64, np.int64)):
+      formatted_value = template.format(value)
+      return formatted_value  # Apply the format only if value is float or int
+    else:
+      return str(value)
+  except Exception as e:
+    logger.error(f"An exception occurred in format_value_lease: {e}")  # Debug statement
+    raise
 
-def lease_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
+def lease_popup_html(df: pd.DataFrame, row: pd.Series) -> str:
   """
   Generates HTML code for the popup based on the given DataFrame row.
   
@@ -47,31 +41,32 @@ def lease_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
   str: The HTML code for the popup.
   """
   i = row.Index
-  df = dataframe.loc[i]
-
-  # Prepare all the fields for the HTML snippet
-  context = {key: format_value_lease(df[key]) for key in df.keys()}
-
+  context = {}
+  for key in df.columns:
+    if key == 'popup_html':  # Skip this column
+      continue
+    context[key] = format_value_lease(df.at[i, key])
   # Additional formatting for special fields
-  context['lc_price'] = format_value_lease(df['list_price'], "${:,.0f}")
-  context['listed_date'] = format_value_lease(pd.to_datetime(df['listed_date']).date())
-  context['price_per_sqft'] = format_value_lease(df['ppsqft'], "${:,.2f}")
-  context['security_deposit'] = format_value_lease(df['DepositSecurity'], "${:,.0f}")
-  context['square_ft'] = format_value_lease(df['Sqft'], "{:,.0f} sq. ft")
-  context['full_address'] = f"{context['short_address']} {context['PostalCode']}"
-
+  context['DepositKey'] = format_value_lease(df.at[i, 'DepositKey'], "${:,.0f}")
+  context['DepositOther'] = format_value_lease(df.at[i, 'DepositOther'], "${:,.0f}")
+  context['DepositPets'] = format_value_lease(df.at[i, 'DepositPets'], "${:,.0f}")
+  context['DepositSecurity'] = format_value_lease(df.at[i, 'DepositSecurity'], "${:,.0f}")
+  context['Furnished'] = format_value_lease(df.at[i, 'Furnished'])
+  context['lc_price'] = format_value_lease(df.at[i, 'list_price'], "${:,.0f}")
+  context['listed_date'] = format_value_lease(pd.to_datetime(df.at[i, 'listed_date']).date())
+  context['ppsqft'] = format_value_lease(df.at[i, 'ppsqft'], "${:,.2f}")
+  context['Sqft'] = format_value_lease(df.at[i, 'Sqft'], "{:,.0f} sq. ft")
   # Handle the MLS photo
   if context['mls_photo'] == 'Unknown':
     mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
   else:
     mls_photo_html_block = f"""
-    <a href="{context['mls_number_hyperlink']}" referrerPolicy="noreferrer" target="_blank">
+    <a href="{context['listing_url']}" referrerPolicy="noreferrer" target="_blank">
     <img src="{context['mls_photo']}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
     </a>
     """
-
   # Handle the MLS number hyperlink
-  if context['mls_number_hyperlink'] == 'Unknown':
+  if context['listing_url'] == 'Unknown':
     listing_url_block = f"""
       <tr>
         <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
@@ -82,34 +77,32 @@ def lease_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
     listing_url_block = f"""
       <tr>
         <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-        <td><a href='{context['mls_number_hyperlink']}' referrerPolicy='noreferrer' target='_blank'>{context['mls_number']}</a></td>
+        <td><a href='{context['listing_url']}' referrerPolicy='noreferrer' target='_blank'>{context['mls_number']}</a></td>
       </tr>
     """
-
-  # Return the HTML snippet
   return f"""<div>{mls_photo_html_block}</div>
   <table id='popup_html_table'>
     <tbody id='popup_html_table_body'>
       <tr id='listed_date'><td>Listed Date</td><td>{context['listed_date']}</td></tr>
-      <tr id='street_address'><td>Street Address</td><td>{context['full_address']}</td></tr>
+      <tr id='street_address'><td>Street Address</td><td>{context['full_street_address']}</td></tr>
       {listing_url_block}
-      <tr id='list_office_phone'><td>List Office Phone</td><td><a href='tel:{context['phone']}'>{context['phone']}</a></td></tr>
+      <tr id='list_office_phone'><td>List Office Phone</td><td><a href='tel:{context['phone_number']}'>{context['phone_number']}</a></td></tr>
       <tr id='rental_price'><td>Rental Price</td><td>{context['lc_price']}</td></tr>
-      <tr id='security_deposit'><td>Security Deposit</td><td>{context['security_deposit']}</td></tr>
-      <tr id='pet_deposit'><td>Pet Deposit</td><td>{context['pet_deposit']}</td></tr>
-      <tr id='key_deposit'><td>Key Deposit</td><td>{context['key_deposit']}</td></tr>
-      <tr id='other_deposit'><td>Other Deposit</td><td>{context['other_deposit']}</td></tr>
-      <tr id='square_feet'><td>Square Feet</td><td>{context['square_ft']}</td></tr>
-      <tr id='price_per_sqft'><td>Price Per Square Foot</td><td>{context['price_per_sqft']}</td></tr>
-      <tr id='bedrooms_bathrooms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms' target='_blank'>Bedrooms/Bathrooms</a></td><td>{context['brba']}</td></tr>
-      <tr id='garage_spaces'><td>Garage Spaces</td><td>{context['garage']}</td></tr>
-      <tr id='pets_allowed'><td>Pets Allowed?</td><td>{context['pets']}</td></tr>
-      <tr id='furnished'><td>Furnished?</td><td>{context['furnished']}</td></tr>
-      <tr id='laundry_features'><td>Laundry Features</td><td>{context['laundry']}</td></tr>
+      <tr id='security_deposit'><td>Security Deposit</td><td>{context['DepositSecurity']}</td></tr>
+      <tr id='pet_deposit'><td>Pet Deposit</td><td>{context['DepositPets']}</td></tr>
+      <tr id='key_deposit'><td>Key Deposit</td><td>{context['DepositKey']}</td></tr>
+      <tr id='other_deposit'><td>Other Deposit</td><td>{context['DepositOther']}</td></tr>
+      <tr id='square_feet'><td>Square Feet</td><td>{context['Sqft']}</td></tr>
+      <tr id='price_per_sqft'><td>Price Per Square Foot</td><td>{context['ppsqft']}</td></tr>
+      <tr id='bedrooms_bathrooms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#bedroomsbathrooms' target='_blank'>Bedrooms/Bathrooms</a></td><td>{context['Br/Ba']}</td></tr>
+      <tr id='garage_spaces'><td>Garage Spaces</td><td>{context['garage_spaces']}</td></tr>
+      <tr id='pets_allowed'><td>Pets Allowed?</td><td>{context['PetsAllowed']}</td></tr>
+      <tr id='furnished'><td>Furnished?</td><td>{context['Furnished']}</td></tr> 
+      <tr id='laundry_features'><td>Laundry Features</td><td>{context['LaundryFeatures']}</td></tr>
       <tr id='senior_community'><td>Senior Community</td><td>{context['SeniorCommunityYN']}</td></tr>
-      <tr id='year_built'><td>Year Built</td><td>{context['year']}</td></tr>
-      <tr id='rental_terms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms' target='_blank'>Rental Terms</a></td><td>{context['terms']}</td></tr>
-      <tr id='subtype'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type' target='_blank'>Physical Sub Type</a></td><td>{context['sub_type']}</td></tr>
+      <tr id='year_built'><td>Year Built</td><td>{context['YrBuilt']}</td></tr>
+      <tr id='rental_terms'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#rental-terms' target='_blank'>Rental Terms</a></td><td>{context['Terms']}</td></tr>
+      <tr id='subtype'><td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#physical-sub-type' target='_blank'>Physical Sub Type</a></td><td>{context['subtype']}</td></tr>
     </tbody>
   </table>"""
 
@@ -141,7 +134,7 @@ def buy_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
     'square_ft': format_value_buy(df['Sqft'], "{:,.0f} sq. ft"),
     'listed_date': format_value_buy(pd.to_datetime(df['listed_date']).date()),
     'mls_number': format_value_buy(df['mls_number']),
-    'mls_number_hyperlink': format_value_buy(df['listing_url']),
+    'listing_url': format_value_buy(df['listing_url']),
     'mls_photo': format_value_buy(df['mls_photo']),
     'lc_price': format_value_buy(df['list_price'], "${:,.0f}"),
     'park_name': format_value_buy(df['park_name']),
@@ -153,13 +146,13 @@ def buy_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
     mls_photo_html_block = "<img src='' referrerPolicy='noreferrer' style='display:block;width:100%;margin-left:auto;margin-right:auto' id='mls_photo_div'>"
   else:
     mls_photo_html_block = f"""
-    <a href="{context['mls_number_hyperlink']}" referrerPolicy="noreferrer" target="_blank">
+    <a href="{context['listing_url']}" referrerPolicy="noreferrer" target="_blank">
     <img src="{context['mls_photo']}" referrerPolicy="noreferrer" style="display:block;width:100%;margin-left:auto;margin-right:auto" id="mls_photo_div">
     </a>
     """
       
   # Handle the MLS number hyperlink
-  if context['mls_number_hyperlink'] == 'Unknown':
+  if context['listing_url'] == 'Unknown':
     listing_url_block = f"""
       <tr>
         <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
@@ -170,10 +163,10 @@ def buy_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
     listing_url_block = f"""
       <tr>
         <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-        <td><a href='{context['mls_number_hyperlink']}' referrerPolicy='noreferrer' target='_blank'>{context['mls_number']}</a></td>
+        <td><a href='{context['listing_url']}' referrerPolicy='noreferrer' target='_blank'>{context['mls_number']}</a></td>
       </tr>
     """
-  
+
   # Generate the HTML snippet
   return f"""<div>{mls_photo_html_block}</div>
   <table id='popup_html_table'>
