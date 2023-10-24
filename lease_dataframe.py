@@ -116,6 +116,8 @@ for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')
   missing_postalcode = return_postalcode(short_address, geolocator=g)
   df.at[row.Index, 'PostalCode'] = missing_postalcode
 
+df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+
 # Tag each row with the date it was processed
 for row in df.itertuples():
   df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
@@ -124,7 +126,7 @@ for row in df.itertuples():
 # Also strip whitespace from the St Name column
 # Convert the postal code into a string so we can combine string and int
 # https://stackoverflow.com/a/11858532
-df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"]
+df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].astype(str)
 
 # Iterate through the dataframe and get the listed date and photo for rows 
 for row in df.itertuples():
@@ -161,14 +163,6 @@ df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 df['garage_spaces'] = df['garage_spaces'].astype('Float64')
-# Convert the rest into nullable integer data types
-# We should do this because these fields will often have missing data, forcing a conversion to float64 
-# https://pandas.pydata.org/docs/user_guide/integer_na.html
-# https://medium.com/when-i-work-data/nullable-integers-4060089f92ec
-# We don't really have a need for floats here, just ints
-# And this will prevent weird TypeError shit like TypeError: '>=' not supported between instances of 'str' and 'int'
-# And this will also convert non-integers into NaNs
-df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
 # Replace all empty values in the following columns with NaN and cast the column as dtype string
 # https://stackoverflow.com/a/47810911
