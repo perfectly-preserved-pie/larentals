@@ -42,7 +42,7 @@ def format_value_buy(value: Any, template: str = "{}") -> str:
   """
   try:
     if pd.isna(value):
-      return 'Unknown'
+      return 'N/A'
     elif isinstance(value, (float, int)) or pd.api.types.is_integer_dtype(type(value)):
       return template.format(value)  # Apply the format only if value is float or int
     else:
