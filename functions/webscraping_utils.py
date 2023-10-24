@@ -83,7 +83,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         date_tag = soup.find('p', attrs={'class': 'summary-mlsnumber'})
         if date_tag:
             listed_date = pd.Timestamp(date_tag.text.split()[-1])
-            logger.success(f"Fetched listed date for {mls_number} (row {row_index + 1} out of {total_rows}).")
+            logger.success(f"Fetched listed date {listed_date} for {mls_number} (row {row_index + 1} out of {total_rows}).")
             
     except requests.Timeout:
         logger.warning(f"Timeout occurred while scraping BHHS page for {mls_number} (row {row_index + 1} out of {total_rows}).")
