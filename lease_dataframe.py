@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup as bs4
 from dotenv import load_dotenv, find_dotenv
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
@@ -11,7 +10,6 @@ from loguru import logger
 import glob
 import os
 import pandas as pd
-import requests
 import sys
 
 ## SETUP AND VARIABLES
