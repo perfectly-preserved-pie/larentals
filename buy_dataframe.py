@@ -104,17 +104,17 @@ for sheet_name, sheet_df in xlsx.items():
 # Concatenate all sheets into a single DataFrame
 df = pd.concat(renamed_sheets_corrected.values())
 
-# Drop all rows that don't have a MLS mls_number and a street number (aka misc data we don't care about)
-df = df.query("mls_number.notna() or street_number.notna()")
+# Drop all rows with misc/irrelevant data
+df.dropna(subset=['street_name'], inplace=True)
 
 # Define columns to remove all non-numeric characters from
 cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
 # Loop through the columns and remove all non-numeric characters except for the string "N/A"
 for col in cols:
     df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or str(x) == 'N/A'))
-# Fill in missing values with NaN
+# Fill in missing values with Unknown
 for col in cols:
-  df[col] = df[col].replace('', pd.NA)
+  df[col] = df[col].replace('', 'Unknown')
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -206,12 +206,10 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', inf
 cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee']
 # Convert columns to string type for string operations
 df[cols] = df[cols].astype(str)
-# Replace 'N/A' with pd.NA
-df[cols] = df[cols].replace('N/A', pd.NA)
 # Remove commas and other non-numeric characters
 df[cols] = df[cols].replace({',': '', r'[^0-9\.]': ''}, regex=True)
-# Replace empty strings with pd.NA
-df[cols] = df[cols].replace('', pd.NA)
+# Replace empty strings with Unknown
+df[cols] = df[cols].replace('', 'Unknown')
 # Convert columns to numeric
 df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
 # Cast specified columns as nullable integers
