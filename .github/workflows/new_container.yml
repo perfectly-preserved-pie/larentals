@@ -27,11 +27,13 @@ jobs:
       with:
         hosts: ${{ secrets.HOST }}
         privateKey: ${{ secrets.PRIVATE_KEY }}
-        command: |
-          docker stop wheretolivedotla && 
-          docker rm wheretolivedotla && 
-          docker pull strayingfromthepath/larentals &&
-          docker run -d --name wheretolivedotla --network plexstack --hostname wheretolivedotla strayingfromthepath/larentals
+      env:
+        DOCKER_NETWORK_STACK: ${{ secrets.DOCKER_NETWORK_STACK }}
+      run: |
+        docker stop wheretolivedotla && 
+        docker rm wheretolivedotla && 
+        docker pull strayingfromthepath/larentals &&
+        docker run -d --name wheretolivedotla --network $DOCKER_NETWORK_STACK --hostname wheretolivedotla strayingfromthepath/larentals
 
     - name: Execute SSH commands on remote server for Dev
       if: needs.check_workflow.outputs.is_dev == 'true'
@@ -39,8 +41,10 @@ jobs:
       with:
         hosts: ${{ secrets.HOST }}
         privateKey: ${{ secrets.PRIVATE_KEY }}
-        command: |
-          docker stop wheretolivedotla-dev && 
-          docker rm wheretolivedotla-dev && 
-          docker pull strayingfromthepath/larentals:dev &&
-          docker run -d --name wheretolivedotla-dev --network plexstack --hostname wheretolivedotla-dev strayingfromthepath/larentals:dev
+      env:
+        DOCKER_NETWORK_STACK: ${{ secrets.DOCKER_NETWORK_STACK }}
+      run: |
+        docker stop wheretolivedotla-dev && 
+        docker rm wheretolivedotla-dev && 
+        docker pull strayingfromthepath/larentals:dev &&
+        docker run -d --name wheretolivedotla-dev --network $DOCKER_NETWORK_STACK --hostname wheretolivedotla-dev strayingfromthepath/larentals:dev
