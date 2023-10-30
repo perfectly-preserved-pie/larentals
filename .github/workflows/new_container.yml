@@ -31,7 +31,7 @@ jobs:
           docker stop wheretolivedotla && 
           docker rm wheretolivedotla && 
           docker pull strayingfromthepath/larentals &&
-          docker run --name wheretolivedotla --network plexstack --hostname wheretolivedotla strayingfromthepath/larentals
+          docker run -d --name wheretolivedotla --network plexstack --hostname wheretolivedotla strayingfromthepath/larentals
 
     - name: Execute SSH commands on remote server for Dev
       if: needs.check_workflow.outputs.is_dev == 'true'
@@ -43,4 +43,4 @@ jobs:
           docker stop wheretolivedotla-dev && 
           docker rm wheretolivedotla-dev && 
           docker pull strayingfromthepath/larentals:dev &&
-          docker run --name wheretolivedotla-dev --network plexstack --hostname wheretolivedotla-dev strayingfromthepath/larentals:dev
+          docker run -d --name wheretolivedotla-dev --network plexstack --hostname wheretolivedotla-dev strayingfromthepath/larentals:dev
