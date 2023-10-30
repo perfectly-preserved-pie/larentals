@@ -177,10 +177,10 @@ df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community Laundry Are
 # Convert the listed date into DateTime and set missing values to be NaT
 # Infer datetime format for faster parsing
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
-df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce', infer_datetime_format=True)
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce')
 
 # Convert date_processed into DateTime
-df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
+df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
 
 # Per CA law, ANY type of deposit is capped at rent * 3 months
 # It doesn't matter the type of deposit, they all have the same cap
@@ -210,7 +210,7 @@ df = df[df.Bedrooms < 6]
 df.reset_index(drop=True, inplace=True)
 
 # Do another pass to convert the date_processed column to datetime64 dtype
-df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', infer_datetime_format=True, format='%Y-%m-%d')
+df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
 
 # Save the dataframe for later ingestion by app.py
 # Read in the old dataframe
