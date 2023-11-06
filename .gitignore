@@ -8,3 +8,4 @@ env
 hdf
 larentals-checkpoint.py
 larentals.csv
+.vscode/settings.json
