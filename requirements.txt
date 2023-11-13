@@ -11,7 +11,7 @@ imagekitio==3.2.0
 loguru==0.7.2
 numpy==1.26.0
 openpyxl==3.1.2
-orjson==3.9.7
+orjson==3.9.10
 pandas==2.1.1
 protobuf==3.20.*
 pyarrow==13.0.0
