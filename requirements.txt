@@ -4,7 +4,7 @@ dash_core_components==2.0.0
 dash_extensions==1.0.4
 dash_html_components==2.0.0
 dash-leaflet==1.0.11
-dash==2.13.0
+dash==2.14.1
 geopy==2.4.0
 gunicorn==21.2.0
 imagekitio==3.2.0
