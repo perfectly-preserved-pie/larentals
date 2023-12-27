@@ -7,7 +7,7 @@ dash-leaflet==1.0.11
 dash==2.14.2
 geopy==2.4.0
 gunicorn==21.2.0
-imagekitio==3.1.0
+imagekitio==3.2.0
 loguru==0.7.2
 numpy==1.26.2
 openpyxl==3.1.2
