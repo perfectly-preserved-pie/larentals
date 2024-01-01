@@ -3,7 +3,7 @@ dash_bootstrap_components==1.5.0
 dash_core_components==2.0.0
 dash_extensions==1.0.4
 dash_html_components==2.0.0
-dash-leaflet==1.0.11
+dash-leaflet==1.0.13
 dash==2.14.2
 geopy==2.4.1
 gunicorn==21.2.0
