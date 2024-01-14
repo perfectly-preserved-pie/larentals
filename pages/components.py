@@ -3,6 +3,8 @@ from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import pandas as pd
+import dash_leaflet.express as dlx
+import json
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -860,16 +862,45 @@ class LeaseComponents:
         return listed_date_components
     
     def create_map(self):
+        # Load GeoJSON data
+        with open('datasets/Oil_Wells_(Inside_LA_County).geojson', 'r') as f:
+            oil_derricks_data = json.load(f)
+
+        # Create markers and popups for each feature in the GeoJSON data
+        markers = [
+            dl.Marker(
+                position=feature['geometry']['coordinates'][::-1],
+                children=[
+                    dl.Popup(feature['properties']['OperatorNa'])
+                ]
+            )
+            for feature in oil_derricks_data['features']
+        ]
+
+        # Create layer for oil derricks
+        oil_derricks_layer = dl.LayerGroup(markers, id='oil_derricks')
+
+        # Create map
         map = dl.Map(
-        [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullScreenControl()],
-        id='map',
-        zoom=9,
-        minZoom=9,
-        center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
-        preferCanvas=True,
-        closePopupOnClick=True,
-        style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+            [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.LayerGroup([oil_derricks_layer], id='oil_derricks_layer'), dl.FullScreenControl()],
+            id='map',
+            zoom=9,
+            minZoom=9,
+            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            preferCanvas=True,
+            closePopupOnClick=True,
+            style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
+
+        # Add layer control
+        layers_control = dl.LayersControl(
+            [
+                dl.BaseLayer(dl.LayerGroup(id="lease_geojson"), name="Lease", checked=True),
+                dl.BaseLayer(dl.LayerGroup(id="oil_derricks_layer"), name="Oil Derricks", checked=False)
+            ],
+            position='topleft'
+        )
+        map.children.append(layers_control)
 
         return map
     
