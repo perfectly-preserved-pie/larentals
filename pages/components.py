@@ -1,8 +1,8 @@
 from dash import html, dcc
+from dash_extensions.javascript import Namespace
 from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-from dash_extensions.javascript import Namespace
 import json
 import pandas as pd
 import uuid
