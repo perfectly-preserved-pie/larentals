@@ -886,7 +886,6 @@ class LeaseComponents:
             popupContent += 'API Number: ' + feature.properties.API + '<br>';
             popupContent += 'Well Type: ' + feature.properties.WellTypeLa + '<br>';
             popupContent += 'Lease Name: ' + feature.properties.LeaseName + '<br>';
-            popupContent += 'Latest Update: ' + feature.properties.LatestUpdate + '<br>';
             popupContent += 'Start Date: ' + feature.properties.SpudDate + '<br>';                   
             popupContent += 'Well Status: ' + feature.properties.WellStatus + '<br>';
             marker.bindPopup(popupContent);
