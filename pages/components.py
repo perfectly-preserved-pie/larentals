@@ -2,7 +2,7 @@ from dash import html, dcc
 from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-from dash_extensions.javascript import assign
+from dash_extensions.javascript import Namespace
 import json
 import pandas as pd
 import uuid
@@ -66,7 +66,8 @@ class LeaseComponents:
 
     def __init__(self, df):
         # Initalize these first because they are used in other components
-        self.df = df 
+        self.df = df
+        self.oil_derricks_data = self.load_geojson_data('datasets/oil_derricks.geojson')
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -93,6 +94,11 @@ class LeaseComponents:
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
+    
+    # Load the oil derrick GeoJSON data
+    def load_geojson_data(self, filepath):
+        with open(filepath, 'r') as f:
+            return json.load(f)
         
     def create_subtype_checklist(self):
         # Instance Variable
@@ -863,38 +869,13 @@ class LeaseComponents:
         return listed_date_components
     
     def create_map(self):
-        # Load GeoJSON data for oil derricks
-        with open('datasets/oil_derricks.geojson', 'r') as f:
-            oil_derricks_data = json.load(f)
+        # Namespace for JavaScript functions
+        ns = Namespace("myNamespace", "mySubNamespace")
 
-        # Create javascript function that draws a marker with your custom icon
-        draw_custom_icon = assign("""function(feature, latlng){
-            const customIcon = L.icon({
-                iconUrl: '/assets/oil_derrick_icon.png',  // URL to your custom icon
-                iconSize: [20, 20]  // Adjust the size as needed
-            });
-            // Create a marker with this icon
-            var marker = L.marker(latlng, {icon: customIcon});
-            // Create a popup with feature properties
-            //var popupContent = '<h4>Oil Derrick Info</h4>';
-            //for (var key in feature.properties) {
-            //    popupContent += key + ': ' + feature.properties[key] + '<br>';
-            //}
-            // Create a popup with specific feature properties
-            var popupContent = '<h4>Oil Derrick Info</h4>';
-            popupContent += 'Well Operator: ' + feature.properties.OperatorNa + '<br>';
-            popupContent += 'API Number: ' + feature.properties.API + '<br>';
-            popupContent += 'Well Type: ' + feature.properties.WellTypeLa + '<br>';
-            popupContent += 'Lease Name: ' + feature.properties.LeaseName + '<br>';
-            popupContent += 'Start Date: ' + feature.properties.SpudDate + '<br>';                   
-            popupContent += 'Well Status: ' + feature.properties.WellStatus + '<br>';
-            marker.bindPopup(popupContent);
-            return marker;
-        }""")
         # Create a GeoJSON layer for oil derricks with clustering
         oil_derricks_layer = dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=oil_derricks_data,
+            data=self.oil_derricks_data,
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -904,7 +885,7 @@ class LeaseComponents:
             },
             # Optional: Define a function for custom popup or styling
             options=dict(
-                pointToLayer=draw_custom_icon,
+                pointToLayer=ns("drawCustomIcon")
         )
         )
 
