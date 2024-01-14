@@ -14,8 +14,15 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             //for (var key in feature.properties) {
             //    popupContent += key + ': ' + feature.properties[key] + '<br>';
             //}
-            // Create a popup with the oil operator name
-            var popupContent = '<h4>Oil Operator</h4>' + feature.properties.OperatorNa;
+            // Create a popup with specific feature properties
+            var popupContent = '<h4>Oil Derrick Info</h4>';
+            popupContent += 'Well Operator: ' + feature.properties.OperatorNa + '<br>';
+            popupContent += 'API Number: ' + feature.properties.API + '<br>';
+            popupContent += 'Well Type: ' + feature.properties.WellTypeLa + '<br>';
+            popupContent += 'Lease Name: ' + feature.properties.LeaseName + '<br>';
+            popupContent += 'Latest Update: ' + feature.properties.LatestUpdate + '<br>';
+            popupContent += 'Start Date: ' + feature.properties.SpudDate + '<br>';
+            popupContent += 'Well Status: ' + feature.properties.WellStatus + '<br>';
             marker.bindPopup(popupContent);
             return marker;
         }

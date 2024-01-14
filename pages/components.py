@@ -864,7 +864,7 @@ class LeaseComponents:
     
     def create_map(self):
         # Load GeoJSON data for oil derricks
-        with open('datasets/Oil_Wells_(Inside_LA_County).geojson', 'r') as f:
+        with open('datasets/oil_derricks.geojson', 'r') as f:
             oil_derricks_data = json.load(f)
 
         # Create javascript function that draws a marker with your custom icon
@@ -880,12 +880,18 @@ class LeaseComponents:
             //for (var key in feature.properties) {
             //    popupContent += key + ': ' + feature.properties[key] + '<br>';
             //}
-            // Create a popup with the oil operator name
-            var popupContent = '<h4>Oil Operator</h4>' + feature.properties.OperatorNa;
+            // Create a popup with specific feature properties
+            var popupContent = '<h4>Oil Derrick Info</h4>';
+            popupContent += 'Well Operator: ' + feature.properties.OperatorNa + '<br>';
+            popupContent += 'API Number: ' + feature.properties.API + '<br>';
+            popupContent += 'Well Type: ' + feature.properties.WellTypeLa + '<br>';
+            popupContent += 'Lease Name: ' + feature.properties.LeaseName + '<br>';
+            popupContent += 'Latest Update: ' + feature.properties.LatestUpdate + '<br>';
+            popupContent += 'Start Date: ' + feature.properties.SpudDate + '<br>';                   
+            popupContent += 'Well Status: ' + feature.properties.WellStatus + '<br>';
             marker.bindPopup(popupContent);
             return marker;
         }""")
-
         # Create a GeoJSON layer for oil derricks with clustering
         oil_derricks_layer = dl.GeoJSON(
             id=str(uuid.uuid4()),
