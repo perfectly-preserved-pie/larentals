@@ -1,9 +1,8 @@
 from dash import html, dcc
-from dash_extensions.javascript import Namespace
 from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-import dash_leaflet.express as dlx
+from dash_extensions.javascript import assign
 import json
 import pandas as pd
 import uuid
@@ -868,6 +867,15 @@ class LeaseComponents:
         with open('datasets/Oil_Wells_(Inside_LA_County).geojson', 'r') as f:
             oil_derricks_data = json.load(f)
 
+        # Create javascript function that draws a marker with your custom icon
+        draw_custom_icon = assign("""function(feature, latlng){
+            const customIcon = L.icon({
+                iconUrl: '/assets/oil_derrick_icon.png',  // URL to your custom icon in assets folder
+                iconSize: [20, 20]  // Adjust the size as needed
+            });
+            return L.marker(latlng, {icon: customIcon});
+        }""")
+
         # Create a GeoJSON layer for oil derricks with clustering
         oil_derricks_layer = dl.GeoJSON(
             id=str(uuid.uuid4()),
@@ -880,7 +888,9 @@ class LeaseComponents:
                 'minZoom': 3,
             },
             # Optional: Define a function for custom popup or styling
-            #options=dict(onEachFeature=lambda feature, layer: layer.bindPopup(feature['properties']['OperatorNa']))
+            options=dict(
+                pointToLayer=draw_custom_icon,
+        )
         )
 
         # Create the main map with the lease layer
