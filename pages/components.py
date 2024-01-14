@@ -905,7 +905,11 @@ class LeaseComponents:
 
         # Create the main map with the lease layer
         map = dl.Map(
-            [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullScreenControl()],
+            [
+                dl.TileLayer(),
+                dl.LayerGroup(id="lease_geojson"),
+                dl.FullScreenControl()
+            ],
             id='map',
             zoom=9,
             minZoom=9,
@@ -918,9 +922,9 @@ class LeaseComponents:
         # Add layer control with the oil derricks layer as an overlay (unchecked by default)
         layers_control = dl.LayersControl(
             [
-                dl.BaseLayer(dl.LayerGroup(id="lease_geojson"), name="Lease", checked=True),
                 dl.Overlay(oil_derricks_layer, name="Oil Derricks", checked=False)
             ],
+            collapsed=False,
             position='topleft'
         )
         map.children.append(layers_control)
