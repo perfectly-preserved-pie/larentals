@@ -2,12 +2,20 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
         function0: function(feature, latlng) {
             const customIcon = L.icon({
-                iconUrl: '/assets/oil_derrick_icon.png', // URL to your custom icon in assets folder
+                iconUrl: '/assets/oil_derrick_icon.png', // URL to your custom icon
                 iconSize: [20, 20] // Adjust the size as needed
             });
-            return L.marker(latlng, {
+            // Create a marker with this icon
+            var marker = L.marker(latlng, {
                 icon: customIcon
             });
+            // Create a popup with feature properties
+            var popupContent = '<h4>Oil Derrick Info</h4>';
+            for (var key in feature.properties) {
+                popupContent += key + ': ' + feature.properties[key] + '<br>';
+            }
+            marker.bindPopup(popupContent);
+            return marker;
         }
     }
 });
