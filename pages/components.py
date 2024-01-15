@@ -1655,7 +1655,7 @@ class BuyComponents:
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.LayerGroup(id="lease_geojson"),
+                dl.LayerGroup(id="buy_geojson"),
                 dl.FullScreenControl()
             ],
             id='map',
