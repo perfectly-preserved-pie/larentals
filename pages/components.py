@@ -67,7 +67,7 @@ class LeaseComponents:
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_derricks_data = self.load_geojson_data('datasets/oil_derricks.geojson')
+        self.oil_well_data = self.load_geojson_data('datasets/oil_well.geojson')
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -873,9 +873,9 @@ class LeaseComponents:
         ns = Namespace("myNamespace", "mySubNamespace")
 
         # Create a GeoJSON layer for oil derricks with clustering
-        oil_derricks_layer = dl.GeoJSON(
+        oil_well_layer = dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=self.oil_derricks_data,
+            data=self.oil_well_data,
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -905,10 +905,10 @@ class LeaseComponents:
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
 
-        # Add layer control with the oil derricks layer as an overlay (unchecked by default)
+        # Add layer control with the oil well layer as an overlay (unchecked by default)
         layers_control = dl.LayersControl(
             [
-                dl.Overlay(oil_derricks_layer, name="Oil Derricks", checked=False)
+                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
             ],
             collapsed=False,
             position='topleft'
@@ -1025,6 +1025,7 @@ class BuyComponents:
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
+        self.oil_well_data = self.load_geojson_data('datasets/oil_well.geojson')
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1050,6 +1051,11 @@ class BuyComponents:
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
 
+    # Load the oil derrick GeoJSON data
+    def load_geojson_data(self, filepath):
+        with open(filepath, 'r') as f:
+            return json.load(f)
+        
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
         # Pre-calculation of unique subtypes and values for the checklist
@@ -1625,16 +1631,51 @@ class BuyComponents:
         return listed_date_components
 
     def create_map(self):
-        map = dl.Map(
-        [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullScreenControl()],
-        id='map',
-        zoom=9,
-        minZoom=9,
-        center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
-        preferCanvas=True,
-        closePopupOnClick=True,
-        style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+        # Namespace for JavaScript functions
+        ns = Namespace("myNamespace", "mySubNamespace")
+
+        # Create a GeoJSON layer for oil derricks with clustering
+        oil_well_layer = dl.GeoJSON(
+            id=str(uuid.uuid4()),
+            data=self.oil_well_data,
+            cluster=True,
+            zoomToBoundsOnClick=True,
+            superClusterOptions={
+                'radius': 160,
+                'maxClusterRadius': 40,
+                'minZoom': 3,
+            },
+            # Optional: Define a function for custom popup or styling
+            options=dict(
+                pointToLayer=ns("drawCustomIcon")
         )
+        )
+
+        # Create the main map with the lease layer
+        map = dl.Map(
+            [
+                dl.TileLayer(),
+                dl.LayerGroup(id="lease_geojson"),
+                dl.FullScreenControl()
+            ],
+            id='map',
+            zoom=9,
+            minZoom=9,
+            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            preferCanvas=True,
+            closePopupOnClick=True,
+            style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+        )
+
+        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        layers_control = dl.LayersControl(
+            [
+                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            ],
+            collapsed=False,
+            position='topleft'
+        )
+        map.children.append(layers_control)
 
         return map
     
