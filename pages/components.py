@@ -1,8 +1,11 @@
 from dash import html, dcc
+from dash_extensions.javascript import Namespace
 from datetime import date
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import json
 import pandas as pd
+import uuid
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -12,8 +15,39 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
         style={'display': 'inline-block'}
     )
 
+# Create a bass class for the oil well GeoJSON data
+# The oil well GeoJSON data is used on both the Lease and Buy pages, so both classes inherit from this base class
+class BaseClass:
+    oil_well_data = None
+
+    @classmethod
+    def load_geojson_data(cls, filepath):
+        with open(filepath, 'r') as f:
+            cls.oil_well_data = json.load(f)
+
+    @classmethod
+    def create_oil_well_geojson_layer(cls):
+        ns = Namespace("myNamespace", "mySubNamespace")
+        return dl.GeoJSON(
+            id=str(uuid.uuid4()),
+            data=cls.oil_well_data,
+            cluster=True,
+            zoomToBoundsOnClick=True,
+            superClusterOptions={
+                'radius': 160,
+                'maxClusterRadius': 40,
+                'minZoom': 3,
+            },
+            options=dict(
+                pointToLayer=ns("drawCustomIcon")
+            )
+        )
+
+# Load the oil well GeoJSON data into its oil_well_data class variable
+BaseClass.load_geojson_data('datasets/oil_well.geojson')
+
 # Create a class to hold all of the Dash components for the Lease page
-class LeaseComponents:
+class LeaseComponents(BaseClass):
     # Class Variables
     subtype_meaning = {
         'APT': 'Apartment (Unspecified)',
@@ -63,7 +97,8 @@ class LeaseComponents:
 
     def __init__(self, df):
         # Initalize these first because they are used in other components
-        self.df = df 
+        self.df = df
+        self.oil_well_layer = self.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -90,7 +125,7 @@ class LeaseComponents:
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-        
+    
     def create_subtype_checklist(self):
         # Instance Variable
         unique_values = self.df['subtype'].dropna().unique().tolist()
@@ -860,19 +895,37 @@ class LeaseComponents:
         return listed_date_components
     
     def create_map(self):
+        # Create a GeoJSON layer for oil wells with clustering
+        oil_well_layer = self.create_oil_well_geojson_layer()
+
+        # Create the main map with the lease layer
         map = dl.Map(
-        [dl.TileLayer(), dl.LayerGroup(id="lease_geojson"), dl.FullScreenControl()],
-        id='map',
-        zoom=9,
-        minZoom=9,
-        center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
-        preferCanvas=True,
-        closePopupOnClick=True,
-        style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+            [
+                dl.TileLayer(),
+                dl.LayerGroup(id="lease_geojson"),
+                dl.FullScreenControl()
+            ],
+            id='map',
+            zoom=9,
+            minZoom=9,
+            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            preferCanvas=True,
+            closePopupOnClick=True,
+            style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
 
+        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        layers_control = dl.LayersControl(
+            [
+                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            ],
+            collapsed=False,
+            position='topleft'
+        )
+        map.children.append(layers_control)
+
         return map
-    
+        
     # Create a button to toggle the collapsed section in the user options card
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/components/collapse/
     def create_more_options(self):
@@ -962,7 +1015,7 @@ class LeaseComponents:
         return title_card
 
 # Create a class to hold all the components for the buy page
-class BuyComponents:
+class BuyComponents(BaseClass):
     # Class Variables
     subtype_meaning = { # Define a dictionary that maps each subtype to its corresponding meaning
         'CONDO': 'Condo (Unspecified)',
@@ -981,6 +1034,7 @@ class BuyComponents:
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
+        self.oil_well_layer = self.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1006,6 +1060,11 @@ class BuyComponents:
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
 
+    # Load the oil derrick GeoJSON data
+    def load_geojson_data(self, filepath):
+        with open(filepath, 'r') as f:
+            return json.load(f)
+        
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
         # Pre-calculation of unique subtypes and values for the checklist
@@ -1581,16 +1640,34 @@ class BuyComponents:
         return listed_date_components
 
     def create_map(self):
+        # Create a GeoJSON layer for oil wells with clustering
+        oil_well_layer = self.create_oil_well_geojson_layer()
+
+        # Create the main map with the lease layer
         map = dl.Map(
-        [dl.TileLayer(), dl.LayerGroup(id="buy_geojson"), dl.FullScreenControl()],
-        id='map',
-        zoom=9,
-        minZoom=9,
-        center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
-        preferCanvas=True,
-        closePopupOnClick=True,
-        style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+            [
+                dl.TileLayer(),
+                dl.LayerGroup(id="buy_geojson"),
+                dl.FullScreenControl()
+            ],
+            id='map',
+            zoom=9,
+            minZoom=9,
+            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            preferCanvas=True,
+            closePopupOnClick=True,
+            style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
+
+        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        layers_control = dl.LayersControl(
+            [
+                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            ],
+            collapsed=False,
+            position='topleft'
+        )
+        map.children.append(layers_control)
 
         return map
     
