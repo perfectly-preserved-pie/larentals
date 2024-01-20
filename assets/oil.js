@@ -14,7 +14,19 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
                 popupContent += 'Lease Name: ' + (feature.properties.LeaseName || 'N/A') + '<br>';
                 popupContent += 'Start Date: ' + (feature.properties.SpudDate || 'N/A') + '<br>';
                 popupContent += 'Well Operator: ' + (feature.properties.OperatorNa || 'N/A') + '<br>';
-                popupContent += 'Well Status: ' + (feature.properties.WellStatus || 'N/A') + '<br>';
+                // Check the Well Status and set the color
+                var wellStatus = feature.properties.WellStatus || 'N/A';
+                var wellStatusColor = 'black';
+                if (wellStatus === 'Plugged') {
+                    wellStatusColor = 'green';
+                } 
+                else if (wellStatus === 'Active') {
+                    wellStatusColor = 'red';
+                } 
+                else if (wellStatus === 'Idle') {
+                    wellStatusColor = '#DAA520';  // Dark yellow
+                }
+                popupContent += 'Well Status: <span style="color:' + wellStatusColor + ';">' + wellStatus + '</span><br>';
                 popupContent += 'Well Type: ' + (feature.properties.WellTypeLa || 'N/A') + '<br>';
                 
                 marker.bindPopup(popupContent);
