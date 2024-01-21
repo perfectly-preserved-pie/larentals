@@ -214,7 +214,7 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', for
 
 # Save the dataframe for later ingestion by app.py
 # Read in the old dataframe
-df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/datasets/lease.parquet')
+df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/lease.parquet')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
@@ -246,4 +246,4 @@ for row in outside_ca_rows.itertuples():
   df_combined.at[row.Index, 'Latitude'] = coordinates[0]
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new dataframe
-df_combined.to_parquet(path="datasets/lease.parquet")
+df_combined.to_parquet(path="assets/datasets/lease.parquet")

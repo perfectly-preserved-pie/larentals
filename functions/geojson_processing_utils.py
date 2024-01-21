@@ -1,16 +1,20 @@
 from typing import Dict, List
+import json
 
-def optimize_geojson(data: Dict, fields_to_keep: List[str]) -> Dict:
+def optimize_geojson(input_filepath: str, output_filepath: str, fields_to_keep: List[str]) -> None:
     """
-    Optimizes a GeoJSON data by retaining only specified fields in the properties of each feature.
+    Optimizes a GeoJSON data by retaining only specified fields in the properties of each feature,
+    and saves the optimized data to a file.
 
     Args:
-        data (Dict): The GeoJSON data to optimize.
+        input_filepath (str): Path to the input GeoJSON file.
+        output_filepath (str): Path to the optimized output GeoJSON file.
         fields_to_keep (List[str]): A list of strings specifying the fields to retain in the properties.
-
-    Returns:
-        Dict: The optimized GeoJSON data.
     """
+    # Load the GeoJSON data from the input file
+    with open(input_filepath, 'r') as f:
+        data = json.load(f)
+
     # Keep only the features in Los Angeles County
     data['features'] = [feature for feature in data['features'] if feature['properties'].get('CountyName') == 'Los Angeles']
 
@@ -20,4 +24,6 @@ def optimize_geojson(data: Dict, fields_to_keep: List[str]) -> Dict:
         # Keep only the required fields
         feature['properties'] = {key: properties[key] for key in fields_to_keep if key in properties}
 
-    return data
+    # Save the optimized GeoJSON data to the output file
+    with open(output_filepath, 'w') as f:
+        json.dump(data, f)

@@ -28,7 +28,7 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
 # import the dataframe
-df = pd.read_parquet(path='datasets/lease.parquet')
+df = pd.read_parquet(path='assets/datasets/lease.parquet')
 pd.set_option("display.precision", 10)
 
 lease_filters = LeaseFilters(df)
