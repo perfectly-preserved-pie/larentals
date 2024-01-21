@@ -7,7 +7,6 @@ import dash_leaflet as dl
 import json
 import pandas as pd
 import uuid
-from functions.geojson_processing_utils import optimize_geojson
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -23,24 +22,20 @@ class BaseClass:
     oil_well_data: ClassVar[Optional[Any]] = None
 
     @classmethod
-    def load_geojson_data(cls, filepath: str = 'datasets/oil_well.geojson') -> Any:
+    def load_geojson_data(cls, filepath: str = 'assets/datasets/oil_well_optimized.geojson') -> Any:
         """
         Loads GeoJSON data from a file, implementing lazy loading to avoid reloading 
         if the data is already loaded.
 
         Args:
-            filepath (str): Path to the GeoJSON file. Defaults to 'datasets/oil_well.geojson'.
+            filepath (str): Path to the GeoJSON file. Defaults to 'assets/datasets/oil_well_optimized.geojson'.
 
         Returns:
             Any: The loaded GeoJSON data.
         """
         if cls.oil_well_data is None:
             with open(filepath, 'r') as f:
-                data = json.load(f)
-                cls.oil_well_data = optimize_geojson(
-                    data=data, 
-                    fields_to_keep=["API", "LeaseName", "SpudDate", "OperatorNa", "WellStatus", "WellTypeLa"]
-                )
+                cls.oil_well_data = json.load(f)
         return cls.oil_well_data
 
     @classmethod
@@ -54,7 +49,7 @@ class BaseClass:
         ns = Namespace("myNamespace", "mySubNamespace")
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=cls.load_geojson_data(),
+            url='assets/datasets/oil_well_optimized.geojson',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
