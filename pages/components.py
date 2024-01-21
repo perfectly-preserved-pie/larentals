@@ -49,7 +49,7 @@ class BaseClass:
         ns = Namespace("myNamespace", "mySubNamespace")
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=cls.load_geojson_data(),
+            url='assets/datasets/oil_well_optimized.geojson',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
