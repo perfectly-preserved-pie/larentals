@@ -935,7 +935,7 @@ class LeaseComponents(BaseClass):
             [
                 dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
             ],
-            collapsed=False,
+            collapsed=True,
             position='topleft'
         )
         map.children.append(layers_control)
@@ -1675,7 +1675,7 @@ class BuyComponents(BaseClass):
             [
                 dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
             ],
-            collapsed=False,
+            collapsed=True,
             position='topleft'
         )
         map.children.append(layers_control)
