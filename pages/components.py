@@ -7,6 +7,7 @@ import dash_leaflet as dl
 import json
 import pandas as pd
 import uuid
+from functions.geojson_processing_utils import optimize_geojson
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -35,7 +36,11 @@ class BaseClass:
         """
         if cls.oil_well_data is None:
             with open(filepath, 'r') as f:
-                cls.oil_well_data = json.load(f)
+                data = json.load(f)
+                cls.oil_well_data = optimize_geojson(
+                    data=data, 
+                    fields_to_keep=["API", "LeaseName", "SpudDate", "OperatorNa", "WellStatus", "WellTypeLa"]
+                )
         return cls.oil_well_data
 
     @classmethod
