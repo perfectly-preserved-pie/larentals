@@ -1,11 +1,13 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
+from typing import Any, ClassVar, Optional
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import json
 import pandas as pd
 import uuid
+from functions.geojson_processing_utils import optimize_geojson
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -18,19 +20,41 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
 # Create a bass class for the oil well GeoJSON data
 # The oil well GeoJSON data is used on both the Lease and Buy pages, so both classes inherit from this base class
 class BaseClass:
-    oil_well_data = None
+    oil_well_data: ClassVar[Optional[Any]] = None
 
     @classmethod
-    def load_geojson_data(cls, filepath):
-        with open(filepath, 'r') as f:
-            cls.oil_well_data = json.load(f)
+    def load_geojson_data(cls, filepath: str = 'datasets/oil_well.geojson') -> Any:
+        """
+        Loads GeoJSON data from a file, implementing lazy loading to avoid reloading 
+        if the data is already loaded.
+
+        Args:
+            filepath (str): Path to the GeoJSON file. Defaults to 'datasets/oil_well.geojson'.
+
+        Returns:
+            Any: The loaded GeoJSON data.
+        """
+        if cls.oil_well_data is None:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+                cls.oil_well_data = optimize_geojson(
+                    data=data, 
+                    fields_to_keep=["API", "LeaseName", "SpudDate", "OperatorNa", "WellStatus", "WellTypeLa"]
+                )
+        return cls.oil_well_data
 
     @classmethod
-    def create_oil_well_geojson_layer(cls):
+    def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
+        """
+        Creates a Dash Leaflet GeoJSON layer with oil well data.
+
+        Returns:
+            dl.GeoJSON: A Dash Leaflet GeoJSON component.
+        """
         ns = Namespace("myNamespace", "mySubNamespace")
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=cls.oil_well_data,
+            data=cls.load_geojson_data(),
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -42,9 +66,6 @@ class BaseClass:
                 pointToLayer=ns("drawCustomIcon")
             )
         )
-
-# Load the oil well GeoJSON data into its oil_well_data class variable
-BaseClass.load_geojson_data('datasets/oil_well.geojson')
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
@@ -98,7 +119,7 @@ class LeaseComponents(BaseClass):
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_well_layer = self.create_oil_well_geojson_layer()
+        self.oil_well_layer = BaseClass.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1034,7 +1055,7 @@ class BuyComponents(BaseClass):
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_well_layer = self.create_oil_well_geojson_layer()
+        self.oil_well_layer = BaseClass.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1059,11 +1080,6 @@ class BuyComponents(BaseClass):
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-
-    # Load the oil derrick GeoJSON data
-    def load_geojson_data(self, filepath):
-        with open(filepath, 'r') as f:
-            return json.load(f)
         
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
