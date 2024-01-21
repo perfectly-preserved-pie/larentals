@@ -1,6 +1,7 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
+from typing import Any, ClassVar, Optional
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import json
@@ -18,21 +19,37 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
 # Create a bass class for the oil well GeoJSON data
 # The oil well GeoJSON data is used on both the Lease and Buy pages, so both classes inherit from this base class
 class BaseClass:
-    oil_well_data = None
+    oil_well_data: ClassVar[Optional[Any]] = None
 
     @classmethod
-    def load_geojson_data(cls, filepath: str = 'datasets/oil_well.geojson'):
+    def load_geojson_data(cls, filepath: str = 'datasets/oil_well.geojson') -> Any:
+        """
+        Loads GeoJSON data from a file, implementing lazy loading to avoid reloading 
+        if the data is already loaded.
+
+        Args:
+            filepath (str): Path to the GeoJSON file. Defaults to 'datasets/oil_well.geojson'.
+
+        Returns:
+            Any: The loaded GeoJSON data.
+        """
         if cls.oil_well_data is None:
             with open(filepath, 'r') as f:
                 cls.oil_well_data = json.load(f)
         return cls.oil_well_data
 
     @classmethod
-    def create_oil_well_geojson_layer(cls):
+    def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
+        """
+        Creates a Dash Leaflet GeoJSON layer with oil well data.
+
+        Returns:
+            dl.GeoJSON: A Dash Leaflet GeoJSON component.
+        """
         ns = Namespace("myNamespace", "mySubNamespace")
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data = cls.load_geojson_data(),
+            data=cls.load_geojson_data(),
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
