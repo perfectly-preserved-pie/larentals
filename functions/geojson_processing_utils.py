@@ -11,7 +11,10 @@ def optimize_geojson(data: Dict, fields_to_keep: List[str]) -> Dict:
     Returns:
         Dict: The optimized GeoJSON data.
     """
-    # Process each feature in the GeoJSON
+    # Keep only the features in Los Angeles County
+    data['features'] = [feature for feature in data['features'] if feature['properties'].get('CountyName') == 'Los Angeles']
+
+    # Now process each remaining feature in the GeoJSON
     for feature in data['features']:
         properties: Dict = feature['properties']
         # Keep only the required fields
