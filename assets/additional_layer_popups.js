@@ -1,6 +1,6 @@
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
-        drawCustomIcon: function(feature, latlng) {
+        drawOilIcon: function(feature, latlng) {
             const customIcon = L.icon({
                 iconUrl: '/assets/oil_derrick_icon.png',
                 iconSize: [20, 20]  // Adjust the size as needed

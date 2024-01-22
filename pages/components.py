@@ -59,7 +59,7 @@ class BaseClass:
                 'minZoom': 3,
             },
             options=dict(
-                pointToLayer=ns("drawCustomIcon")
+                pointToLayer=ns("drawOilIcon")
             )
         )
     
