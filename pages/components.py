@@ -9,25 +9,6 @@ import json
 import pandas as pd
 import uuid
 
-def create_new_geojson_layer(url: str) -> dl.GeoJSON:
-    """
-    Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. If the data is not in GeoJSON format, it is converted.
-
-    Args:
-        url (str): The URL to fetch the data from.
-
-    Returns:
-        dl.GeoJSON: A Dash Leaflet GeoJSON component.
-    """
-    data = fetch_json_data(url)
-    
-    # Check if the data is already in GeoJSON format
-    if not ('type' in data and 'features' in data):
-        data = convert_to_geojson(data)
-    
-    return dl.GeoJSON(data=data, id=str(uuid.uuid4()))
-
-
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
     return html.Button(
@@ -36,8 +17,8 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
         style={'display': 'inline-block'}
     )
 
-# Create a bass class for the oil well GeoJSON data
-# The oil well GeoJSON data is used on both the Lease and Buy pages, so both classes inherit from this base class
+# Create a bass class for the additional layers
+# The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
 class BaseClass:
     oil_well_data: ClassVar[Optional[Any]] = None
 
@@ -81,6 +62,39 @@ class BaseClass:
                 pointToLayer=ns("drawCustomIcon")
             )
         )
+    
+    @classmethod
+    def create_new_geojson_layer(cls, url: str) -> dl.GeoJSON:
+        """
+        Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. If the data is not in GeoJSON format, it is converted.
+
+        Args:
+            url (str): The URL to fetch the data from.
+
+        Returns:
+            dl.GeoJSON: A Dash Leaflet GeoJSON component.
+        """
+        data = fetch_json_data(url)
+        
+        # Check if the data is already in GeoJSON format
+        if not ('type' in data and 'features' in data):
+            data = convert_to_geojson(data)
+        
+        return dl.GeoJSON(
+            data=data,
+            id=str(uuid.uuid4()),
+            cluster=True,
+            zoomToBoundsOnClick=True,
+            superClusterOptions={
+                'radius': 160,
+                'maxClusterRadius': 40,
+                'minZoom': 3,
+            },
+            options=dict(
+                pointToLayer=Namespace("myNamespace", "mySubNamespace")("drawCrimeIcon")
+            )
+            )
+
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
@@ -939,7 +953,7 @@ class LeaseComponents(BaseClass):
         """
         # Create additional layers
         oil_well_layer = self.create_oil_well_geojson_layer()
-        crime_layer = create_new_geojson_layer('https://data.lacity.org/resource/2nrs-mtv8.json')
+        crime_layer = self.create_new_geojson_layer('https://data.lacity.org/resource/2nrs-mtv8.json')
 
         # Create the main map with the lease layer
         map = dl.Map(
