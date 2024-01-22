@@ -1,11 +1,11 @@
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
         drawOilIcon: function(feature, latlng) {
-            const customIcon = L.icon({
+            const OilIcon = L.icon({
                 iconUrl: '/assets/oil_derrick_icon.png',
                 iconSize: [20, 20]  // Adjust the size as needed
             });
-            var marker = L.marker(latlng, {icon: customIcon});
+            var marker = L.marker(latlng, {icon: OilIcon});
             
             // Check if the required properties exist and create the popup content
             if (feature.properties) {
@@ -32,6 +32,31 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
                 marker.bindPopup(popupContent);
             }
 
+            return marker;
+        },
+        drawCrimeIcon: function(feature, latlng) {
+            const CrimeIcon = L.icon({
+                iconUrl: '/assets/crime_icon.png',
+                iconSize: [20, 20]  // Adjust the size as needed
+            });
+            var marker = L.marker(latlng, {icon: CrimeIcon});
+        
+            // Check if the required properties exist and create the popup content
+            if (feature.properties) {
+                var popupContent = '<h4>Crime Info</h4>';
+                popupContent += 'DR No: ' + (feature.properties.dr_no || 'N/A') + '<br>';
+                popupContent += 'Date Occurred: ' + (feature.properties.date_occ || 'N/A') + '<br>';
+                popupContent += 'Time Occurred: ' + (feature.properties.time_occ || 'N/A') + '<br>';
+                popupContent += 'Crime Code Description: ' + (feature.properties.crm_cd_desc || 'N/A') + '<br>';
+                popupContent += 'Victim Age: ' + (feature.properties.vict_age || 'N/A') + '<br>';
+                popupContent += 'Victim Sex: ' + (feature.properties.vict_sex || 'N/A') + '<br>';
+                popupContent += 'Premise Description: ' + (feature.properties.premis_desc || 'N/A') + '<br>';
+                popupContent += 'Weapon Description: ' + (feature.properties.weapon_desc || 'N/A') + '<br>';
+                popupContent += 'Status Description: ' + (feature.properties.status_desc || 'N/A') + '<br>';
+        
+                marker.bindPopup(popupContent);
+            }
+        
             return marker;
         }
     }
