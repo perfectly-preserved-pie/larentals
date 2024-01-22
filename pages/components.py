@@ -973,7 +973,7 @@ class LeaseComponents(BaseClass):
         # Add a layer control for the additional layers
         layers_control = dl.LayersControl(
             [ # Create a list of layers to add to the control
-                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False),
+                dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
                 dl.Overlay(crime_layer, name="Crime", checked=False),
             ],
             collapsed=True,
