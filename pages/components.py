@@ -1,12 +1,27 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
+from functions.geojson_processing_utils import fetch_geojson_data
 from typing import Any, ClassVar, Optional
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import json
 import pandas as pd
 import uuid
+
+def create_new_geojson_layer(url: str) -> dl.GeoJSON:
+    """
+    Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. Assumes that the data is in GeoJSON format.
+
+    Args:
+        url (str): The URL to fetch the GeoJSON data from.
+
+    Returns:
+        dl.GeoJSON: A Dash Leaflet GeoJSON component.
+    """
+    data = fetch_geojson_data(url)
+    return dl.GeoJSON(data=data, id=str(uuid.uuid4()))
+
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -911,8 +926,15 @@ class LeaseComponents(BaseClass):
         return listed_date_components
     
     def create_map(self):
-        # Create a GeoJSON layer for oil wells with clustering
+        """
+        Creates a Dash Leaflet map with multiple layers.
+
+        Returns:
+            dl.Map: A Dash Leaflet Map component.
+        """
+        # Create additional layers
         oil_well_layer = self.create_oil_well_geojson_layer()
+        crime_layer = create_new_geojson_layer('https://data.lacity.org/resource/2nrs-mtv8.json')
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -929,11 +951,11 @@ class LeaseComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
-
-        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        # Add a layer control for the additional layers
         layers_control = dl.LayersControl(
-            [
-                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            [ # Create a list of layers to add to the control
+                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False),
+                dl.Overlay(crime_layer, name="Crime", checked=False),
             ],
             collapsed=True,
             position='topleft'

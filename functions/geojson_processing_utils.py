@@ -1,5 +1,6 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 import json
+import requests
 
 def optimize_geojson(input_filepath: str, output_filepath: str, fields_to_keep: List[str]) -> None:
     """
@@ -27,3 +28,17 @@ def optimize_geojson(input_filepath: str, output_filepath: str, fields_to_keep: 
     # Save the optimized GeoJSON data to the output file
     with open(output_filepath, 'w') as f:
         json.dump(data, f)
+
+def fetch_geojson_data(url: str) -> Any:
+    """
+    Fetches GeoJSON data from a URL.
+
+    Args:
+        url (str): The URL to fetch the GeoJSON data from.
+
+    Returns:
+        Any: The fetched GeoJSON data.
+    """
+    response = requests.get(url)
+    response.raise_for_status() # Raise an exception if the request was unsuccessful
+    return response.json()
