@@ -1,7 +1,7 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
-from functions.geojson_processing_utils import fetch_geojson_data
+from functions.geojson_processing_utils import fetch_json_data, convert_to_geojson
 from typing import Any, ClassVar, Optional
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -11,15 +11,20 @@ import uuid
 
 def create_new_geojson_layer(url: str) -> dl.GeoJSON:
     """
-    Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. Assumes that the data is in GeoJSON format.
+    Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. If the data is not in GeoJSON format, it is converted.
 
     Args:
-        url (str): The URL to fetch the GeoJSON data from.
+        url (str): The URL to fetch the data from.
 
     Returns:
         dl.GeoJSON: A Dash Leaflet GeoJSON component.
     """
-    data = fetch_geojson_data(url)
+    data = fetch_json_data(url)
+    
+    # Check if the data is already in GeoJSON format
+    if not ('type' in data and 'features' in data):
+        data = convert_to_geojson(data)
+    
     return dl.GeoJSON(data=data, id=str(uuid.uuid4()))
 
 

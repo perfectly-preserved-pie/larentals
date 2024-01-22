@@ -29,16 +29,43 @@ def optimize_geojson(input_filepath: str, output_filepath: str, fields_to_keep: 
     with open(output_filepath, 'w') as f:
         json.dump(data, f)
 
-def fetch_geojson_data(url: str) -> Any:
+def fetch_json_data(url: str) -> Any:
     """
-    Fetches GeoJSON data from a URL.
+    Fetches JSON data from a URL.
 
     Args:
-        url (str): The URL to fetch the GeoJSON data from.
+        url (str): The URL to fetch the JSON data from.
 
     Returns:
-        Any: The fetched GeoJSON data.
+        Any: The fetched JSON data.
     """
     response = requests.get(url)
     response.raise_for_status() # Raise an exception if the request was unsuccessful
     return response.json()
+
+def convert_to_geojson(data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Converts a list of dictionaries to GeoJSON format.
+
+    Args:
+        data (List[Dict[str, Any]]): The data to convert.
+
+    Returns:
+        Dict[str, Any]: The data in GeoJSON format.
+    """
+    for item in data:
+        return {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        # Note that the coordinates are in the opposite order from the GeoJSON spec
+                        # https://tools.ietf.org/html/rfc7946#section-3.1.1
+                        'coordinates': [float(item['lon']), float(item['lat'])]
+                    },
+                    'properties': item,
+                }
+            ],
+    }
