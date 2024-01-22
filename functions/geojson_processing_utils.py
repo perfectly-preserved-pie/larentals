@@ -1,6 +1,7 @@
 from typing import Dict, List, Any
 import json
 import requests
+import uuid
 
 def optimize_geojson(input_filepath: str, output_filepath: str, fields_to_keep: List[str]) -> None:
     """
@@ -53,19 +54,18 @@ def convert_to_geojson(data: List[Dict[str, Any]]) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: The data in GeoJSON format.
     """
-    for item in data:
-        return {
-            'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Point',
-                        # Note that the coordinates are in the opposite order from the GeoJSON spec
-                        # https://tools.ietf.org/html/rfc7946#section-3.1.1
-                        'coordinates': [float(item['lon']), float(item['lat'])]
-                    },
-                    'properties': item,
-                }
-            ],
+    return {
+        'type': 'FeatureCollection',
+        'features': [
+            {
+                'type': 'Feature',
+                'id': str(uuid.uuid4()),  # Assign a unique id to each feature
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [float(item['lon']), float(item['lat'])]
+                },
+                'properties': item,
+            }
+            for item in data
+        ],
     }
