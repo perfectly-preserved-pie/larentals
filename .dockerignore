@@ -5,3 +5,4 @@
 *.csv
 *.pyc
 *.xlsx
+assets/datasets/oil_well.geojson

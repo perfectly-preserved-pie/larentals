@@ -1,6 +1,7 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
+from functions.geojson_processing_utils import fetch_json_data, convert_to_geojson
 from typing import Any, ClassVar, Optional
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -16,8 +17,8 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
         style={'display': 'inline-block'}
     )
 
-# Create a bass class for the oil well GeoJSON data
-# The oil well GeoJSON data is used on both the Lease and Buy pages, so both classes inherit from this base class
+# Create a bass class for the additional layers
+# The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
 class BaseClass:
     oil_well_data: ClassVar[Optional[Any]] = None
 
@@ -58,9 +59,42 @@ class BaseClass:
                 'minZoom': 3,
             },
             options=dict(
-                pointToLayer=ns("drawCustomIcon")
+                pointToLayer=ns("drawOilIcon")
             )
         )
+    
+    @classmethod
+    def create_new_geojson_layer(cls, url: str) -> dl.GeoJSON:
+        """
+        Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. If the data is not in GeoJSON format, it is converted.
+
+        Args:
+            url (str): The URL to fetch the data from.
+
+        Returns:
+            dl.GeoJSON: A Dash Leaflet GeoJSON component.
+        """
+        data = fetch_json_data(url)
+        
+        # Check if the data is already in GeoJSON format
+        if not ('type' in data and 'features' in data):
+            data = convert_to_geojson(data)
+        
+        return dl.GeoJSON(
+            data=data,
+            id=str(uuid.uuid4()),
+            cluster=True,
+            zoomToBoundsOnClick=True,
+            superClusterOptions={
+                'radius': 160,
+                'maxClusterRadius': 40,
+                'minZoom': 3,
+            },
+            options=dict(
+                pointToLayer=Namespace("myNamespace", "mySubNamespace")("drawCrimeIcon")
+            )
+            )
+
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
@@ -911,8 +945,15 @@ class LeaseComponents(BaseClass):
         return listed_date_components
     
     def create_map(self):
-        # Create a GeoJSON layer for oil wells with clustering
+        """
+        Creates a Dash Leaflet map with multiple layers.
+
+        Returns:
+            dl.Map: A Dash Leaflet Map component.
+        """
+        # Create additional layers
         oil_well_layer = self.create_oil_well_geojson_layer()
+        crime_layer = self.create_new_geojson_layer('https://data.lacity.org/resource/2nrs-mtv8.json')
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -929,13 +970,13 @@ class LeaseComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
-
-        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        # Add a layer control for the additional layers
         layers_control = dl.LayersControl(
-            [
-                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            [ # Create a list of layers to add to the control
+                dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
+                dl.Overlay(crime_layer, name="Crime", checked=False),
             ],
-            collapsed=False,
+            collapsed=True,
             position='topleft'
         )
         map.children.append(layers_control)
@@ -1675,7 +1716,7 @@ class BuyComponents(BaseClass):
             [
                 dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
             ],
-            collapsed=False,
+            collapsed=True,
             position='topleft'
         )
         map.children.append(layers_control)
