@@ -56,7 +56,7 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
         drawCrimeIcon: function(feature, latlng) {
             const CrimeIcon = L.icon({
                 iconUrl: '/assets/crime_icon.png',
-                iconSize: [20, 20]  // Adjust the size as needed
+                iconSize: [25, 25]  // Adjust the size as needed
             });
             var marker = L.marker(latlng, {icon: CrimeIcon});
         
