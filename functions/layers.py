@@ -84,6 +84,7 @@ class BaseClass:
         one_year_ago_str = one_year_ago.strftime('%Y-%m-%dT%H:%M:%S')
 
         # Construct the query
+        # See https://dev.socrata.com/docs/queries/where.html
         query = (
             f"date_occ between '{one_year_ago_str}' and '{today_str}'"
         )
@@ -93,15 +94,22 @@ class BaseClass:
             dataset_id, 
             where=query, 
             limit=75000, 
+            # Only select the required fields to reduce the size of the response
             select="dr_no, date_occ, time_occ, crm_cd_desc, vict_age, vict_sex, premis_desc, weapon_desc, status_desc, lat, lon"
         )
 
         # Check if the data is already in GeoJSON format
         if not ('type' in data and 'features' in data):
             data = convert_to_geojson(data)
+
+        # Save the data to a GeoJSON file in assets/datasets
+        # It seems weird to save it to the disk instead of just loading it directly into the GeoJSON layer from memory but it's actually faster this way
+        # See https://community.plotly.com/t/dash-leaflet-efficiency-filtering-a-large-geojson-11-mb/52785/2 and https://www.dash-leaflet.com/components/vector_layers/geojson#a-keyword-arguments
+        with open('assets/datasets/crime.geojson', 'w') as f:
+            json.dump(data, f)
         
         return dl.GeoJSON(
-            data=data,
+            url='assets/datasets/crime.geojson',
             id=str(uuid.uuid4()),
             cluster=True,
             zoomToBoundsOnClick=True,
