@@ -1,12 +1,16 @@
 from dash_extensions.javascript import Namespace
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from functions.geojson_processing_utils import fetch_json_data, convert_to_geojson
 from sodapy import Socrata
 from typing import Any, ClassVar, Optional
 from urllib.parse import urlparse
 import dash_leaflet as dl
 import json
+import os
 import uuid
+
+load_dotenv()
 
 # Create a base class for the additional layers
 # The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
@@ -69,7 +73,7 @@ class BaseClass:
         print(domain, dataset_id)
 
         # Create a Socrata client
-        client = Socrata(domain, None)
+        client = Socrata(domain, os.getenv('SOCRATA_APP_TOKEN'))
 
         # Calculate the date range for the past year
         today = datetime.now()
