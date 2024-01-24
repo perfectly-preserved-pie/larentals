@@ -1,3 +1,22 @@
+function militaryToStandard(time) {
+    // Convert the time to a string if it's not already
+    time = String(time);
+
+    // Pad the time with zeros if it's less than 4 digits
+    while (time.length < 4) {
+        time = '0' + time;
+    }
+
+    var hours = parseInt(time.substring(0, 2));
+    var minutes = parseInt(time.substring(2, 4));
+    var suffix = hours >= 12 ? 'PM' : 'AM';
+
+    // Convert to 12-hour time
+    hours = ((hours + 11) % 12) + 1;
+
+    return hours + ':' + minutes + ' ' + suffix;
+}
+
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
         drawOilIcon: function(feature, latlng) {
@@ -45,8 +64,8 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
             if (feature.properties) {
                 var popupContent = '<h4>Crime Info</h4>';
                 popupContent += 'DR No: ' + (feature.properties.dr_no || 'N/A') + '<br>';
-                popupContent += 'Date Occurred: ' + (feature.properties.date_occ || 'N/A') + '<br>';
-                popupContent += 'Time Occurred: ' + (feature.properties.time_occ || 'N/A') + '<br>';
+                popupContent += 'Date Occurred: ' + (feature.properties.date_occ.split('T')[0] || 'N/A') + '<br>';
+                popupContent += 'Time Occurred: ' + (militaryToStandard(feature.properties.time_occ) || 'N/A') + '<br>';
                 popupContent += 'Crime Code Description: ' + (feature.properties.crm_cd_desc || 'N/A') + '<br>';
                 popupContent += 'Victim Age: ' + (feature.properties.vict_age || 'N/A') + '<br>';
                 popupContent += 'Victim Sex: ' + (feature.properties.vict_sex || 'N/A') + '<br>';
