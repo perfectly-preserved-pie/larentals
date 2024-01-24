@@ -65,7 +65,6 @@ class LeaseComponents(BaseClass):
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_well_layer = BaseClass.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1007,7 +1006,6 @@ class BuyComponents(BaseClass):
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_well_layer = BaseClass.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
