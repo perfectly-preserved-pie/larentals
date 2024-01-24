@@ -70,7 +70,6 @@ class BaseClass:
         parsed_url = urlparse(base_url)
         domain = parsed_url.netloc
         dataset_id = parsed_url.path.split('/')[-1].split('.')[0]
-        print(domain, dataset_id)
 
         # Create a Socrata client
         client = Socrata(domain, os.getenv('SOCRATA_APP_TOKEN'))
