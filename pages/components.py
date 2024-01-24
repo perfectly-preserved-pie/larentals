@@ -1,11 +1,14 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
+from datetime import datetime, timedelta
 from functions.geojson_processing_utils import fetch_json_data, convert_to_geojson
 from typing import Any, ClassVar, Optional
+from urllib.parse import urlparse
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import json
+from sodapy import Socrata
 import pandas as pd
 import uuid
 
@@ -64,18 +67,44 @@ class BaseClass:
         )
     
     @classmethod
-    def create_new_geojson_layer(cls, url: str) -> dl.GeoJSON:
+    def create_crime_layer(cls) -> dl.GeoJSON:
         """
-        Creates a new Dash Leaflet GeoJSON layer with data fetched from a URL. If the data is not in GeoJSON format, it is converted.
-
-        Args:
-            url (str): The URL to fetch the data from.
+        Creates a new Dash Leaflet GeoJSON layer with crime data from the past year.
 
         Returns:
             dl.GeoJSON: A Dash Leaflet GeoJSON component.
         """
-        data = fetch_json_data(url)
-        
+        base_url = "https://data.lacity.org/resource/2nrs-mtv8.geojson"
+        # Parse the base_url to get the domain and dataset identifier
+        parsed_url = urlparse(base_url)
+        domain = parsed_url.netloc
+        dataset_id = parsed_url.path.split('/')[-1].split('.')[0]
+        print(domain, dataset_id)
+
+        # Create a Socrata client
+        client = Socrata(domain, None)
+
+        # Calculate the date range for the past year
+        today = datetime.now()
+        one_year_ago = today - timedelta(days=365)
+
+        # Format the dates in the required format
+        today_str = today.strftime('%Y-%m-%dT%H:%M:%S')
+        one_year_ago_str = one_year_ago.strftime('%Y-%m-%dT%H:%M:%S')
+
+        # Construct the query
+        query = (
+            f"date_occ between '{one_year_ago_str}' and '{today_str}'"
+        )
+
+        # Fetch the data
+        data = client.get(
+            dataset_id, 
+            where=query, 
+            limit=75000, 
+            select="dr_no, date_occ, time_occ, crm_cd_desc, vict_age, vict_sex, premis_desc, weapon_desc, status_desc, lat, lon"
+        )
+
         # Check if the data is already in GeoJSON format
         if not ('type' in data and 'features' in data):
             data = convert_to_geojson(data)
@@ -93,7 +122,7 @@ class BaseClass:
             options=dict(
                 pointToLayer=Namespace("myNamespace", "mySubNamespace")("drawCrimeIcon")
             )
-            )
+        )
 
 
 # Create a class to hold all of the Dash components for the Lease page
@@ -953,8 +982,7 @@ class LeaseComponents(BaseClass):
         """
         # Create additional layers
         oil_well_layer = self.create_oil_well_geojson_layer()
-        crime_layer = self.create_new_geojson_layer('https://data.lacity.org/resource/2nrs-mtv8.json')
-
+        crime_layer = self.create_crime_layer()
         # Create the main map with the lease layer
         map = dl.Map(
             [
