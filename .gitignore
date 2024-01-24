@@ -1,11 +1,12 @@
 __pycache__/larentals.cpython-310.pyc
 .env
+.vscode/settings.json
 *.cpython
 *.csv
 *.pyc
 *.xlsx
+assets/datasets/crime.geojson
 env
 hdf
 larentals-checkpoint.py
 larentals.csv
-.vscode/settings.json
