@@ -14,6 +14,9 @@ function militaryToStandard(time) {
     // Convert to 12-hour time
     hours = ((hours + 11) % 12) + 1;
 
+    // Pad the minutes with a leading zero if they're less than 10
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+
     return hours + ':' + minutes + ' ' + suffix;
 }
 
