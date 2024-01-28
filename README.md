@@ -23,7 +23,7 @@ Or you can click the _Looking to buy a property instead?_ button: ![image](https
 
 
 
-**⚠ This website is "slightly" mobile-friendly: it works OK on a smartphone, but I highly recommend using an actual computer or tablet for the best experience!**
+**⚠ This website is mobile-friendly but I highly recommend using an actual computer or tablet for the best experience**
 
 ## The Tech Stack
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
