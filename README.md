@@ -1,4 +1,10 @@
 # [WhereToLive.LA](https://wheretolive.la)
+- [What I'm Using](#what-im-using)
+- [A Deeper Dive](#a-deeper-dive)
+- [How to Build and Run](#how-to-build-and-run)
+  - [Docker](#docker)
+  - [Non-Docker](#non-docker)
+ 
 [![CodeQL](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/codeql-analysis.yml)
 
 [![Build image and publish to DockerHub](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml)
@@ -25,7 +31,7 @@ Or you can click the _Looking to buy a property instead?_ button: ![image](https
 
 **⚠ This website is mobile-friendly but I highly recommend using an actual computer or tablet for the best experience**
 
-## The Tech Stack
+## What I'm Using
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
 *    [Dash Leaflet](https://dash-leaflet.herokuapp.com/) (displaying the map and graphing the markers)
 *    [Dash Bootstrap Components](https://dash-bootstrap-components.opensource.faculty.ai/) (the website layout and icons)
@@ -33,7 +39,7 @@ Or you can click the _Looking to buy a property instead?_ button: ![image](https
 *    [ImageKit](https://github.com/imagekit-developer/imagekit-python) (resizing MLS photos into a standard size on the fly)
 *    [Pandas](https://pandas.pydata.org/) (handling and manipulating the rental property data for each address)
 
-## The Blog Post
+## A Deeper Dive
 [I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/wheretolivedotla/)
 
 ## How to Build and Run
