@@ -53,9 +53,8 @@ class BaseClass:
                 'maxClusterRadius': 40,
                 'minZoom': 3,
             },
-            options=dict(
-                pointToLayer=ns("drawOilIcon")
-            )
+            clusterToLayer=ns("drawOilClusterIcon"),
+            pointToLayer=ns("drawOilIcon"),
         )
 
     def create_crime_layer(cls) -> dl.GeoJSON:
