@@ -23,14 +23,27 @@ function militaryToStandard(time) {
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
         drawOilClusterIcon: function(feature, latlng, index, context){
-            // Here, we'll create a simple circle icon for the oil & gas clusters
+            // This is the default cluster icon creation code from Leaflet.markercluster
+            const childCount = feature.properties.point_count_abbreviated;
+            let c = ' marker-cluster-';
+            if (childCount < 10) {
+                c += 'small';
+            } else if (childCount < 100) {
+                c += 'medium';
+            } else {
+                c += 'large';
+            }
+            const html = '<div class="' + c + '"><span>' + childCount + '</span></div>';
+        
+            // Create a divIcon and include the "Oil & Gas" label above the default cluster icon
             const oilIcon = L.divIcon({
-                html: '<div style="background-color: #FFA500; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: white;">Oil & Gas</div>',
+                html: '<div style="text-align: center; color: #555; position: relative;">Oil & Gas<br>' + html + '</div>',
                 className: '',
-                iconSize: L.point(30, 30)
+                iconSize: L.point(40, 40) // Adjust the size to fit the "Oil & Gas" label and the default icon
             });
             return L.marker(latlng, {icon: oilIcon});
         },
+        
 
 
         drawOilIcon: function(feature, latlng) {
