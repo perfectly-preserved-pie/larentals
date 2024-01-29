@@ -12,7 +12,7 @@ orjson==3.9.12
 pandas==2.2.0
 protobuf==3.20.*
 pyarrow==14.0.2
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 pyyaml 
 requests==2.31.0
 sodapy==2.2.0
