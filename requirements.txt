@@ -15,5 +15,6 @@ pyarrow==14.0.2
 python-dotenv==1.0.0
 pyyaml 
 requests==2.31.0
+sodapy==2.2.0
 tables
 user_agents==2.2.0

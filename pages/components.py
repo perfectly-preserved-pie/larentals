@@ -1,12 +1,9 @@
 from dash import html, dcc
-from dash_extensions.javascript import Namespace
 from datetime import date
-from typing import Any, ClassVar, Optional
+from functions.layers import BaseClass
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-import json
 import pandas as pd
-import uuid
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -15,52 +12,6 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
         children=initial_label, 
         style={'display': 'inline-block'}
     )
-
-# Create a bass class for the oil well GeoJSON data
-# The oil well GeoJSON data is used on both the Lease and Buy pages, so both classes inherit from this base class
-class BaseClass:
-    oil_well_data: ClassVar[Optional[Any]] = None
-
-    @classmethod
-    def load_geojson_data(cls, filepath: str = 'assets/datasets/oil_well_optimized.geojson') -> Any:
-        """
-        Loads GeoJSON data from a file, implementing lazy loading to avoid reloading 
-        if the data is already loaded.
-
-        Args:
-            filepath (str): Path to the GeoJSON file. Defaults to 'assets/datasets/oil_well_optimized.geojson'.
-
-        Returns:
-            Any: The loaded GeoJSON data.
-        """
-        if cls.oil_well_data is None:
-            with open(filepath, 'r') as f:
-                cls.oil_well_data = json.load(f)
-        return cls.oil_well_data
-
-    @classmethod
-    def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
-        """
-        Creates a Dash Leaflet GeoJSON layer with oil well data.
-
-        Returns:
-            dl.GeoJSON: A Dash Leaflet GeoJSON component.
-        """
-        ns = Namespace("myNamespace", "mySubNamespace")
-        return dl.GeoJSON(
-            id=str(uuid.uuid4()),
-            url='assets/datasets/oil_well_optimized.geojson',
-            cluster=True,
-            zoomToBoundsOnClick=True,
-            superClusterOptions={
-                'radius': 160,
-                'maxClusterRadius': 40,
-                'minZoom': 3,
-            },
-            options=dict(
-                pointToLayer=ns("drawCustomIcon")
-            )
-        )
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
@@ -114,7 +65,6 @@ class LeaseComponents(BaseClass):
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_well_layer = BaseClass.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -911,9 +861,15 @@ class LeaseComponents(BaseClass):
         return listed_date_components
     
     def create_map(self):
-        # Create a GeoJSON layer for oil wells with clustering
-        oil_well_layer = self.create_oil_well_geojson_layer()
+        """
+        Creates a Dash Leaflet map with multiple layers.
 
+        Returns:
+            dl.Map: A Dash Leaflet Map component.
+        """
+        # Create additional layers
+        oil_well_layer = self.create_oil_well_geojson_layer()
+        crime_layer = self.create_crime_layer()
         # Create the main map with the lease layer
         map = dl.Map(
             [
@@ -929,11 +885,11 @@ class LeaseComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
-
-        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        # Add a layer control for the additional layers
         layers_control = dl.LayersControl(
-            [
-                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            [ # Create a list of layers to add to the control
+                dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
+                dl.Overlay(crime_layer, name="Crime", checked=False),
             ],
             collapsed=True,
             position='topleft'
@@ -1050,7 +1006,6 @@ class BuyComponents(BaseClass):
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
-        self.oil_well_layer = BaseClass.create_oil_well_geojson_layer()
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
