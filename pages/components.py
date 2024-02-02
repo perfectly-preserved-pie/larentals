@@ -885,6 +885,7 @@ class LeaseComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
+
         # Add a layer control for the additional layers
         layers_control = dl.LayersControl(
             [ # Create a list of layers to add to the control
@@ -1606,8 +1607,9 @@ class BuyComponents(BaseClass):
         return listed_date_components
 
     def create_map(self):
-        # Create a GeoJSON layer for oil wells with clustering
+        # Create additional layers
         oil_well_layer = self.create_oil_well_geojson_layer()
+        crime_layer = self.create_crime_layer()
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -1625,10 +1627,11 @@ class BuyComponents(BaseClass):
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
 
-        # Add layer control with the oil well layer as an overlay (unchecked by default)
+        # Add a layer control for the additional layers
         layers_control = dl.LayersControl(
-            [
-                dl.Overlay(oil_well_layer, name="Oil Wells", checked=False)
+            [ # Create a list of layers to add to the control
+                dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
+                dl.Overlay(crime_layer, name="Crime", checked=False),
             ],
             collapsed=True,
             position='topleft'
