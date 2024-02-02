@@ -22,17 +22,6 @@ function militaryToStandard(time) {
 
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
-        drawOilClusterIcon: function(feature, latlng, index, context){
-            // Here, we'll create a simple circle icon for the oil & gas clusters
-            const oilIcon = L.divIcon({
-                html: '<div style="background-color: #FFA500; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: white;">Oil & Gas</div>',
-                className: '',
-                iconSize: L.point(30, 30)
-            });
-            return L.marker(latlng, {icon: oilIcon});
-        },
-
-
         drawOilIcon: function(feature, latlng) {
             const OilIcon = L.icon({
                 iconUrl: '/assets/oil_derrick_icon.png',
