@@ -21,7 +21,11 @@ def check_expired_listing(url: str, mls_number: str) -> bool:
     bool: True if the listing has expired, False otherwise.
     """
     try:
-        response = requests.get(url, timeout=5)
+        # Set headers to mimic a browser request
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()  # Raise HTTPError for bad responses
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -58,10 +62,17 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     """
     # Initialize variables
     listed_date, photo, link = None, None, None
+
+    # Set headers to mimic a browser request
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+    }
     
     try:
         start_time = time.time()
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Request to {url} returned status code {response.status_code}")
         elapsed_time = time.time() - start_time
         logger.debug(f"HTTP request for {mls_number} took {elapsed_time:.2f} seconds.")
         
