@@ -7,7 +7,7 @@ geopy==2.4.1
 gunicorn==21.2.0
 imagekitio==3.2.0
 loguru==0.7.2
-numpy==1.26.3
+numpy==1.26.4
 orjson==3.9.12
 pandas==2.2.0
 protobuf==3.20.*
