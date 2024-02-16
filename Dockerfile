@@ -8,7 +8,7 @@ COPY requirements.txt .
 ENV VIRTUAL_ENV=/usr/local
 # The -slim Python image doesn't come with curl or wget installed so falling back to pip
 RUN pip install --no-cache-dir uv
-RUN /install.sh && rm /install.sh
+#RUN /install.sh && rm /install.sh
 
 RUN /root/.cargo/bin/uv pip install --no-cache -r requirements.txt
 
