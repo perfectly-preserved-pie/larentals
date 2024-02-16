@@ -6,7 +6,8 @@ COPY requirements.txt .
 # https://www.youtube.com/watch?v=6E7ZGCfruaw
 # https://ryxcommar.com/2024/02/15/how-to-cut-your-python-docker-builds-in-half-with-uv/
 ENV VIRTUAL_ENV=/usr/local
-ADD --chmod=655 https://astral.sh/uv/install.sh /install.sh
+# The -slim Python image doesn't come with curl or wget installed so falling back to pip
+RUN pip install --no-cache-dir uv
 RUN /install.sh && rm /install.sh
 
 RUN /root/.cargo/bin/uv pip install --no-cache -r requirements.txt
