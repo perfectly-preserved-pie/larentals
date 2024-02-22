@@ -63,11 +63,11 @@ def imagekit_transform(
 
 def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
     """
-    This function reclaims space in ImageKit by deleting images that are not referenced in the dataframe.
+    This function reclaims space in ImageKit by bulk deleting images that are not referenced in the dataframe.
 
     Parameters:
-    - df_path (str): The path to the dataframe stored in a parquet file.
-    - imagekit_instance (ImageKit): An instance of ImageKit initialized with the appropriate credentials.
+    df_path (str): The path to the dataframe stored in a parquet file.
+    imagekit_instance (ImageKit): An instance of ImageKit initialized with the appropriate credentials.
 
     Returns:
     None
@@ -78,26 +78,19 @@ def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
     # Get the list of files
     list_files = imagekit_instance.list_files()
 
-    # Initialize a counter for deleted files
-    deleted_files_count = 0
+    # Collect file IDs for deletion
+    file_ids_for_deletion = [file.file_id for file in list_files.list if file.name.replace('.jpg', '') not in df['mls_number'].values]
 
-    # Iterate over the files
-    for i, file in enumerate(list_files.list, start=1):
-        # If the file name (without the '.jpg' extension) is not in the dataframe
-        file_name_without_extension = file.name.replace('.jpg', '')
-        if file_name_without_extension not in df['mls_number'].values:
-            try:
-                # Delete the file from ImageKit
-                imagekit_instance.delete_file(file_id=file.file_id)
-                # Log the deletion
-                logger.success(f"Deleted file {file.name} from ImageKit.")
-                # Increment the counter
-                deleted_files_count += 1
-            except Exception as e:
-                logger.warning(f"Couldn't delete file {file.name} because {e}.")
+    if file_ids_for_deletion:
+        # Perform bulk file deletion
+        bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=file_ids_for_deletion)
 
-        # Log the current row
-        logger.info(f"Processing row {i} of {len(list_files.list)}")
+        # Log bulk deletion result
+        logger.success(f"Successfully deleted file IDs: {bulk_delete_result.successfully_deleted_file_ids}")
+        # If needed, log raw response and any additional details
+        logger.debug(f"Raw Response: {bulk_delete_result.response_metadata.raw}")
 
-    # Log the total number of deleted files
-    logger.info(f"Total number of deleted files: {deleted_files_count}")
+        # Log the total number of deleted files
+        logger.info(f"Total number of deleted files: {len(bulk_delete_result.successfully_deleted_file_ids)}")
+    else:
+        logger.info("No files need to be deleted.")

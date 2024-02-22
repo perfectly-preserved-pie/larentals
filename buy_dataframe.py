@@ -266,3 +266,6 @@ for row in outside_ca_rows.itertuples():
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new combined dataframe
 df_combined.to_parquet(path="assets/datasets/buy.parquet")
+
+# Reclaim space in ImageKit
+reclaim_imagekit_space(df_path="assets/datasets/buy.parquet", imagekit_instance=imagekit)
