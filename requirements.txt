@@ -5,7 +5,7 @@ dash-leaflet==1.0.15
 dash==2.15.0
 geopy==2.4.1
 gunicorn==21.2.0
-imagekitio==3.2.0
+imagekitio==4.0.0
 loguru==0.7.2
 numpy==1.26.4
 orjson==3.9.15
