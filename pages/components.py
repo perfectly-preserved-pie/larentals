@@ -202,7 +202,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatSqFt"
                     },
                 ),
                 dbc.Alert(
@@ -252,7 +253,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -427,7 +429,8 @@ class LeaseComponents(BaseClass):
                     id='rental_price_slider',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                     updatemode='mouseup'
                 ),
@@ -551,7 +554,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -601,7 +605,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -651,7 +656,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -701,7 +707,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -751,7 +758,8 @@ class LeaseComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -1158,7 +1166,8 @@ class BuyComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "format": "formatSqFt"
                     },
                 ),
                 dbc.Alert(
@@ -1208,7 +1217,8 @@ class BuyComponents(BaseClass):
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                 ),
                 dbc.Alert(
@@ -1295,7 +1305,11 @@ class BuyComponents(BaseClass):
                     min=self.df['hoa_fee'].min(),
                     max=self.df['hoa_fee'].max(),
                     value=[self.df['hoa_fee'].min(), self.df['hoa_fee'].max()],
-                    tooltip={'always_visible': True, 'placement': 'bottom'},
+                    tooltip={
+                        'always_visible': True,
+                        'placement': 'bottom',
+                        'transform': 'formatCurrency'
+                        },
                 ),
                 dbc.Alert(
                     [
@@ -1385,7 +1399,11 @@ class BuyComponents(BaseClass):
                     min=self.df['space_rent'].min(),
                     max=self.df['space_rent'].max(),
                     value=[self.df['space_rent'].min(), self.df['space_rent'].max()],
-                    tooltip={'always_visible': True, 'placement': 'bottom'},
+                    tooltip={
+                        'always_visible': True,
+                        'placement': 'bottom',
+                        'transform': 'formatCurrency'
+                    },
                 ),
                 # Radio button for unknown space rent
                 dbc.Alert(
@@ -1478,7 +1496,8 @@ class BuyComponents(BaseClass):
                     id='list_price_slider',
                     tooltip={
                         "placement": "bottom",
-                        "always_visible": True
+                        "always_visible": True,
+                        "transform": "formatCurrency"
                     },
                     updatemode='mouseup'
                 ),
