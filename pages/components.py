@@ -1199,7 +1199,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'margin-top': '15px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'sqft'}
