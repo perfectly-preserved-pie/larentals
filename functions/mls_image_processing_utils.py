@@ -77,8 +77,7 @@ def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
 
 def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
     """
-    This function reclaims space in ImageKit by bulk deleting images that are not referenced in the dataframe,
-    taking into account the limitation on the number of file IDs per request.
+    This function reclaims space in ImageKit by deleting images in bulk that are not referenced in the dataframe.
 
     Parameters:
     df_path (str): The path to the dataframe stored in a parquet file.
@@ -91,26 +90,35 @@ def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
     df = pd.read_parquet(df_path)
 
     # Get the list of files
-    list_files = imagekit_instance.list_files()
+    list_files_response = imagekit_instance.list_files()
+    list_files = list_files_response.get('list', [])
 
-    # Collect file IDs for deletion
-    file_ids_for_deletion = [file.file_id for file in list_files.list if file.name.replace('.jpg', '') not in df['mls_number'].values]
+    # Create a set of referenced mls numbers for faster searching
+    referenced_mls_numbers = set(df['mls_number'].astype(str))
 
-    # Split file IDs into chunks of 100 or fewer
-    file_id_chunks = list(chunked_list(file_ids_for_deletion, 100))
+    # Initialize a list for file IDs to delete
+    file_ids_for_deletion = [file['file_id'] for file in list_files if file['name'].replace('.jpg', '') not in referenced_mls_numbers]
 
-    # Initialize a counter for deleted files
-    deleted_files_count = 0
-
-    # Iterate over each chunk and perform bulk deletion
-    for chunk in file_id_chunks:
-        try:
+    # Function to handle bulk deletion in chunks
+    def delete_in_chunks(file_ids: List[str]) -> None:
+        # Split the file_ids into chunks of 100
+        for i in range(0, len(file_ids), 100):
+            chunk = file_ids[i:i + 100]
             bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=chunk)
-            deleted_files_count += len(bulk_delete_result.successfully_deleted_file_ids)
-            # Log each chunk's deletion result
-            logger.success(f"Successfully deleted {len(bulk_delete_result.successfully_deleted_file_ids)} files in this chunk.")
-        except Exception as e:
-            logger.error(f"Error during bulk file deletion: {e}")
 
-    # Log the total number of deleted files
-    logger.info(f"Total number of deleted files: {deleted_files_count}")
+            # Check the status code and handle the response accordingly
+            if bulk_delete_result.status_code == 200:
+                logger.success(f"Successfully deleted files: {bulk_delete_result.successfully_deleted_file_ids}")
+            elif bulk_delete_result.status_code == 207:
+                logger.success(f"Partially successful deletion: {bulk_delete_result.successfully_deleted_file_ids}")
+                logger.warning(f"Errors in deletion: {bulk_delete_result.errors}")
+            elif bulk_delete_result.status_code == 404:
+                logger.error(f"Files not found: {bulk_delete_result.missing_file_ids}")
+            else:
+                logger.error(f"Unexpected response status: {bulk_delete_result.status_code}")
+
+    # Call the function to delete files in chunks
+    delete_in_chunks(file_ids_for_deletion)
+
+    # Log the total number of files requested for deletion
+    logger.info(f"Total number of files requested for deletion: {len(file_ids_for_deletion)}")
