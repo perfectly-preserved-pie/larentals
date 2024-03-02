@@ -3,6 +3,7 @@ from datetime import date
 from functions.layers import BaseClass
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import numpy as np
 import pandas as pd
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
@@ -1301,15 +1302,19 @@ class BuyComponents(BaseClass):
         return pets_radio
 
     def create_hoa_fee_components(self):
+        # Calculate the number of steps
+        num_steps = 5
+        step_value = (self.df['hoa_fee'].max() - self.df['hoa_fee'].min()) / num_steps
+        # Make sure the step value is a round number for better slider usability
+        step_value = np.round(step_value, -int(np.floor(np.log10(step_value))))
+
         hoa_fee_components = html.Div([
-            
             # Title, subheading, and toggle button
             html.Div([
                 html.H5("HOA Fee", style={'display': 'inline-block', 'margin-right': '10px'}),
                 html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='hoa_fee', initial_label="Hide", page_type='buy')
             ]),
-            
             # The actual RangeSlider and RadioItems
             html.Div([
                 dcc.RangeSlider(
@@ -1317,6 +1322,7 @@ class BuyComponents(BaseClass):
                     min=self.df['hoa_fee'].min(),
                     max=self.df['hoa_fee'].max(),
                     value=[self.df['hoa_fee'].min(), self.df['hoa_fee'].max()],
+                    step=step_value,
                     tooltip={
                         'always_visible': True,
                         'placement': 'bottom',
