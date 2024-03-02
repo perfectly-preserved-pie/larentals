@@ -1177,7 +1177,7 @@ class BuyComponents(BaseClass):
                     tooltip={
                         "placement": "bottom",
                         "always_visible": True,
-                        "format": "formatSqFt"
+                        "transform": "formatSqFt"
                     },
                 ),
                 dbc.Alert(
