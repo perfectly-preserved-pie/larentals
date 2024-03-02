@@ -225,6 +225,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '15px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'sqft'}
@@ -276,6 +277,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'ppsqft'}
@@ -402,6 +404,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'garage_spaces'}
@@ -486,6 +489,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'year_built'}
@@ -577,6 +581,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'security_deposit'}
@@ -628,6 +633,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'other_deposit'}
@@ -679,6 +685,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'pet_deposit'}
@@ -730,6 +737,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
@@ -781,6 +789,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
@@ -858,6 +867,7 @@ class LeaseComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'}
@@ -1189,6 +1199,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'sqft'}
@@ -1240,6 +1251,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'ppsqft'}
@@ -1330,6 +1342,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'hoa_fee'},
@@ -1425,6 +1438,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'space_rent'},
@@ -1558,6 +1572,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'year_built'}
@@ -1611,6 +1626,7 @@ class BuyComponents(BaseClass):
                         ),
                     ],
                     color="info",
+                    style={'margin-top': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'}
