@@ -20,4 +20,4 @@ COPY . ./
 # Set the number of workers to 4.
 # Preload the app to avoid the overhead of loading the app for each worker. See https://www.joelsleppy.com/blog/gunicorn-application-preloading/
 # Set the app to be the server variable in app.py.
-CMD ["gunicorn", "-b", "0.0.0.0:80", "--workers=4", "--preload", "app:server"]
+CMD ["gunicorn", "-b", "0.0.0.0:80", "-k", "gevent", "--workers=20", "--preload", "app:server"]
