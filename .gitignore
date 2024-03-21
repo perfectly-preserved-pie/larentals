@@ -5,7 +5,6 @@ __pycache__/larentals.cpython-310.pyc
 *.csv
 *.pyc
 *.xlsx
-assets/datasets/crime.geojson
 env
 hdf
 larentals-checkpoint.py
