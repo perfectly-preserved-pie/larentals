@@ -16,6 +16,7 @@ load_dotenv()
 # The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
 class BaseClass:
     oil_well_data: ClassVar[Optional[Any]] = None
+    crime_data: ClassVar[Optional[Any]] = None
 
     @classmethod
     def load_geojson_data(cls, filepath: str = 'assets/datasets/oil_well_optimized.geojson') -> Any:
@@ -60,56 +61,15 @@ class BaseClass:
 
     def create_crime_layer(cls) -> dl.GeoJSON:
         """
-        Creates a new Dash Leaflet GeoJSON layer with crime data from the past year.
+        Creates a Dash Leaflet GeoJSON layer with crime data.
 
         Returns:
             dl.GeoJSON: A Dash Leaflet GeoJSON component.
         """
-        base_url = "https://data.lacity.org/resource/2nrs-mtv8.geojson"
-        # Parse the base_url to get the domain and dataset identifier
-        parsed_url = urlparse(base_url)
-        domain = parsed_url.netloc
-        dataset_id = parsed_url.path.split('/')[-1].split('.')[0]
-
-        # Create a Socrata client
-        client = Socrata(domain, os.getenv('SOCRATA_APP_TOKEN'))
-
-        # Calculate the date range for the past year
-        today = datetime.now()
-        one_year_ago = today - timedelta(days=365)
-
-        # Format the dates in the required format
-        today_str = today.strftime('%Y-%m-%dT%H:%M:%S')
-        one_year_ago_str = one_year_ago.strftime('%Y-%m-%dT%H:%M:%S')
-
-        # Construct the query
-        # See https://dev.socrata.com/docs/queries/where.html
-        query = (
-            f"date_occ between '{one_year_ago_str}' and '{today_str}'"
-        )
-
-        # Fetch the data
-        data = client.get(
-            dataset_id, 
-            where=query, 
-            limit=75000, 
-            # Only select the required fields to reduce the size of the response
-            select="dr_no, date_occ, time_occ, crm_cd_desc, vict_age, vict_sex, premis_desc, weapon_desc, status_desc, lat, lon"
-        )
-
-        # Check if the data is already in GeoJSON format
-        if not ('type' in data and 'features' in data):
-            data = convert_to_geojson(data)
-
-        # Save the data to a GeoJSON file in assets/datasets
-        # It seems weird to save it to the disk instead of just loading it directly into the GeoJSON layer from memory but it's actually faster this way
-        # See https://community.plotly.com/t/dash-leaflet-efficiency-filtering-a-large-geojson-11-mb/52785/2 and https://www.dash-leaflet.com/components/vector_layers/geojson#a-keyword-arguments
-        with open('assets/datasets/crime.geojson', 'w') as f:
-            json.dump(data, f)
-        
+        ns = Namespace("myNamespace", "mySubNamespace")
         return dl.GeoJSON(
-            url='assets/datasets/crime.geojson',
             id=str(uuid.uuid4()),
+            url='/assets/datasets/crime.geojson',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -118,6 +78,6 @@ class BaseClass:
                 'minZoom': 3,
             },
             options=dict(
-                pointToLayer=Namespace("myNamespace", "mySubNamespace")("drawCrimeIcon")
+                pointToLayer=ns("drawCrimeIcon")
             )
-        )
+    )
