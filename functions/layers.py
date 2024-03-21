@@ -1,13 +1,8 @@
 from dash_extensions.javascript import Namespace
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from functions.geojson_processing_utils import fetch_json_data, convert_to_geojson
-from sodapy import Socrata
 from typing import Any, ClassVar, Optional
-from urllib.parse import urlparse
 import dash_leaflet as dl
 import json
-import os
 import uuid
 
 load_dotenv()
