@@ -5,6 +5,7 @@ from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
 from loguru import logger
+from loguru import logger
 from user_agents import parse
 import dash
 import dash_bootstrap_components as dbc
@@ -12,6 +13,7 @@ import dash_leaflet as dl
 import dash_leaflet.express as dlx
 import pandas as pd
 import sys
+import time
 import uuid
 
 dash.register_page(
@@ -27,12 +29,22 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# import the dataframe
+# import the dataframe and log how long it takes to load
+start_time = time.time()
 df = pd.read_parquet(path='assets/datasets/lease.parquet')
+duration = time.time() - start_time
+logger.info(f"Loaded 'lease' dataset in {duration:.2f} seconds.")
 pd.set_option("display.precision", 10)
 
+# Create instances of the filters and components classes and log how long it takes to create them
+start_time = time.time()
 lease_filters = LeaseFilters(df)
+duration = time.time() - start_time
+logger.info(f"Created LeaseFilters in {duration:.2f} seconds.")
+start_time = time.time()
 lease_components = LeaseComponents(df)
+duration = time.time() - start_time
+logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})

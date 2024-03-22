@@ -13,6 +13,8 @@ import dash_leaflet.express as dlx
 import pandas as pd
 import sys
 import uuid
+from loguru import logger
+import time
 
 dash.register_page(
   __name__,
@@ -27,12 +29,23 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# import the dataframe 
+# import the dataframe and log how long it takes to load
+start_time = time.time()
 df = pd.read_parquet(path='assets/datasets/buy.parquet')
+duration = time.time() - start_time
+logger.info(f"Loaded 'buy' dataset in {duration:.2f} seconds.")
+
 pd.set_option("display.precision", 10)
 
+# Create the filters and components objects and log how long it takes to create them
+start_time = time.time()
 filters = BuyFilters(df)
+duration = time.time() - start_time
+logger.info(f"Created BuyFilters object in {duration:.2f} seconds.")
+start_time = time.time()
 components = BuyComponents(df)
+duration = time.time() - start_time
+logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
