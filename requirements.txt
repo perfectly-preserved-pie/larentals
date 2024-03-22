@@ -4,6 +4,7 @@ dash_extensions==1.0.14
 dash-leaflet==1.0.15
 dash==2.16.1
 geopy==2.4.1
+gevent==24.2.1
 gunicorn==21.2.0
 imagekitio==4.0.0
 loguru==0.7.2
