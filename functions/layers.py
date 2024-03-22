@@ -14,21 +14,30 @@ class BaseClass:
     crime_data: ClassVar[Optional[Any]] = None
 
     @classmethod
-    def load_geojson_data(cls, filepath: str = 'assets/datasets/oil_well_optimized.geojson') -> Any:
+    def load_geojson_data(cls, filepath: str, dataset: str) -> Any:
         """
         Loads GeoJSON data from a file, implementing lazy loading to avoid reloading 
         if the data is already loaded.
 
         Args:
-            filepath (str): Path to the GeoJSON file. Defaults to 'assets/datasets/oil_well_optimized.geojson'.
+            filepath (str): Path to the GeoJSON file.
+            dataset (str): The dataset to load ('oil_well' or 'crime').
 
         Returns:
             Any: The loaded GeoJSON data.
         """
-        if cls.oil_well_data is None:
-            with open(filepath, 'r') as f:
-                cls.oil_well_data = json.load(f)
-        return cls.oil_well_data
+        if dataset == 'oil_well':
+            if cls.oil_well_data is None:
+                with open(filepath, 'r') as f:
+                    cls.oil_well_data = json.load(f)
+            return cls.oil_well_data
+        elif dataset == 'crime':
+            if cls.crime_data is None:
+                with open(filepath, 'r') as f:
+                    cls.crime_data = json.load(f)
+            return cls.crime_data
+        else:
+            raise ValueError(f"Invalid dataset: {dataset}. Expected 'oil_well' or 'crime'.")
 
     @classmethod
     def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
@@ -39,9 +48,11 @@ class BaseClass:
             dl.GeoJSON: A Dash Leaflet GeoJSON component.
         """
         ns = Namespace("myNamespace", "mySubNamespace")
+        if cls.oil_well_data is None:
+            cls.load_geojson_data(filepath='assets/datasets/oil_well_optimized.geojson', dataset='oil_well')
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            url='assets/datasets/oil_well_optimized.geojson',
+            data=cls.oil_well_data,
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -62,9 +73,11 @@ class BaseClass:
             dl.GeoJSON: A Dash Leaflet GeoJSON component.
         """
         ns = Namespace("myNamespace", "mySubNamespace")
+        if cls.crime_data is None:
+            cls.load_geojson_data(filepath='assets/datasets/crime.geojson', dataset='crime')
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            url='/assets/datasets/crime.geojson',
+            data=cls.crime_data,
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -75,4 +88,4 @@ class BaseClass:
             options=dict(
                 pointToLayer=ns("drawCrimeIcon")
             )
-    )
+        )
