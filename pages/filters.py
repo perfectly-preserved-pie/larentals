@@ -85,16 +85,29 @@ class LeaseFilters:
             ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
         return ppsqft_choice
 
-    # Create a function to return a dataframe filter for pet policy
-    def pets_radio_button(self, choice):
-        if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
-            # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
+    def pets_radio_button(self, choice: str) -> pd.Series:
+        """
+        Filters the DataFrame based on the pet policy according to the user's choice.
+
+        Args:
+        - choice (str): User's choice regarding pet policy. Options are 'Yes', 'No', or 'Both'.
+                        'Yes' for properties that allow pets,
+                        'No' for properties that do not allow pets,
+                        'Both' for all properties regardless of pet policy.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
+        """
+        if choice == 'Yes':
+            # Filter for rows where the pet policy allows pets (not 'No' or 'No, Size Limit')
             pets_radio_choice = ~self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-        elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
+        elif choice == 'No':
+            # Filter for rows where the pet policy does not allow pets
             pets_radio_choice = self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-        elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-            pets_radio_choice = self.df['PetsAllowed']
-        return (pets_radio_choice)
+        else:  # Assuming 'Both' includes all rows
+            # Create a boolean Series of True for all rows to include everything
+            pets_radio_choice = pd.Series([True] * len(self.df), index=self.df.index)
+        return pets_radio_choice
 
     # Create a function to return a dataframe filter for furnished dwellings
     def furnished_checklist_function(self, choice):

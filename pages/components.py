@@ -303,8 +303,8 @@ class LeaseComponents(BaseClass):
                 dcc.RadioItems(
                     id='pets_radio',
                     options=[
-                        {'label': 'Pets Allowed', 'value': 'Yes'},
-                        {'label': 'Pets NOT Allowed', 'value': 'No'},
+                        {'label': 'Pets Allowed', 'value': True},
+                        {'label': 'Pets NOT Allowed', 'value': False},
                         {'label': 'Both', 'value': 'Both'}
                     ],
                     value='Both',
