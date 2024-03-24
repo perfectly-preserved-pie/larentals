@@ -109,15 +109,30 @@ class LeaseFilters:
             pets_radio_choice = pd.Series([True] * len(self.df), index=self.df.index)
         return pets_radio_choice
 
-    # Create a function to return a dataframe filter for furnished dwellings
-    def furnished_checklist_function(self, choice):
-        # Presort the list first for faster performance
+    def furnished_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for furnished dwellings based on the user's choice.
+
+        This function allows for dynamic filtering based on whether the property's furnished
+        status is explicitly stated or unknown. The 'Unknown' option includes listings that
+        might not specify their furnished state.
+
+        Args:
+        - choice (list[str]): A list of user-selected options regarding the furnished status. 
+                              Options include 'Furnished', 'Unfurnished', and 'Unknown'.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
+        """
+        # Presort the list first for potentially faster performance
         choice.sort()
-        if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
-            furnished_checklist_filter = (self.df['Furnished'].isnull()) | (self.df['Furnished'].isin(choice))
-        elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        if 'Unknown' in choice:
+            # Include rows where Furnished status is NaN OR matches one of the selected choices
+            furnished_checklist_filter = self.df['Furnished'].isnull() | self.df['Furnished'].isin(choice)
+        else:
+            # If Unknown is NOT selected, return rows that match the selected choices (implies .notnull() by default)
             furnished_checklist_filter = self.df['Furnished'].isin(choice)
-        return (furnished_checklist_filter)
+        return furnished_checklist_filter
 
     ## Create functions to return a dataframe filter for the various types of deposits
     # Security
