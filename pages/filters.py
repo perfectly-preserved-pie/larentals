@@ -98,10 +98,10 @@ class LeaseFilters:
         Returns:
         - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
         """
-        if choice == 'Yes':
+        if choice == True:
             # Filter for rows where the pet policy allows pets (not 'No' or 'No, Size Limit')
             pets_radio_choice = ~self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-        elif choice == 'No':
+        elif choice == False:
             # Filter for rows where the pet policy does not allow pets
             pets_radio_choice = self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
         else:  # Assuming 'Both' includes all rows
