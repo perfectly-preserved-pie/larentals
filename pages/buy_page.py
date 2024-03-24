@@ -127,21 +127,19 @@ def update_hoa_fee_frequency_div(selected_subtype):
       'margin-bottom' : '10px',
     }
   
-# Define a callback to manage the collapsing behavior
-@callback(
-  [Output('more-options-collapse-buy', 'is_open'),
-    Output('more-options-button-buy', 'children')],
+# Create a callback to manage the collapsing behavior
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='toggleCollapse'
+  ),
+  [
+    Output('more-options-collapse-buy', 'is_open'),
+    Output('more-options-button-buy', 'children')
+  ],
   [Input('more-options-button-buy', 'n_clicks')],
   [State('more-options-collapse-buy', 'is_open')]
 )
-def toggle_collapse(n, is_open):
-  if not n:
-    return False, "More Options"
-
-  if is_open:
-    return False, "More Options"
-  else:
-    return True, "Less Options"
   
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
@@ -274,14 +272,10 @@ def update_map(
 # If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
 # If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
 clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='toggleVisibility'
-  ),
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibility'),
   [
-    Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')
+    Output({'type': 'dynamic_output_div_buy', 'index': MATCH}, 'style'),
+    Output({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'children')
   ],
-  [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
-  [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
+  [Input({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'n_clicks')]
 )

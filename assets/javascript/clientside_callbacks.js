@@ -1,9 +1,9 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
-        toggleVisibility: function(n_clicks, current_style) {
+        toggleVisibility: function(n_clicks) {
             if (n_clicks === undefined) {
                 // PreventUpdate equivalent
-                return window.dash_clientside.no_update;
+                return [window.dash_clientside.no_update, window.dash_clientside.no_update];
             }
 
             var displayStyle = (n_clicks % 2 === 0) ? 'block' : 'none';
