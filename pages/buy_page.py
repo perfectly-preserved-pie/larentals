@@ -1,6 +1,6 @@
 from .components import *
 from .filters import *
-from dash import dcc, callback, MATCH
+from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
@@ -13,6 +13,8 @@ import dash_leaflet.express as dlx
 import pandas as pd
 import sys
 import uuid
+from loguru import logger
+import time
 
 dash.register_page(
   __name__,
@@ -27,12 +29,23 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# import the dataframe 
+# import the dataframe and log how long it takes to load
+start_time = time.time()
 df = pd.read_parquet(path='assets/datasets/buy.parquet')
+duration = time.time() - start_time
+logger.info(f"Loaded 'buy' dataset in {duration:.2f} seconds.")
+
 pd.set_option("display.precision", 10)
 
+# Create the filters and components objects and log how long it takes to create them
+start_time = time.time()
 filters = BuyFilters(df)
+duration = time.time() - start_time
+logger.info(f"Created BuyFilters object in {duration:.2f} seconds.")
+start_time = time.time()
 components = BuyComponents(df)
+duration = time.time() - start_time
+logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
@@ -62,73 +75,53 @@ def update_selected_subtype(value):
     return value
 
 # Define callback to update the style property of the senior community div based on the selected subtype value
-@callback(Output('senior_community_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_senior_community_div(selected_subtype):
-  if 'MH' in selected_subtype:
-    return {'display': 'block'}
-  else:
-    return {'display': 'none'}
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
+  Output('senior_community_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
     
 # Define callback to update the style property of the pet policy div based on the selected subtype value
-@callback(Output('pet_policy_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_pet_policy_div(selected_subtype):
-  if 'MH' in selected_subtype:
-    return {'display': 'block'}
-  else:
-    return {'display': 'none'}
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
+  Output('pet_policy_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
   
 # Define callback to update the style property of the space rent div based on the selected subtype value
-@callback(Output('space_rent_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_space_rent_div(selected_subtype):
-  if 'MH' in selected_subtype:
-    return {
-      'display': 'block',
-      'margin-bottom' : '10px',
-    }
-  else:
-    return {'display': 'none'}
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
+  Output('space_rent_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
 
 # Define callback to update the style property of the missing HOA Fee div based on the selected subtype value
-@callback(Output('hoa_fee_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_unknown_hoa_fee_div(selected_subtype):
-  if 'MH' in selected_subtype and len(selected_subtype) == 1:
-    return {
-      'display': 'none',
-    }
-  else:
-    return {
-      'display': 'block',
-      'margin-bottom' : '10px',
-    }
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
+  Output('hoa_fee_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
   
 # Define callback to update the style property of the HOA Fee frequency div based on the selected subtype value
-@callback(Output('hoa_fee_frequency_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_hoa_fee_frequency_div(selected_subtype):
-  if 'MH' in selected_subtype and len(selected_subtype) == 1:
-    return {
-      'display': 'none',
-    }
-  else:
-    return {
-      'display': 'block',
-      'margin-bottom' : '10px',
-    }
-  
-# Define a callback to manage the collapsing behavior
-@callback(
-  [Output('more-options-collapse-buy', 'is_open'),
-    Output('more-options-button-buy', 'children')],
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
+  Output('hoa_fee_frequency_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
+
+# Create a callback to manage the collapsing behavior
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='toggleCollapse'
+  ),
+  [
+    Output('more-options-collapse-buy', 'is_open'),
+    Output('more-options-button-buy', 'children')
+  ],
   [Input('more-options-button-buy', 'n_clicks')],
   [State('more-options-collapse-buy', 'is_open')]
 )
-def toggle_collapse(n, is_open):
-  if not n:
-    return False, "More Options"
-
-  if is_open:
-    return False, "More Options"
-  else:
-    return True, "Less Options"
   
 @callback(
   Output(component_id='buy_geojson', component_property='children'),
@@ -260,17 +253,11 @@ def update_map(
 # When the toggle button with a specific index is clicked, this function toggles the visibility of the corresponding dynamic_output_div with the same index
 # If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
 # If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
-@callback(
-  [Output({'type': 'dynamic_output_div_buy', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'children')],
-  [Input({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'n_clicks')],
-  [State({'type': 'dynamic_output_div_buy', 'index': MATCH}, 'style')]
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibility'),
+  [
+    Output({'type': 'dynamic_output_div_buy', 'index': MATCH}, 'style'),
+    Output({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'children')
+  ],
+  [Input({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'n_clicks')]
 )
-def toggle_buy_components(n, current_style):
-  if n is None:
-    raise dash.exceptions.PreventUpdate
-
-  if n % 2 == 0:
-    return {'display': 'block'}, "Hide"
-  else:
-    return {'display': 'none'}, "Show"

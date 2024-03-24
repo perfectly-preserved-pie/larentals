@@ -1,9 +1,12 @@
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
+from loguru import logger
 from typing import Any, ClassVar, Optional
 import dash_leaflet as dl
 import json
+import time
 import uuid
+import traceback
 
 load_dotenv()
 
@@ -17,7 +20,7 @@ class BaseClass:
     def load_geojson_data(cls, filepath: str, dataset: str) -> Any:
         """
         Loads GeoJSON data from a file, implementing lazy loading to avoid reloading 
-        if the data is already loaded.
+        if the data is already loaded. Logs the duration of the loading process.
 
         Args:
             filepath (str): Path to the GeoJSON file.
@@ -26,18 +29,31 @@ class BaseClass:
         Returns:
             Any: The loaded GeoJSON data.
         """
+        logger.debug(f"load_geojson_data called from:\n{traceback.format_stack()}")
+
+        start_time = time.time()  # Start timing
+        if dataset == 'oil_well' and cls.oil_well_data is None:
+            with open(filepath, 'r') as f:
+                cls.oil_well_data = json.load(f)
+                duration = time.time() - start_time  # Calculate duration
+                logger.info(f"Loaded 'oil_well' dataset in {duration:.2f} seconds.")
+            return cls.oil_well_data
+        elif dataset == 'crime' and cls.crime_data is None:
+            with open(filepath, 'r') as f:
+                cls.crime_data = json.load(f)
+                duration = time.time() - start_time  # Calculate duration
+                logger.info(f"Loaded 'crime' dataset in {duration:.2f} seconds.")
+            return cls.crime_data
+        elif dataset not in ['oil_well', 'crime']:
+            raise ValueError(f"Invalid dataset: {dataset}. Expected 'oil_well' or 'crime'.")
+        else:  # If data is already loaded, log that instead of loading time
+            logger.info(f"'{dataset}' dataset already loaded; skipping reload.")
+
+        # If data was previously loaded, we didn't measure loading time
         if dataset == 'oil_well':
-            if cls.oil_well_data is None:
-                with open(filepath, 'r') as f:
-                    cls.oil_well_data = json.load(f)
             return cls.oil_well_data
         elif dataset == 'crime':
-            if cls.crime_data is None:
-                with open(filepath, 'r') as f:
-                    cls.crime_data = json.load(f)
             return cls.crime_data
-        else:
-            raise ValueError(f"Invalid dataset: {dataset}. Expected 'oil_well' or 'crime'.")
 
     @classmethod
     def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:

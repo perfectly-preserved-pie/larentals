@@ -1,9 +1,10 @@
 from .components import *
 from .filters import *
-from dash import dcc, callback, MATCH
+from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
+from loguru import logger
 from loguru import logger
 from user_agents import parse
 import dash
@@ -12,6 +13,7 @@ import dash_leaflet as dl
 import dash_leaflet.express as dlx
 import pandas as pd
 import sys
+import time
 import uuid
 
 dash.register_page(
@@ -27,12 +29,22 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# import the dataframe
+# import the dataframe and log how long it takes to load
+start_time = time.time()
 df = pd.read_parquet(path='assets/datasets/lease.parquet')
+duration = time.time() - start_time
+logger.info(f"Loaded 'lease' dataset in {duration:.2f} seconds.")
 pd.set_option("display.precision", 10)
 
+# Create instances of the filters and components classes and log how long it takes to create them
+start_time = time.time()
 lease_filters = LeaseFilters(df)
+duration = time.time() - start_time
+logger.info(f"Created LeaseFilters in {duration:.2f} seconds.")
+start_time = time.time()
 lease_components = LeaseComponents(df)
+duration = time.time() - start_time
+logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
@@ -168,36 +180,32 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   )
 
 # Create a callback to manage the collapsing behavior
-@callback(
-  [Output('more-options-collapse-lease', 'is_open'),
-    Output('more-options-button-lease', 'children')],
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='toggleCollapse'
+  ),
+  [
+    Output('more-options-collapse-lease', 'is_open'),
+    Output('more-options-button-lease', 'children')
+  ],
   [Input('more-options-button-lease', 'n_clicks')],
   [State('more-options-collapse-lease', 'is_open')]
 )
-def toggle_collapse(n, is_open):
-  if not n:
-    return False, "More Options"
-
-  if is_open:
-    return False, "More Options"
-  else:
-    return True, "Less Options"
 
 # Callback to toggle the visibility of dynamic components
 # When the toggle button with a specific index is clicked, this function toggles the visibility of the corresponding dynamic_output_div with the same index
 # If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
 # If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
-@callback(
-  [Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')],
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='toggleVisibility'
+  ),
+  [
+    Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
+    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')
+  ],
   [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
   [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
 )
-def toggle_lease_components(n, current_style):
-  if n is None:
-    raise dash.exceptions.PreventUpdate
-
-  if n % 2 == 0:
-    return {'display': 'block'}, "Hide"
-  else:
-    return {'display': 'none'}, "Show"

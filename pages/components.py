@@ -887,8 +887,8 @@ class LeaseComponents(BaseClass):
             dl.Map: A Dash Leaflet Map component.
         """
         # Create additional layers
-        oil_well_layer = self.create_oil_well_geojson_layer()
-        crime_layer = self.create_crime_layer()
+        #oil_well_layer = self.create_oil_well_geojson_layer()
+        #crime_layer = self.create_crime_layer()
         # Create the main map with the lease layer
         map = dl.Map(
             [
@@ -906,15 +906,15 @@ class LeaseComponents(BaseClass):
         )
 
         # Add a layer control for the additional layers
-        layers_control = dl.LayersControl(
-            [ # Create a list of layers to add to the control
-                dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-                dl.Overlay(crime_layer, name="Crime", checked=False),
-            ],
-            collapsed=True,
-            position='topleft'
-        )
-        map.children.append(layers_control)
+        #layers_control = dl.LayersControl(
+        #    [ # Create a list of layers to add to the control
+        #        dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
+        #        dl.Overlay(crime_layer, name="Crime", checked=False),
+        #    ],
+        #    collapsed=True,
+        #    position='topleft'
+        #)
+        #map.children.append(layers_control)
 
         return map
         
@@ -1649,8 +1649,8 @@ class BuyComponents(BaseClass):
 
     def create_map(self):
         # Create additional layers
-        oil_well_layer = self.create_oil_well_geojson_layer()
-        crime_layer = self.create_crime_layer()
+        #oil_well_layer = self.create_oil_well_geojson_layer()
+        #crime_layer = self.create_crime_layer()
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -1669,15 +1669,15 @@ class BuyComponents(BaseClass):
         )
 
         # Add a layer control for the additional layers
-        layers_control = dl.LayersControl(
-            [ # Create a list of layers to add to the control
-                dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-                dl.Overlay(crime_layer, name="Crime", checked=False),
-            ],
-            collapsed=True,
-            position='topleft'
-        )
-        map.children.append(layers_control)
+        #layers_control = dl.LayersControl(
+        #    [ # Create a list of layers to add to the control
+        #        dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
+        #        dl.Overlay(crime_layer, name="Crime", checked=False),
+        #    ],
+        #    collapsed=True,
+        #    position='topleft'
+        #)
+        #map.children.append(layers_control)
 
         return map
     
