@@ -75,58 +75,40 @@ def update_selected_subtype(value):
     return value
 
 # Define callback to update the style property of the senior community div based on the selected subtype value
-@callback(Output('senior_community_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_senior_community_div(selected_subtype):
-  if 'MH' in selected_subtype:
-    return {'display': 'block'}
-  else:
-    return {'display': 'none'}
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
+  Output('senior_community_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
     
 # Define callback to update the style property of the pet policy div based on the selected subtype value
-@callback(Output('pet_policy_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_pet_policy_div(selected_subtype):
-  if 'MH' in selected_subtype:
-    return {'display': 'block'}
-  else:
-    return {'display': 'none'}
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
+  Output('pet_policy_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
   
 # Define callback to update the style property of the space rent div based on the selected subtype value
-@callback(Output('space_rent_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_space_rent_div(selected_subtype):
-  if 'MH' in selected_subtype:
-    return {
-      'display': 'block',
-      'margin-bottom' : '10px',
-    }
-  else:
-    return {'display': 'none'}
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
+  Output('space_rent_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
 
 # Define callback to update the style property of the missing HOA Fee div based on the selected subtype value
-@callback(Output('hoa_fee_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_unknown_hoa_fee_div(selected_subtype):
-  if 'MH' in selected_subtype and len(selected_subtype) == 1:
-    return {
-      'display': 'none',
-    }
-  else:
-    return {
-      'display': 'block',
-      'margin-bottom' : '10px',
-    }
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
+  Output('hoa_fee_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
   
 # Define callback to update the style property of the HOA Fee frequency div based on the selected subtype value
-@callback(Output('hoa_fee_frequency_div_buy', 'style'), Input('selected_subtype', 'data'))
-def update_hoa_fee_frequency_div(selected_subtype):
-  if 'MH' in selected_subtype and len(selected_subtype) == 1:
-    return {
-      'display': 'none',
-    }
-  else:
-    return {
-      'display': 'block',
-      'margin-bottom' : '10px',
-    }
-  
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
+  Output('hoa_fee_frequency_div_buy', 'style'),
+  [Input('selected_subtype', 'data')]
+)
+
 # Create a callback to manage the collapsing behavior
 clientside_callback(
   ClientsideFunction(

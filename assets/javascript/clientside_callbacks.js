@@ -16,6 +16,23 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 return [false, "More Options"];
             }
             return [!is_open, is_open ? "More Options" : "Less Options"];
+        },
+        toggleVisibilityBasedOnSubtype: function(selected_subtype) {
+            if (selected_subtype.includes('MH')) {
+                return {'display': 'block'};
+            } else {
+                return {'display': 'none'};
+            }
+        },
+        toggleHOAVisibility: function(selected_subtype) {
+            if (selected_subtype.includes('MH') && selected_subtype.length === 1) {
+                return {'display': 'none'};
+            } else {
+                return {
+                    'display': 'block',
+                    'margin-bottom' : '10px',
+                };
+            }
         }
     }
 });
