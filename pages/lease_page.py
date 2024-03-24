@@ -1,6 +1,6 @@
 from .components import *
 from .filters import *
-from dash import dcc, callback, MATCH
+from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
@@ -180,36 +180,32 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   )
 
 # Create a callback to manage the collapsing behavior
-@callback(
-  [Output('more-options-collapse-lease', 'is_open'),
-    Output('more-options-button-lease', 'children')],
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='toggleCollapse'
+  ),
+  [
+    Output('more-options-collapse-lease', 'is_open'),
+    Output('more-options-button-lease', 'children')
+  ],
   [Input('more-options-button-lease', 'n_clicks')],
   [State('more-options-collapse-lease', 'is_open')]
 )
-def toggle_collapse(n, is_open):
-  if not n:
-    return False, "More Options"
-
-  if is_open:
-    return False, "More Options"
-  else:
-    return True, "Less Options"
 
 # Callback to toggle the visibility of dynamic components
 # When the toggle button with a specific index is clicked, this function toggles the visibility of the corresponding dynamic_output_div with the same index
 # If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
 # If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
-@callback(
-  [Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')],
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='toggleVisibility'
+  ),
+  [
+    Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
+    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')
+  ],
   [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
   [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
 )
-def toggle_lease_components(n, current_style):
-  if n is None:
-    raise dash.exceptions.PreventUpdate
-
-  if n % 2 == 0:
-    return {'display': 'block'}, "Hide"
-  else:
-    return {'display': 'none'}, "Show"
