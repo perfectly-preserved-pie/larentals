@@ -156,14 +156,27 @@ class LeaseFilters:
             security_deposit_filter = self.df['DepositSecurity'].between(slider_begin, slider_end)
         return security_deposit_filter
 
-    # Pets
-    def pet_deposit_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            pet_deposit_filter = self.df['DepositPets'].isnull() | (self.df['DepositPets'].between(slider_begin, slider_end))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def pet_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on pet deposit criteria, allowing
+        for the inclusion of properties without a pet deposit listed.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no pet deposit listed.
+        - slider_begin (float): The starting value of the range for the pet deposit.
+        - slider_end (float): The ending value of the range for the pet deposit.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the pet deposit.
+        """
+        if include_missing:
+            # Include properties with no pet deposit listed or within the specified range
+            pet_deposit_filter = self.df['DepositPets'].isnull() | self.df['DepositPets'].between(slider_begin, slider_end)
+        else:
+            # Include properties within the specified range, implicitly excludes nulls
             pet_deposit_filter = self.df['DepositPets'].between(slider_begin, slider_end)
-        return (pet_deposit_filter)
+        return pet_deposit_filter
 
     # Keys
     def key_deposit_function(self, boolean, slider_begin, slider_end):
