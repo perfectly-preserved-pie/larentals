@@ -5,14 +5,25 @@ class LeaseFilters:
     def __init__(self, df):
         self.df = df
 
-    # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-    def sqft_radio_button(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
-            # Then we want nulls to be included in the final dataframe
+    def sqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing square footage should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing square footage should be included.
+        - slider_begin (float): Start value of the square footage slider.
+        - slider_end (float): End value of the square footage slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing square footage
             sqft_choice = self.df['Sqft'].isnull() | self.df['Sqft'].between(slider_begin, slider_end)
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+        else:
+            # Exclude properties with missing square footage
             sqft_choice = self.df['Sqft'].between(slider_begin, slider_end)
-        return (sqft_choice)
+        return sqft_choice
     
     # Create a function to return a dataframe filter for missing year built
     def yrbuilt_radio_button(self, boolean, slider_begin, slider_end):
