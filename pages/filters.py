@@ -65,14 +65,25 @@ class LeaseFilters:
             garage_choice = self.df['garage_spaces'].between(slider_begin, slider_end)
         return garage_choice
     
-    # Create a function to return a dataframe filter for missing ppqsft
-    def ppsqft_radio_button(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
-            # Then we want nulls to be included in the final dataframe 
+    def ppsqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing price per square foot should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing price per square foot should be included.
+        - slider_begin (float): Start value of the price per square foot slider.
+        - slider_end (float): End value of the price per square foot slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing price per square foot
             ppsqft_choice = self.df['ppsqft'].isnull() | self.df['ppsqft'].between(slider_begin, slider_end)
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+        else:
+            # Exclude properties with missing price per square foot
             ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
-        return (ppsqft_choice)
+        return ppsqft_choice
 
     # Create a function to return a dataframe filter for pet policy
     def pets_radio_button(self, choice):
