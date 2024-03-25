@@ -726,10 +726,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='key_deposit_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
