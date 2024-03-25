@@ -281,41 +281,43 @@ class LeaseFilters:
 
         return terms_filter
 
-    
-    # We need to create a function to return a dataframe filter for laundry features
-    # We need to account for every possible combination of choices
-    def laundry_checklist_function(self, choice):
-        # Create a list of options for the first drop-down menu
+    def laundry_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected laundry features.
+        
+        Special handling for 'Other' to include properties that do not match any of the 
+        predefined categories. 'Unknown' and 'None' are treated according to their selection.
+
+        Args:
+        - choice (list[str]): A list of user-selected laundry features.
+        
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on laundry features.
+        """
         laundry_categories = [
-            'Dryer Hookup',
-            'Dryer Included',
-            'Washer Hookup',
-            'Washer Included',
-            'Community Laundry',
-            'Other',
-            'Unknown',
-            'None',
+            'Dryer Hookup', 'Dryer Included', 'Washer Hookup', 'Washer Included',
+            'Community Laundry', 'Other', 'Unknown', 'None',
         ]
-        # Return an empty dataframe if the choice list is empty
-        if len(choice) == 0:
-            return pd.DataFrame()
-        # If the user selects only 'Other', return the properties that don't have any of the strings in the laundry_categories list
-        if len(choice) == 1 and choice[0] == 'Other':
-            laundry_features_filter = ~self.df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
-            return laundry_features_filter
-        # First, create a filter for the first choice
-        laundry_features_filter = self.df['LaundryFeatures'].str.contains(str(choice[0]))
-        # Then, loop through the rest of the choices
-        for i in range(1, len(choice)):
-            # If the user selects "Other", we want to return all the properties that don't have any the strings in the laundry_categories list
-            if choice[i] == 'Other':
-                other = ~self.df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
-                # Then, we want to add the other filter to the laundry_features_filter
-                laundry_features_filter = laundry_features_filter | other
-            # If the user doesn't select "Other", we want to return all the properties that have the first choice, the second choice, etc.
-            elif choice[i] != 'Other':
-                laundry_features_filter = laundry_features_filter | self.df['LaundryFeatures'].str.contains(str(choice[i]))
-        return (laundry_features_filter)
+
+        # Return False for all rows if the choice list is empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Special case for 'Other'
+        if choice == ['Other']:
+            return ~self.df['LaundryFeatures'].astype(str).apply(
+                lambda x: any(cat in x for cat in laundry_categories if cat not in ['Other', 'Unknown', 'None']))
+
+        # Create initial filter
+        laundry_features_filter = pd.Series([False] * len(self.df), index=self.df.index)
+
+        for opt in choice:
+            if opt in laundry_categories and opt != 'Other':
+                # Update filter for selected options
+                laundry_features_filter |= self.df['LaundryFeatures'].astype(str).str.contains(opt, na=False)
+        
+        return laundry_features_filter
 
     # Subtype
     def subtype_checklist_function(self, choice):
