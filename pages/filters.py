@@ -319,15 +319,33 @@ class LeaseFilters:
         
         return laundry_features_filter
 
-    # Subtype
-    def subtype_checklist_function(self, choice):
-        # Presort the list first for faster performance
-        choice.sort()
-        if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+    def subtype_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected property subtypes.
+        
+        Special handling is provided for 'Unknown' to include properties without a specified subtype.
+        
+        Args:
+        - choice (list[str]): A list of user-selected property subtypes, including a special 'Unknown'
+                              option to include properties without a specified subtype.
+        
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on property subtypes.
+        """
+        # Ensure the choice list is not empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Handle 'Unknown' selection
+        if 'Unknown' in choice:
+            # Include rows where subtype is NaN OR matches one of the selected choices
             subtype_filter = self.df['subtype'].isnull() | self.df['subtype'].isin(choice)
-        elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        else:
+            # If 'Unknown' is NOT selected, filter by the selected choices
             subtype_filter = self.df['subtype'].isin(choice)
-        return (subtype_filter)
+
+        return subtype_filter
     
 # Create a class to hold all of the filters for the sale page
 class BuyFilters:
