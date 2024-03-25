@@ -516,13 +516,24 @@ class BuyFilters:
 
         return hoa_fee_frequency_filter
 
-    def space_rent_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            space_rent_filter = self.df['space_rent'].isnull() | (self.df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end))
-        elif boolean == 'False':
-            space_rent_filter = self.df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end)
+    def space_rent_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on space rent criteria, including
+        an option to include properties without space rent listed.
 
-        return (space_rent_filter)
+        Args:
+        - include_missing (bool): Indicates whether to include properties with no space rent listed.
+        - slider_begin (float): The minimum value of the space rent range.
+        - slider_end (float): The maximum value of the space rent range.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on space rent.
+        """
+        if include_missing:
+            return self.df['space_rent'].isnull() | self.df['space_rent'].between(slider_begin, slider_end)
+        else:
+            return self.df['space_rent'].between(slider_begin, slider_end)
 
     def pet_policy_function(self, choice, subtype_selected):
         # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
