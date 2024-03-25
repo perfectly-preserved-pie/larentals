@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 # Create a class to hold all of the filters for the lease page
 class LeaseFilters:
@@ -250,21 +251,35 @@ class LeaseFilters:
             listed_date_filter = self.df['listed_date'].between(start_date, end_date)
         return listed_date_filter
 
-    # Terms
-    def terms_function(self, choice):
-        # Presort the list first for faster performance
+    def terms_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame based on specified terms in the 'Terms' column. Supports
+        inclusion of rows with missing values ('NaN') if 'Unknown' is part of the choices.
+
+        Args:
+        - choice (list[str]): A list of terms to filter the 'Terms' column by. Includes
+                              special handling for 'Unknown' to include or exclude NaN values.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions. If no choices are made, it defaults to False for all rows.
+        """
+        # Ensure choice list is not empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Presort the list for potentially faster performance
         choice.sort()
-        choice_regex = '|'.join(choice)  # Create a regex from choice
+        # Corrected: Use re.escape for escaping regex special characters
+        choice_regex = '|'.join([re.escape(term) for term in choice if term != 'Unknown']) 
+        
+        # Handle 'Unknown' choice
         if 'Unknown' in choice: 
-            # If Unknown is selected, return all rows with NaN OR the selected choices
             terms_filter = self.df['Terms'].isnull() | self.df['Terms'].str.contains(choice_regex, na=False)
-        elif 'Unknown' not in choice: 
-            # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        else: 
             terms_filter = self.df['Terms'].str.contains(choice_regex, na=False)
-        # If there is no choice, return an empty dataframe
-        if len(choice) == 0:
-            terms_filter = pd.DataFrame()
-        return (terms_filter)
+
+        return terms_filter
 
     
     # We need to create a function to return a dataframe filter for laundry features
