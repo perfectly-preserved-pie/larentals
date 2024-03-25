@@ -440,13 +440,30 @@ class BuyFilters:
             ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
         return ppsqft_choice
     
-    def listed_date_function(self, boolean, start_date, end_date):
-        if boolean == 'True':
-            listed_date_filter = (self.df['listed_date'].isnull()) | (self.df['listed_date'].between(start_date, end_date))
-        elif boolean == 'False':
-            listed_date_filter = self.df['listed_date'].between(start_date, end_date)
+    def listed_date_function(self, include_missing: bool, start_date: str, end_date: str) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on the listing date criteria, allowing
+        for the inclusion of properties without a listed date.
 
-        return (listed_date_filter)
+        This function allows filtering properties based on whether there is a listing date
+        specified and whether this date falls within a given range.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no listed date.
+        - start_date (str): The starting date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+        - end_date (str): The ending date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the listing date.
+        """
+        if include_missing:
+            # Include properties with no listed date or within the specified date range
+            listed_date_filter = self.df['listed_date'].isnull() | self.df['listed_date'].between(start_date, end_date)
+        else:
+            # Include properties within the specified date range, implicitly excludes nulls
+            listed_date_filter = self.df['listed_date'].between(start_date, end_date)
+        return listed_date_filter
 
     def hoa_fee_function(self, boolean, slider_begin, slider_end):
         if boolean == 'True':
