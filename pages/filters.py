@@ -465,13 +465,26 @@ class BuyFilters:
             listed_date_filter = self.df['listed_date'].between(start_date, end_date)
         return listed_date_filter
 
-    def hoa_fee_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            hoa_fee_filter = self.df['hoa_fee'].isnull() | (self.df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end))
-        elif boolean == 'False':
-            hoa_fee_filter = self.df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end)
+    def hoa_fee_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on HOA fee criteria, with an option
+        to include properties without an HOA fee listed.
 
-        return (hoa_fee_filter)
+        Args:
+        - include_missing (bool): Indicates whether to include properties with no HOA fee listed.
+        - slider_begin (float): The minimum value of the HOA fee range.
+        - slider_end (float): The maximum value of the HOA fee range.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on HOA fees.
+        """
+        if include_missing:
+            hoa_fee_filter = self.df['hoa_fee'].isnull() | self.df['hoa_fee'].between(slider_begin, slider_end)
+        else:
+            hoa_fee_filter = self.df['hoa_fee'].between(slider_begin, slider_end)
+
+        return hoa_fee_filter
 
     def hoa_fee_frequency_function(self, choice):
         if 'N/A' in choice and len(choice) == 1:
