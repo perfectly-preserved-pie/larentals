@@ -567,27 +567,34 @@ class BuyFilters:
             # User does not want properties that allow pets
             return (pets_allowed_column.str.contains('No', na=is_mh_only)) if is_mh_only else pets_allowed_column.isnull()
 
-    def senior_community_function(self, choice, subtype_selected):
-        # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
-        if 'MH' not in subtype_selected:
-            senior_community_choice = self.df['senior_community'].notnull() | self.df['senior_community'].isnull()
-        # If MH is the only subtype selected and they want a senior community then we want every row where the senior community DOES contain "Y"
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
-            senior_community_choice = self.df['senior_community'].str.contains('Y')
-        # If MH is the only subtype selected and they DON'T want a senior community then we want every row where the senior community DOES contain "N"
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
-            senior_community_choice = self.df['senior_community'].str.contains('N')
-        # If the user says "I don't care, I want both kinds of properties"
-        # Return every row where the pet policy is Yes or No
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
-            senior_community_choice = (self.df['senior_community'].str.contains('N')) | (self.df['senior_community'].str.contains('Y')) 
-        # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y" or is null
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-            senior_community_choice = (self.df['senior_community'].str.contains('Y')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N" or is null
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-            senior_community_choice = (self.df['senior_community'].str.contains('N')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
-            senior_community_choice = self.df['senior_community'].isnull() | self.df['senior_community'].notnull()
-        return (senior_community_choice)
+    def senior_community_function(self, choice: bool or str, subtype_selected: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on the senior community criteria, with special consideration
+        for properties classified under the 'MH' subtype. The choice parameter can be a boolean
+        indicating a preference for senior community properties or 'Both' indicating no preference.
+
+        Args:
+        - choice (bool or str): The user's choice regarding senior community properties. True for properties
+                                within a senior community, False for properties not within a senior community,
+                                and "Both" for all properties regardless of senior community status.
+        - subtype_selected (list[str]): A list of user-selected property subtypes.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on senior community status and selected subtypes.
+        """
+        # If 'MH' is not selected or user is indifferent about senior community, all rows are valid
+        if 'MH' not in subtype_selected or choice == 'Both':
+            return pd.Series([True] * len(self.df), index=self.df.index)
+
+        # Specific logic for when 'MH' is selected
+        senior_community_column = self.df['senior_community'].astype(str)  # Ensure comparison is string-based
+        
+        if choice is True:
+            # User prefers properties within a senior community
+            return senior_community_column.str.contains('Y', na=False)
+        elif choice is False:
+            # User prefers properties not within a senior community
+            return senior_community_column.str.contains('N', na=False)
+        else:  # Covers the case if somehow an unexpected choice value is passed
+            return pd.Series([False] * len(self.df), index=self.df.index)

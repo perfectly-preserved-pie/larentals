@@ -1474,8 +1474,8 @@ class BuyComponents(BaseClass):
                 dcc.RadioItems(
                     id='senior_community_radio',
                     options=[
-                        {'label': 'Yes', 'value': 'True'},
-                        {'label': 'No', 'value': 'False'},
+                        {'label': 'Yes', 'value': True},
+                        {'label': 'No', 'value': False},
                         {'label': 'Both', 'value': 'Both'},
                     ],
                     value='Both',
