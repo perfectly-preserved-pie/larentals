@@ -1,3 +1,4 @@
+from typing import Union
 import pandas as pd
 import re
 
@@ -567,7 +568,7 @@ class BuyFilters:
             # User does not want properties that allow pets
             return (pets_allowed_column.str.contains('No', na=is_mh_only)) if is_mh_only else pets_allowed_column.isnull()
 
-    def senior_community_function(self, choice: bool or str, subtype_selected: list[str]) -> pd.Series:
+    def senior_community_function(self, choice: Union[bool, str], subtype_selected: list[str]) -> pd.Series:
         """
         Filters the DataFrame for properties based on the senior community criteria, with special consideration
         for properties classified under the 'MH' subtype. The choice parameter can be a boolean
