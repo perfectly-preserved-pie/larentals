@@ -178,14 +178,30 @@ class LeaseFilters:
             pet_deposit_filter = self.df['DepositPets'].between(slider_begin, slider_end)
         return pet_deposit_filter
 
-    # Keys
-    def key_deposit_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            key_deposit_filter = self.df['DepositKey'].isnull() | (self.df['DepositKey'].between(slider_begin, slider_end))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def key_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on key deposit criteria, allowing
+        for the inclusion of properties without a key deposit listed.
+
+        This function is designed to filter properties based on the presence or absence
+        of a key deposit and whether the key deposit amount falls within a specified range.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no key deposit listed.
+        - slider_begin (float): The starting value of the range for the key deposit.
+        - slider_end (float): The ending value of the range for the key deposit.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the key deposit.
+        """
+        if include_missing:
+            # Include properties with no key deposit listed or within the specified range
+            key_deposit_filter = self.df['DepositKey'].isnull() | self.df['DepositKey'].between(slider_begin, slider_end)
+        else:
+            # Include properties within the specified range, implicitly excludes nulls
             key_deposit_filter = self.df['DepositKey'].between(slider_begin, slider_end)
-        return (key_deposit_filter)
+        return key_deposit_filter
 
     # Other
     def other_deposit_function(self, boolean, slider_begin, slider_end):
