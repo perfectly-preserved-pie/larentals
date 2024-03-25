@@ -1,7 +1,7 @@
 from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
-from typing import Optional, List, Generator
+from typing import Optional, List, Generator, Set
 import pandas as pd
 import sys
 
@@ -91,34 +91,37 @@ def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
 
     # Get the list of files
     list_files_response = imagekit_instance.list_files()
-    list_files = list_files_response.get('list', [])
+    list_files: list = list_files_response.list if hasattr(list_files_response, 'list') else []
 
     # Create a set of referenced mls numbers for faster searching
-    referenced_mls_numbers = set(df['mls_number'].astype(str))
+    referenced_mls_numbers: Set[str] = set(df['mls_number'].astype(str))
 
     # Initialize a list for file IDs to delete
-    file_ids_for_deletion = [file['file_id'] for file in list_files if file['name'].replace('.jpg', '') not in referenced_mls_numbers]
+    file_ids_for_deletion: List[str] = [
+        file.file_id for file in list_files 
+        if file.name.replace('.jpg', '') not in referenced_mls_numbers
+    ]
 
     # Function to handle bulk deletion in chunks
-    def delete_in_chunks(file_ids: List[str]) -> None:
-        # Split the file_ids into chunks of 100
+    def delete_in_chunks(file_ids: List[str], imagekit_instance: ImageKit) -> None:
+        """Deletes files in chunks of 100 to avoid overloading the API requests."""
         for i in range(0, len(file_ids), 100):
             chunk = file_ids[i:i + 100]
             bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=chunk)
-
-            # Check the status code and handle the response accordingly
-            if bulk_delete_result.status_code == 200:
+            
+            if bulk_delete_result.successfully_deleted_file_ids:
                 logger.success(f"Successfully deleted files: {bulk_delete_result.successfully_deleted_file_ids}")
-            elif bulk_delete_result.status_code == 207:
-                logger.success(f"Partially successful deletion: {bulk_delete_result.successfully_deleted_file_ids}")
-                logger.warning(f"Errors in deletion: {bulk_delete_result.errors}")
-            elif bulk_delete_result.status_code == 404:
-                logger.error(f"Files not found: {bulk_delete_result.missing_file_ids}")
             else:
-                logger.error(f"Unexpected response status: {bulk_delete_result.status_code}")
+                # Since successfully_deleted_file_ids is None or empty, no files were deleted.
+                logger.error("No files were deleted.")
+                # Use the response_metadata to get more details about the request and response.
+                if bulk_delete_result.response_metadata:
+                    logger.debug(f"Response metadata: {bulk_delete_result.response_metadata.raw}")
+                else:
+                    logger.error("No response metadata available.")
 
     # Call the function to delete files in chunks
-    delete_in_chunks(file_ids_for_deletion)
+    delete_in_chunks(file_ids_for_deletion, imagekit_instance)
 
     # Log the total number of files requested for deletion
     logger.info(f"Total number of files requested for deletion: {len(file_ids_for_deletion)}")
