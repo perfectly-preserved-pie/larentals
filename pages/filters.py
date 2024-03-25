@@ -486,15 +486,35 @@ class BuyFilters:
 
         return hoa_fee_filter
 
-    def hoa_fee_frequency_function(self, choice):
-        if 'N/A' in choice and len(choice) == 1:
-            hoa_fee_frequency_filter = self.df['hoa_fee_frequency'].isnull()
-        elif 'Monthly' in choice and len(choice) == 1:
-            hoa_fee_frequency_filter = self.df['hoa_fee_frequency'].str.contains('Monthly')
-        elif len(choice) > 1:
-            hoa_fee_frequency_filter = self.df['hoa_fee_frequency'].isnull() | self.df['hoa_fee_frequency'].str.contains('Monthly')
+    def hoa_fee_frequency_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected HOA fee frequency criteria,
+        including handling for properties without HOA fees ('N/A').
 
-        return (hoa_fee_frequency_filter)
+        Args:
+        - choice (list[str]): A list of user-selected HOA fee frequencies, e.g., ['Monthly', 'N/A'].
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on HOA fee frequency.
+        """
+        # No selection returns False for all rows
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Initialize filter to capture no selections
+        hoa_fee_frequency_filter = pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Special handling for 'N/A'
+        if 'N/A' in choice:
+            hoa_fee_frequency_filter |= self.df['hoa_fee_frequency'].isnull()
+
+        # Handling other selections
+        for freq in choice:
+            if freq != 'N/A':  # Skip 'N/A' since it's already handled
+                hoa_fee_frequency_filter |= self.df['hoa_fee_frequency'].str.contains(freq, na=False)
+
+        return hoa_fee_frequency_filter
 
     def space_rent_function(self, boolean, slider_begin, slider_end):
         if boolean == 'True':
