@@ -352,32 +352,73 @@ class BuyFilters:
     def __init__(self, df):
         self.df = df
 
-    def subtype_checklist_function(self, choice):
-        # Presort the list first for faster performance
-        choice.sort()
-        if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+    def subtype_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected property subtypes.
+        
+        Special handling is provided for 'Unknown' to include properties without a specified subtype.
+        
+        Args:
+        - choice (list[str]): A list of user-selected property subtypes, including a special 'Unknown'
+                              option to include properties without a specified subtype.
+        
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on property subtypes.
+        """
+        # Ensure the choice list is not empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Handle 'Unknown' selection
+        if 'Unknown' in choice:
+            # Include rows where subtype is NaN OR matches one of the selected choices
             subtype_filter = self.df['subtype'].isnull() | self.df['subtype'].isin(choice)
-        elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        else:
+            # If 'Unknown' is NOT selected, filter by the selected choices
             subtype_filter = self.df['subtype'].isin(choice)
-        return (subtype_filter)
 
-    # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-    def sqft_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
+        return subtype_filter
+
+    def sqft_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing square footage should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing square footage should be included.
+        - slider_begin (float): Start value of the square footage slider.
+        - slider_end (float): End value of the square footage slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing square footage
             sqft_choice = self.df['Sqft'].isnull() | self.df['Sqft'].between(slider_begin, slider_end)
-        elif boolean == 'False':
+        else:
+            # Exclude properties with missing square footage
             sqft_choice = self.df['Sqft'].between(slider_begin, slider_end)
+        return sqft_choice
 
-        return (sqft_choice)
+    def year_built_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing year built should be included.
 
-    # Create a function to return a dataframe filter for year built
-    def year_built_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            year_built_choice = self.df['year_built'].isnull() | self.df['year_built'].between(slider_begin, slider_end)
-        elif boolean == 'False':
-            year_built_choice = self.df['year_built'].between(slider_begin, slider_end)
+        Args:
+        - include_missing (bool): Whether properties with missing year built should be included.
+        - slider_begin (int): Start value of the year built slider.
+        - slider_end (int): End value of the year built slider.
 
-        return (year_built_choice)
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing year built
+            yrbuilt_choice = self.df['year_built'].isnull() | self.df['year_built'].between(slider_begin, slider_end)
+        else:
+            # Exclude properties with missing year built
+            yrbuilt_choice = self.df['year_built'].between(slider_begin, slider_end)
+        return yrbuilt_choice
 
     # Create a function to return a dataframe filter for missing ppqsft
     def ppsqft_function(self, boolean, slider_begin, slider_end):

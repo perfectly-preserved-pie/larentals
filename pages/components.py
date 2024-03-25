@@ -1188,10 +1188,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='sqft_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1566,10 +1566,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='yrbuilt_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
