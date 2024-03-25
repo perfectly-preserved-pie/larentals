@@ -420,14 +420,25 @@ class BuyFilters:
             yrbuilt_choice = self.df['year_built'].between(slider_begin, slider_end)
         return yrbuilt_choice
 
-    # Create a function to return a dataframe filter for missing ppqsft
-    def ppsqft_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            ppsqft_choice = self.df['ppsqft'].isnull() | self.df['ppsqft'].between(slider_begin, slider_end)
-        elif boolean == 'False':
-            ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
+    def ppsqft_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing price per square foot should be included.
 
-        return (ppsqft_choice)
+        Args:
+        - include_missing (bool): Whether properties with missing price per square foot should be included.
+        - slider_begin (float): Start value of the price per square foot slider.
+        - slider_end (float): End value of the price per square foot slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing price per square foot
+            ppsqft_choice = self.df['ppsqft'].isnull() | self.df['ppsqft'].between(slider_begin, slider_end)
+        else:
+            # Exclude properties with missing price per square foot
+            ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
+        return ppsqft_choice
     
     def listed_date_function(self, boolean, start_date, end_date):
         if boolean == 'True':
