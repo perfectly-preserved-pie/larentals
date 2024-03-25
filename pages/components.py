@@ -1281,8 +1281,8 @@ class BuyComponents(BaseClass):
                 dcc.RadioItems(
                     id = 'pets_radio',
                     options=[
-                        {'label': 'Pets Allowed', 'value': 'True'},
-                        {'label': 'Pets NOT Allowed', 'value': 'False'},
+                        {'label': 'Pets Allowed', 'value': True},
+                        {'label': 'Pets NOT Allowed', 'value': False},
                         {'label': 'Both', 'value': 'Both'},
                     ],
                     value='Both', # A value needs to be selected upon page load otherwise we error out.

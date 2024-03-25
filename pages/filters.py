@@ -535,30 +535,37 @@ class BuyFilters:
         else:
             return self.df['space_rent'].between(slider_begin, slider_end)
 
-    def pet_policy_function(self, choice, subtype_selected):
-        # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
-        if 'MH' not in subtype_selected:
-            pets_radio_choice = self.df['pets_allowed'].notnull() | self.df['pets_allowed'].isnull()
-        # If MH is the only subtype selected and they want pets then we want every row where the pet policy DOES NOT contain "No"
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
-            pets_radio_choice = ~self.df['pets_allowed'].str.contains('No')
-        # If MH is the only subtype selected and they DON'T want pets then we want every row where the pet policy DOES NOT contain "No"
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
-            pets_radio_choice = self.df['pets_allowed'].str.contains('No')
-        # If the user says "I don't care, I want both kinds of properties"
-        # Return every row where the pet policy is Yes or No
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
-            pets_radio_choice = (~self.df['pets_allowed'].str.contains('No')) | (self.df['pets_allowed'].str.contains('No'))
-        # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" or is null
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-            pets_radio_choice = (~self.df['pets_allowed'].str.contains('No')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No" or is null
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-            pets_radio_choice = (self.df['pets_allowed'].str.contains('No')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
-            pets_radio_choice = self.df['pets_allowed'].isnull() | self.df['pets_allowed'].notnull()
-        return (pets_radio_choice)
+    def pet_policy_function(self, choice: str, subtype_selected: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame based on pet policy preferences, with special consideration
+        for properties classified under the 'MH' subtype. The choice parameter can be a boolean
+        (True, False) indicating a preference for properties that allow or do not allow pets, respectively,
+        or the string "Both" indicating no preference.
+
+        Args:
+        - choice (bool or str): The user's choice regarding pet policy. True for properties that allow pets,
+                                False for properties that do not allow pets, and "Both" for all properties
+                                regardless of pet policy.
+        - subtype_selected (list[str]): A list of user-selected property subtypes.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on pet policy and selected subtypes.
+        """
+        if 'MH' not in subtype_selected or choice == 'Both':
+            # If 'MH' is not selected or user is indifferent about pet policy, all rows are valid
+            return pd.Series([True] * len(self.df), index=self.df.index)
+
+        # Handling cases when 'MH' is selected with a specific pet policy preference
+        is_mh_only = len(subtype_selected) == 1 and 'MH' in subtype_selected
+        pets_allowed_column = self.df['pets_allowed'].astype(str)  # Ensure comparison is string-based
+
+        if choice:
+            # User wants properties that allow pets
+            return (~pets_allowed_column.str.contains('No', na=is_mh_only)) if is_mh_only else pets_allowed_column.notnull()
+        else:
+            # User does not want properties that allow pets
+            return (pets_allowed_column.str.contains('No', na=is_mh_only)) if is_mh_only else pets_allowed_column.isnull()
 
     def senior_community_function(self, choice, subtype_selected):
         # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
