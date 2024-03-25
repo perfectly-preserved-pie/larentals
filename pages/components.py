@@ -214,10 +214,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='sqft_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -266,10 +266,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='ppsqft_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -303,8 +303,8 @@ class LeaseComponents(BaseClass):
                 dcc.RadioItems(
                     id='pets_radio',
                     options=[
-                        {'label': 'Pets Allowed', 'value': 'Yes'},
-                        {'label': 'Pets NOT Allowed', 'value': 'No'},
+                        {'label': 'Pets Allowed', 'value': True},
+                        {'label': 'Pets NOT Allowed', 'value': False},
                         {'label': 'Both', 'value': 'Both'}
                     ],
                     value='Both',
@@ -393,10 +393,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='garage_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -478,10 +478,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='yrbuilt_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -570,10 +570,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='security_deposit_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -674,10 +674,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='pet_deposit_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -726,10 +726,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='key_deposit_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -856,10 +856,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='listed_date_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1188,10 +1188,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='sqft_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1240,10 +1240,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='ppsqft_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1281,8 +1281,8 @@ class BuyComponents(BaseClass):
                 dcc.RadioItems(
                     id = 'pets_radio',
                     options=[
-                        {'label': 'Pets Allowed', 'value': 'True'},
-                        {'label': 'Pets NOT Allowed', 'value': 'False'},
+                        {'label': 'Pets Allowed', 'value': True},
+                        {'label': 'Pets NOT Allowed', 'value': False},
                         {'label': 'Both', 'value': 'Both'},
                     ],
                     value='Both', # A value needs to be selected upon page load otherwise we error out.
@@ -1336,10 +1336,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='hoa_fee_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1432,10 +1432,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='space_rent_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1474,8 +1474,8 @@ class BuyComponents(BaseClass):
                 dcc.RadioItems(
                     id='senior_community_radio',
                     options=[
-                        {'label': 'Yes', 'value': 'True'},
-                        {'label': 'No', 'value': 'False'},
+                        {'label': 'Yes', 'value': True},
+                        {'label': 'No', 'value': False},
                         {'label': 'Both', 'value': 'Both'},
                     ],
                     value='Both',
@@ -1566,10 +1566,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='yrbuilt_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"
@@ -1620,10 +1620,10 @@ class BuyComponents(BaseClass):
                         dcc.RadioItems(
                             id='listed_date_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "margin-right": "5px",
                                 "margin-left": "5px"

@@ -1,296 +1,601 @@
+from typing import Union
 import pandas as pd
+import re
 
 # Create a class to hold all of the filters for the lease page
 class LeaseFilters:
     def __init__(self, df):
         self.df = df
 
-    # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-    def sqft_radio_button(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a square footage listed"
-            # Then we want nulls to be included in the final dataframe
+    def sqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing square footage should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing square footage should be included.
+        - slider_begin (float): Start value of the square footage slider.
+        - slider_end (float): End value of the square footage slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing square footage
             sqft_choice = self.df['Sqft'].isnull() | self.df['Sqft'].between(slider_begin, slider_end)
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+        else:
+            # Exclude properties with missing square footage
             sqft_choice = self.df['Sqft'].between(slider_begin, slider_end)
-        return (sqft_choice)
+        return sqft_choice
     
-    # Create a function to return a dataframe filter for missing year built
-    def yrbuilt_radio_button(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a year built listed"
-            # Then we want nulls to be included in the final dataframe
+    def yrbuilt_radio_button(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing year built should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing year built should be included.
+        - slider_begin (int): Start value of the year built slider.
+        - slider_end (int): End value of the year built slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing year built
             yrbuilt_choice = self.df['YrBuilt'].isnull() | self.df['YrBuilt'].between(slider_begin, slider_end)
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+        else:
+            # Exclude properties with missing year built
             yrbuilt_choice = self.df['YrBuilt'].between(slider_begin, slider_end)
-        return (yrbuilt_choice)
+        return yrbuilt_choice
     
-    # Create a function to return a dataframe filter for missing garage spaces
-    def garage_radio_button(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
-            # Then we want nulls to be included in the final dataframe 
+    def garage_radio_button(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing garage spaces should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing garage spaces should be included.
+        - slider_begin (int): Start value of the garage spaces slider.
+        - slider_end (int): End value of the garage spaces slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing garage spaces
             garage_choice = self.df['garage_spaces'].isnull() | self.df['garage_spaces'].between(slider_begin, slider_end)
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+        else:
+            # Exclude properties with missing garage spaces
             garage_choice = self.df['garage_spaces'].between(slider_begin, slider_end)
-        return (garage_choice)
+        return garage_choice
     
-    # Create a function to return a dataframe filter for missing ppqsft
-    def ppsqft_radio_button(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a garage space listed"
-            # Then we want nulls to be included in the final dataframe 
+    def ppsqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing price per square foot should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing price per square foot should be included.
+        - slider_begin (float): Start value of the price per square foot slider.
+        - slider_end (float): End value of the price per square foot slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing price per square foot
             ppsqft_choice = self.df['ppsqft'].isnull() | self.df['ppsqft'].between(slider_begin, slider_end)
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+        else:
+            # Exclude properties with missing price per square foot
             ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
-        return (ppsqft_choice)
+        return ppsqft_choice
 
-    # Create a function to return a dataframe filter for pet policy
-    def pets_radio_button(self, choice):
-        if choice == 'Yes': # If the user says "yes, I ONLY want properties that allow pets"
-            # Then we want every row where the pet policy is NOT "No" or "No, Size Limit"
+    def pets_radio_button(self, choice: str) -> pd.Series:
+        """
+        Filters the DataFrame based on the pet policy according to the user's choice.
+
+        Args:
+        - choice (str): User's choice regarding pet policy. Options are 'Yes', 'No', or 'Both'.
+                        'Yes' for properties that allow pets,
+                        'No' for properties that do not allow pets,
+                        'Both' for all properties regardless of pet policy.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
+        """
+        if choice == True:
+            # Filter for rows where the pet policy allows pets (not 'No' or 'No, Size Limit')
             pets_radio_choice = ~self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-        elif choice == 'No': # If the user says "No, I don't want properties where pets are allowed"
+        elif choice == False:
+            # Filter for rows where the pet policy does not allow pets
             pets_radio_choice = self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
-        elif choice == 'Both': # If the user says "I don't care, I want both kinds of properties"
-            pets_radio_choice = self.df['PetsAllowed']
-        return (pets_radio_choice)
+        else:  # Assuming 'Both' includes all rows
+            # Create a boolean Series of True for all rows to include everything
+            pets_radio_choice = pd.Series([True] * len(self.df), index=self.df.index)
+        return pets_radio_choice
 
-    # Create a function to return a dataframe filter for furnished dwellings
-    def furnished_checklist_function(self, choice):
-        # Presort the list first for faster performance
+    def furnished_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for furnished dwellings based on the user's choice.
+
+        This function allows for dynamic filtering based on whether the property's furnished
+        status is explicitly stated or unknown. The 'Unknown' option includes listings that
+        might not specify their furnished state.
+
+        Args:
+        - choice (list[str]): A list of user-selected options regarding the furnished status. 
+                              Options include 'Furnished', 'Unfurnished', and 'Unknown'.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
+        """
+        # Presort the list first for potentially faster performance
         choice.sort()
-        if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
-            furnished_checklist_filter = (self.df['Furnished'].isnull()) | (self.df['Furnished'].isin(choice))
-        elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        if 'Unknown' in choice:
+            # Include rows where Furnished status is NaN OR matches one of the selected choices
+            furnished_checklist_filter = self.df['Furnished'].isnull() | self.df['Furnished'].isin(choice)
+        else:
+            # If Unknown is NOT selected, return rows that match the selected choices (implies .notnull() by default)
             furnished_checklist_filter = self.df['Furnished'].isin(choice)
-        return (furnished_checklist_filter)
+        return furnished_checklist_filter
 
-    ## Create functions to return a dataframe filter for the various types of deposits
-    # Security
-    def security_deposit_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            security_deposit_filter = self.df['DepositSecurity'].isnull() | (self.df['DepositSecurity'].between(slider_begin, slider_end))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def security_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on security deposit criteria, allowing
+        for the inclusion of properties without a security deposit listed.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no security deposit listed.
+        - slider_begin (float): The starting value of the range for the security deposit.
+        - slider_end (float): The ending value of the range for the security deposit.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the security deposit.
+        """
+        if include_missing:
+            # Include properties with no security deposit listed or within the specified range
+            security_deposit_filter = self.df['DepositSecurity'].isnull() | self.df['DepositSecurity'].between(slider_begin, slider_end)
+        else:
+            # Include properties within the specified range, implicitly excludes nulls
             security_deposit_filter = self.df['DepositSecurity'].between(slider_begin, slider_end)
-        return (security_deposit_filter)
+        return security_deposit_filter
 
-    # Pets
-    def pet_deposit_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            pet_deposit_filter = self.df['DepositPets'].isnull() | (self.df['DepositPets'].between(slider_begin, slider_end))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def pet_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on pet deposit criteria, allowing
+        for the inclusion of properties without a pet deposit listed.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no pet deposit listed.
+        - slider_begin (float): The starting value of the range for the pet deposit.
+        - slider_end (float): The ending value of the range for the pet deposit.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the pet deposit.
+        """
+        if include_missing:
+            # Include properties with no pet deposit listed or within the specified range
+            pet_deposit_filter = self.df['DepositPets'].isnull() | self.df['DepositPets'].between(slider_begin, slider_end)
+        else:
+            # Include properties within the specified range, implicitly excludes nulls
             pet_deposit_filter = self.df['DepositPets'].between(slider_begin, slider_end)
-        return (pet_deposit_filter)
+        return pet_deposit_filter
 
-    # Keys
-    def key_deposit_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            key_deposit_filter = self.df['DepositKey'].isnull() | (self.df['DepositKey'].between(slider_begin, slider_end))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def key_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on key deposit criteria, allowing
+        for the inclusion of properties without a key deposit listed.
+
+        This function is designed to filter properties based on the presence or absence
+        of a key deposit and whether the key deposit amount falls within a specified range.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no key deposit listed.
+        - slider_begin (float): The starting value of the range for the key deposit.
+        - slider_end (float): The ending value of the range for the key deposit.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the key deposit.
+        """
+        if include_missing:
+            # Include properties with no key deposit listed or within the specified range
+            key_deposit_filter = self.df['DepositKey'].isnull() | self.df['DepositKey'].between(slider_begin, slider_end)
+        else:
+            # Include properties within the specified range, implicitly excludes nulls
             key_deposit_filter = self.df['DepositKey'].between(slider_begin, slider_end)
-        return (key_deposit_filter)
+        return key_deposit_filter
 
-    # Other
-    def other_deposit_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            other_deposit_filter = self.df['DepositOther'].isnull() | (self.df['DepositOther'].between(slider_begin, slider_end))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def other_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on 'other' deposit criteria, allowing
+        for the inclusion of properties without an 'other' deposit listed.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no 'other' deposit listed.
+        - slider_begin (float): The starting value of the range for the 'other' deposit.
+        - slider_end (float): The ending value of the range for the 'other' deposit.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the 'other' deposit.
+        """
+        if include_missing:
+            # Include properties with no 'other' deposit listed or within the specified range
+            other_deposit_filter = self.df['DepositOther'].isnull() | self.df['DepositOther'].between(slider_begin, slider_end)
+        else:
+            # Include properties within the specified range, implicitly excludes nulls
             other_deposit_filter = self.df['DepositOther'].between(slider_begin, slider_end)
-        return (other_deposit_filter)
+        return other_deposit_filter
 
-    # Listed Date
-    def listed_date_function(self, boolean, start_date, end_date):
-        if boolean == 'True': # If the user says "yes, I want properties without a security deposit listed"
-            # Then we want nulls to be included in the final dataframe 
-            listed_date_filter = (self.df['listed_date'].isnull()) | (self.df['listed_date'].between(start_date, end_date))
-        elif boolean == 'False': # If the user says "No nulls", return the same dataframe as the slider would. The slider (by definition: a range between non-null integers) implies .notnull()
+    def listed_date_function(self, include_missing: bool, start_date: str, end_date: str) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on the listing date criteria, allowing
+        for the inclusion of properties without a listed date.
+
+        This function allows filtering properties based on whether there is a listing date
+        specified and whether this date falls within a given range.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no listed date.
+        - start_date (str): The starting date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+        - end_date (str): The ending date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the listing date.
+        """
+        if include_missing:
+            # Include properties with no listed date or within the specified date range
+            listed_date_filter = self.df['listed_date'].isnull() | self.df['listed_date'].between(start_date, end_date)
+        else:
+            # Include properties within the specified date range, implicitly excludes nulls
             listed_date_filter = self.df['listed_date'].between(start_date, end_date)
-        return (listed_date_filter)
+        return listed_date_filter
 
-    # Terms
-    def terms_function(self, choice):
-        # Presort the list first for faster performance
+    def terms_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame based on specified terms in the 'Terms' column. Supports
+        inclusion of rows with missing values ('NaN') if 'Unknown' is part of the choices.
+
+        Args:
+        - choice (list[str]): A list of terms to filter the 'Terms' column by. Includes
+                              special handling for 'Unknown' to include or exclude NaN values.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions. If no choices are made, it defaults to False for all rows.
+        """
+        # Ensure choice list is not empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Presort the list for potentially faster performance
         choice.sort()
-        choice_regex = '|'.join(choice)  # Create a regex from choice
+        # Corrected: Use re.escape for escaping regex special characters
+        choice_regex = '|'.join([re.escape(term) for term in choice if term != 'Unknown']) 
+        
+        # Handle 'Unknown' choice
         if 'Unknown' in choice: 
-            # If Unknown is selected, return all rows with NaN OR the selected choices
             terms_filter = self.df['Terms'].isnull() | self.df['Terms'].str.contains(choice_regex, na=False)
-        elif 'Unknown' not in choice: 
-            # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        else: 
             terms_filter = self.df['Terms'].str.contains(choice_regex, na=False)
-        # If there is no choice, return an empty dataframe
-        if len(choice) == 0:
-            terms_filter = pd.DataFrame()
-        return (terms_filter)
 
-    
-    # We need to create a function to return a dataframe filter for laundry features
-    # We need to account for every possible combination of choices
-    def laundry_checklist_function(self, choice):
-        # Create a list of options for the first drop-down menu
+        return terms_filter
+
+    def laundry_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected laundry features.
+        
+        Special handling for 'Other' to include properties that do not match any of the 
+        predefined categories. 'Unknown' and 'None' are treated according to their selection.
+
+        Args:
+        - choice (list[str]): A list of user-selected laundry features.
+        
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on laundry features.
+        """
         laundry_categories = [
-            'Dryer Hookup',
-            'Dryer Included',
-            'Washer Hookup',
-            'Washer Included',
-            'Community Laundry',
-            'Other',
-            'Unknown',
-            'None',
+            'Dryer Hookup', 'Dryer Included', 'Washer Hookup', 'Washer Included',
+            'Community Laundry', 'Other', 'Unknown', 'None',
         ]
-        # Return an empty dataframe if the choice list is empty
-        if len(choice) == 0:
-            return pd.DataFrame()
-        # If the user selects only 'Other', return the properties that don't have any of the strings in the laundry_categories list
-        if len(choice) == 1 and choice[0] == 'Other':
-            laundry_features_filter = ~self.df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
-            return laundry_features_filter
-        # First, create a filter for the first choice
-        laundry_features_filter = self.df['LaundryFeatures'].str.contains(str(choice[0]))
-        # Then, loop through the rest of the choices
-        for i in range(1, len(choice)):
-            # If the user selects "Other", we want to return all the properties that don't have any the strings in the laundry_categories list
-            if choice[i] == 'Other':
-                other = ~self.df['LaundryFeatures'].astype(str).apply(lambda x: any([cat in x for cat in laundry_categories]))
-                # Then, we want to add the other filter to the laundry_features_filter
-                laundry_features_filter = laundry_features_filter | other
-            # If the user doesn't select "Other", we want to return all the properties that have the first choice, the second choice, etc.
-            elif choice[i] != 'Other':
-                laundry_features_filter = laundry_features_filter | self.df['LaundryFeatures'].str.contains(str(choice[i]))
-        return (laundry_features_filter)
 
-    # Subtype
-    def subtype_checklist_function(self, choice):
-        # Presort the list first for faster performance
-        choice.sort()
-        if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+        # Return False for all rows if the choice list is empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Special case for 'Other'
+        if choice == ['Other']:
+            return ~self.df['LaundryFeatures'].astype(str).apply(
+                lambda x: any(cat in x for cat in laundry_categories if cat not in ['Other', 'Unknown', 'None']))
+
+        # Create initial filter
+        laundry_features_filter = pd.Series([False] * len(self.df), index=self.df.index)
+
+        for opt in choice:
+            if opt in laundry_categories and opt != 'Other':
+                # Update filter for selected options
+                laundry_features_filter |= self.df['LaundryFeatures'].astype(str).str.contains(opt, na=False)
+        
+        return laundry_features_filter
+
+    def subtype_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected property subtypes.
+        
+        Special handling is provided for 'Unknown' to include properties without a specified subtype.
+        
+        Args:
+        - choice (list[str]): A list of user-selected property subtypes, including a special 'Unknown'
+                              option to include properties without a specified subtype.
+        
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on property subtypes.
+        """
+        # Ensure the choice list is not empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Handle 'Unknown' selection
+        if 'Unknown' in choice:
+            # Include rows where subtype is NaN OR matches one of the selected choices
             subtype_filter = self.df['subtype'].isnull() | self.df['subtype'].isin(choice)
-        elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        else:
+            # If 'Unknown' is NOT selected, filter by the selected choices
             subtype_filter = self.df['subtype'].isin(choice)
-        return (subtype_filter)
+
+        return subtype_filter
     
 # Create a class to hold all of the filters for the sale page
 class BuyFilters:
     def __init__(self, df):
         self.df = df
 
-    def subtype_checklist_function(self, choice):
-        # Presort the list first for faster performance
-        choice.sort()
-        if 'Unknown' in choice: # If Unknown is selected, return all rows with NaN OR the selected choices
+    def subtype_checklist_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected property subtypes.
+        
+        Special handling is provided for 'Unknown' to include properties without a specified subtype.
+        
+        Args:
+        - choice (list[str]): A list of user-selected property subtypes, including a special 'Unknown'
+                              option to include properties without a specified subtype.
+        
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on property subtypes.
+        """
+        # Ensure the choice list is not empty
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Handle 'Unknown' selection
+        if 'Unknown' in choice:
+            # Include rows where subtype is NaN OR matches one of the selected choices
             subtype_filter = self.df['subtype'].isnull() | self.df['subtype'].isin(choice)
-        elif 'Unknown' not in choice: # If Unknown is NOT selected, return the selected choices only, which implies .notnull()
+        else:
+            # If 'Unknown' is NOT selected, filter by the selected choices
             subtype_filter = self.df['subtype'].isin(choice)
-        return (subtype_filter)
 
-    # Create a function to return a dataframe filter based on if the user provides a Yes/No to the "should we include properties with missing sqft?" question
-    def sqft_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
+        return subtype_filter
+
+    def sqft_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing square footage should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing square footage should be included.
+        - slider_begin (float): Start value of the square footage slider.
+        - slider_end (float): End value of the square footage slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing square footage
             sqft_choice = self.df['Sqft'].isnull() | self.df['Sqft'].between(slider_begin, slider_end)
-        elif boolean == 'False':
+        else:
+            # Exclude properties with missing square footage
             sqft_choice = self.df['Sqft'].between(slider_begin, slider_end)
+        return sqft_choice
 
-        return (sqft_choice)
+    def year_built_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing year built should be included.
 
-    # Create a function to return a dataframe filter for year built
-    def year_built_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            year_built_choice = self.df['year_built'].isnull() | self.df['year_built'].between(slider_begin, slider_end)
-        elif boolean == 'False':
-            year_built_choice = self.df['year_built'].between(slider_begin, slider_end)
+        Args:
+        - include_missing (bool): Whether properties with missing year built should be included.
+        - slider_begin (int): Start value of the year built slider.
+        - slider_end (int): End value of the year built slider.
 
-        return (year_built_choice)
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing year built
+            yrbuilt_choice = self.df['year_built'].isnull() | self.df['year_built'].between(slider_begin, slider_end)
+        else:
+            # Exclude properties with missing year built
+            yrbuilt_choice = self.df['year_built'].between(slider_begin, slider_end)
+        return yrbuilt_choice
 
-    # Create a function to return a dataframe filter for missing ppqsft
-    def ppsqft_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
+    def ppsqft_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filter the dataframe based on whether properties with missing price per square foot should be included.
+
+        Args:
+        - include_missing (bool): Whether properties with missing price per square foot should be included.
+        - slider_begin (float): Start value of the price per square foot slider.
+        - slider_end (float): End value of the price per square foot slider.
+
+        Returns:
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
+        """
+        if include_missing:
+            # Include properties with missing price per square foot
             ppsqft_choice = self.df['ppsqft'].isnull() | self.df['ppsqft'].between(slider_begin, slider_end)
-        elif boolean == 'False':
+        else:
+            # Exclude properties with missing price per square foot
             ppsqft_choice = self.df['ppsqft'].between(slider_begin, slider_end)
-
-        return (ppsqft_choice)
+        return ppsqft_choice
     
-    def listed_date_function(self, boolean, start_date, end_date):
-        if boolean == 'True':
-            listed_date_filter = (self.df['listed_date'].isnull()) | (self.df['listed_date'].between(start_date, end_date))
-        elif boolean == 'False':
+    def listed_date_function(self, include_missing: bool, start_date: str, end_date: str) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on the listing date criteria, allowing
+        for the inclusion of properties without a listed date.
+
+        This function allows filtering properties based on whether there is a listing date
+        specified and whether this date falls within a given range.
+
+        Args:
+        - include_missing (bool): Whether to include properties with no listed date.
+        - start_date (str): The starting date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+        - end_date (str): The ending date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
+                     filter conditions based on the listing date.
+        """
+        if include_missing:
+            # Include properties with no listed date or within the specified date range
+            listed_date_filter = self.df['listed_date'].isnull() | self.df['listed_date'].between(start_date, end_date)
+        else:
+            # Include properties within the specified date range, implicitly excludes nulls
             listed_date_filter = self.df['listed_date'].between(start_date, end_date)
+        return listed_date_filter
 
-        return (listed_date_filter)
+    def hoa_fee_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on HOA fee criteria, with an option
+        to include properties without an HOA fee listed.
 
-    def hoa_fee_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            hoa_fee_filter = self.df['hoa_fee'].isnull() | (self.df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end))
-        elif boolean == 'False':
-            hoa_fee_filter = self.df.sort_values(by='hoa_fee')['hoa_fee'].between(slider_begin, slider_end)
+        Args:
+        - include_missing (bool): Indicates whether to include properties with no HOA fee listed.
+        - slider_begin (float): The minimum value of the HOA fee range.
+        - slider_end (float): The maximum value of the HOA fee range.
 
-        return (hoa_fee_filter)
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on HOA fees.
+        """
+        if include_missing:
+            hoa_fee_filter = self.df['hoa_fee'].isnull() | self.df['hoa_fee'].between(slider_begin, slider_end)
+        else:
+            hoa_fee_filter = self.df['hoa_fee'].between(slider_begin, slider_end)
 
-    def hoa_fee_frequency_function(self, choice):
-        if 'N/A' in choice and len(choice) == 1:
-            hoa_fee_frequency_filter = self.df['hoa_fee_frequency'].isnull()
-        elif 'Monthly' in choice and len(choice) == 1:
-            hoa_fee_frequency_filter = self.df['hoa_fee_frequency'].str.contains('Monthly')
-        elif len(choice) > 1:
-            hoa_fee_frequency_filter = self.df['hoa_fee_frequency'].isnull() | self.df['hoa_fee_frequency'].str.contains('Monthly')
+        return hoa_fee_filter
 
-        return (hoa_fee_frequency_filter)
+    def hoa_fee_frequency_function(self, choice: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on selected HOA fee frequency criteria,
+        including handling for properties without HOA fees ('N/A').
 
-    def space_rent_function(self, boolean, slider_begin, slider_end):
-        if boolean == 'True':
-            space_rent_filter = self.df['space_rent'].isnull() | (self.df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end))
-        elif boolean == 'False':
-            space_rent_filter = self.df.sort_values(by='space_rent')['space_rent'].between(slider_begin, slider_end)
+        Args:
+        - choice (list[str]): A list of user-selected HOA fee frequencies, e.g., ['Monthly', 'N/A'].
 
-        return (space_rent_filter)
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on HOA fee frequency.
+        """
+        # No selection returns False for all rows
+        if not choice:
+            return pd.Series([False] * len(self.df), index=self.df.index)
 
-    def pet_policy_function(self, choice, subtype_selected):
-        # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
-        if 'MH' not in subtype_selected:
-            pets_radio_choice = self.df['pets_allowed'].notnull() | self.df['pets_allowed'].isnull()
-        # If MH is the only subtype selected and they want pets then we want every row where the pet policy DOES NOT contain "No"
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
-            pets_radio_choice = ~self.df['pets_allowed'].str.contains('No')
-        # If MH is the only subtype selected and they DON'T want pets then we want every row where the pet policy DOES NOT contain "No"
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
-            pets_radio_choice = self.df['pets_allowed'].str.contains('No')
-        # If the user says "I don't care, I want both kinds of properties"
-        # Return every row where the pet policy is Yes or No
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
-            pets_radio_choice = (~self.df['pets_allowed'].str.contains('No')) | (self.df['pets_allowed'].str.contains('No'))
-        # If more than one subtype is selected and MH is one of them AND they want pets, return every row where the pet policy DOES contain "Yes" or is null
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-            pets_radio_choice = (~self.df['pets_allowed'].str.contains('No')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they DON'T want pets, return every row where the pet policy DOES contain "No" or is null
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-            pets_radio_choice = (self.df['pets_allowed'].str.contains('No')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
-            pets_radio_choice = self.df['pets_allowed'].isnull() | self.df['pets_allowed'].notnull()
-        return (pets_radio_choice)
+        # Initialize filter to capture no selections
+        hoa_fee_frequency_filter = pd.Series([False] * len(self.df), index=self.df.index)
 
-    def senior_community_function(self, choice, subtype_selected):
-        # If MH isn't selected, return every row where the pet policy is Yes, No, or null since it doesn't matter
-        if 'MH' not in subtype_selected:
-            senior_community_choice = self.df['senior_community'].notnull() | self.df['senior_community'].isnull()
-        # If MH is the only subtype selected and they want a senior community then we want every row where the senior community DOES contain "Y"
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) == 1:
-            senior_community_choice = self.df['senior_community'].str.contains('Y')
-        # If MH is the only subtype selected and they DON'T want a senior community then we want every row where the senior community DOES contain "N"
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) == 1:
-            senior_community_choice = self.df['senior_community'].str.contains('N')
-        # If the user says "I don't care, I want both kinds of properties"
-        # Return every row where the pet policy is Yes or No
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) == 1: 
-            senior_community_choice = (self.df['senior_community'].str.contains('N')) | (self.df['senior_community'].str.contains('Y')) 
-        # If more than one subtype is selected and MH is one of them AND they want a senior community, return every row where the senior community DOES contain "Y" or is null
-        elif 'MH' in subtype_selected and choice == 'True' and len(subtype_selected) > 1:
-            senior_community_choice = (self.df['senior_community'].str.contains('Y')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they DON'T want a senior community, return every row where the senior community DOES contain "N" or is null
-        elif 'MH' in subtype_selected and choice == 'False' and len(subtype_selected) > 1:
-            senior_community_choice = (self.df['senior_community'].str.contains('N')) | self.df['pets_allowed'].isnull()
-        # If more than one subtype is selected and MH is one of them AND they choose Both, return every row that is null OR non-null
-        elif 'MH' in subtype_selected and choice == 'Both' and len(subtype_selected) > 1:
-            senior_community_choice = self.df['senior_community'].isnull() | self.df['senior_community'].notnull()
-        return (senior_community_choice)
+        # Special handling for 'N/A'
+        if 'N/A' in choice:
+            hoa_fee_frequency_filter |= self.df['hoa_fee_frequency'].isnull()
+
+        # Handling other selections
+        for freq in choice:
+            if freq != 'N/A':  # Skip 'N/A' since it's already handled
+                hoa_fee_frequency_filter |= self.df['hoa_fee_frequency'].str.contains(freq, na=False)
+
+        return hoa_fee_frequency_filter
+
+    def space_rent_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on space rent criteria, including
+        an option to include properties without space rent listed.
+
+        Args:
+        - include_missing (bool): Indicates whether to include properties with no space rent listed.
+        - slider_begin (float): The minimum value of the space rent range.
+        - slider_end (float): The maximum value of the space rent range.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
+                     the filter conditions based on space rent.
+        """
+        if include_missing:
+            return self.df['space_rent'].isnull() | self.df['space_rent'].between(slider_begin, slider_end)
+        else:
+            return self.df['space_rent'].between(slider_begin, slider_end)
+
+    def pet_policy_function(self, choice: str, subtype_selected: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame based on pet policy preferences, with special consideration
+        for properties classified under the 'MH' subtype. The choice parameter can be a boolean
+        (True, False) indicating a preference for properties that allow or do not allow pets, respectively,
+        or the string "Both" indicating no preference.
+
+        Args:
+        - choice (bool or str): The user's choice regarding pet policy. True for properties that allow pets,
+                                False for properties that do not allow pets, and "Both" for all properties
+                                regardless of pet policy.
+        - subtype_selected (list[str]): A list of user-selected property subtypes.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on pet policy and selected subtypes.
+        """
+        if 'MH' not in subtype_selected or choice == 'Both':
+            # If 'MH' is not selected or user is indifferent about pet policy, all rows are valid
+            return pd.Series([True] * len(self.df), index=self.df.index)
+
+        # Handling cases when 'MH' is selected with a specific pet policy preference
+        is_mh_only = len(subtype_selected) == 1 and 'MH' in subtype_selected
+        pets_allowed_column = self.df['pets_allowed'].astype(str)  # Ensure comparison is string-based
+
+        if choice:
+            # User wants properties that allow pets
+            return (~pets_allowed_column.str.contains('No', na=is_mh_only)) if is_mh_only else pets_allowed_column.notnull()
+        else:
+            # User does not want properties that allow pets
+            return (pets_allowed_column.str.contains('No', na=is_mh_only)) if is_mh_only else pets_allowed_column.isnull()
+
+    def senior_community_function(self, choice: Union[bool, str], subtype_selected: list[str]) -> pd.Series:
+        """
+        Filters the DataFrame for properties based on the senior community criteria, with special consideration
+        for properties classified under the 'MH' subtype. The choice parameter can be a boolean
+        indicating a preference for senior community properties or 'Both' indicating no preference.
+
+        Args:
+        - choice (bool or str): The user's choice regarding senior community properties. True for properties
+                                within a senior community, False for properties not within a senior community,
+                                and "Both" for all properties regardless of senior community status.
+        - subtype_selected (list[str]): A list of user-selected property subtypes.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter
+                     conditions based on senior community status and selected subtypes.
+        """
+        # If 'MH' is not selected or user is indifferent about senior community, all rows are valid
+        if 'MH' not in subtype_selected or choice == 'Both':
+            return pd.Series([True] * len(self.df), index=self.df.index)
+
+        # Specific logic for when 'MH' is selected
+        senior_community_column = self.df['senior_community'].astype(str)  # Ensure comparison is string-based
+        
+        if choice is True:
+            # User prefers properties within a senior community
+            return senior_community_column.str.contains('Y', na=False)
+        elif choice is False:
+            # User prefers properties not within a senior community
+            return senior_community_column.str.contains('N', na=False)
+        else:  # Covers the case if somehow an unexpected choice value is passed
+            return pd.Series([False] * len(self.df), index=self.df.index)
