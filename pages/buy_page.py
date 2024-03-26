@@ -209,7 +209,7 @@ def update_map(
   # Logging
   user_agent_string = request.headers.get('User-Agent')
   user_agent = parse(user_agent_string)
-  ip_address = request.remote_addr
+  ip_address = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
   logger.info(f"""User {ip_address} is using {user_agent.browser.family} on {user_agent.get_device()}. 
   They have chosen the following filters: 
     Subtypes: {subtypes_chosen}.
