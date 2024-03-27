@@ -333,12 +333,14 @@ class LeaseComponents(BaseClass):
             '12M': '12 Months',
             '24M': '24 Months',
             '6M': '6 Months',
+            'DL': 'Day-to-Day',
             'MO': 'Month-to-Month',
             'NG': 'Negotiable',
             'SN': 'Seasonal',
             'STL': 'Short Term Lease',
             'Unknown': 'Unknown',
             'VR': 'Vacation Rental',
+            'WK': 'Week-to-Week',
         }
         terms = {k: term_abbreviations[k] for k in sorted(term_abbreviations)}
 
