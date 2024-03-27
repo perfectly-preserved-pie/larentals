@@ -1,5 +1,5 @@
-from .components import *
-from .filters import *
+from .components import LeaseComponents
+from .filters import LeaseFilters
 from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
