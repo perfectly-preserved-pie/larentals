@@ -100,22 +100,21 @@ className="dbc"
 def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental_price, bedrooms_chosen, bathrooms_chosen, sqft_chosen, years_chosen, sqft_missing_radio_choice, yrbuilt_missing_radio_choice, garage_missing_radio_choice, ppsqft_chosen, ppsqft_missing_radio_choice, furnished_choice, security_deposit_chosen, security_deposit_radio_choice, pet_deposit_chosen, pet_deposit_radio_choice, key_deposit_chosen, key_deposit_radio_choice, other_deposit_chosen, other_deposit_radio_choice, listed_date_datepicker_start, listed_date_datepicker_end, listed_date_radio, laundry_chosen):
   # Pre-sort our various lists of strings for faster performance
   subtypes_chosen.sort()
-  df_filtered = df[
+
+  # Sort the DataFrame once at the beginning
+  df_sorted = df.sort_values(by=['garage_spaces', 'list_price', 'Bedrooms', 'Total Bathrooms', 'Sqft', 'YrBuilt', 'ppsqft'])
+
+  df_filtered = df_sorted[
     lease_filters.subtype_checklist_function(subtypes_chosen) &
     lease_filters.pets_radio_button(pets_chosen) &
     lease_filters.terms_function(terms_chosen) &
-    # For the slider, we need to filter the dataframe by an integer range this time and not a string like the ones aboves
-    # To do this, we can use the Pandas .between function
-    # See https://stackoverflow.com/a/40442778
-    ((df.sort_values(by='garage_spaces')['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | lease_filters.garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1])) &
-    # Repeat but for rental price
-    # Also pre-sort our lists of values to improve the performance of .between()
-    (df.sort_values(by='list_price')['list_price'].between(rental_price[0], rental_price[1])) &
-    (df.sort_values(by='Bedrooms')['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
-    (df.sort_values(by='Total Bathrooms')['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    ((df.sort_values(by='Sqft')['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | lease_filters.sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
-    ((df.sort_values(by='YrBuilt')['YrBuilt'].between(years_chosen[0], years_chosen[1])) | lease_filters.yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
-    ((df.sort_values(by='ppsqft')['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | lease_filters.ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
+    ((df_sorted['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | lease_filters.garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1])) &
+    (df_sorted['list_price'].between(rental_price[0], rental_price[1])) &
+    (df_sorted['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
+    (df_sorted['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
+    ((df_sorted['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | lease_filters.sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
+    ((df_sorted['YrBuilt'].between(years_chosen[0], years_chosen[1])) | lease_filters.yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
+    ((df_sorted['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | lease_filters.ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
     lease_filters.furnished_checklist_function(furnished_choice) &
     lease_filters.security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
     lease_filters.pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
@@ -123,7 +122,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     lease_filters.other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
     lease_filters.listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
     lease_filters.laundry_checklist_function(laundry_chosen)
-  ]
+  ] 
 
   # Create an empty list for the markers
   markers = []
