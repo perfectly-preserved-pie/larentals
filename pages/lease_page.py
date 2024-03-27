@@ -5,7 +5,6 @@ from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
 from loguru import logger
-from loguru import logger
 from user_agents import parse
 import dash
 import dash_bootstrap_components as dbc
