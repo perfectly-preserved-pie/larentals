@@ -64,11 +64,12 @@ class BaseClass:
             dl.GeoJSON: A Dash Leaflet GeoJSON component.
         """
         ns = Namespace("myNamespace", "mySubNamespace")
-        if cls.oil_well_data is None:
-            cls.load_geojson_data(filepath='assets/datasets/oil_well_optimized.geojson', dataset='oil_well')
+        #if cls.oil_well_data is None:
+        #    cls.load_geojson_data(filepath='assets/datasets/oil_well_optimized.geojson', dataset='oil_well')
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=cls.oil_well_data,
+            #data=cls.oil_well_data,
+            url='assets/datasets/oil_well_optimized.geojson',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -89,11 +90,12 @@ class BaseClass:
             dl.GeoJSON: A Dash Leaflet GeoJSON component.
         """
         ns = Namespace("myNamespace", "mySubNamespace")
-        if cls.crime_data is None:
-            cls.load_geojson_data(filepath='assets/datasets/crime.geojson', dataset='crime')
+        #if cls.crime_data is None:
+        #    cls.load_geojson_data(filepath='assets/datasets/crime.geojson', dataset='crime')
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
-            data=cls.crime_data,
+            #data=cls.crime_data,
+            url='assets/datasets/crime.geojson',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
