@@ -69,7 +69,8 @@ class BaseClass:
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
             #data=cls.oil_well_data,
-            url='assets/datasets/oil_well_optimized.geojson',
+            format='geobuf',
+            url='assets/datasets/oil_wells.pbf',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
@@ -95,7 +96,8 @@ class BaseClass:
         return dl.GeoJSON(
             id=str(uuid.uuid4()),
             #data=cls.crime_data,
-            url='assets/datasets/crime.geojson',
+            format='geobuf',
+            url='assets/datasets/crime.pbf',
             cluster=True,
             zoomToBoundsOnClick=True,
             superClusterOptions={
