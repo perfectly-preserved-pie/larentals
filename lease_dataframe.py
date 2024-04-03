@@ -1,4 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
+from functions.dataframe_utils import remove_expired_listings
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -220,10 +221,7 @@ df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 # Iterate through the dataframe and drop rows with expired listings
-for row in df_combined[df_combined.listing_url.notnull()].itertuples():
-  if check_expired_listing(row.listing_url, row.mls_number) == True:
-    df_combined = df_combined.drop(row.Index)
-    logger.success(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
+df_combined = asyncio.run(remove_expired_listings(df_combined))
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column

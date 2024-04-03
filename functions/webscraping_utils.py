@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
 from loguru import logger
 from typing import Tuple, Optional
+import asyncio
+import httpx
 import pandas as pd
 import re
 import requests
@@ -10,9 +12,9 @@ import time
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
-def check_expired_listing(url: str, mls_number: str) -> bool:
+async def check_expired_listing(url: str, mls_number: str) -> bool:
     """
-    Checks if a listing has expired based on the presence of a specific HTML element.
+    Checks if a listing has expired based on the presence of a specific HTML element, asynchronously.
     
     Parameters:
     url (str): The URL of the listing to check.
@@ -21,31 +23,37 @@ def check_expired_listing(url: str, mls_number: str) -> bool:
     Returns:
     bool: True if the listing has expired, False otherwise.
     """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+    }
     try:
-        # Set headers to mimic a browser request
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-        }
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()  # Raise HTTPError for bad responses
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Try to find the 'page-description' div and clean its text
-        description = soup.find('div', class_='page-description').text
-        cleaned_description = " ".join(description.split())
-        
-        return bool(cleaned_description)
-        
-    except requests.Timeout:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            description = soup.find('div', class_='page-description').text
+            cleaned_description = " ".join(description.split())
+            
+            return bool(cleaned_description)
+            
+    except httpx.TimeoutException:
         logger.warning(f"Timeout occurred while checking if the listing for {mls_number} has expired.")
-    except requests.HTTPError as h:
-        logger.warning(f"HTTP error {h} occurred while checking if the listing for {mls_number} has expired.")
+    except httpx.HTTPStatusError as h:
+        if h.response.status_code == 429:
+            retry_after = int(h.response.headers.get("Retry-After", 60))  # Use a default retry after 60 seconds if header is missing
+            logger.warning(f"Rate limit exceeded, retrying after {retry_after} seconds.")
+            await asyncio.sleep(retry_after)
+            return await check_expired_listing(url, mls_number)  # Retry the request
+        else:
+            logger.warning(f"HTTP error {h.response.status_code} occurred while checking if the listing for {mls_number} has expired.")
     except AttributeError:
         # This occurs if the 'page-description' div is not found, meaning the listing hasn't expired
         return False
     except Exception as e:
         logger.warning(f"Couldn't detect if the listing for {mls_number} has expired because {e}.")
-    
+
     return False
 
 def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
