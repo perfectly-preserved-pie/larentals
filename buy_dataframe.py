@@ -9,6 +9,7 @@ from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
 from numpy import NaN
+import asyncio
 import glob
 import os
 import pandas as pd
