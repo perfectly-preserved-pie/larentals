@@ -153,7 +153,7 @@ df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.st
 # Iterate through the dataframe and get the listed date and photo for rows 
 for row in df.itertuples():
   mls_number = row[1]
-  webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", row.Index, row.mls_number, len(df))
+  webscrape = asyncio.run(webscrape_bhhs(url=f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", row_index=row.Index, mls_number=mls_number, total_rows=len(df)))
   df.at[row.Index, 'listed_date'] = webscrape[0]
   df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
   df.at[row.Index, 'listing_url'] = webscrape[2]
