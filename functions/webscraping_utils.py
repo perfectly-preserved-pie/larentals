@@ -65,7 +65,7 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
 
