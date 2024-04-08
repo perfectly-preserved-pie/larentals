@@ -1,4 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
+from functions.dataframe_utils import remove_expired_listings
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -7,6 +8,7 @@ from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
+import asyncio
 import glob
 import os
 import pandas as pd
@@ -125,7 +127,7 @@ df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.st
 # Iterate through the dataframe and get the listed date and photo for rows 
 for row in df.itertuples():
   mls_number = row[1]
-  webscrape = webscrape_bhhs(f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", row.Index, row.mls_number, len(df))
+  webscrape = asyncio.run(webscrape_bhhs(url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", row_index=row.Index, mls_number=mls_number, total_rows=len(df)))
   df.at[row.Index, 'listed_date'] = webscrape[0]
   df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
   df.at[row.Index, 'listing_url'] = webscrape[2]
@@ -220,10 +222,7 @@ df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 # Iterate through the dataframe and drop rows with expired listings
-for row in df_combined[df_combined.listing_url.notnull()].itertuples():
-  if check_expired_listing(row.listing_url, row.mls_number) == True:
-    df_combined = df_combined.drop(row.Index)
-    logger.success(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
+df_combined = asyncio.run(remove_expired_listings(df_combined, limiter))
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column
