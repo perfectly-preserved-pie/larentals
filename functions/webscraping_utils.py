@@ -27,7 +27,7 @@ async def check_expired_listing(url: str, mls_number: str) -> bool:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
     }
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
             
