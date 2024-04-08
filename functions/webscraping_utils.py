@@ -47,7 +47,7 @@ async def check_expired_listing(url: str, mls_number: str) -> bool:
             await asyncio.sleep(retry_after)
             return await check_expired_listing(url, mls_number)  # Retry the request
         else:
-            logger.warning(f"HTTP error {h.response.status_code} occurred while checking if the listing for {mls_number} has expired.")
+            logger.warning(f"HTTP error {h.response.status_code} occurred while checking if the listing for {mls_number} has expired. {h.response.text}")
     except AttributeError:
         # This occurs if the 'page-description' div is not found, meaning the listing hasn't expired
         return False
