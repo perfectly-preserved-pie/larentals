@@ -69,6 +69,10 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
             response = await client.get(url, headers=headers)
             response.raise_for_status()
 
+            # Check if a redirect has occurred
+            #if response.history:
+            #    logger.info(f"Redirected from {url} to {response.url} for {mls_number}.")
+
             # Successful HTTP request
             soup = BeautifulSoup(response.text, 'html.parser')
             listed_date, photo, link = None, None, None
