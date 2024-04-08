@@ -1,3 +1,4 @@
+from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
 from loguru import logger
 from typing import Tuple, Optional
@@ -7,10 +8,12 @@ import pandas as pd
 import re
 import requests
 import sys
-import time
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+
+# Limit to 1 request per second
+limiter = AsyncLimiter(1, 1)
 
 async def check_expired_listing(url: str, mls_number: str) -> bool:
     """
@@ -27,16 +30,17 @@ async def check_expired_listing(url: str, mls_number: str) -> bool:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
     }
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            description = soup.find('div', class_='page-description').text
-            cleaned_description = " ".join(description.split())
-            
-            return bool(cleaned_description)
+        async with limiter:
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.get(url, headers=headers)
+                response.raise_for_status()
+                
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        description = soup.find('div', class_='page-description').text
+        cleaned_description = " ".join(description.split())
+        
+        return bool(cleaned_description)
             
     except httpx.TimeoutException:
         logger.warning(f"Timeout occurred while checking if the listing for {mls_number} has expired.")

@@ -241,7 +241,7 @@ df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 if 'LSqft/Ac' in df_combined.columns:
   df_combined = df_combined.drop(columns=['LSqft/Ac'])
 # Iterate through the dataframe and drop rows with expired listings
-df_combined = asyncio.run(remove_expired_listings(df_combined))
+df_combined = asyncio.run(remove_expired_listings(df_combined, limiter))
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
 # Iterate through the combined dataframe and (re)generate the popup_html column

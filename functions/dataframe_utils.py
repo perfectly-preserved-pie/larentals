@@ -1,3 +1,4 @@
+from aiolimiter import AsyncLimiter
 from functions.webscraping_utils import check_expired_listing
 from loguru import logger
 import asyncio
@@ -7,35 +8,34 @@ import sys
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
-async def remove_expired_listings(df: pd.DataFrame) -> pd.DataFrame:
+async def remove_expired_listings(df: pd.DataFrame, limiter: AsyncLimiter) -> pd.DataFrame:
     """
     Asynchronously checks each listing URL in the DataFrame to determine if it has expired,
-    and removes rows with expired listings.
+    and removes rows with expired listings, applying rate limiting.
 
     Parameters:
     df (pd.DataFrame): The DataFrame containing listing URLs and MLS numbers.
+    limiter (AsyncLimiter): The rate limiter to control request frequency.
 
     Returns:
     pd.DataFrame: The DataFrame with expired listings removed.
     """
-    # Prepare coroutine list for all rows that need to be checked
-    tasks = [
-        check_expired_listing(row.listing_url, row.mls_number)
-        for row in df[df.listing_url.notnull()].itertuples()
-    ]
+    async def check_and_mark_expired(row):
+        async with limiter:
+            expired = await check_expired_listing(row.listing_url, row.mls_number)
+        return (row.Index, expired)
     
-    # Execute all the coroutine tasks concurrently
+    # Gather tasks for all rows that need to be checked
+    tasks = [check_and_mark_expired(row) for row in df[df.listing_url.notnull()].itertuples()]
     results = await asyncio.gather(*tasks)
     
     # Determine indexes of rows to drop (where listing has expired)
-    indexes_to_drop = [
-        row.Index for row, result in zip(df[df.listing_url.notnull()].itertuples(), results) if result
-    ]
+    indexes_to_drop = [index for index, expired in results if expired]
     
     # Log success messages for dropped listings
     for index in indexes_to_drop:
-        row = df.loc[index]
-        logger.success(f"Removed {row.mls_number} ({row.listing_url}) from the dataframe because the listing has expired.")
+        mls_number = df.loc[index, 'mls_number']
+        logger.success(f"Removed {mls_number} (Index: {index}) from the dataframe because the listing has expired.")
     
     # Drop the rows from the DataFrame and return the modified DataFrame
     df_dropped_expired = df.drop(indexes_to_drop)
