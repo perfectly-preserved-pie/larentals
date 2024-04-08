@@ -24,7 +24,7 @@ async def check_expired_listing(url: str, mls_number: str) -> bool:
     bool: True if the listing has expired, False otherwise.
     """
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
     }
     try:
         async with httpx.AsyncClient(timeout=10) as client:
@@ -61,7 +61,7 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
     Asynchronously scrapes a BHHS page to fetch the listing URL, photo, and listed date. 
     """
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
     }
 
     try:
