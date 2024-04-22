@@ -13,7 +13,7 @@ numpy==1.26.4
 orjson==3.10.1
 pandas==2.2.2
 protobuf==5.26.1
-pyarrow==15.0.2
+pyarrow==16.0.0
 python-dotenv==1.0.1
 pyyaml 
 requests==2.31.0
