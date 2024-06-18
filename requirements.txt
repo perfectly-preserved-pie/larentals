@@ -9,7 +9,7 @@ gevent==24.2.1
 gunicorn==22.0.0
 imagekitio==4.0.1
 loguru==0.7.2
-numpy==1.26.4
+numpy==2.0.0
 orjson==3.10.5
 pandas==2.2.2
 protobuf==5.27.1
