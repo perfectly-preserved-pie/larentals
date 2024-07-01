@@ -1,7 +1,7 @@
 aiolimiter==1.1.0
 beautifulsoup4==4.12.3
 dash_bootstrap_components==1.6.0
-dash_extensions==1.0.16
+dash_extensions==1.0.17
 dash-leaflet==1.0.15
 dash==2.17.1
 geopy==2.4.1
