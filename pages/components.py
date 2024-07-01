@@ -107,7 +107,7 @@ class LeaseComponents(BaseClass):
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
-                html.H6([html.Em("Use the scrollbar on the right to view more subtype options.")]),
+                html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
                 dcc.Checklist( 
                     id='subtype_checklist',
                     options=sorted(
@@ -1067,7 +1067,7 @@ class BuyComponents(BaseClass):
             ]),
 
             # Additional information about the checklist
-            html.H6([html.Em("Use the scrollbar on the right to view more subtype options.")]),
+            html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
 
             # The actual checklist
             html.Div([
