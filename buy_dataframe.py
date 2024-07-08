@@ -67,8 +67,9 @@ elif "SeniorCommunityYN" in xlsx[list(xlsx.keys())[0]].columns:
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
 
-# Drop the LSqft/Ac column
-df = df.drop(columns=['LSqft/Ac'])
+# Drop the LSqft/Ac column only if it exists
+if 'LSqft/Ac' in df.columns:
+  df = df.drop(columns=['LSqft/Ac'])
 
 pd.set_option("display.precision", 10)
 
