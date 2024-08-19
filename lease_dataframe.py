@@ -246,12 +246,12 @@ for row in outside_ca_rows.itertuples():
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
 # Save the new combined dataframe
 try:
-  df_combined.to_parquet(path="assets/datasets/buy.parquet")
+  df_combined.to_parquet(path="assets/datasets/lease.parquet")
 except Exception as e:
   logger.warning(f"Error saving the combined dataframe as a parquet file: {e}. Falling back to CSV...")
   # Save the new combined dataframe to a CSV file
   try:
-    df_combined.to_csv(path_or_buf="assets/datasets/buy.csv", index=False)
+    df_combined.to_csv(path_or_buf="assets/datasets/lease.csv", index=False)
     logger.info("Saved the combined dataframe to a CSV file")
   except Exception as e:
     logger.error(f"Error saving the combined dataframe to a CSV file: {e}")
