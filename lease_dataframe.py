@@ -244,8 +244,17 @@ for row in outside_ca_rows.itertuples():
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
   df_combined.at[row.Index, 'Latitude'] = coordinates[0]
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
-# Save the new dataframe
-df_combined.to_parquet(path="assets/datasets/lease.parquet")
+# Save the new combined dataframe
+try:
+  df_combined.to_parquet(path="assets/datasets/buy.parquet")
+except Exception as e:
+  logger.warning(f"Error saving the combined dataframe as a parquet file: {e}. Falling back to CSV...")
+  # Save the new combined dataframe to a CSV file
+  try:
+    df_combined.to_csv(path_or_buf="assets/datasets/buy.csv", index=False)
+    logger.info("Saved the combined dataframe to a CSV file")
+  except Exception as e:
+    logger.error(f"Error saving the combined dataframe to a CSV file: {e}")
 
 # Reclaim space in ImageKit
 reclaim_imagekit_space(df_path="assets/datasets/lease.parquet", imagekit_instance=imagekit)
