@@ -109,9 +109,7 @@ def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
             chunk = file_ids[i:i + 100]
             bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=chunk)
             
-            if bulk_delete_result.successfully_deleted_file_ids:
-                logger.success(f"Successfully deleted files: {bulk_delete_result.successfully_deleted_file_ids}")
-            else:
+            if not bulk_delete_result.successfully_deleted_file_ids:
                 # Since successfully_deleted_file_ids is None or empty, no files were deleted.
                 logger.error("No files were deleted.")
                 # Use the response_metadata to get more details about the request and response.
