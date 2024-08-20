@@ -40,6 +40,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             
                 const listingUrlBlock = getListingUrlBlock(data);
             
+                // The variable names here need to match the key names in the GeoJSON data
                 const popupContent = `
                     <div>
                         <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
