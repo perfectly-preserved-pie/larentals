@@ -131,8 +131,29 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
       dict(
         lat=row.Latitude,
         lon=row.Longitude,
-        popup=row.popup_html
-        )
+        data=dict(
+          #mls_number=row.mls_number,
+          address=row.full_street_address,
+          #list_price=row.list_price,
+          #bedrooms=row.Bedrooms,
+          #bathrooms=row.Bedrooms,
+          #sqft=row.Sqft,
+          #year_built=row.YrBuilt,
+          #price_per_sqft=row.ppsqft,
+          #listed_date=row.listed_date,
+          #subtype=row.subtype,
+          #pet_policy=row.PetsAllowed, 
+          #terms=row.Terms,
+          #garage_spaces=row.garage_spaces,
+          #furnished=row.Furnished, 
+          #security_deposit=row.DepositSecurity, 
+          #pet_deposit=row.DepositPets,
+          #key_deposit=row.DepositKey,
+          #other_deposit=row.DepositOther,  
+          #laundry=row.LaundryFeatures,  
+          #image_url=row.mls_photo,
+        ),
+      )
     )
   # Generate geojson with a marker for each listing
   geojson = dlx.dicts_to_geojson([{**m} for m in markers])
