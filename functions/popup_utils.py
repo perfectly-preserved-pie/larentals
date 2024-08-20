@@ -41,7 +41,7 @@ def format_value_buy(value: Any, template: str = "{}") -> str:
   str: The formatted value as a string.
   """
   try:
-    if pd.isna(value):
+    if pd.isna(value) or value is pd.NaT:
       return 'N/A'
     elif isinstance(value, (float, int)) or pd.api.types.is_integer_dtype(type(value)):
       return template.format(value)  # Apply the format only if value is float or int
@@ -149,7 +149,7 @@ def buy_popup_html(dataframe: pd.DataFrame, row: pd.Series) -> str:
     'hoa_fee_frequency': format_value_buy(df['hoa_fee_frequency']),
     'hoa_fee': format_value_buy(df['hoa_fee'], "${:,.2f}"),
     'lc_price': format_value_buy(df['list_price'], "${:,.0f}"),
-    'listed_date': format_value_buy(pd.to_datetime(df['listed_date']).date()),
+    'listed_date': format_value_buy(pd.to_datetime(df['listed_date'], errors='coerce')),
     'listing_url': format_value_buy(df['listing_url']),
     'mls_number': format_value_buy(df['mls_number']),
     'mls_photo': format_value_buy(df['mls_photo']),
