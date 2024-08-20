@@ -30,6 +30,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                     `;
                 }
+                
+                // Function to format date string
+                function formatDate(dateString) {
+                    if (!dateString) return "Unknown";
+                    const date = new Date(dateString);
+                    return date.toISOString().split('T')[0];
+                }
             
                 const listingUrlBlock = getListingUrlBlock(data);
             
@@ -42,7 +49,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.listed_date || "Unknown"}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Street Address</th>
