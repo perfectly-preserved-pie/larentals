@@ -82,11 +82,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft.toLocaleString()} sq. ft</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.price_per_sqft.toLocaleString()}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
@@ -110,7 +110,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.SeniorCommunityYN}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
