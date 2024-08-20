@@ -32,31 +32,31 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Rental Price</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.list_price}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Security Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.security_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.security_deposit.toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pet Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.pet_deposit.toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Key Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.key_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.key_deposit.toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Other Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.other_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.other_deposit.toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft} sq. ft</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft.toLocaleString()} sq. ft</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.price_per_sqft}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.price_per_sqft.toLocaleString()}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
