@@ -1,12 +1,9 @@
-FROM cgr.dev/chainguard/python:latest-dev
+FROM python:3.11-slim
 
 COPY requirements.txt .
 
-# Run as root to install curl
-USER root
-
 # Install curl
-RUN apk update && apk add curl
+RUN apt-get update && apt-get install -y curl
 
 # Using uv to install packages because it's fast as fuck boiiii
 # https://www.youtube.com/watch?v=6E7ZGCfruaw
