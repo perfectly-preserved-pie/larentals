@@ -9,20 +9,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
             if (feature.properties.data) {
                 const data = feature.properties.data;
-
+            
                 // Log the context object to debug
                 console.log('Context:', context);
-
-                // Ensure context has the necessary properties
-                context = {
-                    ...context,
-                    mls_number: data.mls_number,
-                    listing_url: data.listing_url
-                };
-
+            
                 // Function to handle MLS number hyperlink
-                function getListingUrlBlock(context) {
-                    if (!context.mls_number) {
+                function getListingUrlBlock(data) {
+                    if (!data.mls_number) {
                         return `
                             <tr>
                                 <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
@@ -33,16 +26,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     return `
                         <tr>
                             <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-                            <td><a href='${context.listing_url}' referrerPolicy='noreferrer' target='_blank'>${context.mls_number}</a></td>
+                            <td><a href='${data.listing_url}' referrerPolicy='noreferrer' target='_blank'>${data.mls_number}</a></td>
                         </tr>
                     `;
                 }
-
-                const listingUrlBlock = getListingUrlBlock(context);
-
+            
+                const listingUrlBlock = getListingUrlBlock(data);
+            
                 const popupContent = `
                     <div>
-                        <a href="${context.listing_url}" target="_blank" referrerPolicy="noreferrer">
+                        <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
                             <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
                         </a>
                         <h4>${data.address}</h4>
@@ -127,7 +120,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </table>
                     </div>
                 `;
-
+            
                 layer.bindPopup(popupContent, {
                     maxHeight: window.innerWidth < 768 ? 375 : 650,
                     maxWidth: window.innerWidth < 768 ? 175 : 300,
