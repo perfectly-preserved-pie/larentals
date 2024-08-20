@@ -42,7 +42,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.listed_date}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.listed_date || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Street Address</th>
@@ -51,7 +51,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             ${listingUrlBlock}
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.phone_number}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.phone_number || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Rental Price</th>
@@ -59,19 +59,19 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Security Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.security_deposit.toLocaleString()}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.security_deposit ? `$${data.security_deposit.toLocaleString()}` : "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pet Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.pet_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_deposit ? `$${data.pet_deposit.toLocaleString()}` : "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Key Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.key_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.key_deposit ? `$${data.key_deposit.toLocaleString()}` : "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Other Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.other_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.other_deposit ? `$${data.other_deposit.toLocaleString()}` : "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
@@ -87,15 +87,15 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Garage Spaces</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_policy}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_policy || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Furnished?</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.furnished}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.furnished || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Laundry Features</th>
@@ -107,11 +107,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Rental Terms</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.terms}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.terms || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
