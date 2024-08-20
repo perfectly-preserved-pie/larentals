@@ -121,7 +121,10 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     lease_filters.other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
     lease_filters.listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
     lease_filters.laundry_checklist_function(laundry_chosen)
-  ] 
+  ]
+
+  # Fill NA/NaN values with None
+  df_filtered = df_filtered.applymap(lambda x: None if pd.isna(x) else x)
 
   # Create an empty list for the markers
   markers = []
@@ -132,26 +135,26 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
         lat=row.Latitude,
         lon=row.Longitude,
         data=dict(
-          #mls_number=row.mls_number,
           address=row.full_street_address,
-          #list_price=row.list_price,
-          #bedrooms=row.Bedrooms,
-          #bathrooms=row.Bedrooms,
-          #sqft=row.Sqft,
-          #year_built=row.YrBuilt,
-          #price_per_sqft=row.ppsqft,
-          #listed_date=row.listed_date,
-          #subtype=row.subtype,
-          #pet_policy=row.PetsAllowed, 
-          #terms=row.Terms,
-          #garage_spaces=row.garage_spaces,
-          #furnished=row.Furnished, 
-          #security_deposit=row.DepositSecurity, 
-          #pet_deposit=row.DepositPets,
-          #key_deposit=row.DepositKey,
-          #other_deposit=row.DepositOther,  
-          #laundry=row.LaundryFeatures,  
-          #image_url=row.mls_photo,
+          bathrooms=row.Bedrooms,
+          bedrooms=row.Bedrooms,
+          furnished=row.Furnished, 
+          garage_spaces=row.garage_spaces,
+          image_url=row.mls_photo,
+          key_deposit=row.DepositKey,
+          laundry=row.LaundryFeatures,  
+          list_price=row.list_price,
+          listed_date=row.listed_date,
+          mls_number=row.mls_number,
+          other_deposit=row.DepositOther,  
+          pet_deposit=row.DepositPets,
+          pet_policy=row.PetsAllowed, 
+          price_per_sqft=row.ppsqft,
+          security_deposit=row.DepositSecurity, 
+          sqft=row.Sqft,
+          subtype=row.subtype,
+          terms=row.Terms,
+          year_built=row.YrBuilt,
         ),
       )
     )
