@@ -115,7 +115,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                             </tr>
                         </table>
                     </div>
