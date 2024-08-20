@@ -63,15 +63,15 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pet Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.pet_deposit}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Key Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.key_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.key_deposit}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Other Deposit</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.other_deposit}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.other_deposit}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
