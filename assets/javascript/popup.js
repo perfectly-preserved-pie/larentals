@@ -42,7 +42,9 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 const popupContent = `
                     <div>
-                        <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
+                        <a href="${context.listing_url}" target="_blank" referrerPolicy="noreferrer">
+                            <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
+                        </a>
                         <h4>${data.address}</h4>
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
