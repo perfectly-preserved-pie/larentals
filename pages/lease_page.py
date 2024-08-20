@@ -151,8 +151,9 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
           other_deposit=row.DepositOther,  
           pet_deposit=row.DepositPets,
           pet_policy=row.PetsAllowed, 
-          price_per_sqft=row.ppsqft,
+          ppsqft=row.ppsqft,
           security_deposit=row.DepositSecurity, 
+          senior_community=row.SeniorCommunityYN,
           sqft=row.Sqft,
           subtype=row.subtype,
           terms=row.Terms,
@@ -197,8 +198,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     cluster=True,
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
-      'radius': 160,
-      'minZoom': 3,
+      'radius': 180,
+      'minZoom': 1,
     },
     options=dict(onEachFeature=ns("on_each_feature"))
   )
