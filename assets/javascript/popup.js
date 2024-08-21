@@ -110,11 +110,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Laundry Features</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.laundry}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.laundry || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
