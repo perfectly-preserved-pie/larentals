@@ -49,6 +49,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
                 </a>
                 ` : '';
+
+                // Conditionally format the phone number as a tel: link or plain text
+                const phoneNumberBlock = data.phone_number ? `
+                    <a href="tel:${data.phone_number}">${data.phone_number}</a>
+                ` : 'Unknown';
             
                 // The variable names here need to match the key names in the GeoJSON data
                 const popupContent = `
@@ -68,7 +73,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.phone_number || "Unknown"}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Rental Price</th>
