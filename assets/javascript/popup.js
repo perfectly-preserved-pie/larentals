@@ -39,13 +39,18 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 }
             
                 const listingUrlBlock = getListingUrlBlock(data);
+
+                // Conditionally include the property image row if the image URL is available
+                const imageRow = data.image_url ? `
+                <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
+                    <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
+                </a>
+                ` : '';
             
                 // The variable names here need to match the key names in the GeoJSON data
                 const popupContent = `
                     <div>
-                        <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
-                            <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
-                        </a>
+                        ${imageRow}
                         <div style="text-align: center;">
                             <h5>${data.address}</h5>
                         </div>
