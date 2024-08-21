@@ -41,7 +41,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 // Conditionally format the listing URL as a hyperlink or plain text
                 const listingUrlBlock = data.listing_url ? `
                 <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">${data.mls_number}</a>
-                ` : 'Unknown';
+                ` : data.mls_number || 'Unknown';
 
                 // Conditionally include the property image row if the image URL is available
                 const imageRow = data.image_url ? `
