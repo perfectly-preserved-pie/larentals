@@ -46,15 +46,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
                             <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
                         </a>
-                        <h4>${data.address}</h4>
+                        <div style="text-align: center;">
+                            <h5>${data.address}</h5>
+                        </div>
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
-                            </tr>
-                            <tr>
-                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Street Address</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.address}</td>
                             </tr>
                             ${listingUrlBlock}
                             <tr>
