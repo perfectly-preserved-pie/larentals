@@ -38,7 +38,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     return date.toISOString().split('T')[0];
                 }
             
-                const listingUrlBlock = getListingUrlBlock(data);
+                // Conditionally format the listing URL as a hyperlink or plain text
+                const listingUrlBlock = data.listing_url ? `
+                <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">${data.mls_number}</a>
+                ` : 'Unknown';
 
                 // Conditionally include the property image row if the image URL is available
                 const imageRow = data.image_url ? `
@@ -59,7 +62,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
                             </tr>
-                            ${listingUrlBlock}
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${listingUrlBlock}</td>
+                            </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${data.phone_number || "Unknown"}</td>
