@@ -16,7 +16,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             
                 // Function to handle MLS number hyperlink
                 function getListingUrlBlock(data) {
-                    if (!data.mls_number) {
+                    if (!data.listing_url) {
                         return `
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
@@ -67,7 +67,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
                             </tr>
                             ${listingUrlBlock}
                             <tr>
@@ -154,7 +154,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <table style="width:100%;border-collapse:collapse;">
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
                                 </tr>
                                 ${listingUrlBlock}
                                 <tr>
