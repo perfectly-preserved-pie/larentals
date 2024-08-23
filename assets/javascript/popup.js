@@ -158,12 +158,52 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                 </tr>
                                 ${listingUrlBlock}
                                 <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Park Name</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.park_name || "N/A"}
+                                </td>        
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
                                 </tr>
                                 <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Sale Price</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee_frequency || "Unknown" || "N/A"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.space_rent ? `$${data.space_rent.toLocaleString()}` : "N/A"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.bathrooms}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype.includes('MH') ? (data.pets_allowed || "Unknown") : "N/A"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype.includes('MH') ? (data.senior_community || "Unknown") : "N/A"}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                                 </tr>
                             </table>
                         </div>
