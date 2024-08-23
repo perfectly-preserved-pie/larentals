@@ -8,7 +8,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return;
             }
             if (feature.properties.data) {
-                const data = feature.properties.data;
+                const data = feature.properties.data; // Get the dataframe rows from the GeoJSON feature properties
+                const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
             
                 // Log the context object to debug
                 console.log('Context:', context);
@@ -18,15 +19,17 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     if (!data.mls_number) {
                         return `
                             <tr>
-                                <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-                                <td>Not Available</td>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">Not Available</td>
                             </tr>
                         `;
                     }
                     return `
                         <tr>
-                            <td><a href='https://github.com/perfectly-preserved-pie/larentals/wiki#listing-id' target='_blank'>Listing ID (MLS#)</a></td>
-                            <td><a href='${data.listing_url}' referrerPolicy='noreferrer' target='_blank'>${data.mls_number}</a></td>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">
+                                <a href='${data.listing_url}' referrerPolicy='noreferrer' target='_blank'>${data.mls_number}</a>
+                            </td>
                         </tr>
                     `;
                 }
@@ -39,9 +42,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 }
             
                 // Conditionally format the listing URL as a hyperlink or plain text
-                const listingUrlBlock = data.listing_url ? `
-                <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">${data.mls_number}</a>
-                ` : data.mls_number || 'Unknown';
+                const listingUrlBlock = getListingUrlBlock(data);
 
                 // Conditionally include the property image row if the image URL is available
                 const imageRow = data.image_url ? `
@@ -55,9 +56,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     <a href="tel:${data.phone_number}">${data.phone_number}</a>
                 ` : 'Unknown';
             
-                // The variable names here need to match the key names in the GeoJSON data
-                const popupContent = `
-                    <div>
+                // Function to generate popup content for lease page
+                function generateLeasePopupContent(data) {
+                    return `
+                        <div>
                         ${imageRow}
                         <div style="text-align: center;">
                             <h5>${data.address}</h5>
@@ -67,10 +69,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
                             </tr>
-                            <tr>
-                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${listingUrlBlock}</td>
-                            </tr>
+                            ${listingUrlBlock}
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
@@ -141,8 +140,44 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                         </table>
                     </div>
-                `;
-            
+                    `;
+                }
+
+                // Function to generate popup content for buy page
+                function generateBuyPopupContent(data) {
+                    return `
+                        <div>
+                            ${imageRow}
+                            <div style="text-align: center;">
+                                <h5>${data.address}</h5>
+                            </div>
+                            <table style="width:100%;border-collapse:collapse;">
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date) || "Unknown"}</td>
+                                </tr>
+                                ${listingUrlBlock}
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
+                                </tr>
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Sale Price</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    `;
+                }
+
+                // Determine which popup content to generate based on context
+                let popupContent = '';
+                if (context.pageType === 'lease') {
+                    popupContent = generateLeasePopupContent(data);
+                } else if (context.pageType === 'buy') {
+                    popupContent = generateBuyPopupContent(data);
+                }
+
                 layer.bindPopup(popupContent, {
                     maxHeight: window.innerWidth < 768 ? 375 : 650,
                     maxWidth: window.innerWidth < 768 ? 175 : 300,

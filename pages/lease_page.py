@@ -165,6 +165,10 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Generate geojson with a marker for each listing
   geojson = dlx.dicts_to_geojson([{**m} for m in markers])
 
+  # Add context to each feature's properties to pass through to the onEachFeature JavaScript function
+  for feature in geojson['features']:
+    feature['properties']['context'] = {"pageType": "lease"}
+
   # Logging
   user_agent_string = request.headers.get('User-Agent')
   user_agent = parse(user_agent_string)
