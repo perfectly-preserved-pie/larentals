@@ -200,11 +200,44 @@ def update_map(
       dict(
         lat=row.Latitude,
         lon=row.Longitude,
-        popup=row.popup_html
-        )
+        data=dict(
+          #bedrooms_bathrooms=row['Br/Ba'],
+          city=row.City,
+          date_processed=row.date_processed,
+          #full_bathrooms=row['Full Bathrooms'],
+          full_street_address=row.full_street_address,
+          #half_bathrooms=row['Half Bathrooms'],
+          hoa_fee_frequency=row.hoa_fee_frequency,
+          hoa_fee=row.hoa_fee,
+          image_url=row.mls_photo,
+          list_price=row.list_price,
+          listed_date=row.listed_date,
+          listing_url=row.listing_url,
+          mls_number=row.mls_number,
+          park_name=row.park_name,
+          pets_allowed=row.pets_allowed,
+          popup_html=row.popup_html,
+          postal_code=row.PostalCode,
+          ppsqft=row.ppsqft,
+          senior_community=row.senior_community,
+          short_address=row.short_address,
+          space_rent=row.space_rent,
+          sqft=row.Sqft,
+          street_name=row.street_name,
+          street_number=row.street_number,
+          subtype=row.subtype,
+          #three_quarter_bathrooms=row['Three Quarter Bathrooms'],
+          #total_bathrooms=row['Total Bathrooms'],
+          year_built=row.year_built,
+        ),
+      )
     )
   # Generate geojson with a marker for each listing
   geojson = dlx.dicts_to_geojson([{**m} for m in markers])
+
+  # Add context to each feature's properties to pass through to the onEachFeature JavaScript function
+  for feature in geojson['features']:
+    feature['properties']['context'] = {"pageType": "buy"}
 
   # Logging
   user_agent_string = request.headers.get('User-Agent')
