@@ -180,6 +180,17 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         `;
                     }
 
+                    // Conditionally include the space rent row if the property subtype is MH or has MH in the selected subtypes
+                    let spaceRentBlock = '';
+                    if (selected_subtypes.includes('MH')) {
+                        spaceRentBlock = `
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.space_rent ? `$${data.space_rent.toLocaleString()}` : "Unknown"}</td>
+                            </tr>
+                        `;
+                    }
+
                     return `
                         <div>
                             ${imageRow}
@@ -213,10 +224,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
                                 </tr>
-                                <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.space_rent ? `$${data.space_rent.toLocaleString()}` : "N/A"}</td>
-                                </tr>
+                                ${spaceRentBlock}
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.bathrooms}</td>
