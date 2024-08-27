@@ -191,6 +191,28 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         `;
                     }
 
+                    // Conditionally include the HOA Fee row if the property subtype is not MH or has MH in the selected subtypes
+                    let hoaFeeBlock = '';
+                    if (!selected_subtypes.includes('MH')) {
+                        hoaFeeBlock = `
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
+                            </tr>
+                        `;
+                    }
+
+                    // Conditionally include the HOA Fee Frequency row if the property subtype is not MH or has MH in the selected subtypes
+                    let hoaFeeFrequencyBlock = '';
+                    if (!selected_subtypes.includes('MH')) {
+                        hoaFeeFrequencyBlock = `
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee_frequency || "Unknown"}</td>
+                            </tr>
+                        `;
+                    }
+
                     return `
                         <div>
                             ${imageRow}
@@ -208,14 +230,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
                                 </tr>
-                                <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
-                                </tr>
-                                <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee_frequency || "Unknown" || "N/A"}</td>
-                                </tr>
+                                ${hoaFeeBlock}
+                                ${hoaFeeFrequencyBlock}
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
