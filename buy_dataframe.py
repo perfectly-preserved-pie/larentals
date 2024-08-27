@@ -198,10 +198,9 @@ df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
 # Convert PostalCode into nullable integer dtype
 df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
-# Convert the listed date into DateTime and set missing values to be NaT
-# Infer datetime format for faster parsing
+# Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
-df['listed_date'] = pd.to_datetime(df['listed_date'], errors='coerce')
+df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mixed')
 
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
