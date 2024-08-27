@@ -10,9 +10,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
             if (feature.properties.data) {
                 const data = feature.properties.data; // Get the dataframe rows from the GeoJSON feature properties
                 const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
+                const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
             
                 // Log the context object to debug
                 console.log('Context:', context);
+                console.log('Data:', data);
             
                 // Function to handle MLS number hyperlink
                 function getListingUrlBlock(data) {
@@ -144,7 +146,18 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 }
 
                 // Function to generate popup content for buy page
-                function generateBuyPopupContent(data) {
+                function generateBuyPopupContent(data, selected_subtypes) {
+                    // Conditionally include the park name row if the property subtype is MH or has MH in the selected subtypes
+                    let parkNameBlock = '';
+                    if (selected_subtypes.includes('MH')) {
+                        parkNameBlock = `
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Park Name</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.park_name || "Unknown"}</td>
+                            </tr>
+                        `;
+                    }
+
                     return `
                         <div>
                             ${imageRow}
@@ -157,10 +170,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
                                 </tr>
                                 ${listingUrlBlock}
-                                <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Park Name</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.park_name || "N/A"}
-                                </td>        
+                                ${parkNameBlock}
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
@@ -215,7 +225,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 if (context.pageType === 'lease') {
                     popupContent = generateLeasePopupContent(data);
                 } else if (context.pageType === 'buy') {
-                    popupContent = generateBuyPopupContent(data);
+                    popupContent = generateBuyPopupContent(data, selected_subtypes);
                 }
 
                 layer.bindPopup(popupContent, {
