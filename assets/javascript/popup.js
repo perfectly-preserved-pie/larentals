@@ -158,6 +158,28 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         `;
                     }
 
+                    // Conditionally include the pet policy row if the property subtype is MH or has MH in the selected subtypes
+                    let petsAllowedBlock = '';
+                    if (selected_subtypes.includes('MH')) {
+                        petsAllowedBlock = `
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
+                            </tr>
+                        `;
+                    }
+
+                    // Condtionally include the Senior Community row if the property subtype is MH or has MH in the selected subtypes
+                    let seniorCommunityBlock = '';
+                    if (selected_subtypes.includes('MH')) {
+                        seniorCommunityBlock = `
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
+                            </tr>
+                        `;
+                    }
+
                     return `
                         <div>
                             ${imageRow}
@@ -203,14 +225,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
                                 </tr>
-                                <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype.includes('MH') ? (data.pets_allowed || "Unknown") : "N/A"}</td>
-                                </tr>
-                                <tr>
-                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype.includes('MH') ? (data.senior_community || "Unknown") : "N/A"}</td>
-                                </tr>
+                                ${petsAllowedBlock}
+                                ${seniorCommunityBlock}
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
