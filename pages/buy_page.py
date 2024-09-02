@@ -201,7 +201,7 @@ def update_map(
         lat=row.Latitude,
         lon=row.Longitude,
         data=dict(
-          #bedrooms_bathrooms=row['Br/Ba'],
+          bedrooms_bathrooms=row.bedrooms_bathrooms,
           #full_bathrooms=row['Full Bathrooms'],
           #half_bathrooms=row['Half Bathrooms'],
           #popup_html=row.popup_html,
