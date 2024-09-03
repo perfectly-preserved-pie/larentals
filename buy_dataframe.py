@@ -187,6 +187,9 @@ df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
 df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
+# Rename the Br/Ba column to bedrooms_bathrooms
+df.rename(columns={'Br/Ba': 'bedrooms_bathrooms'}, inplace=True)
+
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
@@ -205,7 +208,7 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mi
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
 
-cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee']
+cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee', 'bedrooms_bathrooms']
 # Convert columns to string type for string operations
 df[cols] = df[cols].astype(str)
 # Remove commas and other non-numeric characters
