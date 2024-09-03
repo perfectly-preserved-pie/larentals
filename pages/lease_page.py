@@ -121,7 +121,10 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     lease_filters.other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
     lease_filters.listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
     lease_filters.laundry_checklist_function(laundry_chosen)
-  ] 
+  ]
+
+  # Fill NA/NaN values with None
+  df_filtered = df_filtered.applymap(lambda x: None if pd.isna(x) else x)
 
   # Create an empty list for the markers
   markers = []
@@ -131,11 +134,40 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
       dict(
         lat=row.Latitude,
         lon=row.Longitude,
-        popup=row.popup_html
-        )
+        data=dict(
+          address=row.full_street_address,
+          bathrooms=row.Bedrooms,
+          bedrooms=row.Bedrooms,
+          furnished=row.Furnished, 
+          garage_spaces=row.garage_spaces,
+          image_url=row.mls_photo,
+          key_deposit=row.DepositKey,
+          laundry=row.LaundryFeatures,  
+          list_price=row.list_price,
+          listed_date=row.listed_date,
+          listing_url=row.listing_url,
+          mls_number=row.mls_number,
+          mls_photo=row.mls_photo,
+          other_deposit=row.DepositOther,  
+          pet_deposit=row.DepositPets,
+          pet_policy=row.PetsAllowed,
+          phone_number=row.phone_number,
+          ppsqft=row.ppsqft,
+          security_deposit=row.DepositSecurity, 
+          senior_community=row.SeniorCommunityYN,
+          sqft=row.Sqft,
+          subtype=row.subtype,
+          terms=row.Terms,
+          year_built=row.YrBuilt,
+        ),
+      )
     )
   # Generate geojson with a marker for each listing
   geojson = dlx.dicts_to_geojson([{**m} for m in markers])
+
+  # Add context to each feature's properties to pass through to the onEachFeature JavaScript function
+  for feature in geojson['features']:
+    feature['properties']['context'] = {"pageType": "lease"}
 
   # Logging
   user_agent_string = request.headers.get('User-Agent')
