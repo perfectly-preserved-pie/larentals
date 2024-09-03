@@ -222,7 +222,7 @@ int_cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'T
 df[int_cols] = df[int_cols].astype('Int64')
 
 # Cast these columns as nullable strings
-cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'Br/Ba', 'pets_allowed', 'senior_community', 'hoa_fee_frequency']
+cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'bedrooms_bathrooms', 'pets_allowed', 'senior_community', 'hoa_fee_frequency']
 for col in cols:
   df[col] = df[col].astype('string')
 
