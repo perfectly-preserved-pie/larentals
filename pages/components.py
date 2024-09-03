@@ -347,7 +347,7 @@ class LeaseComponents(BaseClass):
         # Create the Dash component
         rental_terms_checklist = html.Div([
             html.Div([
-                html.H5("Lease Length", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Rental Terms", style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='rental_terms', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
