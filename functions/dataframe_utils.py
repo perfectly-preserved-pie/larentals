@@ -45,3 +45,122 @@ async def remove_expired_listings(df: pd.DataFrame, limiter: AsyncLimiter) -> pd
     # Drop the rows from the DataFrame and return the modified DataFrame
     df_dropped_expired = df.drop(indexes_to_drop)
     return df_dropped_expired
+
+def convert_to_int8(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to Int8Dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to Int8Dtype.
+    """
+    try:
+        df[column_name] = df[column_name].astype('Int8')
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to Int8: {e}")
+    return df
+
+def convert_to_int16(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to Int16Dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to Int16Dtype.
+    """
+    try:
+        df[column_name] = df[column_name].astype('Int16')
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to Int16: {e}")
+    return df
+
+def convert_to_int64(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to Int64Dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to Int64Dtype.
+    """
+    try:
+        df[column_name] = df[column_name].astype('Int64')
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to Int64: {e}")
+    return df
+
+def convert_to_float32(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to Float32Dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to Float32Dtype.
+    """
+    try:
+        df[column_name] = df[column_name].astype('Float32')
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to Float32: {e}")
+    return df
+
+def convert_to_nullable_string(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to nullable string dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to nullable string dtype.
+    """
+    try:
+        df[column_name] = df[column_name].astype(pd.StringDtype())
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to nullable string: {e}")
+    return df
+
+def convert_to_category(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to category dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to category dtype.
+    """
+    try:
+        df[column_name] = df[column_name].astype('category')
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to category: {e}")
+    return df
+
+def convert_to_datetime64(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Convert the specified column in the DataFrame to datetime64[ns] dtype, logging errors without changing the original value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column_name (str): The name of the column to convert.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to datetime64[ns] dtype.
+    """
+    try:
+        df[column_name] = pd.to_datetime(df[column_name], format='mixed', errors='raise')
+    except Exception as e:
+        logger.error(f"Error converting column '{column_name}' to datetime64[ns]: {e}")
+    return df
