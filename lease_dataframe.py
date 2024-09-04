@@ -224,9 +224,6 @@ df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 df_combined = asyncio.run(remove_expired_listings(df_combined, limiter))
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
-# Iterate through the combined dataframe and (re)generate the popup_html column
-for row in df_combined.itertuples():
-  df_combined.at[row.Index, 'popup_html'] = lease_popup_html(df_combined, row)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
   (df_combined['Latitude'] < 32.5) | 
