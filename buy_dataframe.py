@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_expired_listings
+from functions.dataframe_utils import remove_expired_listings, convert_to_int8, convert_to_int16, convert_to_int64, convert_to_float32, convert_to_nullable_string, convert_to_category, convert_to_datetime64
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -263,6 +263,42 @@ for row in outside_ca_rows.itertuples():
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
   df_combined.at[row.Index, 'Latitude'] = coordinates[0]
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
+
+# Final casting of columns
+df_combined = convert_to_int8(df_combined, 'Bedrooms')
+df_combined = convert_to_int8(df_combined, 'Full Bathrooms')
+df_combined = convert_to_int8(df_combined, 'Half Bathrooms')
+df_combined = convert_to_int8(df_combined, 'Three Quarter Bathrooms')
+df_combined = convert_to_int8(df_combined, 'Total Bathrooms')
+
+df_combined = convert_to_int16(df_combined, 'year_built')
+df_combined = convert_to_int16(df_combined, 'PostalCode')
+df_combined = convert_to_int16(df_combined, 'Sqft')
+
+df_combined = convert_to_int64(df_combined, 'list_price')
+
+df_combined = convert_to_float32(df_combined, 'hoa_fee')
+df_combined = convert_to_float32(df_combined, 'ppsqft')
+df_combined = convert_to_float32(df_combined, 'space_rent')
+
+df_combined = convert_to_nullable_string(df_combined, 'bedrooms_bathrooms')
+df_combined = convert_to_nullable_string(df_combined, 'full_street_address')
+df_combined = convert_to_nullable_string(df_combined, 'hoa_fee_frequency')
+df_combined = convert_to_nullable_string(df_combined, 'listing_url')
+df_combined = convert_to_nullable_string(df_combined, 'mls_number')
+df_combined = convert_to_nullable_string(df_combined, 'mls_photo')
+df_combined = convert_to_nullable_string(df_combined, 'park_name')
+df_combined = convert_to_nullable_string(df_combined, 'short_address')
+df_combined = convert_to_nullable_string(df_combined, 'street_number')
+df_combined = convert_to_nullable_string(df_combined, 'street_name')
+df_combined = convert_to_nullable_string(df_combined, 'City')
+df_combined = convert_to_nullable_string(df_combined, 'subtype')
+
+df_combined = convert_to_category(df_combined, 'subtype')
+
+#df_combined = convert_to_datetime64(df_combined, 'listed_date')
+df_combined = convert_to_datetime64(df_combined, 'date_processed')
+
 # Save the new combined dataframe
 try:
   df_combined.to_parquet(path="assets/datasets/buy.parquet")
