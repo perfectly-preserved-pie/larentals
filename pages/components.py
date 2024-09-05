@@ -53,20 +53,12 @@ class LeaseComponents(BaseClass):
         'TWNHS/D': 'Townhouse (Detached)',
         'Unknown': 'Unknown',
     }
-    laundry_categories = [
-        'Dryer Hookup',
-        'Dryer Included',
-        'Washer Hookup',
-        'Washer Included',
-        'Community Laundry',
-        'Other',
-        'Unknown',
-        'None',
-    ]
 
     def __init__(self, df):
         # Initalize these first because they are used in other components
         self.df = df
+
+        self.df['LaundryCategory'] = self.df['LaundryFeatures'].apply(self.categorize_laundry_features)
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -93,6 +85,22 @@ class LeaseComponents(BaseClass):
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
+
+    def categorize_laundry_features(self, feature):
+        if feature is None or feature in [np.nan, 'Unknown', '']:
+            return 'Unknown'
+        if any(keyword in feature for keyword in ['In Closet', 'In Kitchen', 'In Garage', 'Inside', 'Individual Room']):
+            return 'In Unit'
+        elif any(keyword in feature for keyword in ['Community Laundry', 'Common Area', 'Shared']):
+            return 'Shared'
+        elif any(keyword in feature for keyword in ['Hookup', 'Electric Dryer Hookup', 'Gas Dryer Hookup', 'Washer Hookup']):
+            return 'Hookups'
+        elif any(keyword in feature for keyword in ['Dryer Included', 'Washer Included']):
+            return 'Included Appliances'
+        elif any(keyword in feature for keyword in ['Outside', 'Upper Level', 'In Carport']):
+            return 'Location Specific'
+        else:
+            return 'Other'
     
     def create_subtype_checklist(self):
         # Instance Variable
@@ -808,6 +816,15 @@ class LeaseComponents(BaseClass):
         return key_deposit_components
 
     def create_laundry_checklist(self):
+        # Get unique laundry categories sorted alphabetically
+        unique_categories = sorted(self.df['LaundryCategory'].unique())
+
+        # Create options for the checklist
+        laundry_options = [
+            {'label': category, 'value': category}
+            for category in unique_categories
+        ]
+
         laundry_checklist = html.Div([
             html.Div([
                 html.H5("Laundry Features", style={'display': 'inline-block', 'margin-right': '10px'}),
@@ -816,13 +833,9 @@ class LeaseComponents(BaseClass):
             html.Div([
                 dcc.Checklist(
                     id='laundry_checklist',
-                    options=sorted([{'label': i, 'value': i} for i in self.laundry_categories], key=lambda x: x['label']),
-                    value=self.laundry_categories,
-                    labelStyle={'display': 'block'},
-                    inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
-                    },
+                    options=laundry_options,
+                    value=[option['value'] for option in laundry_options],
+                    labelStyle={'display': 'block'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'laundry'}

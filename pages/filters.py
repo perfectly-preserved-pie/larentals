@@ -294,31 +294,38 @@ class LeaseFilters:
         
         Returns:
         - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
-                     the filter conditions based on laundry features.
+                    the filter conditions based on laundry features.
         """
-        laundry_categories = [
-            'Dryer Hookup', 'Dryer Included', 'Washer Hookup', 'Washer Included',
-            'Community Laundry', 'Other', 'Unknown', 'None',
-        ]
-
         # Return False for all rows if the choice list is empty
         if not choice:
             return pd.Series([False] * len(self.df), index=self.df.index)
 
         # Special case for 'Other'
-        if choice == ['Other']:
-            return ~self.df['LaundryFeatures'].astype(str).apply(
-                lambda x: any(cat in x for cat in laundry_categories if cat not in ['Other', 'Unknown', 'None']))
+        if 'Other' in choice:
+            other_filter = ~self.df['LaundryCategory'].isin([
+                'In Unit', 'Shared', 'Hookups', 'Included Appliances', 'Location Specific', 'Unknown'
+            ])
+            choice.remove('Other')
+        else:
+            other_filter = pd.Series([False] * len(self.df), index=self.df.index)
 
-        # Create initial filter
-        laundry_features_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        # Handle 'Unknown' choice
+        if 'Unknown' in choice:
+            unknown_filter = self.df['LaundryCategory'] == 'Unknown'
+            choice.remove('Unknown')
+        else:
+            unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
 
-        for opt in choice:
-            if opt in laundry_categories and opt != 'Other':
-                # Update filter for selected options
-                laundry_features_filter |= self.df['LaundryFeatures'].astype(str).str.contains(opt, na=False)
-        
-        return laundry_features_filter
+        # Filter based on the remaining choices
+        if choice:
+            choice_filter = self.df['LaundryCategory'].isin(choice)
+        else:
+            choice_filter = pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Combine all filters
+        combined_filter = choice_filter | other_filter | unknown_filter
+
+        return combined_filter
 
     def subtype_checklist_function(self, choice: list[str]) -> pd.Series:
         """
