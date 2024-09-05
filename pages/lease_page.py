@@ -103,25 +103,45 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Sort the DataFrame once at the beginning
   df_sorted = df.sort_values(by=['garage_spaces', 'list_price', 'Bedrooms', 'Total Bathrooms', 'Sqft', 'YrBuilt', 'ppsqft'])
 
-  df_filtered = df_sorted[
-    lease_filters.subtype_checklist_function(subtypes_chosen) &
-    lease_filters.pets_radio_button(pets_chosen) &
-    lease_filters.terms_function(terms_chosen) &
-    ((df_sorted['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | lease_filters.garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1])) &
-    (df_sorted['list_price'].between(rental_price[0], rental_price[1])) &
-    (df_sorted['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])) &
-    (df_sorted['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])) &
-    ((df_sorted['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | lease_filters.sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])) &
-    ((df_sorted['YrBuilt'].between(years_chosen[0], years_chosen[1])) | lease_filters.yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])) &
-    ((df_sorted['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | lease_filters.ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])) &
-    lease_filters.furnished_checklist_function(furnished_choice) &
-    lease_filters.security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]) &
-    lease_filters.pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]) &
-    lease_filters.key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]) &
-    lease_filters.other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]) &
-    lease_filters.listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end) &
+  filters = [
+    lease_filters.subtype_checklist_function(subtypes_chosen),
+    lease_filters.pets_radio_button(pets_chosen),
+    lease_filters.terms_function(terms_chosen),
+    ((df_sorted['garage_spaces'].between(garage_spaces[0], garage_spaces[1])) | lease_filters.garage_radio_button(garage_missing_radio_choice, garage_spaces[0], garage_spaces[1])),
+    (df_sorted['list_price'].between(rental_price[0], rental_price[1])),
+    (df_sorted['Bedrooms'].between(bedrooms_chosen[0], bedrooms_chosen[1])),
+    (df_sorted['Total Bathrooms'].between(bathrooms_chosen[0], bathrooms_chosen[1])),
+    ((df_sorted['Sqft'].between(sqft_chosen[0], sqft_chosen[1])) | lease_filters.sqft_radio_button(sqft_missing_radio_choice, sqft_chosen[0], sqft_chosen[1])),
+    ((df_sorted['YrBuilt'].between(years_chosen[0], years_chosen[1])) | lease_filters.yrbuilt_radio_button(yrbuilt_missing_radio_choice, years_chosen[0], years_chosen[1])),
+    ((df_sorted['ppsqft'].between(ppsqft_chosen[0], ppsqft_chosen[1])) | lease_filters.ppsqft_radio_button(ppsqft_missing_radio_choice, ppsqft_chosen[0], ppsqft_chosen[1])),
+    lease_filters.furnished_checklist_function(furnished_choice),
+    lease_filters.security_deposit_function(security_deposit_radio_choice, security_deposit_chosen[0], security_deposit_chosen[1]),
+    lease_filters.pet_deposit_function(pet_deposit_radio_choice, pet_deposit_chosen[0], pet_deposit_chosen[1]),
+    lease_filters.key_deposit_function(key_deposit_radio_choice, key_deposit_chosen[0], key_deposit_chosen[1]),
+    lease_filters.other_deposit_function(other_deposit_radio_choice, other_deposit_chosen[0], other_deposit_chosen[1]),
+    lease_filters.listed_date_function(listed_date_radio, listed_date_datepicker_start, listed_date_datepicker_end),
     lease_filters.laundry_checklist_function(laundry_chosen)
   ]
+
+  # Align filters with the DataFrame
+  aligned_filters = [df_sorted.index.isin(df_sorted[f].index) for f in filters]\
+  
+  # Combine all filters
+  combined_filter = filters[0]
+  for f in filters[1:]:
+    combined_filter &= f
+
+  # Apply the combined filter
+  df_filtered = df_sorted[combined_filter]
+
+  # Debugging: Print the row if it is excluded
+  if 'GD24178910' not in df_filtered['mls_number'].values:
+      logger.debug("Row GD24178910 is excluded. Intermediate filter results:")
+      for i, f in enumerate(aligned_filters):
+          if not f[df_sorted['mls_number'] == 'GD24178910'].any():
+              logger.debug(f"Filter {i} excluded the row.")
+  else:
+      logger.debug("Row GD24178910 is included.")
 
   # Fill NA/NaN values with None
   df_filtered = df_filtered.applymap(lambda x: None if pd.isna(x) else x)
@@ -188,22 +208,22 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
 
   # Now check for missing rows
-  if len(df) != len(df_filtered):
+  #if len(df) != len(df_filtered):
       # Merge the two dataframes to find rows that are not common in both dataframes
-      missing_df = pd.concat([df, df_filtered]).drop_duplicates(keep=False)
-      logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
-      missing_df.to_csv('missing_rows.csv', index=False)
+ #     missing_df = pd.concat([df, df_filtered]).drop_duplicates(keep=False)
+ #     logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
+ #     missing_df.to_csv('missing_rows.csv', index=False)
 
       # Align the DataFrames before comparison
-      df_aligned, missing_df_aligned = df.align(missing_df, join='outer', axis=1, fill_value=None)
+ #     df_aligned, missing_df_aligned = df.align(missing_df, join='outer', axis=1, fill_value=None)
       
       # Ensure the indices are aligned
-      df_aligned, missing_df_aligned = df_aligned.align(missing_df_aligned, join='outer', axis=0, fill_value=None)
+  #    df_aligned, missing_df_aligned = df_aligned.align(missing_df_aligned, join='outer', axis=0, fill_value=None)
       
       # Compare the missing rows with the original dataframe
-      comparison_df = df_aligned.compare(missing_df_aligned, align_axis=0)
-      comparison_df.to_csv('missing_rows_comparison.csv', index=False)
-      logger.info(f"Comparison of missing rows has been saved to 'missing_rows_comparison.csv'")
+   #   comparison_df = df_aligned.compare(missing_df_aligned, align_axis=0)
+    #  comparison_df.to_csv('missing_rows_comparison.csv', index=False)
+     # logger.info(f"Comparison of missing rows has been saved to 'missing_rows_comparison.csv'")
 
   ns = Namespace("dash_props", "module")
   # Generate the map
