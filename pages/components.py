@@ -33,6 +33,7 @@ class LeaseComponents(BaseClass):
         'LOFT/A': 'Loft (Attached)',
         'MANL/D': '??? (Detached)',
         'MH': 'Mobile Home',
+        'OYO/A': 'Own-Your-Own (Attached)',
         'OYO/D': 'Own-Your-Own (Detached)',
         'QUAD': 'Quadplex (Unspecified)',
         'QUAD/A': 'Quadplex (Attached)',
@@ -96,7 +97,7 @@ class LeaseComponents(BaseClass):
     def create_subtype_checklist(self):
         # Instance Variable
         unique_values = self.df['subtype'].dropna().unique().tolist()
-        unique_values = ["Unknown" if i == "/D" else i for i in unique_values]
+        unique_values = ["Unknown" if i in ["/A", "/D"] else i for i in unique_values]
         if "Unknown" not in unique_values:
             unique_values.append("Unknown")
 
