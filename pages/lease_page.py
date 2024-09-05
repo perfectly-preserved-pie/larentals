@@ -188,11 +188,22 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
 
   # Now check for missing rows
-  #if len(df) != len(df_filtered):
-    # Merge the two dataframes to find rows that are not common in both dataframes
-  #  missing_df = pd.concat([df, df_filtered]).drop_duplicates(keep=False)
-  #  logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
-  #  missing_df.to_csv('missing_rows.csv', index=False)
+  if len(df) != len(df_filtered):
+      # Merge the two dataframes to find rows that are not common in both dataframes
+      missing_df = pd.concat([df, df_filtered]).drop_duplicates(keep=False)
+      logger.warning(f"""{len(missing_df)} missing rows have been found. A CSV has been generated and saved in the working directory.""")
+      missing_df.to_csv('missing_rows.csv', index=False)
+
+      # Align the DataFrames before comparison
+      df_aligned, missing_df_aligned = df.align(missing_df, join='outer', axis=1, fill_value=None)
+      
+      # Ensure the indices are aligned
+      df_aligned, missing_df_aligned = df_aligned.align(missing_df_aligned, join='outer', axis=0, fill_value=None)
+      
+      # Compare the missing rows with the original dataframe
+      comparison_df = df_aligned.compare(missing_df_aligned, align_axis=0)
+      comparison_df.to_csv('missing_rows_comparison.csv', index=False)
+      logger.info(f"Comparison of missing rows has been saved to 'missing_rows_comparison.csv'")
 
   ns = Namespace("dash_props", "module")
   # Generate the map
