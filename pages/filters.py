@@ -324,19 +324,23 @@ class LeaseFilters:
         """
         Filters the DataFrame for properties based on selected property subtypes.
         
-        Special handling is provided for 'Unknown' to include properties without a specified subtype.
+        Special handling is provided for 'Unknown' to include properties without a specified subtype,
+        as well as subtypes '/A' and '/D'.
         
         Args:
         - choice (list[str]): A list of user-selected property subtypes, including a special 'Unknown'
-                              option to include properties without a specified subtype.
+                            option to include properties without a specified subtype.
         
         Returns:
         - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
-                     the filter conditions based on property subtypes.
+                    the filter conditions based on property subtypes.
         """
         # Ensure the choice list is not empty
         if not choice:
             return pd.Series([False] * len(self.df), index=self.df.index)
+
+        # Map '/A' and '/D' subtypes to 'Unknown'
+        self.df['subtype'] = self.df['subtype'].replace({'/A': None, '/D': None})
 
         # Handle 'Unknown' selection
         if 'Unknown' in choice:
