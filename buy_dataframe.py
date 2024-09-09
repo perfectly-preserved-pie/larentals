@@ -206,7 +206,7 @@ df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype
 df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mixed')
 
 # Convert date_processed into DateTime
-df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce')
+df['date_processed'] = pd.to_datetime(df['date_processed'], errors='raise', format='mixed')
 
 cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee', 'bedrooms_bathrooms']
 # Convert columns to string type for string operations
