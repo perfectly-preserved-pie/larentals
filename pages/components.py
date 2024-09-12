@@ -24,9 +24,17 @@ class BaseClass:
                     dbc.Col(
                         dbc.ButtonGroup(
                             [
-                                dbc.Button("For Rent", href="/", color="primary"),
+                                dbc.Button(
+                                    [html.I(className="fa fa-building", style={"margin-right": "5px"}), "For Rent"],
+                                    href="/",
+                                    color="primary"
+                                ),
                                 html.Div(style={"width": "1px", "background-color": "#ccc", "margin": "0 1px", "height": "100%"}),  # Vertical Divider
-                                dbc.Button("For Sale", href="/buy", color="primary"),
+                                dbc.Button(
+                                    [html.I(className="fa fa-home", style={"margin-right": "5px"}), "For Sale"],
+                                    href="/buy",
+                                    color="primary"
+                                ),
                             ],
                             className="ml-auto",
                         ),
