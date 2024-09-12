@@ -14,6 +14,54 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
         style={'display': 'inline-block'}
     )
 
+# Create a class to hold all common components for both Lease and Buy pages
+class BaseClass:
+    def create_title_card(self, title, subtitle, button_text, button_href):
+        title_card = dbc.Card(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(html.H3(title, className="card-title"), width="auto"),
+                        dbc.Col(
+                            dbc.ButtonGroup(
+                                [
+                                    dbc.Button("For Rent", href="/", color="primary", className="mr-2"),
+                                    html.Div(style={"width": "1px", "background-color": "#ccc", "margin": "0 1px", "height": "100%"}),  # Vertical Divider
+                                    dbc.Button("For Sale", href="/buy", color="primary"),
+                                ],
+                                className="ml-auto",
+                            ),
+                            width="auto",
+                            className="ml-auto",
+                        ),
+                    ],
+                    align="center",
+                ),
+                html.P(subtitle),
+                html.P(f"Last updated: {self.last_updated}", style={'margin-bottom': '5px'}),
+                html.I(
+                    className="bi bi-github",
+                    style={"margin-right": "5px"},
+                ),
+                html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
+                html.I(
+                    className="fa-solid fa-blog",
+                    style={"margin-right": "5px", "margin-left": "15px"},
+                ),
+                html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+                dbc.Button(
+                    button_text,
+                    href=button_href,
+                    color="primary",
+                    external_link=True,
+                    className="bi bi-building-fill w-100 mt-2",
+                ),
+            ],
+            body=True
+        )
+
+        return title_card
+
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
     # Class Variables
@@ -989,38 +1037,12 @@ class LeaseComponents(BaseClass):
         return map_card
     
     def create_title_card(self):
-        title_card = dbc.Card(
-            [
-                html.H3("WhereToLive.LA", className="card-title"),
-                html.P("An interactive map of available rentals in Los Angeles County. Updated weekly."),
-                html.P(f"Last updated: {self.last_updated}", style={'margin-bottom': '5px'}),
-                html.I(
-                  className="bi bi-github",
-                  style = {
-                    "margin-right": "5px",
-                  },
-                ),
-                html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
-                html.I(
-                  className="fa-solid fa-blog",
-                  style = {
-                    "margin-right": "5px",
-                    "margin-left": "15px"
-                  },
-                ),
-                html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
-                dbc.Button(
-                  " Looking to buy a property instead?",
-                  href="/buy",
-                  color="primary",
-                  external_link=True,
-                  className="bi bi-house-door-fill w-100 mt-2",
-                ),
-            ],
-            body = True
+        return super().create_title_card(
+            title="WhereToLive.LA",
+            subtitle="An interactive map of available rentals in Los Angeles County. Updated weekly.",
+            button_text="Looking to buy a property instead?",
+            button_href="/buy"
         )
-
-        return title_card
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
@@ -1746,37 +1768,9 @@ class BuyComponents(BaseClass):
         return map_card
     
     def create_title_card(self):
-        title_card = dbc.Card(
-        [
-            html.H3("WhereToLive.LA", className="card-title"),
-            html.P("An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."),
-            html.P(f"Last updated: {self.last_updated}", style={'margin-bottom': '5px'}),
-            # Use a GitHub icon for my repo
-            html.I(
-            className="bi bi-github",
-            style = {
-                "margin-right": "5px",
-            },
-            ),
-            html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
-            # Add an icon for my blog
-            html.I(
-            className="fa-solid fa-blog",
-            style = {
-                "margin-right": "5px",
-                "margin-left": "15px"
-            },
-            ),
-            html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
-            dbc.Button(
-            " Looking to rent a property instead?",
-            href="/",
-            color="primary",
-            external_link=True,
-            className="bi bi-building-fill w-100 mt-2",
-            ),
-        ],
-        body = True
+        return super().create_title_card(
+            title="WhereToLive.LA",
+            subtitle="An interactive map of available residential properties for sale in Los Angeles County. Updated weekly.",
+            button_text="Looking to rent a property instead?",
+            button_href="/"
         )
-
-        return title_card
