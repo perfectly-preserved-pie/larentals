@@ -16,7 +16,7 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
 
 # Create a class to hold all common components for both Lease and Buy pages
 class BaseClass:
-    def create_title_card(self, title, subtitle, include_button=True, button_text="", button_href=""):
+    def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
                 [
