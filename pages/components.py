@@ -50,17 +50,6 @@ class BaseClass:
             html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
         ]
 
-        if include_button:
-            title_card_children.append(
-                dbc.Button(
-                    button_text,
-                    href=button_href,
-                    color="primary",
-                    external_link=True,
-                    className="bi bi-building-fill w-100 mt-2",
-                )
-            )
-
         title_card = dbc.Card(title_card_children, body=True)
         return title_card
 
@@ -1041,8 +1030,7 @@ class LeaseComponents(BaseClass):
     def create_title_card(self):
         return super().create_title_card(
             title="WhereToLive.LA",
-            subtitle="An interactive map of available rentals in Los Angeles County. Updated weekly.",
-            include_button=False
+            subtitle="An interactive map of available rentals in Los Angeles County. Updated weekly."
         )
 
 # Create a class to hold all the components for the buy page
@@ -1771,6 +1759,5 @@ class BuyComponents(BaseClass):
     def create_title_card(self):
         return super().create_title_card(
             title="WhereToLive.LA",
-            subtitle="An interactive map of available residential properties for sale in Los Angeles County. Updated weekly.",
-            include_button=False
+            subtitle="An interactive map of available residential properties for sale in Los Angeles County. Updated weekly."
         )
