@@ -13,8 +13,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
             
                 // Log the context object to debug
-                console.log('Context:', context);
-                console.log('Data:', data);
+                //console.log('Context:', context);
+                //console.log('Data:', data);
             
                 // Function to handle MLS number hyperlink
                 function getListingUrlBlock(data) {
