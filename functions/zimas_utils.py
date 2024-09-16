@@ -1,12 +1,21 @@
 from bs4 import BeautifulSoup
 from loguru import logger
+from typing import Dict, Optional, List
 import json
 import re
 import requests
 
-def get_pin_and_street_details_zimas(house_number: str, street_name: str) -> dict:
-    """Query ZIMAS to get PIN, street direction, and street suffix."""
-    
+def get_pin_and_street_details_zimas(house_number: str, street_name: str) -> Optional[Dict[str, str]]:
+    """
+    Query ZIMAS to get PIN, street direction, and street suffix.
+
+    Args:
+        house_number (str): The house number of the address.
+        street_name (str): The street name of the address.
+
+    Returns:
+        Optional[Dict[str, str]]: A dictionary containing the PIN, street direction, and street suffix if found, otherwise None.
+    """
     # Base URL and endpoint
     base_url = "https://zimas.lacity.org"
     endpoint = "/ajaxSearchResults.aspx"
@@ -33,22 +42,22 @@ def get_pin_and_street_details_zimas(house_number: str, street_name: str) -> dic
             pin = match.group(1)
             street_direction = match.group(2)
             street_suffix = match.group(3)
-            
-            logger.info(f"PIN: {pin}, Street Direction: {street_direction}, Street Suffix: {street_suffix}")
-            return {
-                "PIN": pin,
-                "StreetDirection": street_direction,
-                "StreetSuffix": street_suffix
-            }
-        else:
-            logger.error("Could not extract PIN, Street Direction, or Street Suffix from the response.")
-            return {}
-    else:
-        logger.error(f"Failed to retrieve data from ZIMAS. Status code: {response.status_code}")
-        return {}
+            return {"pin": pin, "street_direction": street_direction, "street_suffix": street_suffix}
+    
+    return None
 
-def fetch_permits(house_number: str, street_name: str, zip_code: str) -> list[dict]:
-    """Fetches permit data from the specified URL and parses it into a list of dictionaries."""
+def fetch_permits(house_number: str, street_name: str, zip_code: str) -> List[Dict[str, str]]:
+    """
+    Fetch permit data from the specified address and parse it into a list of dictionaries.
+
+    Args:
+        house_number (str): The house number of the address.
+        street_name (str): The street name of the address.
+        zip_code (str): The ZIP code of the address.
+
+    Returns:
+        List[Dict[str, str]]: A list of dictionaries containing permit data.
+    """
     
     # Get PIN, Street Direction, and Street Suffix from ZIMAS
     zimas_data = get_pin_and_street_details_zimas(house_number, street_name)
