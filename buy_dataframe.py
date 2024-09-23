@@ -260,6 +260,11 @@ for row in outside_ca_rows.itertuples():
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
   df_combined.at[row.Index, 'Latitude'] = coordinates[0]
   df_combined.at[row.Index, 'Longitude'] = coordinates[1]
+
+# Final pass at converting datetime columns to the correct format
+df_combined['listed_date'] = pd.to_datetime(df_combined['listed_date'], errors='raise', format='mixed')
+df_combined['date_processed'] = pd.to_datetime(df_combined['date_processed'], errors='raise', format='mixed')
+
 # Save the new combined dataframe
 try:
   df_combined.to_parquet(path="assets/datasets/buy.parquet")
