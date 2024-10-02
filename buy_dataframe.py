@@ -264,6 +264,7 @@ for row in outside_ca_rows.itertuples():
 # Final pass at converting datetime columns to the correct format
 df_combined['listed_date'] = pd.to_datetime(df_combined['listed_date'], errors='raise', format='mixed')
 df_combined['date_processed'] = pd.to_datetime(df_combined['date_processed'], errors='raise', format='mixed')
+df_combined['Half Bathrooms'] = df_combined['Half Bathrooms'].astype('Int8')
 
 # Save the new combined dataframe
 try:
