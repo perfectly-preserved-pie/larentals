@@ -1,4 +1,4 @@
-# Build the dev image to install the requirements and then copy the venv to the production image
+# Build the dev image to install the requirements
 FROM cgr.dev/chainguard/python:latest-dev AS dev
 
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 # Create virtual environment and install dependencies using uv
 RUN python -m venv venv \
     && source venv/bin/activate \
-    && uv pip install --no-cache -r requirements.txt
+    && uv pip install --no-cache-dir -r requirements.txt
 
 # Set entrypoint to bash for interactive shell in dev
 ENTRYPOINT ["/bin/bash"]
