@@ -1,22 +1,36 @@
-FROM python:3.11-slim
+# Build the dev image to install the requirements and then copy the venv to the production image
+FROM cgr.dev/chainguard/python:latest-dev AS dev
 
-COPY requirements.txt .
+WORKDIR /app
 
-# Install curl
-RUN apt-get update && apt-get install -y curl
+# Copy the requirements file into the working directory
+COPY requirements.txt /app/requirements.txt
 
-# Using uv to install packages because it's fast as fuck boiiii
-# https://www.youtube.com/watch?v=6E7ZGCfruaw
-# https://ryxcommar.com/2024/02/15/how-to-cut-your-python-docker-builds-in-half-with-uv/
-ADD --chmod=655 https://astral.sh/uv/install.sh /install.sh
-RUN /install.sh && rm /install.sh
-RUN /root/.cargo/bin/uv pip install --system --no-cache -r requirements.txt
+# Copy uv binary directly from the UV container image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-COPY . ./
+# Create virtual environment and install dependencies using uv
+RUN python -m venv venv \
+    && source venv/bin/activate \
+    && uv pip install --no-cache -r requirements.txt
 
-# Run the app using gunicorn.
-# Expose the port gunicorn is listening on (80).
-# Set the number of workers to 10.
-# Preload the app to avoid the overhead of loading the app for each worker. See https://www.joelsleppy.com/blog/gunicorn-application-preloading/
-# Set the app to be the server variable in app.py.
-CMD ["gunicorn", "-b", "0.0.0.0:80", "-k", "gevent", "--workers=10", "--preload", "app:server"]
+# Set entrypoint to bash for interactive shell in dev
+ENTRYPOINT ["/bin/bash"]
+
+# Now build the final prod image
+FROM cgr.dev/chainguard/python:latest AS prod
+
+WORKDIR /app
+
+# Copy the virtual environment from the dev stage
+COPY --from=dev /app/venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Copy the rest of the app
+COPY . /app
+
+# Set the entrypoint to gunicorn for production
+ENTRYPOINT ["gunicorn"]
+
+# Run the app using gunicorn with gevent workers
+CMD ["-b", "0.0.0.0:80", "-k", "gevent", "--workers=10", "--preload", "app:server"]
