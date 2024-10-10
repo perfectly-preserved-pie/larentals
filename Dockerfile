@@ -3,16 +3,20 @@ FROM cgr.dev/chainguard/python:latest-dev AS dev
 
 WORKDIR /app
 
-# Copy the requirements file into the working directory
-COPY requirements.txt /app/requirements.txt
+# Switch to root user to install dependencies
+USER root
+
+# Copy everything into the working directory
+COPY . /app
 
 # Copy uv binary directly from the UV container image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Create virtual environment and install dependencies using uv
-RUN python -m venv venv \
-    && source venv/bin/activate \
-    && uv pip install --no-cache-dir -r requirements.txt
+# Install dependencies directly into the system environment using uv
+RUN uv pip install --system --no-cache-dir -r requirements.txt
+
+# Switch back to non-root user
+USER nonroot
 
 # Set entrypoint to bash for interactive shell in dev
 ENTRYPOINT ["/bin/bash"]
@@ -22,12 +26,8 @@ FROM cgr.dev/chainguard/python:latest AS prod
 
 WORKDIR /app
 
-# Copy the virtual environment from the dev stage
-COPY --from=dev /app/venv /app/venv
-ENV PATH="/app/venv/bin:$PATH"
-
-# Copy the rest of the app
-COPY . /app
+# Install the dependencies directly in the production environment (copying system packages from dev)
+COPY --from=dev /app /app
 
 # Set the entrypoint to gunicorn for production
 ENTRYPOINT ["gunicorn"]
