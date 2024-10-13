@@ -26,8 +26,14 @@ FROM cgr.dev/chainguard/python:latest AS prod
 
 WORKDIR /app
 
-# Install the dependencies directly in the production environment (copying system packages from dev)
+# Copy the application code from the dev stage
 COPY --from=dev /app /app
+
+# Copy the installed Python packages from dev stage
+COPY --from=dev /usr/lib/python3.12/site-packages /usr/lib/python3.12/site-packages
+
+# Copy the gunicorn binary from dev stage
+COPY --from=dev /usr/bin/gunicorn /usr/bin/gunicorn
 
 # Set the entrypoint to gunicorn for production
 ENTRYPOINT ["gunicorn"]
