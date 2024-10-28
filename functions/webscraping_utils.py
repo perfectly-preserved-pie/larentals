@@ -112,6 +112,18 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
 
     return None, None, None
 
+async def webscrape_tla(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
+    url = f'https://www.theagencyre.com/properties/rent/mls-;{mls_number}/rental-true'
+    landing_page_soup = BeautifulSoup(requests.get(url).text, 'html.parser')
+    actual_listing_url = landing_page_soup.find('li', class_='checked').find('a')['href']
+
+    # Now find the listing date and photo
+    listing_page_soup = BeautifulSoup(requests.get(actual_listing_url).text, 'html.parser')
+    list_date = listing_page_soup.find('span', {'data-th': 'List Date'}).get_text(strip=True)
+    photo = listing_page_soup.find('meta', {'property': 'og:image'})['content']
+
+    return list_date, photo
+
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     """
     Updates the HOA fee value for a given MLS number by scraping the HOA fee from the detailed listing webpage.
