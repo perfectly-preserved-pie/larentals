@@ -66,7 +66,7 @@ def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
     
     return city
 
-def return_postalcode(address: str, geolocator: GoogleV3) -> Optional[Union[int, type(pd.NA)]]:
+def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[Union[int, pd.NAType]]:
     """
     Fetches the postal code for a given short address using forward and reverse geocoding.
     
