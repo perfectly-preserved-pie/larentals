@@ -190,7 +190,7 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
 
             # If no matching MLS number is found
             logger.warning(f"No property found with MLS Number: {mls_number}")
-            return None, None
+            return None, None, None
 
     except httpx.HTTPStatusError as e:
         logger.error(f"HTTP error occurred: {e}")
