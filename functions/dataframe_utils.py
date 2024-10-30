@@ -1,5 +1,6 @@
 from aiolimiter import AsyncLimiter
-from functions.webscraping_utils import check_expired_listing
+from functions.mls_image_processing_utils import imagekit_transform
+from functions.webscraping_utils import check_expired_listing, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
 import asyncio
 import pandas as pd
@@ -45,3 +46,53 @@ async def remove_expired_listings(df: pd.DataFrame, limiter: AsyncLimiter) -> pd
     # Drop the rows from the DataFrame and return the modified DataFrame
     df_dropped_expired = df.drop(indexes_to_drop)
     return df_dropped_expired
+
+def update_dataframe_with_listing_data(
+    df: pd.DataFrame, imagekit_instance
+) -> pd.DataFrame:
+    """
+    Updates the DataFrame with listed date, MLS photo, and listing URL by scraping BHHS and The Agency.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame to update.
+    imagekit_instance: The ImageKit instance for image transformations.
+
+    Returns:
+    pd.DataFrame: The updated DataFrame.
+    """
+    for row in df.itertuples():
+        mls_number = row.mls_number
+
+        # Try fetching data from BHHS
+        webscrape = asyncio.run(
+            webscrape_bhhs(
+                url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
+                row_index=row.Index,
+                mls_number=mls_number,
+                total_rows=len(df)
+            )
+        )
+
+        if not all(webscrape):
+            # If BHHS didn't return data, try fetching from The Agency
+            agency_data = asyncio.run(
+                fetch_the_agency_data(
+                    mls_number, row_index=row.Index, total_rows=len(df)
+                )
+            )
+            if agency_data[0]:
+                df.at[row.Index, 'listed_date'] = agency_data[0]
+            if agency_data[1]:
+                df.at[row.Index, 'listing_url'] = agency_data[1]
+            if agency_data[2]:
+                df.at[row.Index, 'mls_photo'] = imagekit_transform(
+                    agency_data[2], mls_number, imagekit_instance=imagekit_instance
+                )
+        else:
+            # BHHS returned data, update the DataFrame
+            df.at[row.Index, 'listed_date'] = webscrape[0]
+            df.at[row.Index, 'mls_photo'] = imagekit_transform(
+                webscrape[1], mls_number, imagekit_instance=imagekit_instance
+            )
+            df.at[row.Index, 'listing_url'] = webscrape[2]
+    return df
