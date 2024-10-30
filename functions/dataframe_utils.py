@@ -51,7 +51,7 @@ def update_dataframe_with_listing_data(
     df: pd.DataFrame, imagekit_instance
 ) -> pd.DataFrame:
     """
-    Updates the DataFrame with listed date, MLS photo, and listing URL by scraping BHHS and The Agency.
+    Updates the DataFrame with listing date, MLS photo, and listing URL by scraping BHHS and using The Agency's API.
 
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
@@ -63,36 +63,53 @@ def update_dataframe_with_listing_data(
     for row in df.itertuples():
         mls_number = row.mls_number
 
-        # Try fetching data from BHHS
-        webscrape = asyncio.run(
-            webscrape_bhhs(
-                url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
-                row_index=row.Index,
-                mls_number=mls_number,
-                total_rows=len(df)
+        try:
+            # Try fetching data from BHHS
+            webscrape = asyncio.run(
+                webscrape_bhhs(
+                    url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
+                    row_index=row.Index,
+                    mls_number=mls_number,
+                    total_rows=len(df)
+                )
             )
-        )
 
-        if not all(webscrape):
-            # If BHHS didn't return data, try fetching from The Agency
-            agency_data = asyncio.run(
-                fetch_the_agency_data(
-                    mls_number, row_index=row.Index, total_rows=len(df)
+            if not all(webscrape):
+                logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
+
+                # If BHHS didn't return data, try fetching from The Agency
+                agency_data = asyncio.run(
+                    fetch_the_agency_data(
+                        mls_number, row_index=row.Index, total_rows=len(df)
+                    )
                 )
-            )
-            if agency_data[0]:
-                df.at[row.Index, 'listed_date'] = agency_data[0]
-            if agency_data[1]:
-                df.at[row.Index, 'listing_url'] = agency_data[1]
-            if agency_data[2]:
+
+                if agency_data[0]:
+                    df.at[row.Index, 'listed_date'] = agency_data[0]
+                else:
+                    logger.warning(f"No listed date found for MLS {mls_number} from The Agency.")
+
+                if agency_data[1]:
+                    df.at[row.Index, 'listing_url'] = agency_data[1]
+                else:
+                    logger.warning(f"No listing URL found for MLS {mls_number} from The Agency.")
+
+                if agency_data[2]:
+                    df.at[row.Index, 'mls_photo'] = imagekit_transform(
+                        agency_data[2], mls_number, imagekit_instance=imagekit_instance
+                    )
+                else:
+                    logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
+
+            else:
+                # BHHS returned data, update the DataFrame
+                df.at[row.Index, 'listed_date'] = webscrape[0]
                 df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                    agency_data[2], mls_number, imagekit_instance=imagekit_instance
+                    webscrape[1], mls_number, imagekit_instance=imagekit_instance
                 )
-        else:
-            # BHHS returned data, update the DataFrame
-            df.at[row.Index, 'listed_date'] = webscrape[0]
-            df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                webscrape[1], mls_number, imagekit_instance=imagekit_instance
-            )
-            df.at[row.Index, 'listing_url'] = webscrape[2]
+                df.at[row.Index, 'listing_url'] = webscrape[2]
+
+        except Exception as e:
+            logger.error(f"Error processing MLS {mls_number} at index {row.Index}: {e}")
+
     return df
