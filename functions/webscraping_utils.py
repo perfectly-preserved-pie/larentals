@@ -1,5 +1,6 @@
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
+from datetime import datetime, timezone
 from loguru import logger
 from typing import Tuple, Optional
 import asyncio
@@ -112,17 +113,93 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
 
     return None, None, None
 
-async def webscrape_tla(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
-    url = f'https://www.theagencyre.com/properties/rent/mls-;{mls_number}/rental-true'
-    landing_page_soup = BeautifulSoup(requests.get(url).text, 'html.parser')
-    actual_listing_url = landing_page_soup.find('li', class_='checked').find('a')['href']
+async def fetch_the_agency_data(mls_number: str) -> Tuple[Optional[datetime], Optional[str]]:
+    """
+    Asynchronously fetches property data for a given MLS number from The Agency API.
+    
+    This function sends a POST request with the necessary headers and payload to retrieve property
+    information based on the MLS number. It returns the listing date (without time) and detail URL
+    for the property that matches the MLS number.
 
-    # Now find the listing date and photo
-    listing_page_soup = BeautifulSoup(requests.get(actual_listing_url).text, 'html.parser')
-    list_date = listing_page_soup.find('span', {'data-th': 'List Date'}).get_text(strip=True)
-    photo = listing_page_soup.find('meta', {'property': 'og:image'})['content']
+    Parameters:
+    mls_number (str): The MLS number of the property to fetch.
 
-    return list_date, photo
+    Returns:
+    Tuple[Optional[datetime], Optional[str]]: The listing date (as a datetime.date object) and the 
+                                             detail URL of the property. Returns (None, None)
+                                             if no matching property is found or if an error occurs.
+    """
+    url = "https://search-service.idcrealestate.com/api/property"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "X-Tenant": "AGY",
+        "X-TenantMode": "Production",
+        "X-TenantHost": "theagencyre.com",
+        "Content-Type": "application/json",
+        "Origin": "https://www.theagencyre.com",
+        "Connection": "keep-alive",
+        "Referer": "https://www.theagencyre.com/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "cross-site",
+        "Priority": "u=4",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache"
+    }
+
+    # Normalize the input MLS number by removing '-' and '_'
+    normalized_mls_number = mls_number.replace("-", "").replace("_", "")
+
+    # Define the payload with the necessary parameters
+    payload = {
+        "urlquery": f"/rent/mls-;{mls_number}/rental-true/dsort-cl",
+        "countrystate": "",
+        "zoom": 21
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()  # Raise an error for HTTP status codes >= 400
+            data = response.json()
+
+            # Find the item with the matching mlsNumber or idcMlsNumber
+            for item in data.get("items", []):
+                item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
+                item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
+
+                if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
+                    # Extract listDate and convert it to a date only (without time)
+                    list_date_timestamp = int(item.get("listDate", 0))
+                    list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
+                    detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
+                    
+                    return list_date, detail_url
+
+            # If no matching MLS number is found
+            logger.warning(f"No property found with MLS Number: {mls_number}")
+            return None, None
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error occurred: {e}")
+        logger.debug(f"Response content: {e.response.text}")
+    except httpx.RequestError as e:
+        logger.error(f"Request error occurred: {e}")
+    except ValueError as e:
+        logger.error(f"Value error occurred during JSON parsing: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+
+    # Return None values if property is not found or in case of errors
+    return None, None
+
+# Example usage in an async context
+# import asyncio
+# asyncio.run(fetch_property_data("24_454861"))
+
 
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     """
