@@ -163,11 +163,6 @@ for row in df.itertuples():
       df.at[row.Index, 'listed_date'] = agency_data[0]
     if agency_data[1]:
       df.at[row.Index, 'listing_url'] = agency_data[1]
-    # Handle photo if available from The Agency
-    if agency_data[2]:
-      df.at[row.Index, 'mls_photo'] = imagekit_transform(
-        agency_data[2], mls_number, imagekit_instance=imagekit
-      )
   else:
     # BHHS returned data, proceed as before
     df.at[row.Index, 'listed_date'] = webscrape[0]

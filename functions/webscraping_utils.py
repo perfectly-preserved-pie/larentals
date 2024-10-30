@@ -115,19 +115,19 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
 
 async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int) -> Tuple[Optional[datetime], Optional[str], Optional[str]]:
     """
-    Asynchronously fetches property data for a given MLS number from The Agency API.
-    
-    This function sends a POST request with the necessary headers and payload to retrieve property
-    information based on the MLS number. It returns the listing date (without time) and detail URL
-    for the property that matches the MLS number.
+    Asynchronously fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.
+    row_index (int): The row index for logging or debugging purposes.
+    total_rows (int): Total rows being processed for progress indication.
 
     Returns:
-    Tuple[Optional[datetime], Optional[str]]: The listing date (as a datetime.date object) and the 
-                                             detail URL of the property. Returns (None, None)
-                                             if no matching property is found or if an error occurs.
+    Tuple[Optional[datetime], Optional[str], Optional[str]]: The listing date (as a datetime.date object),
+                                                            the detail URL of the property, and the 
+                                                            first property image.
+                                                            Returns (None, None, None) if no matching
+                                                            property is found or if an error occurs.
     """
     url = "https://search-service.idcrealestate.com/api/property"
     headers = {
@@ -176,9 +176,17 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
                     list_date_timestamp = int(item.get("listDate", 0))
                     list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
                     detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
+                    # Now fetch the detail page to scrape the image source
+                    detail_response = await client.get(detail_url, headers=headers)
+                    detail_response.raise_for_status()
+                    detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
+                    # Find the image with "_1" in the filename
+                    img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
+                    img_src = img_tag["src"] if img_tag else None
+
                     logger.info(f"Successfully fetched data for MLS {mls_number}")
                     
-                    return list_date, detail_url
+                    return list_date, detail_url, img_src
 
             # If no matching MLS number is found
             logger.warning(f"No property found with MLS Number: {mls_number}")
