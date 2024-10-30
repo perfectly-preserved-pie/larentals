@@ -143,16 +143,22 @@ df["full_street_address"] = (
 for row in df.itertuples():
   mls_number = row[1]
   # Try fetching data from BHHS
-  webscrape = asyncio.run(webscrape_bhhs(
-    url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
-    row_index=row.Index,
-    mls_number=mls_number,
-    total_rows=len(df)
-  ))
+  webscrape = asyncio.run(
+    webscrape_bhhs(
+      url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
+      row_index=row.Index,
+      mls_number=mls_number,
+      total_rows=len(df)
+    )
+  )
 
   if not all(webscrape):
     # If BHHS didn't return data, try fetching from The Agency
-    agency_data = asyncio.run(fetch_the_agency_data(mls_number))
+    agency_data = asyncio.run(
+      fetch_the_agency_data(
+        mls_number, row_index=row.Index, total_rows=len(df)
+      )
+    )
     if agency_data[0]:
       df.at[row.Index, 'listed_date'] = agency_data[0]
     if agency_data[1]:

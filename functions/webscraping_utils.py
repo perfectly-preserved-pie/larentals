@@ -113,7 +113,7 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
 
     return None, None, None
 
-async def fetch_the_agency_data(mls_number: str) -> Tuple[Optional[datetime], Optional[str]]:
+async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int) -> Tuple[Optional[datetime], Optional[str], Optional[str]]:
     """
     Asynchronously fetches property data for a given MLS number from The Agency API.
     
@@ -176,6 +176,7 @@ async def fetch_the_agency_data(mls_number: str) -> Tuple[Optional[datetime], Op
                     list_date_timestamp = int(item.get("listDate", 0))
                     list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
                     detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
+                    logger.info(f"Successfully fetched data for MLS {mls_number}")
                     
                     return list_date, detail_url
 
