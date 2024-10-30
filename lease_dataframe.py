@@ -66,7 +66,7 @@ rename_dict = {
   'name': 'street_name',
   'other': 'other_deposit',
   'pet deposit': 'pet_deposit',
-  'prking': 'parking',
+  'prking': 'parking_spaces',
   'security': 'security_deposit',
   'sqft': 'sqft',
   'square': 'ppsqft',
