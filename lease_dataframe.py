@@ -139,13 +139,36 @@ df["full_street_address"] = (
     df["zip_code"].astype(str)
 )
 
-# Iterate through the dataframe and get the listed date and photo for rows 
+# Iterate through the dataframe and get the listed date and photo for rows
 for row in df.itertuples():
   mls_number = row[1]
-  webscrape = asyncio.run(webscrape_bhhs(url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", row_index=row.Index, mls_number=mls_number, total_rows=len(df)))
-  df.at[row.Index, 'listed_date'] = webscrape[0]
-  df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
-  df.at[row.Index, 'listing_url'] = webscrape[2]
+  # Try fetching data from BHHS
+  webscrape = asyncio.run(webscrape_bhhs(
+    url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
+    row_index=row.Index,
+    mls_number=mls_number,
+    total_rows=len(df)
+  ))
+
+  if not all(webscrape):
+    # If BHHS didn't return data, try fetching from The Agency
+    agency_data = asyncio.run(fetch_the_agency_data(mls_number))
+    if agency_data[0]:
+      df.at[row.Index, 'listed_date'] = agency_data[0]
+    if agency_data[1]:
+      df.at[row.Index, 'listing_url'] = agency_data[1]
+    # Handle photo if available from The Agency
+    if agency_data[2]:
+      df.at[row.Index, 'mls_photo'] = imagekit_transform(
+        agency_data[2], mls_number, imagekit_instance=imagekit
+      )
+  else:
+    # BHHS returned data, proceed as before
+    df.at[row.Index, 'listed_date'] = webscrape[0]
+    df.at[row.Index, 'mls_photo'] = imagekit_transform(
+      webscrape[1], mls_number, imagekit_instance=imagekit
+    )
+    df.at[row.Index, 'listing_url'] = webscrape[2]
 
 # Iterate through the dataframe and fetch coordinates for rows
 for row in df.itertuples():
