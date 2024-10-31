@@ -48,7 +48,7 @@ df.columns = df.columns.str.strip()
 # Convert all column names to lowercase
 df.columns = df.columns.str.lower()
 
-# Standardize the column names by renaminmg them
+# Standardize the column names by renaming them
 # https://stackoverflow.com/a/65332240
 # Define a renaming dictionary based on patterns
 rename_dict = {
@@ -87,21 +87,40 @@ df['street_name'] = df['street_name'].str.replace(r'^\d+\s*', '', regex=True)
 df.dropna(subset=['street_name'], inplace=True)
 
 # Columns to clean
-cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'sqft', 'year_built', 'parking', 'lot_size']
-
+cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'sqft', 'pet_deposit']
 # Remove all non-numeric characters, convert to numeric, fill NaNs with pd.NA, and cast to Nullable Integer Type
-df[cols] = df[cols].replace(to_replace='[^\d]', value='', regex=True).apply(pd.to_numeric, errors='coerce').astype(pd.Int32Dtype())
+df[cols] = df[cols].replace(to_replace='[^\d]', value='', regex=True).apply(pd.to_numeric, errors='raise').astype(pd.UInt16Dtype())
 
-# Handle pet_deposit column separately
-df['pet_deposit'] = df['pet_deposit'].replace(to_replace='[^\d.]', value='', regex=True).apply(pd.to_numeric, errors='coerce').astype(pd.Int32Dtype())
+df['lot_size'] = df['lot_size'].astype(pd.UInt32Dtype())
+df['year_built'] = df['year_built'].astype(pd.UInt16Dtype())
+df['parking_spaces'] = df['parking_spaces'].astype(pd.UInt8Dtype())
 
-# Cast the following columns as Int32Dtype
-df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='raise').astype(pd.Int32Dtype())
-df['street_number'] = df['street_number'].apply(pd.to_numeric, errors='raise').astype(pd.Int32Dtype())
-df['lot_size'] = df['lot_size'].apply(pd.to_numeric, errors='raise').astype(pd.Int32Dtype())
+df['street_number'] = df['street_number'].astype(pd.StringDtype())
+df['lot_size'] = df['lot_size'].apply(pd.to_numeric, errors='raise').astype(pd.UInt32Dtype())
 
 # Cast the following columns as a float and remove the leading $ sign
-df['ppsqft'] = df['ppsqft'].replace(to_replace='[^\d.]', value='', regex=True).astype('float32')
+df['ppsqft'] = df['ppsqft'].replace(to_replace='[^\d.]', value='', regex=True).astype(pd.Float32Dtype())
+
+# Columns to be cast as strings
+cols = ['mls_number', 'phone_number', 'street_name', 'zip_code', 'city']
+df[cols] = df[cols].astype(pd.StringDtype())
+
+# Columns to be cast as categories
+cols = ['pet_policy', 'furnished', 'subtype', 'terms', 'laundry']
+df[cols] = df[cols].astype(pd.CategoricalDtype())
+
+# Convert bathroom columns to nullable integer type
+for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']:
+  df[col] = df[col].astype(pd.UInt8Dtype())
+
+# Drop the original 'Baths(FTHQ)' column since we've extracted the data we need
+df.drop(columns=['bathrooms'], inplace=True)
+
+# Convert bedrooms to nullable integer type
+df['bedrooms'] = df['bedrooms'].astype(pd.UInt8Dtype())
+# These columns should stay floats
+df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise', downcast='float')
+df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 
 # Check if 'ppsqft' column exists
 if 'ppsqft' not in df.columns:
@@ -112,10 +131,6 @@ if 'ppsqft' not in df.columns:
 for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
   df.at[row.Index, 'city'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.zip_code)}", geolocator=g)
 
-# Columns to be cast as strings
-cols = ['mls_number', 'phone_number', 'street_name', 'zip_code', 'city', 'terms', 'pet_policy', 'furnished', 'subtype']
-df[cols] = df[cols].astype(pd.StringDtype())
-
 # Create a new column with the Street Number & Street Name
 df["short_address"] = (df["street_number"].astype(str) + ' ' + df["street_name"] + ', ' + df['city']).astype(pd.StringDtype())
 
@@ -125,7 +140,7 @@ df["short_address"] = (df["street_number"].astype(str) + ' ' + df["street_name"]
 for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].itertuples():
   short_address = df.at[row.Index, 'short_address']
   missing_zip_code = return_zip_code(short_address, geolocator=g)
-  df.at[row.Index, 'zip_code'] = (missing_zip_code).astype(pd.Int32Dtype())
+  df.at[row.Index, 'zip_code'] = (missing_zip_code).astype(pd.StringDtype())
 
 # Tag each row with the date it was processed
 for row in df.itertuples():
@@ -150,19 +165,6 @@ for row in df.itertuples():
 
 # Extract total bathrooms and bathroom types (Full, Three-Quarter, Half, Quarter)
 df[['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']] = df['bathrooms'].str.extract(r'(\d+\.\d+)\s\((\d+)\s(\d+)\s(\d+)\s(\d+)\)').astype(float)
-
-# Convert columns to nullable integer type
-for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']:
-  df[col] = df[col].astype(pd.Int8Dtype())
-
-# Drop the original 'Baths(FTHQ)' column since we've extracted the data we need
-df.drop(columns=['bathrooms'], inplace=True)
-
-# Convert bedrooms to nullable integer type
-df['bedrooms'] = df['bedrooms'].astype(pd.Int8Dtype())
-# These columns should stay floats
-df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise')
-df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise')
 
 ## Laundry Features ##
 # Replace all empty values in the following column with "Unknown" and cast the column as dtype string
