@@ -21,10 +21,10 @@ class LeaseFilters:
         """
         if include_missing:
             # Include properties with missing square footage
-            sqft_choice = self.df['Sqft'].isnull() | self.df['Sqft'].between(slider_begin, slider_end)
+            sqft_choice = self.df['sqft'].isnull() | self.df['sqft'].between(slider_begin, slider_end)
         else:
             # Exclude properties with missing square footage
-            sqft_choice = self.df['Sqft'].between(slider_begin, slider_end)
+            sqft_choice = self.df['sqft'].between(slider_begin, slider_end)
         return sqft_choice
     
     def yrbuilt_radio_button(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
@@ -406,10 +406,10 @@ class BuyFilters:
         """
         if include_missing:
             # Include properties with missing square footage
-            sqft_choice = self.df['Sqft'].isnull() | self.df['Sqft'].between(slider_begin, slider_end)
+            sqft_choice = self.df['sqft'].isnull() | self.df['sqft'].between(slider_begin, slider_end)
         else:
             # Exclude properties with missing square footage
-            sqft_choice = self.df['Sqft'].between(slider_begin, slider_end)
+            sqft_choice = self.df['sqft'].between(slider_begin, slider_end)
         return sqft_choice
 
     def year_built_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
