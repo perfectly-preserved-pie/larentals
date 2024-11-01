@@ -302,7 +302,7 @@ class LeaseFilters:
 
         # Special case for 'Other'
         if 'Other' in choice:
-            other_filter = ~self.df['LaundryCategory'].isin([
+            other_filter = ~self.df['laundry'].isin([
                 'In Unit', 'Shared', 'Hookups', 'Included Appliances', 'Location Specific', 'Unknown'
             ])
             choice.remove('Other')
@@ -311,14 +311,14 @@ class LeaseFilters:
 
         # Handle 'Unknown' choice
         if 'Unknown' in choice:
-            unknown_filter = self.df['LaundryCategory'] == 'Unknown'
+            unknown_filter = self.df['laundry'] == 'Unknown'
             choice.remove('Unknown')
         else:
             unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
 
         # Filter based on the remaining choices
         if choice:
-            choice_filter = self.df['LaundryCategory'].isin(choice)
+            choice_filter = self.df['laundry'].isin(choice)
         else:
             choice_filter = pd.Series([False] * len(self.df), index=self.df.index)
 
