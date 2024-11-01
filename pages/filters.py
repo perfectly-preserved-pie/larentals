@@ -61,10 +61,10 @@ class LeaseFilters:
         """
         if include_missing:
             # Include properties with missing garage spaces
-            garage_choice = self.df['garage_spaces'].isnull() | self.df['garage_spaces'].between(slider_begin, slider_end)
+            garage_choice = self.df['parking_spaces'].isnull() | self.df['parking_spaces'].between(slider_begin, slider_end)
         else:
             # Exclude properties with missing garage spaces
-            garage_choice = self.df['garage_spaces'].between(slider_begin, slider_end)
+            garage_choice = self.df['parking_spaces'].between(slider_begin, slider_end)
         return garage_choice
     
     def ppsqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
