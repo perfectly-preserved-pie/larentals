@@ -121,7 +121,7 @@ class LeaseFilters:
 
         Args:
         - choice (list[str]): A list of user-selected options regarding the furnished status. 
-                              Options include 'Furnished', 'Unfurnished', and 'Unknown'.
+                              Options include 'furnished', 'Unfurnished', and 'Unknown'.
 
         Returns:
         - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
@@ -129,11 +129,11 @@ class LeaseFilters:
         # Presort the list first for potentially faster performance
         choice.sort()
         if 'Unknown' in choice:
-            # Include rows where Furnished status is NaN OR matches one of the selected choices
-            furnished_checklist_filter = self.df['Furnished'].isnull() | self.df['Furnished'].isin(choice)
+            # Include rows where furnished status is NaN OR matches one of the selected choices
+            furnished_checklist_filter = self.df['furnished'].isnull() | self.df['furnished'].isin(choice)
         else:
             # If Unknown is NOT selected, return rows that match the selected choices (implies .notnull() by default)
-            furnished_checklist_filter = self.df['Furnished'].isin(choice)
+            furnished_checklist_filter = self.df['furnished'].isin(choice)
         return furnished_checklist_filter
 
     def security_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
