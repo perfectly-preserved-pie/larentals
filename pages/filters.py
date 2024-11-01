@@ -221,10 +221,10 @@ class LeaseFilters:
         """
         if include_missing:
             # Include properties with no 'other' deposit listed or within the specified range
-            other_deposit_filter = self.df['DepositOther'].isnull() | self.df['DepositOther'].between(slider_begin, slider_end)
+            other_deposit_filter = self.df['other_deposit'].isnull() | self.df['other_deposit'].between(slider_begin, slider_end)
         else:
             # Include properties within the specified range, implicitly excludes nulls
-            other_deposit_filter = self.df['DepositOther'].between(slider_begin, slider_end)
+            other_deposit_filter = self.df['other_deposit'].between(slider_begin, slider_end)
         return other_deposit_filter
 
     def listed_date_function(self, include_missing: bool, start_date: str, end_date: str) -> pd.Series:
