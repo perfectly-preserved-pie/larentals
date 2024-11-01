@@ -152,10 +152,10 @@ class LeaseFilters:
         """
         if include_missing:
             # Include properties with no security deposit listed or within the specified range
-            security_deposit_filter = self.df['DepositSecurity'].isnull() | self.df['DepositSecurity'].between(slider_begin, slider_end)
+            security_deposit_filter = self.df['security_deposit'].isnull() | self.df['security_deposit'].between(slider_begin, slider_end)
         else:
             # Include properties within the specified range, implicitly excludes nulls
-            security_deposit_filter = self.df['DepositSecurity'].between(slider_begin, slider_end)
+            security_deposit_filter = self.df['security_deposit'].between(slider_begin, slider_end)
         return security_deposit_filter
 
     def pet_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
