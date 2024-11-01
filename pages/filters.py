@@ -254,11 +254,11 @@ class LeaseFilters:
 
     def terms_function(self, choice: list[str]) -> pd.Series:
         """
-        Filters the DataFrame based on specified terms in the 'Terms' column. Supports
+        Filters the DataFrame based on specified terms in the 'terms' column. Supports
         inclusion of rows with missing values ('NaN') if 'Unknown' is part of the choices.
 
         Args:
-        - choice (list[str]): A list of terms to filter the 'Terms' column by. Includes
+        - choice (list[str]): A list of terms to filter the 'terms' column by. Includes
                               special handling for 'Unknown' to include or exclude NaN values.
 
         Returns:
@@ -276,9 +276,9 @@ class LeaseFilters:
         
         # Handle 'Unknown' choice
         if 'Unknown' in choice: 
-            terms_filter = self.df['Terms'].isnull() | self.df['Terms'].str.contains(choice_regex, na=False)
+            terms_filter = self.df['terms'].isnull() | self.df['terms'].str.contains(choice_regex, na=False)
         else: 
-            terms_filter = self.df['Terms'].str.contains(choice_regex, na=False)
+            terms_filter = self.df['terms'].str.contains(choice_regex, na=False)
 
         return terms_filter
 
