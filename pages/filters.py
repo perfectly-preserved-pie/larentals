@@ -199,10 +199,10 @@ class LeaseFilters:
         """
         if include_missing:
             # Include properties with no key deposit listed or within the specified range
-            key_deposit_filter = self.df['DepositKey'].isnull() | self.df['DepositKey'].between(slider_begin, slider_end)
+            key_deposit_filter = self.df['key_deposit'].isnull() | self.df['key_deposit'].between(slider_begin, slider_end)
         else:
             # Include properties within the specified range, implicitly excludes nulls
-            key_deposit_filter = self.df['DepositKey'].between(slider_begin, slider_end)
+            key_deposit_filter = self.df['key_deposit'].between(slider_begin, slider_end)
         return key_deposit_filter
 
     def other_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
