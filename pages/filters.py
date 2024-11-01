@@ -102,10 +102,10 @@ class LeaseFilters:
         """
         if choice == True:
             # Filter for rows where the pet policy allows pets (not 'No' or 'No, Size Limit')
-            pets_radio_choice = ~self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
+            pets_radio_choice = ~self.df['pet_policy'].isin(['No', 'No, Size Limit'])
         elif choice == False:
             # Filter for rows where the pet policy does not allow pets
-            pets_radio_choice = self.df['PetsAllowed'].isin(['No', 'No, Size Limit'])
+            pets_radio_choice = self.df['pet_policy'].isin(['No', 'No, Size Limit'])
         else:  # Assuming 'Both' includes all rows
             # Create a boolean Series of True for all rows to include everything
             pets_radio_choice = pd.Series([True] * len(self.df), index=self.df.index)
