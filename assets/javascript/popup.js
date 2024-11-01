@@ -109,8 +109,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.bathrooms}</td>
                             </tr>
                             <tr>
-                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Garage Spaces</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.parking_spaces || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
