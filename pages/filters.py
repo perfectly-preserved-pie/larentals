@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 import pandas as pd
 import re
 
@@ -100,18 +100,18 @@ class LeaseFilters:
         Returns:
         - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
         """
-        if choice == True:
+        if choice == 'Yes':
             # Filter for rows where the pet policy allows pets (not 'No' or 'No, Size Limit')
             pets_radio_choice = ~self.df['pet_policy'].isin(['No', 'No, Size Limit'])
-        elif choice == False:
+        elif choice == 'No':
             # Filter for rows where the pet policy does not allow pets
             pets_radio_choice = self.df['pet_policy'].isin(['No', 'No, Size Limit'])
-        else:  # Assuming 'Both' includes all rows
-            # Create a boolean Series of True for all rows to include everything
+        else:  # 'Both'
+            # Include all properties regardless of pet policy
             pets_radio_choice = pd.Series([True] * len(self.df), index=self.df.index)
         return pets_radio_choice
 
-    def furnished_checklist_function(self, choice: list[str]) -> pd.Series:
+    def furnished_checklist_function(self, choice: List[str]) -> pd.Series:
         """
         Filters the DataFrame for furnished dwellings based on the user's choice.
 
@@ -120,244 +120,249 @@ class LeaseFilters:
         might not specify their furnished state.
 
         Args:
-        - choice (list[str]): A list of user-selected options regarding the furnished status. 
-                              Options include 'furnished', 'Unfurnished', and 'Unknown'.
+        - choice (List[str]): A list of user-selected options regarding the furnished status. 
+                            Options include 'Furnished', 'Unfurnished', and 'Unknown'.
 
         Returns:
         - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
         """
-        # Presort the list first for potentially faster performance
-        choice.sort()
+        if not choice:
+            # If no choices are selected, return False for all entries
+            return pd.Series([False] * len(self.df), index=self.df.index)
+        
+        filters = []
         if 'Unknown' in choice:
-            # Include rows where furnished status is NaN OR matches one of the selected choices
-            furnished_checklist_filter = self.df['furnished'].isnull() | self.df['furnished'].isin(choice)
-        else:
-            # If Unknown is NOT selected, return rows that match the selected choices (implies .notnull() by default)
-            furnished_checklist_filter = self.df['furnished'].isin(choice)
+            # Include entries where 'furnished' is NaN
+            filters.append(self.df['furnished'].isna())
+            # Remove 'Unknown' from choices to avoid filtering by it in 'isin'
+            choice = [c for c in choice if c != 'Unknown']
+        
+        if choice:
+            # For remaining choices, filter where 'furnished' matches the choices
+            filters.append(self.df['furnished'].isin(choice))
+        
+        # Combine filters using logical OR
+        furnished_checklist_filter = pd.Series(False, index=self.df.index)
+        for f in filters:
+            furnished_checklist_filter |= f
+        
         return furnished_checklist_filter
 
-    def security_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+    def security_deposit_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
         """
-        Filters the DataFrame for properties based on security deposit criteria, allowing
-        for the inclusion of properties without a security deposit listed.
+        Filter the dataframe based on whether properties with missing security deposit should be included.
 
         Args:
-        - include_missing (bool): Whether to include properties with no security deposit listed.
-        - slider_begin (float): The starting value of the range for the security deposit.
-        - slider_end (float): The ending value of the range for the security deposit.
+        - include_missing (bool): Whether properties with missing security deposit should be included.
+        - slider_begin (int): Start value of the security deposit slider.
+        - slider_end (int): End value of the security deposit slider.
 
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
-                     filter conditions based on the security deposit.
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
         """
         if include_missing:
-            # Include properties with no security deposit listed or within the specified range
+            # Include properties with missing security deposit
             security_deposit_filter = self.df['security_deposit'].isnull() | self.df['security_deposit'].between(slider_begin, slider_end)
         else:
-            # Include properties within the specified range, implicitly excludes nulls
+            # Exclude properties with missing security deposit
             security_deposit_filter = self.df['security_deposit'].between(slider_begin, slider_end)
         return security_deposit_filter
 
-    def pet_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+    def pet_deposit_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
         """
-        Filters the DataFrame for properties based on pet deposit criteria, allowing
-        for the inclusion of properties without a pet deposit listed.
+        Filter the dataframe based on whether properties with missing pet deposit should be included.
 
         Args:
-        - include_missing (bool): Whether to include properties with no pet deposit listed.
-        - slider_begin (float): The starting value of the range for the pet deposit.
-        - slider_end (float): The ending value of the range for the pet deposit.
+        - include_missing (bool): Whether properties with missing pet deposit should be included.
+        - slider_begin (int): Start value of the pet deposit slider.
+        - slider_end (int): End value of the pet deposit slider.
 
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
-                     filter conditions based on the pet deposit.
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
         """
         if include_missing:
-            # Include properties with no pet deposit listed or within the specified range
-            pet_deposit_filter = self.df['pets_deposit'].isnull() | self.df['pets_deposit'].between(slider_begin, slider_end)
+            # Include properties with missing pet deposit
+            pet_deposit_filter = self.df['pet_deposit'].isnull() | self.df['pet_deposit'].between(slider_begin, slider_end)
         else:
-            # Include properties within the specified range, implicitly excludes nulls
-            pet_deposit_filter = self.df['pets_deposit'].between(slider_begin, slider_end)
+            # Exclude properties with missing pet deposit
+            pet_deposit_filter = self.df['pet_deposit'].between(slider_begin, slider_end)
         return pet_deposit_filter
 
-    def key_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+    def key_deposit_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
         """
-        Filters the DataFrame for properties based on key deposit criteria, allowing
-        for the inclusion of properties without a key deposit listed.
-
-        This function is designed to filter properties based on the presence or absence
-        of a key deposit and whether the key deposit amount falls within a specified range.
+        Filter the dataframe based on whether properties with missing key deposit should be included.
 
         Args:
-        - include_missing (bool): Whether to include properties with no key deposit listed.
-        - slider_begin (float): The starting value of the range for the key deposit.
-        - slider_end (float): The ending value of the range for the key deposit.
+        - include_missing (bool): Whether properties with missing key deposit should be included.
+        - slider_begin (int): Start value of the key deposit slider.
+        - slider_end (int): End value of the key deposit slider.
 
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
-                     filter conditions based on the key deposit.
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
         """
         if include_missing:
-            # Include properties with no key deposit listed or within the specified range
+            # Include properties with missing key deposit
             key_deposit_filter = self.df['key_deposit'].isnull() | self.df['key_deposit'].between(slider_begin, slider_end)
         else:
-            # Include properties within the specified range, implicitly excludes nulls
+            # Exclude properties with missing key deposit
             key_deposit_filter = self.df['key_deposit'].between(slider_begin, slider_end)
         return key_deposit_filter
 
-    def other_deposit_function(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+    def other_deposit_function(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
         """
-        Filters the DataFrame for properties based on 'other' deposit criteria, allowing
-        for the inclusion of properties without an 'other' deposit listed.
+        Filter the dataframe based on whether properties with missing other deposit should be included.
 
         Args:
-        - include_missing (bool): Whether to include properties with no 'other' deposit listed.
-        - slider_begin (float): The starting value of the range for the 'other' deposit.
-        - slider_end (float): The ending value of the range for the 'other' deposit.
+        - include_missing (bool): Whether properties with missing other deposit should be included.
+        - slider_begin (int): Start value of the other deposit slider.
+        - slider_end (int): End value of the other deposit slider.
 
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
-                     filter conditions based on the 'other' deposit.
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
         """
         if include_missing:
-            # Include properties with no 'other' deposit listed or within the specified range
+            # Include properties with missing other deposit
             other_deposit_filter = self.df['other_deposit'].isnull() | self.df['other_deposit'].between(slider_begin, slider_end)
         else:
-            # Include properties within the specified range, implicitly excludes nulls
+            # Exclude properties with missing other deposit
             other_deposit_filter = self.df['other_deposit'].between(slider_begin, slider_end)
         return other_deposit_filter
 
-    def listed_date_function(self, include_missing: bool, start_date: str, end_date: str) -> pd.Series:
+    def listed_date_function(self, include_missing: bool, start_date: Union[str, pd.Timestamp], end_date: Union[str, pd.Timestamp]) -> pd.Series:
         """
-        Filters the DataFrame for properties based on the listing date criteria, allowing
-        for the inclusion of properties without a listed date.
-
-        This function allows filtering properties based on whether there is a listing date
-        specified and whether this date falls within a given range.
+        Filter the dataframe based on whether properties with missing listed date should be included.
 
         Args:
-        - include_missing (bool): Whether to include properties with no listed date.
-        - start_date (str): The starting date of the range for the listing date, formatted as 'YYYY-MM-DD'.
-        - end_date (str): The ending date of the range for the listing date, formatted as 'YYYY-MM-DD'.
+        - include_missing (bool): Whether properties with missing listed date should be included.
+        - start_date (Union[str, pd.Timestamp]): Start date of the listed date range.
+        - end_date (Union[str, pd.Timestamp]): End date of the listed date range.
 
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
-                     filter conditions based on the listing date.
+        - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
         """
+        # Convert start_date and end_date to datetime if they are strings
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+
         if include_missing:
-            # Include properties with no listed date or within the specified date range
+            # Include properties with missing listed date
             listed_date_filter = self.df['listed_date'].isnull() | self.df['listed_date'].between(start_date, end_date)
         else:
-            # Include properties within the specified date range, implicitly excludes nulls
+            # Exclude properties with missing listed date
             listed_date_filter = self.df['listed_date'].between(start_date, end_date)
         return listed_date_filter
 
-    def terms_function(self, choice: list[str]) -> pd.Series:
+    def terms_function(self, choice: List[str]) -> pd.Series:
         """
-        Filters the DataFrame based on specified terms in the 'terms' column. Supports
-        inclusion of rows with missing values ('NaN') if 'Unknown' is part of the choices.
-
-        Args:
-        - choice (list[str]): A list of terms to filter the 'terms' column by. Includes
-                              special handling for 'Unknown' to include or exclude NaN values.
-
-        Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the
-                     filter conditions. If no choices are made, it defaults to False for all rows.
-        """
-        # Ensure choice list is not empty
-        if not choice:
-            return pd.Series([False] * len(self.df), index=self.df.index)
-
-        # Presort the list for potentially faster performance
-        choice.sort()
-        # Corrected: Use re.escape for escaping regex special characters
-        choice_regex = '|'.join([re.escape(term) for term in choice if term != 'Unknown']) 
+        Filters the DataFrame based on the rental lease terms according to the user's choice.
         
-        # Handle 'Unknown' choice
-        if 'Unknown' in choice: 
-            terms_filter = self.df['terms'].isnull() | self.df['terms'].str.contains(choice_regex, na=False)
-        else: 
-            terms_filter = self.df['terms'].str.contains(choice_regex, na=False)
-
-        return terms_filter
-
-    def laundry_checklist_function(self, choice: list[str]) -> pd.Series:
-        """
-        Filters the DataFrame for properties based on selected laundry features.
-        
-        Special handling for 'Other' to include properties that do not match any of the 
-        predefined categories. 'Unknown' and 'None' are treated according to their selection.
-
         Args:
-        - choice (list[str]): A list of user-selected laundry features.
+        - choice (List[str]): A list of user-selected terms. Options could include various terms like 'Lease', 'Month-to-Month', etc.
         
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
-                    the filter conditions based on laundry features.
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
         """
-        # Return False for all rows if the choice list is empty
         if not choice:
+            # If no choices are selected, return False for all entries
             return pd.Series([False] * len(self.df), index=self.df.index)
-
-        # Special case for 'Other'
-        if 'Other' in choice:
-            other_filter = ~self.df['laundry'].isin([
-                'In Unit', 'Shared', 'Hookups', 'Included Appliances', 'Location Specific', 'Unknown'
-            ])
-            choice.remove('Other')
-        else:
-            other_filter = pd.Series([False] * len(self.df), index=self.df.index)
-
-        # Handle 'Unknown' choice
+        
+        # Handle 'Unknown' option
         if 'Unknown' in choice:
-            unknown_filter = self.df['laundry'] == 'Unknown'
-            choice.remove('Unknown')
+            unknown_filter = self.df['terms'].isnull()
+            # Remove 'Unknown' from choices to avoid filtering by it in 'str.contains'
+            choice = [c for c in choice if c != 'Unknown']
         else:
             unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
-
-        # Filter based on the remaining choices
+        
         if choice:
-            choice_filter = self.df['laundry'].isin(choice)
+            # Create a regex pattern from the choice list, escaping any special characters
+            pattern = '|'.join([re.escape(term) for term in choice])
+            # Use vectorized string matching for efficient filtering
+            terms_filter = self.df['terms'].str.contains(pattern, na=False, case=False)
         else:
-            choice_filter = pd.Series([False] * len(self.df), index=self.df.index)
-
-        # Combine all filters
-        combined_filter = choice_filter | other_filter | unknown_filter
-
+            terms_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        
+        # Combine filters
+        combined_filter = terms_filter | unknown_filter
         return combined_filter
 
-    def subtype_checklist_function(self, choice: list[str]) -> pd.Series:
+    def laundry_checklist_function(self, choice: List[str]) -> pd.Series:
         """
-        Filters the DataFrame for properties based on selected property subtypes.
-        
-        Special handling is provided for 'Unknown' to include properties without a specified subtype,
-        as well as subtypes '/A' and '/D'.
-        
+        Filters the DataFrame for laundry features based on the user's choice.
+
         Args:
-        - choice (list[str]): A list of user-selected property subtypes, including a special 'Unknown'
-                            option to include properties without a specified subtype.
-        
+        - choice (List[str]): A list of user-selected options regarding laundry features. 
+                            Options include types like 'In Unit', 'Shared', 'Hookups', 
+                            'Included Appliances', 'Location Specific', 'Unknown', and 'Other'.
+
         Returns:
-        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy
-                    the filter conditions based on property subtypes.
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
         """
-        # Ensure the choice list is not empty
         if not choice:
+            # If no choices are selected, return False for all entries
             return pd.Series([False] * len(self.df), index=self.df.index)
 
-        # Map '/A' and '/D' subtypes to 'Unknown'
-        self.df['subtype'] = self.df['subtype'].replace({'/A': None, '/D': None})
-
-        # Handle 'Unknown' selection
+        filters = []
         if 'Unknown' in choice:
-            # Include rows where subtype is NaN OR matches one of the selected choices
-            subtype_filter = self.df['subtype'].isnull() | self.df['subtype'].isin(choice)
-        else:
-            # If 'Unknown' is NOT selected, filter by the selected choices
-            subtype_filter = self.df['subtype'].isin(choice)
+            # Include entries where 'laundry' is NaN
+            filters.append(self.df['laundry'].isna())
+            # Remove 'Unknown' from choices to avoid filtering by it in 'isin'
+            choice = [c for c in choice if c != 'Unknown']
 
-        return subtype_filter
+        if 'Other' in choice:
+            # Include entries where 'laundry' is not in known categories
+            known_categories = ['In Unit', 'Shared', 'Hookups', 'Included Appliances', 'Location Specific']
+            other_filter = ~self.df['laundry'].isin(known_categories)
+            filters.append(other_filter)
+            # Remove 'Other' from choices
+            choice = [c for c in choice if c != 'Other']
+
+        if choice:
+            # Filter where 'laundry' matches the choices
+            filters.append(self.df['laundry'].isin(choice))
+
+        # Combine filters using logical OR
+        if filters:
+            laundry_checklist_filter = pd.Series([False] * len(self.df), index=self.df.index)
+            for f in filters:
+                laundry_checklist_filter |= f
+        else:
+            # If no valid choices left, return False for all entries
+            laundry_checklist_filter = pd.Series([False] * len(self.df), index=self.df.index)
+
+        return laundry_checklist_filter
+
+    def subtype_checklist_function(self, choice: List[str]) -> pd.Series:
+        """
+        Filters the DataFrame for property subtypes based on the user's choice.
+
+        Args:
+        - choice (List[str]): A list of user-selected subtypes. Options include various property types.
+
+        Returns:
+        - pd.Series: A boolean Series indicating which rows of the DataFrame satisfy the filter conditions.
+        """
+        if not choice:
+            # If no choices are selected, return False for all entries
+            return pd.Series([False] * len(self.df), index=self.df.index)
+        
+        # Handle 'Unknown' option
+        if 'Unknown' in choice:
+            unknown_filter = self.df['subtype'].isnull()
+            # Remove 'Unknown' from choices to avoid filtering by it in 'isin'
+            choice = [c for c in choice if c != 'Unknown']
+        else:
+            unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        
+        if choice:
+            # Filter where 'subtype' matches the choices
+            subtype_filter = self.df['subtype'].isin(choice)
+        else:
+            subtype_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        
+        # Combine filters
+        combined_filter = subtype_filter | unknown_filter
+        return combined_filter
     
 # Create a class to hold all of the filters for the sale page
 class BuyFilters:
