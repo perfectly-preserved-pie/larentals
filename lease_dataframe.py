@@ -204,20 +204,20 @@ df_combined = asyncio.run(remove_expired_listings(df_combined, limiter))
 df_combined = df_combined.reset_index(drop=True)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
-  (df_combined['Latitude'] < 32.5) | 
-  (df_combined['Latitude'] > 42) | 
-  (df_combined['Longitude'] < -124) | 
-  (df_combined['Longitude'] > -114)
+  (df_combined['latitude'] < 32.5) | 
+  (df_combined['latitude'] > 42) | 
+  (df_combined['longitude'] < -124) | 
+  (df_combined['longitude'] > -114)
 ]
 total_outside_ca = len(outside_ca_rows)
 counter = 0
 for row in outside_ca_rows.itertuples():
   counter += 1
-  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
+  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.latitude}, {row.longitude} which is outside California. Re-geocoding {row.mls_number}...")
   # Re-geocode the row
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
-  df_combined.at[row.Index, 'Latitude'] = coordinates[0]
-  df_combined.at[row.Index, 'Longitude'] = coordinates[1]
+  df_combined.at[row.Index, 'latitude'] = coordinates[0]
+  df_combined.at[row.Index, 'longitude'] = coordinates[1]
 # Save the new combined dataframe
 try:
   df_combined.to_parquet(path="assets/datasets/lease.parquet")
