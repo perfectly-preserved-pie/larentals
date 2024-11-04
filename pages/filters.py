@@ -41,10 +41,10 @@ class LeaseFilters:
         """
         if include_missing:
             # Include properties with missing year built
-            yrbuilt_choice = self.df['YrBuilt'].isnull() | self.df['YrBuilt'].between(slider_begin, slider_end)
+            yrbuilt_choice = self.df['year_built'].isnull() | self.df['year_built'].between(slider_begin, slider_end)
         else:
             # Exclude properties with missing year built
-            yrbuilt_choice = self.df['YrBuilt'].between(slider_begin, slider_end)
+            yrbuilt_choice = self.df['year_built'].between(slider_begin, slider_end)
         return yrbuilt_choice
     
     def garage_radio_button(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
