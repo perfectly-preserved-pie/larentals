@@ -7,14 +7,14 @@ class LeaseFilters:
     def __init__(self, df):
         self.df = df
 
-    def sqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+    def sqft_radio_button(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
         """
         Filter the dataframe based on whether properties with missing square footage should be included.
 
         Args:
         - include_missing (bool): Whether properties with missing square footage should be included.
-        - slider_begin (float): Start value of the square footage slider.
-        - slider_end (float): End value of the square footage slider.
+        - slider_begin (int): Start value of the square footage slider.
+        - slider_end (int): End value of the square footage slider.
 
         Returns:
         - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
