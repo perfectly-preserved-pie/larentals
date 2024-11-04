@@ -67,14 +67,14 @@ class LeaseFilters:
             garage_choice = self.df['parking_spaces'].between(slider_begin, slider_end)
         return garage_choice
     
-    def ppsqft_radio_button(self, include_missing: bool, slider_begin: float, slider_end: float) -> pd.Series:
+    def ppsqft_radio_button(self, include_missing: bool, slider_begin: int, slider_end: int) -> pd.Series:
         """
         Filter the dataframe based on whether properties with missing price per square foot should be included.
 
         Args:
         - include_missing (bool): Whether properties with missing price per square foot should be included.
-        - slider_begin (float): Start value of the price per square foot slider.
-        - slider_end (float): End value of the price per square foot slider.
+        - slider_begin (int): Start value of the price per square foot slider.
+        - slider_end (int): End value of the price per square foot slider.
 
         Returns:
         - pd.Series: Boolean mask indicating which rows of the dataframe satisfy the filter conditions.
