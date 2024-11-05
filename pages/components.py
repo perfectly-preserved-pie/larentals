@@ -191,7 +191,7 @@ class LeaseComponents(BaseClass):
     def create_bedrooms_slider(self):
         bedrooms_slider = html.Div([
             html.Div([
-                html.H5("bedrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Bedrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='bedrooms', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
