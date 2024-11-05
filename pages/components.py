@@ -1146,9 +1146,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+                    max=self.df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
                     step=1, 
-                    value=[0, self.df['bedrooms'].max()], 
+                    value=[0, self.df['Bedrooms'].max()], 
                     id='bedrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1178,9 +1178,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['total_bathrooms'].max(), 
+                    max=self.df['Total Bathrooms'].max(), 
                     step=1, 
-                    value=[0, self.df['total_bathrooms'].max()], 
+                    value=[0, self.df['Total Bathrooms'].max()], 
                     id='bathrooms_slider',
                     updatemode='mouseup',
                     tooltip={
