@@ -122,11 +122,6 @@ df['bedrooms'] = df['bedrooms'].astype(pd.UInt8Dtype())
 df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 
-# Check if 'ppsqft' column exists
-if 'ppsqft' not in df.columns:
-  # If it has a different name, replace 'Sqft' below with the correct column name
-  df['ppsqft'] = (df['list_price'] / df['Sqft']).round(2)
-
 # Fetch missing city names
 for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
   df.at[row.Index, 'city'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.zip_code)}", geolocator=g)
