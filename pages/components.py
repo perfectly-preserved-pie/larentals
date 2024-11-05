@@ -252,9 +252,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['Sqft'].min(),
-                    max=self.df['Sqft'].max(),
-                    value=[self.df['Sqft'].min(), self.df['Sqft'].max()],
+                    min=self.df['sqft'].min(),
+                    max=self.df['sqft'].max(),
+                    value=[self.df['sqft'].min(), self.df['sqft'].max()],
                     id='sqft_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -381,7 +381,7 @@ class LeaseComponents(BaseClass):
 
     def create_rental_terms_checklist(self):
         # Logic to calculate unique_terms
-        unique_terms = pd.Series([term for sublist in self.df['Terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
+        unique_terms = pd.Series([term for sublist in self.df['terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
         unique_terms = sorted(unique_terms)
 
         # Define term_abbreviations and terms
@@ -863,8 +863,10 @@ class LeaseComponents(BaseClass):
         return key_deposit_components
 
     def create_laundry_checklist(self):
+        # Replace NaN values with 'Unknown' before sorting
+        laundry_series = self.df['laundry'].fillna('Unknown')
         # Get unique laundry categories sorted alphabetically
-        unique_categories = sorted(self.df['laundry'].unique())
+        unique_categories = sorted(laundry_series.unique())
 
         # Create options for the checklist
         laundry_options = [
@@ -962,7 +964,7 @@ class LeaseComponents(BaseClass):
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
