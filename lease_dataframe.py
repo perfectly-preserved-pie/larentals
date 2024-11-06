@@ -147,7 +147,7 @@ df["full_street_address"] = (
     df["street_name"].str.strip() + ', ' + 
     df['city'] + ' ' + 
     df["zip_code"].astype(str)
-)
+).astype(pd.StringDtype())
 
 # Iterate through the dataframe and get the listed date and photo for rows
 df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
