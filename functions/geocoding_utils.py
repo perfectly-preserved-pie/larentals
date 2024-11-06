@@ -66,39 +66,39 @@ def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
     
     return city
 
-def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[Union[int, pd.NAType]]:
+def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[str]:
     """
-    Fetches the postal code for a given short address using forward and reverse geocoding.
-    
+    Fetches the postal code for a given address using geocoding.
+
     Parameters:
-    address (str): The short address.
-    geolocator (GoogleV3): An instance of a GoogleV3 geocoding class.
-    
+    address (str): The full street address.
+    geolocator (GoogleV3): An instance of the GoogleV3 geocoding class.
+
     Returns:
-    Optional[Union[int, type(pd.NA)]]: The postal code as an integer, or pd.NA if unsuccessful.
+    Optional[str]: The postal code as a string, or None if unsuccessful.
     """
-    # Initialize postalcode variable
     postalcode = None
 
     try:
-        geocode_info = geolocator.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
-        components = geolocator.geocode(f"{geocode_info.latitude}, {geocode_info.longitude}").raw['address_components']
-        
-        # Create a dataframe from the list of dictionaries
-        components_df = pd.DataFrame(components)
-        
-        # Iterate through rows to find the postal code
-        for row in components_df.itertuples():
-            if row.types == ['postal_code']:
-                postalcode = int(row.long_name)
-                
-        logger.info(f"Fetched postal code {postalcode} for {address}.")
-    except AttributeError:
-        logger.warning(f"Geocoding returned no results for {address}.")
-        return pd.NA
+        geocode_info = geolocator.geocode(
+            address, components={'administrative_area': 'CA', 'country': 'US'}
+        )
+        if geocode_info:
+            raw = geocode_info.raw['address_components']
+            # Find the 'postal_code'
+            postalcode = next(
+                (addr['long_name'] for addr in raw if 'postal_code' in addr['types']),
+                None
+            )
+            if postalcode:
+                logger.info(f"Fetched zip code ({postalcode}) for {address}.")
+            else:
+                logger.warning(f"No postal code found in geocoding results for {address}.")
+        else:
+            logger.warning(f"Geocoding returned no results for {address}.")
     except Exception as e:
-        logger.warning(f"Couldn't fetch postal code for {address} because {e}.")
-        return pd.NA
+        logger.warning(f"Couldn't fetch zip code for {address} because of {e}.")
+        postalcode = None
 
     return postalcode
 

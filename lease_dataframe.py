@@ -89,7 +89,7 @@ df.dropna(subset=['street_name'], inplace=True)
 # Columns to clean
 cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'sqft', 'pet_deposit']
 # Remove all non-numeric characters, convert to numeric, fill NaNs with pd.NA, and cast to Nullable Integer Type
-df[cols] = df[cols].replace(to_replace='[^\d]', value='', regex=True).apply(pd.to_numeric, errors='raise').astype(pd.UInt16Dtype())
+df[cols] = df[cols].replace(to_replace=r'[^\d]', value='', regex=True).apply(pd.to_numeric, errors='raise').astype(pd.UInt16Dtype())
 
 df['lot_size'] = df['lot_size'].astype(pd.UInt32Dtype())
 df['year_built'] = df['year_built'].astype(pd.UInt16Dtype())
@@ -99,7 +99,7 @@ df['street_number'] = df['street_number'].astype(pd.StringDtype())
 df['lot_size'] = df['lot_size'].apply(pd.to_numeric, errors='raise').astype(pd.UInt32Dtype())
 
 # Cast the following columns as a float and remove the leading $ sign
-df['ppsqft'] = df['ppsqft'].replace(to_replace='[^\d.]', value='', regex=True).astype(pd.Float32Dtype())
+df['ppsqft'] = df['ppsqft'].replace(to_replace=r'[^\d]', value='', regex=True).astype(pd.Float32Dtype())
 
 # Columns to be cast as strings
 cols = ['mls_number', 'phone_number', 'street_name', 'zip_code', 'city']
@@ -135,7 +135,9 @@ df["short_address"] = (df["street_number"].astype(str) + ' ' + df["street_name"]
 for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].itertuples():
   short_address = df.at[row.Index, 'short_address']
   missing_zip_code = return_zip_code(short_address, geolocator=g)
-  df.at[row.Index, 'zip_code'] = (missing_zip_code).astype(pd.StringDtype())
+  df.at[row.Index, 'zip_code'] = missing_zip_code
+
+df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
 
 # Tag each row with the date it was processed
 for row in df.itertuples():
