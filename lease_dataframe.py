@@ -88,15 +88,29 @@ df.dropna(subset=['street_name'], inplace=True)
 
 # Columns to clean
 cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'sqft', 'pet_deposit']
-# Remove all non-numeric characters, convert to numeric, fill NaNs with pd.NA, and cast to Nullable Integer Type
-df[cols] = df[cols].replace(to_replace=r'[^\d]', value='', regex=True).apply(pd.to_numeric, errors='raise').astype(pd.UInt16Dtype())
+# Remove all non-numeric characters, convert to numeric, round to integers, fill NaNs with pd.NA, and cast to Nullable Integer Type
+df[cols] = (
+    df[cols]
+    .replace({r'\$': '', ',': ''}, regex=True)
+    .apply(pd.to_numeric, errors='coerce')
+    .round(0)  # Round to ensure values are integers
+    .astype(pd.Int64Dtype())  # Use Int64Dtype to handle pd.NA
+)
 
-df['lot_size'] = df['lot_size'].astype(pd.UInt32Dtype())
-df['year_built'] = df['year_built'].astype(pd.UInt16Dtype())
-df['parking_spaces'] = df['parking_spaces'].astype(pd.UInt8Dtype())
+# Convert other columns to appropriate data types
+df = df.astype({
+  'year_built': 'UInt16',
+  'parking_spaces': 'UInt8',
+  'street_number': 'string'
+})
 
-df['street_number'] = df['street_number'].astype(pd.StringDtype())
-df['lot_size'] = df['lot_size'].apply(pd.to_numeric, errors='raise').astype(pd.UInt32Dtype())
+# Handle lot_size column separately by removing commas, converting to numeric, and then to UInt32
+df['lot_size'] = (
+  df['lot_size']
+  .replace({',': ''}, regex=True)
+  .apply(pd.to_numeric, errors='coerce')
+  .astype(pd.UInt32Dtype())
+)
 
 # Cast the following columns as a float and remove the leading $ sign
 df['ppsqft'] = df['ppsqft'].replace(to_replace=r'[^\d]', value='', regex=True).astype(pd.Float32Dtype())
@@ -109,6 +123,9 @@ df[cols] = df[cols].astype(pd.StringDtype())
 cols = ['pet_policy', 'furnished', 'subtype', 'terms', 'laundry']
 df[cols] = df[cols].astype(pd.CategoricalDtype())
 
+# Extract total bathrooms and bathroom types (Full, Three-Quarter, Half, Quarter)
+df[['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']] = df['bathrooms'].str.extract(r'(\d+\.\d+)\s\((\d+)\s(\d+)\s(\d+)\s(\d+)\)').astype(float)
+
 # Convert bathroom columns to nullable integer type
 for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']:
   df[col] = df[col].astype(pd.UInt8Dtype())
@@ -118,9 +135,6 @@ df.drop(columns=['bathrooms'], inplace=True)
 
 # Convert bedrooms to nullable integer type
 df['bedrooms'] = df['bedrooms'].astype(pd.UInt8Dtype())
-# These columns should stay floats
-df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise', downcast='float')
-df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 
 # Fetch missing city names
 for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
@@ -160,8 +174,9 @@ for row in df.itertuples():
   df.at[row.Index, 'latitude'] = coordinates[0]
   df.at[row.Index, 'longitude'] = coordinates[1]
 
-# Extract total bathrooms and bathroom types (Full, Three-Quarter, Half, Quarter)
-df[['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']] = df['bathrooms'].str.extract(r'(\d+\.\d+)\s\((\d+)\s(\d+)\s(\d+)\s(\d+)\)').astype(float)
+# These columns should stay floats
+df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise', downcast='float')
+df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 
 ## Laundry Features ##
 # Replace all empty values in the following column with "Unknown" and cast the column as dtype string
