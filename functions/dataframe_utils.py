@@ -62,9 +62,7 @@ def update_dataframe_with_listing_data(
     """
     for row in df.itertuples():
         mls_number = row.mls_number
-
         try:
-            # Try fetching data from BHHS
             webscrape = asyncio.run(
                 webscrape_bhhs(
                     url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
@@ -76,39 +74,32 @@ def update_dataframe_with_listing_data(
 
             if not all(webscrape):
                 logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
-
-                # If BHHS didn't return data, try fetching from The Agency
                 agency_data = asyncio.run(
                     fetch_the_agency_data(
                         mls_number, row_index=row.Index, total_rows=len(df)
                     )
                 )
 
-                listed_date, listing_url = agency_data
-                if listed_date:
-                    df.at[row.Index, 'listed_date'] = listed_date
-                if listing_url:
-                    df.at[row.Index, 'listing_url'] = listing_url
-
-                if not listed_date and not listing_url:
-                    logger.error(f"No listed date or listing URL found for MLS {mls_number} from The Agency.")
-
-                if agency_data[2]:
-                    df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                        agency_data[2], mls_number, imagekit_instance=imagekit_instance
-                    )
+                if agency_data:
+                    listed_date, listing_url, mls_photo = agency_data
+                    if listed_date:
+                        df.at[row.Index, 'listed_date'] = listed_date
+                    if listing_url:
+                        df.at[row.Index, 'listing_url'] = listing_url
+                    if mls_photo:
+                        df.at[row.Index, 'mls_photo'] = imagekit_transform(
+                            mls_photo, mls_number, imagekit_instance=imagekit_instance
+                        )
+                    else:
+                        logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
                 else:
-                    logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
-
+                    logger.error(f"No listed date or listing URL found for MLS {mls_number} from The Agency.")
             else:
-                # BHHS returned data, update the DataFrame
                 df.at[row.Index, 'listed_date'] = webscrape[0]
                 df.at[row.Index, 'mls_photo'] = imagekit_transform(
                     webscrape[1], mls_number, imagekit_instance=imagekit_instance
                 )
                 df.at[row.Index, 'listing_url'] = webscrape[2]
-
         except Exception as e:
             logger.error(f"Error processing MLS {mls_number} at index {row.Index}: {e}")
-
     return df

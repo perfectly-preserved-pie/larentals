@@ -11,7 +11,7 @@ import requests
 import sys
 
 # Initialize logging
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
 
 # Limit to 1 request per second
 limiter = AsyncLimiter(1, 1)
@@ -149,61 +149,48 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
         "Pragma": "no-cache",
         "Cache-Control": "no-cache"
     }
-
-    # Normalize the input MLS number by removing '-' and '_'
     normalized_mls_number = mls_number.replace("-", "").replace("_", "")
-
-    # Define the payload with the necessary parameters
     payload = {
         "urlquery": f"/rent/mls-;{mls_number}/rental-true/dsort-cl",
         "countrystate": "",
         "zoom": 21
     }
-
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=payload)
-            response.raise_for_status()  # Raise an error for HTTP status codes >= 400
-            data = response.json()
+            response.raise_for_status()
+            response.encoding = 'utf-8'  # Ensure the response is decoded as UTF-8
+            try:
+                data = response.json()
+            except ValueError as e:
+                logger.error(f"Value error occurred during JSON parsing: {e}")
+                logger.debug(f"Response content: {response.content}")
+                return None, None, None
 
-            # Find the item with the matching mlsNumber or idcMlsNumber
             for item in data.get("items", []):
                 item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
                 item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
-
                 if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
-                    # Extract listDate and convert it to a date only (without time)
                     list_date_timestamp = int(item.get("listDate", 0))
                     list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
                     detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
-                    # Now fetch the detail page to scrape the image source
                     detail_response = await client.get(detail_url, headers=headers)
                     detail_response.raise_for_status()
                     detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-                    # Find the image with "_1" in the filename
                     img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
                     img_src = img_tag["src"] if img_tag else None
-
                     logger.info(f"Successfully fetched data for MLS {mls_number}")
-                    
                     return list_date, detail_url, img_src
-
-            # If no matching MLS number is found
             logger.warning(f"No property found with MLS Number: {mls_number}")
             return None, None, None
-
     except httpx.HTTPStatusError as e:
         logger.error(f"HTTP error occurred: {e}")
         logger.debug(f"Response content: {e.response.text}")
     except httpx.RequestError as e:
         logger.error(f"Request error occurred: {e}")
-    except ValueError as e:
-        logger.error(f"Value error occurred during JSON parsing: {e}")
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
-
-    # Return None values if property is not found or in case of errors
-    return None, None
+    return None, None, None
 
 # Example usage in an async context
 # import asyncio
