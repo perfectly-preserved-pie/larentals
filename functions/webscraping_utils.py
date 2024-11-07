@@ -211,8 +211,9 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
                     detail_response = requests.get(detail_url, headers=headers)
                     detail_response.raise_for_status()
                     detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-                    img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
-                    img_src = img_tag["src"] if img_tag else None
+                    #logger.debug(detail_soup.prettify())
+                    img_tag = detail_soup.find("img", {"data-src": lambda x: x and x.endswith("_1.jpg")})
+                    img_src = img_tag["data-src"] if img_tag else None
                     logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
                     return list_date, detail_url, img_src
         logger.warning(f"No property found on The Agency with normalized MLS Number: {normalized_mls_number}")
