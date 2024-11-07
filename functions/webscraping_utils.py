@@ -199,7 +199,7 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
         closest_matches = difflib.get_close_matches(normalized_mls_number, all_mls_numbers, n=1, cutoff=0.8)
         if closest_matches:
             best_match = closest_matches[0]
-            logger.debug(f"Best match for MLS Number {normalized_mls_number} is {best_match} with a similarity score of {difflib.SequenceMatcher(None, normalized_mls_number, best_match).ratio()}.")
+            logger.info(f"Best match for MLS Number {normalized_mls_number} is {best_match} with a similarity score of {difflib.SequenceMatcher(None, normalized_mls_number, best_match).ratio()}.")
 
             for item in data.get("items", []):
                 item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
