@@ -84,15 +84,14 @@ def update_dataframe_with_listing_data(
                     )
                 )
 
-                if agency_data[0]:
-                    df.at[row.Index, 'listed_date'] = agency_data[0]
-                else:
-                    logger.warning(f"No listed date found for MLS {mls_number} from The Agency.")
+                listed_date, listing_url = agency_data
+                if listed_date:
+                    df.at[row.Index, 'listed_date'] = listed_date
+                if listing_url:
+                    df.at[row.Index, 'listing_url'] = listing_url
 
-                if agency_data[1]:
-                    df.at[row.Index, 'listing_url'] = agency_data[1]
-                else:
-                    logger.warning(f"No listing URL found for MLS {mls_number} from The Agency.")
+                if not listed_date and not listing_url:
+                    logger.error(f"No listed date or listing URL found for MLS {mls_number} from The Agency.")
 
                 if agency_data[2]:
                     df.at[row.Index, 'mls_photo'] = imagekit_transform(
