@@ -12,6 +12,7 @@ import sys
 import json
 import zlib
 import brotli
+import difflib
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
@@ -161,8 +162,8 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
     logger.debug(payload)
     try:
         response = requests.post(url, headers=headers, json=payload)
-        logger.debug(response.text)
         response.raise_for_status()
+        logger.debug(response.text)
 
         # Check if the response content is already in JSON format
         try:
@@ -189,20 +190,31 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
                 logger.debug(f"Response content: {response.content}")
                 return None, None, None
 
-        for item in data.get("items", []):
-            item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
-            item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
-            if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
-                list_date_timestamp = int(item.get("listDate", 0))
-                list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
-                detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
-                detail_response = requests.get(detail_url, headers=headers)
-                detail_response.raise_for_status()
-                detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-                img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
-                img_src = img_tag["src"] if img_tag else None
-                logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
-                return list_date, detail_url, img_src
+        # Extract MLS numbers from the response
+        mls_numbers = [item.get("mlsNumber", "").replace("-", "").replace("_", "") for item in data.get("items", [])]
+        idc_mls_numbers = [item.get("idcMlsNumber", "").replace("-", "").replace("_", "") for item in data.get("items", [])]
+        all_mls_numbers = mls_numbers + idc_mls_numbers
+
+        # Find the closest match to the normalized MLS number
+        closest_matches = difflib.get_close_matches(normalized_mls_number, all_mls_numbers, n=1, cutoff=0.8)
+        if closest_matches:
+            best_match = closest_matches[0]
+            logger.debug(f"Best match for MLS Number {normalized_mls_number} is {best_match} with a similarity score of {difflib.SequenceMatcher(None, normalized_mls_number, best_match).ratio()}.")
+
+            for item in data.get("items", []):
+                item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
+                item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
+                if item_mls_number == best_match or item_idc_mls_number == best_match:
+                    list_date_timestamp = int(item.get("listDate", 0))
+                    list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
+                    detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
+                    detail_response = requests.get(detail_url, headers=headers)
+                    detail_response.raise_for_status()
+                    detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
+                    img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
+                    img_src = img_tag["src"] if img_tag else None
+                    logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
+                    return list_date, detail_url, img_src
         logger.warning(f"No property found on The Agency with normalized MLS Number: {normalized_mls_number}")
         return None, None, None
     except requests.HTTPError as e:
