@@ -4,15 +4,15 @@ from datetime import datetime, timezone
 from loguru import logger
 from typing import Tuple, Optional
 import asyncio
+import brotli
+import difflib
 import httpx
+import json
 import pandas as pd
 import re
 import requests
 import sys
-import json
 import zlib
-import brotli
-import difflib
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
