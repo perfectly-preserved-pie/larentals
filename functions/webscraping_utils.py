@@ -9,6 +9,9 @@ import pandas as pd
 import re
 import requests
 import sys
+import json
+import zlib
+import brotli
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
@@ -131,7 +134,7 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
     """
     url = "https://search-service.idcrealestate.com/api/property"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
         "Accept": "*/*",
         "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -151,42 +154,61 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
     }
     normalized_mls_number = mls_number.replace("-", "").replace("_", "")
     payload = {
-        "urlquery": f"/rent/mls-;{mls_number}/rental-true/dsort-cl",
+        "urlquery": f"/rent/search-{normalized_mls_number}/rental-true",
         "countrystate": "",
         "zoom": 21
     }
+    logger.debug(payload)
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=headers, json=payload)
-            response.raise_for_status()
-            response.encoding = 'utf-8'  # Ensure the response is decoded as UTF-8
+        response = requests.post(url, headers=headers, json=payload)
+        logger.debug(response.text)
+        response.raise_for_status()
+
+        # Check if the response content is already in JSON format
+        try:
+            data = response.json()
+        except ValueError:
+            # Decompress the response content if necessary
+            content = response.content
             try:
-                data = response.json()
-            except ValueError as e:
-                logger.error(f"Value error occurred during JSON parsing: {e}")
+                if response.headers.get('Content-Encoding') == 'gzip':
+                    content = zlib.decompress(content, zlib.MAX_WBITS | 16)
+                elif response.headers.get('Content-Encoding') == 'deflate':
+                    content = zlib.decompress(content)
+                elif response.headers.get('Content-Encoding') == 'br':
+                    content = brotli.decompress(content)
+                else:
+                    content = response.content
+
+                response.encoding = 'utf-8'  # Ensure the response is decoded as UTF-8
+
+                # Attempt to decode the response content manually
+                data = json.loads(content)
+            except (zlib.error, brotli.error, ValueError) as e:
+                logger.error(f"Decompression or JSON parsing error: {e}")
                 logger.debug(f"Response content: {response.content}")
                 return None, None, None
 
-            for item in data.get("items", []):
-                item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
-                item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
-                if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
-                    list_date_timestamp = int(item.get("listDate", 0))
-                    list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
-                    detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
-                    detail_response = await client.get(detail_url, headers=headers)
-                    detail_response.raise_for_status()
-                    detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-                    img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
-                    img_src = img_tag["src"] if img_tag else None
-                    logger.info(f"Successfully fetched data for MLS {mls_number}")
-                    return list_date, detail_url, img_src
-            logger.warning(f"No property found with MLS Number: {mls_number}")
-            return None, None, None
-    except httpx.HTTPStatusError as e:
+        for item in data.get("items", []):
+            item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
+            item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
+            if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
+                list_date_timestamp = int(item.get("listDate", 0))
+                list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
+                detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
+                detail_response = requests.get(detail_url, headers=headers)
+                detail_response.raise_for_status()
+                detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
+                img_tag = detail_soup.find("img", {"src": lambda x: x and "_1" in x})
+                img_src = img_tag["src"] if img_tag else None
+                logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
+                return list_date, detail_url, img_src
+        logger.warning(f"No property found on The Agency with normalized MLS Number: {normalized_mls_number}")
+        return None, None, None
+    except requests.HTTPError as e:
         logger.error(f"HTTP error occurred: {e}")
         logger.debug(f"Response content: {e.response.text}")
-    except httpx.RequestError as e:
+    except requests.RequestException as e:
         logger.error(f"Request error occurred: {e}")
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
