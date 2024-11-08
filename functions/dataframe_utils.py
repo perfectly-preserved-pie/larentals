@@ -76,7 +76,7 @@ def update_dataframe_with_listing_data(
                 logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
                 agency_data = asyncio.run(
                     fetch_the_agency_data(
-                        mls_number, row_index=row.Index, total_rows=len(df)
+                        mls_number, row_index=row.Index, total_rows=len(df), full_street_address=row.full_street_address
                     )
                 )
 

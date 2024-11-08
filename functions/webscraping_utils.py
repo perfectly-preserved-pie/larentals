@@ -117,7 +117,30 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
 
     return None, None, None
 
-async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int) -> Tuple[Optional[datetime], Optional[str], Optional[str]]:
+def extract_street_name(full_street_address: str) -> Optional[str]:
+    # Split the address at the comma
+    address_first_part = full_street_address.split(',')[0].strip()
+    # Split the first part by spaces
+    tokens = address_first_part.split()
+    # Check if tokens are sufficient
+    if len(tokens) >= 2:
+        street_number = tokens[0]
+        possible_direction = tokens[1].upper()
+        if possible_direction in ['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW']:
+            # Direction present
+            if len(tokens) >= 3:
+                street_name = tokens[2]
+            else:
+                return None
+        else:
+            # No direction
+            street_name = tokens[1]
+        return street_name.lower()
+    else:
+        # Can't extract street name
+        return None
+
+async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str) -> Tuple[Optional[datetime], Optional[str], Optional[str]]:
     """
     Asynchronously fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
 
@@ -159,64 +182,44 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
         "countrystate": "",
         "zoom": 21
     }
-    logger.debug(payload)
+    #logger.debug(payload)
     try:
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
-        logger.debug(response.text)
+        #logger.debug(response.text)
 
-        # Check if the response content is already in JSON format
-        try:
-            data = response.json()
-        except ValueError:
-            # Decompress the response content if necessary
-            content = response.content
-            try:
-                if response.headers.get('Content-Encoding') == 'gzip':
-                    content = zlib.decompress(content, zlib.MAX_WBITS | 16)
-                elif response.headers.get('Content-Encoding') == 'deflate':
-                    content = zlib.decompress(content)
-                elif response.headers.get('Content-Encoding') == 'br':
-                    content = brotli.decompress(content)
-                else:
-                    content = response.content
+        # Parse JSON response
+        data = response.json()
 
-                response.encoding = 'utf-8'  # Ensure the response is decoded as UTF-8
+        # Extract the street name using the new function
+        street_name = extract_street_name(full_street_address)
+        if not street_name:
+            logger.warning(f"Could not extract street name from address: {full_street_address}")
+            return None, None, None
+        logger.debug(f"Extracted street name: {street_name}")
 
-                # Attempt to decode the response content manually
-                data = json.loads(content)
-            except (zlib.error, brotli.error, ValueError) as e:
-                logger.error(f"Decompression or JSON parsing error: {e}")
-                logger.debug(f"Response content: {response.content}")
-                return None, None, None
+        # Filter items based on the street name
+        filtered_items = [
+            item for item in data.get("items", [])
+            if street_name in item.get("fullAddress", "").lower()
+        ]
 
-        # Extract MLS numbers from the response
-        mls_numbers = [item.get("mlsNumber", "").replace("-", "").replace("_", "") for item in data.get("items", [])]
-        idc_mls_numbers = [item.get("idcMlsNumber", "").replace("-", "").replace("_", "") for item in data.get("items", [])]
-        all_mls_numbers = mls_numbers + idc_mls_numbers
-
-        # Find the closest match to the normalized MLS number
-        closest_matches = difflib.get_close_matches(normalized_mls_number, all_mls_numbers, n=1, cutoff=0.8)
-        if closest_matches:
-            best_match = closest_matches[0]
-            logger.info(f"Best match for MLS Number {normalized_mls_number} is {best_match} with a similarity score of {difflib.SequenceMatcher(None, normalized_mls_number, best_match).ratio()}.")
-
-            for item in data.get("items", []):
+        if filtered_items:
+            for item in filtered_items:
                 item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
                 item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
-                if item_mls_number == best_match or item_idc_mls_number == best_match:
+                if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
                     list_date_timestamp = int(item.get("listDate", 0))
                     list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
                     detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
                     detail_response = requests.get(detail_url, headers=headers)
                     detail_response.raise_for_status()
                     detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-                    #logger.debug(detail_soup.prettify())
                     img_tag = detail_soup.find("img", {"data-src": lambda x: x and x.endswith("_1.jpg")})
                     img_src = img_tag["data-src"] if img_tag else None
                     logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
                     return list_date, detail_url, img_src
-        logger.warning(f"No property found on The Agency with normalized MLS Number: {normalized_mls_number}")
+        logger.warning(f"No property found on The Agency with normalized MLS Number: {normalized_mls_number} and street name: {street_name}")
         return None, None, None
     except requests.HTTPError as e:
         logger.error(f"HTTP error occurred: {e}")
