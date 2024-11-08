@@ -125,7 +125,7 @@ def extract_street_name(full_street_address: str) -> Optional[str]:
     It splits the address to isolate the street name component.
 
     Args:
-        full_street_address (str): The full street address (e.g., "118 S Cordova ST #B, ALHAMBRA 91801.0")
+        full_street_address (str): The full street address (e.g., "118 S Cordova ST #B, ALHAMBRA 91801")
 
     Returns:
         Optional[str]: The extracted street name in lowercase if successful; otherwise, None.
