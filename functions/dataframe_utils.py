@@ -74,13 +74,14 @@ def update_dataframe_with_listing_data(
 
             if not all(webscrape):
                 logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
-                agency_data = asyncio.run(
-                    fetch_the_agency_data(
-                        mls_number, row_index=row.Index, total_rows=len(df), full_street_address=row.full_street_address
-                    )
+                agency_data = fetch_the_agency_data(
+                    mls_number,
+                    row_index=row.Index,
+                    total_rows=len(df),
+                    full_street_address=row.full_street_address
                 )
 
-                if agency_data:
+                if agency_data and any(agency_data):
                     listed_date, listing_url, mls_photo = agency_data
                     if listed_date:
                         df.at[row.Index, 'listed_date'] = listed_date
@@ -88,16 +89,20 @@ def update_dataframe_with_listing_data(
                         df.at[row.Index, 'listing_url'] = listing_url
                     if mls_photo:
                         df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                            mls_photo, mls_number, imagekit_instance=imagekit_instance
+                            mls_photo,
+                            mls_number,
+                            imagekit_instance=imagekit_instance
                         )
                     else:
                         logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
                 else:
-                    logger.error(f"No listed date or listing URL found for MLS {mls_number} from The Agency.")
+                    pass
             else:
                 df.at[row.Index, 'listed_date'] = webscrape[0]
                 df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                    webscrape[1], mls_number, imagekit_instance=imagekit_instance
+                    webscrape[1],
+                    mls_number,
+                    imagekit_instance=imagekit_instance
                 )
                 df.at[row.Index, 'listing_url'] = webscrape[2]
         except Exception as e:
