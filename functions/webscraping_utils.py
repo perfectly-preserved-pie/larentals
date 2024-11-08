@@ -269,11 +269,6 @@ def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full
         logger.error(f"An unexpected error occurred: {e}")
     return None, None, None
 
-# Example usage in an async context
-# import asyncio
-# asyncio.run(fetch_property_data("24_454861"))
-
-
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     """
     Updates the HOA fee value for a given MLS number by scraping the HOA fee from the detailed listing webpage.
