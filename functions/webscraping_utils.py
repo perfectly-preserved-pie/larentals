@@ -118,6 +118,18 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
     return None, None, None
 
 def extract_street_name(full_street_address: str) -> Optional[str]:
+    """
+    Extracts the street name from a full street address.
+
+    This function handles addresses with or without unit numbers and directional indicators.
+    It splits the address to isolate the street name component.
+
+    Args:
+        full_street_address (str): The full street address (e.g., "118 S Cordova ST #B, ALHAMBRA 91801.0")
+
+    Returns:
+        Optional[str]: The extracted street name in lowercase if successful; otherwise, None.
+    """
     # Split the address at the comma
     address_first_part = full_street_address.split(',')[0].strip()
     # Remove unit numbers (e.g., #A, #1/2)
@@ -140,9 +152,19 @@ def extract_street_name(full_street_address: str) -> Optional[str]:
     else:
         # Can't extract street name
         return None
-    
+
 def extract_zip_code(full_street_address: str) -> Optional[str]:
-    import re
+    """
+    Extracts the ZIP code from a full street address.
+
+    Uses regular expressions to find a 5-digit ZIP code, optionally handling ZIP+4 formats.
+
+    Args:
+        full_street_address (str): The full street address (e.g., "118 S Cordova ST #B, ALHAMBRA 91801.0")
+
+    Returns:
+        Optional[str]: The extracted ZIP code if successful; otherwise, None.
+    """
     match = re.search(r'\b\d{5}(?:-\d{4})?\b', full_street_address)
     if match:
         return match.group()
