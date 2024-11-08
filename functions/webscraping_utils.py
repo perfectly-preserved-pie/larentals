@@ -173,19 +173,20 @@ def extract_zip_code(full_street_address: str) -> Optional[str]:
 
 def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
     """
-    Asynchronously fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
+    Fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.
     row_index (int): The row index for logging or debugging purposes.
     total_rows (int): Total rows being processed for progress indication.
+    full_street_address (str): The full street address of the property (e.g., "118 S Cordova ST #B, ALHAMBRA 91801").
 
     Returns:
-    Tuple[Optional[datetime], Optional[str], Optional[str]]: The listing date (as a datetime.date object),
-                                                            the detail URL of the property, and the 
-                                                            first property image.
-                                                            Returns (None, None, None) if no matching
-                                                            property is found or if an error occurs.
+    Tuple[Optional[datetime.date], Optional[str], Optional[str]]: 
+        - The listing date (as a datetime.date object) if found; otherwise, None.
+        - The detail URL of the property if found; otherwise, None.
+        - The first property image URL if found; otherwise, None.
+        Returns (None, None, None) if no matching property is found or if an error occurs.
     """
     url = "https://search-service.idcrealestate.com/api/property"
     headers = {
