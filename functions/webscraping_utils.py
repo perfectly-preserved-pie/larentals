@@ -160,7 +160,7 @@ def extract_zip_code(full_street_address: str) -> Optional[str]:
     Uses regular expressions to find a 5-digit ZIP code, optionally handling ZIP+4 formats.
 
     Args:
-        full_street_address (str): The full street address (e.g., "118 S Cordova ST #B, ALHAMBRA 91801.0")
+        full_street_address (str): The full street address (e.g., "118 S Cordova ST #B, ALHAMBRA 91801")
 
     Returns:
         Optional[str]: The extracted ZIP code if successful; otherwise, None.
