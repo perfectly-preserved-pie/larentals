@@ -120,11 +120,12 @@ async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: 
 def extract_street_name(full_street_address: str) -> Optional[str]:
     # Split the address at the comma
     address_first_part = full_street_address.split(',')[0].strip()
+    # Remove unit numbers (e.g., #A, #1/2)
+    address_first_part = re.sub(r'#\S+', '', address_first_part)
     # Split the first part by spaces
     tokens = address_first_part.split()
     # Check if tokens are sufficient
     if len(tokens) >= 2:
-        street_number = tokens[0]
         possible_direction = tokens[1].upper()
         if possible_direction in ['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW']:
             # Direction present
@@ -139,8 +140,16 @@ def extract_street_name(full_street_address: str) -> Optional[str]:
     else:
         # Can't extract street name
         return None
+    
+def extract_zip_code(full_street_address: str) -> Optional[str]:
+    import re
+    match = re.search(r'\b\d{5}(?:-\d{4})?\b', full_street_address)
+    if match:
+        return match.group()
+    else:
+        return None
 
-async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str) -> Tuple[Optional[datetime], Optional[str], Optional[str]]:
+def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
     """
     Asynchronously fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
 
@@ -191,36 +200,43 @@ async def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int
         # Parse JSON response
         data = response.json()
 
-        # Extract the street name using the new function
+        # Extract the street name and zip code
         street_name = extract_street_name(full_street_address)
         if not street_name:
             logger.warning(f"Could not extract street name from address: {full_street_address}")
             return None, None, None
         logger.debug(f"Extracted street name: {street_name}")
 
-        # Filter items based on the street name
+        zip_code = extract_zip_code(full_street_address)
+        if not zip_code:
+            logger.warning(f"Could not extract zip code from address: {full_street_address}")
+            return None, None, None
+        logger.debug(f"Extracted zip code: {zip_code}")
+
+        # Filter items based on the street name and zip code
         filtered_items = [
             item for item in data.get("items", [])
-            if street_name in item.get("fullAddress", "").lower()
+            if street_name in item.get("fullAddress", "").lower() and zip_code in item.get("fullAddress", "").lower()
         ]
 
         if filtered_items:
-            for item in filtered_items:
-                item_mls_number = item.get("mlsNumber", "").replace("-", "").replace("_", "")
-                item_idc_mls_number = item.get("idcMlsNumber", "").replace("-", "").replace("_", "")
-                if item_mls_number == normalized_mls_number or item_idc_mls_number == normalized_mls_number:
-                    list_date_timestamp = int(item.get("listDate", 0))
-                    list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
-                    detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
-                    detail_response = requests.get(detail_url, headers=headers)
-                    detail_response.raise_for_status()
-                    detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-                    img_tag = detail_soup.find("img", {"data-src": lambda x: x and x.endswith("_1.jpg")})
-                    img_src = img_tag["data-src"] if img_tag else None
-                    logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
-                    return list_date, detail_url, img_src
-        logger.warning(f"No property found on The Agency with normalized MLS Number: {normalized_mls_number} and street name: {street_name}")
+            if len(filtered_items) > 1:
+                logger.warning(f"Multiple properties found for street name '{street_name}' and zip code '{zip_code}'. Using the first one.")
+            item = filtered_items[0]
+            list_date_timestamp = int(item.get("listDate", 0))
+            list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
+            detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
+            detail_response = requests.get(detail_url, headers=headers)
+            detail_response.raise_for_status()
+            detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
+            img_tag = detail_soup.find("img", {"data-src": lambda x: x and x.endswith("_1.jpg")})
+            img_src = img_tag["data-src"] if img_tag else None
+            logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
+            return list_date, detail_url, img_src
+
+        logger.warning(f"No property found on The Agency with street name '{street_name}' and zip code '{zip_code}'.")
         return None, None, None
+
     except requests.HTTPError as e:
         logger.error(f"HTTP error occurred: {e}")
         logger.debug(f"Response content: {e.response.text}")
