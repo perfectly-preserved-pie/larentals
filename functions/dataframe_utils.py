@@ -3,8 +3,6 @@ from functions.webscraping_utils import check_expired_listing_bhhs, check_expire
 from loguru import logger
 import asyncio
 import pandas as pd
-import re
-import requests
 import sys
 
 # Initialize logging
