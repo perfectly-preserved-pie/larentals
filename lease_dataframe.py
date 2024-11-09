@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_expired_listings, update_dataframe_with_listing_data
+from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -211,7 +211,7 @@ df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 # Iterate through the dataframe and drop rows with expired listings
-df_combined = asyncio.run(remove_expired_listings(df_combined, limiter))
+df_combined = remove_inactive_listings(df_combined)
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
 # Filter the dataframe for rows outside of California

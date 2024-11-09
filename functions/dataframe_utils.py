@@ -1,6 +1,6 @@
 from aiolimiter import AsyncLimiter
 from functions.mls_image_processing_utils import imagekit_transform
-from functions.webscraping_utils import check_expired_listing, webscrape_bhhs, fetch_the_agency_data
+from functions.webscraping_utils import check_expired_listing_bhhs, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
 import asyncio
 import pandas as pd
@@ -49,7 +49,7 @@ async def remove_expired_listings(df: pd.DataFrame, limiter: AsyncLimiter) -> pd
     df_dropped_expired = df.drop(indexes_to_drop)
     return df_dropped_expired
 
-def check_sold_listing(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool:
+def check_expired_listing_theagency(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool:
     """
     Checks if a listing has been sold based on the 'IsSold' key from The Agency API.
 
@@ -100,31 +100,42 @@ def check_sold_listing(listing_url: str, mls_number: str, board_code: str = 'clr
 
     return False
 
-def remove_sold_listings(df: pd.DataFrame) -> pd.DataFrame:
+def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Checks each listing with 'listing_url' containing 'idcrealestate.com' to determine if it has been sold,
-    and removes rows with sold listings.
+    Checks each listing to determine if it has expired or been sold, and removes inactive listings.
+    If 'bhhs' is in the 'listing_url', it checks for expired listings.
+    If 'idcrealestate' is in the 'listing_url', it checks for sold listings.
 
     Parameters:
     df (pd.DataFrame): The DataFrame containing listing URLs and MLS numbers.
 
     Returns:
-    pd.DataFrame: The DataFrame with sold listings removed.
+    pd.DataFrame: The DataFrame with inactive listings removed.
     """
     indexes_to_drop = []
 
-    for index, row in df.iterrows():
-        if 'idcrealestate.com' in row['listing_url']:
-            is_sold = check_sold_listing(row['listing_url'], row['mls_number'])
+    for row in df.itertuples():
+        listing_url = getattr(row, 'listing_url', '')
+        mls_number = getattr(row, 'mls_number', '')
+
+        if 'bhhs' in listing_url:
+            # Check if the listing has expired
+            is_expired = check_expired_listing_bhhs(listing_url, mls_number)
+            if is_expired:
+                indexes_to_drop.append(row.Index)
+                logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired.")
+        elif 'idcrealestate' in listing_url:
+            # Check if the listing has been sold
+            is_sold = check_expired_listing_theagency(listing_url, mls_number)
             if is_sold:
-                indexes_to_drop.append(index)
-                logger.success(f"Removed MLS {row['mls_number']} (Index: {index}) from the DataFrame because the listing has been sold.")
+                indexes_to_drop.append(row.Index)
+                logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has been sold.")
 
-    sold_count = len(indexes_to_drop)
-    logger.info(f"Total sold listings removed: {sold_count}")
+    inactive_count = len(indexes_to_drop)
+    logger.info(f"Total inactive listings removed: {inactive_count}")
 
-    df_dropped_sold = df.drop(indexes_to_drop)
-    return df_dropped_sold
+    df_active = df.drop(indexes_to_drop)
+    return df_active.reset_index(drop=True)
 
 def update_dataframe_with_listing_data(
     df: pd.DataFrame, imagekit_instance

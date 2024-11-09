@@ -20,7 +20,7 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 # Limit to 1 request per second
 limiter = AsyncLimiter(1, 1)
 
-async def check_expired_listing(url: str, mls_number: str) -> bool:
+async def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     """
     Checks if a listing has expired based on the presence of a specific HTML element, asynchronously.
     
@@ -54,7 +54,7 @@ async def check_expired_listing(url: str, mls_number: str) -> bool:
             retry_after = int(h.response.headers.get("Retry-After", 60))  # Use a default retry after 60 seconds if header is missing
             logger.warning(f"Rate limit exceeded, retrying after {retry_after} seconds.")
             await asyncio.sleep(retry_after)
-            return await check_expired_listing(url, mls_number)  # Retry the request
+            return await check_expired_listing_bhhs(url, mls_number)  # Retry the request
         else:
             logger.warning(f"HTTP error {h.response.status_code} occurred while checking if the listing for {mls_number} has expired. {h.response.text}")
     except AttributeError:
