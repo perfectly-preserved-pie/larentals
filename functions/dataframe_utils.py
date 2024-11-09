@@ -4,9 +4,9 @@ from functions.webscraping_utils import check_expired_listing, webscrape_bhhs, f
 from loguru import logger
 import asyncio
 import pandas as pd
-import sys
 import re
 import requests
+import sys
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
