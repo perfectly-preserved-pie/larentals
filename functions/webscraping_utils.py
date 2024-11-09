@@ -61,6 +61,57 @@ async def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
 
     return False
 
+def check_expired_listing_theagency(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool:
+    """
+    Checks if a listing has been sold based on the 'IsSold' key from The Agency API.
+
+    Parameters:
+    listing_url (str): The URL of the listing to check.
+    mls_number (str): The MLS number of the listing.
+    board_code (str, optional): The board code extracted from the listing URL or a default value.
+
+    Returns:
+    bool: True if the listing has been sold, False otherwise.
+    """
+    # Try to extract the board code from the listing_url if it varies
+    try:
+        pattern = r'https://.*?idcrealestate\.com/.*?/(?P<board_code>\w+)/'
+        match = re.search(pattern, listing_url)
+        if match:
+            board_code = match.group('board_code')
+        else:
+            # Use the default board_code provided in the function parameter
+            pass  # board_code remains as provided
+    except Exception as e:
+        logger.warning(f"Could not extract board code from listing URL: {listing_url}. Error: {e}")
+
+    api_url = f'https://search-service.idcrealestate.com/api/property/en_US/d4/sold-detail/{board_code}/{mls_number}'
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Content-Type": "application/json",
+        "Referer": "https://www.theagencyre.com/",
+        "X-Tenant": "QUdZfFBST0R8Q09NUEFOWXwx",
+        "Origin": "https://www.theagencyre.com",
+        "Connection": "keep-alive",
+    }
+
+    try:
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        is_sold = data.get('IsSold', False)
+        if is_sold:
+            logger.debug(f"Listing {mls_number} has been sold.")
+        return is_sold
+    except requests.HTTPError as e:
+        logger.error(f"HTTP error occurred while checking if the listing for MLS {mls_number} has been sold: {e}")
+    except Exception as e:
+        logger.error(f"An error occurred while checking if the listing for MLS {mls_number} has been sold: {e}")
+
+    return False
+
 async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
     """
     Asynchronously scrapes a BHHS page to fetch the listing URL, photo, and listed date. 
