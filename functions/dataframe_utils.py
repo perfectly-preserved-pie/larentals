@@ -23,8 +23,8 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
     indexes_to_drop = []
 
     for row in df.itertuples():
-        listing_url = getattr(row, 'listing_url', '')
-        mls_number = getattr(row, 'mls_number', '')
+        listing_url = str(getattr(row, 'listing_url', ''))
+        mls_number = str(getattr(row, 'mls_number', ''))
 
         if 'bhhs' in listing_url:
             # Check if the listing has expired
