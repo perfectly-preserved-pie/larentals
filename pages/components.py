@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import numpy as np
 import pandas as pd
+import dash_mantine_components as dmc
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -155,32 +156,47 @@ class LeaseComponents(BaseClass):
             return 'Other'
     
     def create_subtype_checklist(self):
-        # Instance Variable
-        unique_values = self.df['subtype'].dropna().unique().tolist()
-        unique_values = ["Unknown" if i in ["/A", "/D"] else i for i in unique_values]
-        if "Unknown" not in unique_values:
-            unique_values.append("Unknown")
+        # Define groups
+        groups = {
+            "Apartments": ['APT', 'APT/A', 'APT/D'],
+            "Single Family Residences": ['SFR', 'SFR/A', 'SFR/D'],
+            "Condos": ['CONDO', 'CONDO/A', 'CONDO/D'],
+            "Townhouses": ['TWNHS', 'TWNHS/A', 'TWNHS/D'],
+            "Multi-Family": ['DPLX/A', 'DPLX/D', 'TPLX', 'TPLX/A', 'TPLX/D', 'QUAD', 'QUAD/A', 'QUAD/D'],
+            "Commercial Residential": ['COMRES/A', 'COMRES/D'],
+            "Lofts and Studios": ['LOFT/A', 'STUD/A', 'STUD/D'],
+            "Cabins and Manufactured Homes": ['CABIN/D', 'MANL/D', 'MH'],
+            "Unknown": ['Unknown']
+        }
+
+        # Prepare data for MultiSelect
+        data = [
+            {
+                "group": group,
+                "items": [
+                    {"value": subtype, "label": f"{subtype} - {self.subtype_meaning.get(subtype, 'Unknown')}"}
+                    for subtype in subtypes
+                ],
+            }
+            for group, subtypes in groups.items()
+        ]
 
         # Dash Component as Class Method
-        subtype_checklist = html.Div([ 
+        subtype_checklist = html.Div([
             html.Div([
                 html.H5("Subtypes", style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
-                html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
-                dcc.Checklist( 
+                #html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
+                dmc.MultiSelect(
                     id='subtype_checklist',
-                    options=sorted(
-                        [
-                            {'label': f"{i} - {self.subtype_meaning.get(i, 'Unknown')}", 'value': i}
-                            for i in set(unique_values)
-                        ], 
-                        key=lambda x: x['label']
-                    ),
-                    value=[term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in self.df['subtype'].unique()]],
-                    labelStyle={'display': 'block'},
-                    inputStyle={"margin-right": "5px", "margin-left": "5px"},
+                    data=data,
+                    value=[term for term in self.df['subtype'].unique() if term in self.subtype_meaning],
+                    searchable=True,
+                    nothingFoundMessage="No options found",
+                    clearable=True,
+                    style={"margin-bottom": "10px"}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'subtype'},
@@ -190,7 +206,6 @@ class LeaseComponents(BaseClass):
                 "height": '220px'
             })
         ])
-
         return subtype_checklist
     
     def create_bedrooms_slider(self):

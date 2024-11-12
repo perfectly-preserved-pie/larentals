@@ -345,21 +345,21 @@ class LeaseFilters:
         if not choice:
             # If no choices are selected, return False for all entries
             return pd.Series([False] * len(self.df), index=self.df.index)
-        
+
         # Handle 'Unknown' option
         if 'Unknown' in choice:
-            unknown_filter = self.df['subtype'].isnull()
+            unknown_filter = self.df['subtype'].isnull() | (self.df['subtype'] == 'Unknown')
             # Remove 'Unknown' from choices to avoid filtering by it in 'isin'
             choice = [c for c in choice if c != 'Unknown']
         else:
             unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
-        
+
         if choice:
             # Filter where 'subtype' matches the choices
             subtype_filter = self.df['subtype'].isin(choice)
         else:
             subtype_filter = pd.Series([False] * len(self.df), index=self.df.index)
-        
+
         # Combine filters
         combined_filter = subtype_filter | unknown_filter
         return combined_filter
