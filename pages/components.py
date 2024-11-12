@@ -187,8 +187,9 @@ class LeaseComponents(BaseClass):
             for group, subtypes in sorted_groups.items()
         ]
 
-        # Ensure all subtypes are included in the initial value
-        initial_values = [term for term in self.df['subtype'].unique() if term in self.subtype_meaning]
+        # Ensure all possible subtypes are included in the initial value
+        all_possible_subtypes = list(self.subtype_meaning.keys())
+        initial_values = all_possible_subtypes
 
         # Dash Component as Class Method
         subtype_checklist = html.Div([
