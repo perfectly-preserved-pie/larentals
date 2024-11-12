@@ -10,7 +10,7 @@ gunicorn==23.0.0
 imagekitio==4.1.0
 loguru==0.7.2
 numpy==1.26.4
-orjson==3.10.7
+orjson==3.10.11
 pandas==2.2.3
 protobuf==5.28.2
 pyarrow==17.0.0
