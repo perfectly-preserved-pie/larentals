@@ -75,19 +75,19 @@ class LeaseComponents(BaseClass):
         'APT/A': 'Apartment (Attached)',
         'APT/D': 'Apartment (Detached)',
         'CABIN/D': 'Cabin (Detached)',
-        'COMRES/A': 'Commercial/Residential (Attached)',
-        'COMRES/D': 'Commercial/Residential (Detached)',
+        'COMRES/A': 'Commercial Residential (Attached)',
+        'COMRES/D': 'Commercial Residential (Detached)',
         'CONDO': 'Condo (Unspecified)',
         'CONDO/A': 'Condo (Attached)',
         'CONDO/D': 'Condo (Detached)',
-        'COOP/A': 'Cooperative (Attached)',
+        'COOP/A': 'Co-op (Attached)',
         'DPLX/A': 'Duplex (Attached)',
         'DPLX/D': 'Duplex (Detached)',
         'LOFT/A': 'Loft (Attached)',
-        'MANL/D': '??? (Detached)',
+        'MANL/D': 'Manufactured (Detached)',
         'MH': 'Mobile Home',
-        'OYO/A': 'Own-Your-Own (Attached)',
-        'OYO/D': 'Own-Your-Own (Detached)',
+        'OYO/A': 'Own Your Own (Attached)',
+        'OYO/D': 'Own Your Own (Detached)',
         'QUAD': 'Quadplex (Unspecified)',
         'QUAD/A': 'Quadplex (Attached)',
         'QUAD/D': 'Quadplex (Detached)',
@@ -187,6 +187,9 @@ class LeaseComponents(BaseClass):
             for group, subtypes in sorted_groups.items()
         ]
 
+        # Ensure all subtypes are included in the initial value
+        initial_values = [term for term in self.df['subtype'].unique() if term in self.subtype_meaning]
+
         # Dash Component as Class Method
         subtype_checklist = html.Div([
             html.Div([
@@ -194,11 +197,10 @@ class LeaseComponents(BaseClass):
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
-                #html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
                 dmc.MultiSelect(
                     id='subtype_checklist',
                     data=data,
-                    value=[term for term in self.df['subtype'].unique() if term in self.subtype_meaning],
+                    value=initial_values,
                     searchable=True,
                     nothingFoundMessage="No options found",
                     clearable=True,
