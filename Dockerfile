@@ -1,6 +1,21 @@
 FROM python:3.11-slim
 
-COPY requirements.txt .
+WORKDIR /app
+
+# Switch to root user to install dependencies
+USER root
+
+# Copy everything into the working directory
+COPY . /app
+
+# Copy uv binary directly from the UV container image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Install dependencies directly into the system environment using uv
+RUN uv pip install --system --no-cache-dir -r requirements.txt
+
+# Switch back to non-root user
+USER nonroot
 
 # Install curl
 RUN apt-get update && apt-get install -y curl
