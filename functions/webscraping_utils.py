@@ -1,9 +1,7 @@
-from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from loguru import logger
 from typing import Tuple, Optional
-import asyncio
 import httpx
 import pandas as pd
 import re
@@ -13,51 +11,46 @@ import sys
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
 
-# Limit to 1 request per second
-limiter = AsyncLimiter(1, 1)
+import requests
+from bs4 import BeautifulSoup
+from loguru import logger
 
-async def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
+def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     """
-    Checks if a listing has expired based on the presence of a specific HTML element, asynchronously.
-    
+    Checks if a BHHS listing has expired by looking for a specific message on the page.
+
     Parameters:
     url (str): The URL of the listing to check.
     mls_number (str): The MLS number of the listing.
-    
+
     Returns:
     bool: True if the listing has expired, False otherwise.
     """
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
+        "User-Agent": "Mozilla/5.0"
     }
     try:
-        async with limiter:
-            async with httpx.AsyncClient(timeout=10) as client:
-                response = await client.get(url, headers=headers)
-                response.raise_for_status()
-                
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        description = soup.find('div', class_='page-description').text
-        cleaned_description = " ".join(description.split())
-        
-        return bool(cleaned_description)
-            
-    except httpx.TimeoutException:
-        logger.warning(f"Timeout occurred while checking if the listing for {mls_number} has expired.")
-    except httpx.HTTPStatusError as h:
-        if h.response.status_code == 429:
-            retry_after = int(h.response.headers.get("Retry-After", 60))  # Use a default retry after 60 seconds if header is missing
-            logger.warning(f"Rate limit exceeded, retrying after {retry_after} seconds.")
-            await asyncio.sleep(retry_after)
-            return await check_expired_listing_bhhs(url, mls_number)  # Retry the request
-        else:
-            logger.warning(f"HTTP error {h.response.status_code} occurred while checking if the listing for {mls_number} has expired. {h.response.text}")
-    except AttributeError:
-        # This occurs if the 'page-description' div is not found, meaning the listing hasn't expired
+        description_div = soup.find('div', class_='page-description')
+        if description_div:
+            description_text = " ".join(description_div.text.split())
+            if "This listing is no longer available" in description_text:
+                return True
         return False
+
+    except requests.Timeout:
+        logger.warning(f"Timeout occurred while checking if the listing for {mls_number} has expired.")
+    except requests.HTTPError as e:
+        if e.response.status_code == 429:
+            retry_after = int(e.response.headers.get("Retry-After", 60))  # Default to 60 seconds if header is missing
+            logger.warning(f"Rate limit exceeded for MLS {mls_number}, retrying after {retry_after} seconds.")
+        else:
+            logger.error(f"HTTP error occurred for MLS {mls_number}: {e}")
     except Exception as e:
-        logger.warning(f"Couldn't detect if the listing for {mls_number} has expired because {e}.")
+        logger.error(f"An unexpected error occurred for MLS {mls_number}: {e}")
 
     return False
 
