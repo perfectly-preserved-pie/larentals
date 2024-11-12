@@ -26,13 +26,13 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
         listing_url = str(getattr(row, 'listing_url', ''))
         mls_number = str(getattr(row, 'mls_number', ''))
 
-        if 'bhhs' in listing_url:
+        if 'bhhscalifornia.com' in listing_url:
             # Check if the listing has expired
             is_expired = check_expired_listing_bhhs(listing_url, mls_number)
             if is_expired:
                 indexes_to_drop.append(row.Index)
                 logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on BHHS.")
-        elif 'idcrealestate' in listing_url:
+        elif 'theagencyre.com' in listing_url:
             # Check if the listing has been sold
             is_sold = check_expired_listing_theagency(listing_url, mls_number)
             if is_sold:
