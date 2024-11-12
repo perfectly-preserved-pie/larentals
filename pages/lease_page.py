@@ -155,7 +155,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
         lat=row.latitude,
         lon=row.longitude,
         data=dict(
-          bedrooms_bathrooms=row.bedrooms_bathrooms,
+          #bedrooms_bathrooms=row.total_bathrooms,
           bedrooms=row.bedrooms,
           city=row.city,
           date_processed=row.date_processed,
