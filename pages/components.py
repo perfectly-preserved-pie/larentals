@@ -134,7 +134,7 @@ class LeaseComponents(BaseClass):
         self.user_options_card = self.create_user_options_card()
 
     def categorize_laundry_features(self, feature):
-        if feature is None or feature in [np.nan, 'Unknown', '']:
+        if pd.isna(feature) or feature in ['Unknown', '']:
             return 'Unknown'
         if any(keyword in feature for keyword in ['In Closet', 'In Kitchen', 'In Garage', 'Inside', 'Individual Room']):
             return 'In Unit'
