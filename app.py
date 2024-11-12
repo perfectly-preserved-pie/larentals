@@ -1,7 +1,12 @@
-from dash import Dash
+from dash import Dash, _dash_renderer
 import dash
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 import logging
+
+# Set the React version to 18.2.0
+# https://www.dash-mantine-components.com/getting-started#simple-usage
+_dash_renderer._set_react_version("18.2.0")
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -49,19 +54,22 @@ app.index_string = """<!DOCTYPE html>
 </html>
 """
 
-app.layout = dbc.Container([
-  dbc.Row( # Second row: the rest
-    [
-	    dash.page_container
-    ],
-    # Remove the whitespace/padding between the two cards (aka the gutters)
-    # https://stackoverflow.com/a/70495385
-    className="g-0",
+app.layout = dmc.MantineProvider(
+  dbc.Container([
+    dbc.Row( # Second row: the rest
+      [
+        dash.page_container
+      ],
+      # Remove the whitespace/padding between the two cards (aka the gutters)
+      # https://stackoverflow.com/a/70495385
+      className="g-0",
+    ),
+  #html.Link(href='/assets/style.css', rel='stylesheet'),
+  ],
+  fluid = True,
+  className = "dbc",
   ),
-#html.Link(href='/assets/style.css', rel='stylesheet'),
-],
-fluid = True,
-className = "dbc",
+forceColorScheme="dark"
 )
 
 if __name__ == '__main__':
