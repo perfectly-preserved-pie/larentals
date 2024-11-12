@@ -105,7 +105,7 @@ class LeaseComponents(BaseClass):
         # Initalize these first because they are used in other components
         self.df = df
 
-        self.df['LaundryCategory'] = self.df['LaundryFeatures'].apply(self.categorize_laundry_features)
+        self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -134,7 +134,7 @@ class LeaseComponents(BaseClass):
         self.user_options_card = self.create_user_options_card()
 
     def categorize_laundry_features(self, feature):
-        if feature is None or feature in [np.nan, 'Unknown', '']:
+        if pd.isna(feature) or feature in ['Unknown', '']:
             return 'Unknown'
         if any(keyword in feature for keyword in ['In Closet', 'In Kitchen', 'In Garage', 'Inside', 'Individual Room']):
             return 'In Unit'
@@ -197,9 +197,9 @@ class LeaseComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0,
-                    max=self.df['Bedrooms'].max(),
+                    max=self.df['bedrooms'].max(),
                     step=1,
-                    value=[0, self.df['Bedrooms'].max()],
+                    value=[0, self.df['bedrooms'].max()],
                     id='bedrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -225,9 +225,9 @@ class LeaseComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0,
-                    max=self.df['Total Bathrooms'].max(),
+                    max=self.df['total_bathrooms'].max(),
                     step=1,
-                    value=[0, self.df['Total Bathrooms'].max()],
+                    value=[0, self.df['total_bathrooms'].max()],
                     id='bathrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -252,9 +252,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['Sqft'].min(),
-                    max=self.df['Sqft'].max(),
-                    value=[self.df['Sqft'].min(), self.df['Sqft'].max()],
+                    min=self.df['sqft'].min(),
+                    max=self.df['sqft'].max(),
+                    value=[self.df['sqft'].min(), self.df['sqft'].max()],
                     id='sqft_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -380,11 +380,23 @@ class LeaseComponents(BaseClass):
         return pets_radio
 
     def create_rental_terms_checklist(self):
-        # Logic to calculate unique_terms
-        unique_terms = pd.Series([term for sublist in self.df['Terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
+        # Add 'Unknown' to categories if necessary
+        if pd.api.types.is_categorical_dtype(self.df['terms']):
+            if 'Unknown' not in self.df['terms'].cat.categories:
+                self.df['terms'] = self.df['terms'].cat.add_categories('Unknown')
+
+        # Fill NaN values with 'Unknown'
+        terms_series = self.df['terms'].fillna('Unknown')
+
+        # Split terms and flatten the list
+        unique_terms = pd.Series([
+            term.strip() for sublist in terms_series.str.split(',')
+            if sublist for term in sublist
+        ]).unique()
+
         unique_terms = sorted(unique_terms)
 
-        # Define term_abbreviations and terms
+        # Define term abbreviations and labels
         term_abbreviations = {
             '12M': '12 Months',
             '24M': '24 Months',
@@ -398,7 +410,8 @@ class LeaseComponents(BaseClass):
             'VR': 'Vacation Rental',
             'WK': 'Week-to-Week',
         }
-        terms = {k: term_abbreviations[k] for k in sorted(term_abbreviations)}
+
+        terms = {k: term_abbreviations.get(k, k) for k in unique_terms}
 
         # Create the Dash component
         rental_terms_checklist = html.Div([
@@ -410,33 +423,29 @@ class LeaseComponents(BaseClass):
                 dcc.Checklist(
                     id='terms_checklist',
                     options=[{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
-                    value=[term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in unique_terms]],
-                    inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
-                    },
+                    value=unique_terms,  # Select all terms by default
+                    inputStyle={"margin-right": "5px", "margin-left": "5px"},
                     inline=False
                 ),
             ],
-            id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
+                id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
             ),
         ],
-        id='rental_terms_div'
+            id='rental_terms_div'
         )
-
         return rental_terms_checklist
 
     def create_garage_spaces_components(self):
         garage_spaces_components = html.Div([
             html.Div([
-                html.H5("Garage Spaces", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Parking Spaces", style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='garage_spaces', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['garage_spaces'].max(),
-                    value=[0, self.df['garage_spaces'].max()], 
+                    max=self.df['parking_spaces'].max(),
+                    value=[0, self.df['parking_spaces'].max()], 
                     id='garage_spaces_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -516,9 +525,9 @@ class LeaseComponents(BaseClass):
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['YrBuilt'].min(),
-                    max=self.df['YrBuilt'].max(),
-                    value=[0, self.df['YrBuilt'].max()],
+                    min=self.df['year_built'].min(),
+                    max=self.df['year_built'].max(),
+                    value=[0, self.df['year_built'].max()],
                     id='yrbuilt_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -526,7 +535,7 @@ class LeaseComponents(BaseClass):
                         "always_visible": True
                     },
                     marks={
-                        float(self.df['YrBuilt'].min() + i*20): str(self.df['YrBuilt'].min() + i*20) for i in range(8)
+                        float(self.df['year_built'].min() + i*20): str(self.df['year_built'].min() + i*20) for i in range(8)
                     }
                 ),
                 dbc.Alert(
@@ -610,9 +619,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['DepositSecurity'].min(),
-                    max=self.df['DepositSecurity'].max(),
-                    value=[self.df['DepositSecurity'].min(), self.df['DepositSecurity'].max()],
+                    min=self.df['security_deposit'].min(),
+                    max=self.df['security_deposit'].max(),
+                    value=[self.df['security_deposit'].min(), self.df['security_deposit'].max()],
                     id='security_deposit_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -662,9 +671,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['DepositOther'].min(),
-                    max=self.df['DepositOther'].max(),
-                    value=[self.df['DepositOther'].min(), self.df['DepositOther'].max()],
+                    min=self.df['other_deposit'].min(),
+                    max=self.df['other_deposit'].max(),
+                    value=[self.df['other_deposit'].min(), self.df['other_deposit'].max()],
                     id='other_deposit_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -714,9 +723,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['DepositPets'].min(),
-                    max=self.df['DepositPets'].max(),
-                    value=[self.df['DepositPets'].min(), self.df['DepositPets'].max()],
+                    min=self.df['pet_deposit'].min(),
+                    max=self.df['pet_deposit'].max(),
+                    value=[self.df['pet_deposit'].min(), self.df['pet_deposit'].max()],
                     id='pet_deposit_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -766,9 +775,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['DepositKey'].min(),
-                    max=self.df['DepositKey'].max(),
-                    value=[self.df['DepositKey'].min(), self.df['DepositKey'].max()],
+                    min=self.df['key_deposit'].min(),
+                    max=self.df['key_deposit'].max(),
+                    value=[self.df['key_deposit'].min(), self.df['key_deposit'].max()],
                     id='key_deposit_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -818,9 +827,9 @@ class LeaseComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['DepositKey'].min(),
-                    max=self.df['DepositKey'].max(),
-                    value=[self.df['DepositKey'].min(), self.df['DepositKey'].max()],
+                    min=self.df['key_deposit'].min(),
+                    max=self.df['key_deposit'].max(),
+                    value=[self.df['key_deposit'].min(), self.df['key_deposit'].max()],
                     id='key_deposit_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -863,8 +872,10 @@ class LeaseComponents(BaseClass):
         return key_deposit_components
 
     def create_laundry_checklist(self):
+        # Replace NaN values with 'Unknown' before sorting
+        laundry_series = self.df['laundry'].fillna('Unknown')
         # Get unique laundry categories sorted alphabetically
-        unique_categories = sorted(self.df['LaundryCategory'].unique())
+        unique_categories = sorted(laundry_series.unique())
 
         # Create options for the checklist
         laundry_options = [
@@ -962,7 +973,7 @@ class LeaseComponents(BaseClass):
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
@@ -1138,7 +1149,7 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("Bedrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("bedrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='bedrooms', initial_label="Hide", page_type='buy')
             ]),
             
