@@ -169,16 +169,22 @@ class LeaseComponents(BaseClass):
             "Unknown": ['Unknown']
         }
 
-        # Prepare data for MultiSelect
+        # Sort groups alphabetically
+        sorted_groups = dict(sorted(groups.items()))
+
+        # Prepare data for MultiSelect with sorted subtypes
         data = [
             {
                 "group": group,
-                "items": [
-                    {"value": subtype, "label": f"{subtype} - {self.subtype_meaning.get(subtype, 'Unknown')}"}
-                    for subtype in subtypes
-                ],
+                "items": sorted(
+                    [
+                        {"value": subtype, "label": f"{subtype} - {self.subtype_meaning.get(subtype, 'Unknown')}"}
+                        for subtype in subtypes
+                    ],
+                    key=lambda x: x["label"]
+                ),
             }
-            for group, subtypes in groups.items()
+            for group, subtypes in sorted_groups.items()
         ]
 
         # Dash Component as Class Method
