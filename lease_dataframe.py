@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_expired_listings
+from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -36,7 +36,7 @@ global df
 # Load all CSVs and concat into one dataframe
 # https://stackoverflow.com/a/21232849
 path = "."
-all_files = glob.glob(os.path.join(path, "*lacountyrentals*.csv"))
+all_files = glob.glob(os.path.join(path, "*Renter*.csv"))
 df = pd.concat((pd.read_csv(f, float_precision="round_trip", skipinitialspace=True) for f in all_files), ignore_index=True)
 
 pd.set_option("display.precision", 10)
@@ -45,136 +45,153 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip()
 
-# Standardize the column names by renaminmg them
+# Convert all column names to lowercase
+df.columns = df.columns.str.lower()
+
+# Standardize the column names by renaming them
 # https://stackoverflow.com/a/65332240
 # Define a renaming dictionary based on patterns
 rename_dict = {
-  'Garage Spaces': 'garage_spaces',
-  'List Office Phone': 'phone_number',
-  'Listing': 'mls_number',
-  'St Name': 'street_name',
-  'St#': 'street_number',
-  'Sub Type': 'subtype',
-  'Yr': 'YrBuilt',
+  'agent': 'phone_number',
+  'allowed': 'pet_policy',
+  'baths': 'bathrooms',
+  'bedrooms': 'bedrooms',
+  'city': 'city',
+  'furnished': 'furnished',
+  'key': 'key_deposit',
+  'laundry': 'laundry',
+  'list': 'list_price',
+  'lot': 'lot_size',
+  'mls': 'mls_number',
+  'name': 'street_name',
+  'other': 'other_deposit',
+  'pet deposit': 'pet_deposit',
+  'prking': 'parking_spaces',
+  'security': 'security_deposit',
+  'sqft': 'sqft',
+  'square': 'ppsqft',
+  'st #': 'street_number',
+  'sub': 'subtype',
+  'terms': 'terms', 
+  'yr': 'year_built',
+  'zip': 'zip_code',
 }
 
-# Check if 'Price Per' column exists and add to renaming dictionary
-if any(col.startswith('Price Per') for col in df.columns):
-  rename_dict['Price Per'] = 'ppsqft'
-
-# Rename columns
+# Rename columns based on substrings in the column names
 df = df.rename(columns=lambda c: next((v for k, v in rename_dict.items() if k in c), c))
 
-# Special case for list price due to additional condition
-df = df.rename(columns=lambda c: 'list_price' if c.startswith('List') and c.endswith('Price') else c)
+# Drop the numbers in the first group of characters in the street_name column
+df['street_name'] = df['street_name'].str.replace(r'^\d+\s*', '', regex=True)
 
 # Drop all rows with misc/irrelevant data
 df.dropna(subset=['street_name'], inplace=True)
 
 # Columns to clean
-cols = ['DepositKey', 'DepositOther', 'DepositPets', 'DepositSecurity', 'list_price', 'Sqft', 'YrBuilt']
-if 'ppsqft' in df.columns:
-  cols.append('ppsqft')
+cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit']
+# Remove all non-numeric characters, convert to numeric, round to integers, fill NaNs with pd.NA, and cast to Nullable Integer Type
+df[cols] = (
+    df[cols]
+    .replace({r'\$': '', ',': ''}, regex=True)
+    .apply(pd.to_numeric, errors='coerce')
+    .round(0)  # Round to ensure values are integers
+    .astype(pd.UInt16Dtype())
+)
 
-# Remove all non-numeric characters, convert to numeric, and cast to Nullable Integer Type
-df[cols] = df[cols].replace(to_replace='[^\d]', value='', regex=True).apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+# Cast 'sqft' to UInt32
+df['sqft'] = df['sqft'].replace({',': ''}, regex=True).astype(pd.UInt32Dtype())
 
-# Check if 'ppsqft' column exists
-if 'ppsqft' not in df.columns:
-  # If it has a different name, replace 'Sqft' below with the correct column name
-  df['ppsqft'] = (df['list_price'] / df['Sqft']).round(2)
+# Convert other columns to appropriate data types
+df = df.astype({
+  'year_built': 'UInt16',
+  'parking_spaces': 'UInt8',
+  'street_number': 'string'
+})
 
-# Fetch missing city names
-for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
-  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
+# Handle lot_size column separately by removing commas, converting to numeric, and then to UInt32
+df['lot_size'] = (
+  df['lot_size']
+  .replace({',': ''}, regex=True)
+  .apply(pd.to_numeric, errors='coerce')
+  .astype(pd.UInt32Dtype())
+)
+
+# Cast the following columns as a float and remove the leading $ sign
+df['ppsqft'] = df['ppsqft'].replace(to_replace=r'[^\d]', value='', regex=True).astype(pd.Float32Dtype())
 
 # Columns to be cast as strings
-cols = ['street_number', 'street_name', 'City', 'mls_number', 'SeniorCommunityYN', 'Furnished', 'LaundryFeatures', 'subtype']
+cols = ['mls_number', 'phone_number', 'street_name', 'zip_code', 'city']
+df[cols] = df[cols].astype(pd.StringDtype())
 
-for col in cols:
-  # If the column exists, replace empty strings with NaNs
-  if col in df.columns:
-    df[col] = df[col].replace(r'^\s*$', pd.NA, regex=True)
-  # If the column does not exist, create it and fill it with NaNs
-  else:
-    df[col] = pd.NA
-  # Cast the column as a string type (NA values will remain as NA)
-  df[col] = df[col].astype(pd.StringDtype())
+# Columns to be cast as categories
+cols = ['pet_policy', 'furnished', 'subtype', 'terms', 'laundry']
+df[cols] = df[cols].astype(pd.CategoricalDtype())
+
+# Extract total bathrooms and bathroom types (Full, Three-Quarter, Half, Quarter)
+df[['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']] = df['bathrooms'].str.extract(r'(\d+\.\d+)\s\((\d+)\s(\d+)\s(\d+)\s(\d+)\)').astype(float)
+
+# Convert bathroom columns to nullable integer type
+for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']:
+  df[col] = df[col].astype(pd.UInt8Dtype())
+
+# Drop the original 'Baths(FTHQ)' column since we've extracted the data we need
+df.drop(columns=['bathrooms'], inplace=True)
+
+# Convert bedrooms to nullable integer type
+df['bedrooms'] = df['bedrooms'].astype(pd.UInt8Dtype())
+
+# Fetch missing city names
+for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
+  df.at[row.Index, 'city'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.zip_code)}", geolocator=g)
 
 # Create a new column with the Street Number & Street Name
-df["short_address"] = df["street_number"] + ' ' + df["street_name"] + ',' + ' ' + df['City']
+df["short_address"] = (df["street_number"].astype(str) + ' ' + df["street_name"] + ', ' + df['city']).astype(pd.StringDtype())
 
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
+for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].itertuples():
   short_address = df.at[row.Index, 'short_address']
-  missing_postalcode = return_postalcode(short_address, geolocator=g)
-  df.at[row.Index, 'PostalCode'] = missing_postalcode
+  missing_zip_code = return_zip_code(short_address, geolocator=g)
+  df.at[row.Index, 'zip_code'] = missing_zip_code
 
-df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
 
 # Tag each row with the date it was processed
 for row in df.itertuples():
   df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
 
 # Create a new column with the full street address
-# Also strip whitespace from the St Name column
-# Convert the postal code into a string so we can combine string and int
-# https://stackoverflow.com/a/11858532
-df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].astype(str)
+df["full_street_address"] = (
+    df["street_number"].astype(str) + ' ' + 
+    df["street_name"].str.strip() + ', ' + 
+    df['city'] + ' ' + 
+    df["zip_code"].astype(str)
+).astype(pd.StringDtype())
 
-# Iterate through the dataframe and get the listed date and photo for rows 
-for row in df.itertuples():
-  mls_number = row[1]
-  webscrape = asyncio.run(webscrape_bhhs(url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/", row_index=row.Index, mls_number=mls_number, total_rows=len(df)))
-  df.at[row.Index, 'listed_date'] = webscrape[0]
-  df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
-  df.at[row.Index, 'listing_url'] = webscrape[2]
+# Iterate through the dataframe and get the listed date and photo for rows
+df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
 
 # Iterate through the dataframe and fetch coordinates for rows
 for row in df.itertuples():
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
-  df.at[row.Index, 'Latitude'] = coordinates[0]
-  df.at[row.Index, 'Longitude'] = coordinates[1]
+  df.at[row.Index, 'latitude'] = coordinates[0]
+  df.at[row.Index, 'longitude'] = coordinates[1]
 
-#df = update_howloud_scores(df)
-
-# Split the Bedroom/Bathrooms column into separate columns based on delimiters
-# Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
-# Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
-# TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than thpdat, and you can’t officially consider it a full bath.
-df['Bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
-df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
-df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
-df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
-df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
-
-# Convert a few columns into int64
-# pd.to_numeric will convert into int64 or float64 automatically, which is cool
-# These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
-df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric, errors='coerce')
-df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric)
 # These columns should stay floats
-df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
-df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
-df['garage_spaces'] = df['garage_spaces'].astype('Float64')
-
-# Replace all empty values in the following columns with NaN and cast the column as dtype string
-# https://stackoverflow.com/a/47810911
-df.Terms = df.Terms.astype("string").replace(r'^\s*$', pd.NA, regex=True)
+df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise', downcast='float')
+df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 
 ## Laundry Features ##
 # Replace all empty values in the following column with "Unknown" and cast the column as dtype string
-df.LaundryFeatures = df.LaundryFeatures.astype("string").replace(r'^\s*$', "Unknown", regex=True)
+df.laundry = df.laundry.astype("string").replace(r'^\s*$', "Unknown", regex=True)
 # Fill in any NaNs in the Laundry column with "Unknown"
-df.LaundryFeatures = df.LaundryFeatures.fillna(value="Unknown")
-# Any string containing "Community" in the Laundry column should be replaced with "Community Laundry"
-df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community", "Community Laundry")
-# Any string containing "Common" in the Laundry column should be replaced with "Community Laundry"
-df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Common", "Community Laundry")
-# Replace "Community Laundry Area" with "Community Laundry"
-df['LaundryFeatures'] = df['LaundryFeatures'].str.replace("Community Laundry Area", "Community Laundry")
+df.laundry = df.laundry.fillna(value="Unknown")
+# Replace various patterns in the Laundry column with "Community Laundry"
+df.laundry = df.laundry.str.replace(
+  r'Community Laundry Area|Laundry Area|Community|Common', 
+  'Community Laundry', 
+  regex=True
+)
 
 # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
@@ -182,30 +199,6 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mi
 
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
-
-# Per CA law, ANY type of deposit is capped at rent * 3 months
-# It doesn't matter the type of deposit, they all have the same cap
-# Despite that, some landlords/realtors will list the property with an absurd deposit (100k? wtf) so let's rewrite those
-# Use numpy .values to rewrite anything greater than $18000 ($6000 rent * 3 months) into $18000
-# https://stackoverflow.com/a/54426197
-df['DepositSecurity'].values[df['DepositSecurity'] > 18000] = 18000
-df['DepositPets'].values[df['DepositPets'] > 18000] = 18000
-df['DepositOther'].values[df['DepositOther'] > 18000] = 18000
-df['DepositKey'].values[df['DepositKey'] > 18000] = 18000
-
-# Rewrite anything greater than 5000 square feet as NaN
-# Because there's no fucking way there's a RENTAL PROPERTY that is 5000+ sqft in this city
-# It clearly must be some kind of clerical error so a NaN (unknown) is more appropriate
-# All that being said, I should peruse new spreadsheets to make sure there isn't actually a valid property exceeds 5000 sqft
-df['Sqft'].values[df['Sqft'] > 5000] = pd.NA
-
-# Rewrite anything with >5 garage spaces as None
-df['garage_spaces'].values[df['garage_spaces'] > 5] = None
-
-# Keep rows with less than 6 bedrooms
-# 6 bedrooms and above are probably multi family investments and not actual rentals
-# They also skew the outliers, causing the sliders to go way up
-df = df[df.Bedrooms < 6]
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
@@ -221,25 +214,25 @@ df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 # Iterate through the dataframe and drop rows with expired listings
-df_combined = asyncio.run(remove_expired_listings(df_combined, limiter))
+df_combined = remove_inactive_listings(df_combined)
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
-  (df_combined['Latitude'] < 32.5) | 
-  (df_combined['Latitude'] > 42) | 
-  (df_combined['Longitude'] < -124) | 
-  (df_combined['Longitude'] > -114)
+  (df_combined['latitude'] < 32.5) | 
+  (df_combined['latitude'] > 42) | 
+  (df_combined['longitude'] < -124) | 
+  (df_combined['longitude'] > -114)
 ]
 total_outside_ca = len(outside_ca_rows)
 counter = 0
 for row in outside_ca_rows.itertuples():
   counter += 1
-  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
+  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.latitude}, {row.longitude} which is outside California. Re-geocoding {row.mls_number}...")
   # Re-geocode the row
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
-  df_combined.at[row.Index, 'Latitude'] = coordinates[0]
-  df_combined.at[row.Index, 'Longitude'] = coordinates[1]
+  df_combined.at[row.Index, 'latitude'] = coordinates[0]
+  df_combined.at[row.Index, 'longitude'] = coordinates[1]
 # Save the new combined dataframe
 try:
   df_combined.to_parquet(path="assets/datasets/lease.parquet")

@@ -22,7 +22,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         return `
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">Not Available</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.mls_number}</td>
                             </tr>
                         `;
                     }
@@ -47,9 +47,9 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 const listingUrlBlock = getListingUrlBlock(data);
 
                 // Conditionally include the property image row if the image URL is available
-                const imageRow = data.image_url ? `
+                const imageRow = data.mls_photo ? `
                 <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
-                    <img src="${data.image_url}" alt="Property Image" style="width:100%;height:auto;">
+                    <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
                 </a>
                 ` : '';
 
@@ -64,7 +64,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <div>
                         ${imageRow}
                         <div style="text-align: center;">
-                            <h5>${data.address}</h5>
+                            <h5>${data.full_street_address}</h5>
                         </div>
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
@@ -106,11 +106,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.bathrooms}</td>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
                             </tr>
                             <tr>
-                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Garage Spaces</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.parking_spaces || "Unknown"}</td>
                             </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
