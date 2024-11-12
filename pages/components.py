@@ -380,11 +380,23 @@ class LeaseComponents(BaseClass):
         return pets_radio
 
     def create_rental_terms_checklist(self):
-        # Logic to calculate unique_terms
-        unique_terms = pd.Series([term for sublist in self.df['terms'].fillna('Unknown').str.split(',') for term in sublist]).unique()
+        # Add 'Unknown' to categories if necessary
+        if pd.api.types.is_categorical_dtype(self.df['terms']):
+            if 'Unknown' not in self.df['terms'].cat.categories:
+                self.df['terms'] = self.df['terms'].cat.add_categories('Unknown')
+
+        # Fill NaN values with 'Unknown'
+        terms_series = self.df['terms'].fillna('Unknown')
+
+        # Split terms and flatten the list
+        unique_terms = pd.Series([
+            term.strip() for sublist in terms_series.str.split(',')
+            if sublist for term in sublist
+        ]).unique()
+
         unique_terms = sorted(unique_terms)
 
-        # Define term_abbreviations and terms
+        # Define term abbreviations and labels
         term_abbreviations = {
             '12M': '12 Months',
             '24M': '24 Months',
@@ -398,7 +410,8 @@ class LeaseComponents(BaseClass):
             'VR': 'Vacation Rental',
             'WK': 'Week-to-Week',
         }
-        terms = {k: term_abbreviations[k] for k in sorted(term_abbreviations)}
+
+        terms = {k: term_abbreviations.get(k, k) for k in unique_terms}
 
         # Create the Dash component
         rental_terms_checklist = html.Div([
@@ -410,20 +423,16 @@ class LeaseComponents(BaseClass):
                 dcc.Checklist(
                     id='terms_checklist',
                     options=[{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
-                    value=[term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in unique_terms]],
-                    inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
-                    },
+                    value=unique_terms,  # Select all terms by default
+                    inputStyle={"margin-right": "5px", "margin-left": "5px"},
                     inline=False
                 ),
             ],
-            id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
+                id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
             ),
         ],
-        id='rental_terms_div'
+            id='rental_terms_div'
         )
-
         return rental_terms_checklist
 
     def create_garage_spaces_components(self):
