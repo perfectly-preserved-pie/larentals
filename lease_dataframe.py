@@ -87,15 +87,18 @@ df['street_name'] = df['street_name'].str.replace(r'^\d+\s*', '', regex=True)
 df.dropna(subset=['street_name'], inplace=True)
 
 # Columns to clean
-cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'sqft', 'pet_deposit']
+cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit']
 # Remove all non-numeric characters, convert to numeric, round to integers, fill NaNs with pd.NA, and cast to Nullable Integer Type
 df[cols] = (
     df[cols]
     .replace({r'\$': '', ',': ''}, regex=True)
     .apply(pd.to_numeric, errors='coerce')
     .round(0)  # Round to ensure values are integers
-    .astype(pd.Int64Dtype())  # Use Int64Dtype to handle pd.NA
+    .astype(pd.UInt16Dtype())
 )
+
+# Cast 'sqft' to UInt32
+df['sqft'] = df['sqft'].replace({',': ''}, regex=True).astype(pd.UInt32Dtype())
 
 # Convert other columns to appropriate data types
 df = df.astype({
