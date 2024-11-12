@@ -2,11 +2,11 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from loguru import logger
 from typing import Tuple, Optional
-import httpx
 import pandas as pd
 import re
 import requests
 import sys
+import time
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
@@ -21,19 +21,27 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
 
     Parameters:
     url (str): The URL of the listing to check.
-    mls_number (str): The MLS number of the listing.
+    mls_number: The MLS number of the listing.
 
     Returns:
     bool: True if the listing has expired, False otherwise.
     """
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
     }
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-
         soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Look for the message indicating the listing is no longer active
         description_div = soup.find('div', class_='page-description')
         if description_div:
             description_text = " ".join(description_div.text.split())
@@ -44,11 +52,7 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     except requests.Timeout:
         logger.warning(f"Timeout occurred while checking if the listing for {mls_number} has expired.")
     except requests.HTTPError as e:
-        if e.response.status_code == 429:
-            retry_after = int(e.response.headers.get("Retry-After", 60))  # Default to 60 seconds if header is missing
-            logger.warning(f"Rate limit exceeded for MLS {mls_number}, retrying after {retry_after} seconds.")
-        else:
-            logger.error(f"HTTP error occurred for MLS {mls_number}: {e}")
+        logger.error(f"HTTP error occurred for MLS {mls_number}: {e}")
     except Exception as e:
         logger.error(f"An unexpected error occurred for MLS {mls_number}: {e}")
 
@@ -105,55 +109,66 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
 
     return False
 
-async def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
+def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
     """
-    Asynchronously scrapes a BHHS page to fetch the listing URL, photo, and listed date. 
+    Scrapes the BHHS website for listing details.
+
+    Parameters:
+    url (str): The URL of the listing to scrape.
+    row_index (int): The current row index being processed.
+    mls_number (str): The MLS number of the listing.
+    total_rows (int): The total number of rows to process.
+
+    Returns:
+    Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
+        - listed_date (pd.Timestamp): The listing date if found.
+        - photo (str): The URL of the listing photo if found.
+        - link (str): The detailed listing URL if found.
+        Returns (None, None, None) if data is not found or an error occurs.
     """
+    logger.info(f"Scraping BHHS page for {mls_number} (row {row_index + 1} of {total_rows}).")
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
     }
-
     try:
-        async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-            # Check if a redirect has occurred
-            #if response.history:
-            #    logger.info(f"Redirected from {url} to {response.url} for {mls_number}.")
+        # Initialize variables
+        listed_date = None
+        photo = None
+        link = None
 
-            # Successful HTTP request
-            soup = BeautifulSoup(response.text, 'html.parser')
-            listed_date, photo, link = None, None, None
+        # Extract the detailed listing URL
+        link_tag = soup.find('a', class_='btn cab waves-effect waves-light btn-details show-listing-details')
+        if link_tag and 'href' in link_tag.attrs:
+            link = f"https://www.bhhscalifornia.com{link_tag['href']}"
 
-            # Example parsing (ensure to adjust based on actual HTML structure)
-            link_tag = soup.find('a', class_='btn cab waves-effect waves-light btn-details show-listing-details')
-            if link_tag and 'href' in link_tag.attrs:
-                link = f"https://www.bhhscalifornia.com{link_tag['href']}"
+        # Extract the photo URL
+        photo_tag = soup.find('a', class_='show-listing-details')
+        if photo_tag and photo_tag.find('img'):
+            photo = photo_tag.find('img')['src']
 
-            photo_tag = soup.find('a', class_='show-listing-details')
-            if photo_tag and photo_tag.find('img'):
-                photo = photo_tag.find('img')['src']
+        # Extract the listed date
+        date_tag = soup.find('p', class_='summary-mlsnumber')
+        if date_tag:
+            listed_date_text = date_tag.text.split()[-1]
+            listed_date = pd.Timestamp(listed_date_text)
 
-            date_tag = soup.find('p', class_='summary-mlsnumber')
-            if date_tag:
-                listed_date_text = date_tag.text.split()[-1]
-                listed_date = pd.Timestamp(listed_date_text)
+        return listed_date, photo, link
 
-            return listed_date, photo, link
-
-    except httpx.TimeoutException:
-        logger.warning(f"Timeout occurred while scraping BHHS page for {mls_number}.")
-    except httpx.HTTPStatusError as h:
-        if h.response.status_code == 429:
-            retry_after = int(h.response.headers.get("Retry-After", 60))  # Default to 60 seconds
-            logger.warning(f"Rate limit exceeded for {mls_number}, retrying after {retry_after} seconds.")
-            await asyncio.sleep(retry_after)
-            return await webscrape_bhhs(url, row_index, mls_number, total_rows)  # Retry the request
-        else:
-            logger.warning(f"HTTP error {h.response.status_code} occurred while scraping BHHS page for {mls_number}.")
+    except requests.HTTPError as e:
+        logger.warning(f"HTTP error occurred while scraping BHHS page for {mls_number}: {e}")
     except Exception as e:
-        logger.warning(f"Error scraping BHHS page for {mls_number}: {e}.")
+        logger.warning(f"Error scraping BHHS page for {mls_number}: {e}")
 
     return None, None, None
 

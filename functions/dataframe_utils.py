@@ -26,14 +26,14 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
         listing_url = str(getattr(row, 'listing_url', ''))
         mls_number = str(getattr(row, 'mls_number', ''))
 
+        # Check if the listing is expired on BHHS
         if 'bhhscalifornia.com' in listing_url:
-            # Check if the listing has expired
             is_expired = check_expired_listing_bhhs(listing_url, mls_number)
             if is_expired:
                 indexes_to_drop.append(row.Index)
                 logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on BHHS.")
+        # Check if the listing is expired on The Agency
         elif 'theagencyre.com' in listing_url:
-            # Check if the listing has been sold
             is_sold = check_expired_listing_theagency(listing_url, mls_number)
             if is_sold:
                 indexes_to_drop.append(row.Index)
@@ -61,15 +61,13 @@ def update_dataframe_with_listing_data(
     for row in df.itertuples():
         mls_number = row.mls_number
         try:
-            webscrape = asyncio.run(
-                webscrape_bhhs(
-                    url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
-                    row_index=row.Index,
-                    mls_number=mls_number,
-                    total_rows=len(df)
-                )
+            webscrape = webscrape_bhhs(
+                url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
+                row_index=row.Index,
+                mls_number=mls_number,
+                total_rows=len(df)
             )
-
+        
             if not all(webscrape):
                 logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
                 agency_data = fetch_the_agency_data(
