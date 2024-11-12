@@ -37,7 +37,7 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
         description_div = soup.find('div', class_='page-description')
         if description_div:
             description_text = " ".join(description_div.text.split())
-            if "This listing is no longer available" in description_text:
+            if "We're sorry, the listing you are looking for is no longer active." in description_text:
                 return True
         return False
 
