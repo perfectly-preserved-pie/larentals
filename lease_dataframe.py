@@ -156,6 +156,9 @@ for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].it
 
 df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
 
+# Remove the trailing .0 in the zip_code column
+df['zip_code'] = df['zip_code'].str.replace(r'\.0$', '', regex=True)
+
 # Tag each row with the date it was processed
 for row in df.itertuples():
   df.at[row.Index, 'date_processed'] = pd.Timestamp.today()
