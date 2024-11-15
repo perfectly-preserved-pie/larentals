@@ -11,7 +11,7 @@
 
 [![Build and Publish - Dev Build](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image-dev.yml/badge.svg?branch=dev)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image-dev.yml)
 
-This is an interactive map based on /u/WilliamMcCarty's weekly spreadsheets of new rental & for-sale listings in the /r/LArentals & /r/LosAngelesRealEstate subreddits and at https://www.freelarentals.com/. Just like the actual spreadsheets, you can filter the map based on different criteria, such as
+This is an interactive map based on /u/WilliamMcCarty's and /u/TannerBeyer's weekly spreadsheets of new rental & for-sale listings in the /r/LArentals & /r/LosAngelesRealEstate subreddits. Just like the actual spreadsheets, you can filter the map based on different criteria, such as
 * Monthly rent/List price
 * Security deposit cost
 * Number of bedrooms
