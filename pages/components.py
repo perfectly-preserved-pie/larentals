@@ -56,6 +56,11 @@ class BaseClass:
                 style={"margin-right": "5px", "margin-left": "15px"},
             ),
             html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+            html.I(
+                className="fa fa-envelope",
+                style={"margin-right": "5px", "margin-left": "15px"},
+            ),
+            html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
         ]
 
         title_card = dbc.Card(title_card_children, body=True)
