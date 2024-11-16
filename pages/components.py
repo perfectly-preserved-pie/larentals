@@ -71,40 +71,34 @@ class BaseClass:
 class LeaseComponents(BaseClass):
     # Class Variables
     subtype_meaning = {
-        'APT': 'Apartment (Unspecified)',
-        'APT/A': 'Apartment (Attached)',
-        'APT/D': 'Apartment (Detached)',
-        'CABIN/D': 'Cabin (Detached)',
-        'COMRES/A': 'Commercial Residential (Attached)',
-        'COMRES/D': 'Commercial Residential (Detached)',
-        'CONDO': 'Condo (Unspecified)',
-        'CONDO/A': 'Condo (Attached)',
-        'CONDO/D': 'Condo (Detached)',
-        'COOP/A': 'Co-op (Attached)',
-        'DPLX/A': 'Duplex (Attached)',
-        'DPLX/D': 'Duplex (Detached)',
-        'LOFT/A': 'Loft (Attached)',
-        'MANL/D': 'Manufactured (Detached)',
-        'MH': 'Mobile Home',
-        'OYO/A': 'Own Your Own (Attached)',
-        'OYO/D': 'Own Your Own (Detached)',
-        'QUAD': 'Quadplex (Unspecified)',
-        'QUAD/A': 'Quadplex (Attached)',
-        'QUAD/D': 'Quadplex (Detached)',
-        'RMRT/A': 'Room For Rent (Attached)',
-        'RMRT/D': 'Room For Rent (Detached)',
-        'SFR': 'Single Family Residence (Unspecified)',
-        'SFR/A': 'Single Family Residence (Attached)',
-        'SFR/D': 'Single Family Residence (Detached)',
-        'STUD/A': 'Studio (Attached)',
-        'STUD/D': 'Studio (Detached)',
-        'TPLX': 'Triplex (Unspecified)',
-        'TPLX/A': 'Triplex (Attached)',
-        'TPLX/D': 'Triplex (Detached)',
-        'TWNHS': 'Townhouse (Unspecified)',
-        'TWNHS/A': 'Townhouse (Attached)',
-        'TWNHS/D': 'Townhouse (Detached)',
-        'Unknown': 'Unknown',
+        'Apartment (Attached)': 'Apartment (Attached)',
+        'Apartment (Detached)': 'Apartment (Detached)',
+        'Apartment': 'Apartment',
+        'Cabin (Detached)': 'Cabin (Detached)',
+        'Commercial Residential (Attached)': 'Commercial Residential (Attached)',
+        'Condominium (Attached)': 'Condominium (Attached)',
+        'Condominium (Detached)': 'Condominium (Detached)',
+        'Condominium': 'Condominium',
+        'Duplex (Attached)': 'Duplex (Attached)',
+        'Duplex (Detached)': 'Duplex (Detached)',
+        'Loft (Attached)': 'Loft (Attached)',
+        'Loft': 'Loft',
+        'Quadplex (Attached)': 'Quadplex (Attached)',
+        'Quadplex (Detached)': 'Quadplex (Detached)',
+        'Residential & Commercial': 'Residential & Commercial',
+        'Room For Rent (Attached)': 'Room For Rent (Attached)',
+        'Single Family (Attached)': 'Single Family (Attached)',
+        'Single Family (Detached)': 'Single Family (Detached)',
+        'Single Family': 'Single Family',
+        'Stock Cooperative': 'Stock Cooperative',
+        'Studio (Attached)': 'Studio (Attached)',
+        'Studio (Detached)': 'Studio (Detached)',
+        'Townhouse (Attached)': 'Townhouse (Attached)',
+        'Townhouse (Detached)': 'Townhouse (Detached)',
+        'Townhouse': 'Townhouse',
+        'Triplex (Attached)': 'Triplex (Attached)',
+        'Triplex (Detached)': 'Triplex (Detached)',
+        'Unknown': 'Unknown'
     }
 
     def __init__(self, df):
@@ -158,14 +152,20 @@ class LeaseComponents(BaseClass):
     def create_subtype_checklist(self):
         # Define groups
         groups = {
-            "Apartments": ['APT', 'APT/A', 'APT/D'],
-            "Single Family Residences": ['SFR', 'SFR/A', 'SFR/D'],
-            "Condos": ['CONDO', 'CONDO/A', 'CONDO/D'],
-            "Townhouses": ['TWNHS', 'TWNHS/A', 'TWNHS/D'],
-            "Multi-Family": ['DPLX/A', 'DPLX/D', 'TPLX', 'TPLX/A', 'TPLX/D', 'QUAD', 'QUAD/A', 'QUAD/D'],
-            "Commercial Residential": ['COMRES/A', 'COMRES/D'],
-            "Lofts and Studios": ['LOFT/A', 'STUD/A', 'STUD/D'],
-            "Cabins and Manufactured Homes": ['CABIN/D', 'MANL/D', 'MH'],
+            "Apartments": ['Apartment', 'Apartment (Attached)', 'Apartment (Detached)'],
+            "Cabins": ['Cabin (Detached)'],
+            "Combo - Residential & Commercial": ['Combo - Residential & Commercial'],
+            "Commercial Residential": ['Commercial Residential (Attached)'],
+            "Condominiums": ['Condominium', 'Condominium (Attached)', 'Condominium (Detached)'],
+            "Duplexes": ['Duplex (Attached)', 'Duplex (Detached)'],
+            "Lofts": ['Loft', 'Loft (Attached)'],
+            "Quadplexes": ['Quadplex (Detached)', 'Quadplex (Attached)'],
+            "Rooms For Rent": ['Room For Rent (Attached)'],
+            "Single Family Residences": ['Single Family', 'Single Family (Detached)', 'Single Family (Attached)'],
+            "Stock Cooperative": ['Stock Cooperative'],
+            "Studios": ['Studio (Attached)', 'Studio (Detached)'],
+            "Townhouses": ['Townhouse', 'Townhouse (Attached)', 'Townhouse (Detached)'],
+            "Triplexes": ['Triplex (Attached)', 'Triplex (Detached)'],
             "Unknown": ['Unknown']
         }
 
@@ -191,6 +191,14 @@ class LeaseComponents(BaseClass):
         all_possible_subtypes = list(self.subtype_meaning.keys())
         initial_values = all_possible_subtypes
 
+        # Custom styles to change option text color to white
+        custom_styles = {
+            "dropdown": {"color": "white"},
+            "item": {"color": "white"},
+            "value": {"color": "white"},
+            "label": {"color": "white"},
+        }
+
         # Dash Component as Class Method
         subtype_checklist = html.Div([
             html.Div([
@@ -205,14 +213,15 @@ class LeaseComponents(BaseClass):
                     searchable=True,
                     nothingFoundMessage="No options found",
                     clearable=True,
-                    style={"margin-bottom": "10px"}
+                    style={"margin-bottom": "10px"},
+                    styles=custom_styles
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'subtype'},
             style={
                 "overflow-y": "scroll",
                 "overflow-x": 'hidden',
-                "height": '220px'
+                "height": '120px'
             })
         ])
         return subtype_checklist
