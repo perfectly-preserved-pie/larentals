@@ -178,7 +178,7 @@ class LeaseComponents(BaseClass):
                 "group": group,
                 "items": sorted(
                     [
-                        {"value": subtype, "label": f"{subtype} - {self.subtype_meaning.get(subtype, 'Unknown')}"}
+                        {"value": subtype, "label": self.subtype_meaning.get(subtype, 'Unknown')}
                         for subtype in subtypes
                     ],
                     key=lambda x: x["label"]
