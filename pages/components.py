@@ -192,10 +192,10 @@ class LeaseComponents(BaseClass):
         initial_values = all_possible_subtypes
 
         # Custom styles to change option text color to white
+        # https://www.dash-mantine-components.com/components/multiselect#styles-api
         custom_styles = {
             "dropdown": {"color": "white"},
-            "item": {"color": "white"},
-            "value": {"color": "white"},
+            "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
             "label": {"color": "white"},
         }
 
