@@ -196,7 +196,9 @@ class LeaseComponents(BaseClass):
         custom_styles = {
             "dropdown": {"color": "white"},
             "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
+            "input": {"color": "white"},
             "label": {"color": "white"},
+            "pill": {"color": "white"},
         }
 
         # Dash Component as Class Method
