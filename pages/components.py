@@ -234,7 +234,7 @@ class LeaseComponents(BaseClass):
                     id='subtype_checklist',
                     data=data,
                     value=initial_values,
-                    searchable=True,
+                    searchable=False,
                     nothingFoundMessage="No options found",
                     clearable=True,
                     style={"margin-bottom": "10px"},
