@@ -63,7 +63,6 @@ rename_dict = {
   'list': 'list_price',
   'lot': 'lot_size',
   'mls': 'mls_number',
-  'name': 'street_name',
   'other': 'other_deposit',
   'pet deposit': 'pet_deposit',
   'prking': 'parking_spaces',
@@ -71,6 +70,7 @@ rename_dict = {
   'sqft': 'sqft',
   'square': 'ppsqft',
   'st #': 'street_number',
+  'st name': 'street_name',
   'sub': 'subtype',
   'terms': 'terms', 
   'yr': 'year_built',
@@ -155,6 +155,9 @@ for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].it
   df.at[row.Index, 'zip_code'] = missing_zip_code
 
 df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
+
+# Remove the trailing .0 in the zip_code column
+df['zip_code'] = df['zip_code'].str.replace(r'\.0$', '', regex=True)
 
 # Tag each row with the date it was processed
 for row in df.itertuples():

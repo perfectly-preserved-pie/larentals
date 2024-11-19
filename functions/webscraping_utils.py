@@ -100,7 +100,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
         data = response.json()
         is_sold = data.get('IsSold', False)
         if is_sold:
-            logger.debug(f"Listing {mls_number} has been sold.")
+            logger.info(f"Listing {mls_number} has been sold.")
         return is_sold
     except requests.HTTPError as e:
         logger.error(f"HTTP error occurred while checking if the listing for MLS {mls_number} has been sold: {e}")
