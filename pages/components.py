@@ -234,12 +234,11 @@ class LeaseComponents(BaseClass):
                     id='subtype_checklist',
                     data=data,
                     value=initial_values,
-                    searchable=True,
+                    searchable=False,
                     nothingFoundMessage="No options found",
                     clearable=True,
                     style={"margin-bottom": "10px"},
-                    styles=custom_styles,
-                    comboboxProps={'floatingStrategy':'fixed'}
+                    styles=custom_styles
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'subtype'},
