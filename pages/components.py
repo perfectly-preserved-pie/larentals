@@ -245,7 +245,7 @@ class LeaseComponents(BaseClass):
             style={
                 "overflow-y": "scroll",
                 "overflow-x": 'hidden',
-                "height": '120px'
+                #"height": '120px'
             })
         ])
         return subtype_checklist
