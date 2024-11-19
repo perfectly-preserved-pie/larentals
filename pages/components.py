@@ -245,6 +245,7 @@ class LeaseComponents(BaseClass):
             style={
                 "overflow-y": "scroll",
                 "overflow-x": 'hidden',
+                "maxHeight": '120px',
                 #"height": '120px'
             })
         ])
