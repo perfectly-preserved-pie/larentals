@@ -345,22 +345,60 @@ class LeaseFilters:
         if not choice:
             # If no choices are selected, return False for all entries
             return pd.Series([False] * len(self.df), index=self.df.index)
-        
+
         # Handle 'Unknown' option
         if 'Unknown' in choice:
-            unknown_filter = self.df['subtype'].isnull()
+            unknown_filter = self.df['subtype'].isnull() | (self.df['subtype'] == 'Unknown')
             # Remove 'Unknown' from choices to avoid filtering by it in 'isin'
             choice = [c for c in choice if c != 'Unknown']
         else:
             unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
-        
-        if choice:
-            # Filter where 'subtype' matches the choices
-            subtype_filter = self.df['subtype'].isin(choice)
-        else:
-            subtype_filter = pd.Series([False] * len(self.df), index=self.df.index)
-        
-        # Combine filters
+
+        # Create a mapping for the subtypes
+        subtype_mapping = {
+            'Apartment': ['Apartment', 'APT'],
+            'APT/A': ['APT/A'],
+            'APT/D': ['APT/D'],
+            'Cabin (Detached)': ['CABIN/D'],
+            'Combo - Res & Com': ['Combo - Res & Com', 'Combo - Res &amp; Com'],
+            'Commercial Residential (Attached)': ['COMRES/A'],
+            'CONDO/A': ['CONDO/A'],
+            'CONDO/D': ['CONDO/D'],
+            'Condominium': ['Condominium', 'CONDO'],
+            'Duplex (Attached)': ['DPLX/A'],
+            'Duplex (Detached)': ['DPLX/D'],
+            'Loft': ['Loft', 'LOFT'],
+            'LOFT/A': ['LOFT/A'],
+            'Quadplex (Attached)': ['QUAD/A'],
+            'Quadplex (Detached)': ['QUAD/D'],
+            'Room For Rent (Attached)': ['RMRT/A'],
+            'SFR/A': ['SFR/A'],
+            'SFR/D': ['SFR/D'],
+            'Single Family': ['Single Family', 'SFR'],
+            'Stock Cooperative': ['Stock Cooperative'],
+            'Studio (Attached)': ['STUD/A'],
+            'Studio (Detached)': ['STUD/D'],
+            'Townhouse': ['Townhouse', 'TWNHS'],
+            'Triplex (Attached)': ['TPLX/A'],
+            'Triplex (Detached)': ['TPLX/D'],
+            'TWNHS/A': ['TWNHS/A'],
+            'TWNHS/D': ['TWNHS/D'],
+        }
+
+        # Create the filter based on the mapping
+        filters = []
+        for subtype in choice:
+            if subtype in subtype_mapping:
+                filters.append(self.df['subtype'].isin(subtype_mapping[subtype]))
+            else:
+                filters.append(self.df['subtype'] == subtype)
+
+        # Combine filters using logical OR
+        subtype_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        for f in filters:
+            subtype_filter |= f
+
+        # Combine with unknown filter
         combined_filter = subtype_filter | unknown_filter
         return combined_filter
     

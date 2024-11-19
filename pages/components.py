@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import numpy as np
 import pandas as pd
+import dash_mantine_components as dmc
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -70,40 +71,34 @@ class BaseClass:
 class LeaseComponents(BaseClass):
     # Class Variables
     subtype_meaning = {
-        'APT': 'Apartment (Unspecified)',
-        'APT/A': 'Apartment (Attached)',
-        'APT/D': 'Apartment (Detached)',
-        'CABIN/D': 'Cabin (Detached)',
-        'COMRES/A': 'Commercial/Residential (Attached)',
-        'COMRES/D': 'Commercial/Residential (Detached)',
-        'CONDO': 'Condo (Unspecified)',
-        'CONDO/A': 'Condo (Attached)',
-        'CONDO/D': 'Condo (Detached)',
-        'COOP/A': 'Cooperative (Attached)',
-        'DPLX/A': 'Duplex (Attached)',
-        'DPLX/D': 'Duplex (Detached)',
-        'LOFT/A': 'Loft (Attached)',
-        'MANL/D': '??? (Detached)',
-        'MH': 'Mobile Home',
-        'OYO/A': 'Own-Your-Own (Attached)',
-        'OYO/D': 'Own-Your-Own (Detached)',
-        'QUAD': 'Quadplex (Unspecified)',
-        'QUAD/A': 'Quadplex (Attached)',
-        'QUAD/D': 'Quadplex (Detached)',
-        'RMRT/A': 'Room For Rent (Attached)',
-        'RMRT/D': 'Room For Rent (Detached)',
-        'SFR': 'Single Family Residence (Unspecified)',
-        'SFR/A': 'Single Family Residence (Attached)',
-        'SFR/D': 'Single Family Residence (Detached)',
-        'STUD/A': 'Studio (Attached)',
-        'STUD/D': 'Studio (Detached)',
-        'TPLX': 'Triplex (Unspecified)',
-        'TPLX/A': 'Triplex (Attached)',
-        'TPLX/D': 'Triplex (Detached)',
-        'TWNHS': 'Townhouse (Unspecified)',
-        'TWNHS/A': 'Townhouse (Attached)',
-        'TWNHS/D': 'Townhouse (Detached)',
-        'Unknown': 'Unknown',
+        'Apartment (Attached)': 'Apartment (Attached)',
+        'Apartment (Detached)': 'Apartment (Detached)',
+        'Apartment': 'Apartment',
+        'Cabin (Detached)': 'Cabin (Detached)',
+        'Commercial Residential (Attached)': 'Commercial Residential (Attached)',
+        'Condominium (Attached)': 'Condominium (Attached)',
+        'Condominium (Detached)': 'Condominium (Detached)',
+        'Condominium': 'Condominium',
+        'Duplex (Attached)': 'Duplex (Attached)',
+        'Duplex (Detached)': 'Duplex (Detached)',
+        'Loft (Attached)': 'Loft (Attached)',
+        'Loft': 'Loft',
+        'Quadplex (Attached)': 'Quadplex (Attached)',
+        'Quadplex (Detached)': 'Quadplex (Detached)',
+        'Residential & Commercial': 'Residential & Commercial',
+        'Room For Rent (Attached)': 'Room For Rent (Attached)',
+        'Single Family (Attached)': 'Single Family (Attached)',
+        'Single Family (Detached)': 'Single Family (Detached)',
+        'Single Family': 'Single Family',
+        'Stock Cooperative': 'Stock Cooperative',
+        'Studio (Attached)': 'Studio (Attached)',
+        'Studio (Detached)': 'Studio (Detached)',
+        'Townhouse (Attached)': 'Townhouse (Attached)',
+        'Townhouse (Detached)': 'Townhouse (Detached)',
+        'Townhouse': 'Townhouse',
+        'Triplex (Attached)': 'Triplex (Attached)',
+        'Triplex (Detached)': 'Triplex (Detached)',
+        'Unknown': 'Unknown'
     }
 
     def __init__(self, df):
@@ -155,42 +150,104 @@ class LeaseComponents(BaseClass):
             return 'Other'
     
     def create_subtype_checklist(self):
-        # Instance Variable
-        unique_values = self.df['subtype'].dropna().unique().tolist()
-        unique_values = ["Unknown" if i in ["/A", "/D"] else i for i in unique_values]
-        if "Unknown" not in unique_values:
-            unique_values.append("Unknown")
+        # Define groups
+        groups = {
+            "Apartments": [
+                {'label': 'Apartment', 'value': 'Apartment'},
+                {'label': 'Apartment (Attached)', 'value': 'APT/A'},
+                {'label': 'Apartment (Detached)', 'value': 'APT/D'}
+            ],
+            "Cabins": [{'label': 'Cabin (Detached)', 'value': 'CABIN/D'}],
+            "Combo - Residential & Commercial": [{'label': 'Combo - Res & Com', 'value': 'Combo - Res & Com'}],
+            "Commercial Residential": [{'label': 'Commercial Residential (Attached)', 'value': 'COMRES/A'}],
+            "Condominiums": [
+                {'label': 'Condominium', 'value': 'Condominium'},
+                {'label': 'Condominium (Attached)', 'value': 'CONDO/A'},
+                {'label': 'Condominium (Detached)', 'value': 'CONDO/D'}
+            ],
+            "Duplexes": [
+                {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
+                {'label': 'Duplex (Detached)', 'value': 'DPLX/D'}
+            ],
+            "Lofts": [
+                {'label': 'Loft', 'value': 'Loft'},
+                {'label': 'Loft (Attached)', 'value': 'LOFT/A'}
+            ],
+            "Quadplexes": [
+                {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+                {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'}
+            ],
+            "Rooms For Rent": [{'label': 'Room For Rent (Attached)', 'value': 'RMRT/A'}],
+            "Single Family Residences": [
+                {'label': 'Single Family Residence', 'value': 'Single Family'},
+                {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+                {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'}
+            ],
+            "Stock Cooperative": [{'label': 'Stock Cooperative', 'value': 'Stock Cooperative'}],
+            "Studios": [
+                {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+                {'label': 'Studio (Detached)', 'value': 'STUD/D'}
+            ],
+            "Townhouses": [
+                {'label': 'Townhouse', 'value': 'Townhouse'},
+                {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+                {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'}
+            ],
+            "Triplexes": [
+                {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
+                {'label': 'Triplex (Detached)', 'value': 'TPLX/D'}
+            ],
+            "Unknown": [{'label': 'Unknown', 'value': 'Unknown'}]
+        }
+
+        # Prepare data for MultiSelect with sorted subtypes
+        data = [
+            {
+                "group": group,
+                "items": sorted(subtypes, key=lambda x: x["label"])
+            }
+            for group, subtypes in sorted(groups.items())
+        ]
+
+        # Ensure all possible subtypes are included in the initial value
+        all_possible_subtypes = [item['value'] for sublist in groups.values() for item in sublist]
+        initial_values = all_possible_subtypes
+
+        # Custom styles to change option text color to white
+        # https://www.dash-mantine-components.com/components/multiselect#styles-api
+        custom_styles = {
+            "dropdown": {"color": "white"},
+            "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
+            "input": {"color": "white"},
+            "label": {"color": "white"},
+            "pill": {"color": "white"},
+        }
 
         # Dash Component as Class Method
-        subtype_checklist = html.Div([ 
+        subtype_checklist = html.Div([
             html.Div([
                 html.H5("Subtypes", style={'display': 'inline-block', 'margin-right': '10px'}),
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
-                html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
-                dcc.Checklist( 
+                dmc.MultiSelect(
                     id='subtype_checklist',
-                    options=sorted(
-                        [
-                            {'label': f"{i} - {self.subtype_meaning.get(i, 'Unknown')}", 'value': i}
-                            for i in set(unique_values)
-                        ], 
-                        key=lambda x: x['label']
-                    ),
-                    value=[term['value'] for term in [{'label': "Unknown" if pd.isnull(term) else term, 'value': "Unknown" if pd.isnull(term) else term} for term in self.df['subtype'].unique()]],
-                    labelStyle={'display': 'block'},
-                    inputStyle={"margin-right": "5px", "margin-left": "5px"},
+                    data=data,
+                    value=initial_values,
+                    searchable=True,
+                    nothingFoundMessage="No options found",
+                    clearable=True,
+                    style={"margin-bottom": "10px"},
+                    styles=custom_styles
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'subtype'},
             style={
                 "overflow-y": "scroll",
                 "overflow-x": 'hidden',
-                "height": '220px'
+                "height": '120px'
             })
         ])
-
         return subtype_checklist
     
     def create_bedrooms_slider(self):
