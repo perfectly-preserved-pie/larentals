@@ -152,43 +152,65 @@ class LeaseComponents(BaseClass):
     def create_subtype_checklist(self):
         # Define groups
         groups = {
-            "Apartments": ['Apartment', 'Apartment (Attached)', 'Apartment (Detached)'],
-            "Cabins": ['Cabin (Detached)'],
-            "Combo - Residential & Commercial": ['Combo - Residential & Commercial'],
-            "Commercial Residential": ['Commercial Residential (Attached)'],
-            "Condominiums": ['Condominium', 'Condominium (Attached)', 'Condominium (Detached)'],
-            "Duplexes": ['Duplex (Attached)', 'Duplex (Detached)'],
-            "Lofts": ['Loft', 'Loft (Attached)'],
-            "Quadplexes": ['Quadplex (Detached)', 'Quadplex (Attached)'],
-            "Rooms For Rent": ['Room For Rent (Attached)'],
-            "Single Family Residences": ['Single Family', 'Single Family (Detached)', 'Single Family (Attached)'],
-            "Stock Cooperative": ['Stock Cooperative'],
-            "Studios": ['Studio (Attached)', 'Studio (Detached)'],
-            "Townhouses": ['Townhouse', 'Townhouse (Attached)', 'Townhouse (Detached)'],
-            "Triplexes": ['Triplex (Attached)', 'Triplex (Detached)'],
-            "Unknown": ['Unknown']
+            "Apartments": [
+                {'label': 'Apartment', 'value': 'Apartment'},
+                {'label': 'Apartment (Attached)', 'value': 'APT/A'},
+                {'label': 'Apartment (Detached)', 'value': 'APT/D'}
+            ],
+            "Cabins": [{'label': 'Cabin (Detached)', 'value': 'CABIN/D'}],
+            "Combo - Residential & Commercial": [{'label': 'Combo - Res & Com', 'value': 'Combo - Res & Com'}],
+            "Commercial Residential": [{'label': 'Commercial Residential (Attached)', 'value': 'COMRES/A'}],
+            "Condominiums": [
+                {'label': 'Condominium', 'value': 'Condominium'},
+                {'label': 'Condominium (Attached)', 'value': 'CONDO/A'},
+                {'label': 'Condominium (Detached)', 'value': 'CONDO/D'}
+            ],
+            "Duplexes": [
+                {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
+                {'label': 'Duplex (Detached)', 'value': 'DPLX/D'}
+            ],
+            "Lofts": [
+                {'label': 'Loft', 'value': 'Loft'},
+                {'label': 'Loft (Attached)', 'value': 'LOFT/A'}
+            ],
+            "Quadplexes": [
+                {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
+                {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'}
+            ],
+            "Rooms For Rent": [{'label': 'Room For Rent (Attached)', 'value': 'RMRT/A'}],
+            "Single Family Residences": [
+                {'label': 'Single Family Residence', 'value': 'Single Family'},
+                {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
+                {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'}
+            ],
+            "Stock Cooperative": [{'label': 'Stock Cooperative', 'value': 'Stock Cooperative'}],
+            "Studios": [
+                {'label': 'Studio (Attached)', 'value': 'STUD/A'},
+                {'label': 'Studio (Detached)', 'value': 'STUD/D'}
+            ],
+            "Townhouses": [
+                {'label': 'Townhouse', 'value': 'Townhouse'},
+                {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
+                {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'}
+            ],
+            "Triplexes": [
+                {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
+                {'label': 'Triplex (Detached)', 'value': 'TPLX/D'}
+            ],
+            "Unknown": [{'label': 'Unknown', 'value': 'Unknown'}]
         }
-
-        # Sort groups alphabetically
-        sorted_groups = dict(sorted(groups.items()))
 
         # Prepare data for MultiSelect with sorted subtypes
         data = [
             {
                 "group": group,
-                "items": sorted(
-                    [
-                        {"value": subtype, "label": self.subtype_meaning.get(subtype, 'Unknown')}
-                        for subtype in subtypes
-                    ],
-                    key=lambda x: x["label"]
-                ),
+                "items": sorted(subtypes, key=lambda x: x["label"])
             }
-            for group, subtypes in sorted_groups.items()
+            for group, subtypes in sorted(groups.items())
         ]
 
         # Ensure all possible subtypes are included in the initial value
-        all_possible_subtypes = list(self.subtype_meaning.keys())
+        all_possible_subtypes = [item['value'] for sublist in groups.values() for item in sublist]
         initial_values = all_possible_subtypes
 
         # Custom styles to change option text color to white

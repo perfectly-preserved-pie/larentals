@@ -354,13 +354,51 @@ class LeaseFilters:
         else:
             unknown_filter = pd.Series([False] * len(self.df), index=self.df.index)
 
-        if choice:
-            # Filter where 'subtype' matches the choices
-            subtype_filter = self.df['subtype'].isin(choice)
-        else:
-            subtype_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        # Create a mapping for the subtypes
+        subtype_mapping = {
+            'Apartment': ['Apartment', 'APT'],
+            'APT/A': ['APT/A'],
+            'APT/D': ['APT/D'],
+            'Cabin (Detached)': ['CABIN/D'],
+            'Combo - Res & Com': ['Combo - Res & Com', 'Combo - Res &amp; Com'],
+            'Commercial Residential (Attached)': ['COMRES/A'],
+            'CONDO/A': ['CONDO/A'],
+            'CONDO/D': ['CONDO/D'],
+            'Condominium': ['Condominium', 'CONDO'],
+            'Duplex (Attached)': ['DPLX/A'],
+            'Duplex (Detached)': ['DPLX/D'],
+            'Loft': ['Loft', 'LOFT'],
+            'LOFT/A': ['LOFT/A'],
+            'Quadplex (Attached)': ['QUAD/A'],
+            'Quadplex (Detached)': ['QUAD/D'],
+            'Room For Rent (Attached)': ['RMRT/A'],
+            'SFR/A': ['SFR/A'],
+            'SFR/D': ['SFR/D'],
+            'Single Family': ['Single Family', 'SFR'],
+            'Stock Cooperative': ['Stock Cooperative'],
+            'Studio (Attached)': ['STUD/A'],
+            'Studio (Detached)': ['STUD/D'],
+            'Townhouse': ['Townhouse', 'TWNHS'],
+            'Triplex (Attached)': ['TPLX/A'],
+            'Triplex (Detached)': ['TPLX/D'],
+            'TWNHS/A': ['TWNHS/A'],
+            'TWNHS/D': ['TWNHS/D'],
+        }
 
-        # Combine filters
+        # Create the filter based on the mapping
+        filters = []
+        for subtype in choice:
+            if subtype in subtype_mapping:
+                filters.append(self.df['subtype'].isin(subtype_mapping[subtype]))
+            else:
+                filters.append(self.df['subtype'] == subtype)
+
+        # Combine filters using logical OR
+        subtype_filter = pd.Series([False] * len(self.df), index=self.df.index)
+        for f in filters:
+            subtype_filter |= f
+
+        # Combine with unknown filter
         combined_filter = subtype_filter | unknown_filter
         return combined_filter
     
