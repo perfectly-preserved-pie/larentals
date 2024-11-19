@@ -1103,7 +1103,8 @@ class LeaseComponents(BaseClass):
             body = True,
             # Make the graph stay in view as the page is scrolled down
             # https://getbootstrap.com/docs/4.0/utilities/position/
-            className = 'sticky-top'
+            # Apply sticky-top class only on non-mobile devices
+            className='d-block d-md-block sticky-top'
         )
     
         return map_card
