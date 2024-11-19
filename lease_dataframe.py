@@ -52,19 +52,23 @@ df.columns = df.columns.str.lower()
 # https://stackoverflow.com/a/65332240
 # Define a renaming dictionary based on patterns
 rename_dict = {
+  'address': 'street_name',
   'agent': 'phone_number',
   'allowed': 'pet_policy',
   'baths': 'bathrooms',
   'bedrooms': 'bedrooms',
+  'br': 'bedrooms',
   'city': 'city',
   'furnished': 'furnished',
   'key': 'key_deposit',
   'laundry': 'laundry',
   'list': 'list_price',
   'lot': 'lot_size',
+  'lp': 'list_price',
   'mls': 'mls_number',
   'other': 'other_deposit',
   'pet deposit': 'pet_deposit',
+  'pets': 'pet_policy',
   'prking': 'parking_spaces',
   'security': 'security_deposit',
   'sqft': 'sqft',
@@ -73,6 +77,7 @@ rename_dict = {
   'st name': 'street_name',
   'sub': 'subtype',
   'terms': 'terms', 
+  'yb': 'year_built',
   'yr': 'year_built',
   'zip': 'zip_code',
 }
