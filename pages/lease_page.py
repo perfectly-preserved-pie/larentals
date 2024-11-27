@@ -245,6 +245,16 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
 
     // Access all the leaves of the cluster
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
+    const clusterSize = leaves.length;
+
+    // Define a color scale (simple gradient based on cluster size)
+    const getColor = function(size) {
+        if (size < 10) return '#00ff00'; // Green for small clusters
+        if (size < 50) return '#ffff00'; // Yellow for medium clusters
+        if (size < 100) return '#ffa500'; // Orange for larger clusters
+        return '#ff0000'; // Red for very large clusters
+    };
+    const color = getColor(clusterSize);
 
     // Collect coordinates for the cluster's children
     let features = [];
@@ -266,18 +276,18 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     if (convexHull) {
         polygonLayer = L.geoJSON(convexHull, {
             style: {
-                color: '#3388ff', // Border color
+                color: color,     // Use the same color as the cluster icon
                 weight: 2,        // Border thickness
                 fillOpacity: 0.2, // Polygon fill transparency
-                fillColor: '#3388ff' // Polygon fill color
+                fillColor: color  // Polygon fill color
             }
         });
     }
 
-    // Create a custom marker for the cluster
+    // Create a custom marker for the cluster with dynamic color
     const clusterMarker = L.marker(latlng, {
         icon: L.divIcon({
-            html: '<div style="background-color:rgba(51, 136, 255, 0.8); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:white;">' +
+            html: '<div style="background-color:' + color + '; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:white;">' +
                   feature.properties.point_count_abbreviated + '</div>',
             className: 'cluster-marker',
             iconSize: L.point(30, 30)
