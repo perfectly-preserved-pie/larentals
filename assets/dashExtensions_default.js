@@ -10,7 +10,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
             const clusterSize = leaves.length;
 
-            // Define a color scale function (mimicking Leaflet.markercluster behavior)
+            // Define a color scale (mimicking Leaflet.markercluster behavior)
             const getColor = function(size) {
                 if (size < 10) return 'green'; // Small clusters
                 if (size < 50) return 'yellow'; // Medium clusters
@@ -49,19 +49,24 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 });
             }
 
-            // Create a custom marker for the cluster with dynamic color
+            // Create a custom marker for the cluster with dual circle style
             const clusterMarker = L.marker(latlng, {
                 icon: L.divIcon({
-                    html: `<div style="background-color:${color}; 
-                               border-radius:50%; 
-                               width:30px; 
-                               height:30px; 
-                               display:flex; 
-                               align-items:center; 
-                               justify-content:center; 
-                               color:white;">${feature.properties.point_count_abbreviated}</div>`,
+                    html: `
+                <div style="position:relative; width:40px; height:40px;">
+                    <div style="background-color:${color}; opacity:0.6; 
+                                border-radius:50%; width:40px; height:40px; 
+                                position:absolute; top:0; left:0;"></div>
+                    <div style="background-color:${color}; 
+                                border-radius:50%; width:30px; height:30px; 
+                                position:absolute; top:5px; left:5px; 
+                                display:flex; align-items:center; justify-content:center; 
+                                font-weight:bold; color:black; font-size:14px;">
+                        ${feature.properties.point_count_abbreviated}
+                    </div>
+                </div>`,
                     className: 'marker-cluster', // Optional: add a class for further customization
-                    iconSize: L.point(40, 40) // Adjust the icon size if needed
+                    iconSize: L.point(40, 40) // Adjust the icon size
                 })
             });
 
