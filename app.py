@@ -22,6 +22,9 @@ app = Dash(
   meta_tags = [
     {"name": "viewport", "content": "width=device-width, initial-scale=1"}
   ],
+  external_scripts=[
+    'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js'
+  ]
 )
 
 # Set the page title

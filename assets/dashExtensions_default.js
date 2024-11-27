@@ -1,53 +1,17 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
-        function0: function(feature, layer, context) {
-            if (feature.properties.city) {
-                layer.bindTooltip(`${feature.properties.city} (${feature.properties.density})`)
-            }
-        },
-        function1: function(feature, latlng, context) {
-            const {
-                min,
-                max,
-                colorscale,
-                circleOptions,
-                colorProp
-            } = context.hideout;
-            const csc = chroma.scale(colorscale).domain([min, max]);
-            circleOptions.fillColor = csc(feature.properties[colorProp]);
-            return L.circleMarker(latlng, circleOptions);
-        },
-        function2: function(feature, latlng, index, context) {
-            const {
-                min,
-                max,
-                colorscale,
-                circleOptions,
-                colorProp
-            } = context.hideout;
-            const csc = chroma.scale(colorscale).domain([min, max]);
-
+        function0: function(feature, latlng, index, context) {
             // Access the leaves of the cluster
             const leaves = index.getLeaves(feature.properties.cluster_id);
 
-            // Collect coordinates and sum property values
+            // Collect coordinates for the cluster's children
             let features = [];
-            let valueSum = 0;
-
             for (let i = 0; i < leaves.length; ++i) {
                 const coords = leaves[i].geometry.coordinates;
                 const lng = coords[0];
                 const lat = coords[1];
-
-                // Create a Turf.js point feature
                 features.push(turf.point([lng, lat]));
-
-                // Sum the property values
-                valueSum += leaves[i].properties[colorProp];
             }
-
-            // Calculate the mean value for color scaling
-            const valueMean = valueSum / leaves.length;
 
             // Create a Turf.js feature collection
             const fc = turf.featureCollection(features);
@@ -55,50 +19,40 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             // Compute the convex hull
             const convexHull = turf.convex(fc);
 
-            // Create a Leaflet layer for the convex hull polygon
+            // If the convex hull exists, render it as a polygon
             let polygonLayer = null;
             if (convexHull) {
                 polygonLayer = L.geoJSON(convexHull, {
                     style: {
-                        color: csc(valueMean),
-                        weight: 1,
-                        fillOpacity: 0.2
+                        color: '#3388ff', // Border color (default Leaflet cluster color)
+                        weight: 2, // Border thickness
+                        fillOpacity: 0.2, // Polygon fill transparency
+                        fillColor: '#3388ff' // Polygon fill color
                     }
-                });
-            } else {
-                // If convex hull couldn't be computed (e.g., less than 3 points), create a circle
-                polygonLayer = L.circle(latlng, {
-                    radius: 50000, // Adjust radius as needed
-                    color: csc(valueMean),
-                    weight: 1,
-                    fillOpacity: 0.2
                 });
             }
 
-            // Customize the cluster icon
-            const scatterIcon = L.DivIcon.extend({
-                createIcon: function(oldIcon) {
-                    let icon = L.DivIcon.prototype.createIcon.call(this, oldIcon);
-                    icon.style.backgroundColor = this.options.color;
-                    return icon;
-                }
+            // Create a custom marker for the cluster
+            const clusterMarker = L.marker(latlng, {
+                icon: L.divIcon({
+                    html: '<div style="background-color:rgba(51, 136, 255, 0.8); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:white;">' +
+                        feature.properties.point_count_abbreviated + '</div>',
+                    className: 'cluster-marker',
+                    iconSize: L.point(30, 30)
+                })
             });
 
-            const icon = new scatterIcon({
-                html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
-                className: "marker-cluster",
-                iconSize: L.point(40, 40),
-                color: csc(valueMean)
+            // Show the convex hull on hover
+            clusterMarker.on('mouseover', function() {
+                if (polygonLayer) polygonLayer.addTo(context.map);
             });
 
-            const marker = L.marker(latlng, {
-                icon: icon
+            // Hide the convex hull when the hover ends
+            clusterMarker.on('mouseout', function() {
+                if (polygonLayer) context.map.removeLayer(polygonLayer);
             });
 
-            // Create a layer group containing the polygon and the marker
-            const clusterLayer = L.layerGroup([polygonLayer, marker]);
-
-            return clusterLayer;
+            return clusterMarker;
         }
     }
 });
