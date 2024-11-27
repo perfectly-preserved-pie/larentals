@@ -61,7 +61,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                                 border-radius:50%; width:30px; height:30px; 
                                 position:absolute; top:5px; left:5px; 
                                 display:flex; align-items:center; justify-content:center; 
-                                font-weight:bold; color:black; font-size:14px;">
+                                font-weight:normal; color:black; font-size:14px;">
                         ${feature.properties.point_count_abbreviated}
                     </div>
                 </div>`,
