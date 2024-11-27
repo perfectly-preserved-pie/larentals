@@ -1,8 +1,8 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
         function0: function(feature, latlng, index, context) {
-            // Access the leaves of the cluster
-            const leaves = index.getLeaves(feature.properties.cluster_id);
+            // Access all the leaves of the cluster
+            const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
 
             // Collect coordinates for the cluster's children
             let features = [];
@@ -24,7 +24,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             if (convexHull) {
                 polygonLayer = L.geoJSON(convexHull, {
                     style: {
-                        color: '#3388ff', // Border color (default Leaflet cluster color)
+                        color: '#3388ff', // Border color
                         weight: 2, // Border thickness
                         fillOpacity: 0.2, // Polygon fill transparency
                         fillColor: '#3388ff' // Polygon fill color
