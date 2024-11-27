@@ -10,13 +10,15 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
             const clusterSize = leaves.length;
 
-            // Define a color scale (simple gradient based on cluster size)
+            // Define a color scale function (mimicking Leaflet.markercluster behavior)
             const getColor = function(size) {
-                if (size < 10) return '#00ff00'; // Green for small clusters
-                if (size < 50) return '#ffff00'; // Yellow for medium clusters
-                if (size < 100) return '#ffa500'; // Orange for larger clusters
-                return '#ff0000'; // Red for very large clusters
+                if (size < 10) return 'green'; // Small clusters
+                if (size < 50) return 'yellow'; // Medium clusters
+                if (size < 100) return 'orange'; // Larger clusters
+                return 'red'; // Very large clusters
             };
+
+            // Get the appropriate color for the cluster size
             const color = getColor(clusterSize);
 
             // Collect coordinates for the cluster's children
@@ -50,10 +52,16 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             // Create a custom marker for the cluster with dynamic color
             const clusterMarker = L.marker(latlng, {
                 icon: L.divIcon({
-                    html: '<div style="background-color:' + color + '; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:white;">' +
-                        feature.properties.point_count_abbreviated + '</div>',
-                    className: 'cluster-marker',
-                    iconSize: L.point(30, 30)
+                    html: `<div style="background-color:${color}; 
+                               border-radius:50%; 
+                               width:30px; 
+                               height:30px; 
+                               display:flex; 
+                               align-items:center; 
+                               justify-content:center; 
+                               color:white;">${feature.properties.point_count_abbreviated}</div>`,
+                    className: 'marker-cluster', // Optional: add a class for further customization
+                    iconSize: L.point(40, 40) // Adjust the icon size if needed
                 })
             });
 
@@ -71,7 +79,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 }
             });
 
-            // Add behavior to remove the polygon when the cluster is clicked or no longer needed
+            // Add behavior to remove the polygon when the mouse leaves the cluster
             clusterMarker.on('mouseout', function() {
                 if (context.currentPolygon) {
                     context.map.removeLayer(context.currentPolygon);
