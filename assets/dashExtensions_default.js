@@ -49,11 +49,11 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 });
             }
 
-            // Create a custom marker for the cluster with dual circle style
+            // Create a custom marker for the cluster with Leaflet.markercluster font styling
             const clusterMarker = L.marker(latlng, {
                 icon: L.divIcon({
                     html: `
-                <div style="position:relative; width:40px; height:40px;">
+                <div style="position:relative; width:40px; height:40px; font-family: Arial, sans-serif; font-size: 12px;">
                     <div style="background-color:${color}; opacity:0.6; 
                                 border-radius:50%; width:40px; height:40px; 
                                 position:absolute; top:0; left:0;"></div>
@@ -61,7 +61,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                                 border-radius:50%; width:30px; height:30px; 
                                 position:absolute; top:5px; left:5px; 
                                 display:flex; align-items:center; justify-content:center; 
-                                font-weight:normal; color:black; font-size:14px;">
+                                font-weight:normal; color:black; font-size:12px; font-family: Arial, sans-serif;">
                         ${feature.properties.point_count_abbreviated}
                     </div>
                 </div>`,
