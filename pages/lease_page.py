@@ -238,6 +238,11 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
 
   # JavaScript function to render clusters with convex hull polygons
   cluster_to_layer = assign("""function(feature, latlng, index, context){
+    // A global reference to the currently displayed polygon
+    if (!context.currentPolygon) {
+        context.currentPolygon = null;
+    }
+
     // Access all the leaves of the cluster
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
 
@@ -256,7 +261,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     // Compute the convex hull
     const convexHull = turf.convex(fc);
 
-    // If the convex hull exists, render it as a polygon
+    // If the convex hull exists, create it as a polygon
     let polygonLayer = null;
     if (convexHull) {
         polygonLayer = L.geoJSON(convexHull, {
@@ -279,14 +284,26 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
         })
     });
 
-    // Show the convex hull on hover
+    // Add mouseover behavior to display the convex hull
     clusterMarker.on('mouseover', function() {
-        if (polygonLayer) polygonLayer.addTo(context.map);
+        // Remove the previously displayed polygon, if any
+        if (context.currentPolygon) {
+            context.map.removeLayer(context.currentPolygon);
+        }
+
+        // Add the new polygon to the map and update the reference
+        if (polygonLayer) {
+            polygonLayer.addTo(context.map);
+            context.currentPolygon = polygonLayer;
+        }
     });
 
-    // Hide the convex hull when the hover ends
+    // Add behavior to remove the polygon when the cluster is clicked or no longer needed
     clusterMarker.on('mouseout', function() {
-        if (polygonLayer) context.map.removeLayer(polygonLayer);
+        if (context.currentPolygon) {
+            context.map.removeLayer(context.currentPolygon);
+            context.currentPolygon = null;
+        }
     });
 
     return clusterMarker;
