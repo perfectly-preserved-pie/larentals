@@ -1,7 +1,9 @@
 .cache
 .env
-.git
+.git/
 .github/
+.venv/
+.vscode/
 *.csv
 *.pyc
 *.xlsx
