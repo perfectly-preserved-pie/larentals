@@ -4,6 +4,7 @@ from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
+from functions.convex_hull import generate_convex_hulls
 from loguru import logger
 from user_agents import parse
 import dash
@@ -238,15 +239,15 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Generate the map
   return dl.GeoJSON(
     id=str(uuid.uuid4()),
-    #children=[dl.Popup(id='2popup')],
     data=geojson,
     cluster=True,
+    clusterToLayer=generate_convex_hulls,
+    onEachFeature=ns("on_each_feature"),
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
   )
 
 # Create a callback to manage the collapsing behavior

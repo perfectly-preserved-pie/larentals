@@ -20,19 +20,15 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 function getListingUrlBlock(data) {
                     if (!data.listing_url) {
                         return `
-                            <tr>
-                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.mls_number}</td>
-                            </tr>
+                            <div style="text-align: center;">
+                                <h5>${data.full_street_address}</h5>
+                            </div>
                         `;
                     }
                     return `
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">
-                                <a href='${data.listing_url}' referrerPolicy='noreferrer' target='_blank'>${data.mls_number}</a>
-                            </td>
-                        </tr>
+                        <div style="text-align: center;">
+                            <h5><a href='${data.listing_url}' referrerPolicy='noreferrer' target='_blank'>${data.full_street_address}</a></h5>
+                        </div>
                     `;
                 }
                 
@@ -63,15 +59,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     return `
                         <div>
                         ${imageRow}
-                        <div style="text-align: center;">
-                            <h5>${data.full_street_address}</h5>
-                        </div>
+                        ${listingUrlBlock}
                         <table style="width:100%;border-collapse:collapse;">
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
                             </tr>
-                            ${listingUrlBlock}
+                            <tr>
+                                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
+                                <td style="padding:8px;border-bottom:1px solid #ddd;">${data.mls_number}</td>
+                            </tr>
                             <tr>
                                 <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
                                 <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
@@ -216,15 +213,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     return `
                         <div>
                             ${imageRow}
-                            <div style="text-align: center;">
-                                <h5>${data.address}</h5>
-                            </div>
+                            ${listingUrlBlock}
                             <table style="width:100%;border-collapse:collapse;">
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
                                     <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
                                 </tr>
-                                ${listingUrlBlock}
+                                <tr>
+                                    <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
+                                    <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.mls_number)}</td>
+                                </tr>
                                 ${parkNameBlock}
                                 <tr>
                                     <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>

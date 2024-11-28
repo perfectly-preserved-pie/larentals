@@ -26,13 +26,13 @@ class BaseClass:
                         dbc.ButtonGroup(
                             [
                                 dbc.Button(
-                                    [html.I(className="fa fa-building", style={"margin-right": "5px"}), "For Rent"],
+                                    [html.I(className="fa fa-building", style={"marginRight": "5px"}), "For Rent"],
                                     href="/",
                                     color="primary"
                                 ),
-                                html.Div(style={"width": "1px", "background-color": "#ccc", "margin": "0 1px", "height": "100%"}),  # Vertical Divider
+                                html.Div(style={"width": "1px", "backgroundColor": "#ccc", "margin": "0 1px", "height": "100%"}),  # Vertical Divider
                                 dbc.Button(
-                                    [html.I(className="fa fa-home", style={"margin-right": "5px"}), "For Sale"],
+                                    [html.I(className="fa fa-home", style={"marginRight": "5px"}), "For Sale"],
                                     href="/buy",
                                     color="primary"
                                 ),
@@ -46,20 +46,20 @@ class BaseClass:
                 align="center",
             ),
             html.P(subtitle),
-            html.P(f"Last updated: {self.last_updated}", style={'margin-bottom': '5px'}),
+            html.P(f"Last updated: {self.last_updated}", style={'marginBottom': '5px'}),
             html.I(
                 className="bi bi-github",
-                style={"margin-right": "5px"},
+                style={"marginRight": "5px"},
             ),
             html.A("GitHub", href='https://github.com/perfectly-preserved-pie/larentals', target='_blank'),
             html.I(
                 className="fa-solid fa-blog",
-                style={"margin-right": "5px", "margin-left": "15px"},
+                style={"marginRight": "5px", "marginLeft": "15px"},
             ),
             html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
             html.I(
                 className="fa fa-envelope",
-                style={"margin-right": "5px", "margin-left": "15px"},
+                style={"marginRight": "5px", "marginLeft": "15px"},
             ),
             html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
         ]
@@ -226,7 +226,7 @@ class LeaseComponents(BaseClass):
         # Dash Component as Class Method
         subtype_checklist = html.Div([
             html.Div([
-                html.H5("Subtypes", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -237,14 +237,14 @@ class LeaseComponents(BaseClass):
                     searchable=False,
                     nothingFoundMessage="No options found",
                     clearable=True,
-                    style={"margin-bottom": "10px"},
+                    style={"marginBottom": "10px"},
                     styles=custom_styles
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'subtype'},
             style={
-                "overflow-y": "scroll",
-                "overflow-x": 'hidden',
+                "overflowY": "scroll",
+                "overflowX": 'hidden',
                 "maxHeight": '120px',
                 #"height": '120px'
             })
@@ -254,7 +254,7 @@ class LeaseComponents(BaseClass):
     def create_bedrooms_slider(self):
         bedrooms_slider = html.Div([
             html.Div([
-                html.H5("Bedrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Bedrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='bedrooms', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -282,7 +282,7 @@ class LeaseComponents(BaseClass):
     def create_bathrooms_slider(self):
         bathrooms_slider = html.Div([
             html.Div([
-                html.H5("Bathrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Bathrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='bathrooms', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -310,7 +310,7 @@ class LeaseComponents(BaseClass):
     def create_sqft_components(self):
         square_footage_components = html.Div([
             html.Div([
-                html.H5("Square Footage", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Square Footage", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='sqft', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -338,21 +338,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '15px'}
+                    style={'marginTop': '15px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'sqft'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='square_footage_div'
         )
@@ -362,7 +362,7 @@ class LeaseComponents(BaseClass):
     def create_ppsqft_components(self):
         ppsqft_components = html.Div([
             html.Div([
-                html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='ppsqft', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -390,21 +390,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'ppsqft'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='ppsqft_div'
         )
@@ -415,7 +415,7 @@ class LeaseComponents(BaseClass):
     def create_pets_radio_button(self):
         pets_radio = html.Div([
             html.Div([
-                html.H5("Pet Policy", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Pet Policy", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='pets', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
@@ -428,8 +428,8 @@ class LeaseComponents(BaseClass):
                     ],
                     value='Both',
                     inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
+                        "marginRight": "5px",
+                        "marginLeft": "5px"
                     },
                     inline=True
                 ),
@@ -479,7 +479,7 @@ class LeaseComponents(BaseClass):
         # Create the Dash component
         rental_terms_checklist = html.Div([
             html.Div([
-                html.H5("Rental Terms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Rental Terms", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='rental_terms', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
@@ -487,7 +487,7 @@ class LeaseComponents(BaseClass):
                     id='terms_checklist',
                     options=[{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
                     value=unique_terms,  # Select all terms by default
-                    inputStyle={"margin-right": "5px", "margin-left": "5px"},
+                    inputStyle={"marginRight": "5px", "marginLeft": "5px"},
                     inline=False
                 ),
             ],
@@ -501,7 +501,7 @@ class LeaseComponents(BaseClass):
     def create_garage_spaces_components(self):
         garage_spaces_components = html.Div([
             html.Div([
-                html.H5("Parking Spaces", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Parking Spaces", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='garage_spaces', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -528,21 +528,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'garage_spaces'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='garage_spaces_div'
         )
@@ -552,7 +552,7 @@ class LeaseComponents(BaseClass):
     def create_rental_price_slider(self):
         rental_price_components = html.Div([
             html.Div([
-                html.H5("Price (Monthly)", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Price (Monthly)", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='rental_price', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -573,7 +573,7 @@ class LeaseComponents(BaseClass):
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='rental_price_div'
         )
@@ -583,7 +583,7 @@ class LeaseComponents(BaseClass):
     def create_year_built_components(self):
         year_built_components = html.Div([
             html.Div([
-                html.H5("Year Built", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='year_built', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
@@ -613,21 +613,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'year_built'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='year_built_div'
         )
@@ -637,7 +637,7 @@ class LeaseComponents(BaseClass):
     def create_furnished_checklist(self):
         furnished_checklist = html.Div([
             html.Div([
-                html.H5("Furnished/Unfurnished", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Furnished/Unfurnished", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='furnished', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
@@ -661,8 +661,8 @@ class LeaseComponents(BaseClass):
                     ],
                     labelStyle={'display': 'block'},
                     inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
+                        "marginRight": "5px",
+                        "marginLeft": "5px"
                     },
                 ),
             ],
@@ -677,7 +677,7 @@ class LeaseComponents(BaseClass):
     def create_security_deposit_components(self):
         security_deposit_components = html.Div([
             html.Div([
-                html.H5("Security Deposit", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Security Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='security_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -705,21 +705,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'security_deposit'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='security_deposit_div'
         )
@@ -729,7 +729,7 @@ class LeaseComponents(BaseClass):
     def create_other_deposit_components(self):
         other_deposit_components = html.Div([
             html.Div([
-                html.H5("Other Deposit", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Other Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='other_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -757,21 +757,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value='True',
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'other_deposit'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='other_deposit_div'
         )
@@ -781,7 +781,7 @@ class LeaseComponents(BaseClass):
     def create_pet_deposit_components(self):
         pet_deposit_components = html.Div([
             html.Div([
-                html.H5("Pet Deposit", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Pet Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='pet_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -809,21 +809,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'pet_deposit'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='pet_deposit_div'
         )
@@ -833,7 +833,7 @@ class LeaseComponents(BaseClass):
     def create_key_deposit_components(self):
         key_deposit_components = html.Div([
             html.Div([
-                html.H5("Key Deposit", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Key Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='key_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -861,21 +861,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='key_deposit_div'
         )
@@ -885,7 +885,7 @@ class LeaseComponents(BaseClass):
     def create_key_deposit_components(self):
         key_deposit_components = html.Div([
             html.Div([
-                html.H5("Key Deposit", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Key Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='key_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -913,21 +913,21 @@ class LeaseComponents(BaseClass):
                             ],
                             value='True',
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='key_deposit_div'
         )
@@ -948,7 +948,7 @@ class LeaseComponents(BaseClass):
 
         laundry_checklist = html.Div([
             html.Div([
-                html.H5("Laundry Features", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Laundry Features", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='laundry', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -976,7 +976,7 @@ class LeaseComponents(BaseClass):
         
         listed_date_components = html.Div([
             html.Div([
-                html.H5("Listed Date Range", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='listed_date', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
@@ -998,14 +998,14 @@ class LeaseComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'}
@@ -1170,7 +1170,7 @@ class BuyComponents(BaseClass):
         subtype_checklist = html.Div([ 
             # Title and toggle button
             html.Div([
-                html.H5("Subtypes", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='buy')
             ]),
 
@@ -1193,13 +1193,13 @@ class BuyComponents(BaseClass):
                     ),
                     value=cleaned_values,
                     labelStyle={'display': 'block'},
-                    inputStyle={"margin-right": "5px", "margin-left": "5px"},
+                    inputStyle={"marginRight": "5px", "marginLeft": "5px"},
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
             style={
-                "overflow-y": "scroll",
-                "overflow-x": 'hidden',
+                "overflowY": "scroll",
+                "overflowX": 'hidden',
                 "height": '220px'
             }),
         ],
@@ -1213,7 +1213,7 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("bedrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("bedrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='bedrooms', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1245,7 +1245,7 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("Bathrooms", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Bathrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='bathrooms', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1275,7 +1275,7 @@ class BuyComponents(BaseClass):
     def create_sqft_components(self):
         square_footage_components = html.Div([
             html.Div([
-                html.H5("Square Footage", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Square Footage", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='sqft', initial_label="Hide", page_type='buy')
             ]),
             html.Div([
@@ -1303,21 +1303,21 @@ class BuyComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '15px'}
+                    style={'marginTop': '15px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'sqft'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='square_footage_div'
         )
@@ -1327,7 +1327,7 @@ class BuyComponents(BaseClass):
     def create_ppsqft_components(self):
         ppsqft_components = html.Div([
             html.Div([
-                html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='ppsqft', initial_label="Hide", page_type='buy')
             ]),
             html.Div([
@@ -1355,21 +1355,21 @@ class BuyComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'ppsqft'}
             ),
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='ppsqft_div'
         )
@@ -1381,8 +1381,8 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("Pet Policy", style={'display': 'inline-block', 'margin-right': '10px'}),
-                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Pet Policy", style={'display': 'inline-block', 'marginRight': '10px'}),
+                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='pet_policy', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1397,8 +1397,8 @@ class BuyComponents(BaseClass):
                     ],
                     value='Both', # A value needs to be selected upon page load otherwise we error out.
                     inputStyle = {
-                        "margin-right": "5px",
-                        "margin-left": "5px"
+                        "marginRight": "5px",
+                        "marginLeft": "5px"
                     },
                     inline=True  
                 ),
@@ -1421,8 +1421,8 @@ class BuyComponents(BaseClass):
         hoa_fee_components = html.Div([
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("HOA Fee", style={'display': 'inline-block', 'margin-right': '10px'}),
-                html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("HOA Fee", style={'display': 'inline-block', 'marginRight': '10px'}),
+                html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='hoa_fee', initial_label="Hide", page_type='buy')
             ]),
             # The actual RangeSlider and RadioItems
@@ -1451,14 +1451,14 @@ class BuyComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'hoa_fee'},
@@ -1466,7 +1466,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='hoa_fee_div_buy'
         )
@@ -1478,8 +1478,8 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("HOA Fee Frequency", style={'display': 'inline-block', 'margin-right': '10px'}),
-                html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("HOA Fee Frequency", style={'display': 'inline-block', 'marginRight': '10px'}),
+                html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='hoa_fee_frequency', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1494,8 +1494,8 @@ class BuyComponents(BaseClass):
                     value=['N/A', 'Monthly'],
                     labelStyle={'display': 'block'},
                     inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
+                        "marginRight": "5px",
+                        "marginLeft": "5px"
                     },
                 ),
             ],
@@ -1504,7 +1504,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='hoa_fee_frequency_div_buy'
         )
@@ -1516,8 +1516,8 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("Space Rent", style={'display': 'inline-block', 'margin-right': '10px'}),
-                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Space Rent", style={'display': 'inline-block', 'marginRight': '10px'}),
+                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='space_rent', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1547,14 +1547,14 @@ class BuyComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'space_rent'},
@@ -1562,7 +1562,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='space_rent_div_buy'
         )
@@ -1574,8 +1574,8 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("Senior Community", style={'display': 'inline-block', 'margin-right': '10px'}),
-                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Senior Community", style={'display': 'inline-block', 'marginRight': '10px'}),
+                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='senior_community', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1590,8 +1590,8 @@ class BuyComponents(BaseClass):
                     ],
                     value='Both',
                     inputStyle={
-                        "margin-right": "5px",
-                        "margin-left": "5px"
+                        "marginRight": "5px",
+                        "marginLeft": "5px"
                     },
                     inline=True
                 ),
@@ -1601,7 +1601,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='senior_community_div_buy'
         )
@@ -1613,7 +1613,7 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("List Price", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("List Price", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='list_price', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1637,7 +1637,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='list_price_div_buy'
         )
@@ -1649,7 +1649,7 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("Year Built", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='year_built', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1681,14 +1681,14 @@ class BuyComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True     
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'year_built'}
@@ -1696,7 +1696,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='yrbuilt_div_buy'
         )
@@ -1711,7 +1711,7 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("Listed Date Range", style={'display': 'inline-block', 'margin-right': '10px'}),
+                html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='listed_date', initial_label="Hide", page_type='buy')
             ]),
             
@@ -1735,14 +1735,14 @@ class BuyComponents(BaseClass):
                             ],
                             value=True,
                             inputStyle={
-                                "margin-right": "5px",
-                                "margin-left": "5px"
+                                "marginRight": "5px",
+                                "marginLeft": "5px"
                             },
                             inline=True     
                         ),
                     ],
                     color="info",
-                    style={'margin-top': '5px'}
+                    style={'marginTop': '5px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'}
@@ -1750,7 +1750,7 @@ class BuyComponents(BaseClass):
             
         ],
         style={
-            'margin-bottom': '10px',
+            'marginBottom': '10px',
         },
         id='listed_date_div_buy'
         )
