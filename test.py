@@ -98,7 +98,7 @@ cluster_to_layer = assign("""function(feature, latlng, index, context){
     });
 
     const icon = new scatterIcon({
-        html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
+        html: '<div style="backgroundColor:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
         className: "marker-cluster",
         iconSize: L.point(40, 40),
         color: csc(valueMean)

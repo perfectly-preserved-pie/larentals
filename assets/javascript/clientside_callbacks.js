@@ -30,7 +30,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             } else {
                 return {
                     'display': 'block',
-                    'margin-bottom' : '10px',
+                    'marginBottom' : '10px',
                 };
             }
         }
