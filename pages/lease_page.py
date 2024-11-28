@@ -239,7 +239,6 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Generate the map
   return dl.GeoJSON(
     id=str(uuid.uuid4()),
-    #children=[dl.Popup(id='2popup')],
     data=geojson,
     cluster=True,
     clusterToLayer=generate_convex_hulls,
