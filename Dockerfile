@@ -18,6 +18,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 # Install dependencies directly into the system environment using uv
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
+# Set ownership and permissions in a single step
+RUN chown -R nonroot:nonroot /app && chmod -R 755 /app
+
 # Switch back to non-root user
 USER nonroot
 
