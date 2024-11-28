@@ -275,12 +275,12 @@ def update_map(
     data=geojson,
     cluster=True,
     clusterToLayer=generate_convex_hulls,
+    onEachFeature=ns("on_each_feature"),
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
   )
 
 # Callback to toggle the visibility of dynamic components

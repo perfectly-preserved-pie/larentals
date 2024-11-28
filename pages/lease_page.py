@@ -242,12 +242,12 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     data=geojson,
     cluster=True,
     clusterToLayer=generate_convex_hulls,
+    onEachFeature=ns("on_each_feature"),
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
   )
 
 # Create a callback to manage the collapsing behavior
