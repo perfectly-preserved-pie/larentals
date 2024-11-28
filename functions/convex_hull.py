@@ -57,10 +57,10 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         icon: L.divIcon({
             html: `
                 <div style="position:relative; width:40px; height:40px; font-family: Arial, sans-serif; font-size: 12px;">
-                    <div style="backgroundColor:${color}; opacity:0.6; 
+                    <div style="background-color:${color}; opacity:0.6; 
                                 border-radius:50%; width:40px; height:40px; 
                                 position:absolute; top:0; left:0;"></div>
-                    <div style="backgroundColor:${color}; 
+                    <div style="background-color:${color}; 
                                 border-radius:50%; width:30px; height:30px; 
                                 position:absolute; top:5px; left:5px; 
                                 display:flex; align-items:center; justify-content:center; 
