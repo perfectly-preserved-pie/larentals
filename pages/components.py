@@ -234,7 +234,7 @@ class LeaseComponents(BaseClass):
                     id='subtype_checklist',
                     data=data,
                     value=initial_values,
-                    searchable=True,
+                    searchable=False,
                     nothingFoundMessage="No options found",
                     clearable=True,
                     style={"margin-bottom": "10px"},
@@ -245,7 +245,8 @@ class LeaseComponents(BaseClass):
             style={
                 "overflow-y": "scroll",
                 "overflow-x": 'hidden',
-                "height": '120px'
+                "maxHeight": '120px',
+                #"height": '120px'
             })
         ])
         return subtype_checklist
@@ -1103,7 +1104,8 @@ class LeaseComponents(BaseClass):
             body = True,
             # Make the graph stay in view as the page is scrolled down
             # https://getbootstrap.com/docs/4.0/utilities/position/
-            className = 'sticky-top'
+            # Apply sticky-top class only on non-mobile devices
+            className='d-block d-md-block sticky-top'
         )
     
         return map_card

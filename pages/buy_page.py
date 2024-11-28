@@ -4,6 +4,7 @@ from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
+from functions.convex_hull import generate_convex_hulls
 from loguru import logger
 from user_agents import parse
 import dash
@@ -12,9 +13,8 @@ import dash_leaflet as dl
 import dash_leaflet.express as dlx
 import pandas as pd
 import sys
-import uuid
-from loguru import logger
 import time
+import uuid
 
 dash.register_page(
   __name__,
@@ -274,12 +274,13 @@ def update_map(
     id=str(uuid.uuid4()),
     data=geojson,
     cluster=True,
+    clusterToLayer=generate_convex_hulls,
+    onEachFeature=ns("on_each_feature"),
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
       'minZoom': 3,
     },
-    options=dict(onEachFeature=ns("on_each_feature"))
   )
 
 # Callback to toggle the visibility of dynamic components

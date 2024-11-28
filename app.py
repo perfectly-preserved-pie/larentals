@@ -14,14 +14,17 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 
 # Create the app
 app = Dash(
-  __name__, 
-  external_stylesheets=external_stylesheets,
-  use_pages=True,
+	external_scripts = [
+    'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js' # Turf.js for convex hulls
+  ],
+  external_stylesheets = external_stylesheets,
+  name = __name__, 
   # Add meta tags for mobile devices
   # https://community.plotly.com/t/reorder-website-for-mobile-view/33669/5?
   meta_tags = [
     {"name": "viewport", "content": "width=device-width, initial-scale=1"}
   ],
+  use_pages = True,
 )
 
 # Set the page title
