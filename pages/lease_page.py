@@ -4,6 +4,7 @@ from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
 from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
 from flask import request
+from functions.convex_hull import generate_convex_hulls
 from loguru import logger
 from user_agents import parse
 import dash
@@ -14,8 +15,6 @@ import pandas as pd
 import sys
 import time
 import uuid
-from dash_extensions.javascript import assign
-
 
 dash.register_page(
   __name__,
@@ -236,105 +235,6 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     #  comparison_df.to_csv('missing_rows_comparison.csv', index=False)
      # logger.info(f"Comparison of missing rows has been saved to 'missing_rows_comparison.csv'")
 
-  cluster_to_layer = assign("""function(feature, latlng, index, context){
-    // A global reference to the currently displayed polygon
-    if (!context.currentPolygon) {
-        context.currentPolygon = null;
-    }
-
-    // Access all the leaves of the cluster
-    const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
-    const clusterSize = leaves.length;
-
-    // Define a color scale (mimicking Leaflet.markercluster behavior)
-    const getColor = function(size) {
-        if (size < 10) return 'green';   // Small clusters
-        if (size < 50) return 'yellow';  // Medium clusters
-        if (size < 100) return 'orange'; // Larger clusters
-        return 'red';                    // Very large clusters
-    };
-
-    // Get the appropriate color for the cluster size
-    const color = getColor(clusterSize);
-
-    // Collect coordinates for the cluster's children
-    let features = [];
-    for (let i = 0; i < leaves.length; ++i) {
-        const coords = leaves[i].geometry.coordinates;
-        const lng = coords[0];
-        const lat = coords[1];
-        features.push(turf.point([lng, lat]));
-    }
-
-    // Create a Turf.js feature collection
-    const fc = turf.featureCollection(features);
-
-    // Compute the convex hull
-    const convexHull = turf.convex(fc);
-
-    // If the convex hull exists, create it as a polygon
-    let polygonLayer = null;
-    if (convexHull) {
-        polygonLayer = L.geoJSON(convexHull, {
-            style: {
-                color: color,     // Use the same color as the cluster icon
-                weight: 2,        // Border thickness
-                fillOpacity: 0.2, // Polygon fill transparency
-                fillColor: color  // Polygon fill color
-            }
-        });
-    }
-
-    // Create a custom marker for the cluster with Leaflet.markercluster font styling
-    const clusterMarker = L.marker(latlng, {
-        icon: L.divIcon({
-            html: `
-                <div style="position:relative; width:40px; height:40px; font-family: Arial, sans-serif; font-size: 12px;">
-                    <div style="background-color:${color}; opacity:0.6; 
-                                border-radius:50%; width:40px; height:40px; 
-                                position:absolute; top:0; left:0;"></div>
-                    <div style="background-color:${color}; 
-                                border-radius:50%; width:30px; height:30px; 
-                                position:absolute; top:5px; left:5px; 
-                                display:flex; align-items:center; justify-content:center; 
-                                font-weight:normal; color:black; font-size:12px; font-family: Arial, sans-serif;">
-                        ${feature.properties.point_count_abbreviated}
-                    </div>
-                </div>`,
-            className: 'marker-cluster', // Optional: add a class for further customization
-            iconSize: L.point(40, 40)    // Adjust the icon size
-        })
-    });
-
-    // Add mouseover behavior to display the convex hull
-    clusterMarker.on('mouseover', function() {
-        // Remove the previously displayed polygon, if any
-        if (context.currentPolygon) {
-            context.map.removeLayer(context.currentPolygon);
-        }
-
-        // Add the new polygon to the map and update the reference
-        if (polygonLayer) {
-            polygonLayer.addTo(context.map);
-            context.currentPolygon = polygonLayer;
-        }
-    });
-
-    // Add behavior to remove the polygon when the mouse leaves the cluster
-    clusterMarker.on('mouseout', function() {
-        if (context.currentPolygon) {
-            context.map.removeLayer(context.currentPolygon);
-            context.currentPolygon = null;
-        }
-    });
-
-    return clusterMarker;
-}""")
-
-
-
-
-
   ns = Namespace("dash_props", "module")
   # Generate the map
   return dl.GeoJSON(
@@ -342,7 +242,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     #children=[dl.Popup(id='2popup')],
     data=geojson,
     cluster=True,
-    clusterToLayer=cluster_to_layer,
+    clusterToLayer=generate_convex_hulls,
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
