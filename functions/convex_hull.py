@@ -11,11 +11,12 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const clusterSize = leaves.length;
 
     // Define a color scale (mimicking Leaflet.markercluster behavior)
+    // Default colors are at https://github.com/Leaflet/Leaflet.markercluster/blob/master/dist/MarkerCluster.Default.css
     const getColor = function(size) {
-        if (size < 10) return 'green';   // Small clusters
-        if (size < 50) return 'yellow';  // Medium clusters
-        if (size < 100) return 'orange'; // Larger clusters
-        return 'red';                    // Very large clusters
+        if (size < 50) return 'rgba(110, 204, 57, 0.6)';   // Small clusters
+        if (size < 200) return 'rgba(240, 194, 12, 0.6)';  // Medium clusters
+        if (size < 500) return 'rgba(241, 128, 23, 0.6)';  // Larger clusters
+        return 'red';                                      // Very large clusters
     };
 
     // Get the appropriate color for the cluster size
