@@ -1,4 +1,4 @@
-aiolimiter==1.1.0
+aiolimiter==1.2.0
 beautifulsoup4==4.12.3
 dash_bootstrap_components==1.6.0
 dash_extensions==1.0.18
