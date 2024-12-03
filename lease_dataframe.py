@@ -50,35 +50,35 @@ df.columns = df.columns.str.lower()
 
 # Standardize the column names by renaming them
 # https://stackoverflow.com/a/65332240
-# Define a renaming dictionary based on patterns
+# Define a renaming dictionary with exact matches
 rename_dict = {
-  'agent': 'phone_number',
-  'allowed': 'pet_policy',
-  'baths': 'bathrooms',
-  'bedrooms': 'bedrooms',
-  'city': 'city',
-  'furnished': 'furnished',
-  'key': 'key_deposit',
-  'laundry': 'laundry',
-  'list': 'list_price',
-  'lot': 'lot_size',
   'mls': 'mls_number',
-  'other': 'other_deposit',
-  'pet deposit': 'pet_deposit',
-  'prking': 'parking_spaces',
-  'security': 'security_deposit',
-  'sqft': 'sqft',
-  'square': 'ppsqft',
+  'prop subtype': 'subtype',
   'st #': 'street_number',
-  'st name': 'street_name',
-  'sub': 'subtype',
-  'terms': 'terms', 
-  'yr': 'year_built',
+  'address': 'street_name',
+  'city': 'city',
   'zip': 'zip_code',
+  'br': 'bedrooms',
+  'baths(fthq)': 'bathrooms',
+  'other deposit': 'other_deposit',
+  'pet deposit': 'pet_deposit',
+  'key deposit': 'key_deposit',
+  'security deposit': 'security_deposit',
+  'lp': 'list_price',
+  'sqft': 'sqft',
+  'lp $/sqft': 'ppsqft',
+  'yb': 'year_built',
+  '# prking spaces': 'parking_spaces',
+  'laundry': 'laundry',
+  'pets': 'pet_policy',
+  'lease terms': 'terms',
+  'furnished': 'furnished',
+  "seller's agent 1 cell": 'phone_number',
+  'lot sz': 'lot_size',
 }
 
-# Rename columns based on substrings in the column names
-df = df.rename(columns=lambda c: next((v for k, v in rename_dict.items() if k in c), c))
+# Rename columns based on exact matches
+df = df.rename(columns=rename_dict)
 
 # Drop the numbers in the first group of characters in the street_name column
 df['street_name'] = df['street_name'].str.replace(r'^\d+\s*', '', regex=True)
