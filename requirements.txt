@@ -9,7 +9,7 @@ geopy==2.4.1
 gevent==24.11.1
 gunicorn==23.0.0
 imagekitio==4.1.0
-loguru==0.7.2
+loguru==0.7.3
 numpy==1.26.4
 orjson==3.10.11
 pandas==2.2.3
