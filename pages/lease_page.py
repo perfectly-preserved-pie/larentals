@@ -15,6 +15,7 @@ import pandas as pd
 import sys
 import time
 import uuid
+from dash_extensions.javascript import assign
 
 dash.register_page(
   __name__,
@@ -147,53 +148,8 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
   # Fill NA/NaN values with None
   df_filtered = df_filtered.applymap(lambda x: None if pd.isna(x) else x)
 
-  # Create an empty list for the markers
-  markers = []
-  # Iterate through the dataframe, create a marker for each row, and append it to the list
-  for row in df_filtered.itertuples():
-    markers.append(
-      dict(
-        lat=row.latitude,
-        lon=row.longitude,
-        data=dict(
-          #bedrooms_bathrooms=row.total_bathrooms,
-          bedrooms=row.bedrooms,
-          city=row.city,
-          date_processed=row.date_processed,
-          full_bathrooms=row.full_bathrooms,
-          full_street_address=row.full_street_address,
-          furnished=row.furnished,
-          half_bathrooms=row.half_bathrooms,
-          key_deposit=row.key_deposit,
-          laundry=row.laundry,
-          list_price=row.list_price,
-          listed_date=row.listed_date,
-          listing_url=row.listing_url,
-          mls_number=row.mls_number,
-          mls_photo=row.mls_photo,
-          other_deposit=row.other_deposit,
-          parking_spaces=row.parking_spaces,
-          pet_deposit=row.pet_deposit,
-          pet_policy=row.pet_policy,
-          phone_number=row.phone_number,
-          ppsqft=row.ppsqft,
-          security_deposit=row.security_deposit,
-          senior_community=row.senior_community,
-          short_address=row.short_address,
-          sqft=row.sqft,
-          street_name=row.street_name,
-          street_number=row.street_number,
-          subtype=row.subtype,
-          terms=row.terms,
-          three_quarter_bathrooms=row.three_quarter_bathrooms,
-          total_bathrooms=row.total_bathrooms,
-          year_built=row.year_built,
-          zip_code=row.zip_code,
-        ),
-      )
-    )
   # Generate geojson with a marker for each listing
-  geojson = dlx.dicts_to_geojson([{**m} for m in markers])
+  geojson = df
 
   # Add context to each feature's properties to pass through to the onEachFeature JavaScript function
   for feature in geojson['features']:
@@ -215,7 +171,7 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     Price per square foot: {ppsqft_chosen}.
     Listed date range: {listed_date_datepicker_start} to {listed_date_datepicker_end}.
   
-  The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(markers)} markers out of {len(df.index)} total rows.""")
+  The resulting filtered dataframe has {len(df_filtered.index)} rows and {len(df)} markers out of {len(df.index)} total rows.""")
 
   # Now check for missing rows
   #if len(df) != len(df_filtered):
@@ -235,14 +191,16 @@ def update_map(subtypes_chosen, pets_chosen, terms_chosen, garage_spaces, rental
     #  comparison_df.to_csv('missing_rows_comparison.csv', index=False)
      # logger.info(f"Comparison of missing rows has been saved to 'missing_rows_comparison.csv'")
 
+  geojson_filter = assign("dashExtensions.default.geojsonFilter")
   ns = Namespace("dash_props", "module")
   # Generate the map
   return dl.GeoJSON(
-    id=str(uuid.uuid4()),
+    id='lease_geojson',
     data=geojson,
     cluster=True,
     clusterToLayer=generate_convex_hulls,
     onEachFeature=ns("on_each_feature"),
+    options=dict(filter=geojson_filter),
     zoomToBoundsOnClick=True,
     superClusterOptions={ # https://github.com/mapbox/supercluster#options
       'radius': 160,
@@ -279,4 +237,82 @@ clientside_callback(
   ],
   [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
   [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
+)
+
+# List all filter inputs
+filter_inputs = [
+    Input('sqft_slider', 'value'),
+    Input('sqft_missing_radio', 'value'),
+    Input('year_built_slider', 'value'),
+    Input('yrbuilt_missing_radio', 'value'),
+    Input('garage_spaces_slider', 'value'),
+    Input('garage_missing_radio', 'value'),
+    Input('ppsqft_slider', 'value'),
+    Input('ppsqft_missing_radio', 'value'),
+    Input('pets_radio', 'value'),
+    Input('furnished_checklist', 'value'),
+    Input('security_deposit_slider', 'value'),
+    Input('security_deposit_missing_radio', 'value'),
+    Input('pet_deposit_slider', 'value'),
+    Input('pet_deposit_missing_radio', 'value'),
+    Input('key_deposit_slider', 'value'),
+    Input('key_deposit_missing_radio', 'value'),
+    Input('other_deposit_slider', 'value'),
+    Input('other_deposit_missing_radio', 'value'),
+    Input('listed_date_picker', 'start_date'),
+    Input('listed_date_picker', 'end_date'),
+    Input('listed_date_missing_radio', 'value'),
+    Input('terms_checklist', 'value'),
+    Input('laundry_checklist', 'value'),
+    Input('subtype_checklist', 'value'),
+    # Add other filter inputs as needed
+]
+
+# Client-side callback to update the hideout filters
+clientside_callback(
+    """
+    function(
+        sqft_slider, sqft_missing,
+        year_built_slider, yrbuilt_missing,
+        garage_spaces_slider, garage_missing,
+        ppsqft_slider, ppsqft_missing,
+        pets_choice, furnished_choice,
+        security_deposit_slider, security_deposit_missing,
+        pet_deposit_slider, pet_deposit_missing,
+        key_deposit_slider, key_deposit_missing,
+        other_deposit_slider, other_deposit_missing,
+        listed_date_start, listed_date_end, listed_date_missing,
+        terms_chosen, laundry_chosen, subtypes_chosen
+    ) {
+        return {
+            sqft_slider: sqft_slider,
+            include_missing_sqft: sqft_missing === 'Include',
+            year_built_slider: year_built_slider,
+            include_missing_yr_built: yrbuilt_missing === 'Include',
+            garage_spaces_slider: garage_spaces_slider,
+            include_missing_garage_spaces: garage_missing === 'Include',
+            ppsqft_slider: ppsqft_slider,
+            include_missing_ppsqft: ppsqft_missing === 'Include',
+            pets_choice: pets_choice,
+            furnished_choice: furnished_choice,
+            security_deposit_slider: security_deposit_slider,
+            include_missing_security_deposit: security_deposit_missing === 'Include',
+            pet_deposit_slider: pet_deposit_slider,
+            include_missing_pet_deposit: pet_deposit_missing === 'Include',
+            key_deposit_slider: key_deposit_slider,
+            include_missing_key_deposit: key_deposit_missing === 'Include',
+            other_deposit_slider: other_deposit_slider,
+            include_missing_other_deposit: other_deposit_missing === 'Include',
+            listed_date_start: listed_date_start,
+            listed_date_end: listed_date_end,
+            include_missing_listed_date: listed_date_missing === 'Include',
+            terms_chosen: terms_chosen,
+            laundry_chosen: laundry_chosen,
+            subtypes_chosen: subtypes_chosen
+            // Include other filters as needed
+        };
+    }
+    """,
+    Output('lease_geojson', 'hideout'),
+    filter_inputs
 )
