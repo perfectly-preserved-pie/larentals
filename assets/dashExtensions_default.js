@@ -96,6 +96,17 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             });
 
             return clusterMarker;
+        },
+        function1: function(feature, context) {
+            const filters = context.props.hideout;
+
+            // Filter for list price
+            const listPrice = feature.properties.data?.list_price;
+            if (listPrice === null || listPrice === undefined) {
+                return false; // Exclude properties with missing list price
+            }
+            return listPrice >= filters.list_price_slider[0] && listPrice <= filters.list_price_slider[1];
         }
+
     }
 });
