@@ -1028,6 +1028,10 @@ class LeaseComponents(BaseClass):
         """
         with open("assets/datasets/output.geojson", "r") as f:
             geojson_data = json.load(f)
+
+        for feature in geojson_data["features"]:
+            feature["properties"]["context"] = {"pageType": "lease"}
+
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
