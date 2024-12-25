@@ -96,6 +96,9 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             });
 
             return clusterMarker;
+        },
+        function1: function(feature, context) {
+            return feature.properties.list_price >= context.hideout[0] && feature.properties.list_price <= context.hideout[1];
         }
     }
 });

@@ -79,3 +79,10 @@ clientside_callback(
   [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
   [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
 )
+
+# Clientside callback to update the hideout property
+clientside_callback(
+  "function(x){return x;}",
+  Output("lease_geojson", "hideout"),
+  Input("rental_price_slider", "value")
+)

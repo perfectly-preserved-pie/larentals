@@ -6,9 +6,8 @@ import dash_leaflet as dl
 import numpy as np
 import pandas as pd
 import dash_mantine_components as dmc
-import json
 from functions.convex_hull import generate_convex_hulls
-from dash_extensions.javascript import Namespace
+from dash_extensions.javascript import Namespace, assign
 import geopandas as gpd
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
@@ -1032,6 +1031,7 @@ class LeaseComponents(BaseClass):
         #crime_layer = self.create_crime_layer()
 
         ns = Namespace("dash_props", "module")
+        geojson_filter = assign("function(feature, context){return feature.properties.list_price >= context.hideout[0] && feature.properties.list_price <= context.hideout[1];}")
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -1042,6 +1042,8 @@ class LeaseComponents(BaseClass):
                     url='/assets/datasets/lease.geojson',
                     cluster=True,
                     clusterToLayer=generate_convex_hulls,
+                    filter=geojson_filter,
+                    hideout={"min_price": self.df['list_price'].min(), "max_price": self.df['list_price'].max()},  # Initial hideout value
                     onEachFeature=ns("on_each_feature"),
                     zoomToBoundsOnClick=True,
                     superClusterOptions={ # https://github.com/mapbox/supercluster#options
