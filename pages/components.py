@@ -6,6 +6,7 @@ import dash_leaflet as dl
 import numpy as np
 import pandas as pd
 import dash_mantine_components as dmc
+import json
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -1023,6 +1024,8 @@ class LeaseComponents(BaseClass):
         Returns:
             dl.Map: A Dash Leaflet Map component.
         """
+        with open("assets/datasets/output.geojson", "r") as f:
+            geojson_data = json.load(f)
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
@@ -1030,7 +1033,7 @@ class LeaseComponents(BaseClass):
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.LayerGroup(id="lease_geojson"),
+                dl.GeoJSON(data=geojson_data, cluster=True),
                 dl.FullScreenControl()
             ],
             id='map',
