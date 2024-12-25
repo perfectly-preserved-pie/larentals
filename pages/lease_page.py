@@ -1,20 +1,13 @@
 from .components import LeaseComponents
 from .filters import LeaseFilters
-from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
-from dash_extensions.javascript import Namespace
+from dash import dcc, MATCH, clientside_callback, ClientsideFunction
 from dash.dependencies import Input, Output, State
-from flask import request
-from functions.convex_hull import generate_convex_hulls
 from loguru import logger
-from user_agents import parse
 import dash
 import dash_bootstrap_components as dbc
-import dash_leaflet as dl
-import dash_leaflet.express as dlx
-import pandas as pd
 import sys
 import time
-import uuid
+import geopandas as gpd
 
 dash.register_page(
   __name__,
@@ -29,12 +22,7 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# import the dataframe and log how long it takes to load
-start_time = time.time()
-df = pd.read_parquet(path='assets/datasets/lease.parquet')
-duration = time.time() - start_time
-logger.info(f"Loaded 'lease' dataset in {duration:.2f} seconds.")
-pd.set_option("display.precision", 10)
+df = gpd.read_file('assets/datasets/output.geojson')
 
 # Create instances of the filters and components classes and log how long it takes to create them
 start_time = time.time()
