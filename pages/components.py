@@ -9,6 +9,7 @@ import dash_mantine_components as dmc
 import json
 from functions.convex_hull import generate_convex_hulls
 from dash_extensions.javascript import Namespace
+import geopandas as gpd
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -104,9 +105,9 @@ class LeaseComponents(BaseClass):
         'Unknown': 'Unknown'
     }
 
-    def __init__(self, df):
+    def __init__(self):
         # Initalize these first because they are used in other components
-        self.df = df
+        self.df = gpd.read_file("assets/datasets/output.geojson")
 
         self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
 
