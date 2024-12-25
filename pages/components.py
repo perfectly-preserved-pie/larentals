@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import dash_mantine_components as dmc
 import json
+from functions.convex_hull import generate_convex_hulls
+from dash_extensions.javascript import Namespace
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -1029,11 +1031,25 @@ class LeaseComponents(BaseClass):
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
+
+        ns = Namespace("dash_props", "module")
+
         # Create the main map with the lease layer
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.GeoJSON(data=geojson_data, cluster=True),
+                dl.GeoJSON(
+                    id='lease_geojson',
+                    data=geojson_data,
+                    cluster=True,
+                    clusterToLayer=generate_convex_hulls,
+                    onEachFeature=ns("on_each_feature"),
+                    zoomToBoundsOnClick=True,
+                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                        'radius': 160,
+                        'minZoom': 3,
+                    },
+                ),
                 dl.FullScreenControl()
             ],
             id='map',
