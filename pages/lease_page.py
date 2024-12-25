@@ -82,7 +82,7 @@ clientside_callback(
 
 # Clientside callback to update the hideout property
 clientside_callback(
-  "function(x){return x;}",
+  "function(x){return {min_price: x[0], max_price: x[1]};}",
   Output("lease_geojson", "hideout"),
   Input("rental_price_slider", "value")
 )
