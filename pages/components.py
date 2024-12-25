@@ -107,7 +107,7 @@ class LeaseComponents(BaseClass):
 
     def __init__(self):
         # Initalize these first because they are used in other components
-        self.df = gpd.read_file("assets/datasets/output.geojson")
+        self.df = gpd.read_file("assets/datasets/lease.geojson")
 
         self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
 
@@ -1027,12 +1027,6 @@ class LeaseComponents(BaseClass):
         Returns:
             dl.Map: A Dash Leaflet Map component.
         """
-        with open("assets/datasets/output.geojson", "r") as f:
-            geojson_data = json.load(f)
-
-        #for feature in geojson_data["features"]:
-        #    feature["properties"]["context"] = {"pageType": "lease"}
-
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
@@ -1045,7 +1039,7 @@ class LeaseComponents(BaseClass):
                 dl.TileLayer(),
                 dl.GeoJSON(
                     id='lease_geojson',
-                    data=geojson_data,
+                    url='/assets/datasets/lease.geojson',
                     cluster=True,
                     clusterToLayer=generate_convex_hulls,
                     onEachFeature=ns("on_each_feature"),
