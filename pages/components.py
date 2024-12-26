@@ -1,15 +1,15 @@
 from dash import html, dcc
+from dash_extensions.javascript import Namespace
 from datetime import date
+from functions.convex_hull import generate_convex_hulls
 from functions.layers import BaseClass
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import dash_mantine_components as dmc
+import geopandas as gpd
+import json
 import numpy as np
 import pandas as pd
-import dash_mantine_components as dmc
-import json
-from functions.convex_hull import generate_convex_hulls
-from dash_extensions.javascript import Namespace, assign
-import geopandas as gpd
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
