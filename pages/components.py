@@ -6,6 +6,7 @@ import dash_leaflet as dl
 import numpy as np
 import pandas as pd
 import dash_mantine_components as dmc
+import json
 from functions.convex_hull import generate_convex_hulls
 from dash_extensions.javascript import Namespace, assign
 import geopandas as gpd
@@ -136,6 +137,13 @@ class LeaseComponents(BaseClass):
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
 
+    def return_geojson(self):
+        """
+        Load the GeoJSON data from the file and return it as an object.
+        """
+        with open("assets/datasets/lease.geojson", "r") as file:
+            return json.load(file)
+    
     def categorize_laundry_features(self, feature):
         if pd.isna(feature) or feature in ['Unknown', '']:
             return 'Unknown'
@@ -1055,10 +1063,10 @@ class LeaseComponents(BaseClass):
                 dl.TileLayer(),
                 dl.GeoJSON(
                     id='lease_geojson',
-                    url='/assets/datasets/lease.geojson',
+                    data=None,
                     cluster=True,
-                    #clusterToLayer=generate_convex_hulls,
-                    filter=geojson_filter,
+                    clusterToLayer=generate_convex_hulls,
+                    #filter=geojson_filter,
                     hideout={"min_price": self.df['list_price'].min(), "max_price": self.df['list_price'].max()},  # Initial hideout value
                     onEachFeature=ns("on_each_feature"),
                     zoomToBoundsOnClick=True,

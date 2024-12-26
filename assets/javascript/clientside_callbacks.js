@@ -33,6 +33,25 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     'marginBottom' : '10px',
                 };
             }
+        },
+        filterAndCluster: function(sliderValue, rawData) {
+            if (!rawData || !rawData.features) {
+                // If missing or invalid, just return as-is or an empty FeatureCollection
+                return rawData || {type: "FeatureCollection", features: []};
+            }
+            const [minPrice, maxPrice] = sliderValue;
+
+            // Filter out features that don't meet the price criteria
+            const filteredFeatures = rawData.features.filter(feature => {
+                const price = feature.properties.list_price || 0;
+                return price >= minPrice && price <= maxPrice;
+            });
+
+            // Return a new FeatureCollection with only those filtered features
+            return {
+                ...rawData,
+                features: filteredFeatures
+            };
         }
     }
 });
