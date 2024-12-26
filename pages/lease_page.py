@@ -1,5 +1,4 @@
 from .components import LeaseComponents
-from .filters import LeaseFilters
 from dash import dcc, MATCH, clientside_callback, ClientsideFunction
 from dash.dependencies import Input, Output, State
 from loguru import logger
