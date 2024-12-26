@@ -96,21 +96,6 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             });
 
             return clusterMarker;
-        },
-        function1: function(feature, context) {
-            console.log(context.hideout);
-
-            // Always allow cluster features to pass
-            if (feature.properties.cluster) {
-                return true;
-            }
-
-            // Otherwise, filter the actual point features by price
-            const listPrice = feature.properties.list_price || 0;
-            const minPrice = context.hideout.min_price;
-            const maxPrice = context.hideout.max_price;
-            return listPrice >= minPrice && listPrice <= maxPrice;
         }
-
     }
 });

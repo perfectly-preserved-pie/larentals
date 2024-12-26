@@ -1039,23 +1039,6 @@ class LeaseComponents(BaseClass):
         #crime_layer = self.create_crime_layer()
 
         ns = Namespace("dash_props", "module")
-        geojson_filter = assign("""
-            function(feature, context) {
-                console.log(context.hideout);
-
-                // Always allow cluster features to pass
-                if (feature.properties.cluster) {
-                    return true;
-                }
-
-                // Otherwise, filter the actual point features by price
-                const listPrice = feature.properties.list_price || 0;
-                const minPrice = context.hideout.min_price;
-                const maxPrice = context.hideout.max_price;
-                return listPrice >= minPrice && listPrice <= maxPrice;
-            }
-        """)
-
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -1066,7 +1049,6 @@ class LeaseComponents(BaseClass):
                     data=None,
                     cluster=True,
                     clusterToLayer=generate_convex_hulls,
-                    #filter=geojson_filter,
                     hideout={"min_price": self.df['list_price'].min(), "max_price": self.df['list_price'].max()},  # Initial hideout value
                     onEachFeature=ns("on_each_feature"),
                     zoomToBoundsOnClick=True,
