@@ -1049,7 +1049,6 @@ class LeaseComponents(BaseClass):
                     data=None,
                     cluster=True,
                     clusterToLayer=generate_convex_hulls,
-                    hideout={"min_price": self.df['list_price'].min(), "max_price": self.df['list_price'].max()},  # Initial hideout value
                     onEachFeature=ns("on_each_feature"),
                     zoomToBoundsOnClick=True,
                     superClusterOptions={ # https://github.com/mapbox/supercluster#options
