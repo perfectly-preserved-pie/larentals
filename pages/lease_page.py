@@ -86,20 +86,13 @@ clientside_callback(
   [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
 )
 
-# Clientside callback to update the hideout property
-clientside_callback(
-  "function(x){return {min_price: x[0], max_price: x[1]};}",
-  Output("lease_geojson", "hideout"),
-  Input("rental_price_slider", "value")
-)
-
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
-    ClientsideFunction(
-        namespace='clientside',
-        function_name='filterAndCluster'
-    ),
-    Output('lease_geojson', 'data'),      # We update the clusterable GeoJSON
-    Input('rental_price_slider', 'value'),   # e.g. [min_price, max_price]
-    State('lease-geojson-store', 'data')  # Pull the *full* dataset from the Store
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='filterAndCluster' # This function is defined in assets/clientside_callbacks.js
+  ),
+  Output('lease_geojson', 'data'),      # We update the clusterable GeoJSON
+  Input('rental_price_slider', 'value'),   # e.g. [min_price, max_price]
+  State('lease-geojson-store', 'data')  # Pull the *full* dataset from the Store
 )
