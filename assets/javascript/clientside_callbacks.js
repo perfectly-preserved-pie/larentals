@@ -51,6 +51,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             furnishedChoices,
             securityDepositRange,
             securityDepositIncludeMissing,
+            petDepositRange,
+            petDepositIncludeMissing,
             rawData
         ) {
             if (!rawData || !rawData.features) {
@@ -65,6 +67,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minParking, maxParking] = parkingSpacesRange;
             const [minYear, maxYear] = yearBuiltRange;
             const [minSecurityDeposit, maxSecurityDeposit] = securityDepositRange;
+            const [minPetDeposit, maxPetDeposit] = petDepositRange;
         
             const filteredFeatures = rawData.features.filter(feature => {
                 const price = feature.properties.list_price || 0;
@@ -76,7 +79,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const parkingSpaces = feature.properties.parking_spaces || 0;
                 const yearBuilt = feature.properties.year_built || 'Unknown';
                 const furnished = feature.properties.furnished || 'Unknown';
-                const securityDeposit = feature.properties.security_deposit;
+                const securityDeposit = feature.properties.security_deposit || 'Unknown';
+                const petDeposit = feature.properties.pet_deposit || 'Unknown';
         
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -143,11 +147,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     let unknownFilter = false;
                     let chosenFurnished = [...furnishedChoices];
                     if (chosenFurnished.includes("Unknown")) {
-                        unknownFilter = !feature.properties.furnished; 
+                        unknownFilter = !furnished; 
                         chosenFurnished = chosenFurnished.filter(x => x !== "Unknown");
                     }
                     if (chosenFurnished.length > 0) {
-                        furnishedFilter = chosenFurnished.includes(feature.properties.furnished) || unknownFilter;
+                        furnishedFilter = chosenFurnished.includes(furnished) || unknownFilter;
                     } else {
                         furnishedFilter = unknownFilter;
                     }
@@ -158,6 +162,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     securityDepositFilter = !securityDeposit || (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 } else {
                     securityDepositFilter = securityDeposit && (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                }
+
+                let petDepositFilter = true;
+                if (petDepositIncludeMissing) {
+                petDepositFilter = !petDeposit || (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                } else {
+                petDepositFilter = petDeposit && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 }
         
                 return (
@@ -171,7 +182,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     yearBuiltFilter &&
                     termsFilter &&
                     furnishedFilter &&
-                    securityDepositFilter
+                    securityDepositFilter &&
+                    petDepositFilter
                 );
             });
         
