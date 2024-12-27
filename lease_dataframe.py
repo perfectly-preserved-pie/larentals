@@ -8,7 +8,6 @@ from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
-import asyncio
 import geopandas as gpd
 import glob
 import os
