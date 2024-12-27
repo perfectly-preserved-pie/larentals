@@ -86,15 +86,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const otherDepositIncludeMissingBool = otherDepositIncludeMissing === 'True';
         
             const filteredFeatures = rawData.features.filter(feature => {
-                const price = feature.properties.list_price || 0;
-                const bedrooms = feature.properties.bedrooms || 0;
-                const bathrooms = feature.properties.total_bathrooms || 0;
-                const petPolicyValue = feature.properties.pet_policy || 'Unknown';
-                const sqft = feature.properties.sqft || 0;
-                const ppsqft = feature.properties.ppsqft || 0;
-                const parkingSpaces = feature.properties.parking_spaces || 0;
-                const yearBuilt = feature.properties.year_built || 'Unknown';
-                const furnished = feature.properties.furnished || 'Unknown';
+                const price = feature.properties.list_price;
+                const bedrooms = feature.properties.bedrooms;
+                const bathrooms = feature.properties.total_bathrooms;
+                const petPolicyValue = feature.properties.pet_policy;
+                const sqft = feature.properties.sqft;
+                const ppsqft = feature.properties.ppsqft;
+                const parkingSpaces = feature.properties.parking_spaces;
+                const yearBuilt = feature.properties.year_built;
+                const furnished = feature.properties.furnished;
                 const securityDeposit = feature.properties.security_deposit;
                 const petDeposit = feature.properties.pet_deposit;
                 const keyDeposit = feature.properties.key_deposit;
