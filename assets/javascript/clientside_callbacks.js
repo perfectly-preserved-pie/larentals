@@ -53,6 +53,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             securityDepositIncludeMissing,
             petDepositRange,
             petDepositIncludeMissing,
+            keyDepositRange,
+            keyDepositIncludeMissing,
             rawData
         ) {
             if (!rawData || !rawData.features) {
@@ -68,6 +70,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minYear, maxYear] = yearBuiltRange;
             const [minSecurityDeposit, maxSecurityDeposit] = securityDepositRange;
             const [minPetDeposit, maxPetDeposit] = petDepositRange;
+            const [minKeyDeposit, maxKeyDeposit] = keyDepositRange;
         
             const filteredFeatures = rawData.features.filter(feature => {
                 const price = feature.properties.list_price || 0;
@@ -79,8 +82,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const parkingSpaces = feature.properties.parking_spaces || 0;
                 const yearBuilt = feature.properties.year_built || 'Unknown';
                 const furnished = feature.properties.furnished || 'Unknown';
-                const securityDeposit = feature.properties.security_deposit || 'Unknown';
-                const petDeposit = feature.properties.pet_deposit || 'Unknown';
+                const securityDeposit = feature.properties.security_deposit || 0;
+                const petDeposit = feature.properties.pet_deposit || 0;
+                const keyDeposit = feature.properties.key_deposit || 0;
         
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -163,12 +167,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 } else {
                     securityDepositFilter = securityDeposit && (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 }
-
+        
                 let petDepositFilter = true;
                 if (petDepositIncludeMissing) {
-                petDepositFilter = !petDeposit || (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                    petDepositFilter = !petDeposit || (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 } else {
-                petDepositFilter = petDeposit && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                    petDepositFilter = petDeposit && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                }
+        
+                let keyDepositFilter = true;
+                if (keyDepositIncludeMissing) {
+                    keyDepositFilter = !keyDeposit || (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                } else {
+                    keyDepositFilter = keyDeposit && (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
                 }
         
                 return (
@@ -183,7 +194,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     termsFilter &&
                     furnishedFilter &&
                     securityDepositFilter &&
-                    petDepositFilter
+                    petDepositFilter &&
+                    keyDepositFilter
                 );
             });
         
