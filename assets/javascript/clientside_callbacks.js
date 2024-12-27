@@ -34,7 +34,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 };
             }
         },
-        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, rawData) {
+        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, petPolicy, rawData) {
             if (!rawData || !rawData.features) {
                 return rawData;
             }
@@ -47,9 +47,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const price = feature.properties.list_price || 0;
                 const bedrooms = feature.properties.bedrooms || 0;
                 const bathrooms = feature.properties.total_bathrooms || 0;
+                const petPolicyValue = feature.properties.pet_policy || 'Unknown';
+
+                let petPolicyFilter = true;
+                if (petPolicy === true) {
+                    petPolicyFilter = !['No', 'No, Size Limit'].includes(petPolicyValue);
+                } else if (petPolicy === false) {
+                    petPolicyFilter = ['No', 'No, Size Limit'].includes(petPolicyValue);
+                } else if (petPolicy === 'Both') {
+                    petPolicyFilter = true;
+                }
+                
                 return price >= minPrice && price <= maxPrice &&
                        bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
-                       bathrooms >= minBathrooms && bathrooms <= maxBathrooms;
+                       bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
+                       petPolicyFilter;
             });
 
             // Return a new GeoJSON FeatureCollection with the filtered features
