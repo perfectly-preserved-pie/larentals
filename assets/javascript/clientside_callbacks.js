@@ -225,8 +225,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     let chosenFurnished = [...furnishedChoices];
 
                     if (chosenFurnished.includes("Unknown")) {
-                        unknownFilter = !furnished;
-                        chosenFurnished = chosenFurnished.filter(x => x !== "Unknown");
+                        // "Unknown" in the data means "we don't really know if it's furnished or not"
+                        // so treat furnished === "Unknown" as "unknown".
+                        unknownFilter = furnished === null 
+                            || furnished === undefined 
+                            || furnished === "Unknown";
+                    chosenFurnished = chosenFurnished.filter(x => x !== "Unknown");
                     }
 
                     if (chosenFurnished.length > 0) {
