@@ -34,7 +34,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 };
             }
         },
-        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, petPolicy, sqftRange, sqftIncludeMissing,  ppsqftRange, ppsqftIncludeMissing, parkingSpacesRange, parkingSpacesIncludeMissing, rawData) {
+        filterAndCluster: function(
+            priceRange,
+            bedroomsRange,
+            bathroomsRange,
+            petPolicy,
+            sqftRange,
+            sqftIncludeMissing,
+            ppsqftRange,
+            ppsqftIncludeMissing,
+            parkingSpacesRange,
+            parkingSpacesIncludeMissing,
+            yearBuiltRange,
+            yearBuiltIncludeMissing,
+            rawData
+          ) {
             if (!rawData || !rawData.features) {
                 return rawData;
             }
@@ -44,6 +58,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minSqft, maxSqft] = sqftRange;
             const [minPpsqft, maxPpsqft] = ppsqftRange;
             const [minParking, maxParking] = parkingSpacesRange;
+            const [minYear, maxYear] = yearBuiltRange;
 
             // Filter out anything that doesn't meet the criteria
             const filteredFeatures = rawData.features.filter(feature => {
@@ -54,6 +69,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const sqft = feature.properties.sqft || 0;
                 const ppsqft = feature.properties.ppsqft || 0;
                 const parkingSpaces = feature.properties.parking_spaces || 0;
+                const yearBuilt = feature.properties.year_built || 'Unknown';
 
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -85,10 +101,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     parkingFilter = parkingSpaces && (parkingSpaces >= minParking && parkingSpaces <= maxParking);
                 }
 
+                let yearBuiltFilter = true;
+                if (yearBuiltIncludeMissing) {
+                yearBuiltFilter = !yearBuilt || (yearBuilt >= minYear && yearBuilt <= maxYear);
+                } else {
+                yearBuiltFilter = yearBuilt && (yearBuilt >= minYear && yearBuilt <= maxYear);
+                }
+
                 return price >= minPrice && price <= maxPrice &&
                        bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                        bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
-                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter;
+                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter && yearBuiltFilter;
             });
 
             // Return a new GeoJSON FeatureCollection with the filtered features

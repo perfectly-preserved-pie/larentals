@@ -103,6 +103,8 @@ clientside_callback(
     Input('ppsqft_missing_radio', 'value'),
     Input('garage_spaces_slider', 'value'),
     Input('garage_missing_radio', 'value'),
+    Input('yrbuilt_slider', 'value'),
+    Input('yrbuilt_missing_radio', 'value'),
   ],
   State('lease-geojson-store', 'data')
 )
