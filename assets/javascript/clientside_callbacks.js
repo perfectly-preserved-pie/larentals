@@ -62,11 +62,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} otherDepositRange - [minOtherDeposit, maxOtherDeposit]
          * @param {boolean} otherDepositIncludeMissing - Include listings with null/undefined other deposit?
          * @param {string[]} laundryChoices - e.g. ["In Unit", "Shared", "Unknown"]
+         * @param {string[]} subtypeSelection - e.g. ["Condo", "Townhouse"]
          * @param {Object} rawData - GeoJSON data with .features array
          *
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
-        filterAndCluster: function(
+        filterAndCluster: function( // The order here MUST match the order in the callback decorator
             priceRange,
             bedroomsRange,
             bathroomsRange,
@@ -90,6 +91,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             otherDepositRange,
             otherDepositIncludeMissing,
             laundryChoices,
+            subtypeSelection,
             rawData
         ) {
             if (!rawData || !rawData.features) {
@@ -131,6 +133,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const parkingSpaces = feature.properties.parking_spaces;
                 const yearBuilt = feature.properties.year_built;
                 const laundryCategory = feature.properties.laundry_category; 
+                const subtype = feature.properties.subtype;
 
                 // Transform "Both" -> "Furnished Or Unfurnished"
                 let furnished = feature.properties.furnished;
@@ -303,6 +306,30 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     laundryFilter = chosenLaundry.includes(laundryCategory) || unknownLaundryOk;
                 }
 
+                // 13) subtypeFilter - referencing the new flattened subtype values
+                let subtypeFilterResult = true;
+                if (!subtypeSelection || subtypeSelection.length === 0) {
+                    // If user unchecks everything => exclude all
+                    subtypeFilterResult = false;
+                } else {
+                    let unknownSubtypeOk = false;
+                    let chosenSubtypes = [...subtypeSelection];
+
+                    // If user includes "Unknown" as a choice
+                    if (chosenSubtypes.includes("Unknown")) {
+                        unknownSubtypeOk = (
+                            subtype === null ||
+                            subtype === undefined ||
+                            subtype === "Unknown"
+                        );
+                        chosenSubtypes = chosenSubtypes.filter(x => x !== "Unknown");
+                    }
+
+                    // Now do a simple membership check:
+                    // If user choices includes the listing's flattened subtype, or it's unknown
+                    subtypeFilterResult = chosenSubtypes.includes(subtype) || unknownSubtypeOk;
+                }
+
                 // Decide if we include this feature
                 const includeFeature =
                     price >= minPrice && price <= maxPrice &&
@@ -319,7 +346,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     petDepositFilter &&
                     keyDepositFilter &&
                     otherDepositFilter &&
-                    laundryFilter;
+                    laundryFilter &&
+                    subtypeFilterResult;
 
                 // Debug if excluded
                 if (!includeFeature) {
@@ -339,6 +367,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         keyDeposit,
                         otherDeposit,
                         laundryCategory,
+                        subtype,
                         filters: {
                             petPolicyFilter,
                             sqftFilter,
@@ -351,7 +380,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                             petDepositFilter,
                             keyDepositFilter,
                             otherDepositFilter,
-                            laundryFilter
+                            laundryFilter,
+                            subtypeFilterResult
                         }
                     });
                 }

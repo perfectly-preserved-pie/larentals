@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data, categorize_laundry_features
+from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data, categorize_laundry_features, flatten_subtype_column
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -196,6 +196,9 @@ df.laundry = df.laundry.str.replace(
   'Community Laundry', 
   regex=True
 )
+
+# Flatten the subtype column
+df = flatten_subtype_column(df)
 
 # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html

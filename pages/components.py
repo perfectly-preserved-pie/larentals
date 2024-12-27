@@ -161,71 +161,24 @@ class LeaseComponents(BaseClass):
             return 'Other'
     
     def create_subtype_checklist(self):
-        # Define groups
-        groups = {
-            "Apartments": [
-                {'label': 'Apartment', 'value': 'Apartment'},
-                {'label': 'Apartment (Attached)', 'value': 'APT/A'},
-                {'label': 'Apartment (Detached)', 'value': 'APT/D'}
-            ],
-            "Cabins": [{'label': 'Cabin (Detached)', 'value': 'CABIN/D'}],
-            "Combo - Residential & Commercial": [{'label': 'Combo - Res & Com', 'value': 'Combo - Res & Com'}],
-            "Commercial Residential": [{'label': 'Commercial Residential (Attached)', 'value': 'COMRES/A'}],
-            "Condominiums": [
-                {'label': 'Condominium', 'value': 'Condominium'},
-                {'label': 'Condominium (Attached)', 'value': 'CONDO/A'},
-                {'label': 'Condominium (Detached)', 'value': 'CONDO/D'}
-            ],
-            "Duplexes": [
-                {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
-                {'label': 'Duplex (Detached)', 'value': 'DPLX/D'}
-            ],
-            "Lofts": [
-                {'label': 'Loft', 'value': 'Loft'},
-                {'label': 'Loft (Attached)', 'value': 'LOFT/A'}
-            ],
-            "Quadplexes": [
-                {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
-                {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'}
-            ],
-            "Rooms For Rent": [{'label': 'Room For Rent (Attached)', 'value': 'RMRT/A'}],
-            "Single Family Residences": [
-                {'label': 'Single Family Residence', 'value': 'Single Family'},
-                {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
-                {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'}
-            ],
-            "Stock Cooperative": [{'label': 'Stock Cooperative', 'value': 'Stock Cooperative'}],
-            "Studios": [
-                {'label': 'Studio (Attached)', 'value': 'STUD/A'},
-                {'label': 'Studio (Detached)', 'value': 'STUD/D'}
-            ],
-            "Townhouses": [
-                {'label': 'Townhouse', 'value': 'Townhouse'},
-                {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
-                {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'}
-            ],
-            "Triplexes": [
-                {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
-                {'label': 'Triplex (Detached)', 'value': 'TPLX/D'}
-            ],
-            "Unknown": [{'label': 'Unknown', 'value': 'Unknown'}]
-        }
-
-        # Prepare data for MultiSelect with sorted subtypes
-        data = [
-            {
-                "group": group,
-                "items": sorted(subtypes, key=lambda x: x["label"])
-            }
-            for group, subtypes in sorted(groups.items())
+        """
+        Creates a Dash MultiSelect of the flattened subtypes, without grouping.
+        """
+        flattened_subtypes = [
+            'Apartment', 'Cabin', 'Combo - Res & Com', 'Commercial Residential',
+            'Condominium', 'Duplex', 'Loft', 'Quadplex', 'Room For Rent',
+            'Single Family', 'Stock Cooperative', 'Studio', 'Townhouse',
+            'Triplex', 'Unknown'
         ]
 
-        # Ensure all possible subtypes are included in the initial value
-        all_possible_subtypes = [item['value'] for sublist in groups.values() for item in sublist]
-        initial_values = all_possible_subtypes
+        # Create data in the format dmc.MultiSelect expects
+        # Each item is { 'label': '...', 'value': '...' }
+        data = [{"label": st, "value": st} for st in sorted(flattened_subtypes)]
 
-        # Custom styles to change option text color to white
-        # https://www.dash-mantine-components.com/components/multiselect#styles-api
+        # Default to everything selected
+        initial_values = [item["value"] for item in data]
+
+        # Custom styles for the MultiSelect
         custom_styles = {
             "dropdown": {"color": "white"},
             "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
@@ -234,7 +187,6 @@ class LeaseComponents(BaseClass):
             "pill": {"color": "white"},
         }
 
-        # Dash Component as Class Method
         subtype_checklist = html.Div([
             html.Div([
                 html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
@@ -257,9 +209,9 @@ class LeaseComponents(BaseClass):
                 "overflowY": "scroll",
                 "overflowX": 'hidden',
                 "maxHeight": '120px',
-                #"height": '120px'
             })
         ])
+
         return subtype_checklist
     
     def create_bedrooms_slider(self):
