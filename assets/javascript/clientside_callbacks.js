@@ -34,7 +34,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 };
             }
         },
-        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, petPolicy, sqftRange, sqftIncludeMissing, rawData) {
+        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, petPolicy, sqftRange, sqftIncludeMissing,  ppsqftRange, ppsqftIncludeMissing, rawData) {
             if (!rawData || !rawData.features) {
                 return rawData;
             }
@@ -42,6 +42,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minBedrooms, maxBedrooms] = bedroomsRange;
             const [minBathrooms, maxBathrooms] = bathroomsRange;
             const [minSqft, maxSqft] = sqftRange;
+            const [minPpsqft, maxPpsqft] = ppsqftRange;
 
             // Filter out anything that doesn't meet the criteria
             const filteredFeatures = rawData.features.filter(feature => {
@@ -50,6 +51,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const bathrooms = feature.properties.total_bathrooms || 0;
                 const petPolicyValue = feature.properties.pet_policy || 'Unknown';
                 const sqft = feature.properties.sqft;
+                const ppsqft = feature.properties.ppsqft;
 
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -66,11 +68,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 } else {
                     sqftFilter = sqft && (sqft >= minSqft && sqft <= maxSqft);
                 }
+
+                let ppsqftFilter = true;
+                if (ppsqftIncludeMissing) {
+                ppsqftFilter = !ppsqft || (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                } else {
+                ppsqftFilter = ppsqft && (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                }
                 
                 return price >= minPrice && price <= maxPrice &&
                        bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                        bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
-                       petPolicyFilter && sqftFilter;
+                       petPolicyFilter && sqftFilter && ppsqftFilter;
             });
 
             // Return a new GeoJSON FeatureCollection with the filtered features
