@@ -47,6 +47,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             parkingSpacesIncludeMissing,
             yearBuiltRange,
             yearBuiltIncludeMissing,
+            rentalTerms,
             rawData
           ) {
             if (!rawData || !rawData.features) {
@@ -108,10 +109,31 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 yearBuiltFilter = yearBuilt && (yearBuilt >= minYear && yearBuilt <= maxYear);
                 }
 
+                let termsFilter = true;
+                if (!rentalTerms || rentalTerms.length === 0) {
+                termsFilter = false;
+                } else {
+                let unknownFilter = false;
+                let chosenTerms = [...rentalTerms];
+                if (chosenTerms.includes("Unknown")) {
+                    unknownFilter = !feature.properties.terms; 
+                    chosenTerms = chosenTerms.filter(t => t !== "Unknown");
+                }
+                if (chosenTerms.length > 0) {
+                    const pattern = chosenTerms.map(term =>
+                    term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    ).join("|");
+                    const regex = new RegExp(pattern, "i");
+                    termsFilter = (feature.properties.terms && regex.test(feature.properties.terms)) || unknownFilter;
+                } else {
+                    termsFilter = unknownFilter;
+                }
+                }
+
                 return price >= minPrice && price <= maxPrice &&
                        bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                        bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
-                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter && yearBuiltFilter;
+                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter && yearBuiltFilter && termsFilter;
             });
 
             // Return a new GeoJSON FeatureCollection with the filtered features

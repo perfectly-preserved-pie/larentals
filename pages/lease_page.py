@@ -105,6 +105,7 @@ clientside_callback(
     Input('garage_missing_radio', 'value'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_radio', 'value'),
+    Input('terms_checklist', 'value'),
   ],
   State('lease-geojson-store', 'data')
 )
