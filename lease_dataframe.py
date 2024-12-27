@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data
+from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data, categorize_laundry_features
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -9,6 +9,7 @@ from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
 import asyncio
+import geopandas as gpd
 import glob
 import os
 import pandas as pd
@@ -218,6 +219,8 @@ df_combined = pd.concat([df, df_old], ignore_index=True)
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
 # Iterate through the dataframe and drop rows with expired listings
 df_combined = remove_inactive_listings(df_combined)
+# Categorize the laundry features
+df_combined['laundry_category'] = df_combined['laundry'].apply(categorize_laundry_features)
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
 # Filter the dataframe for rows outside of California
@@ -237,16 +240,17 @@ for row in outside_ca_rows.itertuples():
   df_combined.at[row.Index, 'latitude'] = coordinates[0]
   df_combined.at[row.Index, 'longitude'] = coordinates[1]
 # Save the new combined dataframe
+# Convert the combined DataFrame to a GeoDataFrame
+gdf_combined = gpd.GeoDataFrame(
+  df_combined, 
+  geometry=gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
+)
+# Save the GeoDataFrame as a GeoJSON file
 try:
-  df_combined.to_parquet(path="assets/datasets/lease.parquet")
+  gdf_combined.to_file("assets/datasets/lease.geojson", driver="GeoJSON")
+  logger.info("Saved the combined GeoDataFrame to a GeoJSON file.")
 except Exception as e:
-  logger.warning(f"Error saving the combined dataframe as a parquet file: {e}. Falling back to CSV...")
-  # Save the new combined dataframe to a CSV file
-  try:
-    df_combined.to_csv(path_or_buf="assets/datasets/lease.csv", index=False)
-    logger.info("Saved the combined dataframe to a CSV file")
-  except Exception as e:
-    logger.error(f"Error saving the combined dataframe to a CSV file: {e}")
+  logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
 
 # Reclaim space in ImageKit
-reclaim_imagekit_space(df_path="assets/datasets/lease.parquet", imagekit_instance=imagekit)
+reclaim_imagekit_space(df_path="assets/datasets/lease.geojson", imagekit_instance=imagekit)
