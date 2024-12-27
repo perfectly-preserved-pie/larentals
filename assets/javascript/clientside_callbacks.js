@@ -34,6 +34,35 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 };
             }
         },
+        /**
+         * Filters GeoJSON features according to user-selected criteria.
+         *
+         * @param {[number, number]} priceRange - [minPrice, maxPrice]
+         * @param {[number, number]} bedroomsRange - [minBedrooms, maxBedrooms]
+         * @param {[number, number]} bathroomsRange - [minBathrooms, maxBathrooms]
+         * @param {boolean|string} petPolicy - User-selected pet policy (true, false, "Both")
+         * @param {[number, number]} sqftRange - [minSqft, maxSqft]
+         * @param {boolean} sqftIncludeMissing - Whether to include listings with null/undefined sqft
+         * @param {[number, number]} ppsqftRange - [minPpsqft, maxPpsqft]
+         * @param {boolean} ppsqftIncludeMissing - Whether to include listings with null/undefined ppsqft
+         * @param {[number, number]} parkingSpacesRange - [minParking, maxParking]
+         * @param {boolean} parkingSpacesIncludeMissing - Whether to include listings with null/undefined parking
+         * @param {[number, number]} yearBuiltRange - [minYear, maxYear]
+         * @param {boolean} yearBuiltIncludeMissing - Whether to include listings with null/undefined year_built
+         * @param {string[]} rentalTerms - Array of user-selected rental terms, e.g. ["12 Months", "Month To Month", "Unknown"]
+         * @param {string[]} furnishedChoices - Array of user-selected furnished options, e.g. ["Furnished", "Unfurnished", "Unknown"]
+         * @param {[number, number]} securityDepositRange - [minSecurityDeposit, maxSecurityDeposit]
+         * @param {boolean} securityDepositIncludeMissing - Whether to include listings with null/undefined security deposit
+         * @param {[number, number]} petDepositRange - [minPetDeposit, maxPetDeposit]
+         * @param {boolean} petDepositIncludeMissing - Whether to include listings with null/undefined pet deposit
+         * @param {[number, number]} keyDepositRange - [minKeyDeposit, maxKeyDeposit]
+         * @param {boolean} keyDepositIncludeMissing - Whether to include listings with null/undefined key deposit
+         * @param {[number, number]} otherDepositRange - [minOtherDeposit, maxOtherDeposit]
+         * @param {boolean} otherDepositIncludeMissing - Whether to include listings with null/undefined other deposit
+         * @param {Object} rawData - GeoJSON data with .features array
+         *
+         * @returns {Object} - A GeoJSON FeatureCollection of filtered features
+         */
         filterAndCluster: function(
             priceRange,
             bedroomsRange,
@@ -62,7 +91,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             if (!rawData || !rawData.features) {
                 return rawData;
             }
-        
+
+            // Destructure all the numeric ranges
             const [minPrice, maxPrice] = priceRange;
             const [minBedrooms, maxBedrooms] = bedroomsRange;
             const [minBathrooms, maxBathrooms] = bathroomsRange;
@@ -74,8 +104,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minPetDeposit, maxPetDeposit] = petDepositRange;
             const [minKeyDeposit, maxKeyDeposit] = keyDepositRange;
             const [minOtherDeposit, maxOtherDeposit] = otherDepositRange;
-        
-            // Convert the include missing values to booleans
+
+            // Convert the include-missing values to booleans
             const sqftIncludeMissingBool = Boolean(sqftIncludeMissing);
             const ppsqftIncludeMissingBool = Boolean(ppsqftIncludeMissing);
             const parkingSpacesIncludeMissingBool = Boolean(parkingSpacesIncludeMissing);
@@ -84,7 +114,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const petDepositIncludeMissingBool = Boolean(petDepositIncludeMissing);
             const keyDepositIncludeMissingBool = Boolean(keyDepositIncludeMissing);
             const otherDepositIncludeMissingBool = Boolean(otherDepositIncludeMissing);
-        
+
+            // Filter the rawData.features based on the criteria
             const filteredFeatures = rawData.features.filter(feature => {
                 const price = feature.properties.list_price;
                 const bedrooms = feature.properties.bedrooms;
@@ -94,137 +125,160 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const ppsqft = feature.properties.ppsqft;
                 const parkingSpaces = feature.properties.parking_spaces;
                 const yearBuilt = feature.properties.year_built;
-                const furnished = feature.properties.furnished;
+
+                // Transform furnished value from "Both" → "Furnished Or Unfurnished" if desired
+                let furnished = feature.properties.furnished;
+                if (furnished === "Both") {
+                    furnished = "Furnished Or Unfurnished";
+                }
+
                 const securityDeposit = feature.properties.security_deposit;
                 const petDeposit = feature.properties.pet_deposit;
                 const keyDeposit = feature.properties.key_deposit;
                 const otherDeposit = feature.properties.other_deposit;
                 const mls_number = feature.properties.mls_number;
-        
+
+                // 1) petPolicyFilter
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
+                    // only listings that are NOT "No" or "No, Size Limit"
                     petPolicyFilter = !['No', 'No, Size Limit'].includes(petPolicyValue);
                 } else if (petPolicy === false) {
+                    // only listings that ARE "No" or "No, Size Limit"
                     petPolicyFilter = ['No', 'No, Size Limit'].includes(petPolicyValue);
                 } else if (petPolicy === 'Both') {
+                    // everything passes
                     petPolicyFilter = true;
                 }
-        
+
+                // 2) sqftFilter
                 let sqftFilter = true;
                 if (sqftIncludeMissingBool) {
-                    sqftFilter = sqft === null || sqft === undefined || (sqft >= minSqft && sqft <= maxSqft);
+                    sqftFilter = (sqft === null || sqft === undefined) ||
+                                (sqft >= minSqft && sqft <= maxSqft);
                 } else {
-                    sqftFilter = sqft !== null && sqft !== undefined && (sqft >= minSqft && sqft <= maxSqft);
+                    sqftFilter = (sqft !== null && sqft !== undefined) &&
+                                (sqft >= minSqft && sqft <= maxSqft);
                 }
-        
+
+                // 3) ppsqftFilter
                 let ppsqftFilter = true;
                 if (ppsqftIncludeMissingBool) {
-                    ppsqftFilter = ppsqft === null || ppsqft === undefined || (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                    ppsqftFilter = (ppsqft === null || ppsqft === undefined) ||
+                                (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
                 } else {
-                    ppsqftFilter = ppsqft !== null && ppsqft !== undefined && (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                    ppsqftFilter = (ppsqft !== null && ppsqft !== undefined) &&
+                                (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
                 }
-        
+
+                // 4) parkingFilter
                 let parkingFilter = true;
                 if (parkingSpacesIncludeMissingBool) {
-                    parkingFilter = parkingSpaces === null || parkingSpaces === undefined || (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                    parkingFilter = (parkingSpaces === null || parkingSpaces === undefined) ||
+                                    (parkingSpaces >= minParking && parkingSpaces <= maxParking);
                 } else {
-                    parkingFilter = parkingSpaces !== null && parkingSpaces !== undefined && (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                    parkingFilter = (parkingSpaces !== null && parkingSpaces !== undefined) &&
+                                    (parkingSpaces >= minParking && parkingSpaces <= maxParking);
                 }
-                //console.log('Parking filter values:', {
-                //    mls_number,
-                //    minParking,
-                //    maxParking,
-                //    parkingSpacesIncludeMissingBool,
-                 //   parkingSpaces,
-                //    parkingFilter
-               // });
-        
+
+                // 5) yearBuiltFilter
                 let yearBuiltFilter = true;
                 if (yearBuiltIncludeMissingBool) {
-                    yearBuiltFilter = yearBuilt === null || yearBuilt === undefined || (yearBuilt >= minYear && yearBuilt <= maxYear);
+                    yearBuiltFilter = (yearBuilt === null || yearBuilt === undefined) ||
+                                    (yearBuilt >= minYear && yearBuilt <= maxYear);
                 } else {
-                    yearBuiltFilter = yearBuilt !== null && yearBuilt !== undefined && (yearBuilt >= minYear && yearBuilt <= maxYear);
+                    yearBuiltFilter = (yearBuilt !== null && yearBuilt !== undefined) &&
+                                    (yearBuilt >= minYear && yearBuilt <= maxYear);
                 }
-        
+
+                // 6) termsFilter
                 let termsFilter = true;
                 if (!rentalTerms || rentalTerms.length === 0) {
                     termsFilter = false;
                 } else {
                     let unknownFilter = false;
                     let chosenTerms = [...rentalTerms];
+
                     if (chosenTerms.includes("Unknown")) {
-                        unknownFilter = !feature.properties.terms; 
+                        // If user wants "Unknown," pass if feature.properties.terms is falsy
+                        unknownFilter = !feature.properties.terms;
                         chosenTerms = chosenTerms.filter(t => t !== "Unknown");
                     }
+
                     if (chosenTerms.length > 0) {
-                        const pattern = chosenTerms.map(term =>
-                            term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                        ).join("|");
+                        const pattern = chosenTerms
+                        .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .join("|");
                         const regex = new RegExp(pattern, "i");
                         termsFilter = (feature.properties.terms && regex.test(feature.properties.terms)) || unknownFilter;
                     } else {
                         termsFilter = unknownFilter;
                     }
                 }
-        
+
+                // 7) furnishedFilter
                 let furnishedFilter = true;
                 if (!furnishedChoices || furnishedChoices.length === 0) {
                     furnishedFilter = false;
                 } else {
                     let unknownFilter = false;
                     let chosenFurnished = [...furnishedChoices];
+
                     if (chosenFurnished.includes("Unknown")) {
-                        unknownFilter = !furnished; 
+                        unknownFilter = !furnished;
                         chosenFurnished = chosenFurnished.filter(x => x !== "Unknown");
                     }
+
                     if (chosenFurnished.length > 0) {
                         furnishedFilter = chosenFurnished.includes(furnished) || unknownFilter;
                     } else {
                         furnishedFilter = unknownFilter;
                     }
                 }
-        
+
+                // 8) securityDepositFilter
                 let securityDepositFilter = true;
                 if (securityDepositIncludeMissingBool) {
-                    securityDepositFilter = securityDeposit === null || securityDeposit === undefined || (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                    securityDepositFilter = (securityDeposit === null || securityDeposit === undefined) ||
+                                            (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 } else {
-                    securityDepositFilter = securityDeposit !== null && securityDeposit !== undefined && (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                    securityDepositFilter = (securityDeposit !== null && securityDeposit !== undefined) &&
+                                            (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 }
-        
+
+                // 9) petDepositFilter
                 let petDepositFilter = true;
                 if (petDepositIncludeMissingBool) {
-                    petDepositFilter = petDeposit === null || petDeposit === undefined || (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                    petDepositFilter = (petDeposit === null || petDeposit === undefined) ||
+                                    (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 } else {
-                    petDepositFilter = petDeposit !== null && petDeposit !== undefined && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                    petDepositFilter = (petDeposit !== null && petDeposit !== undefined) &&
+                                    (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 }
-                //console.log('Pet deposit filter values:', {
-                //    mls_number,
-                //    minPetDeposit,
-                //    maxPetDeposit,
-                //    petDepositIncludeMissingBool,
-                //    petDeposit,
-                //    petDepositFilter
-                //});
 
-                //console.log("Raw value of parkingSpacesIncludeMissing:", parkingSpacesIncludeMissing);
-                //console.log("parkingSpacesIncludeMissingBool:", parkingSpacesIncludeMissingBool);
-
-        
+                // 10) keyDepositFilter
                 let keyDepositFilter = true;
                 if (keyDepositIncludeMissingBool) {
-                    keyDepositFilter = keyDeposit === null || keyDeposit === undefined || (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                    keyDepositFilter = (keyDeposit === null || keyDeposit === undefined) ||
+                                    (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
                 } else {
-                    keyDepositFilter = keyDeposit !== null && keyDeposit !== undefined && (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                    keyDepositFilter = (keyDeposit !== null && keyDeposit !== undefined) &&
+                                    (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
                 }
-        
+
+                // 11) otherDepositFilter
                 let otherDepositFilter = true;
                 if (otherDepositIncludeMissingBool) {
-                    otherDepositFilter = otherDeposit === null || otherDeposit === undefined || (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
+                    otherDepositFilter = (otherDeposit === null || otherDeposit === undefined) ||
+                                        (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
                 } else {
-                    otherDepositFilter = otherDeposit !== null && otherDeposit !== undefined && (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
+                    otherDepositFilter = (otherDeposit !== null && otherDeposit !== undefined) &&
+                                        (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
                 }
-        
-                const includeFeature = price >= minPrice && price <= maxPrice &&
+
+                // Finally, decide if we keep this feature
+                const includeFeature =
+                    price >= minPrice && price <= maxPrice &&
                     bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                     bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
                     petPolicyFilter &&
@@ -238,7 +292,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     petDepositFilter &&
                     keyDepositFilter &&
                     otherDepositFilter;
-        
+
+                // Optional debugging
                 if (!includeFeature) {
                     console.log('Feature excluded:', {
                         mls_number,
@@ -270,11 +325,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         }
                     });
                 }
-        
+
                 return includeFeature;
             });
-        
+
+            // Return a new FeatureCollection with the filtered features
             return { type: "FeatureCollection", features: filteredFeatures };
         }
+
+        
             }
         });
