@@ -48,6 +48,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             yearBuiltRange,
             yearBuiltIncludeMissing,
             rentalTerms,
+            furnishedChoices,
             rawData
           ) {
             if (!rawData || !rawData.features) {
@@ -71,6 +72,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const ppsqft = feature.properties.ppsqft || 0;
                 const parkingSpaces = feature.properties.parking_spaces || 0;
                 const yearBuilt = feature.properties.year_built || 'Unknown';
+                const furnished = feature.properties.furnished || 'Unknown';
 
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -130,10 +132,28 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
                 }
 
+                let furnishedFilter = true;
+                if (!furnishedChoices || furnishedChoices.length === 0) {
+                furnishedFilter = false;
+                } else {
+                let unknownFilter = false;
+                let chosenFurnished = [...furnishedChoices];
+                if (chosenFurnished.includes("Unknown")) {
+                    // Include listings with missing or null furnished property
+                    unknownFilter = !feature.properties.furnished; 
+                    chosenFurnished = chosenFurnished.filter(x => x !== "Unknown");
+                }
+                if (chosenFurnished.length > 0) {
+                    furnishedFilter = chosenFurnished.includes(feature.properties.furnished) || unknownFilter;
+                } else {
+                    furnishedFilter = unknownFilter;
+                }
+                }
+
                 return price >= minPrice && price <= maxPrice &&
                        bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                        bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
-                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter && yearBuiltFilter && termsFilter;
+                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter && yearBuiltFilter && termsFilter && furnishedFilter;
             });
 
             // Return a new GeoJSON FeatureCollection with the filtered features
