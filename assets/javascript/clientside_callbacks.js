@@ -75,15 +75,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minKeyDeposit, maxKeyDeposit] = keyDepositRange;
             const [minOtherDeposit, maxOtherDeposit] = otherDepositRange;
         
-            // Convert string values to boolean
-            const sqftIncludeMissingBool = sqftIncludeMissing === 'True';
-            const ppsqftIncludeMissingBool = ppsqftIncludeMissing === 'True';
-            const parkingSpacesIncludeMissingBool = parkingSpacesIncludeMissing === 'True';
-            const yearBuiltIncludeMissingBool = yearBuiltIncludeMissing === 'True';
-            const securityDepositIncludeMissingBool = securityDepositIncludeMissing === 'True';
-            const petDepositIncludeMissingBool = petDepositIncludeMissing === 'True';
-            const keyDepositIncludeMissingBool = keyDepositIncludeMissing === 'True';
-            const otherDepositIncludeMissingBool = otherDepositIncludeMissing === 'True';
+            // Convert the include missing values to booleans
+            const sqftIncludeMissingBool = Boolean(sqftIncludeMissing);
+            const ppsqftIncludeMissingBool = Boolean(ppsqftIncludeMissing);
+            const parkingSpacesIncludeMissingBool = Boolean(parkingSpacesIncludeMissing);
+            const yearBuiltIncludeMissingBool = Boolean(yearBuiltIncludeMissing);
+            const securityDepositIncludeMissingBool = Boolean(securityDepositIncludeMissing);
+            const petDepositIncludeMissingBool = Boolean(petDepositIncludeMissing);
+            const keyDepositIncludeMissingBool = Boolean(keyDepositIncludeMissing);
+            const otherDepositIncludeMissingBool = Boolean(otherDepositIncludeMissing);
         
             const filteredFeatures = rawData.features.filter(feature => {
                 const price = feature.properties.list_price;
@@ -99,6 +99,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const petDeposit = feature.properties.pet_deposit;
                 const keyDeposit = feature.properties.key_deposit;
                 const otherDeposit = feature.properties.other_deposit;
+                const mls_number = feature.properties.mls_number;
         
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -129,6 +130,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 } else {
                     parkingFilter = parkingSpaces !== null && parkingSpaces !== undefined && (parkingSpaces >= minParking && parkingSpaces <= maxParking);
                 }
+                //console.log('Parking filter values:', {
+                //    mls_number,
+                //    minParking,
+                //    maxParking,
+                //    parkingSpacesIncludeMissingBool,
+                 //   parkingSpaces,
+                //    parkingFilter
+               // });
         
                 let yearBuiltFilter = true;
                 if (yearBuiltIncludeMissingBool) {
@@ -188,6 +197,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 } else {
                     petDepositFilter = petDeposit !== null && petDeposit !== undefined && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 }
+                //console.log('Pet deposit filter values:', {
+                //    mls_number,
+                //    minPetDeposit,
+                //    maxPetDeposit,
+                //    petDepositIncludeMissingBool,
+                //    petDeposit,
+                //    petDepositFilter
+                //});
+
+                //console.log("Raw value of parkingSpacesIncludeMissing:", parkingSpacesIncludeMissing);
+                //console.log("parkingSpacesIncludeMissingBool:", parkingSpacesIncludeMissingBool);
+
         
                 let keyDepositFilter = true;
                 if (keyDepositIncludeMissingBool) {
@@ -203,8 +224,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     otherDepositFilter = otherDeposit !== null && otherDeposit !== undefined && (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
                 }
         
-                return (
-                    price >= minPrice && price <= maxPrice &&
+                const includeFeature = price >= minPrice && price <= maxPrice &&
                     bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                     bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
                     petPolicyFilter &&
@@ -217,11 +237,44 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     securityDepositFilter &&
                     petDepositFilter &&
                     keyDepositFilter &&
-                    otherDepositFilter
-                );
+                    otherDepositFilter;
+        
+                if (!includeFeature) {
+                    console.log('Feature excluded:', {
+                        mls_number,
+                        price,
+                        bedrooms,
+                        bathrooms,
+                        petPolicyValue,
+                        sqft,
+                        ppsqft,
+                        parkingSpaces,
+                        yearBuilt,
+                        furnished,
+                        securityDeposit,
+                        petDeposit,
+                        keyDeposit,
+                        otherDeposit,
+                        filters: {
+                            petPolicyFilter,
+                            sqftFilter,
+                            ppsqftFilter,
+                            parkingFilter,
+                            yearBuiltFilter,
+                            termsFilter,
+                            furnishedFilter,
+                            securityDepositFilter,
+                            petDepositFilter,
+                            keyDepositFilter,
+                            otherDepositFilter
+                        }
+                    });
+                }
+        
+                return includeFeature;
             });
         
             return { type: "FeatureCollection", features: filteredFeatures };
         }
-    }
-});
+            }
+        });
