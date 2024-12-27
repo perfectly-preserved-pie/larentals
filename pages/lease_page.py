@@ -115,6 +115,7 @@ clientside_callback(
     Input('key_deposit_missing_radio', 'value'),
     Input('other_deposit_slider', 'value'),
     Input('other_deposit_missing_radio', 'value'),
+    Input('laundry_checklist', 'value'),
   ],
   State('lease-geojson-store', 'data')
 )
