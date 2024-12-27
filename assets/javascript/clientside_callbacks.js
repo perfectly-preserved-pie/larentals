@@ -55,6 +55,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             petDepositIncludeMissing,
             keyDepositRange,
             keyDepositIncludeMissing,
+            otherDepositRange,
+            otherDepositIncludeMissing,
             rawData
         ) {
             if (!rawData || !rawData.features) {
@@ -71,6 +73,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minSecurityDeposit, maxSecurityDeposit] = securityDepositRange;
             const [minPetDeposit, maxPetDeposit] = petDepositRange;
             const [minKeyDeposit, maxKeyDeposit] = keyDepositRange;
+            const [minOtherDeposit, maxOtherDeposit] = otherDepositRange;
+        
+            // Convert string values to boolean
+            const sqftIncludeMissingBool = sqftIncludeMissing === 'True';
+            const ppsqftIncludeMissingBool = ppsqftIncludeMissing === 'True';
+            const parkingSpacesIncludeMissingBool = parkingSpacesIncludeMissing === 'True';
+            const yearBuiltIncludeMissingBool = yearBuiltIncludeMissing === 'True';
+            const securityDepositIncludeMissingBool = securityDepositIncludeMissing === 'True';
+            const petDepositIncludeMissingBool = petDepositIncludeMissing === 'True';
+            const keyDepositIncludeMissingBool = keyDepositIncludeMissing === 'True';
+            const otherDepositIncludeMissingBool = otherDepositIncludeMissing === 'True';
         
             const filteredFeatures = rawData.features.filter(feature => {
                 const price = feature.properties.list_price || 0;
@@ -82,9 +95,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const parkingSpaces = feature.properties.parking_spaces || 0;
                 const yearBuilt = feature.properties.year_built || 'Unknown';
                 const furnished = feature.properties.furnished || 'Unknown';
-                const securityDeposit = feature.properties.security_deposit || 0;
-                const petDeposit = feature.properties.pet_deposit || 0;
-                const keyDeposit = feature.properties.key_deposit || 0;
+                const securityDeposit = feature.properties.security_deposit;
+                const petDeposit = feature.properties.pet_deposit;
+                const keyDeposit = feature.properties.key_deposit;
+                const otherDeposit = feature.properties.other_deposit;
         
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -96,31 +110,31 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
         
                 let sqftFilter = true;
-                if (sqftIncludeMissing) {
-                    sqftFilter = !sqft || (sqft >= minSqft && sqft <= maxSqft);
+                if (sqftIncludeMissingBool) {
+                    sqftFilter = sqft === null || sqft === undefined || (sqft >= minSqft && sqft <= maxSqft);
                 } else {
-                    sqftFilter = sqft && (sqft >= minSqft && sqft <= maxSqft);
+                    sqftFilter = sqft !== null && sqft !== undefined && (sqft >= minSqft && sqft <= maxSqft);
                 }
         
                 let ppsqftFilter = true;
-                if (ppsqftIncludeMissing) {
-                    ppsqftFilter = !ppsqft || (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                if (ppsqftIncludeMissingBool) {
+                    ppsqftFilter = ppsqft === null || ppsqft === undefined || (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
                 } else {
-                    ppsqftFilter = ppsqft && (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                    ppsqftFilter = ppsqft !== null && ppsqft !== undefined && (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
                 }
         
                 let parkingFilter = true;
-                if (parkingSpacesIncludeMissing) {
-                    parkingFilter = !parkingSpaces || (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                if (parkingSpacesIncludeMissingBool) {
+                    parkingFilter = parkingSpaces === null || parkingSpaces === undefined || (parkingSpaces >= minParking && parkingSpaces <= maxParking);
                 } else {
-                    parkingFilter = parkingSpaces && (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                    parkingFilter = parkingSpaces !== null && parkingSpaces !== undefined && (parkingSpaces >= minParking && parkingSpaces <= maxParking);
                 }
         
                 let yearBuiltFilter = true;
-                if (yearBuiltIncludeMissing) {
-                    yearBuiltFilter = !yearBuilt || (yearBuilt >= minYear && yearBuilt <= maxYear);
+                if (yearBuiltIncludeMissingBool) {
+                    yearBuiltFilter = yearBuilt === null || yearBuilt === undefined || (yearBuilt >= minYear && yearBuilt <= maxYear);
                 } else {
-                    yearBuiltFilter = yearBuilt && (yearBuilt >= minYear && yearBuilt <= maxYear);
+                    yearBuiltFilter = yearBuilt !== null && yearBuilt !== undefined && (yearBuilt >= minYear && yearBuilt <= maxYear);
                 }
         
                 let termsFilter = true;
@@ -162,24 +176,31 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
         
                 let securityDepositFilter = true;
-                if (securityDepositIncludeMissing) {
-                    securityDepositFilter = !securityDeposit || (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                if (securityDepositIncludeMissingBool) {
+                    securityDepositFilter = securityDeposit === null || securityDeposit === undefined || (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 } else {
-                    securityDepositFilter = securityDeposit && (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                    securityDepositFilter = securityDeposit !== null && securityDeposit !== undefined && (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 }
         
                 let petDepositFilter = true;
-                if (petDepositIncludeMissing) {
-                    petDepositFilter = !petDeposit || (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                if (petDepositIncludeMissingBool) {
+                    petDepositFilter = petDeposit === null || petDeposit === undefined || (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 } else {
-                    petDepositFilter = petDeposit && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                    petDepositFilter = petDeposit !== null && petDeposit !== undefined && (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 }
         
                 let keyDepositFilter = true;
-                if (keyDepositIncludeMissing) {
-                    keyDepositFilter = !keyDeposit || (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                if (keyDepositIncludeMissingBool) {
+                    keyDepositFilter = keyDeposit === null || keyDeposit === undefined || (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
                 } else {
-                    keyDepositFilter = keyDeposit && (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                    keyDepositFilter = keyDeposit !== null && keyDeposit !== undefined && (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                }
+        
+                let otherDepositFilter = true;
+                if (otherDepositIncludeMissingBool) {
+                    otherDepositFilter = otherDeposit === null || otherDeposit === undefined || (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
+                } else {
+                    otherDepositFilter = otherDeposit !== null && otherDeposit !== undefined && (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
                 }
         
                 return (
@@ -195,7 +216,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     furnishedFilter &&
                     securityDepositFilter &&
                     petDepositFilter &&
-                    keyDepositFilter
+                    keyDepositFilter &&
+                    otherDepositFilter
                 );
             });
         
