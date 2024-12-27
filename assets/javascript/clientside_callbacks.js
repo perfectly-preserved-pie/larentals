@@ -34,22 +34,27 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 };
             }
         },
-        filterAndCluster: function(sliderValue, rawData) {
+        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, rawData) {
             if (!rawData || !rawData.features) {
-                // If missing or invalid, just return as-is or an empty FeatureCollection
-                return rawData || {type: "FeatureCollection", features: []};
+                return rawData;
             }
-            const [minPrice, maxPrice] = sliderValue;
+            const [minPrice, maxPrice] = priceRange;
+            const [minBedrooms, maxBedrooms] = bedroomsRange;
+            const [minBathrooms, maxBathrooms] = bathroomsRange;
 
-            // Filter out features that don't meet the price criteria
+            // Filter out anything that doesn't meet the criteria
             const filteredFeatures = rawData.features.filter(feature => {
                 const price = feature.properties.list_price || 0;
-                return price >= minPrice && price <= maxPrice;
+                const bedrooms = feature.properties.bedrooms || 0;
+                const bathrooms = feature.properties.total_bathrooms || 0;
+                return price >= minPrice && price <= maxPrice &&
+                       bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
+                       bathrooms >= minBathrooms && bathrooms <= maxBathrooms;
             });
 
-            // Return a new FeatureCollection with only those filtered features
+            // Return a new GeoJSON FeatureCollection with the filtered features
             return {
-                ...rawData,
+                type: "FeatureCollection",
                 features: filteredFeatures
             };
         }

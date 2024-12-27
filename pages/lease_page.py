@@ -89,9 +89,13 @@ clientside_callback(
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',
-    function_name='filterAndCluster' # This function is defined in assets/clientside_callbacks.js
+    function_name='filterAndCluster'
   ),
-  Output('lease_geojson', 'data'),      # We update the clusterable GeoJSON
-  Input('rental_price_slider', 'value'),   # e.g. [min_price, max_price]
-  State('lease-geojson-store', 'data')  # Pull the *full* dataset from the Store
+  Output('lease_geojson', 'data'),
+  [
+    Input('rental_price_slider', 'value'),
+    Input('bedrooms_slider', 'value'),
+    Input('bathrooms_slider', 'value')
+  ],
+  State('lease-geojson-store', 'data')
 )
