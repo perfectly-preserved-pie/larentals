@@ -107,6 +107,8 @@ clientside_callback(
     Input('yrbuilt_missing_radio', 'value'),
     Input('terms_checklist', 'value'),
     Input('furnished_checklist', 'value'),
+    Input('security_deposit_slider', 'value'),
+    Input('security_deposit_missing_radio', 'value'),
   ],
   State('lease-geojson-store', 'data')
 )
