@@ -63,8 +63,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {boolean} otherDepositIncludeMissing - Include listings with null/undefined other deposit?
          * @param {string[]} laundryChoices - e.g. ["In Unit", "Shared", "Unknown"]
          * @param {string[]} subtypeSelection - e.g. ["Condo", "Townhouse"]
+         * @param {string[]} dateRange - e.g. ["2021-01-01", "2021-12-31"]
+         * @param {boolean} dateIncludeMissing - Include listings with null/undefined date?
          * @param {Object} rawData - GeoJSON data with .features array
-         *
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
         filterAndCluster: function( // The order here MUST match the order in the callback decorator
@@ -92,6 +93,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             otherDepositIncludeMissing,
             laundryChoices,
             subtypeSelection,
+            dateStart,
+            dateEnd,
+            dateIncludeMissing,
             rawData
         ) {
             if (!rawData || !rawData.features) {
@@ -120,6 +124,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const petDepositIncludeMissingBool     = Boolean(petDepositIncludeMissing);
             const keyDepositIncludeMissingBool     = Boolean(keyDepositIncludeMissing);
             const otherDepositIncludeMissingBool   = Boolean(otherDepositIncludeMissing);
+            const dateIncludeMissingBool           = Boolean(dateIncludeMissing);
+
+            // Convert dateStart and dateEnd to Date objects
+            const filterMinDate = dateStart ? new Date(dateStart) : null;
+            const filterMaxDate = dateEnd ? new Date(dateEnd) : null;
 
             // Filter each feature
             const filteredFeatures = rawData.features.filter(feature => {
@@ -134,6 +143,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const yearBuilt = feature.properties.year_built;
                 const laundryCategory = feature.properties.laundry_category; 
                 const subtype = feature.properties.subtype;
+                const date = feature.properties.listed_date;
+                const mls_number = feature.properties.mls_number;
 
                 // Transform "Both" -> "Furnished Or Unfurnished"
                 let furnished = feature.properties.furnished;
@@ -146,8 +157,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const petDeposit = feature.properties.pet_deposit;
                 const keyDeposit = feature.properties.key_deposit;
                 const otherDeposit = feature.properties.other_deposit;
-
-                const mls_number = feature.properties.mls_number;
 
                 // 1) petPolicyFilter
                 let petPolicyFilter = true;
@@ -330,6 +339,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     subtypeFilterResult = chosenSubtypes.includes(subtype) || unknownSubtypeOk;
                 }
 
+                // 14) dateFilter
+                let dateFilter = true;
+                const listingDate = date ? new Date(date) : null;
+                if (dateIncludeMissingBool) {
+                    dateFilter = (listingDate === null) ||
+                                 (listingDate >= filterMinDate && listingDate <= filterMaxDate);
+                } else {
+                    dateFilter = (listingDate !== null) &&
+                                 (listingDate >= filterMinDate && listingDate <= filterMaxDate);
+                }
+
                 // Decide if we include this feature
                 const includeFeature =
                     price >= minPrice && price <= maxPrice &&
@@ -347,7 +367,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     keyDepositFilter &&
                     otherDepositFilter &&
                     laundryFilter &&
-                    subtypeFilterResult;
+                    subtypeFilterResult &&
+                    dateFilter;
 
                 // Debug if excluded
                 if (!includeFeature) {
@@ -368,6 +389,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         otherDeposit,
                         laundryCategory,
                         subtype,
+                        date,
                         filters: {
                             petPolicyFilter,
                             sqftFilter,
@@ -381,7 +403,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                             keyDepositFilter,
                             otherDepositFilter,
                             laundryFilter,
-                            subtypeFilterResult
+                            subtypeFilterResult,
+                            dateFilter
                         }
                     });
                 }

@@ -92,7 +92,7 @@ clientside_callback(
     function_name='filterAndCluster'
   ),
   Output('lease_geojson', 'data'),
-  [
+  [ # The order of these inputs must match the order of the arguments in the filterAndCluster function
     Input('rental_price_slider', 'value'),
     Input('bedrooms_slider', 'value'),
     Input('bathrooms_slider', 'value'),
@@ -117,6 +117,9 @@ clientside_callback(
     Input('other_deposit_missing_radio', 'value'),
     Input('laundry_checklist', 'value'),
     Input('subtype_checklist', 'value'),
+    Input('listed_date_datepicker', 'start_date'),
+    Input('listed_date_datepicker', 'end_date'),
+    Input('listed_date_missing_radio', 'value'),
   ],
   State('lease-geojson-store', 'data')
 )
