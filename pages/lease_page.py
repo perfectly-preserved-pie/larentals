@@ -97,6 +97,8 @@ clientside_callback(
     Input('bedrooms_slider', 'value'),
     Input('bathrooms_slider', 'value'),
     Input('pets_radio', 'value'),
+    Input('sqft_slider', 'value'),
+    Input('sqft_missing_radio', 'value'),
   ],
   State('lease-geojson-store', 'data')
 )
