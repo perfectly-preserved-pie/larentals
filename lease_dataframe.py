@@ -215,7 +215,7 @@ df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', for
 
 # Save the dataframe for later ingestion by app.py
 # Read in the old dataframe
-df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/lease.parquet')
+df_old = gpd.read_file(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/lease.geojson')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
@@ -256,4 +256,4 @@ except Exception as e:
   logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
 
 # Reclaim space in ImageKit
-reclaim_imagekit_space(df_path="assets/datasets/lease.geojson", imagekit_instance=imagekit)
+reclaim_imagekit_space(geojson_path="assets/datasets/lease.geojson", imagekit_instance=imagekit)
