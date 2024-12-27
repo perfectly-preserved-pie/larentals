@@ -34,7 +34,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 };
             }
         },
-        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, petPolicy, sqftRange, sqftIncludeMissing,  ppsqftRange, ppsqftIncludeMissing, rawData) {
+        filterAndCluster: function(priceRange, bedroomsRange, bathroomsRange, petPolicy, sqftRange, sqftIncludeMissing,  ppsqftRange, ppsqftIncludeMissing, parkingSpacesRange, parkingSpacesIncludeMissing, rawData) {
             if (!rawData || !rawData.features) {
                 return rawData;
             }
@@ -43,6 +43,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minBathrooms, maxBathrooms] = bathroomsRange;
             const [minSqft, maxSqft] = sqftRange;
             const [minPpsqft, maxPpsqft] = ppsqftRange;
+            const [minParking, maxParking] = parkingSpacesRange;
 
             // Filter out anything that doesn't meet the criteria
             const filteredFeatures = rawData.features.filter(feature => {
@@ -50,8 +51,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const bedrooms = feature.properties.bedrooms || 0;
                 const bathrooms = feature.properties.total_bathrooms || 0;
                 const petPolicyValue = feature.properties.pet_policy || 'Unknown';
-                const sqft = feature.properties.sqft;
-                const ppsqft = feature.properties.ppsqft;
+                const sqft = feature.properties.sqft || 0;
+                const ppsqft = feature.properties.ppsqft || 0;
+                const parkingSpaces = feature.properties.parking_spaces || 0;
 
                 let petPolicyFilter = true;
                 if (petPolicy === true) {
@@ -75,11 +77,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 } else {
                 ppsqftFilter = ppsqft && (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
                 }
-                
+
+                let parkingFilter = true;
+                if (parkingSpacesIncludeMissing) {
+                    parkingFilter = !parkingSpaces || (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                } else {
+                    parkingFilter = parkingSpaces && (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                }
+
                 return price >= minPrice && price <= maxPrice &&
                        bedrooms >= minBedrooms && bedrooms <= maxBedrooms &&
                        bathrooms >= minBathrooms && bathrooms <= maxBathrooms &&
-                       petPolicyFilter && sqftFilter && ppsqftFilter;
+                       petPolicyFilter && sqftFilter && ppsqftFilter && parkingFilter;
             });
 
             // Return a new GeoJSON FeatureCollection with the filtered features
