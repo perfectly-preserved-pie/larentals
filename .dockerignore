@@ -1,7 +1,11 @@
 .cache
 .env
-.git
+.git/
 .github/
+.venv/
+.vscode/
 *.csv
 *.pyc
 *.xlsx
+**/__pycache__/
+assets/dashExtensions_default.js
