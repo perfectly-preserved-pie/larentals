@@ -1,11 +1,15 @@
 from dash import html, dcc
+from dash_extensions.javascript import Namespace
 from datetime import date
+from functions.convex_hull import generate_convex_hulls
 from functions.layers import BaseClass
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import dash_mantine_components as dmc
+import geopandas as gpd
+import json
 import numpy as np
 import pandas as pd
-import dash_mantine_components as dmc
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -101,9 +105,9 @@ class LeaseComponents(BaseClass):
         'Unknown': 'Unknown'
     }
 
-    def __init__(self, df):
+    def __init__(self):
         # Initalize these first because they are used in other components
-        self.df = df
+        self.df = gpd.read_file("assets/datasets/lease.geojson")
 
         self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
 
@@ -133,6 +137,13 @@ class LeaseComponents(BaseClass):
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
 
+    def return_geojson(self):
+        """
+        Load the GeoJSON data from the file and return it as an object.
+        """
+        with open("assets/datasets/lease.geojson", "r") as file:
+            return json.load(file)
+    
     def categorize_laundry_features(self, feature):
         if pd.isna(feature) or feature in ['Unknown', '']:
             return 'Unknown'
@@ -150,71 +161,24 @@ class LeaseComponents(BaseClass):
             return 'Other'
     
     def create_subtype_checklist(self):
-        # Define groups
-        groups = {
-            "Apartments": [
-                {'label': 'Apartment', 'value': 'Apartment'},
-                {'label': 'Apartment (Attached)', 'value': 'APT/A'},
-                {'label': 'Apartment (Detached)', 'value': 'APT/D'}
-            ],
-            "Cabins": [{'label': 'Cabin (Detached)', 'value': 'CABIN/D'}],
-            "Combo - Residential & Commercial": [{'label': 'Combo - Res & Com', 'value': 'Combo - Res & Com'}],
-            "Commercial Residential": [{'label': 'Commercial Residential (Attached)', 'value': 'COMRES/A'}],
-            "Condominiums": [
-                {'label': 'Condominium', 'value': 'Condominium'},
-                {'label': 'Condominium (Attached)', 'value': 'CONDO/A'},
-                {'label': 'Condominium (Detached)', 'value': 'CONDO/D'}
-            ],
-            "Duplexes": [
-                {'label': 'Duplex (Attached)', 'value': 'DPLX/A'},
-                {'label': 'Duplex (Detached)', 'value': 'DPLX/D'}
-            ],
-            "Lofts": [
-                {'label': 'Loft', 'value': 'Loft'},
-                {'label': 'Loft (Attached)', 'value': 'LOFT/A'}
-            ],
-            "Quadplexes": [
-                {'label': 'Quadplex (Attached)', 'value': 'QUAD/A'},
-                {'label': 'Quadplex (Detached)', 'value': 'QUAD/D'}
-            ],
-            "Rooms For Rent": [{'label': 'Room For Rent (Attached)', 'value': 'RMRT/A'}],
-            "Single Family Residences": [
-                {'label': 'Single Family Residence', 'value': 'Single Family'},
-                {'label': 'Single Family Residence (Attached)', 'value': 'SFR/A'},
-                {'label': 'Single Family Residence (Detached)', 'value': 'SFR/D'}
-            ],
-            "Stock Cooperative": [{'label': 'Stock Cooperative', 'value': 'Stock Cooperative'}],
-            "Studios": [
-                {'label': 'Studio (Attached)', 'value': 'STUD/A'},
-                {'label': 'Studio (Detached)', 'value': 'STUD/D'}
-            ],
-            "Townhouses": [
-                {'label': 'Townhouse', 'value': 'Townhouse'},
-                {'label': 'Townhouse (Attached)', 'value': 'TWNHS/A'},
-                {'label': 'Townhouse (Detached)', 'value': 'TWNHS/D'}
-            ],
-            "Triplexes": [
-                {'label': 'Triplex (Attached)', 'value': 'TPLX/A'},
-                {'label': 'Triplex (Detached)', 'value': 'TPLX/D'}
-            ],
-            "Unknown": [{'label': 'Unknown', 'value': 'Unknown'}]
-        }
-
-        # Prepare data for MultiSelect with sorted subtypes
-        data = [
-            {
-                "group": group,
-                "items": sorted(subtypes, key=lambda x: x["label"])
-            }
-            for group, subtypes in sorted(groups.items())
+        """
+        Creates a Dash MultiSelect of the flattened subtypes, without grouping.
+        """
+        flattened_subtypes = [
+            'Apartment', 'Cabin', 'Combo - Res & Com', 'Commercial Residential',
+            'Condominium', 'Duplex', 'Loft', 'Quadplex', 'Room For Rent',
+            'Single Family', 'Stock Cooperative', 'Studio', 'Townhouse',
+            'Triplex', 'Unknown'
         ]
 
-        # Ensure all possible subtypes are included in the initial value
-        all_possible_subtypes = [item['value'] for sublist in groups.values() for item in sublist]
-        initial_values = all_possible_subtypes
+        # Create data in the format dmc.MultiSelect expects
+        # Each item is { 'label': '...', 'value': '...' }
+        data = [{"label": st, "value": st} for st in sorted(flattened_subtypes)]
 
-        # Custom styles to change option text color to white
-        # https://www.dash-mantine-components.com/components/multiselect#styles-api
+        # Default to everything selected
+        initial_values = [item["value"] for item in data]
+
+        # Custom styles for the MultiSelect
         custom_styles = {
             "dropdown": {"color": "white"},
             "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
@@ -223,7 +187,6 @@ class LeaseComponents(BaseClass):
             "pill": {"color": "white"},
         }
 
-        # Dash Component as Class Method
         subtype_checklist = html.Div([
             html.Div([
                 html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
@@ -246,9 +209,9 @@ class LeaseComponents(BaseClass):
                 "overflowY": "scroll",
                 "overflowX": 'hidden',
                 "maxHeight": '120px',
-                #"height": '120px'
             })
         ])
+
         return subtype_checklist
     
     def create_bedrooms_slider(self):
@@ -752,10 +715,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='other_deposit_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "marginRight": "5px",
                                 "marginLeft": "5px"
@@ -908,10 +871,10 @@ class LeaseComponents(BaseClass):
                         dcc.RadioItems(
                             id='key_deposit_missing_radio',
                             options=[
-                                {'label': 'Yes', 'value': 'True'},
-                                {'label': 'No', 'value': 'False'}
+                                {'label': 'Yes', 'value': True},
+                                {'label': 'No', 'value': False}
                             ],
-                            value='True',
+                            value=True,
                             inputStyle={
                                 "marginRight": "5px",
                                 "marginLeft": "5px"
@@ -1026,11 +989,25 @@ class LeaseComponents(BaseClass):
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
+
+        ns = Namespace("dash_props", "module")
+
         # Create the main map with the lease layer
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.LayerGroup(id="lease_geojson"),
+                dl.GeoJSON(
+                    id='lease_geojson',
+                    data=None,
+                    cluster=True,
+                    clusterToLayer=generate_convex_hulls,
+                    onEachFeature=ns("on_each_feature"),
+                    zoomToBoundsOnClick=True,
+                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                        'radius': 160,
+                        'minZoom': 3,
+                    },
+                ),
                 dl.FullScreenControl()
             ],
             id='map',
