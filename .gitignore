@@ -1,12 +1,10 @@
-__pycache__/larentals.cpython-310.pyc
+__pycache__/
 .env
-.vscode/settings.json
+.venv/
+.vscode/
 *.cpython
 *.csv
 *.pyc
 *.xlsx
-.venv/
+assets/dashExtensions_default.js
 env
-hdf
-larentals-checkpoint.py
-larentals.csv

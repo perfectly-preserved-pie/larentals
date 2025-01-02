@@ -2,6 +2,7 @@ from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
 from typing import Optional, List, Generator, Set
+import geopandas as gpd
 import pandas as pd
 import sys
 
@@ -75,26 +76,26 @@ def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
 
-def reclaim_imagekit_space(df_path: str, imagekit_instance: ImageKit) -> None:
+def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> None:
     """
-    This function reclaims space in ImageKit by deleting images in bulk that are not referenced in the dataframe.
+    This function reclaims space in ImageKit by deleting images in bulk that are not referenced in the GeoJSON.
 
     Parameters:
-    df_path (str): The path to the dataframe stored in a parquet file.
+    df_path (str): The path to the GeoJSON file.
     imagekit_instance (ImageKit): An instance of ImageKit initialized with the appropriate credentials.
 
     Returns:
     None
     """
-    # Load the dataframe
-    df = pd.read_parquet(df_path)
+    # Load the GeoJSON file
+    gdf = gpd.read_file(geojson_path)
 
     # Get the list of files
     list_files_response = imagekit_instance.list_files()
     list_files: list = list_files_response.list if hasattr(list_files_response, 'list') else []
 
     # Create a set of referenced mls numbers for faster searching
-    referenced_mls_numbers: Set[str] = set(df['mls_number'].astype(str))
+    referenced_mls_numbers: Set[str] = set(gdf['mls_number'].astype(str))
 
     # Initialize a list for file IDs to delete
     file_ids_for_deletion: List[str] = [

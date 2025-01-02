@@ -104,3 +104,111 @@ def update_dataframe_with_listing_data(
         except Exception as e:
             logger.error(f"Error processing MLS {mls_number} at index {row.Index}: {e}")
     return df
+
+def categorize_laundry_features(feature) -> str:
+    # If it's NaN, treat as unknown
+    if pd.isna(feature):
+        return 'Unknown'
+
+    # Convert to string, lowercase, and strip whitespace
+    feature_str = str(feature).lower().strip()
+
+    # If it's empty or literally 'unknown', just call it 'Unknown'
+    if feature_str in ['', 'unknown']:
+        return 'Unknown'
+
+    # Split on commas
+    tokens = [token.strip() for token in feature_str.split(',')]
+
+    has_any = lambda keywords: any(any_kw in t for t in tokens for any_kw in keywords)
+
+    if has_any(['in closet', 'in kitchen', 'in garage', 'inside', 'individual room']):
+        return 'In Unit'
+    elif has_any(['community laundry', 'common area', 'shared']):
+        return 'Shared'
+    elif has_any(['hookup', 'electric dryer hookup', 'gas dryer hookup', 'washer hookup']):
+        return 'Hookups'
+    elif has_any(['dryer included', 'dryer', 'washer included', 'washer']):
+        return 'Included Appliances'
+    elif has_any(['outside', 'upper level', 'in carport']):
+        return 'Location Specific'
+    elif feature_str == 'none':
+        return 'None'
+    else:
+        return 'Other'
+    
+def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Flatten the 'subtype' column in-place by mapping attached/detached abbreviations
+    (e.g. 'SFR/A', 'SFR/D', 'CONDO/A', etc.) to a simplified label 
+    (e.g. 'Single Family', 'Condominium', etc.).
+    
+    :param df: A pandas DataFrame with a column named 'subtype'.
+    :return: The same DataFrame (df) with its 'subtype' column flattened.
+    """
+
+    # Create a mapping from various raw subtype strings → flattened label
+    subtype_map = {
+        # Single Family
+        "SFR": "Single Family",
+        "SFR/A": "Single Family",
+        "SFR/D": "Single Family",
+        
+        # Condominium
+        "CONDO": "Condominium",
+        "CONDO/A": "Condominium",
+        "CONDO/D": "Condominium",
+        
+        # Apartment
+        "APT": "Apartment",
+        "APT/A": "Apartment",
+        "APT/D": "Apartment",
+        
+        # Townhouse
+        "TWNHS": "Townhouse",
+        "TWNHS/A": "Townhouse",
+        "TWNHS/D": "Townhouse",
+        
+        # Duplex
+        "DPLX": "Duplex",
+        "DPLX/A": "Duplex",
+        "DPLX/D": "Duplex",
+        
+        # Triplex
+        "TPLX": "Triplex",
+        "TPLX/A": "Triplex",
+        "TPLX/D": "Triplex",
+        
+        # Quadplex
+        "QUAD": "Quadplex",
+        "QUAD/A": "Quadplex",
+        "QUAD/D": "Quadplex",
+        
+        # Lofts
+        "LOFT": "Loft",
+        "LOFT/A": "Loft",
+        
+        # Studios
+        "STUD": "Studio",
+        "STUD/A": "Studio",
+        "STUD/D": "Studio",
+        
+        # Room for Rent
+        "RMRT/A": "Room For Rent",
+        "RMRT/D": "Room For Rent",
+        
+        # Cabin
+        "CABIN": "Cabin",
+        "CABIN/A": "Cabin",
+        "CABIN/D": "Cabin",
+        
+        # Commercial Residential
+        "COMRES/A": "Commercial Residential",
+        "COMRES/D": "Commercial Residential",
+        "Combo - Res &amp; Com": "Commercial Residential",
+    }
+
+    # Apply the mapping: where a key is found, replace with its value; otherwise leave as is
+    df["subtype"] = df["subtype"].map(subtype_map).fillna(df["subtype"])
+
+    return df
