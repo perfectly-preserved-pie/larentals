@@ -20,11 +20,7 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# Create instances of the filters and components classes and log how long it takes to create them
-start_time = time.time()
-#lease_filters = LeaseFilters(df)
-duration = time.time() - start_time
-logger.info(f"Created LeaseFilters in {duration:.2f} seconds.")
+# Create instances of the components classes and log how long it takes to create them
 start_time = time.time()
 lease_components = LeaseComponents()
 duration = time.time() - start_time
