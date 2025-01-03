@@ -163,8 +163,8 @@ for row in df.itertuples():
 # Iterate through the dataframe and fetch coordinates for rows
 for row in df.itertuples():
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
-  df.at[row.Index, 'Latitude'] = coordinates[0]
-  df.at[row.Index, 'Longitude'] = coordinates[1]
+  df.at[row.Index, 'latitude'] = coordinates[0]
+  df.at[row.Index, 'longitude'] = coordinates[1]
 
 #df = update_howloud_scores(df)
 
@@ -196,8 +196,8 @@ df.rename(columns={'Br/Ba': 'bedrooms_bathrooms'}, inplace=True)
 df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric, errors='coerce')
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric, errors='coerce')
 # These columns should stay floats
-df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
-df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
+df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
+df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
 # Convert zip_code into nullable integer dtype
 df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
@@ -246,20 +246,20 @@ df_combined = remove_inactive_listings(df_combined)
 df_combined = df_combined.reset_index(drop=True)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
-  (df_combined['Latitude'] < 32.5) | 
-  (df_combined['Latitude'] > 42) | 
-  (df_combined['Longitude'] < -124) | 
-  (df_combined['Longitude'] > -114)
+  (df_combined['latitude'] < 32.5) | 
+  (df_combined['latitude'] > 42) | 
+  (df_combined['longitude'] < -124) | 
+  (df_combined['longitude'] > -114)
 ]
 total_outside_ca = len(outside_ca_rows)
 counter = 0
 for row in outside_ca_rows.itertuples():
   counter += 1
-  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.Latitude}, {row.Longitude} which is outside California. Re-geocoding {row.mls_number}...")
+  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.latitude}, {row.longitude} which is outside California. Re-geocoding {row.mls_number}...")
   # Re-geocode the row
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
-  df_combined.at[row.Index, 'Latitude'] = coordinates[0]
-  df_combined.at[row.Index, 'Longitude'] = coordinates[1]
+  df_combined.at[row.Index, 'latitude'] = coordinates[0]
+  df_combined.at[row.Index, 'longitude'] = coordinates[1]
 
 # Final pass at converting datetime columns to the correct format
 df_combined['listed_date'] = pd.to_datetime(df_combined['listed_date'], errors='raise', format='mixed')
