@@ -1110,9 +1110,9 @@ class BuyComponents(BaseClass):
         'Unknown': 'Unknown'
     }
 
-    def __init__(self, df):
+    def __init__(self):
         # Initalize these first because they are used in other components
-        self.df = df
+        self.df = gpd.read_file("assets/datasets/buy.geojson")
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1137,6 +1137,13 @@ class BuyComponents(BaseClass):
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
+
+    def return_geojson(self):
+        """
+        Load the GeoJSON data from the file and return it as an object.
+        """
+        with open("assets/datasets/buy.geojson", "r") as file:
+            return json.load(file)
         
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
