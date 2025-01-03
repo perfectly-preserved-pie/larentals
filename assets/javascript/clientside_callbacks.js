@@ -414,6 +414,182 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
             // Return new FeatureCollection
             return { type: "FeatureCollection", features: filteredFeatures };
+        },
+        /**
+         * Filters and clusters the GeoJSON data for buying properties, following the logic
+         * in the BuyFilters class. The order of parameters matches the Dash callback's Input order.
+         *
+         * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by list_price.
+         * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by bedrooms.
+         * @param {Array<number>} bathroomsRange - [minBaths, maxBaths] for filtering by bathrooms.
+         * @param {string|boolean} petsAllowed - The pet policy choice from the user (could be true, false, or "Both").
+         * @param {Array<number>} sqftRange - [minSqft, maxSqft] for filtering by sqft.
+         * @param {boolean} sqftIncludeMissing - Whether to include rows where sqft is missing (null or "Unknown").
+         * @param {Array<number>} ppsqftRange - [minPpSqft, maxPpSqft] for filtering by ppsqft.
+         * @param {boolean} ppsqftIncludeMissing - Whether to include rows where ppsqft is missing.
+         * @param {Array<number>} garageSpacesRange - Placeholder for garage spaces filtering (not in df columns).
+         * @param {boolean} garageSpacesIncludeMissing - Placeholder for including missing garage spaces (not in df).
+         * @param {Array<number>} yearBuiltRange - [yearBuiltStart, yearBuiltEnd] for filtering by year_built.
+         * @param {boolean} yearBuiltIncludeMissing - Whether to include rows with missing year_built.
+         * @param {string|boolean} seniorCommunityOption - The senior community choice (true, false, or "Both").
+         * @param {Array<string>} subtypeSelection - List of selected subtypes (e.g., ["SFR", "MH"]).
+         * @param {string} dateStart - The listing date range start (YYYY-MM-DD).
+         * @param {string} dateEnd - The listing date range end (YYYY-MM-DD).
+         * @param {boolean} dateIncludeMissing - Whether to include rows with a missing listed_date.
+         * @param {Object} rawData - The full buy GeoJSON data.
+         * @returns {Object} A GeoJSON FeatureCollection with features that match all filters.
+         */
+        filterAndClusterBuy: function(
+            priceRange,
+            bedroomsRange,
+            bathroomsRange,
+            petsAllowed,
+            sqftRange,
+            sqftIncludeMissing,
+            ppsqftRange,
+            ppsqftIncludeMissing,
+            garageSpacesRange,
+            garageSpacesIncludeMissing,
+            yearBuiltRange,
+            yearBuiltIncludeMissing,
+            seniorCommunityOption,
+            subtypeSelection,
+            dateStart,
+            dateEnd,
+            dateIncludeMissing,
+            rawData
+        ) {
+            const filteredFeatures = rawData.features.filter((feature) => {
+            const props = feature.properties || {};
+        
+            // 1) priceFilter (list_price)
+            const priceVal = parseFloat(props.list_price) || 0;
+            const priceInRange = (priceVal >= priceRange[0]) && (priceVal <= priceRange[1]);
+        
+            // 2) bedroomsFilter
+            const bedroomsVal = parseFloat(props.bedrooms) || 0;
+            const bedroomsInRange = (bedroomsVal >= bedroomsRange[0]) && (bedroomsVal <= bedroomsRange[1]);
+        
+            // 3) bathroomsFilter
+            const bathroomsVal = parseFloat(props.bathrooms) || 0;
+            const bathroomsInRange = (bathroomsVal >= bathroomsRange[0]) && (bathroomsVal <= bathroomsRange[1]);
+        
+            // 4) petsAllowedFilter (pets_allowed column)
+            // BuyFilters often distinguishes "Yes", "No", etc., or includes logic for "MH" subtype,
+            // but we'll mimic a simpler approach here. 
+            let petsFilter = true;
+            const petPolicy = (props.pets_allowed || '').toLowerCase();  
+            // If user wants properties that allow pets
+            if (petsAllowed === true) {
+                petsFilter = petPolicy.includes('yes');
+            } else if (petsAllowed === false) {
+                petsFilter = petPolicy.includes('no');
+            } 
+            // if petsAllowed === "Both", we do not filter by pet policy
+        
+            // 5) sqftFilter
+            // If sqftIncludeMissing is true, we include rows with missing or "Unknown" sqft
+            let sqftVal = props.sqft || '';
+            if (sqftVal.toLowerCase() === 'unknown') {
+                sqftVal = '';
+            }
+            const sqftNum = parseFloat(sqftVal) || 0;
+            let sqftFilter = (sqftNum >= sqftRange[0]) && (sqftNum <= sqftRange[1]);
+            if (sqftIncludeMissing && !sqftVal) {
+                sqftFilter = true;
+            }
+        
+            // 6) ppsqftFilter
+            let ppsqftVal = props.ppsqft || '';
+            if (ppsqftVal.toLowerCase() === 'unknown') {
+                ppsqftVal = '';
+            }
+            const ppsqftNum = parseFloat(ppsqftVal) || 0;
+            let ppsqftFilter = (ppsqftNum >= ppsqftRange[0]) && (ppsqftNum <= ppsqftRange[1]);
+            if (ppsqftIncludeMissing && !ppsqftVal) {
+                ppsqftFilter = true;
+            }
+        
+            // 7) garageSpacesFilter (placeholder logic -- not present in df)
+            // If you have a real "garage_spaces" column, adapt accordingly.
+            let garageSpacesFilter = true;
+            // If we had a valid column: parseFloat(props.garage_spaces) etc.
+            // For now, we ignore it or accept all.
+        
+            // 8) yearBuiltFilter
+            let yearVal = props.year_built || '';
+            if (yearVal.toLowerCase() === 'unknown') {
+                yearVal = '';
+            }
+            const yearNum = parseFloat(yearVal) || 0;
+            let yrBuiltFilter = (yearNum >= yearBuiltRange[0]) && (yearNum <= yearBuiltRange[1]);
+            if (yearBuiltIncludeMissing && !yearVal) {
+                yrBuiltFilter = true;
+            }
+        
+            // 9) seniorCommunityFilter (senior_community column with "Y"/"N")
+            let seniorFilter = true;
+            const seniorVal = (props.senior_community || '').toUpperCase();
+            if (seniorCommunityOption === true) {
+                seniorFilter = seniorVal.includes('Y');
+            } else if (seniorCommunityOption === false) {
+                seniorFilter = seniorVal.includes('N');
+            } 
+            // if seniorCommunityOption === "Both", we do not filter by senior_community
+        
+            // 10) subtypeFilter
+            // If "Unknown" is in subtypeSelection, include null or empty. Otherwise, match subtypes
+            let subtypeFilter = false;
+            let propertySubtype = (props.subtype || '').toUpperCase();
+            if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
+                subtypeFilter = true;
+            } else {
+                // Check whether the propertySubtype is in user selections (case-insensitive)
+                subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
+            }
+        
+            // 11) listedDateFilter
+            // If dateIncludeMissing is true, we allow missing or out-of-range dates
+            // We'll parse listed_date as a Date
+            let dateFilter = false;
+            const listedDateStr = props.listed_date || '';
+            if (!listedDateStr) {
+                // If there's no listed_date, include only if dateIncludeMissing is true
+                dateFilter = !!dateIncludeMissing;
+            } else {
+                // Convert to JS Date and compare
+                const listedDateObj = new Date(listedDateStr);
+                const startObj = dateStart ? new Date(dateStart) : null;
+                const endObj = dateEnd ? new Date(dateEnd) : null;
+        
+                if (startObj && endObj) {
+                dateFilter = (listedDateObj >= startObj && listedDateObj <= endObj);
+                } else {
+                // If missing either start or end, assume the user wants everything
+                dateFilter = true;
+                }
+            }
+        
+            // Combine all filters
+            return (
+                priceInRange &&
+                bedroomsInRange &&
+                bathroomsInRange &&
+                petsFilter &&
+                sqftFilter &&
+                ppsqftFilter &&
+                garageSpacesFilter &&
+                yrBuiltFilter &&
+                seniorFilter &&
+                subtypeFilter &&
+                dateFilter
+            );
+            });
+        
+            return {
+            type: 'FeatureCollection',
+            features: filteredFeatures
+            };
         }
     }
 });
