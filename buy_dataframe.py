@@ -207,7 +207,7 @@ df['calculated_total_bathrooms'] = (
 df = df.drop(columns=['calculated_total_bathrooms'])
 
 logger.info("Bathroom columns extracted and total_bathrooms updated.")
-logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].head())
+logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].sample(n=10))
 
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
