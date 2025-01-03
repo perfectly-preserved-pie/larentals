@@ -139,8 +139,8 @@ df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() 
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
 for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
   short_address = df.at[row.Index, 'short_address']
-  missing_postalcode = return_postalcode(short_address, geolocator=g)
-  df.at[row.Index, 'PostalCode'] = missing_postalcode
+  missing_zip_code = return_zip_code(short_address, geolocator=g)
+  df.at[row.Index, 'PostalCode'] = missing_zip_code
 
 # Tag each row with the date it was processed
 for row in df.itertuples():
