@@ -181,7 +181,7 @@ for row in df.itertuples():
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
 # TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than thpdat, and you can’t officially consider it a full bath.
-df['Bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
+df['bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
 df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
 df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
 df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
@@ -193,7 +193,7 @@ df.rename(columns={'Br/Ba': 'bedrooms_bathrooms'}, inplace=True)
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
-df['Bedrooms'] = df['Bedrooms'].apply(pd.to_numeric, errors='coerce')
+df['bedrooms'] = df['bedrooms'].apply(pd.to_numeric, errors='coerce')
 df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric, errors='coerce')
 # These columns should stay floats
 df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
@@ -208,7 +208,7 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mi
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='raise', format='mixed')
 
-cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee', 'bedrooms_bathrooms']
+cols = ['Full Bathrooms', 'bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee', 'bedrooms_bathrooms']
 # Convert columns to string type for string operations
 df[cols] = df[cols].astype(str)
 # Remove commas and other non-numeric characters
@@ -218,7 +218,7 @@ df[cols] = df[cols].replace('', 'Unknown')
 # Convert columns to numeric
 df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
 # Cast specified columns as nullable integers
-int_cols = ['Full Bathrooms', 'Bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
+int_cols = ['Full Bathrooms', 'bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
 df[int_cols] = df[int_cols].astype('Int64')
 
 # Cast these columns as nullable strings
