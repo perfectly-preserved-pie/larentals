@@ -157,21 +157,62 @@ for row in df.itertuples():
 #    df[col] = df[col].astype(pd.Int32Dtype())  # Cast to nullable integer
 #  else:
 #    df[col] = df[col].astype(pd.StringDtype())  # Cast to string
-    
-# Split the Bedroom/Bathrooms column into separate columns based on delimiters
-# Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
-# Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
-# TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than thpdat, and you can’t officially consider it a full bath.
-df['total_bathrooms'] = (df['bedrooms_bathrooms'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
-df['full_bathrooms'] = (df['bedrooms_bathrooms'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
-df['half_bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
-df['three_quarter_bathrooms'] = (df['bedrooms_bathrooms'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
+
+### BATHROOMS PARSING
+# Split the Bedroom/Bathrooms column to extract total and detailed bathroom counts
+# Expected format: '1.00 (1 0 0 0)' where:
+# - 1.00 is the total bathrooms
+# - 1 is full bathrooms
+# - 0 is half bathrooms
+# - 0 is three-quarter bathrooms
+# - 0 is extra bathrooms
+
+# Define a regex pattern to extract total bathrooms and bathroom details inside parentheses
+# Expected format: '1.00 (1 0 0 0)'
+bathroom_pattern = r'^(\d+\.\d+)\s+\((\d+)\s+(\d+)\s+(\d+)\s+(\d+)\)'
+
+# Extract the numbers: total, full, half, three_quarter, extra
+bathroom_details = df['bedrooms_bathrooms'].str.extract(bathroom_pattern)
+
+# Check if extraction was successful
+if bathroom_details.isnull().values.any():
+  logger.warning("Some rows in 'bedrooms_bathrooms' do not match the expected format.")
+
+# Rename the extracted columns
+bathroom_details.columns = [
+  'total_bathrooms',
+  'full_bathrooms',
+  'half_bathrooms',
+  'three_quarter_bathrooms',
+  'extra_bathrooms'
+]
+
+# Convert total_bathrooms to nullable UInt8
+bathroom_details['total_bathrooms'] = bathroom_details['total_bathrooms'].astype("float").astype("UInt8")
+
+# Convert to numeric types
+bathroom_details = bathroom_details.astype("UInt8")
+
+# Assign the extracted bathrooms to the main DataFrame
+df = pd.concat([df, bathroom_details], axis=1)
+
+# Validate the 'total_bathrooms' against the detailed counts
+df['calculated_total_bathrooms'] = (
+  df['full_bathrooms'] +
+  0.5 * df['half_bathrooms'] +
+  0.75 * df['three_quarter_bathrooms']
+)
+
+# Drop the 'calculated_total_bathrooms' column
+df = df.drop(columns=['calculated_total_bathrooms'])
+
+logger.info("Bathroom columns extracted and total_bathrooms updated.")
+logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].head())
 
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
 df['bedrooms'] = df['bedrooms'].apply(pd.to_numeric, errors='coerce')
-df['total_bathrooms'] = df['total_bathrooms'].apply(pd.to_numeric, errors='coerce')
 # These columns should stay floats
 df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
 df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
