@@ -24,16 +24,9 @@ dash.register_page(
   description='An interactive map of available residential properties for sale in Los Angeles County. Updated weekly.',
 )
 
-
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
-
-# import the dataframe and log how long it takes to load
-start_time = time.time()
-df = pd.read_parquet(path='assets/datasets/buy.parquet')
-duration = time.time() - start_time
-logger.info(f"Loaded 'buy' dataset in {duration:.2f} seconds.")
 
 pd.set_option("display.precision", 10)
 
