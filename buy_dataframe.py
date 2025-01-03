@@ -212,7 +212,6 @@ logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'hal
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
-df['bedrooms'] = df['bedrooms'].apply(pd.to_numeric, errors='coerce')
 # These columns should stay floats
 df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
 df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
