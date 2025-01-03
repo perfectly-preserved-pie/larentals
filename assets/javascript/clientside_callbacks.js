@@ -469,6 +469,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minPpsqft, maxPpsqft] = ppsqftRange;
             //const [minParking, maxParking] = parkingSpacesRange;
             const [minYear, maxYear] = yearBuiltRange;
+            //const [dateStart, dateEnd] = dateRange;
 
             // Convert the "include missing" flags from dash into booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
@@ -480,6 +481,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
             const filteredFeatures = rawData.features.filter((feature) => {
             const props = feature.properties || {};
+            const mls_number = props.mls_number || 'Unknown';
         
             // 1) priceFilter (list_price)
             const priceVal = parseFloat(props.list_price) || 0;
@@ -497,12 +499,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             // BuyFilters often distinguishes "Yes", "No", etc., or includes logic for "MH" subtype,
             // but we'll mimic a simpler approach here. 
             let petsFilter = true;
-            const petPolicy = (props.pets_allowed || '').toLowerCase();  
+            const petsPolicy = (props.pets_allowed || 'Unknown').toLowerCase();  
             // If user wants properties that allow pets
             if (petsAllowed === true) {
-                petsFilter = petPolicy.includes('yes');
+                petsFilter = petsPolicy.includes('yes');
             } else if (petsAllowed === false) {
-                petsFilter = petPolicy.includes('no');
+                petsFilter = petsPolicy.includes('no');
             } 
             // if petsAllowed === "Both", we do not filter by pet policy
         
@@ -572,7 +574,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
             }
 
-            // Decide if we include this feature
+            // Combine all filters
             const includeFeature =
                 priceVal >= minPrice && priceVal <= maxPrice &&
                 bedroomsVal >= minBedrooms && bedroomsVal <= maxBedrooms &&
@@ -591,36 +593,26 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     priceVal,
                     bedroomsVal,
                     bathroomsVal,
-                    petPolicyValue,
-                    sqft,
-                    ppsqft,
+                    petsFilter,
+                    sqftVal,
+                    ppsqftVal,
                     yearBuiltVal,
-                    subtype,
-                    date,
+                    subtypeSelection,
+                    dateStart,
+                    dateEnd,
                     filters: {
-                        petPolicyFilter,
+                        petsFilter,
                         sqftFilter,
                         ppsqftFilter,
                         yrBuiltFilter,
                         subtypeFilter,
+                        seniorFilter,
                         dateFilter
                     }
                 });
             }
         
-            // Combine all filters
-            return (
-                priceInRange &&
-                bedroomsInRange &&
-                bathroomsInRange &&
-                petsFilter &&
-                sqftFilter &&
-                ppsqftFilter &&
-                yrBuiltFilter &&
-                seniorFilter &&
-                subtypeFilter &&
-                dateFilter
-            );
+            return includeFeature;
             });
         
             return {
