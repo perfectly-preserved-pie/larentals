@@ -38,29 +38,8 @@ xlsx = pd.read_excel(excel_file, sheet_name=None)
 
 ## Remember: N/A = Not Applicable to this home type while NaN = Unknown for some reason (missing data)
 # Assuming first sheet is single-family homes, second sheet is condos/townhouses, and third sheet is mobile homes
-# Set the subtype of every row in the first sheet to "SFR"
-xlsx[list(xlsx.keys())[0]]["Sub Type"] = "SFR"
-# Set the subtype of every row in the third sheet to "MH"
-xlsx[list(xlsx.keys())[2]]["Sub Type"] = "MH"
-# Set the HOA fee and HOA fee frequency of every row in the third sheet to NaN
-xlsx[list(xlsx.keys())[2]]["HOA Fee"] = NaN
-xlsx[list(xlsx.keys())[2]]["HOA Frequency"] = NaN
-# Set the space rent and park name of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["Space Rent"] = NaN
-xlsx[list(xlsx.keys())[0]]["Park Name"] = NaN
-xlsx[list(xlsx.keys())[1]]["Space Rent"] = NaN
-xlsx[list(xlsx.keys())[1]]["Park Name"] = NaN
-# Set the PetsAllowed of every row in the first and second sheets to NaN
-xlsx[list(xlsx.keys())[0]]["PetsAllowed"] = NaN
-xlsx[list(xlsx.keys())[1]]["PetsAllowed"] = NaN
-# Set the SeniorCommunityYN of every row in the first and second sheets to NaN
-# If "SeniorCommunity" is in the columns, set it to NaN
-if "SeniorCommunity" in xlsx[list(xlsx.keys())[0]].columns:
-  xlsx[list(xlsx.keys())[0]]["SeniorCommunity"] = NaN
-  xlsx[list(xlsx.keys())[1]]["SeniorCommunity"] = NaN
-elif "SeniorCommunityYN" in xlsx[list(xlsx.keys())[0]].columns:
-  xlsx[list(xlsx.keys())[0]]["SeniorCommunityYN"] = NaN
-  xlsx[list(xlsx.keys())[1]]["SeniorCommunityYN"] = NaN
+# Set the subtype of every row in the first sheet to "Single Family Residence"
+xlsx[list(xlsx.keys())[0]]["Sub type"] = "Single Family Residence"
 
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
@@ -71,66 +50,65 @@ if 'LSqft/Ac' in df.columns:
 
 pd.set_option("display.precision", 10)
 
-# Strip leading and trailing whitespaces from the column names
+# Strip leading and trailing whitespaces from the column names and convert them to lowercase
 # https://stackoverflow.com/a/36082588
-df.columns = df.columns.str.strip()
+df.columns = df.columns.str.strip().str.lower()
 
 # Using a dictionary for clearer column renaming
 specific_column_map = {
-  'Garage Spaces': 'garage_spaces',
-  'Hfrequency': 'hoa_fee_frequency',
-  'HOA Fee Frequency': 'hoa_fee_frequency',
-  'HOA Fee': 'hoa_fee',
-  'HOA Frequency': 'hoa_fee_frequency',
-  'List Price': 'list_price',
-  'Listing ID (MLS#)': 'mls_number',
-  'Park Name': 'park_name',
-  'PetsAllowed': 'pets_allowed',
-  'Price Per Square Foot': 'ppsqft',
-  'SeniorCommunity': 'senior_community',
-  'SeniorCommunityYN': 'senior_community',
-  'Space Rent': 'space_rent',
-  'St Name': 'street_name',
-  'St#': 'street_number',
-  'Sub Type': 'subtype',
-  'Yr Built': 'year_built',
+  '# prking spaces': 'garage_spaces',
+  'address': 'street_address',
+  'baths(fthq)': 'bedrooms_bathrooms',
+  'br': 'bedrooms',
+  'city': 'city',
+  'hoa fee freq.1': 'hoa_fee_frequency',
+  'hoa fees': 'hoa_fee',
+  'hoa': 'hoa_fee',
+  'list price': 'list_price',
+  'lot size': 'lot_size',
+  'mls': 'mls_number',
+  'price per square foot': 'ppsqft',
+  'sqft': 'sqft',
+  'st #': 'street_number',
+  'sub type': 'subtype',
+  'year built': 'year_built',
+  'zip': 'zip_code',
 }
 
 # Rename columns using the specific map
 renamed_sheets_corrected = {}
 for sheet_name, sheet_df in xlsx.items():
   sheet_df.columns = sheet_df.columns.str.strip()
-  renamed_sheets_corrected[sheet_name] = sheet_df.rename(columns=specific_column_map)
+  # Only rename columns present in both the DataFrame and specific_column_map
+  existing_renames = {col: specific_column_map[col] for col in sheet_df.columns if col in specific_column_map}
+  renamed_sheets_corrected[sheet_name] = sheet_df.rename(columns=existing_renames)
 
-# Concatenate all sheets into a single DataFrame
-df = pd.concat(renamed_sheets_corrected.values())
+# Then proceed with concatenation
+df = pd.concat(renamed_sheets_corrected.values(), ignore_index=True)
 
 # Drop all rows with misc/irrelevant data
-df.dropna(subset=['street_name'], inplace=True)
+df.dropna(subset=['street_address'], inplace=True)
 
 # Define columns to remove all non-numeric characters from
-cols = ['hoa_fee', 'list_price', 'space_rent', 'ppsqft', 'Sqft', 'year_built']
+cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']
 # Loop through the columns and remove all non-numeric characters except for the string "N/A"
 for col in cols:
     df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or str(x) == 'N/A'))
-# Fill in missing values with Unknown
-for col in cols:
-  df[col] = df[col].replace('', 'Unknown')
 
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
 # Fetch missing city names
-for row in df.loc[(df['City'].isnull()) & (df['zip_code'].notnull())].itertuples():
-  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.zip_code)}", geolocator=g)
+for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
+  df.at[row.Index, 'city'] = fetch_missing_city(f"{row.street_address} {str(row.city)} {str(row.zip_code)}", geolocator=g)
 
 # Cast these columns as strings so we can concatenate them
-cols = ['street_number', 'street_name', 'City', 'mls_number']
+cols = ['street_number', 'street_address', 'city', 'mls_number']
 for col in cols:
   df[col] = df[col].astype("string")
 
 # Create a new column with the Street Number & Street Name
-df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City']
+df["short_address"] = df["street_address"].str.strip() + ',' + ' ' + df['city']
 
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
@@ -148,7 +126,7 @@ for row in df.itertuples():
 # Also strip whitespace from the St Name column
 # Convert the postal code into a string so we can combine string and int
 # https://stackoverflow.com/a/11858532
-df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["zip_code"].map(str)
+df["full_street_address"] = df["street_address"].str.strip() + ',' + ' ' + df['city'] + ' ' + df["zip_code"].map(str)
 
 # Iterate through the dataframe and get the listed date and photo for rows
 df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
@@ -174,25 +152,21 @@ for row in df.itertuples():
 # Based on the example given in the spreadsheet: 2 (beds) / 1 (total baths),1 (full baths) ,0 (half bath), 0 (three quarter bath)
 # Realtor logic based on https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
 # TIL: A full bathroom is made up of four parts: a sink, a shower, a bathtub, and a toilet. Anything less than thpdat, and you can’t officially consider it a full bath.
-df['bedrooms'] = df['Br/Ba'].str.split('/', expand=True)[0]
-df['Total Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
-df['Full Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
-df['Half Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
-df['Three Quarter Bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
-
-# Rename the Br/Ba column to bedrooms_bathrooms
-df.rename(columns={'Br/Ba': 'bedrooms_bathrooms'}, inplace=True)
+df['total_bathrooms'] = (df['bedrooms_bathrooms'].str.split('/', expand=True)[1]).str.split(',', expand=True)[0]
+df['full_bathrooms'] = (df['bedrooms_bathrooms'].str.split('/', expand=True)[1]).str.split(',', expand=True)[1]
+df['half_bathrooms'] = (df['Br/Ba'].str.split('/', expand=True)[1]).str.split(',', expand=True)[2]
+df['three_quarter_bathrooms'] = (df['bedrooms_bathrooms'].str.split('/', expand=True)[1]).str.split(',', expand=True)[3]
 
 # Convert a few columns into int64
 # pd.to_numeric will convert into int64 or float64 automatically, which is cool
 # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
 df['bedrooms'] = df['bedrooms'].apply(pd.to_numeric, errors='coerce')
-df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric, errors='coerce')
+df['total_bathrooms'] = df['total_bathrooms'].apply(pd.to_numeric, errors='coerce')
 # These columns should stay floats
 df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
 df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
-# Convert zip_code into nullable integer dtype
-df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+# Convert zip_code into string
+df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype("string")
 
 # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
@@ -201,7 +175,7 @@ df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mi
 # Convert date_processed into DateTime
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='raise', format='mixed')
 
-cols = ['Full Bathrooms', 'bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms', 'space_rent', 'ppsqft', 'hoa_fee', 'bedrooms_bathrooms']
+cols = ['full_bathrooms', 'bedrooms', 'year_built', 'sqft', 'list_price', 'total_bathrooms', 'ppsqft', 'hoa_fee', 'bedrooms_bathrooms']
 # Convert columns to string type for string operations
 df[cols] = df[cols].astype(str)
 # Remove commas and other non-numeric characters
@@ -211,11 +185,11 @@ df[cols] = df[cols].replace('', 'Unknown')
 # Convert columns to numeric
 df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
 # Cast specified columns as nullable integers
-int_cols = ['Full Bathrooms', 'bedrooms', 'year_built', 'Sqft', 'list_price', 'Total Bathrooms']
+int_cols = ['full_bathrooms', 'bedrooms', 'year_built', 'sqft', 'list_price', 'total_bathrooms']
 df[int_cols] = df[int_cols].astype('Int64')
 
 # Cast these columns as nullable strings
-cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'bedrooms_bathrooms', 'pets_allowed', 'senior_community', 'hoa_fee_frequency']
+cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'bedrooms_bathrooms', 'hoa_fee_frequency']
 for col in cols:
   df[col] = df[col].astype('string')
 
