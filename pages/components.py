@@ -1742,21 +1742,40 @@ class BuyComponents(BaseClass):
         return listed_date_components
 
     def create_map(self):
+        """
+        Creates a Dash Leaflet map with multiple layers.
+
+        Returns:
+            dl.Map: A Dash Leaflet Map component.
+        """
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
+
+        ns = Namespace("dash_props", "module")
 
         # Create the main map with the lease layer
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.LayerGroup(id="buy_geojson"),
+                dl.GeoJSON(
+                    id='buy_geojson',
+                    data=None,
+                    cluster=True,
+                    clusterToLayer=generate_convex_hulls,
+                    onEachFeature=ns("on_each_feature"),
+                    zoomToBoundsOnClick=True,
+                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                        'radius': 160,
+                        'minZoom': 3,
+                    },
+                ),
                 dl.FullScreenControl()
             ],
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
