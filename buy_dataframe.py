@@ -230,6 +230,11 @@ for col in cols:
 # Reindex the dataframe
 df.reset_index(drop=True, inplace=True)
 
+# Add pageType context
+# Add context to each feature's properties to pass through to the onEachFeature JavaScript function
+for row in df.itertuples():
+  df.at[row.Index, 'context'] = {"pageType": "buy"}
+
 # Save the dataframe for later ingestion by app.py
 # Read in the old dataframe 
 df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/buy.parquet')
