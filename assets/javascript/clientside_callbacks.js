@@ -448,8 +448,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             sqftIncludeMissing,
             ppsqftRange,
             ppsqftIncludeMissing,
-            garageSpacesRange,
-            garageSpacesIncludeMissing,
             yearBuiltRange,
             yearBuiltIncludeMissing,
             seniorCommunityOption,
@@ -459,6 +457,27 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             dateIncludeMissing,
             rawData
         ) {
+            if (!rawData || !rawData.features) {
+                return rawData;
+            }
+
+            // Destructure numeric ranges
+            const [minPrice, maxPrice] = priceRange;
+            const [minBedrooms, maxBedrooms] = bedroomsRange;
+            const [minBathrooms, maxBathrooms] = bathroomsRange;
+            const [minSqft, maxSqft] = sqftRange;
+            const [minPpsqft, maxPpsqft] = ppsqftRange;
+            //const [minParking, maxParking] = parkingSpacesRange;
+            const [minYear, maxYear] = yearBuiltRange;
+
+            // Convert the "include missing" flags from dash into booleans
+            const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
+            const ppsqftIncludeMissingBool         = Boolean(ppsqftIncludeMissing);
+            const yearBuiltIncludeMissingBool      = Boolean(yearBuiltIncludeMissing);
+            const dateIncludeMissingBool           = Boolean(dateIncludeMissing);
+
+            console.log('Raw data:', rawData);
+
             const filteredFeatures = rawData.features.filter((feature) => {
             const props = feature.properties || {};
         
@@ -489,41 +508,24 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         
             // 5) sqftFilter
             // If sqftIncludeMissing is true, we include rows with missing or "Unknown" sqft
-            let sqftVal = props.sqft || '';
-            if (sqftVal.toLowerCase() === 'unknown') {
-                sqftVal = '';
-            }
-            const sqftNum = parseFloat(sqftVal) || 0;
-            let sqftFilter = (sqftNum >= sqftRange[0]) && (sqftNum <= sqftRange[1]);
-            if (sqftIncludeMissing && !sqftVal) {
+            const sqftVal = parseFloat(props.sqft) || 0;
+            // If the user chose to include missing values:
+            let sqftFilter = (sqftVal >= minSqft && sqftVal <= maxSqft);
+            if (sqftIncludeMissingBool && (props.sqft === null || isNaN(sqftVal))) {
                 sqftFilter = true;
             }
         
             // 6) ppsqftFilter
-            let ppsqftVal = props.ppsqft || '';
-            if (ppsqftVal.toLowerCase() === 'unknown') {
-                ppsqftVal = '';
-            }
-            const ppsqftNum = parseFloat(ppsqftVal) || 0;
-            let ppsqftFilter = (ppsqftNum >= ppsqftRange[0]) && (ppsqftNum <= ppsqftRange[1]);
-            if (ppsqftIncludeMissing && !ppsqftVal) {
+            let ppsqftVal = parseFloat(props.ppsqft) || 0;
+            let ppsqftFilter = (ppsqftVal >= ppsqftRange[0]) && (ppsqftVal <= ppsqftRange[1]);
+            if (ppsqftIncludeMissingBool && (props.ppsqft === null || isNaN(ppsqftVal))) {
                 ppsqftFilter = true;
             }
         
-            // 7) garageSpacesFilter (placeholder logic -- not present in df)
-            // If you have a real "garage_spaces" column, adapt accordingly.
-            let garageSpacesFilter = true;
-            // If we had a valid column: parseFloat(props.garage_spaces) etc.
-            // For now, we ignore it or accept all.
-        
             // 8) yearBuiltFilter
-            let yearVal = props.year_built || '';
-            if (yearVal.toLowerCase() === 'unknown') {
-                yearVal = '';
-            }
-            const yearNum = parseFloat(yearVal) || 0;
-            let yrBuiltFilter = (yearNum >= yearBuiltRange[0]) && (yearNum <= yearBuiltRange[1]);
-            if (yearBuiltIncludeMissing && !yearVal) {
+            let yearBuiltVal = parseFloat(props.year_built) || 0;
+            let yrBuiltFilter = (yearBuiltVal >= yearBuiltRange[0]) && (yearBuiltVal <= yearBuiltRange[1]);
+            if (yearBuiltIncludeMissingBool && (props.year_built === null || isNaN(yearBuiltVal))) {
                 yrBuiltFilter = true;
             }
         
@@ -555,7 +557,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const listedDateStr = props.listed_date || '';
             if (!listedDateStr) {
                 // If there's no listed_date, include only if dateIncludeMissing is true
-                dateFilter = !!dateIncludeMissing;
+                dateFilter = !!dateIncludeMissingBool;
             } else {
                 // Convert to JS Date and compare
                 const listedDateObj = new Date(listedDateStr);
@@ -569,6 +571,42 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 dateFilter = true;
                 }
             }
+
+            // Decide if we include this feature
+            const includeFeature =
+                priceVal >= minPrice && priceVal <= maxPrice &&
+                bedroomsVal >= minBedrooms && bedroomsVal <= maxBedrooms &&
+                bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms &&
+                petsFilter &&
+                sqftFilter &&
+                ppsqftFilter &&
+                yrBuiltFilter &&
+                subtypeFilter &&
+                dateFilter;
+
+            // Debug if excluded
+            if (!includeFeature) {
+                console.log('Feature excluded:', {
+                    mls_number,
+                    priceVal,
+                    bedroomsVal,
+                    bathroomsVal,
+                    petPolicyValue,
+                    sqft,
+                    ppsqft,
+                    yearBuiltVal,
+                    subtype,
+                    date,
+                    filters: {
+                        petPolicyFilter,
+                        sqftFilter,
+                        ppsqftFilter,
+                        yrBuiltFilter,
+                        subtypeFilter,
+                        dateFilter
+                    }
+                });
+            }
         
             // Combine all filters
             return (
@@ -578,7 +616,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 petsFilter &&
                 sqftFilter &&
                 ppsqftFilter &&
-                garageSpacesFilter &&
                 yrBuiltFilter &&
                 seniorFilter &&
                 subtypeFilter &&
