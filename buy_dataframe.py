@@ -82,18 +82,14 @@ specific_column_map = {
 for sheet_name, sheet_df in xlsx.items():
   original_columns = sheet_df.columns.tolist()
   sheet_df.columns = sheet_df.columns.str.strip().str.lower()
-  
   # Identify columns that can be renamed
   existing_renames = {col: specific_column_map[col] for col in sheet_df.columns if col in specific_column_map}
-  
   if existing_renames:
     logger.info(f"Renaming columns in sheet '{sheet_name}': {existing_renames}")
   else:
     logger.warning(f"No columns to rename in sheet '{sheet_name}'.")
-
   # Rename the columns
   renamed_sheet_df = sheet_df.rename(columns=existing_renames)
-  
   # Add the renamed DataFrame to the dictionary
   renamed_sheets_corrected[sheet_name] = renamed_sheet_df
 
