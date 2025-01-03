@@ -1264,9 +1264,9 @@ class BuyComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['Sqft'].min(),
-                    max=self.df['Sqft'].max(),
-                    value=[self.df['Sqft'].min(), self.df['Sqft'].max()],
+                    min=self.df['sqft'].min(),
+                    max=self.df['sqft'].max(),
+                    value=[self.df['sqft'].min(), self.df['sqft'].max()],
                     id='sqft_slider',
                     updatemode='mouseup',
                     tooltip={
