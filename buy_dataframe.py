@@ -236,15 +236,12 @@ for row in df.itertuples():
   df.at[row.Index, 'context'] = {"pageType": "buy"}
 
 # Save the dataframe for later ingestion by app.py
-# Read in the old dataframe 
-df_old = pd.read_parquet(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/buy.parquet')
+# Read in the old dataframe
+df_old = gpd.read_file(filename='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/buy.geojson')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
-# Drop the LSqft/Ac column if it exists
-if 'LSqft/Ac' in df_combined.columns:
-  df_combined = df_combined.drop(columns=['LSqft/Ac'])
 # Iterate through the dataframe and drop rows with expired listings
 df_combined = remove_inactive_listings(df_combined)
 # Reset the index
@@ -265,23 +262,18 @@ for row in outside_ca_rows.itertuples():
   coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
   df_combined.at[row.Index, 'latitude'] = coordinates[0]
   df_combined.at[row.Index, 'longitude'] = coordinates[1]
-
-# Final pass at converting datetime columns to the correct format
-df_combined['listed_date'] = pd.to_datetime(df_combined['listed_date'], errors='raise', format='mixed')
-df_combined['date_processed'] = pd.to_datetime(df_combined['date_processed'], errors='raise', format='mixed')
-df_combined['Half Bathrooms'] = df_combined['Half Bathrooms'].astype('Int8')
-
 # Save the new combined dataframe
+# Convert the combined DataFrame to a GeoDataFrame
+gdf_combined = gpd.GeoDataFrame(
+  df_combined, 
+  geometry=gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
+)
+# Save the GeoDataFrame as a GeoJSON file
 try:
-  df_combined.to_parquet(path="assets/datasets/buy.parquet")
+  gdf_combined.to_file("assets/datasets/buy.geojson", driver="GeoJSON")
+  logger.info("Saved the combined GeoDataFrame to a GeoJSON file.")
 except Exception as e:
-  logger.warning(f"Error saving the combined dataframe as a parquet file: {e}. Falling back to CSV...")
-  # Save the new combined dataframe to a CSV file
-  try:
-    df_combined.to_csv(path_or_buf="assets/datasets/buy.csv", index=False)
-    logger.info("Saved the combined dataframe to a CSV file")
-  except Exception as e:
-    logger.error(f"Error saving the combined dataframe to a CSV file: {e}")
+  logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
 
 # Reclaim space in ImageKit
-reclaim_imagekit_space(df_path="assets/datasets/buy.parquet", imagekit_instance=imagekit)
+reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
