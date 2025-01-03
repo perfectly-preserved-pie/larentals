@@ -1237,9 +1237,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['Total Bathrooms'].max(), 
+                    max=self.df['bathrooms'].max(), 
                     step=1, 
-                    value=[0, self.df['Total Bathrooms'].max()], 
+                    value=[0, self.df['bathrooms'].max()], 
                     id='bathrooms_slider',
                     updatemode='mouseup',
                     tooltip={
