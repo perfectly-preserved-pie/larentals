@@ -87,7 +87,7 @@ for sheet_name, sheet_df in xlsx.items():
 df = pd.concat(renamed_sheets_corrected.values(), ignore_index=True)
 
 # Drop all rows with misc/irrelevant data
-df.dropna(subset=['street_address'], inplace=True)
+df.dropna(subset=['mls_number'], inplace=True)
 
 # Define columns to remove all non-numeric characters from
 cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']
