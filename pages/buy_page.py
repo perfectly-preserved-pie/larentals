@@ -50,9 +50,14 @@ logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
 
+# Create a store for the geojson data
+geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=components.return_geojson())
+#logger.debug(f"GeoJSON data: {geojson_store.data}")
+#logger.debug(f"this is the return geojson {lease_components.return_geojson()}")
 
 layout = dbc.Container([
   collapse_store,
+  geojson_store,
   dbc.Row( # First row: title card
     [
       dbc.Col([components.title_card, components.user_options_card], lg=3, md=6, sm=4),
