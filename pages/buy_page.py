@@ -30,13 +30,9 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 
 pd.set_option("display.precision", 10)
 
-# Create the filters and components objects and log how long it takes to create them
+# Create the components objects and log how long it takes to create them
 start_time = time.time()
-filters = BuyFilters(df)
-duration = time.time() - start_time
-logger.info(f"Created BuyFilters object in {duration:.2f} seconds.")
-start_time = time.time()
-components = BuyComponents(df)
+components = BuyComponents()
 duration = time.time() - start_time
 logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 
