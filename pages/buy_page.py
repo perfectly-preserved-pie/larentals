@@ -117,6 +117,7 @@ clientside_callback(
   [State('more-options-collapse-buy', 'is_open')]
 )
 
+# Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',
@@ -139,6 +140,11 @@ clientside_callback(
     Input('listed_date_datepicker', 'start_date'),
     Input('listed_date_datepicker', 'end_date'),
     Input('listed_date_missing_radio', 'value'),
+    Input('hoa_fee_slider', 'value'),
+    Input('hoa_fee_missing_radio', 'value'),
+    Input('hoa_fee_frequency_checklist', 'value'),
+    Input('space_rent_slider', 'value'),
+    Input('space_rent_missing_radio', 'value'),
   ],
   State('buy-geojson-store', 'data')
 )
