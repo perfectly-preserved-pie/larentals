@@ -123,8 +123,8 @@ for col in cols:
 df.reset_index(drop=True, inplace=True)
 
 # Fetch missing city names
-for row in df.loc[(df['City'].isnull()) & (df['PostalCode'].notnull())].itertuples():
-  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.PostalCode)}", geolocator=g)
+for row in df.loc[(df['City'].isnull()) & (df['zip_code'].notnull())].itertuples():
+  df.at[row.Index, 'City'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.zip_code)}", geolocator=g)
 
 # Cast these columns as strings so we can concatenate them
 cols = ['street_number', 'street_name', 'City', 'mls_number']
@@ -137,10 +137,10 @@ df["short_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() 
 # Filter the dataframe and return only rows with a NaN postal code
 # For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
 # Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[(df['PostalCode'].isnull()) | (df['PostalCode'] == 'Assessor')].itertuples():
+for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].itertuples():
   short_address = df.at[row.Index, 'short_address']
   missing_zip_code = return_zip_code(short_address, geolocator=g)
-  df.at[row.Index, 'PostalCode'] = missing_zip_code
+  df.at[row.Index, 'zip_code'] = missing_zip_code
 
 # Tag each row with the date it was processed
 for row in df.itertuples():
@@ -150,7 +150,7 @@ for row in df.itertuples():
 # Also strip whitespace from the St Name column
 # Convert the postal code into a string so we can combine string and int
 # https://stackoverflow.com/a/11858532
-df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["PostalCode"].map(str)
+df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["zip_code"].map(str)
 
 # Iterate through the dataframe and get the listed date and photo for rows 
 for row in df.itertuples():
@@ -198,8 +198,8 @@ df['Total Bathrooms'] = df['Total Bathrooms'].apply(pd.to_numeric, errors='coerc
 # These columns should stay floats
 df['Latitude'] = df['Latitude'].apply(pd.to_numeric, errors='coerce')
 df['Longitude'] = df['Longitude'].apply(pd.to_numeric, errors='coerce')
-# Convert PostalCode into nullable integer dtype
-df['PostalCode'] = df['PostalCode'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
+# Convert zip_code into nullable integer dtype
+df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype(pd.Int64Dtype())
 
 # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
