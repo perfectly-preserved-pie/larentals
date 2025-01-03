@@ -54,6 +54,9 @@ pd.set_option("display.precision", 10)
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip().str.lower()
 
+# Initialize an empty dictionary to hold renamed DataFrames
+renamed_sheets_corrected = {}
+
 # Using a dictionary for clearer column renaming
 specific_column_map = {
   '# prking spaces': 'garage_spaces',
@@ -75,13 +78,24 @@ specific_column_map = {
   'zip': 'zip_code',
 }
 
-# Rename columns using the specific map
-renamed_sheets_corrected = {}
+# Rename columns using the specific map in a safe manner
 for sheet_name, sheet_df in xlsx.items():
-  sheet_df.columns = sheet_df.columns.str.strip()
-  # Only rename columns present in both the DataFrame and specific_column_map
+  original_columns = sheet_df.columns.tolist()
+  sheet_df.columns = sheet_df.columns.str.strip().str.lower()
+  
+  # Identify columns that can be renamed
   existing_renames = {col: specific_column_map[col] for col in sheet_df.columns if col in specific_column_map}
-  renamed_sheets_corrected[sheet_name] = sheet_df.rename(columns=existing_renames)
+  
+  if existing_renames:
+    logger.info(f"Renaming columns in sheet '{sheet_name}': {existing_renames}")
+  else:
+    logger.warning(f"No columns to rename in sheet '{sheet_name}'.")
+
+  # Rename the columns
+  renamed_sheet_df = sheet_df.rename(columns=existing_renames)
+  
+  # Add the renamed DataFrame to the dictionary
+  renamed_sheets_corrected[sheet_name] = renamed_sheet_df
 
 # Then proceed with concatenation
 df = pd.concat(renamed_sheets_corrected.values(), ignore_index=True)

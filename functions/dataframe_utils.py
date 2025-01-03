@@ -46,7 +46,7 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
     return df_active.reset_index(drop=True)
 
 def update_dataframe_with_listing_data(
-    df: pd.DataFrame, imagekit_instance
+    df: pd.DataFrame, imagekit_instance, for_sale: bool = False
 ) -> pd.DataFrame:
     """
     Updates the DataFrame with listing date, MLS photo, and listing URL by scraping BHHS and using The Agency's API.
@@ -54,6 +54,7 @@ def update_dataframe_with_listing_data(
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
     imagekit_instance: The ImageKit instance for image transformations.
+    for_sale (bool): Whether the listings are for sale or for lease. Defaults to False.
 
     Returns:
     pd.DataFrame: The updated DataFrame.
@@ -74,7 +75,8 @@ def update_dataframe_with_listing_data(
                     mls_number,
                     row_index=row.Index,
                     total_rows=len(df),
-                    full_street_address=row.full_street_address
+                    full_street_address=row.full_street_address,
+                    for_sale=for_sale
                 )
 
                 if agency_data and any(agency_data):
