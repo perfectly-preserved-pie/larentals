@@ -1,10 +1,9 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_inactive_listings
+from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
 from functions.popup_utils import *
-from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
@@ -151,13 +150,8 @@ for row in df.itertuples():
 # https://stackoverflow.com/a/11858532
 df["full_street_address"] = df["street_number"] + ' ' + df["street_name"].str.strip() + ',' + ' ' + df['City'] + ' ' + df["zip_code"].map(str)
 
-# Iterate through the dataframe and get the listed date and photo for rows 
-for row in df.itertuples():
-  mls_number = row[1]
-  webscrape = webscrape_bhhs(url=f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/", row_index=row.Index, mls_number=mls_number, total_rows=len(df))
-  df.at[row.Index, 'listed_date'] = webscrape[0]
-  df.at[row.Index, 'mls_photo'] = imagekit_transform(webscrape[1], row[1], imagekit_instance=imagekit)
-  df.at[row.Index, 'listing_url'] = webscrape[2]
+# Iterate through the dataframe and get the listed date and photo for rows
+df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
 
 # Iterate through the dataframe and fetch coordinates for rows
 for row in df.itertuples():
