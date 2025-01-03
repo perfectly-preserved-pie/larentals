@@ -33,7 +33,7 @@ global df
 
 ### PANDAS DATAFRAME OPERATIONS
 # Read all sheets from the Excel file
-excel_file = glob.glob('*homes*.xlsx')[0]
+excel_file = glob.glob('*.xlsx')[0]
 xlsx = pd.read_excel(excel_file, sheet_name=None)
 
 ## Remember: N/A = Not Applicable to this home type while NaN = Unknown for some reason (missing data)
