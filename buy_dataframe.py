@@ -143,7 +143,7 @@ for row in df.itertuples():
 df["full_street_address"] = df["street_address"].str.strip() + ',' + ' ' + df['city'] + ' ' + df["zip_code"].map(str)
 
 # Iterate through the dataframe and get the listed date and photo for rows
-df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
+df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit, for_sale=True)
 
 # Iterate through the dataframe and fetch coordinates for rows
 for row in df.itertuples():
