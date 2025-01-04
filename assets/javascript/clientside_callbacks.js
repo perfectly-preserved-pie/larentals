@@ -414,6 +414,240 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
             // Return new FeatureCollection
             return { type: "FeatureCollection", features: filteredFeatures };
+        },
+        /**
+        * Filters and clusters the GeoJSON data for buying properties based on various criteria.
+        * The order of parameters matches the Dash callback's Input order.
+        *
+        * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by `list_price`.
+        * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by `bedrooms`.
+        * @param {Array<number>} bathroomsRange - [minBaths, maxBaths] for filtering by `bathrooms`.
+        * @param {boolean|string} petsAllowed - Pet policy choice (`true`, `false`, or `"Both"`).
+        * @param {Array<number>} sqftRange - [minSqft, maxSqft] for filtering by `sqft`.
+        * @param {boolean} sqftIncludeMissing - Whether to include properties with missing `sqft`.
+        * @param {Array<number>} ppsqftRange - [minPpsqft, maxPpsqft] for filtering by `ppsqft`.
+        * @param {boolean} ppsqftIncludeMissing - Whether to include properties with missing `ppsqft`.
+        * @param {Array<number>} yearBuiltRange - [minYearBuilt, maxYearBuilt] for filtering by `year_built`.
+        * @param {boolean} yearBuiltIncludeMissing - Whether to include properties with missing `year_built`.
+        * @param {boolean|string} seniorCommunityOption - Senior community choice (`true`, `false`, or `"Both"`).
+        * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
+        * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
+        * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
+        * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
+        * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
+        * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
+        * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
+        * @param {Array<number>} spaceRentRange - [minSpaceRent, maxSpaceRent] for filtering by `space_rent`.
+        * @param {boolean} spaceRentIncludeMissing - Whether to include properties with missing `space_rent`.
+        * @param {Object} rawData - The full buy GeoJSON data as a FeatureCollection.
+        * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
+        */
+        filterAndClusterBuy: function(
+            priceRange,
+            bedroomsRange,
+            bathroomsRange,
+            petsAllowed,
+            sqftRange,
+            sqftIncludeMissing,
+            ppsqftRange,
+            ppsqftIncludeMissing,
+            yearBuiltRange,
+            yearBuiltIncludeMissing,
+            seniorCommunityOption,
+            subtypeSelection,
+            dateStart,
+            dateEnd,
+            dateIncludeMissing,
+            hoaFeeRange,
+            hoaFeeIncludeMissing,
+            hoaFeeFrequencyChecklist,
+            spaceRentRange,
+            spaceRentIncludeMissing,
+            rawData
+        ) {
+            // Convert Dash boolean inputs to actual booleans
+            const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
+            const ppsqftIncludeMissingBool         = Boolean(ppsqftIncludeMissing);
+            const yearBuiltIncludeMissingBool      = Boolean(yearBuiltIncludeMissing);
+            const dateIncludeMissingBool           = Boolean(dateIncludeMissing);
+            const hoaFeeIncludeMissingBool         = Boolean(hoaFeeIncludeMissing);
+            const spaceRentIncludeMissingBool      = Boolean(spaceRentIncludeMissing);
+
+            // Deconstruct range arrays for easier access
+            const [minPrice, maxPrice]            = priceRange;
+            const [minBedrooms, maxBedrooms]      = bedroomsRange;
+            const [minBathrooms, maxBathrooms]    = bathroomsRange;
+            const [minSqft, maxSqft]              = sqftRange;
+            const [minPpsqft, maxPpsqft]          = ppsqftRange;
+            const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
+            const [minHOA, maxHOA]                = hoaFeeRange;
+            const [minSpaceRent, maxSpaceRent]    = spaceRentRange;
+
+            // Debug: Log raw data
+            console.log('Raw data:', rawData);
+
+            // Filter the features based on the provided criteria
+            const filteredFeatures = rawData.features.filter((feature) => {
+                const props = feature.properties || {};
+                const mls_number = props.mls_number || 'Unknown';
+
+                // 1) Price Filter
+                const priceVal = parseFloat(props.list_price) || 0;
+                const priceInRange = (priceVal >= minPrice && priceVal <= maxPrice);
+
+                // 2) Bedrooms Filter
+                const bedroomsVal = parseFloat(props.bedrooms) || 0;
+                const bedroomsInRange = (bedroomsVal >= minBedrooms && bedroomsVal <= maxBedrooms);
+
+                // 3) Bathrooms Filter
+                const bathroomsVal = parseFloat(props.bathrooms) || 0;
+                const bathroomsInRange = (bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms);
+
+                // 4) Pets Allowed Filter
+                let petsFilter = true;
+                const petsPolicy = (props.pets_allowed || '').toLowerCase();
+                if (petsAllowed === true) {
+                    petsFilter = petsPolicy.includes('yes');
+                } else if (petsAllowed === false) {
+                    petsFilter = petsPolicy.includes('no');
+                }
+                // If petsAllowed is "Both", do not filter
+
+                // 5) Sqft Filter
+                const sqftVal = parseFloat(props.sqft);
+                let sqftFilter = !isNaN(sqftVal) && (sqftVal >= minSqft && sqftVal <= maxSqft);
+                if (sqftIncludeMissingBool && (props.sqft == null || isNaN(sqftVal))) {
+                    sqftFilter = true;
+                }
+
+                // 6) PPSqft Filter
+                const ppsqftVal = parseFloat(props.ppsqft);
+                let ppsqftFilter = !isNaN(ppsqftVal) && (ppsqftVal >= minPpsqft && ppsqftVal <= maxPpsqft);
+                if (ppsqftIncludeMissingBool && (props.ppsqft == null || isNaN(ppsqftVal))) {
+                    ppsqftFilter = true;
+                }
+
+                // 7) Year Built Filter
+                const yearBuiltVal = parseFloat(props.year_built);
+                let yrBuiltFilter = !isNaN(yearBuiltVal) && (yearBuiltVal >= minYearBuilt && yearBuiltVal <= maxYearBuilt);
+                if (yearBuiltIncludeMissingBool && (props.year_built == null || isNaN(yearBuiltVal))) {
+                    yrBuiltFilter = true;
+                }
+
+                // 8) Senior Community Filter
+                let seniorFilter = true;
+                const seniorVal = (props.senior_community || '').toUpperCase();
+                if (seniorCommunityOption === true) {
+                    seniorFilter = seniorVal.includes('Y');
+                } else if (seniorCommunityOption === false) {
+                    seniorFilter = seniorVal.includes('N');
+                }
+                // If seniorCommunityOption is "Both", do not filter
+
+                // 9) Subtype Filter
+                let subtypeFilter = false;
+                const propertySubtype = (props.subtype || '').toUpperCase();
+                if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
+                    subtypeFilter = true;
+                } else {
+                    subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
+                }
+
+                // 10) Listed Date Filter
+                let dateFilter = false;
+                const listedDateStr = props.listed_date || '';
+                if (!listedDateStr) {
+                    // If missing listed_date, include only if dateIncludeMissing is true
+                    dateFilter = !!dateIncludeMissingBool;
+                } else {
+                    const listedDateObj = new Date(listedDateStr);
+                    const startObj = dateStart ? new Date(dateStart) : null;
+                    const endObj = dateEnd ? new Date(dateEnd) : null;
+                    if (startObj && endObj) {
+                        dateFilter = (listedDateObj >= startObj && listedDateObj <= endObj);
+                    } else {
+                        // If missing start or end, do not constrain
+                        dateFilter = true;
+                    }
+                }
+
+                // 11) HOA Fee Filter
+                const hoaVal = parseFloat(props.hoa_fee);
+                let hoaFilter = !isNaN(hoaVal) && (hoaVal >= minHOA && hoaVal <= maxHOA);
+                if (hoaFeeIncludeMissingBool && (props.hoa_fee == null || isNaN(hoaVal))) {
+                    hoaFilter = true;
+                }
+
+                // 12) HOA Fee Frequency Filter
+                const hoaFreqVal = props.hoa_fee_frequency || 'N/A';
+                const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
+
+                // 13) Space Rent Filter
+                const spaceVal = parseFloat(props.space_rent);
+                let spaceRentFilter = !isNaN(spaceVal) && (spaceVal >= minSpaceRent && spaceVal <= maxSpaceRent);
+                if (spaceRentIncludeMissingBool && (props.space_rent == null || isNaN(spaceVal))) {
+                    spaceRentFilter = true;
+                }
+
+                // Combine all filters
+                const includeFeature =
+                    priceInRange &&
+                    bedroomsInRange &&
+                    bathroomsInRange &&
+                    petsFilter &&
+                    sqftFilter &&
+                    ppsqftFilter &&
+                    yrBuiltFilter &&
+                    seniorFilter &&
+                    subtypeFilter &&
+                    dateFilter &&
+                    hoaFilter &&
+                    hoaFeeFreqFilter &&
+                    spaceRentFilter;
+
+                // Debug if excluded
+                if (!includeFeature) {
+                    console.log('Feature excluded:', {
+                        mls_number,
+                        priceVal,
+                        bedroomsVal,
+                        bathroomsVal,
+                        petsAllowed,
+                        sqftVal,
+                        ppsqftVal,
+                        yearBuiltVal,
+                        seniorVal,
+                        propertySubtype,
+                        listedDateStr,
+                        hoaVal,
+                        hoaFreqVal,
+                        spaceVal,
+                        filters: {
+                            priceInRange,
+                            bedroomsInRange,
+                            bathroomsInRange,
+                            petsFilter,
+                            sqftFilter,
+                            ppsqftFilter,
+                            yrBuiltFilter,
+                            seniorFilter,
+                            subtypeFilter,
+                            dateFilter,
+                            hoaFilter,
+                            hoaFeeFreqFilter,
+                            spaceRentFilter
+                        }
+                    });
+                }
+
+                return includeFeature;
+            });
+
+            // Return the filtered FeatureCollection
+            return {
+                type: "FeatureCollection",
+                features: filteredFeatures
+            };
         }
     }
 });

@@ -1110,9 +1110,9 @@ class BuyComponents(BaseClass):
         'Unknown': 'Unknown'
     }
 
-    def __init__(self, df):
+    def __init__(self):
         # Initalize these first because they are used in other components
-        self.df = df
+        self.df = gpd.read_file("assets/datasets/buy.geojson")
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1137,6 +1137,13 @@ class BuyComponents(BaseClass):
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
+
+    def return_geojson(self):
+        """
+        Load the GeoJSON data from the file and return it as an object.
+        """
+        with open("assets/datasets/buy.geojson", "r") as file:
+            return json.load(file)
         
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
@@ -1198,9 +1205,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+                    max=self.df['bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
                     step=1, 
-                    value=[0, self.df['Bedrooms'].max()], 
+                    value=[0, self.df['bedrooms'].max()], 
                     id='bedrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1230,9 +1237,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['Total Bathrooms'].max(), 
+                    max=self.df['bathrooms'].max(), 
                     step=1, 
-                    value=[0, self.df['Total Bathrooms'].max()], 
+                    value=[0, self.df['bathrooms'].max()], 
                     id='bathrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1257,9 +1264,9 @@ class BuyComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['Sqft'].min(),
-                    max=self.df['Sqft'].max(),
-                    value=[self.df['Sqft'].min(), self.df['Sqft'].max()],
+                    min=self.df['sqft'].min(),
+                    max=self.df['sqft'].max(),
+                    value=[self.df['sqft'].min(), self.df['sqft'].max()],
                     id='sqft_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1735,21 +1742,40 @@ class BuyComponents(BaseClass):
         return listed_date_components
 
     def create_map(self):
+        """
+        Creates a Dash Leaflet map with multiple layers.
+
+        Returns:
+            dl.Map: A Dash Leaflet Map component.
+        """
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
+
+        ns = Namespace("dash_props", "module")
 
         # Create the main map with the lease layer
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.LayerGroup(id="buy_geojson"),
+                dl.GeoJSON(
+                    id='buy_geojson',
+                    data=None,
+                    cluster=True,
+                    clusterToLayer=generate_convex_hulls,
+                    onEachFeature=ns("on_each_feature"),
+                    zoomToBoundsOnClick=True,
+                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                        'radius': 160,
+                        'minZoom': 3,
+                    },
+                ),
                 dl.FullScreenControl()
             ],
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}

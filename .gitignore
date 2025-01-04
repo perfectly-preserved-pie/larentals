@@ -6,4 +6,5 @@ __pycache__/
 *.csv
 *.pyc
 *.xlsx
+assets/dashExtensions_default.js
 env

@@ -212,9 +212,14 @@ df.reset_index(drop=True, inplace=True)
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
 
+# Add pageType context
+# Add context to each feature's properties to pass through to the onEachFeature JavaScript function
+for row in df.itertuples():
+  df.at[row.Index, 'context'] = {"pageType": "lease"}
+
 # Save the dataframe for later ingestion by app.py
 # Read in the old dataframe
-df_old = gpd.read_file(path='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/lease.geojson')
+df_old = gpd.read_file(filename='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/lease.geojson')
 # Combine both old and new dataframes
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again

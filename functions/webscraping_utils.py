@@ -226,7 +226,7 @@ def extract_zip_code(full_street_address: str) -> Optional[str]:
     else:
         return None
 
-def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
+def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str, for_sale=False) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
     """
     Fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
 
@@ -235,6 +235,7 @@ def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full
     row_index (int): The row index for logging or debugging purposes.
     total_rows (int): Total rows being processed for progress indication.
     full_street_address (str): The full street address of the property (e.g., "118 S Cordova ST #B, ALHAMBRA 91801").
+    for_sale (bool): If True, search for sale properties; otherwise rentals.
 
     Returns:
     Tuple[Optional[datetime.date], Optional[str], Optional[str]]: 
@@ -264,8 +265,11 @@ def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full
         "Cache-Control": "no-cache"
     }
     normalized_mls_number = mls_number.replace("-", "").replace("_", "")
+    # Choose query parts based on for_sale flag
+    listing_type = "sale" if for_sale else "rent"
+    rental_flag = "false" if for_sale else "true"
     payload = {
-        "urlquery": f"/rent/search-{normalized_mls_number}/rental-true",
+        "urlquery": f"/{listing_type}/rental-{rental_flag}/search-{normalized_mls_number}",
         "countrystate": "",
         "zoom": 21
     }
