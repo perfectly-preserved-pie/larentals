@@ -177,7 +177,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock || "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
