@@ -173,6 +173,17 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     `;
                 }
 
+                // Conditional Pets Allowed
+                let petsAllowedContent = '';
+                if (data.pets_allowed) {
+                    petsAllowedContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
                 return `
                     <div>
                     ${imageRow}
@@ -218,10 +229,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
                         </tr>
                         ${parkingContent}
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
-                        </tr>
+                        ${petsAllowedContent}
                         ${seniorCommunityContent}
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
