@@ -150,7 +150,18 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Function to generate popup content for buy page
-            function generateBuyPopupContent(data, selected_subtypes) {
+            function generateBuyPopupContent(data) {
+                // Include parking spaces if subtype is not 'SFR' or 'Single Family Residence'
+                let parkingContent = '';
+                if (!(data.subtype.includes('SFR') || data.subtype.includes('Single Family Residence'))) {
+                    parkingContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
                 return `
                     <div>
                     ${imageRow}
@@ -195,10 +206,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
                         </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
-                        </tr>
+                        ${parkingContent}
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
