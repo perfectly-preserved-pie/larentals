@@ -170,7 +170,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString() || "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
