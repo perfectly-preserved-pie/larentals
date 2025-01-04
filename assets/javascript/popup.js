@@ -169,9 +169,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
                         </tr>
                         <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Sale Price</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
                         </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee_frequency || "Unknown"}</td>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
@@ -181,24 +188,20 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
                         </tr>
                         <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Lot Size</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.lot_size ? `${data.lot_size.toLocaleString()} sq. ft` : "Unknown"}</td>
+                        </tr>
+                        <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.parking_spaces || "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_policy || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Furnished?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.furnished || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Laundry Features</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.laundry || "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
@@ -207,10 +210,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Sale Terms</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.terms || "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
