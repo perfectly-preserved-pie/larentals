@@ -162,6 +162,17 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     `;
                 }
 
+                // Conditional Senior Community
+                let seniorCommunityContent = '';
+                if (data.subtype.includes('MH')) {
+                    seniorCommunityContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
                 return `
                     <div>
                     ${imageRow}
@@ -211,10 +222,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
                         </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
-                        </tr>
+                        ${seniorCommunityContent}
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
