@@ -173,7 +173,6 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
         "SFR/D": "Single Family Residence",
         "Single Family Residence": "Single Family Residence",
         "Stock Cooperative": "Stock Cooperative",
-        "Townhouse": "Townhouse",
         "TPLX": "Triplex",
         "TPLX/A": "Triplex",
         "TPLX/D": "Triplex",
