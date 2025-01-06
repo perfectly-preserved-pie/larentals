@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data
+from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data, flatten_subtype_column
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -7,7 +7,6 @@ from functions.popup_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
-from numpy import NaN
 import glob
 import os
 import pandas as pd
@@ -217,6 +216,9 @@ df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
 df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
 # Convert zip_code into string
 df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype("string")
+
+# Flatten the subtype column
+df = flatten_subtype_column(df)
 
 # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
