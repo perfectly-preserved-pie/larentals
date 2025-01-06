@@ -184,6 +184,17 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     `;
                 }
 
+                // Conditional Space Rent
+                let spaceRentContent = '';
+                if (data.subtype.includes('MH') || data.subtype.includes('Manufactured Home')) {
+                    spaceRentContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.space_rent || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
                 return `
                     <div>
                     ${imageRow}
@@ -231,6 +242,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         ${parkingContent}
                         ${petsAllowedContent}
                         ${seniorCommunityContent}
+                        ${spaceRentContent}
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
