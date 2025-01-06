@@ -66,14 +66,17 @@ specific_column_map = {
   'hoa fee freq.1': 'hoa_fee_frequency',
   'hoa fees': 'hoa_fee',
   'hoa': 'hoa_fee',
+  'hod': 'hoa_fee',
   'list price': 'list_price',
   'lot size': 'lot_size',
   'mls': 'mls_number',
+  'price per sqft': 'ppsqft',
   'price per square foot': 'ppsqft',
   'sqft': 'sqft',
   'st #': 'street_number',
   'sub type': 'subtype',
   'year built': 'year_built',
+  'yr built': 'year_built',
   'zip': 'zip_code',
 }
 
