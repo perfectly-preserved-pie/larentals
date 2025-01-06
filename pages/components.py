@@ -1095,21 +1095,6 @@ class LeaseComponents(BaseClass):
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
-    # Class Variables
-    subtype_meaning = { # Define a dictionary that maps each subtype to its corresponding meaning
-        'CONDO': 'Condo (Unspecified)',
-        'CONDO/A': 'Condo (Attached)',
-        'CONDO/D': 'Condo (Detached)',
-        'MH': 'Mobile Home',
-        'SFR': 'Single Family Residence (Unspecified)',
-        'SFR/A': 'Single Family Residence (Attached)',
-        'SFR/D': 'Single Family Residence (Detached)',
-        'TWNHS': 'Townhouse (Unspecified)',
-        'TWNHS/A': 'Townhouse (Attached)',
-        'TWNHS/D': 'Townhouse (Detached)',
-        'Unknown': 'Unknown'
-    }
-
     def __init__(self):
         # Initalize these first because they are used in other components
         self.df = gpd.read_file("assets/datasets/buy.geojson")
@@ -1147,9 +1132,12 @@ class BuyComponents(BaseClass):
         
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
-        # Pre-calculation of unique subtypes and values for the checklist
-        unique_values = self.df['subtype'].unique()
-        cleaned_values = [i if not pd.isna(i) else 'Unknown' for i in unique_values]
+        # Get unique subtypes from the dataframe
+        unique_subtypes = self.df['subtype'].unique()
+        # Replace NAs with 'Unknown'
+        cleaned_subtypes = [st if pd.notna(st) else 'Unknown' for st in unique_subtypes]
+        # Create data list for MultiSelect
+        data = [{'label': st, 'value': st} for st in sorted(cleaned_subtypes)]
 
         subtype_checklist = html.Div([ 
             # Title and toggle button
@@ -1163,22 +1151,15 @@ class BuyComponents(BaseClass):
 
             # The actual checklist
             html.Div([
-                dcc.Checklist( 
-                    id='subtype_checklist',
-                    options=sorted(
-                        [
-                            {
-                                'label': f"{i if not pd.isna(i) else 'Unknown'} - {self.subtype_meaning.get(i if not pd.isna(i) else 'Unknown', 'Unknown')}",
-                                'value': i if not pd.isna(i) else 'Unknown'
-                            }
-                            for i in unique_values
-                        ], 
-                        key=lambda x: x['label']
-                    ),
-                    value=cleaned_values,
-                    labelStyle={'display': 'block'},
-                    inputStyle={"marginRight": "5px", "marginLeft": "5px"},
-                ),
+                dmc.MultiSelect(
+                id='subtype_checklist',
+                data=data,
+                value=[item['value'] for item in data],
+                searchable=True,
+                nothingFoundMessage="No options found",
+                clearable=True,
+                style={"marginBottom": "10px"},
+            ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
             style={
