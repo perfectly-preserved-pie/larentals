@@ -1159,11 +1159,7 @@ class BuyComponents(BaseClass):
             ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
-            style={
-                "overflowY": "scroll",
-                "overflowX": 'hidden',
-                "height": '220px'
-            }),
+            ),
         ],
         id='subtypes_div_buy'
         )
