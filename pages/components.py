@@ -1146,9 +1146,6 @@ class BuyComponents(BaseClass):
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='buy')
             ]),
 
-            # Additional information about the checklist
-            html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
-
             # The actual checklist
             html.Div([
                 dmc.MultiSelect(
