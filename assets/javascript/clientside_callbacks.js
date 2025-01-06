@@ -580,7 +580,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 12) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
-                const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'Unknown' : rawVal;
+                const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
                 const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
 
                 // 13) Space Rent Filter
