@@ -182,6 +182,6 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
     }
 
     # Apply the subtype_map
-    df['subtype'] = df['subtype'].apply(lambda x: subtype_map.get(str(x), x))
+    df['subtype'] = df['subtype'].map(subtype_map).fillna('Unknown')
 
     return df
