@@ -217,9 +217,6 @@ df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
 # Convert zip_code into string
 df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype("string")
 
-# Flatten the subtype column
-df = flatten_subtype_column(df)
-
 # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
 df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mixed')
@@ -259,6 +256,8 @@ df_old = gpd.read_file(filename='https://github.com/perfectly-preserved-pie/lare
 df_combined = pd.concat([df, df_old], ignore_index=True)
 # Drop any dupes again
 df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
+# Flatten the subtype column
+df_combined = flatten_subtype_column(df_combined)
 # Iterate through the dataframe and drop rows with expired listings
 df_combined = remove_inactive_listings(df_combined)
 # Reset the index
