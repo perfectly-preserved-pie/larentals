@@ -43,12 +43,6 @@ xlsx[list(xlsx.keys())[0]]["subtype"] = "Single Family Residence"
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
 
-# Drop the LSqft/Ac column only if it exists
-if 'LSqft/Ac' in df.columns:
-  df = df.drop(columns=['LSqft/Ac'])
-
-pd.set_option("display.precision", 10)
-
 # Strip leading and trailing whitespaces from the column names and convert them to lowercase
 # https://stackoverflow.com/a/36082588
 df.columns = df.columns.str.strip().str.lower()
