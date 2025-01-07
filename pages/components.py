@@ -1095,24 +1095,9 @@ class LeaseComponents(BaseClass):
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
-    # Class Variables
-    subtype_meaning = { # Define a dictionary that maps each subtype to its corresponding meaning
-        'CONDO': 'Condo (Unspecified)',
-        'CONDO/A': 'Condo (Attached)',
-        'CONDO/D': 'Condo (Detached)',
-        'MH': 'Mobile Home',
-        'SFR': 'Single Family Residence (Unspecified)',
-        'SFR/A': 'Single Family Residence (Attached)',
-        'SFR/D': 'Single Family Residence (Detached)',
-        'TWNHS': 'Townhouse (Unspecified)',
-        'TWNHS/A': 'Townhouse (Attached)',
-        'TWNHS/D': 'Townhouse (Detached)',
-        'Unknown': 'Unknown'
-    }
-
-    def __init__(self, df):
+    def __init__(self):
         # Initalize these first because they are used in other components
-        self.df = df
+        self.df = gpd.read_file("assets/datasets/buy.geojson")
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
@@ -1137,12 +1122,22 @@ class BuyComponents(BaseClass):
         # Initialize these last because they depend on other components
         self.more_options = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
+
+    def return_geojson(self):
+        """
+        Load the GeoJSON data from the file and return it as an object.
+        """
+        with open("assets/datasets/buy.geojson", "r") as file:
+            return json.load(file)
         
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
-        # Pre-calculation of unique subtypes and values for the checklist
-        unique_values = self.df['subtype'].unique()
-        cleaned_values = [i if not pd.isna(i) else 'Unknown' for i in unique_values]
+        # Get unique subtypes from the dataframe
+        unique_subtypes = self.df['subtype'].unique()
+        # Replace NAs with 'Unknown'
+        cleaned_subtypes = [st if pd.notna(st) else 'Unknown' for st in unique_subtypes]
+        # Create data list for MultiSelect
+        data = [{'label': st, 'value': st} for st in sorted(cleaned_subtypes)]
 
         subtype_checklist = html.Div([ 
             # Title and toggle button
@@ -1151,34 +1146,20 @@ class BuyComponents(BaseClass):
                 create_toggle_button(index='subtype', initial_label="Hide", page_type='buy')
             ]),
 
-            # Additional information about the checklist
-            html.H6([html.Em("Swipe (or scroll) down on the following options to view more subtypes.")]),
-
             # The actual checklist
             html.Div([
-                dcc.Checklist( 
-                    id='subtype_checklist',
-                    options=sorted(
-                        [
-                            {
-                                'label': f"{i if not pd.isna(i) else 'Unknown'} - {self.subtype_meaning.get(i if not pd.isna(i) else 'Unknown', 'Unknown')}",
-                                'value': i if not pd.isna(i) else 'Unknown'
-                            }
-                            for i in unique_values
-                        ], 
-                        key=lambda x: x['label']
-                    ),
-                    value=cleaned_values,
-                    labelStyle={'display': 'block'},
-                    inputStyle={"marginRight": "5px", "marginLeft": "5px"},
-                ),
+                dmc.MultiSelect(
+                id='subtype_checklist',
+                data=data,
+                value=[item['value'] for item in data],
+                searchable=True,
+                nothingFoundMessage="No options found",
+                clearable=True,
+                style={"marginBottom": "10px"},
+            ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
-            style={
-                "overflowY": "scroll",
-                "overflowX": 'hidden',
-                "height": '220px'
-            }),
+            ),
         ],
         id='subtypes_div_buy'
         )
@@ -1198,9 +1179,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['Bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
+                    max=self.df['bedrooms'].max(), # Dynamically calculate the maximum number of bedrooms
                     step=1, 
-                    value=[0, self.df['Bedrooms'].max()], 
+                    value=[0, self.df['bedrooms'].max()], 
                     id='bedrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1230,9 +1211,9 @@ class BuyComponents(BaseClass):
             html.Div([
                 dcc.RangeSlider(
                     min=0, 
-                    max=self.df['Total Bathrooms'].max(), 
+                    max=self.df['total_bathrooms'].max(), 
                     step=1, 
-                    value=[0, self.df['Total Bathrooms'].max()], 
+                    value=[0, self.df['total_bathrooms'].max()], 
                     id='bathrooms_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1257,9 +1238,9 @@ class BuyComponents(BaseClass):
             ]),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['Sqft'].min(),
-                    max=self.df['Sqft'].max(),
-                    value=[self.df['Sqft'].min(), self.df['Sqft'].max()],
+                    min=self.df['sqft'].min(),
+                    max=self.df['sqft'].max(),
+                    value=[self.df['sqft'].min(), self.df['sqft'].max()],
                     id='sqft_slider',
                     updatemode='mouseup',
                     tooltip={
@@ -1735,21 +1716,40 @@ class BuyComponents(BaseClass):
         return listed_date_components
 
     def create_map(self):
+        """
+        Creates a Dash Leaflet map with multiple layers.
+
+        Returns:
+            dl.Map: A Dash Leaflet Map component.
+        """
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
+
+        ns = Namespace("dash_props", "module")
 
         # Create the main map with the lease layer
         map = dl.Map(
             [
                 dl.TileLayer(),
-                dl.LayerGroup(id="buy_geojson"),
+                dl.GeoJSON(
+                    id='buy_geojson',
+                    data=None,
+                    cluster=True,
+                    clusterToLayer=generate_convex_hulls,
+                    onEachFeature=ns("on_each_feature"),
+                    zoomToBoundsOnClick=True,
+                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                        'radius': 160,
+                        'minZoom': 3,
+                    },
+                ),
                 dl.FullScreenControl()
             ],
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['Latitude'].mean(), self.df['Longitude'].mean()),
+            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}

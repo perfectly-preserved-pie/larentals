@@ -74,7 +74,6 @@ def update_dataframe_with_listing_data(
                     mls_number,
                     row_index=row.Index,
                     total_rows=len(df),
-                    full_street_address=row.full_street_address
                 )
 
                 if agency_data and any(agency_data):
@@ -149,66 +148,40 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
 
     # Create a mapping from various raw subtype strings → flattened label
     subtype_map = {
-        # Single Family
-        "SFR": "Single Family",
-        "SFR/A": "Single Family",
-        "SFR/D": "Single Family",
-        
-        # Condominium
-        "CONDO": "Condominium",
-        "CONDO/A": "Condominium",
-        "CONDO/D": "Condominium",
-        
-        # Apartment
         "APT": "Apartment",
         "APT/A": "Apartment",
         "APT/D": "Apartment",
-        
-        # Townhouse
-        "TWNHS": "Townhouse",
-        "TWNHS/A": "Townhouse",
-        "TWNHS/D": "Townhouse",
-        
-        # Duplex
+        "Co-Ownership": "Co-Ownership",
+        "CONDO": "Condominium",
+        "CONDO/A": "Condominium",
+        "CONDO/D": "Condominium",
+        "Condominium": "Condominium",
         "DPLX": "Duplex",
         "DPLX/A": "Duplex",
         "DPLX/D": "Duplex",
-        
-        # Triplex
+        "MH": "Manufactured Home",
+        "Own Your Own": "Own Your Own",
+        "OwnYourOwn": "Own Your Own",
+        "OYO": "Own Your Own",
+        "OYO/A": "Own Your Own",
+        "OYO/D": "Own Your Own",
+        "QUAD": "Quadruplex",
+        "QUAD/A": "Quadruplex",
+        "QUAD/D": "Quadruplex",
+        "SFR": "Single Family Residence",
+        "SFR/A": "Single Family Residence",
+        "SFR/D": "Single Family Residence",
+        "Single Family Residence": "Single Family Residence",
+        "Stock Cooperative": "Stock Cooperative",
         "TPLX": "Triplex",
         "TPLX/A": "Triplex",
         "TPLX/D": "Triplex",
-        
-        # Quadplex
-        "QUAD": "Quadplex",
-        "QUAD/A": "Quadplex",
-        "QUAD/D": "Quadplex",
-        
-        # Lofts
-        "LOFT": "Loft",
-        "LOFT/A": "Loft",
-        
-        # Studios
-        "STUD": "Studio",
-        "STUD/A": "Studio",
-        "STUD/D": "Studio",
-        
-        # Room for Rent
-        "RMRT/A": "Room For Rent",
-        "RMRT/D": "Room For Rent",
-        
-        # Cabin
-        "CABIN": "Cabin",
-        "CABIN/A": "Cabin",
-        "CABIN/D": "Cabin",
-        
-        # Commercial Residential
-        "COMRES/A": "Commercial Residential",
-        "COMRES/D": "Commercial Residential",
-        "Combo - Res &amp; Com": "Commercial Residential",
+        "TWNHS": "Townhouse",
+        "TWNHS/A": "Townhouse",
+        "TWNHS/D": "Townhouse",
     }
 
-    # Apply the mapping: where a key is found, replace with its value; otherwise leave as is
-    df["subtype"] = df["subtype"].map(subtype_map).fillna(df["subtype"])
+    # Apply the subtype_map
+    df['subtype'] = df['subtype'].map(subtype_map).fillna('Unknown')
 
     return df

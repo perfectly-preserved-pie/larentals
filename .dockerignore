@@ -9,3 +9,4 @@
 *.xlsx
 **/__pycache__/
 assets/dashExtensions_default.js
+include/

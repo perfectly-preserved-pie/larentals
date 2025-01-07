@@ -226,102 +226,96 @@ def extract_zip_code(full_street_address: str) -> Optional[str]:
     else:
         return None
 
-def fetch_the_agency_data(mls_number: str, row_index: int, total_rows: int, full_street_address: str) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
+def fetch_the_agency_data(
+    mls_number: str,
+    row_index: int,
+    total_rows: int,
+) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
     """
-    Fetches property data for a given MLS number from The Agency API and scrapes the detail page for the image source.
+    Fetches property data for a given MLS number from The Agency API.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.
     row_index (int): The row index for logging or debugging purposes.
     total_rows (int): Total rows being processed for progress indication.
-    full_street_address (str): The full street address of the property (e.g., "118 S Cordova ST #B, ALHAMBRA 91801").
 
     Returns:
     Tuple[Optional[datetime.date], Optional[str], Optional[str]]: 
         - The listing date (as a datetime.date object) if found; otherwise, None.
         - The detail URL of the property if found; otherwise, None.
         - The first property image URL if found; otherwise, None.
-        Returns (None, None, None) if no matching property is found or if an error occurs.
+    Returns (None, None, None) if no matching property is found or if an error occurs.
     """
-    url = "https://search-service.idcrealestate.com/api/property"
+    url = f"https://search-service.idcrealestate.com/api/property/en_US/d4/detail/clr/{mls_number}"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
         "Accept": "*/*",
         "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "X-Tenant": "AGY",
-        "X-TenantMode": "Production",
-        "X-TenantHost": "theagencyre.com",
-        "Content-Type": "application/json",
+        "Accept-Encoding": "gzip, deflate, br",
         "Origin": "https://www.theagencyre.com",
         "Connection": "keep-alive",
-        "Referer": "https://www.theagencyre.com/",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "cross-site",
+        #"Sec-Fetch-Dest": "empty",
+        #"Sec-Fetch-Mode": "no-cors",
+        #"Sec-Fetch-Site": "cross-site",
+        "Content-Type": "application/json",
+        "X-Tenant": "QUdZfFBST0R8Q09NUEFOWXwx",
         "Priority": "u=4",
         "Pragma": "no-cache",
-        "Cache-Control": "no-cache"
+        "Cache-Control": "no-cache",
+        "Referer": "https://www.theagencyre.com/"
     }
-    normalized_mls_number = mls_number.replace("-", "").replace("_", "")
-    payload = {
-        "urlquery": f"/rent/search-{normalized_mls_number}/rental-true",
-        "countrystate": "",
-        "zoom": 21
-    }
-    #logger.debug(payload)
+
+    logger.debug(f"Processing MLS {mls_number} ({row_index}/{total_rows})")
+
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.get(url, headers=headers)
+        #logger.debug(f"Request URL: {url}")
+        #logger.debug(f"Response Status Code: {response.status_code}")
         response.raise_for_status()
-        #logger.debug(response.text)
 
         # Parse JSON response
         data = response.json()
+        #logger.debug(f"Response JSON for MLS {mls_number}: {data}")
 
-        # Extract the street name and zip code
-        street_name = extract_street_name(full_street_address)
-        if not street_name:
-            logger.warning(f"Could not extract street name from address: {full_street_address}")
-            return None, None, None
-        logger.debug(f"Extracted street name: {street_name}")
+        # Extract listing date
+        list_date_str = data.get("ListDate", "")
+        if list_date_str:
+            try:
+                list_date = datetime.fromisoformat(list_date_str).date()
+            except ValueError as ve:
+                logger.error(f"Date parsing error for MLS {mls_number}: {ve}")
+                list_date = None
+        else:
+            list_date = None
+        logger.debug(f"Listing Date for MLS {mls_number}: {list_date}")
 
-        zip_code = extract_zip_code(full_street_address)
-        if not zip_code:
-            logger.warning(f"Could not extract zip code from address: {full_street_address}")
-            return None, None, None
-        logger.debug(f"Extracted zip code: {zip_code}")
+        # Extract detail URL
+        detail_url_path = data.get("DetailUrl", "")
+        detail_url = f"https://www.theagencyre.com{detail_url_path}" if detail_url_path else None
+        logger.debug(f"Detail URL for MLS {mls_number}: {detail_url}")
 
-        # Filter items based on the street name and zip code
-        filtered_items = [
-            item for item in data.get("items", [])
-            if street_name in item.get("fullAddress", "").lower() and zip_code in item.get("fullAddress", "").lower()
-        ]
-
-        if filtered_items:
-            if len(filtered_items) > 1:
-                logger.warning(f"Multiple properties found for street name '{street_name}' and zip code '{zip_code}'. Using the first one.")
-            item = filtered_items[0]
-            list_date_timestamp = int(item.get("listDate", 0))
-            list_date = datetime.fromtimestamp(list_date_timestamp, tz=timezone.utc).date()
-            detail_url = f"https://www.theagencyre.com{item.get('detailUrl', '')}"
-            detail_response = requests.get(detail_url, headers=headers)
-            detail_response.raise_for_status()
-            detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
-            img_tag = detail_soup.find("img", {"data-src": lambda x: x and x.endswith("_1.jpg")})
-            img_src = img_tag["data-src"] if img_tag else None
-            logger.success(f"Successfully fetched {list_date} {detail_url} {img_src} for MLS {mls_number}")
-            return list_date, detail_url, img_src
-
-        logger.warning(f"No property found on The Agency with street name '{street_name}' and zip code '{zip_code}'.")
-        return None, None, None
+        # Extract image source from PhotosXml
+        photos = data.get("PhotosXml", {}).get("Urls", {}).get("URL", [])
+        img_src = photos[0] if photos else None  # Get the first image URL
+        if img_src:
+            logger.debug(f"Image Source for MLS {mls_number}: {img_src}")
+        else:
+            logger.debug(f"No images found for MLS {mls_number}.")
+        
+        logger.info(f"Successfully fetched data for MLS {mls_number}")
+        return list_date, detail_url, img_src
 
     except requests.HTTPError as e:
-        logger.error(f"HTTP error occurred: {e}")
-        logger.debug(f"Response content: {e.response.text}")
+        logger.error(f"HTTP error occurred while fetching MLS {mls_number}: {e}")
+        if e.response is not None:
+            logger.debug(f"Response content: {e.response.text}")
     except requests.RequestException as e:
-        logger.error(f"Request error occurred: {e}")
+        logger.error(f"Request error occurred while fetching MLS {mls_number}: {e}")
+    except ValueError as e:
+        logger.error(f"JSON decoding failed for MLS {mls_number}: {e}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred while fetching MLS {mls_number}: {e}")
+
     return None, None, None
 
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:

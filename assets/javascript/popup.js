@@ -150,7 +150,51 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Function to generate popup content for buy page
-            function generateBuyPopupContent(data, selected_subtypes) {
+            function generateBuyPopupContent(data) {
+                // Include parking spaces if subtype is not 'SFR' or 'Single Family Residence'
+                let parkingContent = '';
+                if (!(data.subtype.includes('SFR') || data.subtype.includes('Single Family Residence'))) {
+                    parkingContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
+                // Conditional Senior Community
+                let seniorCommunityContent = '';
+                if (data.subtype.includes('MH')) {
+                    seniorCommunityContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
+                // Conditional Pets Allowed
+                let petsAllowedContent = '';
+                if (data.pets_allowed) {
+                    petsAllowedContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
+                // Conditional Space Rent
+                let spaceRentContent = '';
+                if (data.subtype.includes('MH') || data.subtype.includes('Manufactured Home')) {
+                    spaceRentContent = `
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.space_rent || "Unknown"}</td>
+                        </tr>
+                    `;
+                }
+
                 return `
                     <div>
                     ${imageRow}
@@ -166,12 +210,19 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock || "Unknown"}</td>
                         </tr>
                         <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Sale Price</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString() || "Unknown"}</td>
                         </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee_frequency || "Unknown"}</td>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
@@ -181,36 +232,20 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
                         </tr>
                         <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Lot Size</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.lot_size ? `${data.lot_size.toLocaleString()} sq. ft` : "Unknown"}</td>
+                        </tr>
+                        <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
                         </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.parking_spaces || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_policy || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Furnished?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.furnished || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Laundry Features</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.laundry || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
-                        </tr>
+                        ${parkingContent}
+                        ${petsAllowedContent}
+                        ${seniorCommunityContent}
+                        ${spaceRentContent}
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Sale Terms</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.terms || "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
