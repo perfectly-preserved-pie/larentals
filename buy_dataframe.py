@@ -38,7 +38,7 @@ xlsx = pd.read_excel(excel_file, sheet_name=None)
 ## Remember: N/A = Not Applicable to this home type while NaN = Unknown for some reason (missing data)
 # Assuming first sheet is single-family homes, second sheet is condos/townhouses, and third sheet is mobile homes
 # Set the subtype of every row in the first sheet to "Single Family Residence"
-xlsx[list(xlsx.keys())[0]]["Sub type"] = "Single Family Residence"
+xlsx[list(xlsx.keys())[0]]["subtype"] = "Single Family Residence"
 
 # Merge all sheets into a single DataFrame
 df = pd.concat(xlsx.values())
