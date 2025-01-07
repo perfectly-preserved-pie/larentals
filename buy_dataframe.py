@@ -69,6 +69,7 @@ specific_column_map = {
   'mls': 'mls_number',
   'price per sqft': 'ppsqft',
   'price per square foot': 'ppsqft',
+  'prop subtype': 'subtype',
   'sqft': 'sqft',
   'st #': 'street_number',
   'sub type': 'subtype',
