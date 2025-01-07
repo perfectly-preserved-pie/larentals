@@ -18,7 +18,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         toggleVisibilityBasedOnSubtype: function(selected_subtype) {
-            if (selected_subtype.includes('MH')) {
+            if (selected_subtype.includes('Manufactured Home')) {
                 return {'display': 'block'};
             } else {
                 return {'display': 'none'};
@@ -26,7 +26,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         toggleHOAVisibility: function(selected_subtype) {
-            if (selected_subtype.includes('MH') && selected_subtype.length === 1) {
+            if (selected_subtype.includes('Manufactured Home') && selected_subtype.length === 1) {
                 return {'display': 'none'};
             } else {
                 return {
