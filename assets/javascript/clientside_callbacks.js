@@ -484,7 +484,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minSpaceRent, maxSpaceRent]    = spaceRentRange;
 
             // Debug: Log raw data
-            console.log('Raw data:', rawData);
+            //console.log('Raw data:', rawData);
 
             // Filter the features based on the provided criteria
             const filteredFeatures = rawData.features.filter((feature) => {
