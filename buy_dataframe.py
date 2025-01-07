@@ -198,15 +198,8 @@ bathroom_details = bathroom_details.astype("UInt8")
 # Assign the extracted bathrooms to the main DataFrame
 df = pd.concat([df, bathroom_details], axis=1)
 
-# Validate the 'total_bathrooms' against the detailed counts
-df['calculated_total_bathrooms'] = (
-  df['full_bathrooms'] +
-  0.5 * df['half_bathrooms'] +
-  0.75 * df['three_quarter_bathrooms']
-)
-
-# Drop the 'calculated_total_bathrooms' column
-df = df.drop(columns=['calculated_total_bathrooms'])
+# If total_bathrooms is missing, fill it with the sum of the detailed bathrooms
+df['total_bathrooms'] = df['total_bathrooms'].fillna(df['full_bathrooms'] + df['half_bathrooms'] + df['three_quarter_bathrooms'] + df['extra_bathrooms'])
 
 logger.info("Bathroom columns extracted and total_bathrooms updated.")
 logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].sample(n=10))
