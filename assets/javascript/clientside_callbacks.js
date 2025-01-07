@@ -500,7 +500,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const bedroomsInRange = (bedroomsVal >= minBedrooms && bedroomsVal <= maxBedrooms);
 
                 // 3) Bathrooms Filter
-                const bathroomsVal = parseFloat(props.bathrooms) || 0;
+                const bathroomsVal = parseFloat(props.total_bathrooms) || 0;
                 const bathroomsInRange = (bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms);
 
                 // 4) Pets Allowed Filter
