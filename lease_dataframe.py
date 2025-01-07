@@ -69,7 +69,6 @@ rename_dict = {
   'pet deposit': 'pet_deposit',
   'pets': 'pet_policy',
   'prop subtype': 'subtype',
-  'prop subtype': 'subtype',
   'security deposit': 'security_deposit',
   'sqft': 'sqft',
   'st #': 'street_number',
