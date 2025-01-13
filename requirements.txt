@@ -11,11 +11,11 @@ gevent==24.11.1
 gunicorn==23.0.0
 imagekitio==4.1.0
 loguru==0.7.3
-numpy==1.26.4
+numpy==2.2.1
 openpyxl==3.1.5
-orjson==3.10.12
+orjson==3.10.14
 pandas==2.2.3
-protobuf==5.29.2
+protobuf==5.29.3
 pyarrow==18.1.0
 python-dotenv==1.0.1
 pyyaml 
