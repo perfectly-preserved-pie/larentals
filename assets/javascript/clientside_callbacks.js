@@ -18,7 +18,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         toggleVisibilityBasedOnSubtype: function(selected_subtype) {
-            if (selected_subtype.includes('MH')) {
+            if (selected_subtype.includes('Manufactured Home')) {
                 return {'display': 'block'};
             } else {
                 return {'display': 'none'};
@@ -26,7 +26,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         toggleHOAVisibility: function(selected_subtype) {
-            if (selected_subtype.includes('MH') && selected_subtype.length === 1) {
+            if (selected_subtype.includes('Manufactured Home') && selected_subtype.length === 1) {
                 return {'display': 'none'};
             } else {
                 return {
@@ -484,7 +484,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minSpaceRent, maxSpaceRent]    = spaceRentRange;
 
             // Debug: Log raw data
-            console.log('Raw data:', rawData);
+            //console.log('Raw data:', rawData);
 
             // Filter the features based on the provided criteria
             const filteredFeatures = rawData.features.filter((feature) => {
@@ -500,7 +500,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const bedroomsInRange = (bedroomsVal >= minBedrooms && bedroomsVal <= maxBedrooms);
 
                 // 3) Bathrooms Filter
-                const bathroomsVal = parseFloat(props.bathrooms) || 0;
+                const bathroomsVal = parseFloat(props.total_bathrooms) || 0;
                 const bathroomsInRange = (bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms);
 
                 // 4) Pets Allowed Filter

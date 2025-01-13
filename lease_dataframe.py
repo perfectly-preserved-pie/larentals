@@ -212,10 +212,8 @@ df.reset_index(drop=True, inplace=True)
 # Do another pass to convert the date_processed column to datetime64 dtype
 df['date_processed'] = pd.to_datetime(df['date_processed'], errors='coerce', format='%Y-%m-%d')
 
-# Add pageType context
-# Add context to each feature's properties to pass through to the onEachFeature JavaScript function
-for row in df.itertuples():
-  df.at[row.Index, 'context'] = {"pageType": "lease"}
+# Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
+df['context'] = [{"pageType": "lease"} for _ in range(len(df))]
 
 # Save the dataframe for later ingestion by app.py
 # Read in the old dataframe

@@ -10,13 +10,18 @@ _dash_renderer._set_react_version("18.2.0")
 
 logging.getLogger().setLevel(logging.INFO)
 
-external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
+external_stylesheets = [
+	dbc.themes.DARKLY,
+  dbc.icons.BOOTSTRAP,
+  dbc.icons.FONT_AWESOME
+]
+external_scripts = [
+  'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js' # Turf.js for convex hulls
+]
 
 # Create the app
 app = Dash(
-	external_scripts = [
-    'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js' # Turf.js for convex hulls
-  ],
+	external_scripts = external_scripts,
   external_stylesheets = external_stylesheets,
   name = __name__, 
   # Add meta tags for mobile devices

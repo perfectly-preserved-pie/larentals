@@ -1,20 +1,12 @@
 from .components import BuyComponents
-from .filters import BuyFilters
 from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
-from dash_extensions.javascript import Namespace
 from dash.dependencies import Input, Output, State
-from flask import request
-from functions.convex_hull import generate_convex_hulls
 from loguru import logger
-from user_agents import parse
 import dash
 import dash_bootstrap_components as dbc
-import dash_leaflet as dl
-import dash_leaflet.express as dlx
 import pandas as pd
 import sys
 import time
-import uuid
 
 dash.register_page(
   __name__,
