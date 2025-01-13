@@ -49,7 +49,7 @@ jobs:
     steps:
       - name: Check dev.wheretolive.la status
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://dev.wheretolive.la)
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.wheretolive.la)
           if [ "$response" -ne 200 ]; then
             echo "Status check failed"
             exit 1
@@ -57,7 +57,7 @@ jobs:
 
       - name: Check for "Updated weekly" text
         run: |
-          content=$(curl -s http://dev.wheretolive.la)
+          content=$(curl -s https://dev.wheretolive.la)
           if [[ "$content" != *"Updated weekly"* ]]; then
             echo "Text check failed"
             exit 1
