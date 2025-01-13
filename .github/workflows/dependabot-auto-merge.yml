@@ -1,0 +1,80 @@
+name: Dependabot Auto Merge
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - dev
+
+jobs:
+  merge-dependabot:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Install the latest version of uv and define a cache dependency glob
+        uses: astral-sh/setup-uv@v5
+        with:
+            enable-cache: true
+            cache-dependency-glob: "requirements**.txt"
+
+      - name: Install requirements
+        run: uv pip install -r requirements.txt
+        env:
+            UV_SYSTEM_PYTHON: 1
+
+      - name: Run tests
+        run: pytest
+
+      - name: Merge into dev
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout dev
+          git merge ${{ github.event.pull_request.head.ref }}
+          git push origin dev
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
+
+  check-dev-status:
+    needs: merge-dependabot
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check dev.wheretolive.la status
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://dev.wheretolive.la)
+          if [ "$response" -ne 200 ]; then
+            echo "Status check failed"
+            exit 1
+          fi
+
+      - name: Check for "Updated weekly" text
+        run: |
+          content=$(curl -s http://dev.wheretolive.la)
+          if [[ "$content" != *"Updated weekly"* ]]; then
+            echo "Text check failed"
+            exit 1
+          fi
+
+  merge-to-master:
+    needs: check-dev-status
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Merge dev into master
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout master
+          git merge dev
+          git push origin master
