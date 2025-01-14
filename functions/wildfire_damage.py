@@ -83,7 +83,7 @@ def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, leas
 
 # Paths to the GeoJSON files
 palisades_geojson_path = 'assets/datasets/DINS_2025_Palisades_Public_View.geojson'
-eaton_geojson_path = 'assets/datasets/Eaton_2025_Palisades_Public_View.geojson'
+eaton_geojson_path = 'assets/datasets/DINS_2025_Eaton_Public_View.geojson'
 lease_geojson_path = 'assets/datasets/lease.geojson'
 buy_geojson_path = 'assets/datasets/buy.geojson'
 
