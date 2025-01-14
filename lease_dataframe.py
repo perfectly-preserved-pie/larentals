@@ -228,9 +228,10 @@ df_combined = remove_inactive_listings(df_combined)
 df_combined['laundry_category'] = df_combined['laundry'].apply(categorize_laundry_features)
 # Reset the index
 df_combined = df_combined.reset_index(drop=True)
-# Remove trailing 0 in the street_number column and the full_street_address column
-df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0$', '', regex=True)
-df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0$', '', regex=True)
+# Remove trailing 0 in the street_number column and the full_street_address column and the short_address column
+df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0', '', regex=True)
+df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0', '', regex=True)
+df_combined['short_address'] = df_combined['short_address'].str.replace(r'\.0', '', regex=True)
 # Filter the dataframe for rows outside of California
 outside_ca_rows = df_combined[
   (df_combined['latitude'] < 32.5) | 
