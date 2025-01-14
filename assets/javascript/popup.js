@@ -39,6 +39,18 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 `;
             }
 
+            // Function to handle the fire alert
+            function getFireAlertBlock(data) {
+                if (data.affected_by_palisades_fire) {
+                    return `
+                        <div style="color: red; text-align: center;">
+                            ⚠️ Affected by Palisades Fire. Please verify at <a href="https://recovery.lacounty.gov/palisades-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
+                        </div>
+                    `;
+                }
+                return '';
+            }
+
             // Function to format date string
             function formatDate(dateString) {
                 if (!dateString) return "Unknown";
@@ -65,6 +77,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             function generateLeasePopupContent(data) {
                 return `
                     <div>
+                    ${getFireAlertBlock(data)}
                     ${imageRow}
                     ${listingUrlBlock}
                     <table style="width:100%;border-collapse:collapse;">
@@ -197,6 +210,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 return `
                     <div>
+                    ${getFireAlertBlock(data)}
                     ${imageRow}
                     ${listingUrlBlock}
                     <table style="width:100%;border-collapse:collapse;">
