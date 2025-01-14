@@ -39,6 +39,30 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 `;
             }
 
+            // Function to handle the Palisades fire alert
+            function getPalisadesFireAlertBlock(data) {
+                if (data.affected_by_palisades_fire) {
+                    return `
+                        <div style="color: red; text-align: center;">
+                            ⚠️ Affected by Palisades Fire. Please verify at <a href="https://recovery.lacounty.gov/palisades-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
+                        </div>
+                    `;
+                }
+                return '';
+            }
+
+            // Function to handle the Eaton fire alert
+            function getEatonFireAlertBlock(data) {
+                if (data.affected_by_eaton_fire) {
+                    return `
+                        <div style="color: red; text-align: center;">
+                            ⚠️ Affected by Eaton Fire. Please verify at <a href="https://recovery.lacounty.gov/eaton-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
+                        </div>
+                    `;
+                }
+                return '';
+            }
+
             // Function to format date string
             function formatDate(dateString) {
                 if (!dateString) return "Unknown";
@@ -65,6 +89,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
             function generateLeasePopupContent(data) {
                 return `
                     <div>
+                    ${getPalisadesFireAlertBlock(data)}
+                    ${getEatonFireAlertBlock(data)}
                     ${imageRow}
                     ${listingUrlBlock}
                     <table style="width:100%;border-collapse:collapse;">
@@ -197,6 +223,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 return `
                     <div>
+                    ${getPalisadesFireAlertBlock(data)}
+                    ${getEatonFireAlertBlock(data)}
                     ${imageRow}
                     ${listingUrlBlock}
                     <table style="width:100%;border-collapse:collapse;">
