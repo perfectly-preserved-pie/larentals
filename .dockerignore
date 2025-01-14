@@ -8,5 +8,6 @@
 *.pyc
 *.xlsx
 **/__pycache__/
+*dataframe.py
 assets/dashExtensions_default.js
 include/
