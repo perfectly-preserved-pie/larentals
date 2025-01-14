@@ -181,7 +181,7 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
         "TWNHS/D": "Townhouse",
     }
 
-    # Apply the subtype_map
-    df['subtype'] = df['subtype'].map(subtype_map).fillna('Unknown')
+    # Apply the subtype_map only to known subtypes
+    df['subtype'] = df['subtype'].apply(lambda x: subtype_map.get(x, x) if pd.notnull(x) and x != '' else 'Unknown')
 
     return df
