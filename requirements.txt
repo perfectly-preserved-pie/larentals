@@ -1,6 +1,6 @@
 beautifulsoup4==4.12.3
 brotli==1.1.0
-dash_bootstrap_components==1.6.0
+dash_bootstrap_components==1.7.1
 dash_extensions==1.0.19
 dash-leaflet==1.0.15
 dash-mantine-components==0.15.1
@@ -11,12 +11,12 @@ gevent==24.11.1
 gunicorn==23.0.0
 imagekitio==4.1.0
 loguru==0.7.3
-numpy==2.2.1
+numpy==2.2.2
 openpyxl==3.1.5
-orjson==3.10.14
+orjson==3.10.15
 pandas==2.2.3
 protobuf==5.29.3
-pyarrow==18.1.0
+pyarrow==19.0.0
 python-dotenv==1.0.1
 pyyaml 
 requests==2.32.3
