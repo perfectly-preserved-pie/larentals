@@ -26,7 +26,7 @@ jobs:
       - name: Install requirements
         run: uv pip install -r requirements.txt
         env:
-            UV_SYSTEM_PYTHON: 1
+            UV_SYSTEM_PYTHON: true
 
       - name: Run tests
         run: pytest
