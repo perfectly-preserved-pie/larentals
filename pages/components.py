@@ -544,6 +544,10 @@ class LeaseComponents(BaseClass):
         return rental_price_components
 
     def create_year_built_components(self):
+        min_year = int(self.df['year_built'].min())
+        max_year = int(self.df['year_built'].max())
+        marks_range = np.linspace(min_year, max_year, 5, dtype=int)  # 5 equally spaced marks
+
         year_built_components = html.Div([
             html.Div([
                 html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
@@ -551,18 +555,17 @@ class LeaseComponents(BaseClass):
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['year_built'].min(),
-                    max=self.df['year_built'].max(),
-                    value=[0, self.df['year_built'].max()],
+                    min=min_year,
+                    max=max_year,
+                    value=[0, max_year],
                     id='yrbuilt_slider',
                     updatemode='mouseup',
                     tooltip={
                         "placement": "bottom",
                         "always_visible": True
                     },
-                    marks={
-                        float(self.df['year_built'].min() + i*20): str(self.df['year_built'].min() + i*20) for i in range(8)
-                    }
+                    #marks={str(year): str(year) for year in marks_range}
+                    marks={int(year): str(int(year)) for year in marks_range},
                 ),
                 dbc.Alert(
                     [
@@ -1603,6 +1606,9 @@ class BuyComponents(BaseClass):
         return list_price_slider
 
     def create_year_built_components(self):
+        min_year = int(self.df['year_built'].min())
+        max_year = int(self.df['year_built'].max())
+        marks_range = np.linspace(min_year, max_year, 5, dtype=int)  # 5 equally spaced marks
         year_built_components = html.Div([
             
             # Title and toggle button
@@ -1614,17 +1620,15 @@ class BuyComponents(BaseClass):
             # The actual RangeSlider and Radio button
             html.Div([
                 dcc.RangeSlider(
-                    min=self.df['year_built'].min(),
-                    max=self.df['year_built'].max(),
-                    value=[0, self.df['year_built'].max()],
+                    min=min_year,
+                    max=max_year,
+                    value=[0, max_year],
                     id='yrbuilt_slider',
                     tooltip={
                         "placement": "bottom",
                         "always_visible": True
                     },
-                    marks={  # Create custom tick marks
-                        # ... (the marks you already provided)
-                    },
+                    marks={int(year): str(int(year)) for year in marks_range},
                     updatemode='mouseup'
                 ),
                 dbc.Alert(
