@@ -7,6 +7,6 @@ __pycache__/
 *.pyc
 *.xlsx
 assets/dashExtensions_default.js
-datasets/DINS*
+assets/datasets/DINS*
 env
 include/
