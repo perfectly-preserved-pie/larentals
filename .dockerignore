@@ -10,4 +10,5 @@
 **/__pycache__/
 *dataframe.py
 assets/dashExtensions_default.js
+datasets/DINS*
 include/
