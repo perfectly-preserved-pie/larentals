@@ -1,8 +1,8 @@
 from functions.mls_image_processing_utils import imagekit_transform
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
-import asyncio
 import pandas as pd
+import requests
 import sys
 
 # Initialize logging
@@ -184,4 +184,25 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
     # Apply the subtype_map only to known subtypes
     df['subtype'] = df['subtype'].apply(lambda x: subtype_map.get(x, x) if pd.notnull(x) and x != '' else 'Unknown')
 
+    return df
+
+def refresh_invalid_mls_photos(df: pd.DataFrame, imagekit_instance) -> pd.DataFrame:
+    """
+    Checks if each mls_photo URL returns HTTP 200. 
+    If not, regenerates data for that row using update_dataframe_with_listing_data.
+    """
+    for row in df.itertuples():
+        photo_url = getattr(row, 'mls_photo', None)
+        if photo_url and pd.notnull(photo_url):
+            try:
+                response = requests.head(photo_url, timeout=5)
+                if response.status_code != 200:
+                    single_row_df = df.loc[[row.Index]].copy()
+                    single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
+                    df.loc[[row.Index]] = single_row_df
+            except requests.RequestException:
+                # If the photo fails to load, we try to update it
+                single_row_df = df.loc[[row.Index]].copy()
+                single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
+                df.loc[[row.Index]] = single_row_df
     return df
