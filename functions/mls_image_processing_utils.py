@@ -3,6 +3,7 @@ from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
 from typing import Optional, List, Generator, Set
 import geopandas as gpd
+import os
 import pandas as pd
 import sys
 
@@ -100,7 +101,7 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     # Initialize a list for file IDs to delete
     file_ids_for_deletion: List[str] = [
         file.file_id for file in list_files 
-        if file.name.replace('.jpg', '') not in referenced_mls_numbers
+        if os.path.splitext(file.name)[0] not in referenced_mls_numbers
     ]
 
     # Function to handle bulk deletion in chunks
