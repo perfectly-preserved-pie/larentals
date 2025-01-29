@@ -41,7 +41,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             // Function to handle the Palisades fire alert
             function getPalisadesFireAlertBlock(data) {
-                if (data.affected_by_palisades_fire) {
+                if (data.affected_by_palisades_fire === true || data.affected_by_palisades_fire === "True") {
                     return `
                         <div style="color: red; text-align: center;">
                             ⚠️ Affected by Palisades Fire. Please verify at <a href="https://recovery.lacounty.gov/palisades-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
@@ -53,7 +53,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             // Function to handle the Eaton fire alert
             function getEatonFireAlertBlock(data) {
-                if (data.affected_by_eaton_fire) {
+                if (data.affected_by_eaton_fire === true || data.affected_by_eaton_fire === "True") {
                     return `
                         <div style="color: red; text-align: center;">
                             ⚠️ Affected by Eaton Fire. Please verify at <a href="https://recovery.lacounty.gov/eaton-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
