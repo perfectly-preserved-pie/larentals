@@ -1,3 +1,4 @@
+from dotenv import load_dotenv, find_dotenv
 from imagekitio import ImageKit
 from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from loguru import logger
@@ -6,6 +7,8 @@ import geopandas as gpd
 import os
 import pandas as pd
 import sys
+
+load_dotenv(find_dotenv())
 
 # https://github.com/imagekit-developer/imagekit-python#file-upload
 
@@ -125,3 +128,41 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
 
     # Log the total number of files requested for deletion
     logger.info(f"Total number of files requested for deletion: {len(file_ids_for_deletion)}")
+
+def delete_single_mls_image(mls_number: str) -> None:
+    """
+    Deletes all images associated with a single MLS number from ImageKit.
+
+    Parameters:
+    mls_number (str): The MLS number associated with the images.
+
+    Returns:
+    None
+    """
+    imagekit_instance = ImageKit(
+        public_key=os.getenv('IMAGEKIT_PUBLIC_KEY'),
+        private_key=os.getenv('IMAGEKIT_PRIVATE_KEY'),
+        url_endpoint=os.getenv('IMAGEKIT_URL_ENDPOINT')
+    )
+    try:
+        # Find files associated with the MLS number
+        list_files_response = imagekit_instance.list_files()
+        list_files: list = list_files_response.list if hasattr(list_files_response, 'list') else []
+
+        files_to_delete = [file.file_id for file in list_files if file.name.startswith(mls_number)]
+
+        if files_to_delete:
+            # Delete files in bulk
+            bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=files_to_delete)
+            if bulk_delete_result.successfully_deleted_file_ids:
+                logger.info(f"Deleted images for MLS {mls_number}.")
+            else:
+                logger.error(f"Failed to delete some images for MLS {mls_number}.")
+                if bulk_delete_result.response_metadata:
+                    logger.debug(f"Response metadata: {bulk_delete_result.response_metadata.raw}")
+                else:
+                    logger.error("No response metadata available.")
+        else:
+            logger.warning(f"No images found for MLS {mls_number}.")
+    except Exception as e:
+        logger.error(f"Error deleting images for MLS {mls_number}: {e}")

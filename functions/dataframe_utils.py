@@ -1,4 +1,4 @@
-from functions.mls_image_processing_utils import imagekit_transform
+from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
 import pandas as pd
@@ -32,12 +32,14 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
             if is_expired:
                 indexes_to_drop.append(row.Index)
                 logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on BHHS.")
+                delete_single_mls_image(mls_number)
         # Check if the listing is expired on The Agency
         elif 'theagencyre.com' in listing_url:
             is_sold = check_expired_listing_theagency(listing_url, mls_number)
             if is_sold:
                 indexes_to_drop.append(row.Index)
                 logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on The Agency.")
+                delete_single_mls_image(mls_number)
 
     inactive_count = len(indexes_to_drop)
     logger.info(f"Total inactive listings removed: {inactive_count}")

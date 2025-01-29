@@ -291,4 +291,4 @@ except Exception as e:
   logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
 
 # Reclaim space in ImageKit
-reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
+#reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
