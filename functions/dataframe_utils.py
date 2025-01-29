@@ -150,6 +150,7 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
 
     # Create a mapping from various raw subtype strings → flattened label
     subtype_map = {
+        "Apartment": "Apartment",
         "APT": "Apartment",
         "APT/A": "Apartment",
         "APT/D": "Apartment",
@@ -175,10 +176,10 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
         "SFR/D": "Single Family Residence",
         "Single Family Residence": "Single Family Residence",
         "Stock Cooperative": "Stock Cooperative",
+        "Townhouse": "Townhouse",
         "TPLX": "Triplex",
         "TPLX/A": "Triplex",
         "TPLX/D": "Triplex",
-        "Townhouse": "Townhouse",
         "TWNHS": "Townhouse",
         "TWNHS/A": "Townhouse",
         "TWNHS/D": "Townhouse",
