@@ -201,6 +201,7 @@ def refresh_invalid_mls_photos(df: pd.DataFrame, imagekit_instance) -> pd.DataFr
             try:
                 response = requests.head(photo_url, timeout=5)
                 if response.status_code != 200:
+                    logger.info(f"Photo {photo_url} for MLS {row.mls_number} is invalid. Regenerating data.")
                     single_row_df = df.loc[[row.Index]].copy()
                     single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
                     df.loc[[row.Index]] = single_row_df
