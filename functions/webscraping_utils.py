@@ -278,7 +278,7 @@ def fetch_the_agency_data(
 
         # Parse JSON response
         data = response.json()
-        logger.debug(f"Response JSON for MLS {mls_number}: {data}")
+        #logger.debug(f"Response JSON for MLS {mls_number}: {data}")
 
         # Extract listing date
         list_date_str = data.get("ListDate", "")
@@ -313,8 +313,8 @@ def fetch_the_agency_data(
 
     except requests.HTTPError as e:
         logger.error(f"HTTP error occurred while fetching MLS {mls_number}: {e}")
-        if e.response is not None:
-            logger.debug(f"Response content: {e.response.text}")
+        #if e.response is not None:
+            #logger.debug(f"Response content: {e.response.text}")
     except requests.RequestException as e:
         logger.error(f"Request error occurred while fetching MLS {mls_number}: {e}")
     except ValueError as e:

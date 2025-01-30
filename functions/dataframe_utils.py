@@ -71,7 +71,7 @@ def update_dataframe_with_listing_data(
             )
         
             if not all(webscrape):
-                logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
+                #logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
                 agency_data = fetch_the_agency_data(
                     mls_number,
                     row_index=row.Index,
@@ -90,8 +90,8 @@ def update_dataframe_with_listing_data(
                             mls_number,
                             imagekit_instance=imagekit_instance
                         )
-                    else:
-                        logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
+                    #else:
+                        #logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
                 else:
                     pass
             else:
