@@ -39,6 +39,9 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     try:
         response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
+
+        time.sleep(5)
+
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Look for the message indicating the listing is no longer active
@@ -97,6 +100,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
     try:
         response = requests.get(api_url, headers=headers, timeout=5)
         response.raise_for_status()
+        time.sleep(5)
         data = response.json()
         is_sold = data.get('IsSold', False)
         if is_sold:
@@ -140,6 +144,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     try:
         response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
+        time.sleep(5)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Initialize variables
@@ -273,6 +278,8 @@ def fetch_the_agency_data(
         #logger.debug(f"Response Status Code: {response.status_code}")
         response.raise_for_status()
 
+        time.sleep(5)
+
         # Parse JSON response
         data = response.json()
         #logger.debug(f"Response JSON for MLS {mls_number}: {data}")
@@ -338,6 +345,7 @@ def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
         # Fetch the main listing page
         main_response = requests.get(main_url, headers=headers, timeout=5)
         main_response.raise_for_status()
+        time.sleep(5)
         main_soup = BeautifulSoup(main_response.text, 'html.parser')     
         # Find the link to the details page
         link_tag = main_soup.find('a', attrs={'class': 'btn cab waves-effect waves-light btn-details show-listing-details'})
