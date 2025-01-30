@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
+from datetime import datetime
 from loguru import logger
 from typing import Tuple, Optional
 import pandas as pd
@@ -37,7 +37,7 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
         'Cache-Control': 'no-cache',
     }
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -95,7 +95,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
     }
 
     try:
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(api_url, headers=headers, timeout=5)
         response.raise_for_status()
         data = response.json()
         is_sold = data.get('IsSold', False)
