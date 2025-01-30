@@ -165,7 +165,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
             listed_date = pd.Timestamp(listed_date_text)
 
         if listed_date is None and photo is None and link is None:
-            logger.info(f"No data found for BHHS page for {mls_number}.")
+            logger.info(f"No data found on BHHS page for {mls_number}.")
 
         return listed_date, photo, link
 
