@@ -11,10 +11,6 @@ import time
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
 
-import requests
-from bs4 import BeautifulSoup
-from loguru import logger
-
 def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     """
     Checks if a BHHS listing has expired by looking for a specific message on the page.
@@ -282,7 +278,7 @@ def fetch_the_agency_data(
 
         # Parse JSON response
         data = response.json()
-        #logger.debug(f"Response JSON for MLS {mls_number}: {data}")
+        logger.debug(f"Response JSON for MLS {mls_number}: {data}")
 
         # Extract listing date
         list_date_str = data.get("ListDate", "")
