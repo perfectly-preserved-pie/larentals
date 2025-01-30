@@ -138,7 +138,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         'Cache-Control': 'no-cache',
     }
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -268,7 +268,7 @@ def fetch_the_agency_data(
     logger.debug(f"Processing MLS {mls_number} ({row_index}/{total_rows})")
 
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=5)
         #logger.debug(f"Request URL: {url}")
         #logger.debug(f"Response Status Code: {response.status_code}")
         response.raise_for_status()
@@ -336,7 +336,7 @@ def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     main_url = base_url.format(mls_number)  
     try:
         # Fetch the main listing page
-        main_response = requests.get(main_url, headers=headers)
+        main_response = requests.get(main_url, headers=headers, timeout=5)
         main_response.raise_for_status()
         main_soup = BeautifulSoup(main_response.text, 'html.parser')     
         # Find the link to the details page
