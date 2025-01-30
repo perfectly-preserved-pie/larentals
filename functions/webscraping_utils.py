@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
 from loguru import logger
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List, Union
 import pandas as pd
 import re
 import requests
@@ -299,6 +299,9 @@ def fetch_the_agency_data(
 
         # Extract image source from PhotosXml
         photos = data.get("PhotosXml", {}).get("Urls", {}).get("URL", [])
+        # Ensure photos is always a list
+        if isinstance(photos, str):
+            photos = [photos]
         img_src = photos[0] if photos else None  # Get the first image URL
         if img_src:
             logger.debug(f"Image Source for MLS {mls_number}: {img_src}")
