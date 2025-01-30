@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
 from loguru import logger
-from typing import Tuple, Optional, List, Union
+from typing import Tuple, Optional
 import pandas as pd
 import re
 import requests
