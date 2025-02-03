@@ -1,4 +1,4 @@
-from functions.mls_image_processing_utils import imagekit_transform
+from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
 import pandas as pd
@@ -32,12 +32,14 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
             if is_expired:
                 indexes_to_drop.append(row.Index)
                 logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on BHHS.")
+                delete_single_mls_image(mls_number)
         # Check if the listing is expired on The Agency
         elif 'theagencyre.com' in listing_url:
             is_sold = check_expired_listing_theagency(listing_url, mls_number)
             if is_sold:
                 indexes_to_drop.append(row.Index)
                 logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on The Agency.")
+                delete_single_mls_image(mls_number)
 
     inactive_count = len(indexes_to_drop)
     logger.info(f"Total inactive listings removed: {inactive_count}")
@@ -69,7 +71,7 @@ def update_dataframe_with_listing_data(
             )
         
             if not all(webscrape):
-                logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
+                #logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
                 agency_data = fetch_the_agency_data(
                     mls_number,
                     row_index=row.Index,
@@ -88,8 +90,8 @@ def update_dataframe_with_listing_data(
                             mls_number,
                             imagekit_instance=imagekit_instance
                         )
-                    else:
-                        logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
+                    #else:
+                        #logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
                 else:
                     pass
             else:
@@ -148,6 +150,7 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
 
     # Create a mapping from various raw subtype strings → flattened label
     subtype_map = {
+        "Apartment": "Apartment",
         "APT": "Apartment",
         "APT/A": "Apartment",
         "APT/D": "Apartment",
@@ -173,6 +176,7 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
         "SFR/D": "Single Family Residence",
         "Single Family Residence": "Single Family Residence",
         "Stock Cooperative": "Stock Cooperative",
+        "Townhouse": "Townhouse",
         "TPLX": "Triplex",
         "TPLX/A": "Triplex",
         "TPLX/D": "Triplex",
@@ -197,6 +201,7 @@ def refresh_invalid_mls_photos(df: pd.DataFrame, imagekit_instance) -> pd.DataFr
             try:
                 response = requests.head(photo_url, timeout=5)
                 if response.status_code != 200:
+                    logger.info(f"Photo {photo_url} for MLS {row.mls_number} is invalid. Regenerating data.")
                     single_row_df = df.loc[[row.Index]].copy()
                     single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
                     df.loc[[row.Index]] = single_row_df
