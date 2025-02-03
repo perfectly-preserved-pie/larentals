@@ -2,7 +2,7 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
-from functions.layers import BaseClass
+from functions.layers import LayersClass
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
@@ -992,6 +992,7 @@ class LeaseComponents(BaseClass):
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
+        farmers_market_layer = LayersClass.create_farmers_markets_layer()
 
         ns = Namespace("dash_props", "module")
 
@@ -1023,15 +1024,16 @@ class LeaseComponents(BaseClass):
         )
 
         # Add a layer control for the additional layers
-        #layers_control = dl.LayersControl(
-        #    [ # Create a list of layers to add to the control
-        #        dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-        #        dl.Overlay(crime_layer, name="Crime", checked=False),
-        #    ],
-        #    collapsed=True,
-        #    position='topleft'
-        #)
-        #map.children.append(layers_control)
+        layers_control = dl.LayersControl(
+            [ # Create a list of layers to add to the control
+                #dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
+                #dl.Overlay(crime_layer, name="Crime", checked=False),
+                dl.Overlay(farmers_market_layer, name="Farmers Markets", checked=False),
+            ],
+            collapsed=True,
+            position='topleft'
+        )
+        map.children.append(layers_control)
 
         return map
         
