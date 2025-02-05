@@ -1,6 +1,7 @@
 from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
+import geopandas as gpd
 import pandas as pd
 import requests
 import sys
@@ -190,24 +191,45 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def refresh_invalid_mls_photos(df: pd.DataFrame, imagekit_instance) -> pd.DataFrame:
+def refresh_invalid_mls_photos(
+    input_geojson_path: str, 
+    output_geojson_path: str, 
+    imagekit_instance
+) -> None:
     """
-    Checks if each mls_photo URL returns HTTP 200. 
-    If not, regenerates data for that row using update_dataframe_with_listing_data.
+    Loads a GeoJSON file as a GeoDataFrame, checks if the 'mls_photo' URL for each row is valid,
+    regenerates data for rows with invalid photos using update_dataframe_with_listing_data, 
+    and saves the updated GeoDataFrame as a GeoJSON.
+    
+    Args:
+        input_geojson_path (str): Path to the input GeoJSON file.
+        output_geojson_path (str): Path for saving the updated GeoJSON file.
+        imagekit_instance: An instance of ImageKit for processing images.
     """
-    for row in df.itertuples():
-        photo_url = getattr(row, 'mls_photo', None)
+    try:
+        gdf = gpd.read_file(input_geojson_path)
+    except Exception as e:
+        logger.error(f"Error loading GeoJSON from {input_geojson_path}: {e}")
+        return
+
+    for row in gdf.itertuples():
+        photo_url = getattr(row, "mls_photo", None)
         if photo_url and pd.notnull(photo_url):
             try:
                 response = requests.head(photo_url, timeout=5)
                 if response.status_code != 200:
                     logger.info(f"Photo {photo_url} for MLS {row.mls_number} is invalid. Regenerating data.")
-                    single_row_df = df.loc[[row.Index]].copy()
+                    single_row_df = gdf.loc[[row.Index]].copy()
                     single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
-                    df.loc[[row.Index]] = single_row_df
+                    gdf.loc[[row.Index]] = single_row_df
             except requests.RequestException:
-                # If the photo fails to load, we try to update it
-                single_row_df = df.loc[[row.Index]].copy()
+                logger.info(f"Request error for photo {photo_url} for MLS {row.mls_number}. Regenerating data.")
+                single_row_df = gdf.loc[[row.Index]].copy()
                 single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
-                df.loc[[row.Index]] = single_row_df
-    return df
+                gdf.loc[[row.Index]] = single_row_df
+
+    try:
+        gdf.to_file(output_geojson_path, driver="GeoJSON")
+        logger.info(f"Saved the updated GeoDataFrame to {output_geojson_path}.")
+    except Exception as e:
+        logger.error(f"Error saving the updated GeoDataFrame to {output_geojson_path}: {e}")
