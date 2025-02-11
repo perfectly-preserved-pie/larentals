@@ -163,6 +163,7 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
         "DPLX": "Duplex",
         "DPLX/A": "Duplex",
         "DPLX/D": "Duplex",
+        "Loft": "Loft",
         "MH": "Manufactured Home",
         "Own Your Own": "Own Your Own",
         "OwnYourOwn": "Own Your Own",
