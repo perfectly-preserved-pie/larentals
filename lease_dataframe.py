@@ -88,14 +88,31 @@ df.dropna(subset=['street_name'], inplace=True)
 
 # Columns to clean
 cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit']
-# Remove all non-numeric characters, convert to numeric, round to integers, fill NaNs with pd.NA, and cast to Nullable Integer Type
-df[cols] = (
-    df[cols]
-    .replace({r'\$': '', ',': ''}, regex=True)
-    .apply(pd.to_numeric, errors='coerce')
-    .round(0)  # Round to ensure values are integers
-    .astype(pd.UInt16Dtype())
+# Remove all non-numeric characters, convert to numeric, and round to integers
+numeric_cleaned = (
+  df[cols]
+  .replace({r'\$': '', ',': ''}, regex=True)
+  .apply(pd.to_numeric, errors='coerce')
+  .round(0)
 )
+# Identify rows where any value exceeds the UInt16 limit (65,535)
+mask = (numeric_cleaned > 65535).any(axis=1)
+if mask.any():
+  # Join the MLS number column so that we log which MLS is affected,
+  # then log the numeric columns that exceed the limit.
+  culprit_rows = df.loc[mask, ['mls_number']].join(numeric_cleaned.loc[mask, :])
+  logger.warning("Rows with values exceeding the UInt16 limit were found:")
+  logger.warning(culprit_rows)
+
+# Cast each column individually:
+# If all values in a column are <= 65,535, use UInt16
+for col in cols:
+  max_val = numeric_cleaned[col].max(skipna=True)
+  if pd.notna(max_val) and max_val <= 65535:
+    df[col] = numeric_cleaned[col].astype(pd.UInt16Dtype())
+  else:
+    logger.error(f"Column '{col}' has values exceeding the UInt16 limit and cannot be cast to UInt16. Aborting.")
+    sys.exit(1)
 
 # Cast 'sqft' to UInt32
 df['sqft'] = df['sqft'].replace({',': ''}, regex=True).astype(pd.UInt32Dtype())
