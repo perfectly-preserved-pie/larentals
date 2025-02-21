@@ -536,7 +536,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 8) Senior Community Filter
                 let seniorFilter = true;
-                const seniorVal = (props.senior_community || '').toUpperCase();
+                const seniorVal = String(props.senior_community).toUpperCase();
                 if (seniorCommunityOption === true) {
                     seniorFilter = seniorVal.includes('Y');
                 } else if (seniorCommunityOption === false) {
