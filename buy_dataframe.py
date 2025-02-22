@@ -121,13 +121,9 @@ for col in cols:
 # Create a new column with the Street Number & Street Name
 df["short_address"] = df["street_address"].str.strip() + ',' + ' ' + df['city']
 
-# Filter the dataframe and return only rows with a NaN postal code
-# For some reason some Postal Codes are "Assessor" :| so we need to include that string in an OR operation
-# Then iterate through this filtered dataframe and input the right info we get using geocoding
-for row in df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')].itertuples():
-  short_address = df.at[row.Index, 'short_address']
-  missing_zip_code = return_zip_code(short_address, geolocator=g)
-  df.at[row.Index, 'zip_code'] = missing_zip_code
+# Fetch missing zip codes
+df = fetch_missing_zip_codes(df, geolocator=g)
+df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
 
 # Tag each row with the date it was processed
 for row in df.itertuples():
