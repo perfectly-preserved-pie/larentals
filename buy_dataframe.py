@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data, flatten_subtype_column
+from functions.dataframe_utils import *
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -283,6 +283,10 @@ gdf_combined = gpd.GeoDataFrame(
   df_combined, 
   geometry=gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
 )
+# Re-geocode rows where latitude is above a certain threshold
+gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
+# Drop some columns that are no longer needed
+reduce_geojson_columns(gdf=gdf_combined)
 # Save the GeoDataFrame as a GeoJSON file
 try:
   gdf_combined.to_file("assets/datasets/buy.geojson", driver="GeoJSON")

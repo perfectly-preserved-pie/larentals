@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from functions.dataframe_utils import remove_inactive_listings, update_dataframe_with_listing_data, categorize_laundry_features, flatten_subtype_column
+from functions.dataframe_utils import *
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
@@ -249,28 +249,16 @@ df_combined = df_combined.reset_index(drop=True)
 df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0', '', regex=True)
 df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0', '', regex=True)
 df_combined['short_address'] = df_combined['short_address'].str.replace(r'\.0', '', regex=True)
-# Filter the dataframe for rows outside of California
-outside_ca_rows = df_combined[
-  (df_combined['latitude'] < 32.5) | 
-  (df_combined['latitude'] > 42) | 
-  (df_combined['longitude'] < -124) | 
-  (df_combined['longitude'] > -114)
-]
-total_outside_ca = len(outside_ca_rows)
-counter = 0
-for row in outside_ca_rows.itertuples():
-  counter += 1
-  logger.warning(f"Row {counter} out of {total_outside_ca}: {row.mls_number} has coordinates {row.latitude}, {row.longitude} which is outside California. Re-geocoding {row.mls_number}...")
-  # Re-geocode the row
-  coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
-  df_combined.at[row.Index, 'latitude'] = coordinates[0]
-  df_combined.at[row.Index, 'longitude'] = coordinates[1]
 # Save the new combined dataframe
 # Convert the combined DataFrame to a GeoDataFrame
 gdf_combined = gpd.GeoDataFrame(
   df_combined, 
   geometry=gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
 )
+# Re-geocode rows where latitude is above a certain threshold
+gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
+# Drop some columns that are no longer needed
+reduce_geojson_columns(gdf=gdf_combined)
 # Save the GeoDataFrame as a GeoJSON file
 try:
   gdf_combined.to_file("assets/datasets/lease.geojson", driver="GeoJSON")

@@ -1016,7 +1016,10 @@ class LeaseComponents(BaseClass):
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
+            center={
+                "lat": float(self.df.geometry.y.mean()),
+                "lng": float(self.df.geometry.x.mean())
+            },      
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
@@ -1753,7 +1756,10 @@ class BuyComponents(BaseClass):
             id='map',
             zoom=9,
             minZoom=9,
-            center=(self.df['latitude'].mean(), self.df['longitude'].mean()),
+            center={
+                "lat": float(self.df.geometry.y.mean()),
+                "lng": float(self.df.geometry.x.mean())
+            },
             preferCanvas=True,
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}

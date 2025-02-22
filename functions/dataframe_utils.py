@@ -234,3 +234,46 @@ def refresh_invalid_mls_photos(
         logger.info(f"Saved the updated GeoDataFrame to {output_geojson_path}.")
     except Exception as e:
         logger.error(f"Error saving the updated GeoDataFrame to {output_geojson_path}: {e}")
+
+def reduce_geojson_columns(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Drops specified columns from a GeoDataFrame.
+
+    The following columns will be dropped if they exist in the GeoDataFrame:
+      - latitude
+      - longitude
+      - la county homes 1-13-25
+      - street_name
+      - Full Bathrooms
+      - Half Bathrooms
+      - Three Quarter Bathrooms
+      - short_address
+      - zip_code
+      - city
+      - street_number
+      - street_address
+
+    Args:
+        gdf (gpd.GeoDataFrame): The input GeoDataFrame.
+
+    Returns:
+        gpd.GeoDataFrame: A new GeoDataFrame with the specified columns removed.
+    """
+    cols_to_drop = [
+        'latitude',
+        'longitude',
+        'la county homes 1-13-25',
+        'street_name',
+        'Full Bathrooms',
+        'Half Bathrooms',
+        'Three Quarter Bathrooms',
+        'short_address',
+        'zip_code',
+        'city',
+        'street_number',
+        'street_address'
+    ]
+    # Drop only the columns that exist in the GeoDataFrame
+    existing_cols = [col for col in cols_to_drop if col in gdf.columns]
+    reduced_gdf = gdf.drop(columns=existing_cols)
+    return reduced_gdf

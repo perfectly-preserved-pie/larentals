@@ -1,7 +1,8 @@
 from geopy.geocoders import GoogleV3
 from loguru import logger
-from typing import Tuple, Optional, Union
-import pandas as pd
+from shapely.geometry import Point
+from typing import Tuple, Optional
+import geopandas as gpd
 import sys
 
 # Initialize logging
@@ -102,3 +103,38 @@ def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[str]:
 
     return postalcode
 
+def re_geocode_above_lat_threshold(gdf: gpd.GeoDataFrame, geolocator, lat_threshold: float = 35.393528) -> gpd.GeoDataFrame:
+    """
+    Re-geocode rows in the GeoDataFrame where the 'latitude' exceeds a given threshold and update the
+    geometry property with the new coordinates.
+
+    For each row with a latitude greater than lat_threshold, the function uses the provided geolocator
+    (via the return_coordinates function) to get updated latitude and longitude, then updates the geometry 
+    property accordingly.
+
+    Args:
+        gdf (gpd.GeoDataFrame): Input GeoDataFrame containing 'latitude', 'longitude', and 'full_street_address' columns,
+                                 as well as a valid 'geometry' column.
+        geolocator: A geolocator instance to use for re-geocoding.
+        lat_threshold (float): Latitude threshold above which re-geocoding occurs.
+
+    Returns:
+        gpd.GeoDataFrame: The updated GeoDataFrame with corrected coordinates in the 'geometry' property.
+    """
+    filtered_gdf = gdf[gdf['latitude'] > lat_threshold]
+    total_rows = len(filtered_gdf)
+    counter = 0
+
+    for row in filtered_gdf.itertuples():
+        counter += 1
+        logger.info(f"Re-geocoding row {counter} of {total_rows}: MLS {row.mls_number} with latitude {row.latitude} above {lat_threshold}")
+        new_coords = return_coordinates(
+            address=row.full_street_address,
+            row_index=row.Index,
+            geolocator=geolocator,
+            total_rows=total_rows
+        )
+        # Update the geometry property for the Feature (Point expects (lng, lat))
+        gdf.at[row.Index, 'geometry'] = Point(new_coords[1], new_coords[0])
+    
+    return gdf
