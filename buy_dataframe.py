@@ -257,12 +257,14 @@ df_combined = df_combined.reset_index(drop=True)
 df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0', '', regex=True)
 df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0', '', regex=True)
 df_combined['short_address'] = df_combined['short_address'].str.replace(r'\.0', '', regex=True)
-# Save the new combined dataframe
-# Convert the combined DataFrame to a GeoDataFrame
-gdf_combined = gpd.GeoDataFrame(
-  df_combined, 
-  geometry=gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
-)
+# Compute geometry from lon/lat where available
+computed_geometry = gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
+# Convert to a Series with the same index as the original DataFrame
+computed_geometry_series = pd.Series(computed_geometry, index=df_combined.index)
+# Combine the existing geometry with computed_geometry_series
+df_combined["geometry"] = df_combined["geometry"].combine_first(computed_geometry_series)
+# Create the GeoDataFrame using the updated geometry column
+gdf_combined = gpd.GeoDataFrame(df_combined, geometry="geometry")
 # Re-geocode rows where latitude is above a certain threshold
 gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
 # Drop some columns that are no longer needed
