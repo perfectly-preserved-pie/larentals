@@ -254,7 +254,7 @@ gdf_combined = gpd.GeoDataFrame(df_combined, geometry="geometry")
 # Re-geocode rows where latitude is above a certain threshold
 gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
 # Drop some columns that are no longer needed
-reduce_geojson_columns(gdf=gdf_combined)
+gdf_combined = reduce_geojson_columns(gdf=gdf_combined)
 # Save the GeoDataFrame as a GeoJSON file
 try:
   gdf_combined.to_file("assets/datasets/lease.geojson", driver="GeoJSON")
