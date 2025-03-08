@@ -16,7 +16,7 @@ openpyxl==3.1.5
 orjson==3.10.15
 pandas==2.2.3
 protobuf==5.29.3
-pyarrow==19.0.0
+pyarrow==19.0.1
 python-dotenv==1.0.1
 pyyaml 
 requests==2.32.3
