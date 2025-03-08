@@ -12,9 +12,10 @@ load_dotenv()
 
 # Create a base class for the additional layers
 # The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
-class BaseClass:
+class LayersClass:
     oil_well_data: ClassVar[Optional[Any]] = None
     crime_data: ClassVar[Optional[Any]] = None
+    farmers_markets_data: ClassVar[Optional[Any]] = None
 
     @classmethod
     def load_geojson_data(cls, filepath: str, dataset: str) -> Any:
@@ -29,7 +30,7 @@ class BaseClass:
         Returns:
             Any: The loaded GeoJSON data.
         """
-        logger.debug(f"load_geojson_data called from:\n{traceback.format_stack()}")
+        #logger.debug(f"load_geojson_data called from:\n{traceback.format_stack()}")
 
         start_time = time.time()  # Start timing
         if dataset == 'oil_well' and cls.oil_well_data is None:
@@ -44,6 +45,12 @@ class BaseClass:
                 duration = time.time() - start_time  # Calculate duration
                 logger.info(f"Loaded 'crime' dataset in {duration:.2f} seconds.")
             return cls.crime_data
+        elif dataset == 'farmers_markets' and cls.farmers_markets_data is None:
+            with open(filepath, 'r') as f:
+                cls.farmers_markets_data = json.load(f)
+                duration = time.time() - start_time
+                logger.info(f"Loaded 'farmers_markets' dataset in {duration:.2f} seconds.")
+            return cls.farmers_markets_data
         elif dataset not in ['oil_well', 'crime']:
             raise ValueError(f"Invalid dataset: {dataset}. Expected 'oil_well' or 'crime'.")
         else:  # If data is already loaded, log that instead of loading time
@@ -79,6 +86,20 @@ class BaseClass:
             options=dict(
                 pointToLayer=ns("drawOilIcon")
             )
+        )
+    
+    @classmethod
+    def create_farmers_markets_layer(cls) -> dl.GeoJSON:
+        ns = Namespace("myNamespace", "mySubNamespace")
+        if cls.farmers_markets_data is None:
+            cls.load_geojson_data(filepath='assets/datasets/farmers_markets.geojson', dataset='farmers_markets')
+        return dl.GeoJSON(
+            id=str(uuid.uuid4()),
+            data=cls.farmers_markets_data,
+            cluster=True,
+            zoomToBoundsOnClick=True,
+            superClusterOptions={'radius':160,'maxClusterRadius':40,'minZoom':3},
+            options=dict(pointToLayer=ns("drawFarmersMarketIcon"))
         )
 
     def create_crime_layer(cls) -> dl.GeoJSON:

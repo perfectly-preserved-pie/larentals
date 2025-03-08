@@ -80,6 +80,25 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
             }
         
             return marker;
-        }
+        },
+        drawFarmersMarketIcon: function(feature, latlng) {
+            const MarketIcon = L.icon({
+                iconUrl: '/assets/farmers_market_icon.png',
+                iconSize: [25, 25]
+            });
+            const marker = L.marker(latlng, {icon: MarketIcon});
+        
+            if (feature.properties) {
+                let popupContent = '<h4>Farmers Market Info</h4>';
+                popupContent += 'Name: ' + (feature.properties.name || 'N/A') + '<br>';
+                popupContent += 'Address: ' + (feature.properties.addrln1 || 'N/A') + '<br>';
+                popupContent += 'City: ' + (feature.properties.city || 'N/A') + '<br>';
+                popupContent += 'Hours: ' + (feature.properties.hours || 'N/A') + '<br>';
+                popupContent += 'URL: ' + (feature.properties.url || 'N/A') + '<br>';
+                marker.bindPopup(popupContent);
+            }
+        
+            return marker;
+        },
     }
 });
