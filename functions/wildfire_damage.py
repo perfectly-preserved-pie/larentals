@@ -1,4 +1,5 @@
 from typing import Tuple
+import argparse
 import geopandas as gpd
 
 # 2025 Palisades Fire: https://gis.data.ca.gov/datasets/CALFIRE-Forestry::dins-2025-palisades-public-view/about
@@ -9,14 +10,14 @@ def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, leas
     Checks for fire damage in lease and buy properties based on Palisades and Eaton fire datasets.
 
     Parameters:
-    palisades_geojson_path (str): Path to the Palisades fire GeoJSON file.
-    eaton_geojson_path (str): Path to the Eaton fire GeoJSON file.
-    lease_geojson_path (str): Path to the lease properties GeoJSON file.
-    buy_geojson_path (str): Path to the buy properties GeoJSON file.
-    buffer_distance (float): Buffer distance for spatial join. Default is 10.
+        palisades_geojson_path (str): Path to the Palisades fire GeoJSON file.
+        eaton_geojson_path (str): Path to the Eaton fire GeoJSON file.
+        lease_geojson_path (str): Path to the lease properties GeoJSON file.
+        buy_geojson_path (str): Path to the buy properties GeoJSON file.
+        buffer_distance (float): Buffer distance for spatial join. Default is 10.
 
     Returns:
-    Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Updated lease and buy GeoDataFrames with fire damage information.
+        Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Updated lease and buy GeoDataFrames with fire damage information.
     """
     # Load the GeoJSON files
     palisades_gdf = gpd.read_file(palisades_geojson_path)
@@ -81,18 +82,29 @@ def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, leas
 
     return lease_gdf, buy_gdf
 
-# Paths to the GeoJSON files
-palisades_geojson_path = 'assets/datasets/DINS_2025_Palisades_Public_View.geojson'
-eaton_geojson_path = 'assets/datasets/DINS_2025_Eaton_Public_View.geojson'
-lease_geojson_path = 'assets/datasets/lease.geojson'
-buy_geojson_path = 'assets/datasets/buy.geojson'
+def main():
+    parser = argparse.ArgumentParser(description='Check fire damage for lease and buy properties.')
+    parser.add_argument('--buffer_distance', type=float, default=10, help='Buffer distance for the spatial join.')
+    args = parser.parse_args()
 
-# Tune buffer distance
-buffer_distance = 10  # Adjust this value as needed
+    # Hard-coded paths in the assets/datasets folder
+    palisades_geojson_path = 'assets/datasets/DINS_2025_Palisades_Public_View.geojson'
+    eaton_geojson_path = 'assets/datasets/DINS_2025_Eaton_Public_View.geojson'
+    lease_geojson_path = 'assets/datasets/lease.geojson'
+    buy_geojson_path = 'assets/datasets/buy.geojson'
 
-# Check fire damage and update DataFrames
-lease_gdf, buy_gdf = check_fire_damage(palisades_geojson_path, eaton_geojson_path, lease_geojson_path, buy_geojson_path, buffer_distance)
+    lease_gdf, buy_gdf = check_fire_damage(
+        palisades_geojson_path, 
+        eaton_geojson_path, 
+        lease_geojson_path, 
+        buy_geojson_path, 
+        args.buffer_distance
+    )
 
-# Save the updated DataFrames back to GeoJSON files
-lease_gdf.to_file(lease_geojson_path, driver='GeoJSON')
-buy_gdf.to_file(buy_geojson_path, driver='GeoJSON')
+    # Save the updated GeoDataFrames back to GeoJSON files
+    lease_gdf.to_file(lease_geojson_path, driver='GeoJSON')
+    buy_gdf.to_file(buy_geojson_path, driver='GeoJSON')
+    print("Updated GeoJSON files have been saved.")
+
+if __name__ == '__main__':
+    main()
