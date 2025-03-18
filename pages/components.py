@@ -1680,18 +1680,12 @@ class BuyComponents(BaseClass):
                 html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='listed_date', initial_label="Hide", page_type='buy')
             ]),
-            # Main content for listed date
+            # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
-                # DatePicker component
-                dcc.DatePickerRange(
-                    id='listed_date_datepicker',
-                    max_date_allowed=today,
-                    start_date=self.earliest_date,
-                    end_date=today
-                ),
-                # Header and radio buttons for time range directly underneath
+                # Radio buttons placed before the date picker
                 html.Div([
-                    html.H6(html.Em("I want to see listings posted in the last..."), style={'marginBottom': '5px'}),
+                    html.H6(html.Em("I want to see listings posted in the last..."), 
+                            style={'marginBottom': '5px'}),
                     dcc.RadioItems(
                         id='listed_time_range_radio',
                         options=[
@@ -1704,7 +1698,14 @@ class BuyComponents(BaseClass):
                         inline=True,
                         labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'}
                     )
-                ], style={'marginTop': '5px'}),
+                ], style={'marginBottom': '5px'}),
+                # DatePicker component
+                dcc.DatePickerRange(
+                    id='listed_date_datepicker',
+                    max_date_allowed=today,
+                    start_date=self.earliest_date,
+                    end_date=today
+                ),
                 # Alert about missing listed dates
                 dbc.Alert(
                     [
@@ -1725,10 +1726,7 @@ class BuyComponents(BaseClass):
                     style={'marginTop': '5px'}
                 ),
             ], id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'})
-        ],
-        style={'marginBottom': '10px'},
-        id='listed_date_div_buy'
-        )
+        ], style={'marginBottom': '10px'}, id='listed_date_div_buy')
         
         return listed_date_components
 
