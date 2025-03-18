@@ -283,5 +283,5 @@ try:
 except Exception as e:
   logger.error(f"An error occurred: {e}")
   logger.info(f"Saving the current state of the dataframe to a CSV file for debugging.")
-  df.to_csv("assets/datasets/lease.csv", index=False)
+  df.to_csv("assets/datasets/buy.csv", index=False)
   sys.exit(1)
