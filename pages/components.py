@@ -1704,7 +1704,8 @@ class BuyComponents(BaseClass):
                     id='listed_date_datepicker',
                     max_date_allowed=today,
                     start_date=self.earliest_date,
-                    end_date=today
+                    end_date=today,
+                    initial_visible_month=today,
                 ),
                 # Alert about missing listed dates
                 dbc.Alert(
