@@ -113,6 +113,7 @@ class LeaseComponents(BaseClass):
 
         self.bathrooms_slider = self.create_bathrooms_slider()
         self.bedrooms_slider = self.create_bedrooms_slider()
+        self.earliest_date = (self.df['listed_date'].min()).to_pydatetime()
         self.furnished_checklist = self.create_furnished_checklist()
         self.garage_spaces_components = self.create_garage_spaces_components()
         self.key_deposit_components = self.create_key_deposit_components()
@@ -936,22 +937,41 @@ class LeaseComponents(BaseClass):
     def create_listed_date_components(self):
         # Get today's date and set it as the end date for the date picker
         today = date.today()
-        # Get the earliest date and convert it to Pythonic datetime for Dash
-        self.df['listed_date'] = pd.to_datetime(self.df['listed_date'], errors='coerce')
-        earliest_date = (self.df['listed_date'].min()).to_pydatetime()
         
         listed_date_components = html.Div([
+            # Top header: Listed Date Range with toggle button
             html.Div([
                 html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='listed_date', initial_label="Hide", page_type='lease')
             ]),
+            # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
+                # Radio buttons placed before the date picker
+                html.Div([
+                    html.H6(html.Em("I want to see listings posted in the last..."), 
+                            style={'marginBottom': '5px'}),
+                    dcc.RadioItems(
+                        id='listed_time_range_radio',
+                        options=[
+                            {'label': '2 Weeks', 'value': 14},
+                            {'label': '1 Month', 'value': 30},
+                            {'label': '3 Months', 'value': 90},
+                            {'label': 'All Time', 'value': 0}
+                        ],
+                        value=0,
+                        inline=True,
+                        labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'}
+                    )
+                ], style={'marginBottom': '5px'}),
+                # DatePicker component
                 dcc.DatePickerRange(
-                    id='listed_date_datepicker',
+                    id='listed_date_datepicker_lease',
                     max_date_allowed=today,
-                    start_date=earliest_date,
-                    end_date=today
+                    start_date=self.earliest_date,
+                    end_date=today,
+                    initial_visible_month=today,
                 ),
+                # Alert about missing listed dates
                 dbc.Alert(
                     [
                         html.I(className="bi bi-info-circle-fill me-2"),
@@ -963,22 +983,15 @@ class LeaseComponents(BaseClass):
                                 {'label': 'No', 'value': False}
                             ],
                             value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
+                            inputStyle={"marginRight": "5px", "marginLeft": "5px"},
                             inline=True
                         ),
                     ],
                     color="info",
                     style={'marginTop': '5px'}
                 ),
-            ],
-            id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'}
-            ),
-        ],
-        id='listed_date_div'
-        )
+            ], id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'})
+        ], style={'marginBottom': '10px'}, id='listed_date_div_lease')
         
         return listed_date_components
     
@@ -1675,21 +1688,39 @@ class BuyComponents(BaseClass):
         today = date.today()
         
         listed_date_components = html.Div([
-            
-            # Title and toggle button
+            # Top header: Listed Date Range with toggle button
             html.Div([
                 html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
                 create_toggle_button(index='listed_date', initial_label="Hide", page_type='buy')
             ]),
-            
-            # DatePicker and Radio button
+            # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
+                # Radio buttons placed before the date picker
+                html.Div([
+                    html.H6(html.Em("I want to see listings posted in the last..."), 
+                            style={'marginBottom': '5px'}),
+                    dcc.RadioItems(
+                        id='listed_time_range_radio',
+                        options=[
+                            {'label': '2 Weeks', 'value': 14},
+                            {'label': '1 Month', 'value': 30},
+                            {'label': '3 Months', 'value': 90},
+                            {'label': 'All Time', 'value': 0}
+                        ],
+                        value=0,
+                        inline=True,
+                        labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'}
+                    )
+                ], style={'marginBottom': '5px'}),
+                # DatePicker component
                 dcc.DatePickerRange(
-                    id='listed_date_datepicker',
+                    id='listed_date_datepicker_buy',
                     max_date_allowed=today,
                     start_date=self.earliest_date,
-                    end_date=today
+                    end_date=today,
+                    initial_visible_month=today,
                 ),
+                # Alert about missing listed dates
                 dbc.Alert(
                     [
                         html.I(className="bi bi-info-circle-fill me-2"),
@@ -1701,27 +1732,16 @@ class BuyComponents(BaseClass):
                                 {'label': 'No', 'value': False}
                             ],
                             value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True     
+                            inputStyle={"marginRight": "5px", "marginLeft": "5px"},
+                            inline=True
                         ),
                     ],
                     color="info",
                     style={'marginTop': '5px'}
                 ),
-            ],
-            id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'}
-            ),
-            
-        ],
-        style={
-            'marginBottom': '10px',
-        },
-        id='listed_date_div_buy'
-        )
-
+            ], id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'})
+        ], style={'marginBottom': '10px'}, id='listed_date_div_buy')
+        
         return listed_date_components
 
     def create_map(self):
