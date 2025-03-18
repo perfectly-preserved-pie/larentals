@@ -36,6 +36,24 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             }
         },
 
+        updateDatePicker: function(selectedDays, earliestDate) {
+            var today = new Date();
+            function formatDate(d) {
+                var year = d.getFullYear();
+                var month = (d.getMonth() + 1).toString().padStart(2, '0');
+                var day = d.getDate().toString().padStart(2, '0');
+                return year + '-' + month + '-' + day;
+            }
+            if (selectedDays > 0) {
+                var startDate = new Date();
+                startDate.setDate(today.getDate() - parseInt(selectedDays));
+                return formatDate(startDate);
+            } else {
+                // Return the stored earliest date
+                return earliestDate;
+            }
+        },
+
         /**
          * Filters GeoJSON features according to user-selected criteria.
          *

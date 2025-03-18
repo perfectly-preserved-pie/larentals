@@ -34,9 +34,13 @@ geojson_store = dcc.Store(id='lease-geojson-store', storage_type='memory', data=
 #logger.debug(f"GeoJSON data: {geojson_store.data}")
 #logger.debug(f"this is the return geojson {lease_components.return_geojson()}")
 
+# Create a Store to hold the earliest listed date
+earliest_date_store = dcc.Store(id="earliest_date_store", data=lease_components.earliest_date) 
+
 layout = dbc.Container([
   collapse_store,
   geojson_store,
+  earliest_date_store,
   dbc.Row(
     [
       dbc.Col([lease_components.title_card, lease_components.user_options_card], lg=3, md=6, sm=4),
@@ -113,9 +117,20 @@ clientside_callback(
     Input('other_deposit_missing_radio', 'value'),
     Input('laundry_checklist', 'value'),
     Input('subtype_checklist', 'value'),
-    Input('listed_date_datepicker', 'start_date'),
-    Input('listed_date_datepicker', 'end_date'),
+    Input('listed_date_datepicker_lease', 'start_date'),
+    Input('listed_date_datepicker_lease', 'end_date'),
     Input('listed_date_missing_radio', 'value'),
   ],
   State('lease-geojson-store', 'data')
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='updateDatePicker'
+  ),
+  Output('listed_date_datepicker_lease', 'start_date'),
+  Input('listed_time_range_radio', 'value'),
+  State('earliest_date_store', 'data'),
+  
 )

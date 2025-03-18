@@ -36,9 +36,13 @@ geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=co
 #logger.debug(f"GeoJSON data: {geojson_store.data}")
 #logger.debug(f"this is the return geojson {lease_components.return_geojson()}")
 
+# Create a Store to hold the earliest listed date
+earliest_date_store = dcc.Store(id="earliest_date_store", data=components.earliest_date) 
+
 layout = dbc.Container([
   collapse_store,
   geojson_store,
+  earliest_date_store,
   dbc.Row( # First row: title card
     [
       dbc.Col([components.title_card, components.user_options_card], lg=3, md=6, sm=4),
@@ -129,8 +133,8 @@ clientside_callback(
     Input('yrbuilt_missing_radio', 'value'),
     Input('senior_community_radio', 'value'),
     Input('subtype_checklist', 'value'),
-    Input('listed_date_datepicker', 'start_date'),
-    Input('listed_date_datepicker', 'end_date'),
+    Input('listed_date_datepicker_buy', 'start_date'),
+    Input('listed_date_datepicker_buy', 'end_date'),
     Input('listed_date_missing_radio', 'value'),
     Input('hoa_fee_slider', 'value'),
     Input('hoa_fee_missing_radio', 'value'),
@@ -152,4 +156,14 @@ clientside_callback(
     Output({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'children')
   ],
   [Input({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'n_clicks')]
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='updateDatePicker'
+  ),
+  Output('listed_date_datepicker_buy', 'start_date'),
+  Input('listed_time_range_radio', 'value'),
+  State('earliest_date_store', 'data'),
 )
