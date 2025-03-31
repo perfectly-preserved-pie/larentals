@@ -4,7 +4,7 @@ dash_bootstrap_components==1.7.1
 dash_extensions==1.0.20
 dash-leaflet==1.0.15
 dash-mantine-components==1.1.1
-dash==2.18.2
+dash==3.0.1
 geopandas==1.0.1
 geopy==2.4.1
 gevent==24.11.1
