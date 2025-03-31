@@ -36,13 +36,8 @@ try:
   excel_file = glob.glob('*.xlsx')[0]
   xlsx = pd.read_excel(excel_file, sheet_name=None)
 
-  ## Remember: N/A = Not Applicable to this home type while NaN = Unknown for some reason (missing data)
-  # Assuming first sheet is single-family homes, second sheet is condos/townhouses, and third sheet is mobile homes
-  # Set the subtype of every row in the first sheet to "Single Family Residence"
-  xlsx[list(xlsx.keys())[0]]["subtype"] = "Single Family Residence"
-
   # Merge all sheets into a single DataFrame
-  df = pd.concat(xlsx.values())
+  df = pd.concat(xlsx.values(), ignore_index=True)
 
   # Strip leading and trailing whitespaces from the column names and convert them to lowercase
   # https://stackoverflow.com/a/36082588
@@ -95,6 +90,11 @@ try:
     # Add the renamed DataFrame to the dictionary
     renamed_sheets_corrected[sheet_name] = renamed_sheet_df
 
+  ## Remember: N/A = Not Applicable to this home type while NaN = Unknown for some reason (missing data)
+  # Assuming first sheet is single-family homes, second sheet is condos/townhouses, and third sheet is mobile homes
+  # Set the subtype of every row in the first sheet to "Single Family Residence"
+  xlsx[list(xlsx.keys())[0]]["subtype"] = "Single Family Residence"
+
   # Then proceed with concatenation
   df = pd.concat(renamed_sheets_corrected.values(), ignore_index=True)
 
@@ -105,7 +105,10 @@ try:
   cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']
   # Loop through the columns and remove all non-numeric characters except for the string "N/A"
   for col in cols:
-      df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or str(x) == 'N/A'))
+    if col not in df.columns:
+      logger.warning(f"Column '{col}' is missing. Available columns: {list(df.columns)}")
+      continue
+    df[col] = df[col].apply(lambda x: ''.join(c for c in str(x) if c.isdigit() or c == '.' or str(x) == 'N/A'))
 
   # Reindex the dataframe
   df.reset_index(drop=True, inplace=True)
@@ -281,7 +284,7 @@ try:
   #reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
 
 except Exception as e:
-  logger.error(f"An error occurred: {e}")
+  logger.exception(f"An error occurred: {e}")
   logger.info(f"Saving the current state of the dataframe to a CSV file for debugging.")
-  df.to_csv("assets/datasets/lease.csv", index=False)
+  df.to_csv("assets/datasets/buy.csv", index=False)
   sys.exit(1)
