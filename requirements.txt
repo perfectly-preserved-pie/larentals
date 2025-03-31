@@ -15,7 +15,7 @@ numpy==2.2.4
 openpyxl==3.1.5
 orjson==3.10.16
 pandas==2.2.3
-protobuf==5.29.3
+protobuf==6.30.2
 pyarrow==19.0.1
 python-dotenv==1.1.0
 pyyaml 
