@@ -1,8 +1,9 @@
 from dash import Dash, _dash_renderer
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from flask import request, jsonify
+from flask import request, jsonify, abort
 from loguru import logger
+import bleach
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
@@ -88,6 +89,14 @@ app.layout = dmc.MantineProvider(
 forceColorScheme="dark"
 )
 
+ALLOWED_OPTIONS = {
+  "Wrong Location",
+  "Unavailable/Sold/Rented",
+  "Wrong Details",
+  "Incorrect Price",
+  "Other"
+}
+
 # Create a custom route for handling the email sending of listing reports
 @app.server.route('/report_listing', methods=['POST'])
 def report_listing():
@@ -96,6 +105,12 @@ def report_listing():
   option = data.get('option')
   text_report = data.get('text')
   properties = data.get('properties')
+
+  if option not in ALLOWED_OPTIONS:
+    abort(400, "Invalid option provided.")
+
+  # Sanitize text. Here, we disallow any tags.
+    sanitized_text = bleach.clean(text_report, tags=[], attributes={}, strip=True)
   
   # Build the plain text email body
   email_body = (

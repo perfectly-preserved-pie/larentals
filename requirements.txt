@@ -1,4 +1,5 @@
 beautifulsoup4==4.13.3
+bleach==6.2.0
 brotli==1.1.0
 dash_bootstrap_components==1.7.1
 dash_extensions==1.0.20
