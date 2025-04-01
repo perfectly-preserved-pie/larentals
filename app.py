@@ -110,13 +110,13 @@ def report_listing():
     abort(400, "Invalid option provided.")
 
   # Sanitize text. Here, we disallow any tags.
-    sanitized_text = bleach.clean(text_report, tags=[], attributes={}, strip=True)
+  sanitized_text = bleach.clean(text_report, tags=[], attributes={}, strip=True)
   
   # Build the plain text email body
   email_body = (
     f"Report for MLS: {mls_number}\n\n"
     f"Option: {option}\n\n"
-    f"Details: {text_report}\n\n"
+    f"Details: {sanitized_text}\n\n"
     f"Properties:\n{json.dumps(properties, indent=2)}"
   )
   
