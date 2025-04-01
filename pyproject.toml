@@ -1,0 +1,32 @@
+[project]
+name = "larentals-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4==4.13.3",
+    "brotli==1.1.0",
+    "dash==3.0.1",
+    "dash-bootstrap-components==1.7.1",
+    "dash-extensions==1.0.20",
+    "dash-leaflet==1.0.15",
+    "dash-mantine-components==1.1.1",
+    "geopandas==1.0.1",
+    "geopy==2.4.1",
+    "gevent==24.11.1",
+    "gunicorn==23.0.0",
+    "imagekitio==4.1.0",
+    "loguru==0.7.3",
+    "numpy==2.2.4",
+    "openpyxl==3.1.5",
+    "orjson==3.10.16",
+    "pandas==2.2.3",
+    "protobuf==6.30.2",
+    "pyarrow==19.0.1",
+    "python-dotenv==1.1.0",
+    "pyyaml>=6.0.2",
+    "requests==2.32.3",
+    "tables>=3.10.1",
+    "user-agents==2.2.0",
+]
