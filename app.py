@@ -16,7 +16,8 @@ external_stylesheets = [
   dbc.icons.FONT_AWESOME
 ]
 external_scripts = [
-  'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js' # Turf.js for convex hulls
+  'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js', # Turf.js for convex hulls
+  'https://cdn.jsdelivr.net/npm/sweetalert2@11' # SweetAlert2 for popups
 ]
 
 # Create the app

@@ -11,9 +11,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             const data = feature.properties; // Use feature.properties directly
+            const encodedData = encodeURIComponent(JSON.stringify(data)); // Encode the data as a JSON for the reportListing function
             const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
             const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
-
+            
             if (!context) {
                 //console.log("Context is undefined.");
                 return;
@@ -171,6 +172,9 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
                     </table>
+                    <div style="text-align:right;margin-top:5px;">
+                        <a href="#" onclick='reportListing(decodeURIComponent("${encodedData}"))'>Report Listing</a>
+                    </div>
                 </div>
                 `;
             }
