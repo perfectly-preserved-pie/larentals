@@ -89,6 +89,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // Function to generate popup content for lease page
             function generateLeasePopupContent(data) {
                 return `
+                    <div style="position: relative;">
+                        <div style="text-align:right;margin-bottom:10px;">
+                            <a href="#" onclick='reportListing(decodeURIComponent("${encodedData}"))'>Report Listing</a>
+                    </div>
                     <div>
                     ${getPalisadesFireAlertBlock(data)}
                     ${getEatonFireAlertBlock(data)}
@@ -172,9 +176,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
                     </table>
-                    <div style="text-align:right;margin-top:5px;">
-                        <a href="#" onclick='reportListing(decodeURIComponent("${encodedData}"))'>Report Listing</a>
-                    </div>
                 </div>
                 `;
             }
