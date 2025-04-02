@@ -11,9 +11,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             const data = feature.properties; // Use feature.properties directly
+            const encodedData = encodeURIComponent(JSON.stringify(data)); // Encode the data as a JSON for the reportListing function
             const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
             const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
-
+            
             if (!context) {
                 //console.log("Context is undefined.");
                 return;
@@ -75,9 +76,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             // Conditionally include the property image row if the image URL is available
             const imageRow = data.mls_photo ? `
-            <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
-                <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
-            </a>
+            <div style="position: relative;">
+                <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
+                    <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
+                </a>
+            </div>
             ` : '';
 
             // Conditionally format the phone number as a tel: link or plain text
@@ -171,6 +174,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
                     </table>
+                    <div style="text-align:center; margin-top: 10px;">
+                        <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
+                            <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
+                            <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+                        </a>
+                    </div>
                 </div>
                 `;
             }
@@ -280,6 +289,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
                     </table>
+                    <div style="text-align:center; margin-top: 10px;">
+                        <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
+                            <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
+                            <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+                        </a>
+                    </div>
                 </div>
                 `;
             }
@@ -293,10 +308,14 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Bind the popup to the layer and set the max height and width based on the screen size
-            layer.bindPopup(popupContent, {
-                maxHeight: window.innerWidth < 768 ? 375 : 650,
-                maxWidth: window.innerWidth < 768 ? 175 : 300,
-            });
+            layer.bindPopup(
+                popupContent, 
+                {
+                    maxHeight: window.innerWidth < 768 ? 375 : 650,
+                    maxWidth: window.innerWidth < 768 ? 175 : 300,
+                    closeButton: false,
+                },
+            );
         }
     }
 });
