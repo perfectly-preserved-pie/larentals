@@ -80,11 +80,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
                     <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
                 </a>
-                <div style="position: absolute; top: 5px; right: 5px; z-index: 100;">
-                    <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))'>
-                        <i class="fa-solid fa-flag" style="font-size:1.5em; color:red;"></i>
-                    </a>
-                </div>
             </div>
             ` : '';
 
@@ -179,6 +174,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
                     </table>
+                    <div style="text-align:center; margin-top: 10px;">
+                        <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
+                            <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
+                            <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+                        </a>
+                    </div>
                 </div>
                 `;
             }
@@ -288,6 +289,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
                     </table>
+                    <div style="text-align:center; margin-top: 10px;">
+                        <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
+                            <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
+                            <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+                        </a>
+                    </div>
                 </div>
                 `;
             }
