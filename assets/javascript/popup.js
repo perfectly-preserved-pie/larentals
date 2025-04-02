@@ -76,9 +76,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             // Conditionally include the property image row if the image URL is available
             const imageRow = data.mls_photo ? `
-            <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
-                <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
-            </a>
+            <div style="position: relative;">
+                <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
+                    <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
+                </a>
+                <div style="position: absolute; top: 5px; right: 5px; z-index: 100;">
+                    <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))'>
+                        <i class="fa-solid fa-flag" style="font-size:1.5em; color:red;"></i>
+                    </a>
+                </div>
+            </div>
             ` : '';
 
             // Conditionally format the phone number as a tel: link or plain text
@@ -89,10 +96,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // Function to generate popup content for lease page
             function generateLeasePopupContent(data) {
                 return `
-                    <div style="position: relative;">
-                        <div style="text-align:right;margin-bottom:10px;">
-                            <a href="#" onclick='reportListing(decodeURIComponent("${encodedData}"))'>Report Listing</a>
-                    </div>
                     <div>
                     ${getPalisadesFireAlertBlock(data)}
                     ${getEatonFireAlertBlock(data)}
@@ -298,10 +301,14 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Bind the popup to the layer and set the max height and width based on the screen size
-            layer.bindPopup(popupContent, {
-                maxHeight: window.innerWidth < 768 ? 375 : 650,
-                maxWidth: window.innerWidth < 768 ? 175 : 300,
-            });
+            layer.bindPopup(
+                popupContent, 
+                {
+                    maxHeight: window.innerWidth < 768 ? 375 : 650,
+                    maxWidth: window.innerWidth < 768 ? 175 : 300,
+                    closeButton: false,
+                },
+            );
         }
     }
 });
