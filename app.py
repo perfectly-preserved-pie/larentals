@@ -156,8 +156,8 @@ def report_listing():
     )
     return jsonify(status="success"), 200
   except Exception as e:
-    logger.error("Error sending email:", e)
-    return jsonify(status="error", message=str(e)), 500
+    logger.error("Error sending email: {}", e)
+    return jsonify(status="error", message="An internal error has occurred. Please try again later."), 500
 
 if __name__ == '__main__':
 	app.run(debug=True)
