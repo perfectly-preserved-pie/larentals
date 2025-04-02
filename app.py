@@ -1,5 +1,4 @@
 from dash import Dash, _dash_renderer
-from dotenv import load_dotenv, find_dotenv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import request, jsonify, abort
@@ -12,8 +11,6 @@ import json
 import logging
 import os
 import smtplib
-
-load_dotenv(find_dotenv())
 
 # Set the React version to 18.2.0
 # https://www.dash-mantine-components.com/getting-started#simple-usage
