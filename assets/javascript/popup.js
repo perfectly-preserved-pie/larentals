@@ -170,7 +170,9 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Laundry Features -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Laundry Features:</span>
-                                <span class="value">${data.laundry || "Unknown"}</span>
+                                <span class="value" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
+                                    ${data.laundry || "Unknown"}
+                                </span>
                             </div>
                             <!-- Senior Community -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
