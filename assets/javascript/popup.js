@@ -332,7 +332,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             layer.bindPopup(
                 popupContent, 
                 {
-                    maxHeight: window.innerWidth < 768 ? 375 : 650,
+                    maxHeight: window.innerWidth < 768 ? 410 : 650,
                     maxWidth: window.innerWidth < 768 ? 175 : 300,
                     closeButton: false,
                 },
