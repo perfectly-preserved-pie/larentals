@@ -92,95 +92,114 @@ window.dash_props = Object.assign({}, window.dash_props, {
             function generateLeasePopupContent(data) {
                 return `
                     <div>
-                    ${getPalisadesFireAlertBlock(data)}
-                    ${getEatonFireAlertBlock(data)}
-                    ${imageRow}
-                    ${listingUrlBlock}
-                    <table style="width:100%;border-collapse:collapse;">
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.mls_number}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Rental Price</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString()}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Security Deposit</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.security_deposit ? `$${data.security_deposit.toLocaleString()}` : "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pet Deposit</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_deposit ? `$${data.pet_deposit.toLocaleString()}` : "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Key Deposit</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.key_deposit ? `$${data.key_deposit.toLocaleString()}` : "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Other Deposit</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.other_deposit ? `$${data.other_deposit.toLocaleString()}` : "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.parking_spaces || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pet_policy || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Furnished?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.furnished || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Laundry Features</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.laundry || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Rental Terms</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.terms || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
-                        </tr>
-                    </table>
-                    <div style="text-align:center; margin-top: 10px;">
-                        <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
-                            <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
-                            <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
-                        </a>
+                        ${getPalisadesFireAlertBlock(data)}
+                        ${getEatonFireAlertBlock(data)}
+                        ${imageRow}
+                        ${listingUrlBlock}
+                        <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                            <!-- Listed Date -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Listed Date:</span>
+                                <span class="value">${formatDate(data.listed_date)}</span>
+                            </div>
+                            <!-- Listing ID (MLS#) -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Listing ID (MLS#):</span>
+                                <span class="value">${data.mls_number}</span>
+                            </div>
+                            <!-- List Office Phone -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">List Office Phone:</span>
+                                <span class="value">${phoneNumberBlock}</span>
+                            </div>
+                            <!-- Rental Price -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Rental Price:</span>
+                                <span class="value">$${data.list_price.toLocaleString()}</span>
+                            </div>
+                            <!-- Security Deposit -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Security Deposit:</span>
+                                <span class="value">${data.security_deposit ? `$${data.security_deposit.toLocaleString()}` : "Unknown"}</span>
+                            </div>
+                            <!-- Pet Deposit -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Pet Deposit:</span>
+                                <span class="value">${data.pet_deposit ? `$${data.pet_deposit.toLocaleString()}` : "Unknown"}</span>
+                            </div>
+                            <!-- Key Deposit -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Key Deposit:</span>
+                                <span class="value">${data.key_deposit ? `$${data.key_deposit.toLocaleString()}` : "Unknown"}</span>
+                            </div>
+                            <!-- Other Deposit -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Other Deposit:</span>
+                                <span class="value">${data.other_deposit ? `$${data.other_deposit.toLocaleString()}` : "Unknown"}</span>
+                            </div>
+                            <!-- Square Feet -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Square Feet:</span>
+                                <span class="value">${data.sqft ? `${data.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
+                            </div>
+                            <!-- Price Per Square Foot -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Price Per Square Foot:</span>
+                                <span class="value">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</span>
+                            </div>
+                            <!-- Bedrooms/Bathrooms -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms:</span>
+                                <span class="value">${data.bedrooms}/${data.total_bathrooms}</span>
+                            </div>
+                            <!-- Parking Spaces -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Parking Spaces:</span>
+                                <span class="value">${data.parking_spaces || "Unknown"}</span>
+                            </div>
+                            <!-- Pets Allowed? -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Pets Allowed?</span>
+                                <span class="value">${data.pet_policy || "Unknown"}</span>
+                            </div>
+                            <!-- Furnished? -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Furnished?</span>
+                                <span class="value">${data.furnished || "Unknown"}</span>
+                            </div>
+                            <!-- Laundry Features -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Laundry Features:</span>
+                                <span class="value">${data.laundry || "Unknown"}</span>
+                            </div>
+                            <!-- Senior Community -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Senior Community:</span>
+                                <span class="value">${data.senior_community || "Unknown"}</span>
+                            </div>
+                            <!-- Year Built -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Year Built:</span>
+                                <span class="value">${data.year_built || "Unknown"}</span>
+                            </div>
+                            <!-- Rental Terms -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Rental Terms:</span>
+                                <span class="value">${data.terms || "Unknown"}</span>
+                            </div>
+                            <!-- Physical Sub Type -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Physical Sub Type:</span>
+                                <span class="value">${data.subtype || "Unknown"}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
+                                <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
+                                <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+                            </a>
+                        </div>
                     </div>
-                </div>
                 `;
             }
 
