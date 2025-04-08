@@ -99,62 +99,62 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                             <!-- Listed Date -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Listed Date:</span>
+                                <span class="label" style="font-weight: bold;">Listed Date</span>
                                 <span class="value">${formatDate(data.listed_date)}</span>
                             </div>
                             <!-- Listing ID (MLS#) -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Listing ID (MLS#):</span>
+                                <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
                                 <span class="value">${data.mls_number}</span>
                             </div>
                             <!-- List Office Phone -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">List Office Phone:</span>
+                                <span class="label" style="font-weight: bold;">List Office Phone</span>
                                 <span class="value">${phoneNumberBlock}</span>
                             </div>
                             <!-- Rental Price -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Rental Price:</span>
+                                <span class="label" style="font-weight: bold;">Rental Price</span>
                                 <span class="value">$${data.list_price.toLocaleString()}</span>
                             </div>
                             <!-- Security Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Security Deposit:</span>
+                                <span class="label" style="font-weight: bold;">Security Deposit</span>
                                 <span class="value">${data.security_deposit ? `$${data.security_deposit.toLocaleString()}` : "Unknown"}</span>
                             </div>
                             <!-- Pet Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Pet Deposit:</span>
+                                <span class="label" style="font-weight: bold;">Pet Deposit</span>
                                 <span class="value">${data.pet_deposit ? `$${data.pet_deposit.toLocaleString()}` : "Unknown"}</span>
                             </div>
                             <!-- Key Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Key Deposit:</span>
+                                <span class="label" style="font-weight: bold;">Key Deposit</span>
                                 <span class="value">${data.key_deposit ? `$${data.key_deposit.toLocaleString()}` : "Unknown"}</span>
                             </div>
                             <!-- Other Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Other Deposit:</span>
+                                <span class="label" style="font-weight: bold;">Other Deposit</span>
                                 <span class="value">${data.other_deposit ? `$${data.other_deposit.toLocaleString()}` : "Unknown"}</span>
                             </div>
                             <!-- Square Feet -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Square Feet:</span>
+                                <span class="label" style="font-weight: bold;">Square Feet</span>
                                 <span class="value">${data.sqft ? `${data.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
                             </div>
                             <!-- Price Per Square Foot -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Price Per Square Foot:</span>
+                                <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
                                 <span class="value">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</span>
                             </div>
                             <!-- Bedrooms/Bathrooms -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms:</span>
+                                <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
                                 <span class="value">${data.bedrooms}/${data.total_bathrooms}</span>
                             </div>
                             <!-- Parking Spaces -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Parking Spaces:</span>
+                                <span class="label" style="font-weight: bold;">Parking Spaces</span>
                                 <span class="value">${data.parking_spaces || "Unknown"}</span>
                             </div>
                             <!-- Pets Allowed? -->
@@ -169,29 +169,29 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </div>
                             <!-- Laundry Features -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Laundry Features:</span>
+                                <span class="label" style="font-weight: bold;">Laundry Features</span>
                                 <span class="value" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
                                     ${data.laundry || "Unknown"}
                                 </span>
                             </div>
                             <!-- Senior Community -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Senior Community:</span>
+                                <span class="label" style="font-weight: bold;">Senior Community</span>
                                 <span class="value">${data.senior_community || "Unknown"}</span>
                             </div>
                             <!-- Year Built -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Year Built:</span>
+                                <span class="label" style="font-weight: bold;">Year Built</span>
                                 <span class="value">${data.year_built || "Unknown"}</span>
                             </div>
                             <!-- Rental Terms -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Rental Terms:</span>
+                                <span class="label" style="font-weight: bold;">Rental Terms</span>
                                 <span class="value">${data.terms || "Unknown"}</span>
                             </div>
                             <!-- Physical Sub Type -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Physical Sub Type:</span>
+                                <span class="label" style="font-weight: bold;">Physical Sub Type</span>
                                 <span class="value">${data.subtype || "Unknown"}</span>
                             </div>
                         </div>
