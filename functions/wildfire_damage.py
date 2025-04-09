@@ -2,7 +2,7 @@ from typing import Tuple
 import argparse
 import geopandas as gpd
 
-# 2025 Palisades Fire: https://gis.data.ca.gov/datasets/CALFIRE-Forestry::dins-2025-palisades-public-view/about
+# 2025 Palisades Fire: https://data.lacounty.gov/datasets/CALFIRE-Forestry::dins-2025-palisades-public-view/explore
 # 2025 Eaton Fire: https://gis.data.ca.gov/datasets/CALFIRE-Forestry::dins-2025-eaton-public-view/about
 
 def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, lease_geojson_path: str, buy_geojson_path: str, buffer_distance: float = 10) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
