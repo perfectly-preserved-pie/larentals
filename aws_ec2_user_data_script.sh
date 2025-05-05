@@ -6,25 +6,36 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   python3 python3-pip git curl unzip
 
-# 2) Install AWS CLI v2 and uv via pip (system-wide)
-python3 -m pip install --upgrade pip
-python3 -m pip install --no-cache-dir awscli uv
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 3) Install the CloudWatch Agent
+# Create a venv and activate it
+uv venv
+source .venv/bin/activate
+
+# Install the CloudWatch Agent
 curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
   https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 dpkg -i /tmp/amazon-cloudwatch-agent.deb || apt-get install -fy
 
-# 4) Clone only the 'aws' branch
+# Install the AWS CLI
+uv pip install --no-cache-dir \
+  awscli
+
+# Set the git config to use the best compression
+# This is a workaround for the issue with the default git compression
+git config --global core.compression 9 repack
+
+# Clone only the 'aws' branch
 cd /home/ubuntu
 git clone --branch aws --single-branch \
   https://github.com/perfectly-preserved-pie/larentals.git larentals
 cd larentals
 
-# 5) Install requirements system-wide
-uv pip install --system --no-cache-dir -r requirements.txt
+# Install requirements 
+uv pip install --no-cache-dir -r requirements.txt
 
-# 6) Configure the CloudWatch Agent to tail the log file
+# Configure the CloudWatch Agent to tail the log file
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
 {
   "logs": {
@@ -43,12 +54,12 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
 }
 EOF
 
-# 7) Enable & start the CloudWatch Agent
+# Enable & start the CloudWatch Agent
 systemctl enable amazon-cloudwatch-agent
 systemctl start amazon-cloudwatch-agent
 
-# 8) Run dataframe script
+# Run dataframe script
 uv run python lease_dataframe.py
 
-# 9) If anything fails, check cloud-init logs:
-#    sudo cat /var/log/cloud-init-output.log | less
+# If anything fails, check cloud-init logs:
+#    sudo tail -f /var/log/cloud-init-output.log
