@@ -9,10 +9,11 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
   python3 python3-venv python3-pip git curl unzip
 
 # ----------------------------------------
-# 2) Install uv & AWS CLI via pip
+# 2) Install uv & AWS CLI
 # ----------------------------------------
 python3 -m pip install --upgrade pip
-pip3 install uv awscli
+pip3 install awscli
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # ----------------------------------------
 # 3) Install the CloudWatch Agent
