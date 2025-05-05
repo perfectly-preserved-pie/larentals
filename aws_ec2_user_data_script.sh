@@ -14,6 +14,7 @@ git clone --branch aws --single-branch https://github.com/perfectly-preserved-pi
 cd larentals
 
 # 4) Create venv & install all Python deps via uv
+uv venv
 uv pip install -r requirements.txt
 
 # 5) Configure CloudWatch Agent to tail the loguru file
