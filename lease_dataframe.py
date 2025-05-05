@@ -3,7 +3,7 @@ from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
 from functions.popup_utils import *
-from functions.aws_functions import load_ssm_parameters
+from functions.aws_functions import load_ssm_parameters, upload_file_to_s3
 from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -264,6 +264,12 @@ try:
   try:
     gdf_combined.to_file("assets/datasets/lease.geojson", driver="GeoJSON")
     logger.info("Saved the combined GeoDataFrame to a GeoJSON file.")
+    # now push it to S3
+    upload_file_to_s3(
+      local_path="assets/datasets/lease.geojson",
+      bucket="wheretolivedotla-geojsonstorage",
+      key="lease.geojson"
+    )
   except Exception as e:
     logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
 

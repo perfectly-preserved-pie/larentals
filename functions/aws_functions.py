@@ -1,5 +1,9 @@
-from typing import Dict
+from loguru import logger
+from typing import NoReturn, Dict
 import boto3
+import sys
+
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def load_ssm_parameters(
     path: str,
@@ -27,3 +31,19 @@ def load_ssm_parameters(
             params[key.upper()] = p["Value"]
 
     return params
+
+def upload_file_to_s3(
+    local_path: str,
+    bucket: str,
+    key: str
+) -> NoReturn:
+    """
+    Upload a local file to the specified S3 bucket.
+
+    :param local_path: Path to the file on the local filesystem.
+    :param bucket: Name of the S3 bucket.
+    :param key:   Destination key name under which to store the file.
+    """
+    s3 = boto3.client("s3")
+    s3.upload_file(local_path, bucket, key)
+    logger.info(f"Uploaded {local_path} → s3://{bucket}/{key}")
