@@ -1,23 +1,43 @@
 #!/bin/bash
 set -e
 
-# 1) Install system deps: python3 (3.11), venv, pip, git, awscli, CloudWatch Agent
-yum install -y python3 python3-venv python3-pip git awscli amazon-cloudwatch-agent
+# ----------------------------------------
+# 1) Update & install OS packages
+# ----------------------------------------
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  python3 python3-venv python3-pip git curl unzip
 
-# 2) Install uv into the system Python
+# ----------------------------------------
+# 2) Install uv & AWS CLI via pip
+# ----------------------------------------
 python3 -m pip install --upgrade pip
-python3 -m pip install uv
+pip3 install uv awscli
 
-# 3) Clone only the 'aws' branch
-cd /home/ec2-user
-git clone --branch aws --single-branch https://github.com/perfectly-preserved-pie/larentals.git larentals
+# ----------------------------------------
+# 3) Install the CloudWatch Agent
+# ----------------------------------------
+curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
+  https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+dpkg -i /tmp/amazon-cloudwatch-agent.deb
+
+# ----------------------------------------
+# 4) Clone only the 'aws' branch
+# ----------------------------------------
+cd /home/ubuntu
+git clone --branch aws --single-branch \
+  https://github.com/perfectly-preserved-pie/larentals.git larentals
 cd larentals
 
-# 4) Create a Python 3.11 venv & install requirements
-uv venv --python python3
+# ----------------------------------------
+# 5) Bootstrap a venv and install requirements
+# ----------------------------------------
+uv venv            # uses system python3 (which on Ubuntu 24.04 is ≥3.11)
 uv pip install -r requirements.txt
 
-# 5) Configure CloudWatch Agent to tail log file
+# ----------------------------------------
+# 6) Configure the CloudWatch Agent to tail the log file
+# ----------------------------------------
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
 {
   "logs": {
@@ -36,13 +56,13 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
 }
 EOF
 
-# 6) Enable & start the CloudWatch Agent
+# ----------------------------------------
+# 7) Enable & start the CloudWatch Agent
+# ----------------------------------------
 systemctl enable amazon-cloudwatch-agent
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
-  -a fetch-config \
-  -m ec2 \
-  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
-  -s
+systemctl start amazon-cloudwatch-agent
 
-# 7) Run the script inside the venv
+# ----------------------------------------
+# 8) Run the dataframe script
+# ----------------------------------------
 uv run python lease_dataframe.py
