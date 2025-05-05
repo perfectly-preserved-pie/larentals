@@ -66,3 +66,6 @@ systemctl start amazon-cloudwatch-agent
 # 8) Run the dataframe script
 # ----------------------------------------
 uv run python lease_dataframe.py
+
+# To troubleshoot if this script fails, SSH into the instance and check:
+# sudo cat /var/log/cloud-init-output.log | less
