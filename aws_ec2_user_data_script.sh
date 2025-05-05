@@ -1,34 +1,23 @@
 #!/bin/bash
 set -e
 
-# 1) Install Python 3.11 (and venv/pip) on RPM- or DEB-based AMIs
-if ! command -v python3.11 &>/dev/null; then
-  # Amazon Linux / RHEL
-  yum install -y python3.11 python3.11-venv python3.11-pip \
-    || \
-  # Ubuntu / Debian
-  (apt-get update && DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y python3.11 python3.11-venv python3.11-pip)
-fi
+# 1) Install system deps: python3 (3.11), venv, pip, git, awscli, CloudWatch Agent
+yum install -y python3 python3-venv python3-pip git awscli amazon-cloudwatch-agent
 
-# 2) Point the `python3` and `pip3` symlinks at 3.11
-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
-alternatives --install /usr/bin/pip3   pip3   /usr/bin/pip3.11   1
+# 2) Install uv into the system Python
+python3 -m pip install --upgrade pip
+python3 -m pip install uv
 
-# 3) Install uv under Python 3.11
-pip3 install --upgrade pip
-pip3 install uv
-
-# 4) Clone only the 'aws' branch
+# 3) Clone only the 'aws' branch
 cd /home/ec2-user
 git clone --branch aws --single-branch https://github.com/perfectly-preserved-pie/larentals.git larentals
 cd larentals
 
-# 5) Create a Python 3.11 venv & install all deps
-uv venv --python python3.11
+# 4) Create a Python 3.11 venv & install requirements
+uv venv --python python3
 uv pip install -r requirements.txt
 
-# 6) Configure CloudWatch Agent to tail the log file
+# 5) Configure CloudWatch Agent to tail log file
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
 {
   "logs": {
@@ -47,12 +36,13 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
 }
 EOF
 
-# 7) Start the CloudWatch Agent
+# 6) Enable & start the CloudWatch Agent
+systemctl enable amazon-cloudwatch-agent
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config \
   -m ec2 \
   -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
   -s
 
-# 8) Run the script inside the Python 3.11 venv
+# 7) Run the script inside the venv
 uv run python lease_dataframe.py
