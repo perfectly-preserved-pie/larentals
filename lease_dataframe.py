@@ -22,6 +22,15 @@ os.environ.update(ssm_values)
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+# Log to a file
+logger.add(
+  "/var/log/lease_dataframe.log",
+  level="INFO",
+  rotation="10 MB",        # optional
+  retention="7 days",      # optional
+  backtrace=True,
+  diagnose=True
+)
 
 # ImageKit.IO
 # https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
