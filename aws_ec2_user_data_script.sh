@@ -12,6 +12,9 @@ cd $HOME
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# add the local bin to the PATH
+source $HOME/.local/bin/env
+
 # Create a venv and activate it
 uv venv
 source .venv/bin/activate
