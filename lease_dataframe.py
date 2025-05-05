@@ -1,9 +1,9 @@
-from dotenv import load_dotenv, find_dotenv
 from functions.dataframe_utils import *
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
 from functions.popup_utils import *
+from functions.secrets import load_ssm_parameters
 from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -15,6 +15,10 @@ import pandas as pd
 import sys
 
 ## SETUP AND VARIABLES
+# Load everything from AWS SSM into os.environ ─
+ssm_values = load_ssm_parameters("/wheretolivedotla/")
+os.environ.update(ssm_values)
+
 load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
