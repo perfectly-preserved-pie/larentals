@@ -4,11 +4,11 @@ set -e
 # 1) Update & install OS packages
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  python3 python3-pip git curl unzip awscli
+  python3 python3-pip git curl unzip
 
-# 2) Install uv via pip (system-wide)
+# 2) Install AWS CLI v2 and uv via pip (system-wide)
 python3 -m pip install --upgrade pip
-python3 -m pip install --no-cache-dir uv
+python3 -m pip install --no-cache-dir awscli uv
 
 # 3) Install the CloudWatch Agent
 curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
