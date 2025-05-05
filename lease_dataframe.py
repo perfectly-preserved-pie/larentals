@@ -19,7 +19,6 @@ import sys
 ssm_values = load_ssm_parameters("/wheretolivedotla/")
 os.environ.update(ssm_values)
 
-load_dotenv(find_dotenv())
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
