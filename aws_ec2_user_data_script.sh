@@ -6,6 +6,9 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   python3 python3-pip git curl unzip
 
+export HOME=/home/ubuntu
+cd $HOME
+
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
