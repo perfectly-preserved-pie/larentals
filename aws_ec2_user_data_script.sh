@@ -31,10 +31,9 @@ git clone --branch aws --single-branch \
 cd larentals
 
 # ----------------------------------------
-# 5) Bootstrap a venv and install requirements
+# 5) install requirements
 # ----------------------------------------
-uv venv            # uses system python3 (which on Ubuntu 24.04 is ≥3.11)
-uv pip install -r requirements.txt
+uv pip install --system --no-cache-dir -r requirements.txt
 
 # ----------------------------------------
 # 6) Configure the CloudWatch Agent to tail the log file
