@@ -55,6 +55,11 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
             "file_path": "/var/log/lease_dataframe.log",
             "log_group_name": "LarentalsLeaseDF",
             "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "/var/log/buy_dataframe.log",
+            "log_group_name": "LarentalsBuyDF",
+            "log_stream_name": "{instance_id}"
           }
         ]
       }
