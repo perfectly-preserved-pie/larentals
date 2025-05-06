@@ -1,0 +1,37 @@
+[project]
+name        = "WhereToLive.LA"
+version     = "0.1.0"
+description = "An interactive map of available rentals in Los Angeles County. Updated weekly."             
+readme      = "README.md"
+license     = {  } # 
+requires-python = ">=3.11"
+
+dependencies = [
+  "beautifulsoup4~=4.13.3",
+  "bleach~=6.2.0",
+  "boto3~=1.38.8",
+  "brotli~=1.1.0",
+  "dash-bootstrap-components~=1.7.1",
+  "dash-extensions~=1.0.20",
+  "dash-leaflet~=1.0.15",
+  "dash-mantine-components~=1.1.1",
+  "dash~=3.0.4",          # ≧3.0.4, <3.1.0
+  "flask>=3.0.3,<3.1.0",   # allows any 3.x below 3.1
+  "geopandas~=1.0.1",
+  "geopy~=2.4.1",
+  "gevent~=24.11.1",
+  "gunicorn~=23.0.0",
+  "imagekitio~=4.1.0",
+  "loguru~=0.7.3",
+  "numpy~=2.2.4",
+  "openpyxl~=3.1.5",
+  "orjson~=3.10.16",
+  "pandas~=2.2.3",
+  "protobuf~=6.30.2",
+  "pyarrow~=19.0.1",
+  "python-dotenv~=1.1.0",
+  "pyyaml",               # unpinned, take latest
+  "requests~=2.32.3",
+  "tables",               # unpinned, take latest
+  "user-agents~=2.2.0",
+]
