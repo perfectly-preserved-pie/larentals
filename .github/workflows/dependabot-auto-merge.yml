@@ -2,11 +2,8 @@ name: Dependabot CI/CD Process
 
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-    branches:
-      - dev
+    types: [opened, synchronize]
+    branches: [dev]
 
 jobs:
   merge-dependabot:
@@ -18,19 +15,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install the latest version of uv and define a cache dependency glob
+      - name: Install uv & enable cache
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "requirements**.txt"
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
 
-      - name: Install requirements
-        run: uv pip install --system -r requirements.txt
+      - name: Install dependencies
+        run: uv install --system --no-cache-dir
         env:
           UV_SYSTEM_PYTHON: 1
 
       - name: Run tests
-        run: pytest
+        run: uv run -- pytest
 
       - name: Merge into dev
         run: |
