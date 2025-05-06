@@ -27,10 +27,6 @@ curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
   https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 dpkg -i /tmp/amazon-cloudwatch-agent.deb || apt-get install -fy
 
-# Install the AWS CLI
-uv pip install --no-cache-dir \
-  awscli
-
 # Set the git config to use the best compression
 # This is a workaround for the issue with the default git compression
 git config --global core.compression 9 repack
