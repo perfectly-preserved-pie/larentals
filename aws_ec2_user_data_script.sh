@@ -72,8 +72,26 @@ EOF
 systemctl enable amazon-cloudwatch-agent
 systemctl start amazon-cloudwatch-agent
 
-# Run dataframe script
-uv run python lease_dataframe.py
+# ───────────────────────────────────────────────────────────────
+# Run both scripts in parallel, but don’t let one failure stop the other
+# ───────────────────────────────────────────────────────────────
+uv run python lease_dataframe.py & pid_lease=$!
+uv run python buy_dataframe.py   & pid_buy=$!
+
+# Temporarily disable “exit on error” so we can collect both exit codes
+set +e
+
+wait $pid_lease
+code_lease=$?
+
+wait $pid_buy
+code_buy=$?
+
+# Re-enable “exit on error” for any subsequent critical commands
+set -e
+
+echo "lease_dataframe.py exited with code $code_lease"
+echo "buy_dataframe.py   exited with code $code_buy"
 
 # If anything fails, check cloud-init logs:
 #    sudo tail -f /var/log/cloud-init-output.log
