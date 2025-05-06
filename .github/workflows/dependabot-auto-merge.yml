@@ -1,4 +1,4 @@
-name: Dependabot Auto Merge
+name: Dependabot CI/CD Process
 
 on:
   pull_request:
