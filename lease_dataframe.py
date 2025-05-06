@@ -1,4 +1,4 @@
-from dotenv import load_dotenv, find_dotenv
+from functions.aws_functions import load_ssm_parameters, upload_file_to_s3
 from functions.dataframe_utils import *
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
@@ -15,10 +15,22 @@ import pandas as pd
 import sys
 
 ## SETUP AND VARIABLES
-load_dotenv(find_dotenv())
+# Load everything from AWS SSM into os.environ ─
+ssm_values = load_ssm_parameters("/wheretolivedotla/")
+os.environ.update(ssm_values)
+
 g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+# Log to a file
+logger.add(
+  "/var/log/lease_dataframe.log",
+  level="INFO",
+  rotation="10 MB",        # optional
+  retention="7 days",      # optional
+  backtrace=True,
+  diagnose=True
+)
 
 # ImageKit.IO
 # https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
@@ -256,10 +268,18 @@ try:
   gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
   # Drop some columns that are no longer needed
   gdf_combined = reduce_geojson_columns(gdf=gdf_combined)
+  # Clean up outliers
+  gdf_combined = drop_high_outliers(gdf=gdf_combined, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
   # Save the GeoDataFrame as a GeoJSON file
   try:
     gdf_combined.to_file("assets/datasets/lease.geojson", driver="GeoJSON")
     logger.info("Saved the combined GeoDataFrame to a GeoJSON file.")
+    # now push it to S3
+    upload_file_to_s3(
+      local_path="assets/datasets/lease.geojson",
+      bucket="wheretolivedotla-geojsonstorage",
+      key="lease.geojson"
+    )
   except Exception as e:
     logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
 

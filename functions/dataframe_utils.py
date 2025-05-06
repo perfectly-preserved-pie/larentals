@@ -1,6 +1,7 @@
 from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
+from typing import Sequence, Dict, Optional
 import geopandas as gpd
 import pandas as pd
 import requests
@@ -277,3 +278,78 @@ def reduce_geojson_columns(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     existing_cols = [col for col in cols_to_drop if col in gdf.columns]
     reduced_gdf = gdf.drop(columns=existing_cols)
     return reduced_gdf
+
+def drop_high_outliers(
+    gdf: gpd.GeoDataFrame,
+    cols: Sequence[str] = ("sqft", "total_bathrooms", "bedrooms", "parking_spaces"),
+    iqr_multiplier: float = 1.5,
+    absolute_caps: Optional[Dict[str, float]] = None
+) -> gpd.GeoDataFrame:
+    """
+    Remove rows from a GeoDataFrame where values in specified numeric columns
+    exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
+    also any domain-specific hard caps. Geometry is preserved.
+
+    Parameters
+    ----------
+    gdf : gpd.GeoDataFrame
+        Input GeoDataFrame containing the properties to clean.
+    cols : Sequence[str], default ("sqft", "total_bathrooms", "bedrooms", "parking_spaces")
+        List of numeric columns to check for high outliers.
+    iqr_multiplier : float, default 1.5
+        Multiplier applied to the interquartile range to define the upper bound.
+    absolute_caps : Optional[Dict[str, float]], default None
+        Hard-maximum caps per column (e.g. {"total_bathrooms": 10, "bedrooms": 6}).
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        A cleaned copy of `gdf` with outliers removed and index reset.
+    """
+    gdf_clean = gdf.copy()
+    
+    # 1) Compute IQR thresholds once on original
+    thresholds: Dict[str, float] = {}
+    for col in cols:
+        if col not in gdf_clean.columns:
+            logger.warning(f"Column '{col}' not found; skipping IQR removal.")
+            continue
+        if not pd.api.types.is_numeric_dtype(gdf_clean[col]):
+            logger.warning(f"Column '{col}' is not numeric; skipping.")
+            continue
+
+        q1 = gdf_clean[col].quantile(0.25)
+        q3 = gdf_clean[col].quantile(0.75)
+        iqr = q3 - q1
+
+        if iqr == 0:
+            logger.warning(f"IQR for '{col}' is zero; skipping.")
+            continue
+
+        thresholds[col] = q3 + iqr_multiplier * iqr
+
+    # 2) Drop using IQR thresholds
+    total_dropped = 0
+    for col, cutoff in thresholds.items():
+        before = len(gdf_clean)
+        gdf_clean = gdf_clean[gdf_clean[col] <= cutoff]
+        dropped = before - len(gdf_clean)
+        total_dropped += dropped
+        logger.info(
+            f"Dropped {dropped} rows where '{col}' > {cutoff:.2f} "
+            f"(Q3={thresholds[col] - iqr_multiplier * (thresholds[col] - q1):.2f}, "
+            f"IQR={(thresholds[col] - q1) / iqr_multiplier:.2f})."
+        )
+
+    # 3) Drop using absolute caps if provided
+    if absolute_caps:
+        for col, cap in absolute_caps.items():
+            if col in gdf_clean.columns and pd.api.types.is_numeric_dtype(gdf_clean[col]):
+                before = len(gdf_clean)
+                gdf_clean = gdf_clean[gdf_clean[col] <= cap]
+                dropped = before - len(gdf_clean)
+                total_dropped += dropped
+                logger.info(f"Dropped {dropped} rows where '{col}' > absolute cap {cap}.")
+
+    logger.info(f"Total rows dropped: {total_dropped}")
+    return gdf_clean.reset_index(drop=True)

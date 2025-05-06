@@ -3,9 +3,7 @@ __pycache__/
 .venv/
 .vscode/
 *.cpython
-*.csv
 *.pyc
-*.xlsx
 assets/dashExtensions_default.js
 assets/datasets/DINS*
 env
