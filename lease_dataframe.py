@@ -268,6 +268,8 @@ try:
   gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
   # Drop some columns that are no longer needed
   gdf_combined = reduce_geojson_columns(gdf=gdf_combined)
+  # Clean up outliers
+  gdf_combined = drop_high_outliers(gdf=gdf_combined, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
   # Save the GeoDataFrame as a GeoJSON file
   try:
     gdf_combined.to_file("assets/datasets/lease.geojson", driver="GeoJSON")
