@@ -41,7 +41,7 @@ git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
 cd larentals
 
 # Install requirements 
-uv pip install --no-cache-dir -r requirements.txt
+uv sync
 
 # Configure the CloudWatch Agent to tail the log file
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
