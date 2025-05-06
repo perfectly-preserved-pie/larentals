@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Set the timezone to Pacific Time
+timedatectl set-timezone America/Los_Angeles
+
 # 1) Update & install OS packages
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
