@@ -21,7 +21,6 @@ RUN chown -R nonroot:nonroot /app \
 
 # 6) Switch to non-root
 USER nonroot
-EXPOSE 8080
 
 # 7) Use uv run to lock, sync, then invoke Gunicorn
 #    Note the “--” to separate uv flags from the Gunicorn command
