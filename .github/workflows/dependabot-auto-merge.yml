@@ -24,7 +24,7 @@ jobs:
             **/uv.lock
 
       - name: Install dependencies
-        run: uv install --system --no-cache-dir
+        run: uv pip install -r pyproject.toml --system --no-cache-dir
         env:
           UV_SYSTEM_PYTHON: 1
 
