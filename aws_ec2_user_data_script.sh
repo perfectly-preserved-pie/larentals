@@ -35,10 +35,9 @@ uv pip install --no-cache-dir \
 # This is a workaround for the issue with the default git compression
 git config --global core.compression 9 repack
 
-# Clone only the 'aws' branch
+# Clone the repo
 cd /home/ubuntu
-git clone --branch aws --single-branch \
-  https://github.com/perfectly-preserved-pie/larentals.git larentals
+git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
 cd larentals
 
 # Install requirements 
