@@ -12,21 +12,22 @@ jobs:
   merge-dependabot:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-        
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Install the latest version of uv and define a cache dependency glob
         uses: astral-sh/setup-uv@v5
         with:
-            enable-cache: true
-            cache-dependency-glob: "requirements**.txt"
+          enable-cache: true
+          cache-dependency-glob: "requirements**.txt"
 
       - name: Install requirements
-        run: uv pip install --system -r requirements.txt 
+        run: uv pip install --system -r requirements.txt
         env:
-            UV_SYSTEM_PYTHON: 1
+          UV_SYSTEM_PYTHON: 1
 
       - name: Run tests
         run: pytest
@@ -45,7 +46,6 @@ jobs:
   check-dev-status:
     needs: merge-dependabot
     runs-on: ubuntu-latest
-
     steps:
       - name: Check dev.wheretolive.la status
         run: |
@@ -66,15 +66,16 @@ jobs:
   merge-to-master:
     needs: check-dev-status
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Merge dev into master
+      - name: Merge dev into master (fast-forward only)
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git checkout master
-          git merge dev
+          git merge --ff-only dev
           git push origin master
