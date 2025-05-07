@@ -88,5 +88,7 @@ set -e
 echo "lease_dataframe.py exited with code $code_lease"
 echo "buy_dataframe.py   exited with code $code_buy"
 
+shutdown -h now
+
 # If anything fails, check cloud-init logs:
 #    sudo tail -f /var/log/cloud-init-output.log
