@@ -1015,7 +1015,7 @@ class LeaseComponents(BaseClass):
                 dl.TileLayer(),
                 dl.GeoJSON(
                     id='lease_geojson',
-                    data=None,
+                    url='/assets/datasets/lease.geojson',
                     cluster=True,
                     clusterToLayer=generate_convex_hulls,
                     onEachFeature=ns("on_each_feature"),
