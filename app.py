@@ -1,16 +1,12 @@
 from dash import Dash, _dash_renderer
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from flask import request, jsonify, abort
 from loguru import logger
 import bleach
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
-import json
 import logging
-import os
-import smtplib
+import sqlite3
 
 # Set the React version to 18.2.0
 # https://www.dash-mantine-components.com/getting-started#simple-usage
@@ -97,67 +93,47 @@ ALLOWED_OPTIONS = {
   "Other"
 }
 
-# Create a custom route for handling the email sending of listing reports
+# Create a custom route for the report form submission
 @app.server.route('/report_listing', methods=['POST'])
-def report_listing():
+def report_listing() -> tuple:
+  """Handle listing reports. If marked 'Unavailable/Sold/Rented', update the database flag."""
   data = request.get_json()
-  mls_number = data.get('mls_number')
-  option = data.get('option')
-  text_report = data.get('text')
-  properties = data.get('properties')
+  mls_number: str = data.get('mls_number')
+  option: str = data.get('option')
+  text_report: str = data.get('text')
+  properties: dict = data.get('properties')
 
   if option not in ALLOWED_OPTIONS:
     abort(400, "Invalid option provided.")
 
-  # Sanitize text. Here, we disallow any tags.
+  # Sanitize text input (disallow any tags)
   sanitized_text = bleach.clean(text_report, tags=[], attributes={}, strip=True)
-  
-  # Build the plain text email body
-  email_body = (
-    f"Report for MLS: {mls_number}\n\n"
-    f"Option: {option}\n\n"
-    f"Details: {sanitized_text}\n\n"
-    f"Properties:\n{json.dumps(properties, indent=2)}"
-  )
-  
-  sender = "report@wheretolive.la"
-  receiver = "hey@wheretolive.la"
-  
-  # Create a MIMEMultipart message; can attach both text and html if needed
-  msg = MIMEMultipart('mixed')
-  msg["Subject"] = f"Listing Report: {mls_number}"
-  msg["From"] = sender
-  msg["To"] = receiver
-  
-  # Create plain text message part
-  text_message = MIMEText(email_body, 'plain')
-  msg.attach(text_message)
-  
-  # Send an HTML version as well
-  # html_message = MIMEText(f"<pre>{email_body}</pre>", 'html')
-  # msg.attach(html_message)
-  
-  # SMTP2GO configuration
-  username = os.getenv("SMTP2GO_USERNAME")
-  password = os.getenv("SMTP2GO_PASSWORD")
-  smtp_host = "mail.smtp2go.com"
-  smtp_port = 2525 
-  
+  logger.info(f"Received report for MLS {mls_number}: Option='{option}', Details='{sanitized_text}'")
+
   try:
-    mailServer = smtplib.SMTP(smtp_host, smtp_port)
-    mailServer.ehlo()
-    mailServer.starttls()
-    mailServer.ehlo()
-    mailServer.login(username, password)
-    mailServer.sendmail(sender, receiver, msg.as_string())
-    mailServer.quit()
-    logger.success(
-        f"Successfully sent report listing email for MLS: {mls_number}. Email body: {email_body}"
-    )
+    # If the listing is reported as unavailable/sold/rented, update the SQLite database
+    if option == "Unavailable/Sold/Rented":
+      # Determine which table to update based on context (lease or buy)
+      page_type = None
+      if properties:
+        # 'context' field contains {"pageType": "<lease|buy>"}
+        context = properties.get('context')
+        if isinstance(context, dict):
+          page_type = context.get('pageType')
+      # Default to lease if not specified (should not happen if data is correct)
+      table_name = 'lease' if page_type == 'lease' else 'buy'
+      # Update the corresponding listing's reported_as_inactive flag
+      conn = sqlite3.connect("assets/datasets/larentals.db")
+      cur = conn.cursor()
+      cur.execute(f"UPDATE {table_name} SET reported_as_inactive = 1 WHERE mls_number = ?", (mls_number,))
+      conn.commit()
+      conn.close()
+      logger.success(f"Marked MLS {mls_number} as inactive in '{table_name}' table.")
+    # (For other report options, no database action is needed)
     return jsonify(status="success"), 200
   except Exception as e:
-    logger.error("Error sending email: {}", e)
-    return jsonify(status="error", message="An internal error has occurred. Please try again later."), 500
+    logger.error(f"Error handling report for MLS {mls_number}: {e}")
+    return jsonify(status="error", message="Internal error, please try again later."), 500
 
 if __name__ == '__main__':
 	app.run(debug=True)
