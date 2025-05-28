@@ -278,7 +278,7 @@ try:
     # Convert to a Series with the same index as the original DataFrame
     computed_geometry_series = pd.Series(computed_geometry, index=df_combined.index)
     # Combine the existing geometry with computed_geometry_series
-    df_combined["geometry"] = df_combined["geometry"].combine_first(computed_geometry_series)
+    df_combined["geometry"] = df_combined.get("geometry", computed_geometry_series).combine_first(computed_geometry_series)
     # Create the GeoDataFrame using the updated geometry column
     gdf_combined = gpd.GeoDataFrame(df_combined, geometry="geometry")
     # Re-geocode rows where latitude is above a certain threshold
