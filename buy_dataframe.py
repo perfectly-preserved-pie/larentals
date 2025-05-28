@@ -11,6 +11,7 @@ import glob
 import os
 import pandas as pd
 import sys
+import sqlite3
 
 ## SETUP AND VARIABLES
 # Load everything from AWS SSM into os.environ ─
@@ -38,6 +39,10 @@ imagekit = ImageKit(
     private_key=os.getenv('IMAGEKIT_PRIVATE_KEY'),
     url_endpoint = os.getenv('IMAGEKIT_URL_ENDPOINT')
 )
+
+# Database path and table name
+DB_PATH = "assets/datasets/larentals.db"
+TABLE_NAME = "buy"
 
 # Make the dataframe a global variable
 global df
@@ -256,47 +261,64 @@ try:
   # Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
   df['context'] = [{"pageType": "buy"} for _ in range(len(df))]
 
-  # Save the dataframe for later ingestion by app.py
-  # Read in the old dataframe
-  df_old = gpd.read_file(filename='https://github.com/perfectly-preserved-pie/larentals/raw/master/assets/datasets/buy.geojson')
-  # Combine both old and new dataframes
-  df_combined = pd.concat([df, df_old], ignore_index=True)
-  # Drop any dupes again
-  df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
-  # Flatten the subtype column
-  df_combined = flatten_subtype_column(df_combined)
-  # Iterate through the dataframe and drop rows with expired listings
+  ### MERGE WITH EXISTING DATA ###
+  df_old = pd.DataFrame()
+  if os.path.exists(DB_PATH):
+    conn = sqlite3.connect(DB_PATH)
+    try:
+      df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
+    except Exception as e:
+      logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
+      df_old = pd.DataFrame()
+    conn.close()
+  if not df_old.empty:
+    df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
+    df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
+    df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
+  else:
+    df_combined = df.copy()
+  df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
+  df_combined = flatten_subtype_column(df_combined) 
   df_combined = remove_inactive_listings(df_combined)
-  # Reset the index
-  df_combined = df_combined.reset_index(drop=True)
-  # Remove trailing 0 in the street_number column and the full_street_address column and the short_address column
-  df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0', '', regex=True)
-  df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0', '', regex=True)
-  df_combined['short_address'] = df_combined['short_address'].str.replace(r'\.0', '', regex=True)
-  # Compute geometry from lon/lat where available
+  df_combined.reset_index(drop=True, inplace=True)
+  # Clean up address fields
+  df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
+  df_combined["full_street_address"] = df_combined["street_number"].str.cat(df_combined["street_address"], sep=" ", na_rep="").str.strip()
+  df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
+  # Compute geometry for geospatial data
   computed_geometry = gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
-  # Convert to a Series with the same index as the original DataFrame
-  computed_geometry_series = pd.Series(computed_geometry, index=df_combined.index)
-  # Combine the existing geometry with computed_geometry_series
-  df_combined["geometry"] = df_combined["geometry"].combine_first(computed_geometry_series)
-  # Create the GeoDataFrame using the updated geometry column
+  df_combined["geometry"] = df_combined.get("geometry", computed_geometry).combine_first(computed_geometry)
   gdf_combined = gpd.GeoDataFrame(df_combined, geometry="geometry")
-  # Re-geocode rows where latitude is above a certain threshold
   gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
-  # Drop some columns that are no longer needed
-  gdf_combined = reduce_geojson_columns(gdf=gdf_combined)
-  # Save the GeoDataFrame as a GeoJSON file
+  gdf_combined = reduce_geojson_columns(gdf_combined)
+  # Prepare final DataFrame
+  gdf_combined.reset_index(drop=True, inplace=True)
+  gdf_combined.drop(columns=["geometry"], inplace=True)
+  df_final = pd.DataFrame(gdf_combined)
+  if "reported_as_inactive" not in df_final.columns:
+    df_final["reported_as_inactive"] = False
+  else:
+    df_final["reported_as_inactive"] = df_final["reported_as_inactive"].fillna(False)
+  if not df_old.empty:
+    previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
+    df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+
+  # Save into SQLite instead of dumping GeoJSON + upload buy.geojson
   try:
-    gdf_combined.to_file("assets/datasets/buy.geojson", driver="GeoJSON")
-    logger.info("Saved the combined GeoDataFrame to a GeoJSON file.")
-    # now push it to S3
+    conn = sqlite3.connect(DB_PATH)
+    # overwrite the existing 'buy' table
+    gdf_combined.drop(columns=["geometry"]).to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
+    conn.commit()
+    conn.close()
+    logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'.")
+    # now push the updated database to S3
     upload_file_to_s3(
-      local_path="assets/datasets/buy.geojson",
+      local_path=DB_PATH,
       bucket="wheretolivedotla-geojsonstorage",
-      key="buy.geojson"
+      key="larentals.db"
     )
   except Exception as e:
-    logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
+    logger.error(f"Error writing combined GeoDataFrame to SQLite: {e}")
 
   # Reclaim space in ImageKit
   #reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
