@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 import sqlite3
 
+DB_PATH = "assets/datasets/larentals.db"
+
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
     return html.Button(
@@ -21,6 +23,75 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
 
 # Create a class to hold all common components for both Lease and Buy pages
 class BaseClass:
+    def __init__(self, table_name: str, page_type: str) -> None:
+        """
+        Load a table from SQLite and prepare the GeoDataFrame.
+
+        Args:
+            table_name (str): The name of the SQLite table to read (e.g. "lease" or "buy").
+            page_type  (str): The page context used for GeoJSON features ("lease" or "buy").
+        """
+        # 1) Load raw table
+        conn = sqlite3.connect(DB_PATH)
+        self.df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+        conn.close()
+
+        # 2) Coerce date columns to datetime
+        for dtcol in ("listed_date", "date_processed"):
+            if dtcol in self.df:
+                self.df[dtcol] = pd.to_datetime(self.df[dtcol], errors="coerce")
+
+        # 3) Build GeoDataFrame if coords exist
+        if {"latitude", "longitude"}.issubset(self.df.columns):
+            geom = gpd.points_from_xy(self.df["longitude"], self.df["latitude"])
+            self.df = gpd.GeoDataFrame(self.df, geometry=geom)
+
+        # 4) Compute earliest listed_date
+        if "listed_date" in self.df and not self.df["listed_date"].isna().all():
+            self.earliest_date = self.df["listed_date"].min().to_pydatetime()
+        else:
+            self.earliest_date = date.today()
+
+        # 5) Compute last_updated
+        latest = self.df.get("date_processed").max() if "date_processed" in self.df else None
+        self.last_updated = latest.strftime("%m/%d/%Y") if pd.notna(latest) else "N/A"
+
+        # 6) store page_type for return_geojson
+        self.page_type = page_type
+
+    def return_geojson(self) -> dict:
+        """
+        Build a valid GeoJSON FeatureCollection from self.df,
+        converting any Timestamp columns to ISO strings and
+        tagging each feature with {"pageType": self.page_type}.
+        """
+        # 1) work on a copy
+        df = self.df.copy()
+
+        # 2) convert datetime columns
+        for dtcol in ("listed_date", "date_processed"):
+            if dtcol in df:
+                df[dtcol] = df[dtcol].dt.strftime("%Y-%m-%dT%H:%M:%S").fillna("")
+
+        # 3) build features
+        features = []
+        for _, row in df.iterrows():
+            props = row.drop(labels=["geometry"]).to_dict()
+            props["context"] = {"pageType": self.page_type}
+            geom = mapping(row.geometry) if hasattr(row, "geometry") else None
+
+            features.append({
+                "type": "Feature",
+                "geometry": geom,
+                "properties": props
+            })
+
+        # 4) return the collection
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+    
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
@@ -106,38 +177,10 @@ class LeaseComponents(BaseClass):
     }
 
     def __init__(self) -> None:
-        """
-        Initialize lease components by loading data from SQLite,
-        coercing dates, computing summary dates, and building UI elements.
-        """
-        # 1) Load data
-        conn = sqlite3.connect("assets/datasets/larentals.db")
-        self.df = pd.read_sql_query("SELECT * FROM lease", conn)
-        conn.close()
+        # Call the parent constructor to load the lease table
+        super().__init__(table_name="lease", page_type="lease")
 
-        # 2) Coerce date columns to datetime (unparseable → NaT)
-        self.df['listed_date']    = pd.to_datetime(self.df['listed_date'],    errors='coerce')
-        self.df['date_processed'] = pd.to_datetime(self.df['date_processed'], errors='coerce')
-
-        # 3) Build GeoDataFrame if coords exist
-        if {"latitude", "longitude"}.issubset(self.df.columns):
-            geom = gpd.points_from_xy(self.df["longitude"], self.df["latitude"])
-            self.df = gpd.GeoDataFrame(self.df, geometry=geom)
-
-        # 4) Compute earliest listed_date safely
-        if not self.df['listed_date'].isna().all():
-            self.earliest_date = self.df['listed_date'].min().to_pydatetime()
-        else:
-            self.earliest_date = date.today()
-
-        # 5) Compute last_updated from date_processed safely
-        latest = self.df['date_processed'].max()
-        if pd.notna(latest):
-            self.last_updated = latest.strftime("%m/%d/%Y")
-        else:
-            self.last_updated = "N/A"
-
-        # 6) Apply any transformations (laundry categories, etc.)
+        # Apply lease-specific transformations to the DataFrame
         if 'laundry' in self.df.columns:
             self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
 
@@ -166,42 +209,6 @@ class LeaseComponents(BaseClass):
         # Dependent components last
         self.more_options      = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-
-    def return_geojson(self) -> dict:
-        """
-        Build a valid GeoJSON FeatureCollection from the lease listings,
-        converting any Timestamps to ISO strings and avoiding unsupported kwargs.
-        
-        Returns:
-            dict: A RFC 7946-compliant GeoJSON FeatureCollection.
-        """
-        # Work on a copy
-        df = self.df.copy()
-
-        # 1) Convert datetime columns to ISO strings
-        for dtcol in ("listed_date", "date_processed"):
-            if dtcol in df:
-                df[dtcol] = df[dtcol].dt.strftime("%Y-%m-%dT%H:%M:%S").fillna("")
-
-        # 2) Build GeoJSON features
-        features = []
-        for _, row in df.iterrows():
-            props = row.drop(labels=["geometry"]).to_dict()
-            # Attach pageType context
-            props["context"] = {"pageType": "lease"}
-            geom = mapping(row.geometry) if hasattr(row, "geometry") else None
-
-            features.append({
-                "type": "Feature",
-                "geometry": geom,
-                "properties": props
-            })
-
-        # 3) Return FeatureCollection
-        return {
-            "type": "FeatureCollection",
-            "features": features
-        }
     
     def categorize_laundry_features(self, feature):
         if pd.isna(feature) or feature in ['Unknown', '']:
@@ -1175,35 +1182,10 @@ class LeaseComponents(BaseClass):
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
     def __init__(self):
-        """Initialize buy components and load data from SQLite database."""
-        # 1) Load data
-        conn = sqlite3.connect("assets/datasets/larentals.db")
-        self.df = pd.read_sql_query("SELECT * FROM buy", conn)
-        conn.close()
+        # Call the parent constructor to load the buy table
+        super().__init__(table_name="buy", page_type="buy")
 
-        # 2) Build GeoDataFrame if coords exist
-        if "latitude" in self.df.columns and "longitude" in self.df.columns:
-            geometry = gpd.points_from_xy(self.df["longitude"], self.df["latitude"])
-            self.df = gpd.GeoDataFrame(self.df, geometry=geometry)
-
-        # 3) Convert date columns to datetime
-        self.df['listed_date']    = pd.to_datetime(self.df['listed_date'],    errors='coerce')
-        self.df['date_processed'] = pd.to_datetime(self.df['date_processed'], errors='coerce')
-
-        # 4) Earliest date logic
-        if not self.df['listed_date'].isna().all():
-            self.earliest_date = self.df['listed_date'].min().to_pydatetime()
-        else:
-            self.earliest_date = date.today()
-
-        # 5) Safely compute last_updated
-        latest = self.df['date_processed'].max()
-        if pd.notna(latest):
-            self.last_updated = latest.strftime('%m/%d/%Y')
-        else:
-            self.last_updated = "N/A"
-
-        # 6) Now build the UI components
+        # Now build the UI components
         self.bathrooms_slider         = self.create_bathrooms_slider()
         self.bedrooms_slider          = self.create_bedrooms_slider()
         self.hoa_fee_components       = self.create_hoa_fee_components()
@@ -1224,42 +1206,6 @@ class BuyComponents(BaseClass):
         # 7) Dependent components
         self.more_options      = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-
-    def return_geojson(self) -> dict:
-        """
-        Build a valid GeoJSON FeatureCollection from the buy listings,
-        converting any Timestamps to ISO strings and avoiding unsupported kwargs.
-        
-        Returns:
-            dict: A RFC 7946-compliant GeoJSON FeatureCollection.
-        """
-        # Work on a copy
-        df = self.df.copy()
-
-        # 1) Convert datetime columns to ISO strings
-        for dtcol in ("listed_date", "date_processed"):
-            if dtcol in df:
-                df[dtcol] = df[dtcol].dt.strftime("%Y-%m-%dT%H:%M:%S").fillna("")
-
-        # 2) Build GeoJSON features
-        features = []
-        for _, row in df.iterrows():
-            props = row.drop(labels=["geometry"]).to_dict()
-            # Attach pageType context
-            props["context"] = {"pageType": "buy"}
-            geom = mapping(row.geometry) if hasattr(row, "geometry") else None
-
-            features.append({
-                "type": "Feature",
-                "geometry": geom,
-                "properties": props
-            })
-
-        # 3) Return FeatureCollection
-        return {
-            "type": "FeatureCollection",
-            "features": features
-        }
     
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
