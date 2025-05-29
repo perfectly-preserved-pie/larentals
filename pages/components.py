@@ -1227,30 +1227,35 @@ class BuyComponents(BaseClass):
 
     def return_geojson(self) -> dict:
         """
-        Build a true GeoJSON FeatureCollection from the buy listings,
-        with no pd.Timestamp or unsupported kwargs.
+        Build a valid GeoJSON FeatureCollection from the buy listings,
+        converting any Timestamps to ISO strings and avoiding unsupported kwargs.
+        
+        Returns:
+            dict: A RFC 7946-compliant GeoJSON FeatureCollection.
         """
+        # Work on a copy
         df = self.df.copy()
 
-        # 1) Convert any datetime columns to ISO‐strings
+        # 1) Convert datetime columns to ISO strings
         for dtcol in ("listed_date", "date_processed"):
-            if dtcol in df.columns:
+            if dtcol in df:
                 df[dtcol] = df[dtcol].dt.strftime("%Y-%m-%dT%H:%M:%S").fillna("")
 
-        # 2) Build features list
+        # 2) Build GeoJSON features
         features = []
         for _, row in df.iterrows():
-            # extract geometry as GeoJSON
-            geom = row.geometry.__geo_interface__ if hasattr(row, "geometry") else None
-            # drop the geometry column from properties
             props = row.drop(labels=["geometry"]).to_dict()
+            # Attach pageType context
+            props["context"] = {"pageType": "buy"}
+            geom = mapping(row.geometry) if hasattr(row, "geometry") else None
+
             features.append({
                 "type": "Feature",
                 "geometry": geom,
                 "properties": props
             })
 
-        # 3) Return a FeatureCollection
+        # 3) Return FeatureCollection
         return {
             "type": "FeatureCollection",
             "features": features
