@@ -111,26 +111,46 @@ def report_listing() -> tuple:
   logger.info(f"Received report for MLS {mls_number}: Option='{option}', Details='{sanitized_text}'")
 
   try:
-    # If the listing is reported as unavailable/sold/rented, update the SQLite database
+    # Determine which table to update based on context (lease or buy)
+    page_type = None
+    if properties and isinstance(properties.get('context'), dict):
+      page_type = properties['context'].get('pageType')
+    table_name = 'lease' if page_type == 'lease' else 'buy'
+
+    conn = sqlite3.connect("assets/datasets/larentals.db")
+    cur = conn.cursor()
+
+    # make sure our two new columns exist
+    cur.execute(f"PRAGMA table_info({table_name});")
+    cols = [r[1] for r in cur.fetchall()]
+    if 'report_option' not in cols:
+      cur.execute(f"ALTER TABLE {table_name} ADD COLUMN report_option TEXT;")
+    if 'report_text' not in cols:
+      cur.execute(f"ALTER TABLE {table_name} ADD COLUMN report_text TEXT;")
+
     if option == "Unavailable/Sold/Rented":
-      # Determine which table to update based on context (lease or buy)
-      page_type = None
-      if properties:
-        # 'context' field contains {"pageType": "<lease|buy>"}
-        context = properties.get('context')
-        if isinstance(context, dict):
-          page_type = context.get('pageType')
-      # Default to lease if not specified (should not happen if data is correct)
-      table_name = 'lease' if page_type == 'lease' else 'buy'
-      # Update the corresponding listing's reported_as_inactive flag
-      conn = sqlite3.connect("assets/datasets/larentals.db")
-      cur = conn.cursor()
-      cur.execute(f"UPDATE {table_name} SET reported_as_inactive = 1 WHERE mls_number = ?", (mls_number,))
-      conn.commit()
-      conn.close()
+      # mark tenatively inactive
+      cur.execute(
+        f"UPDATE {table_name} SET reported_as_inactive = 1 WHERE mls_number = ?",
+        (mls_number,)
+      )
       logger.success(f"Marked MLS {mls_number} as inactive in '{table_name}' table.")
-    # (For other report options, no database action is needed)
+    else:
+      # record the other option + free‐form text
+      cur.execute(
+        f"""UPDATE {table_name}
+          SET report_option = ?, report_text = ?
+          WHERE mls_number = ?""",
+        (option, sanitized_text, mls_number)
+      )
+      logger.success(
+        f"Saved user-submitted report for MLS {mls_number}: option={option}, text='{sanitized_text}'"
+      )
+
+    conn.commit()
+    conn.close()
     return jsonify(status="success"), 200
+
   except Exception as e:
     logger.error(f"Error handling report for MLS {mls_number}: {e}")
     return jsonify(status="error", message="Internal error, please try again later."), 500
