@@ -2,14 +2,16 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
-from functions.layers import LayersClass
+from shapely.geometry import mapping
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
 import geopandas as gpd
-import json
 import numpy as np
 import pandas as pd
+import sqlite3
+
+DB_PATH = "assets/datasets/larentals.db"
 
 def create_toggle_button(index, page_type, initial_label="Hide"):
     """Creates a toggle button with an initial label."""
@@ -21,6 +23,75 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
 
 # Create a class to hold all common components for both Lease and Buy pages
 class BaseClass:
+    def __init__(self, table_name: str, page_type: str) -> None:
+        """
+        Load a table from SQLite and prepare the GeoDataFrame.
+
+        Args:
+            table_name (str): The name of the SQLite table to read (e.g. "lease" or "buy").
+            page_type  (str): The page context used for GeoJSON features ("lease" or "buy").
+        """
+        # 1) Load raw table
+        conn = sqlite3.connect(DB_PATH)
+        self.df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+        conn.close()
+
+        # 2) Coerce date columns to datetime
+        for dtcol in ("listed_date", "date_processed"):
+            if dtcol in self.df:
+                self.df[dtcol] = pd.to_datetime(self.df[dtcol], errors="coerce")
+
+        # 3) Build GeoDataFrame if coords exist
+        if {"latitude", "longitude"}.issubset(self.df.columns):
+            geom = gpd.points_from_xy(self.df["longitude"], self.df["latitude"])
+            self.df = gpd.GeoDataFrame(self.df, geometry=geom)
+
+        # 4) Compute earliest listed_date
+        if "listed_date" in self.df and not self.df["listed_date"].isna().all():
+            self.earliest_date = self.df["listed_date"].min().to_pydatetime()
+        else:
+            self.earliest_date = date.today()
+
+        # 5) Compute last_updated
+        latest = self.df.get("date_processed").max() if "date_processed" in self.df else None
+        self.last_updated = latest.strftime("%m/%d/%Y") if pd.notna(latest) else "N/A"
+
+        # 6) store page_type for return_geojson
+        self.page_type = page_type
+
+    def return_geojson(self) -> dict:
+        """
+        Build a valid GeoJSON FeatureCollection from self.df,
+        converting any Timestamp columns to ISO strings and
+        tagging each feature with {"pageType": self.page_type}.
+        """
+        # 1) work on a copy
+        df = self.df.copy()
+
+        # 2) convert datetime columns
+        for dtcol in ("listed_date", "date_processed"):
+            if dtcol in df:
+                df[dtcol] = df[dtcol].dt.strftime("%Y-%m-%dT%H:%M:%S").fillna("")
+
+        # 3) build features
+        features = []
+        for _, row in df.iterrows():
+            props = row.drop(labels=["geometry"]).to_dict()
+            props["context"] = {"pageType": self.page_type}
+            geom = mapping(row.geometry) if hasattr(row, "geometry") else None
+
+            features.append({
+                "type": "Feature",
+                "geometry": geom,
+                "properties": props
+            })
+
+        # 4) return the collection
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+    
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
@@ -105,45 +176,39 @@ class LeaseComponents(BaseClass):
         'Unknown': 'Unknown'
     }
 
-    def __init__(self):
-        # Initalize these first because they are used in other components
-        self.df = gpd.read_file("assets/datasets/lease.geojson")
+    def __init__(self) -> None:
+        # Call the parent constructor to load the lease table
+        super().__init__(table_name="lease", page_type="lease")
 
-        self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
+        # Apply lease-specific transformations to the DataFrame
+        if 'laundry' in self.df.columns:
+            self.df['laundry'] = self.df['laundry'].apply(self.categorize_laundry_features)
 
-        self.bathrooms_slider = self.create_bathrooms_slider()
-        self.bedrooms_slider = self.create_bedrooms_slider()
-        self.earliest_date = (self.df['listed_date'].min()).to_pydatetime()
-        self.furnished_checklist = self.create_furnished_checklist()
-        self.garage_spaces_components = self.create_garage_spaces_components()
-        self.key_deposit_components = self.create_key_deposit_components()
-        self.last_updated = self.df['date_processed'].max().strftime('%m/%d/%Y')
-        self.laundry_checklist = self.create_laundry_checklist()
-        self.listed_date_components = self.create_listed_date_components()
-        self.map = self.create_map()
-        self.map_card = self.create_map_card()
-        self.other_deposit_components = self.create_other_deposit_components()
-        self.pet_deposit_components = self.create_pet_deposit_components()
-        self.pets_radio = self.create_pets_radio_button()
-        self.ppsqft_components = self.create_ppsqft_components()
-        self.rental_price_slider = self.create_rental_price_slider()
-        self.rental_terms_checklist = self.create_rental_terms_checklist()
+        # 7) Build the UI components
+        self.bathrooms_slider            = self.create_bathrooms_slider()
+        self.bedrooms_slider             = self.create_bedrooms_slider()
+        self.furnished_checklist         = self.create_furnished_checklist()
+        self.garage_spaces_components    = self.create_garage_spaces_components()
+        self.key_deposit_components      = self.create_key_deposit_components()
+        self.laundry_checklist           = self.create_laundry_checklist()
+        self.listed_date_components      = self.create_listed_date_components()
+        self.map                         = self.create_map()
+        self.map_card                    = self.create_map_card()
+        self.other_deposit_components    = self.create_other_deposit_components()
+        self.pet_deposit_components      = self.create_pet_deposit_components()
+        self.pets_radio                  = self.create_pets_radio_button()
+        self.ppsqft_components           = self.create_ppsqft_components()
+        self.rental_price_slider         = self.create_rental_price_slider()
+        self.rental_terms_checklist      = self.create_rental_terms_checklist()
         self.security_deposit_components = self.create_security_deposit_components()
-        self.square_footage_components = self.create_sqft_components()
-        self.subtype_checklist = self.create_subtype_checklist()
-        self.title_card = self.create_title_card()
-        self.year_built_components = self.create_year_built_components()
+        self.square_footage_components   = self.create_sqft_components()
+        self.subtype_checklist           = self.create_subtype_checklist()
+        self.title_card                  = self.create_title_card()
+        self.year_built_components       = self.create_year_built_components()
 
-        # Initialize these last because they depend on other components
-        self.more_options = self.create_more_options()
+        # Dependent components last
+        self.more_options      = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-
-    def return_geojson(self):
-        """
-        Load the GeoJSON data from the file and return it as an object.
-        """
-        with open("assets/datasets/lease.geojson", "r") as file:
-            return json.load(file)
     
     def categorize_laundry_features(self, feature):
         if pd.isna(feature) or feature in ['Unknown', '']:
@@ -1005,7 +1070,7 @@ class LeaseComponents(BaseClass):
         # Create additional layers
         #oil_well_layer = self.create_oil_well_geojson_layer()
         #crime_layer = self.create_crime_layer()
-        farmers_market_layer = LayersClass.create_farmers_markets_layer()
+        #farmers_market_layer = LayersClass.create_farmers_markets_layer()
 
         ns = Namespace("dash_props", "module")
 
@@ -1044,7 +1109,7 @@ class LeaseComponents(BaseClass):
             [ # Create a list of layers to add to the control
                 #dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
                 #dl.Overlay(crime_layer, name="Crime", checked=False),
-                dl.Overlay(farmers_market_layer, name="Farmers Markets", checked=False),
+                #dl.Overlay(farmers_market_layer, name="Farmers Markets", checked=False),
             ],
             collapsed=True,
             position='topleft'
@@ -1117,40 +1182,31 @@ class LeaseComponents(BaseClass):
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
     def __init__(self):
-        # Initalize these first because they are used in other components
-        self.df = gpd.read_file("assets/datasets/buy.geojson")
+        # Call the parent constructor to load the buy table
+        super().__init__(table_name="buy", page_type="buy")
 
-        self.bathrooms_slider = self.create_bathrooms_slider()
-        self.bedrooms_slider = self.create_bedrooms_slider()
-        self.df['listed_date'] = pd.to_datetime(self.df['listed_date'], errors='coerce')
-        self.earliest_date = (self.df['listed_date'].min()).to_pydatetime()
-        self.hoa_fee_components = self.create_hoa_fee_components()
+        # Now build the UI components
+        self.bathrooms_slider         = self.create_bathrooms_slider()
+        self.bedrooms_slider          = self.create_bedrooms_slider()
+        self.hoa_fee_components       = self.create_hoa_fee_components()
         self.hoa_fee_frequency_checklist = self.create_hoa_fee_frequency_checklist()
-        self.last_updated = self.df['date_processed'].max().strftime('%m/%d/%Y')
-        self.list_price_slider = self.create_list_price_slider()
-        self.listed_date_components = self.create_listed_date_components()
-        self.map = self.create_map()
-        self.map_card = self.create_map_card()
-        self.pet_policy_radio_button = self.create_pets_radio_button()
-        self.ppsqft_components = self.create_ppsqft_components()
+        self.list_price_slider        = self.create_list_price_slider()
+        self.listed_date_components   = self.create_listed_date_components()
+        self.map                      = self.create_map()
+        self.map_card                 = self.create_map_card()
+        self.pet_policy_radio_button  = self.create_pets_radio_button()
+        self.ppsqft_components        = self.create_ppsqft_components()
         self.senior_community_components = self.create_senior_community_components()
-        self.space_rent_components = self.create_space_rent_components()
-        self.sqft_components = self.create_sqft_components()
-        self.subtype_checklist = self.create_subtype_checklist()
-        self.title_card = self.create_title_card()
-        self.year_built_components = self.create_year_built_components()
+        self.space_rent_components    = self.create_space_rent_components()
+        self.sqft_components          = self.create_sqft_components()
+        self.subtype_checklist        = self.create_subtype_checklist()
+        self.title_card               = self.create_title_card()
+        self.year_built_components    = self.create_year_built_components()
 
-        # Initialize these last because they depend on other components
-        self.more_options = self.create_more_options()
+        # 7) Dependent components
+        self.more_options      = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
-
-    def return_geojson(self):
-        """
-        Load the GeoJSON data from the file and return it as an object.
-        """
-        with open("assets/datasets/buy.geojson", "r") as file:
-            return json.load(file)
-        
+    
     # Create a checklist for the user to select the subtypes they want to see
     def create_subtype_checklist(self):
         # Get unique subtypes from the dataframe
