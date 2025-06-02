@@ -344,13 +344,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // treat <768px wide as “mobile”
             const isMobile = mapW < 768;
 
-            // on narrow screens use 60% width, on desktop 40%
-            let maxWidth  = Math.floor(mapW * (isMobile ? 0.6 : 0.4));
+            // on narrow screens use 60% width, on desktop 80%
+            let maxWidth  = Math.floor(mapW * (isMobile ? 0.6 : 0.8));
             // but never wider than 250px
             maxWidth = Math.min(maxWidth, 250);
 
-            // on narrow screens use 80% height, on desktop 30%
-            let maxHeight = Math.floor(mapH * (isMobile ? 0.80 : 0.3));
+            // on narrow screens use 80% height, on desktop 80%
+            let maxHeight = Math.floor(mapH * (isMobile ? 0.80 : 0.8));
             // but never taller than 500px
             maxHeight = Math.min(maxHeight, 500);
 
