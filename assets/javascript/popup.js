@@ -352,7 +352,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // on narrow screens use 80% height, on desktop 80%
             let maxHeight = Math.floor(mapH * (isMobile ? 0.80 : 0.8));
             // but never taller than 500px
-            maxHeight = Math.min(maxHeight, 500);
+            maxHeight = Math.min(maxHeight, 400);
 
             //console.debug("Adjusted popup size:", maxWidth, "x", maxHeight);
 
