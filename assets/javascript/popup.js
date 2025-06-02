@@ -344,7 +344,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 {
                     maxWidth,
                     maxHeight,
-                    keepInView: true,
+                    //keepInView: true,
                     autoPanPadding: [10, 10],
                     closeButton: false,
                     //closeOnClick: false,
