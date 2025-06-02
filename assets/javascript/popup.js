@@ -364,7 +364,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     maxHeight,
                     //keepInView: true,
                     autoPanPadding: [10, 10],
-                    closeButton: false,
+                    closeButton: true,
                     //closeOnClick: false,
                 }
             );
