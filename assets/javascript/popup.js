@@ -328,14 +328,27 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 popupContent = generateBuyPopupContent(data, selected_subtypes);
             }
 
-            // Bind the popup to the layer and set the max height and width based on the screen size
+            // Use Leaflet's map size to determine the popup size
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const isMobile = L.Browser.mobile;
+
+            // 80% width on mobile, 40% on desktop
+            const maxWidth  = Math.floor(w * (isMobile ? 0.8 : 0.4));
+            // 60% height on mobile, 50% on desktop
+            const maxHeight = Math.floor(h * (isMobile ? 0.6 : 0.5));
+
+            // Bind the popup to the layer with the generated content and size constraints
             layer.bindPopup(
-                popupContent, 
+                popupContent,
                 {
-                    maxHeight: window.innerWidth < 768 ? 410 : 650,
-                    maxWidth: window.innerWidth < 768 ? 175 : 300,
+                    maxWidth,
+                    maxHeight,
+                    keepInView: true,
+                    autoPanPadding: [10, 10],
                     closeButton: false,
-                },
+                    //closeOnClick: false,
+                }
             );
         }
     }
