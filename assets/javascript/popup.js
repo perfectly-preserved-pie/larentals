@@ -333,39 +333,22 @@ window.dash_props = Object.assign({}, window.dash_props, {
             //const h = window.innerHeight;
             //const isMobile = L.Browser.mobile;
 
-            // Calculate the maximum width and height for the popup based on the map container size
-            const container = (layer._map && layer._map.getContainer())
-            || document.querySelector('.dash-leaflet-map') // Fallback to the first map container found
-            || window; // Fallback to the window if no map container is found
-
-            const mapW = container.clientWidth || window.innerWidth;
-            const mapH = container.clientHeight || window.innerHeight;
-
-            // treat <768px wide as “mobile”
-            const isMobile = mapW < 768;
-
-            // on narrow screens use 60% width, on desktop 80%
-            let maxWidth  = Math.floor(mapW * (isMobile ? 0.6 : 0.8));
-            // but never wider than 250px
-            maxWidth = Math.min(maxWidth, 250);
-
-            // on narrow screens use 80% height, on desktop 80%
-            let maxHeight = Math.floor(mapH * (isMobile ? 0.80 : 0.8));
-            // but never taller than 500px
-            maxHeight = Math.min(maxHeight, 400);
-
-            //console.debug("Adjusted popup size:", maxWidth, "x", maxHeight);
+            // Compute maxWidth/maxHeight
+            const isMobile = L.Browser.mobile || window.innerWidth < 768; // Use Leaflet's mobile detection or check window width
+            const maxWidth  = isMobile ? 225 : 300;
+            const maxHeight = isMobile ? 485 : 650;
 
             // Bind the popup to the layer with the generated content and size constraints
             layer.bindPopup(
                 popupContent,
                 {
-                    maxWidth,
-                    maxHeight,
+                    maxWidth: maxWidth,
+                    maxHeight: maxHeight,
                     //keepInView: true,
                     autoPanPadding: [10, 10],
                     closeButton: true,
                     //closeOnClick: false,
+                    className: 'responsive-popup',
                 }
             );
         }
