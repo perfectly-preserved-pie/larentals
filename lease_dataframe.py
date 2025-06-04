@@ -217,6 +217,13 @@ try:
     df_combined['laundry_category'] = df_combined['laundry'].apply(categorize_laundry_features)
     # Reset the index
     df_combined = df_combined.reset_index(drop=True)
+    for col in ['street_number','full_street_address','short_address']:
+      df_combined[col] = (
+          df_combined[col]
+            .fillna('')           # no more NaNs
+            .astype(str)          # ensure string dtype
+            .str.replace(r'\.0$', '', regex=True)
+      )
     # Remove trailing 0 in the street_number column and the full_street_address column and the short_address column
     df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0', '', regex=True)
     df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0', '', regex=True)
