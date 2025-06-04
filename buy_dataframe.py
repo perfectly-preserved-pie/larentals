@@ -144,7 +144,6 @@ try:
 
   # Fetch missing zip codes
   df = fetch_missing_zip_codes(df, geolocator=g)
-  df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
 
   # Tag each row with the date it was processed
   for row in df.itertuples():
@@ -164,17 +163,6 @@ try:
     coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
     df.at[row.Index, 'latitude'] = coordinates[0]
     df.at[row.Index, 'longitude'] = coordinates[1]
-
-  #df = update_howloud_scores(df)
-
-  # Cast HowLoud columns as either nullable strings or nullable integers
-  #howloud_columns = [col for col in df.columns if col.startswith("howloud_")]
-  #for col in howloud_columns:
-    # Check if the content is purely numeric
-  #  if df[col].dropna().astype(str).str.isnumeric().all():
-  #    df[col] = df[col].astype(pd.Int32Dtype())  # Cast to nullable integer
-  #  else:
-  #    df[col] = df[col].astype(pd.StringDtype())  # Cast to string
 
   ### BATHROOMS PARSING
   # Split the Bedroom/Bathrooms column to extract total and detailed bathroom counts
@@ -205,12 +193,6 @@ try:
     'extra_bathrooms'
   ]
 
-  # Convert total_bathrooms to nullable UInt8
-  bathroom_details['total_bathrooms'] = bathroom_details['total_bathrooms'].astype("float").astype("UInt8")
-
-  # Convert to numeric types
-  bathroom_details = bathroom_details.astype("UInt8")
-
   # Assign the extracted bathrooms to the main DataFrame
   df = pd.concat([df, bathroom_details], axis=1)
 
@@ -219,15 +201,6 @@ try:
 
   logger.info("Bathroom columns extracted and total_bathrooms updated.")
   logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].sample(n=10))
-
-  # Convert a few columns into int64
-  # pd.to_numeric will convert into int64 or float64 automatically, which is cool
-  # These columns are assumed to have NO MISSING DATA, so we can cast them as int64 instead of floats (ints can't handle NaNs)
-  # These columns should stay floats
-  df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='coerce')
-  df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='coerce')
-  # Convert zip_code into string
-  df['zip_code'] = df['zip_code'].apply(pd.to_numeric, errors='coerce').astype("string")
 
   # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
   # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
@@ -245,15 +218,6 @@ try:
   df[cols] = df[cols].replace('', 'Unknown')
   # Convert columns to numeric
   df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
-  # Cast specified columns as nullable integers
-  int_cols = ['full_bathrooms', 'bedrooms', 'year_built', 'sqft', 'list_price', 'total_bathrooms']
-  df[int_cols] = df[int_cols].astype('Int64')
-
-  # Cast these columns as nullable strings
-  cols = ['short_address', 'full_street_address', 'mls_number', 'mls_photo', 'listing_url', 'subtype', 'bedrooms_bathrooms', 'hoa_fee_frequency']
-  for col in cols:
-    df[col] = df[col].astype('string')
-
 
   # Reindex the dataframe
   df.reset_index(drop=True, inplace=True)

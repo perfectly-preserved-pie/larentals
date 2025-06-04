@@ -105,7 +105,7 @@ try:
   df.dropna(subset=['street_name'], inplace=True)
 
   # Columns to clean
-  cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit']
+  cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit', 'lot_size', 'sqft', 'year_built']
   # Remove all non-numeric characters, convert to numeric, and round to integers
   numeric_cleaned = (
     df[cols]
@@ -113,77 +113,29 @@ try:
     .apply(pd.to_numeric, errors='coerce')
     .round(0)
   )
-  # Identify rows where any value exceeds the UInt16 limit (65,535)
-  mask = (numeric_cleaned > 65535).any(axis=1)
-  if mask.any():
-    # Join the MLS number column so that we log which MLS is affected,
-    # then log the numeric columns that exceed the limit.
-    culprit_rows = df.loc[mask, ['mls_number']].join(numeric_cleaned.loc[mask, :])
-    logger.warning("Rows with values exceeding the UInt16 limit were found:")
-    logger.warning(culprit_rows)
+  
+  # Assign cleaned columns back to the dataframe
+  df[cols] = numeric_cleaned
 
-  # Cast each column individually:
-  # If all values in a column are <= 65,535, use UInt16
-  for col in cols:
-    max_val = numeric_cleaned[col].max(skipna=True)
-    if pd.notna(max_val) and max_val <= 65535:
-      df[col] = numeric_cleaned[col].astype(pd.UInt16Dtype())
-    else:
-      logger.error(f"Column '{col}' has values exceeding the UInt16 limit and cannot be cast to UInt16. Aborting.")
-      sys.exit(1)
-
-  # Cast 'sqft' to UInt32
-  df['sqft'] = df['sqft'].replace({',': ''}, regex=True).astype(pd.UInt32Dtype())
-
-  # Convert other columns to appropriate data types
-  df = df.astype({
-    'year_built': 'UInt16',
-    'parking_spaces': 'UInt8',
-    'street_number': 'string'
-  })
-
-  # Handle lot_size column separately by removing commas, converting to numeric, and then to UInt32
-  df['lot_size'] = (
-    df['lot_size']
-    .replace({',': ''}, regex=True)
-    .apply(pd.to_numeric, errors='coerce')
-    .astype(pd.UInt32Dtype())
-  )
-
-  # Cast the following columns as a float and remove the leading $ sign
-  df['ppsqft'] = df['ppsqft'].replace(to_replace=r'[^\d]', value='', regex=True).astype(pd.Float32Dtype())
-
-  # Columns to be cast as strings
-  cols = ['mls_number', 'phone_number', 'street_name', 'zip_code', 'city']
-  df[cols] = df[cols].astype(pd.StringDtype())
-
-  # Columns to be cast as categories
-  cols = ['pet_policy', 'furnished', 'subtype', 'terms', 'laundry']
-  df[cols] = df[cols].astype(pd.CategoricalDtype())
+  # Clean ppsqft column separately to shaving off the decimal places
+  df['ppsqft'] = df['ppsqft'].replace({r'\$': '', ',': ''}, regex=True)
 
   # Extract total bathrooms and bathroom types (Full, Three-Quarter, Half, Quarter)
-  df[['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']] = df['bathrooms'].str.extract(r'(\d+\.\d+)\s\((\d+)\s(\d+)\s(\d+)\s(\d+)\)').astype(float)
-
-  # Convert bathroom columns to nullable integer type
-  for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']:
-    df[col] = df[col].astype(pd.UInt8Dtype())
+  df[['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms']] = df['bathrooms'].str.extract(r'(\d+\.\d+)\s\((\d+)\s(\d+)\s(\d+)\s(\d+)\)')
 
   # Drop the original 'Baths(FTHQ)' column since we've extracted the data we need
   df.drop(columns=['bathrooms'], inplace=True)
-
-  # Convert bedrooms to nullable integer type
-  df['bedrooms'] = df['bedrooms'].astype(pd.UInt8Dtype())
 
   # Fetch missing city names
   for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
     df.at[row.Index, 'city'] = fetch_missing_city(f"{row.street_number} {row.street_name} {str(row.zip_code)}", geolocator=g)
 
   # Create a new column with the Street Number & Street Name
-  df["short_address"] = (df["street_number"].astype(str) + ' ' + df["street_name"] + ', ' + df['city']).astype(pd.StringDtype())
+  df["short_address"] = (df["street_number"].astype(str) + ' ' + df["street_name"] + ', ' + df['city'])
 
   # Fetch missing zip codes
   df = fetch_missing_zip_codes(df, geolocator=g)
-  df['zip_code'] = df['zip_code'].astype(pd.StringDtype())
+  df['zip_code'] = df['zip_code']
 
   # Remove the trailing .0 in the zip_code column
   df['zip_code'] = df['zip_code'].str.replace(r'\.0$', '', regex=True)
@@ -198,7 +150,7 @@ try:
       df["street_name"].str.strip() + ', ' + 
       df['city'] + ' ' + 
       df["zip_code"].astype(str)
-  ).astype(pd.StringDtype())
+  )
 
   # Iterate through the dataframe and get the listed date and photo for rows
   df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
@@ -208,10 +160,6 @@ try:
     coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
     df.at[row.Index, 'latitude'] = coordinates[0]
     df.at[row.Index, 'longitude'] = coordinates[1]
-
-  # These columns should stay floats
-  df['latitude'] = df['latitude'].apply(pd.to_numeric, errors='raise', downcast='float')
-  df['longitude'] = df['longitude'].apply(pd.to_numeric, errors='raise', downcast='float')
 
   ## Laundry Features ##
   # Replace all empty values in the following column with "Unknown" and cast the column as dtype string
