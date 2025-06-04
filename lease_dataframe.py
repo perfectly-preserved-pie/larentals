@@ -290,6 +290,14 @@ try:
   else:
     df_combined = df.copy()
 
+  if "reported_as_inactive" not in gdf_combined.columns:
+    gdf_combined["reported_as_inactive"] = False
+  else:
+    gdf_combined["reported_as_inactive"] = gdf_combined["reported_as_inactive"].fillna(False)
+  if not df_old.empty:
+    previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
+    gdf_combined.loc[gdf_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+
   # Save the GeoDataFrame to the SQLite database
   try:
     conn = sqlite3.connect(DB_PATH)
