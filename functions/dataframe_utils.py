@@ -6,11 +6,14 @@ import geopandas as gpd
 import pandas as pd
 import requests
 import sys
+import sqlite3
+
+DB = "assets/datasets/larentals.db"
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
-def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
+def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """
     Checks each listing to determine if it has expired or been sold, and removes inactive listings.
     If 'bhhs' is in the 'listing_url', it checks for expired listings.
@@ -22,32 +25,32 @@ def remove_inactive_listings(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
     pd.DataFrame: The DataFrame with inactive listings removed.
     """
-    indexes_to_drop = []
+    to_delete = []
 
     for row in df.itertuples():
-        listing_url = str(getattr(row, 'listing_url', ''))
-        mls_number = str(getattr(row, 'mls_number', ''))
+        url = getattr(row, 'listing_url', '')
+        mls = getattr(row, 'mls_number', '')
+        if 'bhhscalifornia.com' in url and check_expired_listing_bhhs(url, mls):
+            to_delete.append(mls)
+        elif 'theagencyre.com' in url and check_expired_listing_theagency(url, mls):
+            to_delete.append(mls)
 
-        # Check if the listing is expired on BHHS
-        if 'bhhscalifornia.com' in listing_url:
-            is_expired = check_expired_listing_bhhs(listing_url, mls_number)
-            if is_expired:
-                indexes_to_drop.append(row.Index)
-                logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on BHHS.")
-                delete_single_mls_image(mls_number)
-        # Check if the listing is expired on The Agency
-        elif 'theagencyre.com' in listing_url:
-            is_sold = check_expired_listing_theagency(listing_url, mls_number)
-            if is_sold:
-                indexes_to_drop.append(row.Index)
-                logger.success(f"Removed MLS {mls_number} (Index: {row.Index}) from the DataFrame because the listing has expired on The Agency.")
-                delete_single_mls_image(mls_number)
+    # 1) delete from SQLite
+    if to_delete:
+        conn = sqlite3.connect(DB)
+        cur  = conn.cursor()
+        for mls in to_delete:
+            cur.execute(f"DELETE FROM {table_name} WHERE mls_number = ?", (mls,))
+        conn.commit()
+        conn.close()
+    
+    # 2) drop in-memory
+    df_clean = df[~df['mls_number'].isin(to_delete)].reset_index(drop=True)
 
-    inactive_count = len(indexes_to_drop)
+    inactive_count = len(to_delete)
     logger.info(f"Total inactive listings removed: {inactive_count}")
 
-    df_active = df.drop(indexes_to_drop)
-    return df_active.reset_index(drop=True)
+    return df_clean
 
 def update_dataframe_with_listing_data(
     df: pd.DataFrame, imagekit_instance

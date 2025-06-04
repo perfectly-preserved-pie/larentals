@@ -212,7 +212,7 @@ try:
     # Drop any dupes again
     df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
     # Iterate through the dataframe and drop rows with expired listings
-    df_combined = remove_inactive_listings(df_combined)
+    df_combined = remove_inactive_listings(df_combined, table_name="lease")
     # Categorize the laundry features
     df_combined['laundry_category'] = df_combined['laundry'].apply(categorize_laundry_features)
     # Reset the index

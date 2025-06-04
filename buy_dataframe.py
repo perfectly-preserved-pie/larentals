@@ -243,7 +243,7 @@ try:
     df_combined = df.copy()
   df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
   df_combined = flatten_subtype_column(df_combined) 
-  df_combined = remove_inactive_listings(df_combined)
+  df_combined = remove_inactive_listings(df_combined, table_name="buy")
   df_combined.reset_index(drop=True, inplace=True)
   # Clean up address fields
   df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
