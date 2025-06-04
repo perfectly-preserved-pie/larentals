@@ -246,6 +246,8 @@ try:
   df_combined = remove_inactive_listings(df_combined, table_name="buy")
   df_combined.reset_index(drop=True, inplace=True)
   # Clean up address fields
+  df_combined['city']     = df_combined['city'].fillna('').astype(str)
+  df_combined['zip_code'] = df_combined['zip_code'].fillna('').astype(str)
   df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
   df_combined["full_street_address"] = df_combined["street_number"].str.cat(df_combined["street_address"], sep=" ", na_rep="").str.strip()
   df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
