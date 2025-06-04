@@ -290,7 +290,7 @@ try:
   else:
     df_combined = df.copy()
 
-  # Save the GeoDataFrame as a GeoJSON file
+  # Save the GeoDataFrame to the SQLite database
   try:
     conn = sqlite3.connect(DB_PATH)
     # overwrite the existing 'lease' table
@@ -298,14 +298,8 @@ try:
     conn.commit()
     conn.close()
     logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'.")
-    # now push it to S3
-    upload_file_to_s3(
-      local_path="assets/datasets/larentals.db",
-      bucket="wheretolivedotla-geojsonstorage",
-      key="larentals.db"
-    )
   except Exception as e:
-    logger.error(f"Error saving the combined GeoDataFrame to a GeoJSON file: {e}")
+    logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
 
   # Reclaim space in ImageKit
   #reclaim_imagekit_space(geojson_path="assets/datasets/lease.geojson", imagekit_instance=imagekit)

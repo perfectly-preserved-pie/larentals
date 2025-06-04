@@ -303,7 +303,7 @@ try:
     previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
     df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
-  # Save into SQLite instead of dumping GeoJSON + upload buy.geojson
+  # Save into SQLite
   try:
     conn = sqlite3.connect(DB_PATH)
     # overwrite the existing 'buy' table
@@ -311,14 +311,8 @@ try:
     conn.commit()
     conn.close()
     logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'.")
-    # now push the updated database to S3
-    upload_file_to_s3(
-      local_path=DB_PATH,
-      bucket="wheretolivedotla-geojsonstorage",
-      key="larentals.db"
-    )
   except Exception as e:
-    logger.error(f"Error writing combined GeoDataFrame to SQLite: {e}")
+    logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
 
   # Reclaim space in ImageKit
   #reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
