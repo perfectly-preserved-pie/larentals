@@ -88,6 +88,16 @@ set -e
 echo "lease_dataframe.py exited with code $code_lease"
 echo "buy_dataframe.py   exited with code $code_buy"
 
+# Only push to S3 if *both* succeeded
+if [[ $code_lease -eq 0 && $code_buy -eq 0 ]]; then
+  echo "Both dataframes updated successfully - uploading larentals.db to S3…"
+  aws s3 cp ~/larentals/assets/datasets/larentals.db \
+    s3://wheretolivedotla-geojsonstorage/larentals.db
+else
+  echo "One or more scripts failed; skipping S3 upload."
+  exit 1
+fi
+
 shutdown -h now
 
 # If anything fails, check cloud-init logs:
