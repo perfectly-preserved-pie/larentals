@@ -15,41 +15,35 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """
-    Checks each listing to determine if it has expired or been sold, and removes inactive listings.
-    If 'bhhs' is in the 'listing_url', it checks for expired listings.
-    If 'idcrealestate' is in the 'listing_url', it checks for sold listings.
-
-    Parameters:
-    df (pd.DataFrame): The DataFrame containing listing URLs and MLS numbers.
-
-    Returns:
-    pd.DataFrame: The DataFrame with inactive listings removed.
+    Removes listings that have expired or been sold both in memory and in the SQLite table.
     """
     to_delete = []
 
     for row in df.itertuples():
-        url = getattr(row, 'listing_url', '')
+        # guard against NaN or non-string listing_url
+        raw = getattr(row, 'listing_url', '')
+        url = '' if pd.isna(raw) else str(raw)
         mls = getattr(row, 'mls_number', '')
+
         if 'bhhscalifornia.com' in url and check_expired_listing_bhhs(url, mls):
             to_delete.append(mls)
         elif 'theagencyre.com' in url and check_expired_listing_theagency(url, mls):
             to_delete.append(mls)
 
-    # 1) delete from SQLite
     if to_delete:
         conn = sqlite3.connect(DB)
-        cur  = conn.cursor()
-        for mls in to_delete:
-            cur.execute(f"DELETE FROM {table_name} WHERE mls_number = ?", (mls,))
+        cur = conn.cursor()
+        for mls_number in to_delete:
+            cur.execute(
+                f"DELETE FROM {table_name} WHERE mls_number = ?",
+                (mls_number,)
+            )
         conn.commit()
         conn.close()
-    
-    # 2) drop in-memory
+
+    # Drop rows in the DataFrame
     df_clean = df[~df['mls_number'].isin(to_delete)].reset_index(drop=True)
-
-    inactive_count = len(to_delete)
-    logger.info(f"Total inactive listings removed: {inactive_count}")
-
+    logger.info(f"Removed {len(to_delete)} inactive listings")
     return df_clean
 
 def update_dataframe_with_listing_data(
