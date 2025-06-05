@@ -20,9 +20,12 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     to_delete = []
 
     for row in df.itertuples():
-        # guard against NaN or non-string listing_url
         raw = getattr(row, 'listing_url', '')
-        url = '' if pd.isna(raw) else str(raw)
+        # guard against NaN, floats, etc.
+        if pd.isna(raw) or not isinstance(raw, str):
+            url = ""
+        else:
+            url = raw
         mls = getattr(row, 'mls_number', '')
 
         if 'bhhscalifornia.com' in url and check_expired_listing_bhhs(url, mls):
@@ -41,7 +44,6 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
         conn.commit()
         conn.close()
 
-    # Drop rows in the DataFrame
     df_clean = df[~df['mls_number'].isin(to_delete)].reset_index(drop=True)
     logger.info(f"Removed {len(to_delete)} inactive listings")
     return df_clean
