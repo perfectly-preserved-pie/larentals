@@ -30,8 +30,10 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
 
         if 'bhhscalifornia.com' in url and check_expired_listing_bhhs(url, mls):
             to_delete.append(mls)
+            delete_single_mls_image(mls)
         elif 'theagencyre.com' in url and check_expired_listing_theagency(url, mls):
             to_delete.append(mls)
+            delete_single_mls_image(mls)
 
     if to_delete:
         conn = sqlite3.connect(DB)
