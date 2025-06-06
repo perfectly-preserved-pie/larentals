@@ -29,7 +29,7 @@ uv venv
 source .venv/bin/activate
 
 # Install requirements 
-uv sync
+uv sync --project "$BASE_DIR/pyproject.toml"
 
 cd "$BASE_DIR"
 
