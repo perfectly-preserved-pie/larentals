@@ -37,7 +37,9 @@ cd "$BASE_DIR"
 sudo timedatectl set-timezone America/Los_Angeles
 
 # install CloudWatch agent
-sudo apt install -y amazon-cloudwatch-agent
+curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
+  https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+dpkg -i /tmp/amazon-cloudwatch-agent.deb || apt-get install -fy
 
 # apply the CloudWatch config
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
