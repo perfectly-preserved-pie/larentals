@@ -9,6 +9,9 @@ S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
 
 cd "$BASE_DIR"
 
+# ensure OS uses PST/PDT
+sudo timedatectl set-timezone America/Los_Angeles
+
 # install CloudWatch agent
 sudo yum install -y amazon-cloudwatch-agent
 
@@ -21,25 +24,31 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
 
 run_pipeline() {
   local mode=$1    # "sample" or "full"
-  local args=$2    # "--sample N" or ""
+  local args=${2:-}
 
-  echo "[$mode] starting lease pipeline $args"
-  uv run python lease_dataframe.py $args >> /var/log/lease_dataframe.log 2>&1 & pid_lease=$!
+  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting lease pipeline $args" \
+    >> /var/log/lease_dataframe.log 2>&1
+  uv run python lease_dataframe.py $args \
+    >> /var/log/lease_dataframe.log 2>&1 & pid_lease=$!
 
-  echo "[$mode] starting buy pipeline $args"
-  uv run python buy_dataframe.py   $args >> /var/log/buy_dataframe.log   2>&1 & pid_buy=$!
+  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting buy pipeline $args" \
+    >> /var/log/buy_dataframe.log 2>&1
+  uv run python buy_dataframe.py $args \
+    >> /var/log/buy_dataframe.log 2>&1 & pid_buy=$!
 
   wait $pid_lease; code_lease=$?
   wait $pid_buy;   code_buy=$?
 
-  echo "[$mode] lease exit code: $code_lease" >> /var/log/lease_dataframe.log
-  echo "[$mode] buy   exit code: $code_buy"   >> /var/log/buy_dataframe.log
+  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] lease exit code: $code_lease" \
+    >> /var/log/lease_dataframe.log
+  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] buy   exit code: $code_buy" \
+    >> /var/log/buy_dataframe.log
 
   if (( code_lease != 0 || code_buy != 0 )); then
-    echo "[$mode] pipelines failed; aborting." >> /var/log/lease_dataframe.log
+    echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] pipelines failed; aborting." \
+      >> /var/log/lease_dataframe.log
     return 1
   fi
-
   return 0
 }
 
@@ -50,7 +59,8 @@ fi
 
 # 2) full run (process all rows and write to SQLite, then S3 upload)
 if run_pipeline "full" ""; then
-  echo "[full] pipelines succeeded; uploading DB to S3" >> /var/log/lease_dataframe.log
+  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [full] pipelines succeeded; uploading DB to S3" \
+    >> /var/log/lease_dataframe.log
   aws s3 cp "$DB_PATH" "$S3_URI"
 else
   exit 1
