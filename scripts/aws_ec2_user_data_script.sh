@@ -7,13 +7,37 @@ BASE_DIR=/home/ubuntu/larentals
 DB_PATH=$BASE_DIR/assets/datasets/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
 
+# Update & install OS packages
+sudo apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  python3 python3-pip git curl unzip
+
+export HOME=/home/ubuntu
+cd $HOME
+
+# Clone the repo
+git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
+
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# add the local bin to the PATH
+source $HOME/.local/bin/env
+
+# Create a venv and activate it
+uv venv
+source .venv/bin/activate
+
+# Install requirements 
+uv sync
+
 cd "$BASE_DIR"
 
 # ensure OS uses PST/PDT
 sudo timedatectl set-timezone America/Los_Angeles
 
 # install CloudWatch agent
-sudo yum install -y amazon-cloudwatch-agent
+sudo apt install -y amazon-cloudwatch-agent
 
 # apply the CloudWatch config
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
