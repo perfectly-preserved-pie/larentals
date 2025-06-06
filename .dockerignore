@@ -12,5 +12,6 @@
 assets/dashExtensions_default.js
 assets/datasets/*.bak
 assets/datasets/DINS*
-aws_ec2_user_data_script.sh
 include/
+pipelines/
+scripts/
