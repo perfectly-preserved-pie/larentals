@@ -1,104 +1,59 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Set the timezone to Pacific Time
-timedatectl set-timezone America/Los_Angeles
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+SAMPLE_SIZE=10
+BASE_DIR=/home/ubuntu/larentals
+DB_PATH=$BASE_DIR/assets/datasets/larentals.db
+S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
 
-# 1) Update & install OS packages
-apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  python3 python3-pip git curl unzip
+cd "$BASE_DIR"
 
-export HOME=/home/ubuntu
-cd $HOME
+# install CloudWatch agent
+sudo yum install -y amazon-cloudwatch-agent
 
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# apply the CloudWatch config
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -c file:$BASE_DIR/scripts/cloudwatch.json \
+  -s
 
-# add the local bin to the PATH
-source $HOME/.local/bin/env
+run_pipeline() {
+  local mode=$1    # "sample" or "full"
+  local args=$2    # "--sample N" or ""
 
-# Create a venv and activate it
-uv venv
-source .venv/bin/activate
+  echo "[$mode] starting lease pipeline $args"
+  uv run python lease_dataframe.py $args >> /var/log/lease_dataframe.log 2>&1 & pid_lease=$!
 
-# Install the CloudWatch Agent
-curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
-  https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-dpkg -i /tmp/amazon-cloudwatch-agent.deb || apt-get install -fy
+  echo "[$mode] starting buy pipeline $args"
+  uv run python buy_dataframe.py   $args >> /var/log/buy_dataframe.log   2>&1 & pid_buy=$!
 
-# Set the git config to use the best compression
-# This is a workaround for the issue with the default git compression
-git config --global core.compression 9 repack
+  wait $pid_lease; code_lease=$?
+  wait $pid_buy;   code_buy=$?
 
-# Clone the repo
-cd /home/ubuntu
-git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
-cd larentals
+  echo "[$mode] lease exit code: $code_lease" >> /var/log/lease_dataframe.log
+  echo "[$mode] buy   exit code: $code_buy"   >> /var/log/buy_dataframe.log
 
-# Install requirements 
-uv sync
+  if (( code_lease != 0 || code_buy != 0 )); then
+    echo "[$mode] pipelines failed; aborting." >> /var/log/lease_dataframe.log
+    return 1
+  fi
 
-# Configure the CloudWatch Agent to tail the log file
-cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
-{
-  "logs": {
-    "logs_collected": {
-      "files": {
-        "collect_list": [
-          {
-            "file_path": "/var/log/lease_dataframe.log",
-            "log_group_name": "LarentalsLeaseDF",
-            "log_stream_name": "{instance_id}"
-          },
-          {
-            "file_path": "/var/log/buy_dataframe.log",
-            "log_group_name": "LarentalsBuyDF",
-            "log_stream_name": "{instance_id}"
-          }
-        ]
-      }
-    }
-  }
+  return 0
 }
-EOF
 
-# Enable & start the CloudWatch Agent
-systemctl enable amazon-cloudwatch-agent
-systemctl start amazon-cloudwatch-agent
+# 1) sample test (runs both pipelines on SAMPLE_SIZE rows)
+if ! run_pipeline "sample" "--sample $SAMPLE_SIZE"; then
+  exit 1
+fi
 
-# ───────────────────────────────────────────────────────────────
-# Run both scripts in parallel, but don’t let one failure stop the other
-# ───────────────────────────────────────────────────────────────
-uv run python lease_dataframe.py & pid_lease=$!
-uv run python buy_dataframe.py   & pid_buy=$!
-
-# Temporarily disable “exit on error” so we can collect both exit codes
-set +e
-
-wait $pid_lease
-code_lease=$?
-
-wait $pid_buy
-code_buy=$?
-
-# Re-enable “exit on error” for any subsequent critical commands
-set -e
-
-echo "lease_dataframe.py exited with code $code_lease"
-echo "buy_dataframe.py   exited with code $code_buy"
-
-# Only push to S3 if *both* succeeded
-if [[ $code_lease -eq 0 && $code_buy -eq 0 ]]; then
-  echo "Both dataframes updated successfully - uploading larentals.db to S3…"
-  aws s3 cp ~/larentals/assets/datasets/larentals.db \
-    s3://wheretolivedotla-geojsonstorage/larentals.db
+# 2) full run (process all rows and write to SQLite, then S3 upload)
+if run_pipeline "full" ""; then
+  echo "[full] pipelines succeeded; uploading DB to S3" >> /var/log/lease_dataframe.log
+  aws s3 cp "$DB_PATH" "$S3_URI"
 else
-  echo "One or more scripts failed; skipping S3 upload."
   exit 1
 fi
 
 shutdown -h now
-
-# If anything fails, check cloud-init logs:
-#    sudo tail -f /var/log/cloud-init-output.log

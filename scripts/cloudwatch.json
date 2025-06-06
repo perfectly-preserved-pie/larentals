@@ -1,0 +1,26 @@
+{  
+    "agent": {  
+      "metrics_collection_interval": 60,  
+      "run_as_user": "root"  
+    },  
+    "logs": {  
+      "logs_collected": {  
+        "files": {  
+          "collect_list": [  
+            {  
+              "file_path": "/var/log/lease_dataframe.log",  
+              "log_group_name": "larentals-lease",  
+              "log_stream_name": "{instance_id}",  
+              "timestamp_format": "%Y-%m-%d %H:%M:%S"  
+            },  
+            {  
+              "file_path": "/var/log/buy_dataframe.log",  
+              "log_group_name": "larentals-buy",  
+              "log_stream_name": "{instance_id}",  
+              "timestamp_format": "%Y-%m-%d %H:%M:%S"  
+            }  
+          ]  
+        }  
+      }  
+    }  
+  }
