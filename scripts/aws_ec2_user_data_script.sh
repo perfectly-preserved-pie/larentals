@@ -54,12 +54,12 @@ run_pipeline() {
 
   echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting lease pipeline $args" \
     >> /var/log/lease_dataframe.log 2>&1
-  uv run python lease_dataframe.py $args \
+  uv run python pipelines/lease_dataframe.py $args \
     >> /var/log/lease_dataframe.log 2>&1 & pid_lease=$!
 
   echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting buy pipeline $args" \
     >> /var/log/buy_dataframe.log 2>&1
-  uv run python buy_dataframe.py $args \
+  uv run python pipelines/buy_dataframe.py $args \
     >> /var/log/buy_dataframe.log 2>&1 & pid_buy=$!
 
   wait $pid_lease; code_lease=$?
