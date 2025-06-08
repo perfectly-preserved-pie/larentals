@@ -34,7 +34,7 @@ uv sync --project "$BASE_DIR/pyproject.toml"
 cd "$BASE_DIR"
 
 # add project root to PYTHONPATH so `import functions` works
-export PYTHONPATH="$BASE_DIR:$PYTHONPATH"
+#export PYTHONPATH="$BASE_DIR:$PYTHONPATH"
 
 # ensure OS uses PST/PDT
 sudo timedatectl set-timezone America/Los_Angeles
@@ -44,12 +44,16 @@ curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
   https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 sudo dpkg -i /tmp/amazon-cloudwatch-agent.deb || apt-get install -fy
 
-# apply the CloudWatch config
+# apply the CloudWatch config (don’t die if it was already stopped)
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config \
   -m ec2 \
   -c file:$BASE_DIR/scripts/cloudwatch.json \
-  -s
+  -s || true
+
+# then make sure the agent is enabled & running
+sudo systemctl enable amazon-cloudwatch-agent
+sudo systemctl restart amazon-cloudwatch-agent
 
 run_pipeline() {
   local mode=$1    # "sample" or "full"
@@ -57,12 +61,13 @@ run_pipeline() {
 
   echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting lease pipeline $args" \
     >> /var/log/lease_dataframe.log 2>&1
-  uv run python pipelines/lease_dataframe.py $args \
+  rm -rf ~/.cache/uv
+  uv run python -m pipelines.lease_dataframe $args \
     >> /var/log/lease_dataframe.log 2>&1 & pid_lease=$!
-
   echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting buy pipeline $args" \
     >> /var/log/buy_dataframe.log 2>&1
-  uv run python pipelines/buy_dataframe.py $args \
+  rm -rf ~/.cache/uv
+  uv run python -m pipelines.buy_dataframe $args \
     >> /var/log/buy_dataframe.log 2>&1 & pid_buy=$!
 
   wait $pid_lease; code_lease=$?
