@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # Load all CSVs and concat into one dataframe
     # https://stackoverflow.com/a/21232849
     path = "."
-    all_files = glob.glob(os.path.join(path, "*Renter*.csv"))
+    all_files = glob.glob(os.path.join(path, "*.csv"))
     df = pd.concat((pd.read_csv(f, float_precision="round_trip", skipinitialspace=True) for f in all_files), ignore_index=True)
 
     pd.set_option("display.precision", 10)
