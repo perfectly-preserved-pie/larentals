@@ -1,19 +1,34 @@
 {
-  "agent": { "metrics_collection_interval": 60, "run_as_user": "root" },
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "root"
+  },
   "logs": {
     "logs_collected": {
       "files": {
         "collect_list": [
           {
-            "file_path": "/var/log/lease_dataframe.log",
+            "file_path": "/var/log/larentals/sample/lease_dataframe_sample.log",
             "log_group_name": "larentals-lease",
-            "log_stream_name": "{instance_id}",
+            "log_stream_name": "{instance_id}/sample",
             "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
           },
           {
-            "file_path": "/var/log/buy_dataframe.log",
+            "file_path": "/var/log/larentals/sample/buy_dataframe_sample.log",
             "log_group_name": "larentals-buy",
-            "log_stream_name": "{instance_id}",
+            "log_stream_name": "{instance_id}/sample",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
+          },
+          {
+            "file_path": "/var/log/larentals/full/lease_dataframe_full.log",
+            "log_group_name": "larentals-lease",
+            "log_stream_name": "{instance_id}/full",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
+          },
+          {
+            "file_path": "/var/log/larentals/full/buy_dataframe_full.log",
+            "log_group_name": "larentals-buy",
+            "log_stream_name": "{instance_id}/full",
             "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
           }
         ]
