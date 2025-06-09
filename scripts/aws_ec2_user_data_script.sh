@@ -18,11 +18,6 @@ if [ ! -d "$BASE_DIR" ]; then
   git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
 fi
 
-# Ensure ubuntu can access workspace and cache
-chown -R ubuntu:ubuntu "$BASE_DIR"
-mkdir -p /home/ubuntu/.cache/uv
-chown -R ubuntu:ubuntu /home/ubuntu/.cache
-
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
