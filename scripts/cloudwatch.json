@@ -15,18 +15,6 @@
             "log_group_name": "larentals-buy",
             "log_stream_name": "{instance_id}",
             "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
-          },
-          {
-            "file_path": "/var/log/lease_dataframe_sample.log",
-            "log_group_name": "larentals-lease-sample",
-            "log_stream_name": "{instance_id}",
-            "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
-          },
-          {
-            "file_path": "/var/log/buy_dataframe_sample.log",
-            "log_group_name": "larentals-buy-sample",
-            "log_stream_name": "{instance_id}",
-            "timestamp_format": "%Y-%m-%d %H:%M:%S %Z"
           }
         ]
       }
