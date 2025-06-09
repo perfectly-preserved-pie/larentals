@@ -241,6 +241,11 @@ if __name__ == "__main__":
     # Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
     df['context'] = [{"pageType": "buy"} for _ in range(len(df))]
 
+    # before saving, if in test mode exit here
+    if SAMPLE_N:
+      logger.success(f"[buy] Test run succeeded on {SAMPLE_N} rows – exiting before write.")
+      sys.exit(0)
+
     ### MERGE WITH EXISTING DATA ###
     df_old = pd.DataFrame()
     if os.path.exists(DB_PATH):
@@ -290,11 +295,6 @@ if __name__ == "__main__":
     if not df_old.empty:
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
-    
-    # before saving, if in test mode exit here
-    if SAMPLE_N:
-      logger.success(f"[buy] Test run succeeded on {SAMPLE_N} rows – exiting before write.")
-      sys.exit(0)
 
     # Save into SQLite
     try:
