@@ -152,6 +152,9 @@ if __name__ == "__main__":
     df = fetch_missing_zip_codes(df, geolocator=g)
     df['zip_code'] = df['zip_code']
 
+    # ensure zip_code is a string so .str accessor will work
+    df['zip_code'] = df['zip_code'].astype(str)
+
     # Remove the trailing .0 in the zip_code column
     df['zip_code'] = df['zip_code'].str.replace(r'\.0$', '', regex=True)
 
