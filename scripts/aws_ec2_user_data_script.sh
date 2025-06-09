@@ -33,7 +33,7 @@ uv sync --project "$BASE_DIR/pyproject.toml"
 cd "$BASE_DIR"
 
 # add project root to PYTHONPATH so `import functions` works
-#export PYTHONPATH="$BASE_DIR:$PYTHONPATH"
+export PYTHONPATH="$BASE_DIR:$PYTHONPATH"
 
 # ensure OS uses PST/PDT
 sudo timedatectl set-timezone America/Los_Angeles
