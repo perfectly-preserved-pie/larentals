@@ -61,9 +61,13 @@ if __name__ == "__main__":
 
   try:
     ### PANDAS DATAFRAME OPERATIONS
-    # Read all sheets from the Excel file
-    excel_file = glob.glob('*.xlsx')[0]
-    xlsx = pd.read_excel(excel_file, sheet_name=None)
+    # find the one .xlsx in this pipelines/ folder
+    script_dir = os.path.dirname(__file__)
+    excel_files = glob.glob(os.path.join(script_dir, '*.xlsx'))
+    if not excel_files:
+      raise FileNotFoundError("Expected one .xlsx in pipelines/, found none")
+    excel_path = os.path.join(script_dir, excel_files[0])
+    xlsx = pd.read_excel(excel_path, sheet_name=None)
 
     # Merge all sheets into a single DataFrame
     df = pd.concat(xlsx.values(), ignore_index=True)
