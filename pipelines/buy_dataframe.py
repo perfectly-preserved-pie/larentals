@@ -15,17 +15,17 @@ import sqlite3
 import argparse
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(
-    description="Build buy listings and (optionally) test on a sample"
-  )
-  parser.add_argument("--sample", "-n", type=int, default=None, help="…")
-  parser.add_argument("--logfile", "-l", type=str, default=None,
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-n","--sample",  type=int, default=None,
+    help="If set, run on a sample and exit before write")
+  parser.add_argument("-l","--logfile", type=str, default=None,
     help="Path to log file (default /var/log/buy_dataframe.log)")
   args = parser.parse_args()
   SAMPLE_N = args.sample
-  LOGFILE   = args.logfile or "/var/log/buy_dataframe.log"
+  LOGFILE  = args.logfile or "/var/log/buy_dataframe.log"
 
-  # set up logging
+  # — Setup logging — remove defaults, add stderr + chosen file only
+  logger.remove()
   logger.add(sys.stderr, format="{time} {level} {message}", level="INFO")
   logger.add(
     LOGFILE,
@@ -43,17 +43,6 @@ if __name__ == "__main__":
 
   g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
-  logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-  # Log to a file
-  logger.add(
-    "/var/log/buy_dataframe.log",
-    level="INFO",
-    rotation="10 MB",        # optional
-    retention="7 days",      # optional
-    backtrace=True,
-    diagnose=True
-  )
-
   # ImageKit.IO
   # https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
   # Create keys at https://imagekit.io/dashboard/developer/api-keys
@@ -66,9 +55,6 @@ if __name__ == "__main__":
   # Database path and table name
   DB_PATH = "assets/datasets/larentals.db"
   TABLE_NAME = "buy"
-
-  # Make the dataframe a global variable
-  global df
 
   try:
     ### PANDAS DATAFRAME OPERATIONS
