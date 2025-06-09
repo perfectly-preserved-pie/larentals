@@ -18,12 +18,23 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description="Build buy listings and (optionally) test on a sample"
   )
-  parser.add_argument(
-    "--sample", "-n", type=int, default=None,
-    help="If set, sample N rows and run pipeline without saving"
-  )
+  parser.add_argument("--sample", "-n", type=int, default=None, help="…")
+  parser.add_argument("--logfile", "-l", type=str, default=None,
+    help="Path to log file (default /var/log/buy_dataframe.log)")
   args = parser.parse_args()
   SAMPLE_N = args.sample
+  LOGFILE   = args.logfile or "/var/log/buy_dataframe.log"
+
+  # set up logging
+  logger.add(sys.stderr, format="{time} {level} {message}", level="INFO")
+  logger.add(
+    LOGFILE,
+    level="INFO",
+    rotation="10 MB",
+    retention="7 days",
+    backtrace=True,
+    diagnose=True,
+  )
 
   ## SETUP AND VARIABLES
   # Load everything from AWS SSM into os.environ ─

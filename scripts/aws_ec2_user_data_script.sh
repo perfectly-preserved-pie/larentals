@@ -61,47 +61,41 @@ echo "Running pipelines..."
 run_pipeline() {
   local mode=$1
   local args=${2:-}
+  # pick a suffix for sample vs full
+  local suffix=""
+  if [[ $mode == "sample" ]]; then
+    suffix="_sample"
+  fi
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting lease pipeline $args" \
-    >> /var/log/lease_dataframe.log 2>&1
-  rm -rf /home/ubuntu/.cache/uv
-  uv run python -m pipelines.lease_dataframe $args \
-    >> /var/log/lease_dataframe.log 2>&1 & pid_lease=$!
+  echo "[$(date)] [$mode] starting lease…" 
+  uv run python -m pipelines.lease_dataframe \
+    $args \
+    --logfile /var/log/lease_dataframe${suffix}.log
+  pid_lease=$!
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] starting buy pipeline $args" \
-    >> /var/log/buy_dataframe.log 2>&1
-  rm -rf /home/ubuntu/.cache/uv
-  uv run python -m pipelines.buy_dataframe $args \
-    >> /var/log/buy_dataframe.log 2>&1 & pid_buy=$!
+  echo "[$(date)] [$mode] starting buy…" 
+  uv run python -m pipelines.buy_dataframe \
+    $args \
+    --logfile /var/log/buy_dataframe${suffix}.log
+  pid_buy=$!
 
   wait $pid_lease; code_lease=$?
   wait $pid_buy;   code_buy=$?
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] lease exit code: $code_lease" \
-    >> /var/log/lease_dataframe.log
-  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] buy   exit code: $code_buy" \
-    >> /var/log/buy_dataframe.log
+  echo "[$(date)] [$mode] lease exit: $code_lease"
+  echo "[$(date)] [$mode] buy   exit: $code_buy"
 
   if (( code_lease != 0 || code_buy != 0 )); then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [$mode] pipelines failed; aborting." \
-      >> /var/log/lease_dataframe.log
+    echo "[$(date)] [$mode] pipelines failed."
     return 1
   fi
   return 0
 }
 
-# 1) sample test
-if ! run_pipeline "sample" "--sample $SAMPLE_SIZE"; then
-  exit 1
-fi
+# sample run logs to *_sample.log
+run_pipeline "sample" "--sample $SAMPLE_SIZE" || exit 1
 
-# 2) full run & S3 upload
-if run_pipeline "full"; then
-  echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] [full] uploading DB to S3" \
-    >> /var/log/lease_dataframe.log
-  aws s3 cp "$DB_PATH" "$S3_URI"
-else
-  exit 1
-fi
+# full run logs back to the normal files
+run_pipeline "full" ""  && aws s3 cp "$DB_PATH" "$S3_URI" || exit 1
 
 shutdown -h now
