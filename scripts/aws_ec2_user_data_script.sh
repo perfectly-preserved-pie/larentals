@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 SAMPLE_SIZE=10
