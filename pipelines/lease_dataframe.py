@@ -221,10 +221,6 @@ if __name__ == "__main__":
       finally:
         conn.close()
 
-    # sample old rows too if in test mode
-    if SAMPLE_N and not df_old.empty:
-      df_old = df_old.sample(min(SAMPLE_N, len(df_old)), random_state=1)
-
     # Combine new and old data
     if not df_old.empty:
       # Ensure datetime columns in old data are proper dtypes
@@ -233,6 +229,10 @@ if __name__ == "__main__":
       df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
       # Drop any dupes again
       df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
+
+      if SAMPLE_N:
+        df_combined = df_combined.sample(SAMPLE_N, random_state=1)
+
       # Iterate through the dataframe and drop rows with expired listings
       df_combined = remove_inactive_listings(df_combined, table_name="lease")
       # Categorize the laundry features
@@ -267,14 +267,14 @@ if __name__ == "__main__":
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_combined.loc[df_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
-    # before saving, if in test mode exit here
-    if SAMPLE_N:
-      logger.success(f"[lease] Test run succeeded on {SAMPLE_N} rows – exiting before write.")
-      sys.exit(0)
-
-     # serialize any dict‐valued columns (e.g. context) to JSON text
+    # serialize any dict‐valued columns (e.g. context) to JSON text
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
+
+    # before saving, if in test mode
+    if SAMPLE_N:
+      logger.success(f"[lease] Test run succeeded on {SAMPLE_N} rows.")
+      sys.exit(0)
 
     # Save the GeoDataFrame to the SQLite database
     try:
