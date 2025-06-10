@@ -242,11 +242,6 @@ if __name__ == "__main__":
     # Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
     df['context'] = [{"pageType": "buy"} for _ in range(len(df))]
 
-    # before saving, if in test mode exit here
-    if SAMPLE_N:
-      logger.success(f"[buy] Test run succeeded on {SAMPLE_N} rows – exiting before write.")
-      sys.exit(0)
-
     ### MERGE WITH EXISTING DATA ###
     df_old = pd.DataFrame()
     if os.path.exists(DB_PATH):
@@ -258,11 +253,6 @@ if __name__ == "__main__":
         df_old = pd.DataFrame()
       finally:
         conn.close()
-
-    # sample old rows too if in test mode
-    if SAMPLE_N and not df_old.empty:
-      df_old = df_old.sample(min(SAMPLE_N, len(df_old)), random_state=1)
-    
     if not df_old.empty:
       df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
@@ -270,6 +260,10 @@ if __name__ == "__main__":
     else:
       df_combined = df.copy()
     df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
+
+    if SAMPLE_N:
+      df_combined = df_combined.sample(SAMPLE_N, random_state=1)
+
     df_combined = flatten_subtype_column(df_combined) 
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
     df_combined.reset_index(drop=True, inplace=True)
@@ -292,9 +286,14 @@ if __name__ == "__main__":
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
-     # serialize any dict‐valued columns (e.g. context) to JSON text
+    # serialize any dict‐valued columns (e.g. context) to JSON text
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
+
+    # before saving, if in test mode
+    if SAMPLE_N:
+      logger.success(f"[lease] Test run succeeded on {SAMPLE_N} rows.")
+      sys.exit(0)
 
     # Save into SQLite
     try:
