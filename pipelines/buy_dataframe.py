@@ -13,6 +13,7 @@ import pandas as pd
 import sys
 import sqlite3
 import argparse
+import json
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -290,6 +291,10 @@ if __name__ == "__main__":
     if not df_old.empty:
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+
+     # serialize any dict‐valued columns (e.g. context) to JSON text
+    if "context" in df_combined.columns:
+      df_combined["context"] = df_combined["context"].apply(json.dumps)
 
     # Save into SQLite
     try:
