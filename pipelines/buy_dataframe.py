@@ -278,16 +278,11 @@ if __name__ == "__main__":
     df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
     df_combined["full_street_address"] = df_combined["street_number"].str.cat(df_combined["street_address"], sep=" ", na_rep="").str.strip()
     df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
-    # Compute geometry for geospatial data
-    computed_geometry = gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
-    df_combined["geometry"] = df_combined.get("geometry", computed_geometry).combine_first(computed_geometry)
-    gdf_combined = gpd.GeoDataFrame(df_combined, geometry="geometry")
-    gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
-    gdf_combined = reduce_geojson_columns(gdf_combined)
+    df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
+    df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
-    gdf_combined.reset_index(drop=True, inplace=True)
-    gdf_combined.drop(columns=["geometry"], inplace=True)
-    df_final = pd.DataFrame(gdf_combined)
+    df_combined.reset_index(drop=True, inplace=True)
+    df_final = pd.DataFrame(df_combined)
     if "reported_as_inactive" not in df_final.columns:
       df_final["reported_as_inactive"] = False
     else:
