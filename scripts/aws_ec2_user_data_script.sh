@@ -100,8 +100,8 @@ run_parallel() {
   echo "[$mode] Both pipelines succeeded."
 }
 
-echo "----- SAMPLE RUN -----"
-run_parallel "sample" "--sample $SAMPLE_SIZE" "$SAMPLE_LOG_DIR"
+#echo "----- SAMPLE RUN -----"
+#run_parallel "sample" "--sample $SAMPLE_SIZE" "$SAMPLE_LOG_DIR"
 
 echo "----- FULL RUN -----"
 run_parallel "full" "" "$FULL_LOG_DIR"

@@ -251,30 +251,22 @@ if __name__ == "__main__":
       df_combined['street_number'] = df_combined['street_number'].str.replace(r'\.0', '', regex=True)
       df_combined['full_street_address'] = df_combined['full_street_address'].str.replace(r'\.0', '', regex=True)
       df_combined['short_address'] = df_combined['short_address'].str.replace(r'\.0', '', regex=True)
-      # Compute geometry from lon/lat where available
-      computed_geometry = gpd.points_from_xy(df_combined.longitude, df_combined.latitude)
-      # Convert to a Series with the same index as the original DataFrame
-      computed_geometry_series = pd.Series(computed_geometry, index=df_combined.index)
-      # Combine the existing geometry with computed_geometry_series
-      df_combined["geometry"] = df_combined.get("geometry", computed_geometry_series).combine_first(computed_geometry_series)
-      # Create the GeoDataFrame using the updated geometry column
-      gdf_combined = gpd.GeoDataFrame(df_combined, geometry="geometry")
       # Re-geocode rows where latitude is above a certain threshold
-      gdf_combined = re_geocode_above_lat_threshold(gdf_combined, geolocator=g)
+      df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
       # Drop some columns that are no longer needed
-      gdf_combined = reduce_geojson_columns(gdf=gdf_combined)
+      df_combined = reduce_geojson_columns(gdf=df_combined)
       # Clean up outliers
-      gdf_combined = drop_high_outliers(gdf=gdf_combined, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
+      df_combined = drop_high_outliers(gdf=df_combined, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
     else:
       df_combined = df.copy()
 
-    if "reported_as_inactive" not in gdf_combined.columns:
-      gdf_combined["reported_as_inactive"] = False
+    if "reported_as_inactive" not in df_combined.columns:
+      df_combined["reported_as_inactive"] = False
     else:
-      gdf_combined["reported_as_inactive"] = gdf_combined["reported_as_inactive"].fillna(False)
+      df_combined["reported_as_inactive"] = df_combined["reported_as_inactive"].fillna(False)
     if not df_old.empty:
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
-      gdf_combined.loc[gdf_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+      df_combined.loc[df_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
     # before saving, if in test mode exit here
     if SAMPLE_N:
@@ -285,7 +277,7 @@ if __name__ == "__main__":
     try:
       conn = sqlite3.connect(DB_PATH)
       # overwrite the existing 'lease' table
-      gdf_combined.drop(columns=["geometry"]).to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
+      df_combined.to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
       conn.commit()
       conn.close()
       logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'.")
