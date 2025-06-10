@@ -8,14 +8,13 @@ from functions.webscraping_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
-import geopandas as gpd
+import argparse
 import glob
+import json
 import os
 import pandas as pd
-import sys
 import sqlite3
-import argparse
-
+import sys
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -272,6 +271,10 @@ if __name__ == "__main__":
     if SAMPLE_N:
       logger.success(f"[lease] Test run succeeded on {SAMPLE_N} rows – exiting before write.")
       sys.exit(0)
+
+     # serialize any dict‐valued columns (e.g. context) to JSON text
+    if "context" in df_combined.columns:
+      df_combined["context"] = df_combined["context"].apply(json.dumps)
 
     # Save the GeoDataFrame to the SQLite database
     try:
