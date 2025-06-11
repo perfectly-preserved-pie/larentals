@@ -128,38 +128,35 @@ def fetch_missing_zip_codes(df: pd.DataFrame, geolocator) -> pd.DataFrame:
         df.at[row.Index, 'zip_code'] = missing_zip
     return df
 
-def re_geocode_above_lat_threshold(gdf: gpd.GeoDataFrame, geolocator, lat_threshold: float = 35.393528) -> gpd.GeoDataFrame:
+def re_geocode_above_lat_threshold(
+    df: pd.DataFrame,
+    geolocator: GoogleV3,
+    lat_threshold: float = 35.393528
+) -> pd.DataFrame:
     """
-    Re-geocode rows in the GeoDataFrame where the 'latitude' exceeds a given threshold and update the
-    geometry property with the new coordinates.
-
-    For each row with a latitude greater than lat_threshold, the function uses the provided geolocator
-    (via the return_coordinates function) to get updated latitude and longitude, then updates the geometry 
-    property accordingly.
-
-    Args:
-        gdf (gpd.GeoDataFrame): Input GeoDataFrame containing 'latitude', 'longitude', and 'full_street_address' columns,
-                                 as well as a valid 'geometry' column.
-        geolocator: A geolocator instance to use for re-geocoding.
-        lat_threshold (float): Latitude threshold above which re-geocoding occurs.
-
-    Returns:
-        gpd.GeoDataFrame: The updated GeoDataFrame with corrected coordinates in the 'geometry' property.
+    For rows where 'latitude' exceeds lat_threshold, re-fetch coordinates
+    and overwrite the 'latitude' and 'longitude' columns in-place.
     """
-    filtered_gdf = gdf[gdf['latitude'] > lat_threshold]
-    total_rows = len(filtered_gdf)
+    # Identify rows to re-geocode
+    mask = df['latitude'] > lat_threshold
+    total = mask.sum()
+    if total == 0:
+        return df
+
     counter = 0
-
-    for row in filtered_gdf.itertuples():
+    for idx in df[mask].index:
         counter += 1
-        logger.info(f"Re-geocoding row {counter} of {total_rows}: MLS {row.mls_number} with latitude {row.latitude} above {lat_threshold}")
-        new_coords = return_coordinates(
-            address=row.full_street_address,
-            row_index=row.Index,
+        address = df.at[idx, 'full_street_address']
+        logger.info(f"Re-geocoding row {counter} of {total}: MLS {df.at[idx,'mls_number']} "
+                    f"with latitude {df.at[idx,'latitude']} above {lat_threshold}")
+        new_lat, new_lon = return_coordinates(
+            address=address,
+            row_index=idx,
             geolocator=geolocator,
-            total_rows=total_rows
+            total_rows=total
         )
-        # Update the geometry property for the Feature (Point expects (lng, lat))
-        gdf.at[row.Index, 'geometry'] = Point(new_coords[1], new_coords[0])
-    
-    return gdf
+        # Overwrite the numeric latitude & longitude
+        df.at[idx, 'latitude']  = new_lat
+        df.at[idx, 'longitude'] = new_lon
+
+    return df

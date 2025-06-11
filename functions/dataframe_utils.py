@@ -2,11 +2,11 @@ from functions.mls_image_processing_utils import imagekit_transform, delete_sing
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
 from typing import Sequence, Dict, Optional
-import geopandas as gpd
+import json
 import pandas as pd
 import requests
-import sys
 import sqlite3
+import sys
 
 DB = "assets/datasets/larentals.db"
 
@@ -200,48 +200,58 @@ def refresh_invalid_mls_photos(
     imagekit_instance
 ) -> None:
     """
-    Loads a GeoJSON file as a GeoDataFrame, checks if the 'mls_photo' URL for each row is valid,
-    regenerates data for rows with invalid photos using update_dataframe_with_listing_data, 
-    and saves the updated GeoDataFrame as a GeoJSON.
-    
-    Args:
-        input_geojson_path (str): Path to the input GeoJSON file.
-        output_geojson_path (str): Path for saving the updated GeoJSON file.
-        imagekit_instance: An instance of ImageKit for processing images.
+    Loads a GeoJSON file as JSON, checks if the 'mls_photo' URL for each feature is valid,
+    regenerates data for features with invalid photos using update_dataframe_with_listing_data,
+    and writes out the updated GeoJSON.
     """
     try:
-        gdf = gpd.read_file(input_geojson_path)
+        with open(input_geojson_path, 'r') as f:
+            geojson = json.load(f)
     except Exception as e:
         logger.error(f"Error loading GeoJSON from {input_geojson_path}: {e}")
         return
 
-    for row in gdf.itertuples():
-        photo_url = getattr(row, "mls_photo", None)
-        if photo_url and pd.notnull(photo_url):
-            try:
-                response = requests.head(photo_url, timeout=5)
-                if response.status_code != 200:
-                    logger.info(f"Photo {photo_url} for MLS {row.mls_number} is invalid. Regenerating data.")
-                    single_row_df = gdf.loc[[row.Index]].copy()
-                    single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
-                    gdf.loc[[row.Index]] = single_row_df
-            except requests.RequestException:
-                logger.info(f"Request error for photo {photo_url} for MLS {row.mls_number}. Regenerating data.")
-                single_row_df = gdf.loc[[row.Index]].copy()
-                single_row_df = update_dataframe_with_listing_data(single_row_df, imagekit_instance)
-                gdf.loc[[row.Index]] = single_row_df
+    features = geojson.get('features', [])
+    if not features:
+        logger.warning(f"No features found in {input_geojson_path}")
+    # build a DataFrame of properties so we can call the existing update logic
+    props_df = pd.json_normalize([feat.get('properties', {}) for feat in features])
+    # retain the original indices so we can map back
+    props_df.index = range(len(features))
+
+    for idx, row in props_df.iterrows():
+        photo_url = row.get('mls_photo')
+        if not photo_url or pd.isna(photo_url):
+            continue
+        try:
+            resp = requests.head(photo_url, timeout=5)
+            if resp.status_code != 200:
+                logger.info(f"Photo invalid for feature {idx}, regenerating.")
+                single = row.to_frame().T.copy()
+                updated = update_dataframe_with_listing_data(single, imagekit_instance)
+                props_df.loc[idx, updated.columns] = updated.iloc[0].to_dict()
+        except requests.RequestException:
+            logger.info(f"Request error on photo for feature {idx}, regenerating.")
+            single = row.to_frame().T.copy()
+            updated = update_dataframe_with_listing_data(single, imagekit_instance)
+            props_df.loc[idx, updated.columns] = updated.iloc[0].to_dict()
+
+    # write properties back into geojson structure
+    for i, feat in enumerate(features):
+        feat['properties'] = props_df.iloc[i].to_dict()
 
     try:
-        gdf.to_file(output_geojson_path, driver="GeoJSON")
-        logger.info(f"Saved the updated GeoDataFrame to {output_geojson_path}.")
+        with open(output_geojson_path, 'w') as f:
+            json.dump(geojson, f)
+        logger.info(f"Saved the updated GeoJSON to {output_geojson_path}.")
     except Exception as e:
-        logger.error(f"Error saving the updated GeoDataFrame to {output_geojson_path}: {e}")
+        logger.error(f"Error saving updated GeoJSON to {output_geojson_path}: {e}")
 
-def reduce_geojson_columns(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def reduce_geojson_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Drops specified columns from a GeoDataFrame.
+    Drops specified columns from a DataFrame.
 
-    The following columns will be dropped if they exist in the GeoDataFrame:
+    The following columns will be dropped if they exist in the DataFrame:
       - latitude
       - longitude
       - la county homes 1-13-25
@@ -256,10 +266,10 @@ def reduce_geojson_columns(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
       - street_address
 
     Args:
-        gdf (gpd.GeoDataFrame): The input GeoDataFrame.
+        df (pd.DataFrame): The input DataFrame.
 
     Returns:
-        gpd.GeoDataFrame: A new GeoDataFrame with the specified columns removed.
+        pd.DataFrame: A new DataFrame with the specified columns removed.
     """
     cols_to_drop = [
         'latitude',
@@ -276,51 +286,35 @@ def reduce_geojson_columns(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         'street_address'
     ]
     # Drop only the columns that exist in the GeoDataFrame
-    existing_cols = [col for col in cols_to_drop if col in gdf.columns]
-    reduced_gdf = gdf.drop(columns=existing_cols)
+    existing_cols = [col for col in cols_to_drop if col in df.columns]
+    reduced_gdf = df.drop(columns=existing_cols)
     return reduced_gdf
 
 def drop_high_outliers(
-    gdf: gpd.GeoDataFrame,
+    df: pd.DataFrame,
     cols: Sequence[str] = ("sqft", "total_bathrooms", "bedrooms", "parking_spaces"),
     iqr_multiplier: float = 1.5,
     absolute_caps: Optional[Dict[str, float]] = None
-) -> gpd.GeoDataFrame:
+) -> pd.DataFrame:
     """
-    Remove rows from a GeoDataFrame where values in specified numeric columns
-    exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
-    also any domain-specific hard caps. Geometry is preserved.
-
-    Parameters
-    ----------
-    gdf : gpd.GeoDataFrame
-        Input GeoDataFrame containing the properties to clean.
-    cols : Sequence[str], default ("sqft", "total_bathrooms", "bedrooms", "parking_spaces")
-        List of numeric columns to check for high outliers.
-    iqr_multiplier : float, default 1.5
-        Multiplier applied to the interquartile range to define the upper bound.
-    absolute_caps : Optional[Dict[str, float]], default None
-        Hard-maximum caps per column (e.g. {"total_bathrooms": 10, "bedrooms": 6}).
-
-    Returns
-    -------
-    gpd.GeoDataFrame
-        A cleaned copy of `gdf` with outliers removed and index reset.
-    """
-    gdf_clean = gdf.copy()
+     Remove rows from a DataFrame where values in specified numeric columns
+     exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
+     also any domain-specific hard caps.
+     """
+    df_clean = df.copy()
     
     # 1) Compute IQR thresholds once on original
     thresholds: Dict[str, float] = {}
     for col in cols:
-        if col not in gdf_clean.columns:
+        if col not in df_clean.columns:
             logger.warning(f"Column '{col}' not found; skipping IQR removal.")
             continue
-        if not pd.api.types.is_numeric_dtype(gdf_clean[col]):
+        if not pd.api.types.is_numeric_dtype(df_clean[col]):
             logger.warning(f"Column '{col}' is not numeric; skipping.")
             continue
 
-        q1 = gdf_clean[col].quantile(0.25)
-        q3 = gdf_clean[col].quantile(0.75)
+        q1 = df_clean[col].quantile(0.25)
+        q3 = df_clean[col].quantile(0.75)
         iqr = q3 - q1
 
         if iqr == 0:
@@ -332,9 +326,9 @@ def drop_high_outliers(
     # 2) Drop using IQR thresholds
     total_dropped = 0
     for col, cutoff in thresholds.items():
-        before = len(gdf_clean)
-        gdf_clean = gdf_clean[gdf_clean[col] <= cutoff]
-        dropped = before - len(gdf_clean)
+        before = len(df_clean)
+        df_clean = df_clean[df_clean[col] <= cutoff]
+        dropped = before - len(df_clean)
         total_dropped += dropped
         logger.info(
             f"Dropped {dropped} rows where '{col}' > {cutoff:.2f} "
@@ -345,12 +339,12 @@ def drop_high_outliers(
     # 3) Drop using absolute caps if provided
     if absolute_caps:
         for col, cap in absolute_caps.items():
-            if col in gdf_clean.columns and pd.api.types.is_numeric_dtype(gdf_clean[col]):
-                before = len(gdf_clean)
-                gdf_clean = gdf_clean[gdf_clean[col] <= cap]
-                dropped = before - len(gdf_clean)
+            if col in df_clean.columns and pd.api.types.is_numeric_dtype(df_clean[col]):
+                before = len(df_clean)
+                df_clean = df_clean[df_clean[col] <= cap]
+                dropped = before - len(df_clean)
                 total_dropped += dropped
                 logger.info(f"Dropped {dropped} rows where '{col}' > absolute cap {cap}.")
 
     logger.info(f"Total rows dropped: {total_dropped}")
-    return gdf_clean.reset_index(drop=True)
+    return df_clean.reset_index(drop=True)
