@@ -271,15 +271,26 @@ if __name__ == "__main__":
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
 
+    # decide where to write
+    if SAMPLE_N:
+      target_table = f"{TABLE_NAME}_sample"
+      logger.info(f"[lease] TEST MODE: writing {len(df_combined)} rows into table '{target_table}'")
+    else:
+      target_table = TABLE_NAME
+      logger.info(f"[lease] FULL MODE: writing {len(df_combined)} rows into table '{target_table}'")
+
     # Save the GeoDataFrame to the SQLite database
     try:
       conn = sqlite3.connect(DB_PATH)
       # overwrite the existing 'lease' table
-      df_combined.to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
+      df_combined.to_sql(target_table, conn, if_exists="replace", index=False)
       conn.commit()
       conn.close()
-      logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'. Total rows updated: {len(df_combined)}")
-      sys.exit(0)
+      if SAMPLE_N:
+        logger.success(f"[lease] Sample run. Test insert into '{target_table}' succeeded—exiting.")
+        sys.exit(0)
+      else:
+        logger.success(f"[lease] Full run. Insert into '{target_table}' succeeded.")
     except Exception as e:
       logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
 
