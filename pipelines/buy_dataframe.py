@@ -248,7 +248,7 @@ if __name__ == "__main__":
       conn = sqlite3.connect(DB_PATH)
       try:
         if SAMPLE_N:
-          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME} LIMIT {SAMPLE_N}", conn)
+          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}", conn)
         else:
           # Read the entire existing table
           df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
