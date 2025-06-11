@@ -247,7 +247,11 @@ if __name__ == "__main__":
     if os.path.exists(DB_PATH):
       conn = sqlite3.connect(DB_PATH)
       try:
-        df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
+        if SAMPLE_N:
+          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME} LIMIT {SAMPLE_N}", conn)
+        else:
+          # Read the entire existing table
+          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
       except Exception as e:
         logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
         df_old = pd.DataFrame()
@@ -290,19 +294,26 @@ if __name__ == "__main__":
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
 
-    # before saving, if in test mode
+    # decide where to write
     if SAMPLE_N:
-      logger.success(f"[lease] Test run succeeded on {SAMPLE_N} rows.")
-      sys.exit(0)
+      target_table = f"{TABLE_NAME}_sample"
+      logger.info(f"[buy] TEST MODE: writing {len(df_combined)} rows into table '{target_table}'")
+    else:
+      target_table = TABLE_NAME
+      logger.info(f"[buy] FULL MODE: writing {len(df_combined)} rows into table '{target_table}'")
 
     # Save into SQLite
     try:
       conn = sqlite3.connect(DB_PATH)
       # overwrite the existing 'buy' table
-      df_final.to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
+      df_combined.to_sql(target_table, conn, if_exists="replace", index=False)
       conn.commit()
       conn.close()
-      logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'.")
+      if SAMPLE_N:
+        logger.success(f"[buy] Sample run. Test insert into '{target_table}' succeeded—exiting.")
+        sys.exit(0)
+      else:
+        logger.success(f"[buy] Full run. Insert into '{target_table}' succeeded.")
     except Exception as e:
       logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
     
