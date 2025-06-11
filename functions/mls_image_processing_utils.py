@@ -163,6 +163,6 @@ def delete_single_mls_image(mls_number: str) -> None:
                 else:
                     logger.error("No response metadata available.")
         else:
-            logger.warning(f"No images found for MLS {mls_number}.")
+            logger.info(f"No images found for MLS {mls_number}.")
     except Exception as e:
         logger.error(f"Error deleting images for MLS {mls_number}: {e}")
