@@ -102,12 +102,18 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
         if is_sold:
             logger.info(f"Listing {mls_number} has been sold.")
         return is_sold
-    except requests.HTTPError as e:
-        logger.error(f"HTTP error occurred while checking if the listing for MLS {mls_number} has been sold: {e}")
-    except Exception as e:
-        logger.error(f"An error occurred while checking if the listing for MLS {mls_number} has been sold: {e}")
-
-    return False
+    
+    except requests.exceptions.HTTPError as http_err:
+        code = http_err.response.status_code if http_err.response is not None else 'Unknown'
+        if code == 404:
+            logger.info(f"Listing {mls_number} not found on The Agency (404).")
+        else:
+            logger.error(f"HTTP {code} error for MLS {mls_number}: {http_err}")
+        return False
+    
+    except requests.RequestException as req_err:
+        logger.error(f"Network error checking MLS {mls_number}: {req_err}")
+        return False
 
 def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
     """
