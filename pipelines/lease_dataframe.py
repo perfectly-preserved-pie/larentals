@@ -253,7 +253,7 @@ if __name__ == "__main__":
       # Re-geocode rows where latitude is above a certain threshold
       df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
       # Drop some columns that are no longer needed
-      df_combined = reduce_geojson_columns(df=df_combined)
+      #df_combined = reduce_geojson_columns(df=df_combined)
       # Clean up outliers
       df_combined = drop_high_outliers(df=df_combined, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
     else:

@@ -274,7 +274,7 @@ if __name__ == "__main__":
     df_combined["full_street_address"] = df_combined["street_number"].str.cat(df_combined["street_address"], sep=" ", na_rep="").str.strip()
     df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
     df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
-    df_combined = reduce_geojson_columns(df_combined)
+    #df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
     df_combined.reset_index(drop=True, inplace=True)
     df_final = pd.DataFrame(df_combined)
