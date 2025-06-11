@@ -1,8 +1,6 @@
 from geopy.geocoders import GoogleV3
 from loguru import logger
-from shapely.geometry import Point
 from typing import Tuple, Optional
-import geopandas as gpd
 import pandas as pd
 import sys
 
