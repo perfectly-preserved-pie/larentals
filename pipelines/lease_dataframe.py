@@ -210,11 +210,15 @@ if __name__ == "__main__":
 
     ### MERGE WITH EXISTING DATA ###
     # Read existing lease data from SQLite to preserve historical listings and flags
-    df_old = pd.DataFrame()
     if os.path.exists(DB_PATH):
       conn = sqlite3.connect(DB_PATH)
       try:
-        df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
+        # if SAMPLE_N is set, read the existing table and sample it
+        if SAMPLE_N:
+          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}", conn)
+        else:
+          # Read the entire existing table
+          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
       except Exception as e:
         logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
         df_old = pd.DataFrame()
@@ -229,10 +233,6 @@ if __name__ == "__main__":
       df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
       # Drop any dupes again
       df_combined = df_combined.drop_duplicates(subset=['mls_number'], keep="last")
-
-      if SAMPLE_N:
-        df_combined = df_combined.sample(SAMPLE_N, random_state=1)
-
       # Iterate through the dataframe and drop rows with expired listings
       df_combined = remove_inactive_listings(df_combined, table_name="lease")
       # Categorize the laundry features
@@ -271,11 +271,6 @@ if __name__ == "__main__":
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
 
-    # before saving, if in test mode
-    if SAMPLE_N:
-      logger.success(f"[lease] Test run succeeded on {SAMPLE_N} rows.")
-      sys.exit(0)
-
     # Save the GeoDataFrame to the SQLite database
     try:
       conn = sqlite3.connect(DB_PATH)
@@ -283,7 +278,8 @@ if __name__ == "__main__":
       df_combined.to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
       conn.commit()
       conn.close()
-      logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'.")
+      logger.info(f"Updated SQLite table '{TABLE_NAME}' in '{DB_PATH}'. Total rows updated: {len(df_combined)}")
+      sys.exit(0)
     except Exception as e:
       logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
 
