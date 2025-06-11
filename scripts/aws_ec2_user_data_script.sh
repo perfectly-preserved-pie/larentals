@@ -1,11 +1,10 @@
 #!/bin/bash
-set -euo pipefail
 
 # Timestamp for logs (not used in filenames here, but could be useful)
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 # Configuration variables
-SAMPLE_SIZE=10
+SAMPLE_SIZE=30
 BASE_DIR=/home/ubuntu/larentals
 DB_PATH=$BASE_DIR/assets/datasets/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
@@ -28,6 +27,11 @@ cd "$HOME"
 if [ ! -d "$BASE_DIR" ]; then
   git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
 fi
+
+# Install AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
 
 # Install uv (Astral)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -67,44 +71,12 @@ echo "Applying CloudWatch config..."
 systemctl enable amazon-cloudwatch-agent
 systemctl restart amazon-cloudwatch-agent
 
-# Helper function to run both pipelines in parallel and check exit codes
-run_parallel() {
-  local mode=$1      # "sample" or "full"
-  local args=$2      # flags like "--sample $SAMPLE_SIZE" or empty
-  local outdir=$3    # log directory
-
-  echo "===== [$mode] Starting lease and buy pipelines ($args) ====="
-
-  # Lease pipeline
-  uv run python -m pipelines.lease_dataframe \
-    $args \
-    --logfile "$outdir/lease_dataframe_${mode}.log" &
-  pid_lease=$!
-
-  # Buy pipeline
-  uv run python -m pipelines.buy_dataframe \
-    $args \
-    --logfile "$outdir/buy_dataframe_${mode}.log" &
-  pid_buy=$!
-
-  echo "[$mode] Waiting on PIDs: lease=$pid_lease, buy=$pid_buy"
-  wait "$pid_lease"; code_lease=$?
-  wait "$pid_buy";   code_buy=$?
-
-  echo "[$mode] lease exit: $code_lease; buy exit: $code_buy"
-  if (( code_lease != 0 || code_buy != 0 )); then
-    echo "[$mode] One or both pipelines failed (exit codes $code_lease, $code_buy); exiting."
-    exit 1
-  fi
-
-  echo "[$mode] Both pipelines succeeded."
-}
-
-echo "----- SAMPLE RUN -----"
-run_parallel "sample" "--sample $SAMPLE_SIZE" "$SAMPLE_LOG_DIR"
-
-echo "----- FULL RUN -----"
-run_parallel "full" "" "$FULL_LOG_DIR"
+# Lease pipeline
+uv run python -m pipelines.lease_dataframe \
+  --sample 15 \
+  --logfile "$outdir/lease_dataframe.log" \
+&& uv run python -m pipelines.lease_dataframe \
+  --logfile "$outdir/lease_dataframe.log"
 
 echo "----- UPLOAD DB -----"
 aws s3 cp "$DB_PATH" "$S3_URI"
