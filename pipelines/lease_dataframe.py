@@ -270,7 +270,7 @@ if __name__ == "__main__":
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
 
-    # Convert total_bathrooms, full_bathrooms, three_quarter_bathrooms, half_bathrooms, quarter_bathrooms to nullable integers
+    # Convert these columns to nullable integers
     for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms', 'year_built', 'parking_spaces', 'bedrooms', 'lot_size', 'olp', 'list_price', 'sqft', 'key_deposit', 'other_deposit', 'pet_deposit', 'security_deposit']:
       df_combined[col] = pd.to_numeric(df_combined[col], errors='coerce').astype('Int64')
     # Convert date columns to datetime64 dtype
