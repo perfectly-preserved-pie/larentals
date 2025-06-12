@@ -287,8 +287,6 @@ if __name__ == "__main__":
     for col in df_combined.select_dtypes(include=['object']).columns:
       df_combined[col] = df_combined[col].astype("string")
 
-    
-
     # decide where to write
     if SAMPLE_N:
       target_table = f"{TABLE_NAME}_sample"
