@@ -72,11 +72,7 @@ systemctl enable amazon-cloudwatch-agent
 systemctl restart amazon-cloudwatch-agent
 
 # Lease pipeline
-uv run python -m pipelines.lease_dataframe \
-  --sample 15 \
-  --logfile "$outdir/lease_dataframe.log" \
-&& uv run python -m pipelines.lease_dataframe \
-  --logfile "$outdir/lease_dataframe.log"
+uv run python -m pipelines.lease_dataframe --sample 15 && uv run python -m pipelines.lease_dataframe
 
 echo "----- UPLOAD DB -----"
 aws s3 cp "$DB_PATH" "$S3_URI"
