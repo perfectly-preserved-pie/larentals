@@ -270,25 +270,6 @@ if __name__ == "__main__":
     if "context" in df_combined.columns:
       df_combined["context"] = df_combined["context"].apply(json.dumps)
 
-    # Convert total_bathrooms, full_bathrooms, three_quarter_bathrooms, half_bathrooms, quarter_bathrooms to nullable integers
-    for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms', 'year_built', 'parking_spaces', 'bedrooms', 'lot_size', 'olp', 'list_price', 'sqft']:
-      df_combined[col] = pd.to_numeric(df_combined[col], errors='coerce').astype('Int64')
-    # Convert date columns to datetime64 dtype
-    for col in ['listed_date', 'date_processed']:
-      df_combined[col] = pd.to_datetime(df_combined[col], errors='coerce')
-    # Convert boolean columns to bool dtype
-    for col in ['affected_by_eaton_fire', 'affected_by_palisades_fire', 'reported_as_inactive']:
-      df_combined[col] = df_combined[col].astype(bool)
-    # Convert latitude and longitude and ppsqft to float
-    df_combined['latitude'] = pd.to_numeric(df_combined['latitude'], errors='coerce')
-    df_combined['longitude'] = pd.to_numeric(df_combined['longitude'], errors='coerce')
-    df_combined['ppsqft'] = pd.to_numeric(df_combined['ppsqft'], errors='coerce')
-    # Convert the rest of the object columns to string type
-    for col in df_combined.select_dtypes(include=['object']).columns:
-      df_combined[col] = df_combined[col].astype("string")
-
-    
-
     # decide where to write
     if SAMPLE_N:
       target_table = f"{TABLE_NAME}_sample"
