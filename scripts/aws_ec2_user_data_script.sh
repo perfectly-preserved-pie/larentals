@@ -13,6 +13,7 @@ S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
 SAMPLE_LOG_DIR=/var/log/larentals/sample
 FULL_LOG_DIR=/var/log/larentals/full
 mkdir -p "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR"
+chmod 777 "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" # fuck it lol
 
 # Update & install OS packages (script runs as root)
 apt-get update -y
