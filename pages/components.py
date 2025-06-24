@@ -131,7 +131,7 @@ class BaseClass:
                 className="fa-solid fa-blog",
                 style={"marginRight": "5px", "marginLeft": "15px"},
             ),
-            html.A("About This Project", href='https://automateordie.io/wheretolivedotla/', target='_blank'),
+            html.A("About This Project", href='https://automateordie.io/blog/2023/08/26/wheretolivela/', target='_blank'),
             html.I(
                 className="fa fa-envelope",
                 style={"marginRight": "5px", "marginLeft": "15px"},

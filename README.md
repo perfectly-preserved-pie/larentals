@@ -41,7 +41,7 @@ You can click the toggle buttons next to the title to switch between For Rent an
 *    [Pandas](https://pandas.pydata.org/) (handling and manipulating the rental property data for each address)
 
 ## A Deeper Dive
-[I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/wheretolivedotla/)
+[I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/blog/2023/08/26/wheretolivela/)
 
 ## How to Build and Run
 ### Docker
