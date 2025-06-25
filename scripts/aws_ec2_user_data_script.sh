@@ -72,12 +72,26 @@ echo "Applying CloudWatch config..."
 systemctl enable amazon-cloudwatch-agent
 systemctl restart amazon-cloudwatch-agent
 
-# Lease pipeline
-uv run python -m pipelines.lease_dataframe \
-  --sample 15 \
-  --logfile "$SAMPLE_LOG_DIR/lease_sample.log" \
-&& uv run python -m pipelines.lease_dataframe \
-  --logfile "$FULL_LOG_DIR/lease_full.log"
+# Sample both in parallel
+(
+  uv run python -m pipelines.lease_dataframe \
+    --sample 15 \
+    --logfile "$SAMPLE_LOG_DIR/lease_sample.log" \
+  && uv run python -m pipelines.lease_dataframe \
+    --logfile "$FULL_LOG_DIR/lease_full.log"
+) &
+
+(
+  uv run python -m pipelines.buy_dataframe \
+    --sample 15 \
+    --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
+  && uv run python -m pipelines.buy_dataframe \
+    --logfile "$FULL_LOG_DIR/buy_full.log"
+) &
+
+# Wait for both pipelines to finish before proceeding
+wait
+echo "Both lease+buy pipelines complete"
 
 echo "----- UPLOAD DB -----"
 aws s3 cp "$DB_PATH" "$S3_URI"
