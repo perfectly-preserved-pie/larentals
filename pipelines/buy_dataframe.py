@@ -20,10 +20,10 @@ if __name__ == "__main__":
   parser.add_argument("-n","--sample",  type=int, default=None,
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
-    help="Path to log file (default /var/log/buy_dataframe.log)")
+    help="Path to log file (default /var/log/larentals/buy_dataframe.log)")
   args = parser.parse_args()
   SAMPLE_N = args.sample
-  LOGFILE  = args.logfile or "/var/log/buy_dataframe.log"
+  LOGFILE  = args.logfile or "/var/log/larentals/buy_dataframe.log"
 
   # — Setup logging — remove defaults, add stderr + chosen file only
   logger.remove()
