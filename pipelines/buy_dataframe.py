@@ -305,17 +305,18 @@ if __name__ == "__main__":
     # Save into SQLite
     try:
       conn = sqlite3.connect(DB_PATH)
-      # overwrite the existing 'buy' table
       df_combined.to_sql(target_table, conn, if_exists="replace", index=False)
       conn.commit()
       conn.close()
+
       if SAMPLE_N:
-        logger.success(f"[buy] Sample run. Test insert into '{target_table}' succeeded—exiting.")
+        logger.success(f"[buy] Sample insert into '{target_table}' succeeded—exiting without overwriting '{TABLE_NAME}'.")
         sys.exit(0)
-      else:
-        logger.success(f"[buy] Full run. Insert into '{target_table}' succeeded.")
+
+      logger.success(f"[buy] Full insert into '{TABLE_NAME}' succeeded.")
     except Exception as e:
-      logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
+      logger.error(f"Error updating SQLite table '{target_table}': {e}")
+      sys.exit(1)
     
   except Exception as e:
     logger.exception(f"Error in buy pipeline: {e}")
