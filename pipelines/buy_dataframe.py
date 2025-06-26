@@ -263,10 +263,8 @@ if __name__ == "__main__":
       df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
     else:
       df_combined = df.copy()
-    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
-
-    if SAMPLE_N:
-      df_combined = df_combined.sample(SAMPLE_N, random_state=1)
+    # Make NEW (df) rows win on deduplication
+    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="first")
 
     df_combined = flatten_subtype_column(df_combined) 
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
@@ -275,7 +273,13 @@ if __name__ == "__main__":
     df_combined['city']     = df_combined['city'].fillna('').astype(str)
     df_combined['zip_code'] = df_combined['zip_code'].fillna('').astype(str)
     df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
-    df_combined["full_street_address"] = df_combined["street_number"].str.cat(df_combined["street_address"], sep=" ", na_rep="").str.strip()
+    df_combined["full_street_address"] = (
+      df_combined[["street_number", "street_address", "city", "zip_code"]]
+        .fillna("")  # avoid nan strings
+        .agg(" ".join, axis=1)
+        .str.replace(r"\s+", " ", regex=True)
+        .str.strip()
+    )
     df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
     df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
     #df_combined = reduce_geojson_columns(df_combined)
