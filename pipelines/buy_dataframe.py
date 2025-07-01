@@ -23,8 +23,12 @@ if __name__ == "__main__":
     help="Path to log file (default /var/log/larentals/buy_dataframe.log)")
   parser.add_argument("--use-env",   action="store_true",           
     help="Load from .env instead of SSM")
+  parser.add_argument("--use-nominatim", action="store_true",
+    help="If set, use Nominatim instead of Google for geocoding"
+  )
   args = parser.parse_args()
   SAMPLE_N = args.sample
+  USE_NOMINATIM  = args.use_nominatim
   LOGFILE  = args.logfile or "/var/log/larentals/buy_dataframe.log"
 
   # — Setup logging — remove defaults, add stderr + chosen file only
@@ -183,7 +187,7 @@ if __name__ == "__main__":
 
     # Iterate through the dataframe and fetch coordinates for rows
     for row in df.itertuples():
-      coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df))
+      coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df), use_nominatim=USE_NOMINATIM)
       df.at[row.Index, 'latitude'] = coordinates[0]
       df.at[row.Index, 'longitude'] = coordinates[1]
 
