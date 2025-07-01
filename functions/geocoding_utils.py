@@ -1,4 +1,5 @@
-from geopy.geocoders import GoogleV3
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+from geopy.geocoders import GoogleV3, Nominatim
 from loguru import logger
 from typing import Tuple, Optional
 import pandas as pd
@@ -7,9 +8,17 @@ import sys
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
-def return_coordinates(address: str, row_index: int, geolocator: GoogleV3, total_rows: int) -> Tuple[Optional[float], Optional[float]]:
+def return_coordinates(
+    address: str,
+    row_index: int,
+    geolocator: GoogleV3,
+    total_rows: int,
+    use_nominatim: bool = False,
+    nominatim_user_agent: str = "larentals-geocoder",
+    nominatim_timeout: int = 10
+) -> Tuple[Optional[float], Optional[float]]:
     """
-    Fetches the latitude and longitude of a given address using geocoding.
+    Fetches the latitude and longitude of a given address using geocoding. Uses Nominatim if flagged, otherwise defaults to GoogleV3.
     
     Parameters:
     address (str): The full street address.
@@ -20,20 +29,35 @@ def return_coordinates(address: str, row_index: int, geolocator: GoogleV3, total
     Returns:
     Tuple[Optional[float], Optional[float]]: Latitude and Longitude as a tuple, or (None, None) if unsuccessful.
     """
-    # Initialize variables
-    lat, lon = None, None
+    if use_nominatim:
+        try:
+            nomi = Nominatim(user_agent=nominatim_user_agent)
+            location = nomi.geocode(
+                {
+                    "street": address,
+                    "county": "Los Angeles",
+                    "state": "California",
+                    "country": "USA"
+                },
+                bounded=True,  # enforce the restraints above
+                timeout=nominatim_timeout
+            )
+            if location:
+                return location.latitude, location.longitude
+            logger.error(f"[{row_index}/{total_rows}] Nominatim: no result for '{address}'")
+        except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
+            logger.error(f"[{row_index}/{total_rows}] Nominatim error: {e}")
+        return None, None
 
+    # default: GoogleV3
     try:
-        geocode_info = geolocator.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
-        lat = float(geocode_info.latitude)
-        lon = float(geocode_info.longitude)
-        logger.info(f"Fetched coordinates {lat}, {lon} for {address} (row {row_index + 1} of {total_rows}).")
-    except AttributeError:
-        logger.warning(f"Geocoding returned no results for {address} (row {row_index + 1} of {total_rows}).")
-    except Exception as e:
-        logger.warning(f"Couldn't fetch geocode information for {address} (row {row_index + 1} of {total_rows}) because of {e}.")
-
-    return lat, lon
+        loc = geolocator.geocode(address, timeout=10, components={'administrative_area': 'CA', 'country': 'US'})
+        if loc:
+            return loc.latitude, loc.longitude
+        logger.warning(f"[{row_index}/{total_rows}] GoogleV3: no result for '{address}'")
+    except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
+        logger.warning(f"[{row_index}/{total_rows}] GoogleV3 error: {e}")
+    return None, None
 
 def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
     """
