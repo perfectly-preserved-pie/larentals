@@ -21,6 +21,8 @@ if __name__ == "__main__":
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
     help="Path to log file (default /var/log/larentals/lease_dataframe.log)")
+  parser.add_argument("--use-env",   action="store_true",           
+    help="Load from .env instead of SSM")
   args = parser.parse_args()
   SAMPLE_N = args.sample
   LOGFILE  = args.logfile or "/var/log/larentals/lease_dataframe.log"
@@ -38,9 +40,14 @@ if __name__ == "__main__":
   )
 
   ## SETUP AND VARIABLES
-  # Load everything from AWS SSM into os.environ ─
-  ssm_values = load_ssm_parameters("/wheretolivedotla/")
-  os.environ.update(ssm_values)
+  # load env
+  if args.use_env:
+    load_dotenv(find_dotenv())
+    logger.info("Loaded local .env")
+  else:
+    ssm_vals = load_ssm_parameters("/wheretolivedotla/")
+    os.environ.update(ssm_vals)
+    logger.info("Loaded from SSM")
 
   g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
