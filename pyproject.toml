@@ -33,5 +33,11 @@ dependencies = [
   "pyyaml",               # unpinned, take latest
   "requests~=2.32.3",
   "tables",               # unpinned, take latest
+  "pytest",
   "user-agents~=2.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
 ]
