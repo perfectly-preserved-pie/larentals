@@ -23,10 +23,11 @@ jobs:
             **/pyproject.toml
             **/uv.lock
 
+      - name: Create virtual environment
+        run: uv venv
+
       - name: Install dependencies
-        run: uv pip install -r pyproject.toml --system --no-cache-dir
-        env:
-          UV_SYSTEM_PYTHON: 1
+        run: uv pip install -r pyproject.toml --no-cache-dir
 
       - name: Run tests
         run: uv run -- pytest
