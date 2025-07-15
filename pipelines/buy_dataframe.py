@@ -257,24 +257,27 @@ if __name__ == "__main__":
     if os.path.exists(DB_PATH):
       conn = sqlite3.connect(DB_PATH)
       try:
+        # if SAMPLE_N is set, sample historical rows too
         if SAMPLE_N:
-          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}", conn)
+          df_old = pd.read_sql_query(
+            f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}",
+            conn
+          )
         else:
-          # Read the entire existing table
           df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
       except Exception as e:
         logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
         df_old = pd.DataFrame()
       finally:
         conn.close()
+
     if not df_old.empty:
       df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
       df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
     else:
       df_combined = df.copy()
-    # Make NEW (df) rows win on deduplication
-    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="first")
+    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
 
     df_combined = flatten_subtype_column(df_combined) 
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
