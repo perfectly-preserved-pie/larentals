@@ -10,8 +10,8 @@ DB_PATH=$BASE_DIR/assets/datasets/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
 
 # Log directories
-SAMPLE_LOG_DIR=/var/log/larentals/sample
-FULL_LOG_DIR=/var/log/larentals/full
+SAMPLE_LOG_DIR=~/larentals/sample
+FULL_LOG_DIR=~/larentals/full
 mkdir -p "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR"
 chmod 777 "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" # fuck it lol
 

@@ -20,7 +20,7 @@ if __name__ == "__main__":
   parser.add_argument("-n","--sample", type=int, default=None,
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
-    help="Path to log file (default /var/log/larentals/lease_dataframe.log)")
+    help="Path to log file (default ~/larentals/lease_dataframe.log)")
   parser.add_argument("--use-env",   action="store_true",           
     help="Load from .env instead of SSM")
   parser.add_argument("--use-nominatim", action="store_true",
@@ -29,7 +29,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
   SAMPLE_N = args.sample
   USE_NOMINATIM  = args.use_nominatim
-  LOGFILE  = args.logfile or "/var/log/larentals/lease_dataframe.log"
+  LOGFILE  = args.logfile or "~/larentals/lease_dataframe.log"
 
   # — Setup logging — remove defaults, add stderr + chosen file only
   logger.remove()
