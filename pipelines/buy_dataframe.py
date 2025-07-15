@@ -80,9 +80,6 @@ if __name__ == "__main__":
     # Merge all sheets into a single DataFrame
     df = pd.concat(xlsx.values(), ignore_index=True)
 
-    if SAMPLE_N:
-      df = df.sample(SAMPLE_N, random_state=1)  # test‐mode sample
-
     # Strip leading and trailing whitespaces from the column names and convert them to lowercase
     # https://stackoverflow.com/a/36082588
     df.columns = df.columns.str.strip().str.lower()
@@ -144,6 +141,10 @@ if __name__ == "__main__":
 
     # Drop all rows with misc/irrelevant data
     df.dropna(subset=['mls_number'], inplace=True)
+
+    if SAMPLE_N:
+      df = df.sample(SAMPLE_N, random_state=1)
+      logger.info(f"[buy] TEST MODE: sampled {SAMPLE_N} new rows")
 
     # Define columns to remove all non-numeric characters from
     cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']
