@@ -290,15 +290,29 @@ if __name__ == "__main__":
     # Clean up address fields
     df_combined['city']     = df_combined['city'].fillna('').astype(str)
     df_combined['zip_code'] = df_combined['zip_code'].fillna('').astype(str)
-    df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
-    df_combined["full_street_address"] = (
-      df_combined[["street_number", "street_address", "city", "zip_code"]]
-        .fillna("")  # avoid nan strings
+    df_combined["street_number"] = (
+      df_combined["street_number"]
+        .astype(str)
+        .str.replace(r"\.0$", "", regex=True)
+    )
+
+    # only build full_street_address where it's blank
+    mask_full = df_combined["full_street_address"].isna() | (df_combined["full_street_address"] == "")
+    df_combined.loc[mask_full, "full_street_address"] = (
+      df_combined.loc[mask_full, ["street_number","street_address","city","zip_code"]]
+        .fillna("")
         .agg(" ".join, axis=1)
         .str.replace(r"\s+", " ", regex=True)
         .str.strip()
     )
-    df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
+
+    # only build short_address where it's blank
+    mask_short = df_combined["short_address"].isna() | (df_combined["short_address"] == "")
+    df_combined.loc[mask_short, "short_address"] = (
+      df_combined.loc[mask_short, "city"]
+        .str.cat(df_combined.loc[mask_short, "zip_code"], sep=", ", na_rep="")
+        .str.strip()
+    )
     df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
     #df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
