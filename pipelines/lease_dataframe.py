@@ -89,6 +89,10 @@ if __name__ == "__main__":
     # Convert all column names to lowercase
     df.columns = df.columns.str.lower()
 
+    # Remove all cells in mls_number that have more than 20 characters
+    # To get rid of garbage data
+    df = df[df['mls_number'].astype(str).str.len() <= 20]
+
     # Standardize the column names by renaming them
     # https://stackoverflow.com/a/65332240
     # Define a renaming dictionary with exact matches

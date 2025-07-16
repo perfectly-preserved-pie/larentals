@@ -84,6 +84,10 @@ if __name__ == "__main__":
     # https://stackoverflow.com/a/36082588
     df.columns = df.columns.str.strip().str.lower()
 
+    # Remove all cells in mls_number that have more than 20 characters
+    # To get rid of garbage data
+    df = df[df['mls_number'].astype(str).str.len() <= 20]
+
     # Initialize an empty dictionary to hold renamed DataFrames
     renamed_sheets_corrected = {}
 
