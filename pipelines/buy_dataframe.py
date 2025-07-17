@@ -287,18 +287,46 @@ if __name__ == "__main__":
     df_combined = flatten_subtype_column(df_combined) 
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
     df_combined.reset_index(drop=True, inplace=True)
+    
+    # Attempt to reconstruct missing base address components from full_street_address
+    required_base_fields = ['street_address', 'city', 'zip_code', 'street_number']
+    for col in required_base_fields:
+      if col not in df_combined.columns:
+        df_combined[col] = None
+
+    mask_missing = df_combined['street_address'].isna() & df_combined['full_street_address'].notna()
+
+    # Extract street_number from start of street_address, city, zip from the full address
+    reconstructed = df_combined.loc[mask_missing, 'full_street_address'].str.extract(
+      r'^(?P<street_address>.*?), (?P<city>.*?) (?P<zip_code>\d{5})$'
+    )
+
+    # Attempt to extract street_number from reconstructed street_address
+    reconstructed["street_number"] = reconstructed["street_address"].str.extract(r'^(?P<street_number>\d+)')
+
+    # Apply reconstructed values back to df_combined
+    for col in ['street_address', 'city', 'zip_code', 'street_number']:
+      df_combined.loc[mask_missing & reconstructed[col].notna(), col] = reconstructed[col]
+
     # Clean up address fields
     df_combined['city']     = df_combined['city'].fillna('').astype(str)
     df_combined['zip_code'] = df_combined['zip_code'].fillna('').astype(str)
     df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
-    df_combined["full_street_address"] = (
-      df_combined[["street_number", "street_address", "city", "zip_code"]]
-        .fillna("")  # avoid nan strings
-        .agg(" ".join, axis=1)
-        .str.replace(r"\s+", " ", regex=True)
-        .str.strip()
+
+    # Rebuild short_address and full_street_address for all rows with valid components
+    valid_address_rows = df_combined["street_address"].notna()
+
+    df_combined.loc[valid_address_rows, "short_address"] = (
+      df_combined.loc[valid_address_rows, "street_address"].str.strip()
+      + ", " + df_combined.loc[valid_address_rows, "city"].str.strip()
     )
-    df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
+
+    df_combined.loc[valid_address_rows, "full_street_address"] = (
+      df_combined.loc[valid_address_rows, "street_address"].str.strip()
+      + ", " + df_combined.loc[valid_address_rows, "city"].str.strip()
+      + " " + df_combined.loc[valid_address_rows, "zip_code"].str.strip()
+    )
+
     df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
     #df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
