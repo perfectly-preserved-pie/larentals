@@ -2,6 +2,7 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
+from html import unescape
 from shapely.geometry import mapping
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -63,8 +64,10 @@ class BaseClass:
         if 'subtype' in self.df.columns:
             self.df['subtype'] = (
                 self.df['subtype']
-                  .fillna('Unknown')                       # NaN → "Unknown"
+                  .fillna('Unknown')                              # NaN → "Unknown"
                   .replace({None: 'Unknown', 'None': 'Unknown'})  # None or "None" → "Unknown"
+                  .astype(str)                                    # Ensure all entries are strings
+                  .apply(unescape)                                # "&amp;" → "&"
             )
 
         # Do the same for Furnished
