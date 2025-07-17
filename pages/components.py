@@ -78,6 +78,10 @@ class BaseClass:
                   .replace({None: 'Unknown', 'None': 'Unknown'})
             )
 
+        # Turn None/NaN laundry_category into "Unknown"
+        if 'laundry_category' in self.df.columns:
+            self.df['laundry_category'] = self.df['laundry_category'].fillna('Unknown').replace({None: 'Unknown', 'None': 'Unknown'})
+
     def return_geojson(self) -> dict:
         """
         Build a valid GeoJSON FeatureCollection from self.df,
