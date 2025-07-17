@@ -59,6 +59,22 @@ class BaseClass:
         # 6) store page_type for return_geojson
         self.page_type = page_type
 
+        # Turn None/NaN subtypes into "Unknown" so they show up in the checklist
+        if 'subtype' in self.df.columns:
+            self.df['subtype'] = (
+                self.df['subtype']
+                  .fillna('Unknown')                       # NaN → "Unknown"
+                  .replace({None: 'Unknown', 'None': 'Unknown'})  # None or "None" → "Unknown"
+            )
+
+        # Do the same for Furnished
+        if 'furnished' in self.df.columns:
+            self.df['furnished'] = (
+                self.df['furnished']
+                  .fillna('Unknown')
+                  .replace({None: 'Unknown', 'None': 'Unknown'})
+            )
+
     def return_geojson(self) -> dict:
         """
         Build a valid GeoJSON FeatureCollection from self.df,
