@@ -181,6 +181,7 @@ class LeaseComponents(BaseClass):
         'Duplex (Detached)': 'Duplex (Detached)',
         'Loft (Attached)': 'Loft (Attached)',
         'Loft': 'Loft',
+        'Own Your Own': 'Own Your Own',
         'Quadplex (Attached)': 'Quadplex (Attached)',
         'Quadplex (Detached)': 'Quadplex (Detached)',
         'Residential & Commercial': 'Residential & Commercial',
@@ -255,7 +256,7 @@ class LeaseComponents(BaseClass):
         """
         flattened_subtypes = [
             'Apartment', 'Cabin', 'Combo - Res & Com', 'Commercial Residential',
-            'Condominium', 'Duplex', 'Loft', 'Quadplex', 'Room For Rent',
+            'Condominium', 'Duplex', 'Loft','Own Your Own', 'Quadplex', 'Room For Rent',
             'Single Family', 'Stock Cooperative', 'Studio', 'Townhouse',
             'Triplex', 'Unknown'
         ]
