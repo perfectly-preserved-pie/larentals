@@ -21,8 +21,7 @@ external_stylesheets = [
 ]
 external_scripts = [
   'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js', # Turf.js for convex hulls
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11', # SweetAlert2 for popups
-  'https://unpkg.com/@popperjs/core@2', # Popper.js for popups
+  'https://cdn.jsdelivr.net/npm/sweetalert2@11' # SweetAlert2 for popups
 ]
 
 # Create the app
