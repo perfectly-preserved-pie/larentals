@@ -1,3 +1,21 @@
+/**
+ * Compute a maxWidth/maxHeight based on the map size (CSS pixels)
+ * @param {L.Layer} layer  Layer already on the map
+ * @param {number} padding Padding around the popup in px
+ * @returns {{maxW: number, maxH: number}}
+ */
+function getPopupDims(layer, padding = 10) {
+  const map = layer._map;
+  const { x: W, y: H } = map.getSize();
+  // simple breakpoints
+  const widthRatio  = window.innerWidth < 480 ? 0.9 : 0.5;
+  const heightRatio = window.innerHeight < 600 ? 0.8 : 0.6;
+  return {
+    maxW: Math.floor(W * widthRatio)  - padding * 2,
+    maxH: Math.floor(H * heightRatio) - padding * 2
+  };
+}
+
 // This is a JavaScript file to customize the Leaflet popup
 // It should be used with dl.GeoJSON's `onEachFeature` option
 // See https://github.com/perfectly-preserved-pie/larentals/issues/86#issuecomment-1585304809
@@ -328,29 +346,70 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 popupContent = generateBuyPopupContent(data, selected_subtypes);
             }
 
-            // Use Leaflet's map size to determine the popup size
-            //const w = window.innerWidth;
-            //const h = window.innerHeight;
-            //const isMobile = L.Browser.mobile;
+            layer.on('click', () => {
+                const { maxW, maxH } = getPopupDims(layer, 10);
+                const html = popupContent || '<div style="padding: 1em;">No data available</div>';
 
-            // Compute maxWidth/maxHeight
-            const isMobile = L.Browser.mobile || window.innerWidth < 768; // Use Leaflet's mobile detection or check window width
-            const maxWidth  = isMobile ? 225 : 300;
-            const maxHeight = isMobile ? 485 : 650;
+                // wrap in a container with inline size + scroll
+                const container = document.createElement('div');
+                container.style.maxWidth     = `${maxW}px`;
+                container.style.maxHeight    = `${maxH}px`;
+                container.style.overflowY    = 'auto';
+                container.style.boxSizing    = 'border-box';
+                container.innerHTML          = html;
 
-            // Bind the popup to the layer with the generated content and size constraints
-            layer.bindPopup(
-                popupContent,
-                {
-                    maxWidth: maxWidth,
-                    maxHeight: maxHeight,
-                    //keepInView: true,
-                    autoPanPadding: [10, 10],
-                    closeButton: true,
-                    //closeOnClick: false,
-                    className: 'responsive-popup',
-                }
-            );
+                 // ** grab the marker’s built‑in popupAnchor **
+                // this is [xOffset, yOffset] in pixels, relative to the icon’s tip
+                const iconOpts     = layer.options.icon && layer.options.icon.options;
+                const popupAnchor  = (iconOpts && iconOpts.popupAnchor) || [0, 0];
+                // Popper’s offset = [skidding, distance]
+                // For placement:'top', distance>0 moves the popup further up.
+                // Leaflet’s y‑anchor is typically negative (e.g. [0, -41]),
+                // so invert the sign:
+                const popperOffset = [
+                    popupAnchor[0],       // keep the same horizontal shift
+                    -popupAnchor[1]       // flip negative→positive
+                ];
+
+                // create a Popper popup
+                const popup = L.popup({
+                    autoPan:      true,
+                    closeOnClick: true,
+                    closeButton:  true,
+                    className:    'custom-popup',
+                    popperOptions: {
+                        placement: 'top',
+                        modifiers: [
+                            // gap between marker and popup
+                            { name: 'offset',        options: { offset: popperOffset } },
+                            // keep within map container
+                            {
+                                name: 'preventOverflow',
+                                options: {
+                                boundary:     layer._map.getContainer(),
+                                tether:       true,
+                                altAxis:      true,
+                                padding:      8
+                                }
+                            },
+                            // flip to bottom/right/left if needed
+                            {
+                                name: 'flip',
+                                options: {
+                                    fallbackPlacements: ['bottom', 'right', 'left'],
+                                    padding: 8
+                                }
+                            }
+                        ]
+                    }
+                });
+
+                // Set content & open
+                popup
+                .setContent(container)
+                .setLatLng(layer.getLatLng())
+                .openOn(layer._map);
+            });
         }
     }
 });
