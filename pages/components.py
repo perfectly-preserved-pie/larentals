@@ -1101,7 +1101,9 @@ class LeaseComponents(BaseClass):
         # Create the main map with the lease layer
         map = dl.Map(
             [
-                dl.TileLayer(),
+                dl.TileLayer(
+                    detectRetina=True,
+                ),
                 dl.GeoJSON(
                     id='lease_geojson',
                     data=None,
@@ -1840,7 +1842,9 @@ class BuyComponents(BaseClass):
         # Create the main map with the lease layer
         map = dl.Map(
             [
-                dl.TileLayer(),
+                dl.TileLayer(
+                    detectRetina=True,
+                ),
                 dl.GeoJSON(
                     id='buy_geojson',
                     data=None,
