@@ -44,14 +44,6 @@ You can click the toggle buttons next to the title to switch between For Rent an
 [I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/blog/2023/08/26/wheretolivela/)
 
 ## How to Build and Run
-### Docker
-1. Pull the Docker image: `docker pull strayingfromthepath:larentals`
-3. Run the Docker image: `docker run -p 1337:80 larentals`
-4. The Dash app will be accessible at `$HOST:1337`
-
-### Non-Docker
 1. Clone the repo `git clone https://github.com/perfectly-preserved-pie/larentals.git`
 2. `cd` into the new directory
-3. Install requirements with `pip install -r requirements.txt`
-4. Launch the webserver with `gunicorn -b 0.0.0.0:8050 --workers=4 app:server` or `python3 app.py` for the default Dash webserver.
-6. Have fun
+3. Run `uv run app.py` - `uv` will take care of the venv and dependencies (sourced from `pyproject.toml`) for you.
