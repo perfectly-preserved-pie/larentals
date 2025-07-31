@@ -46,4 +46,4 @@ You can click the toggle buttons next to the title to switch between For Rent an
 ## How to Build and Run
 1. Clone the repo `git clone https://github.com/perfectly-preserved-pie/larentals.git`
 2. `cd` into the new directory
-3. Run `uv run app.py` - `uv` will take care of the venv and dependencies (sourced from `pyproject.toml`) for you.
+3. Run `uv run app.py`. `uv` will take care of the venv and dependencies (sourced from `pyproject.toml`) for you.
