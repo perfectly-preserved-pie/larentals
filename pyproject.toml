@@ -28,7 +28,7 @@ dependencies = [
   "orjson~=3.10.16",
   "pandas~=2.2.3",
   "protobuf~=6.30.2",
-  "pyarrow~=19.0.1",
+  "pyarrow~=21.0.0",
   "python-dotenv~=1.1.0",
   "pyyaml",               # unpinned, take latest
   "requests~=2.32.3",
