@@ -340,9 +340,16 @@ if __name__ == "__main__":
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
-    # serialize any dict‐valued columns (e.g. context) to JSON text
+    # serialize dict/list valued 'context' entries to JSON only once (to avoid double dumping existing JSON strings)
     if "context" in df_combined.columns:
-      df_combined["context"] = df_combined["context"].apply(json.dumps)
+      def _to_json_once(v):
+        if isinstance(v, (dict, list)):
+          try:
+            return json.dumps(v, ensure_ascii=False)
+          except Exception:
+            return json.dumps(str(v))  # fallback—should be rare
+        return v  # assume already a JSON string or scalar
+      df_combined["context"] = df_combined["context"].apply(_to_json_once)
 
     # decide where to write
     if SAMPLE_N:
