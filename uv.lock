@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -436,7 +436,7 @@ wheels = [
 
 [[package]]
 name = "gevent"
-version = "25.5.1"
+version = "25.8.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cffi", marker = "platform_python_implementation == 'CPython' and sys_platform == 'win32'" },
@@ -444,33 +444,39 @@ dependencies = [
     { name = "zope-event" },
     { name = "zope-interface" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/58/267e8160aea00ab00acd2de97197eecfe307064a376fb5c892870a8a6159/gevent-25.5.1.tar.gz", hash = "sha256:582c948fa9a23188b890d0bc130734a506d039a2e5ad87dae276a456cc683e61", size = 6388207, upload-time = "2025-05-12T12:57:59.833Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/65/79/4f3fcc8cf79a22f21eaa3d8d9d0a12d82edd6f9715e2e1fd5ffe6e4bc1cc/gevent-25.8.2.tar.gz", hash = "sha256:0cfab118ad5dcc55d7847dd9dccd560d9015fe671f42714b6f1ac97e3b2b9a3a", size = 6422843, upload-time = "2025-08-29T17:01:29.146Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/eb/015e93f16a718e2f836ecebecae9bcd7b4d2a5695d1c8bd5bba2d5d91548/gevent-25.5.1-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:12380aba5c316e9ff53cc21d8ab80f4a91c0df3ada58f65d4f5eb2cf693db00e", size = 2877441, upload-time = "2025-05-12T11:14:57.735Z" },
-    { url = "https://files.pythonhosted.org/packages/7b/86/42d191a6f6672ca59d6d79b4cd9b89d4a15f59c843fbbad42f2b749f8ea9/gevent-25.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7f0694daab1a041b69a53f53c2141c12994892b2503870515cabe6a5dbd2a928", size = 1774873, upload-time = "2025-05-12T11:52:29.015Z" },
-    { url = "https://files.pythonhosted.org/packages/f5/9f/42dd255849c9ca2e814f5cbe180980594007ba19044a132cf674069e38bf/gevent-25.5.1-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:2797885e9aeffdc98e1846723e5aa212e7ce53007dbef40d6fd2add264235c41", size = 1857911, upload-time = "2025-05-12T11:54:19.523Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/fc/8e799a733be48f6114bfc531b94e28812741664d8af89872dd90e117f8a4/gevent-25.5.1-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:cde6aaac36b54332e10ea2a5bc0de6a8aba6c205c92603fe4396e3777c88e05d", size = 1812751, upload-time = "2025-05-12T12:00:03.719Z" },
-    { url = "https://files.pythonhosted.org/packages/52/4f/a3f3acd961887da10cb0b49c3d915201973d59ce6bf49e2922eaf2058d5f/gevent-25.5.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:24484f80f14befb8822bf29554cfb3a26a26cb69cd1e5a8be9e23b4bd7a96e25", size = 2087115, upload-time = "2025-05-12T11:33:01.128Z" },
-    { url = "https://files.pythonhosted.org/packages/b6/27/bb38e005106a53787c13ad1f9f73ed990e403e462108acae6320ab11d442/gevent-25.5.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:8fdc7446895fa184890d8ca5ea61e502691114f9db55c9b76adc33f3086c4368", size = 1793549, upload-time = "2025-05-12T11:59:57.854Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/56/da817bc69e1f0ae8438f12f2cd150656b09a8c3576c6d12f992dc9ca64ef/gevent-25.5.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:5b6106e2414b1797133786258fa1962a5e836480e4d5e861577f9fc63b673a5a", size = 2145899, upload-time = "2025-05-12T11:40:53.275Z" },
-    { url = "https://files.pythonhosted.org/packages/b8/42/989403abbdbb1346a1507083c02018bee3fedaef3f9648940c767d8c0958/gevent-25.5.1-cp311-cp311-win_amd64.whl", hash = "sha256:bc899212d90f311784c58938a9c09c59802fb6dc287a35fabdc36d180f57f575", size = 1635771, upload-time = "2025-05-12T12:26:47.644Z" },
-    { url = "https://files.pythonhosted.org/packages/58/c5/cf71423666a0b83db3d7e3f85788bc47d573fca5fe62b798fe2c4273de7c/gevent-25.5.1-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:d87c0a1bd809d8f70f96b9b229779ec6647339830b8888a192beed33ac8d129f", size = 2909333, upload-time = "2025-05-12T11:11:34.883Z" },
-    { url = "https://files.pythonhosted.org/packages/26/7e/d2f174ee8bec6eb85d961ca203bc599d059c857b8412e367b8fa206603a5/gevent-25.5.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b87a4b66edb3808d4d07bbdb0deed5a710cf3d3c531e082759afd283758bb649", size = 1788420, upload-time = "2025-05-12T11:52:30.306Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/f3/3aba8c147b9108e62ba348c726fe38ae69735a233db425565227336e8ce6/gevent-25.5.1-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f076779050029a82feb0cb1462021d3404d22f80fa76a181b1a7889cd4d6b519", size = 1868854, upload-time = "2025-05-12T11:54:21.564Z" },
-    { url = "https://files.pythonhosted.org/packages/c6/b1/11a5453f8fcebe90a456471fad48bd154c6a62fcb96e3475a5e408d05fc8/gevent-25.5.1-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:bb673eb291c19370f69295f7a881a536451408481e2e3deec3f41dedb7c281ec", size = 1833946, upload-time = "2025-05-12T12:00:05.514Z" },
-    { url = "https://files.pythonhosted.org/packages/70/1c/37d4a62303f86e6af67660a8df38c1171b7290df61b358e618c6fea79567/gevent-25.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c1325ed44225c8309c0dd188bdbbbee79e1df8c11ceccac226b861c7d52e4837", size = 2070583, upload-time = "2025-05-12T11:33:02.803Z" },
-    { url = "https://files.pythonhosted.org/packages/4b/8f/3b14929ff28263aba1d268ea97bcf104be1a86ba6f6bb4633838e7a1905e/gevent-25.5.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:fcd5bcad3102bde686d0adcc341fade6245186050ce14386d547ccab4bd54310", size = 1808341, upload-time = "2025-05-12T11:59:59.154Z" },
-    { url = "https://files.pythonhosted.org/packages/2f/fc/674ec819fb8a96e482e4d21f8baa43d34602dba09dfce7bbdc8700899d1b/gevent-25.5.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:1a93062609e8fa67ec97cd5fb9206886774b2a09b24887f40148c9c37e6fb71c", size = 2137974, upload-time = "2025-05-12T11:40:54.78Z" },
-    { url = "https://files.pythonhosted.org/packages/05/9a/048b7f5e28c54e4595ad4a8ad3c338fa89560e558db2bbe8273f44f030de/gevent-25.5.1-cp312-cp312-win_amd64.whl", hash = "sha256:2534c23dc32bed62b659ed4fd9e198906179e68b26c9276a897e04163bdde806", size = 1638344, upload-time = "2025-05-12T12:08:31.776Z" },
-    { url = "https://files.pythonhosted.org/packages/10/25/2162b38d7b48e08865db6772d632bd1648136ce2bb50e340565e45607cad/gevent-25.5.1-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:a022a9de9275ce0b390b7315595454258c525dc8287a03f1a6cacc5878ab7cbc", size = 2928044, upload-time = "2025-05-12T11:11:36.33Z" },
-    { url = "https://files.pythonhosted.org/packages/1b/e0/dbd597a964ed00176da122ea759bf2a6c1504f1e9f08e185379f92dc355f/gevent-25.5.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3fae8533f9d0ef3348a1f503edcfb531ef7a0236b57da1e24339aceb0ce52922", size = 1788751, upload-time = "2025-05-12T11:52:32.643Z" },
-    { url = "https://files.pythonhosted.org/packages/f1/74/960cc4cf4c9c90eafbe0efc238cdf588862e8e278d0b8c0d15a0da4ed480/gevent-25.5.1-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:c7b32d9c3b5294b39ea9060e20c582e49e1ec81edbfeae6cf05f8ad0829cb13d", size = 1869766, upload-time = "2025-05-12T11:54:23.903Z" },
-    { url = "https://files.pythonhosted.org/packages/56/78/fa84b1c7db79b156929685db09a7c18c3127361dca18a09e998e98118506/gevent-25.5.1-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:7b95815fe44f318ebbfd733b6428b4cb18cc5e68f1c40e8501dd69cc1f42a83d", size = 1835358, upload-time = "2025-05-12T12:00:06.794Z" },
-    { url = "https://files.pythonhosted.org/packages/00/5c/bfefe3822bbca5b83bfad256c82251b3f5be13d52d14e17a786847b9b625/gevent-25.5.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d316529b70d325b183b2f3f5cde958911ff7be12eb2b532b5c301f915dbbf1e", size = 2073071, upload-time = "2025-05-12T11:33:04.2Z" },
-    { url = "https://files.pythonhosted.org/packages/20/e4/08a77a3839a37db96393dea952e992d5846a881b887986dde62ead6b48a1/gevent-25.5.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:f6ba33c13db91ffdbb489a4f3d177a261ea1843923e1d68a5636c53fe98fa5ce", size = 1809805, upload-time = "2025-05-12T12:00:00.537Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/ac/28848348f790c1283df74b0fc0a554271d0606676470f848eccf84eae42a/gevent-25.5.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:37ee34b77c7553777c0b8379915f75934c3f9c8cd32f7cd098ea43c9323c2276", size = 2138305, upload-time = "2025-05-12T11:40:56.566Z" },
-    { url = "https://files.pythonhosted.org/packages/52/9e/0e9e40facd2d714bfb00f71fc6dacaacc82c24c1c2e097bf6461e00dec9f/gevent-25.5.1-cp313-cp313-win_amd64.whl", hash = "sha256:9fa6aa0da224ed807d3b76cdb4ee8b54d4d4d5e018aed2478098e685baae7896", size = 1637444, upload-time = "2025-05-12T12:17:45.995Z" },
-    { url = "https://files.pythonhosted.org/packages/60/16/b71171e97ec7b4ded8669542f4369d88d5a289e2704efbbde51e858e062a/gevent-25.5.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:0bacf89a65489d26c7087669af89938d5bfd9f7afb12a07b57855b9fad6ccbd0", size = 2937113, upload-time = "2025-05-12T11:12:03.191Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/0b/ea7376dabb0065889285404d519c732fc31bd8688ffaa6c70d75c7a27970/gevent-25.8.2-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:4b6d143b3facc930a90e263a4faebe8776f5e8493055022a493ec9de8a259690", size = 1790891, upload-time = "2025-08-29T17:09:25.254Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/82/6c9e04c6f4d5a954776b6b9ca4eacebbab751483f6a4dcd0d618ed194f2f/gevent-25.8.2-cp311-cp311-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:128f68c7ddb4ce55760557549ce8db0ea2f7818a963a148e7a2f22fb6ee34645", size = 1874098, upload-time = "2025-08-29T17:10:36.983Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/46/bc9648c9c8ff92b54f319337b829bbdddae598db446e26adb2699c172eca/gevent-25.8.2-cp311-cp311-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:d6d250ad0382135ad8bfb9cfd0c2a33a3dfd251a05657f652152e0c9084d1ddd", size = 1829800, upload-time = "2025-08-29T17:17:32.051Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/a6/7fdf82ef067912e6d111dfa7ea542955cd009ce8b598ad760ae2f2acb209/gevent-25.8.2-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:59107c7a452c7a70388b350f9840e6f5761a61e7c9750c48ad10066f29ac9a56", size = 2120221, upload-time = "2025-08-29T16:44:59.325Z" },
+    { url = "https://files.pythonhosted.org/packages/53/5f/325c2b02c28d670f1ec11ffa42423ee73d3fb9e52d2b52505017e5d52499/gevent-25.8.2-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:c4bd94b59b68058157b1632ae3488124d569b7067ad458c654cd4fb7dd2d5ade", size = 1807361, upload-time = "2025-08-29T17:21:23.522Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/f4/cca38c75c229eafdc0e8fbea6a98cd3854767db73235ab65f4ab89818f81/gevent-25.8.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:dead93501a7d7973294708b73d7e47b13c16f001a317094b2068730f9ab2ad39", size = 2177473, upload-time = "2025-08-29T16:51:02.672Z" },
+    { url = "https://files.pythonhosted.org/packages/77/ce/4b467f6696ab4e8d894c69d6be2b2303413d46d6a4c19fa9039805c81c50/gevent-25.8.2-cp311-cp311-win_amd64.whl", hash = "sha256:f99f2587f3b99f4ddc3446cee2ef4b8dea75ea536994377881a2f50a31f43dd9", size = 1661818, upload-time = "2025-08-29T18:54:08.764Z" },
+    { url = "https://files.pythonhosted.org/packages/59/58/85d0d4e1b9021b9eef0416708b152b3df0b31189d34f1c19aa219f2015f3/gevent-25.8.2-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:0a8cf26b0852bd31761b5ac35485520657dc22eeded2a867d4fe97bc341bd338", size = 2953067, upload-time = "2025-08-29T16:17:25.284Z" },
+    { url = "https://files.pythonhosted.org/packages/47/72/420d9884eb8e6cc40675fdc739f67e3c5688b60ce7aa7a05d4485362ab69/gevent-25.8.2-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:36cd3bb6184c44b959c918a13d33a2f533de6d3eccf03a9ea3b90a1639082c3a", size = 1806754, upload-time = "2025-08-29T17:09:26.841Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/7b/ce6f691fd57aa1be040d96b99ca14aa0cb96a3a9c790e9d05efcd50d6531/gevent-25.8.2-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:fa2dd9474eda6e990ec52b3ea74e0cb8713f1ef98fbaedcbcdcdef783cd7f863", size = 1887793, upload-time = "2025-08-29T17:10:39.122Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/9f/73eeb6d0c3afa13c34ee4d3bb31c288d0e7db5aaffefeb4d38ea55023b23/gevent-25.8.2-cp312-cp312-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:2c3018f3e89443e7086c905cd6da69c249d48070cc0f8d5357fdc325a9641bd2", size = 1853085, upload-time = "2025-08-29T17:17:33.531Z" },
+    { url = "https://files.pythonhosted.org/packages/99/5a/4fa732550334a5d426204fbc6c551f4e2be056d64007bafc788fad646209/gevent-25.8.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ef20a651139f281fa014e26bb1642b17aa46d0f7afa29b024ffb195249644925", size = 2107051, upload-time = "2025-08-29T16:45:00.575Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/b6/0627da55247a686e74973ed243432d3091606ad6b0a95341080dee423525/gevent-25.8.2-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:3358fc5bf0b960533d0ac2839fa9458fe5f6288b816b48ce7677b5e92434dad8", size = 1825463, upload-time = "2025-08-29T17:21:25.064Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/89/4ba9f5fd6a6a180306447351f4cb4b194aba2b1ea46c24c877d5ad1efea5/gevent-25.8.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:b3c613e128f805b85fa03d54470a57e37592d2206e95c9553bcfd6b517863003", size = 2170419, upload-time = "2025-08-29T16:51:04.581Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/95/ab3ad5e942c5c9c08e3fa803fa7d600d959abe7ab054b1497d52fc3e72e8/gevent-25.8.2-cp312-cp312-win_amd64.whl", hash = "sha256:647bbbeeddd69bfdbd3df1a7c864b4727bfb09e7f461f47293e3d98ded7d74d4", size = 1665470, upload-time = "2025-08-29T18:44:53.101Z" },
+    { url = "https://files.pythonhosted.org/packages/be/8f/c0253d7cfe1d28cd5c00bea318832ec91f5270205dc579428e4c612aa71a/gevent-25.8.2-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:a30373121527feff642a7528bf674eb7b1d3cb343d6b2b3eb42e7ea76288d8f0", size = 2970872, upload-time = "2025-08-29T16:18:00.81Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/b6/ab76e03c97b260bb84634c7c6439a2b7c5552c060f777814e7675ab45a83/gevent-25.8.2-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:c70ee82f417d1c94db3eb3fd2d14bfa6995a61b88f66005a69a169ad1df55b59", size = 1807295, upload-time = "2025-08-29T17:09:28.414Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/90/e918c22133726907ebdb104b5ddc1d4c4e859a035acf42d1d9e977a5c436/gevent-25.8.2-cp313-cp313-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:6a1399407299c710f5fe9348cda3f16e6d6fd6e592098d8bb678d58393b5457d", size = 1888756, upload-time = "2025-08-29T17:10:41.055Z" },
+    { url = "https://files.pythonhosted.org/packages/62/be/060509577f8c1f1262b4ca67a298ac3a63ad5e9117d8409a0adc37264372/gevent-25.8.2-cp313-cp313-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:6513e872a365acb407c7a13e11112bbfe8b9d6f0cc138182b50ce9f4074a1f2f", size = 1855064, upload-time = "2025-08-29T17:17:34.767Z" },
+    { url = "https://files.pythonhosted.org/packages/85/43/2c0a6c3e347ad702b4bd1cdd1d43ac329f0a820f30b6f47ff5b48fafe405/gevent-25.8.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e7d586a041f13b661dbe25137d6659fe246b1b454d0c5c29be26a3d8d4ed96cf", size = 2109585, upload-time = "2025-08-29T16:45:01.851Z" },
+    { url = "https://files.pythonhosted.org/packages/df/67/96454c79579a4970e053e6cd2ccc86579ea84c1bfa2ea11ae271ee5425e2/gevent-25.8.2-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:07717cb293684185bd5190b876d897dd8ed11d6eb707264a0541bc36a6b06ba3", size = 1827172, upload-time = "2025-08-29T17:21:26.382Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/a6/cc29497c6520009296c980d7f5007ce64395d66833b93baeb7127ccd9d5a/gevent-25.8.2-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:14e3ece38dcb24209a5b05dcc7ba5544514943bb7841bc5152c395c69e7ffbdc", size = 2171887, upload-time = "2025-08-29T16:51:06.839Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/3e/81793a2cab226a46524113bd8ecda711c6bb87efbd324bb7b709eb9ace90/gevent-25.8.2-cp313-cp313-win_amd64.whl", hash = "sha256:791fb76294b79d5b0271b1be088d5dfb37506b7a8f4315ff939cae32b46be905", size = 1664350, upload-time = "2025-08-29T18:33:39.639Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/98/69cec7441638ddd1afa9a6f44fe0ebf12cbbd412463e82d68f6cc44bef44/gevent-25.8.2-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:2776417181b27466b562bc47af5d20a55e2ccd4deec06a96f37e58317e1c8525", size = 2980136, upload-time = "2025-08-29T16:17:32.035Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/ff/b685f71849ab29be8eda39da06299b2fdaf96a50fceefff760a282647a82/gevent-25.8.2-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:9b795ea9727d873387483df4ffd31137c4859746c9c789238db483a28bfa16de", size = 1812326, upload-time = "2025-08-29T17:09:30.187Z" },
+    { url = "https://files.pythonhosted.org/packages/86/7c/d1d291f17af4d3f811208f977f1a3e1d1178c5eb9f34337ae26ec61959e8/gevent-25.8.2-cp314-cp314-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:98a4302cb64c3fbc1f7472b051ac79e68b3d41f9d37a08a0fc6058461079dedf", size = 1893012, upload-time = "2025-08-29T17:10:42.415Z" },
+    { url = "https://files.pythonhosted.org/packages/31/67/b6d85443ecbfecc5ba2edd07986ac98ae721ddc29736740a777fcb8dd934/gevent-25.8.2-cp314-cp314-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:5c4a99ac674d8c13459e03dcb5550a4a3639a9bd1dcda12a630ffdd1fae8d9f8", size = 1859957, upload-time = "2025-08-29T17:17:35.964Z" },
+    { url = "https://files.pythonhosted.org/packages/57/f5/5bb45f208238e5528c523eff2b0b5a2ed59089e0eeff0c325c011d2f4992/gevent-25.8.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:398dc7adbcd8cf1fcb2dc8dc48aafc355790bff842c906a28b9f995bcc061bd2", size = 2111374, upload-time = "2025-08-29T16:45:03.156Z" },
+    { url = "https://files.pythonhosted.org/packages/49/91/fd53ec0617c869df78cb7bb9a85741483df56288b23ac1fc4a3b5f165b34/gevent-25.8.2-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:3535a699771f35b460026077dec946e73e4744afb5661b4e05a78eea74c120ce", size = 1831945, upload-time = "2025-08-29T17:21:29.356Z" },
+    { url = "https://files.pythonhosted.org/packages/92/7d/46b4d5a8c9b37d66f16d7cd4f52e60e026a58b3a9cdedb4f93581082fb2b/gevent-25.8.2-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:23383d4e50718750f44cabdf1f8d4905108da0ffc6a8bf85448fb0a68f0e1b4d", size = 2174857, upload-time = "2025-08-29T16:51:08.342Z" },
+    { url = "https://files.pythonhosted.org/packages/37/ce/18ff1db74d5654318a3a3176fda984317d3d9856a91ef0c1da56324e7104/gevent-25.8.2-cp314-cp314-win_amd64.whl", hash = "sha256:28a60e5f1174ac568639ab3bd12be9d620478a35acf0ad3156ef117918b4f551", size = 1686254, upload-time = "2025-08-29T18:23:41.138Z" },
 ]
 
 [[package]]
@@ -561,6 +567,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/76/66/650a33bd90f786193e4de4b3ad86ea60b53c89b669a5c7be931fac31cdb0/importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000", size = 56641, upload-time = "2025-04-27T15:29:01.736Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/20/b0/36bd937216ec521246249be3bf9855081de4c5e06a0c9b4219dbeda50373/importlib_metadata-8.7.0-py3-none-any.whl", hash = "sha256:e5dd1551894c77868a30651cef00984d50e1002d06942a7101d34870c5f02afd", size = 27656, upload-time = "2025-04-27T15:29:00.214Z" },
+]
+
+[[package]]
+name = "iniconfig"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/97/ebf4da567aa6827c909642694d71c9fcf53e5b504f2d96afea02718862f3/iniconfig-2.1.0.tar.gz", hash = "sha256:3abbd2e30b36733fee78f9c7f7308f2d0050e88f0087fd25c2645f63c773e1c7", size = 4793, upload-time = "2025-03-19T20:09:59.721Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/e1/e6716421ea10d38022b952c159d5161ca1193197fb744506875fbb87ea7b/iniconfig-2.1.0-py3-none-any.whl", hash = "sha256:9deba5723312380e77435581c6bf4935c94cbfab9b1ed33ef8d238ea168eb760", size = 6050, upload-time = "2025-03-19T20:10:01.071Z" },
 ]
 
 [[package]]
@@ -985,6 +1000,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pluggy"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
 name = "protobuf"
 version = "6.30.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1132,6 +1156,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pygments"
+version = "2.19.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/77/a5b8c569bf593b0140bde72ea885a803b82086995367bf2037de0159d924/pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887", size = 4968631, upload-time = "2025-06-21T13:39:12.283Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b", size = 1225217, upload-time = "2025-06-21T13:39:07.939Z" },
+]
+
+[[package]]
 name = "pyogrio"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1195,6 +1228,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1d/0d/07ac7712994454a254c383c0d08aff9916a2851e6512d59da8dc369b1b02/pyproj-3.7.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:87229e42b75e89f4dad6459200f92988c5998dfb093c7c631fb48524c86cd5dc", size = 10729260, upload-time = "2025-02-16T04:28:40.639Z" },
     { url = "https://files.pythonhosted.org/packages/b0/d0/9c604bc72c37ba69b867b6df724d6a5af6789e8c375022c952f65b2af558/pyproj-3.7.1-cp313-cp313-win32.whl", hash = "sha256:d666c3a3faaf3b1d7fc4a544059c4eab9d06f84a604b070b7aa2f318e227798e", size = 5855462, upload-time = "2025-02-16T04:28:42.827Z" },
     { url = "https://files.pythonhosted.org/packages/98/df/68a2b7f5fb6400c64aad82d72bcc4bc531775e62eedff993a77c780defd0/pyproj-3.7.1-cp313-cp313-win_amd64.whl", hash = "sha256:d3caac7473be22b6d6e102dde6c46de73b96bc98334e577dfaee9886f102ea2e", size = 6266573, upload-time = "2025-02-16T04:28:44.727Z" },
+]
+
+[[package]]
+name = "pytest"
+version = "8.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "iniconfig" },
+    { name = "packaging" },
+    { name = "pluggy" },
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
 ]
 
 [[package]]
@@ -1533,11 +1582,17 @@ dependencies = [
     { name = "pandas" },
     { name = "protobuf" },
     { name = "pyarrow" },
+    { name = "pytest" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "tables" },
     { name = "user-agents" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
 ]
 
 [package.metadata]
@@ -1554,7 +1609,7 @@ requires-dist = [
     { name = "flask", specifier = ">=3.0.3,<3.1.0" },
     { name = "geopandas", specifier = "~=1.1.1" },
     { name = "geopy", specifier = "~=2.4.1" },
-    { name = "gevent", specifier = "~=25.5.1" },
+    { name = "gevent", specifier = "~=25.8.2" },
     { name = "gunicorn", specifier = "~=23.0.0" },
     { name = "imagekitio", specifier = "~=4.1.0" },
     { name = "loguru", specifier = "~=0.7.3" },
@@ -1564,12 +1619,15 @@ requires-dist = [
     { name = "pandas", specifier = "~=2.2.3" },
     { name = "protobuf", specifier = "~=6.30.2" },
     { name = "pyarrow", specifier = "~=19.0.1" },
+    { name = "pytest" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "python-dotenv", specifier = "~=1.1.0" },
     { name = "pyyaml" },
     { name = "requests", specifier = "~=2.32.3" },
     { name = "tables" },
     { name = "user-agents", specifier = "~=2.2.0" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "win32-setctime"
