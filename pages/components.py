@@ -1102,7 +1102,7 @@ class LeaseComponents(BaseClass):
         map = dl.Map(
             [
                 dl.TileLayer(
-                    detectRetina=True,
+                    detectRetina=False,
                 ),
                 dl.GeoJSON(
                     id='lease_geojson',
@@ -1843,7 +1843,7 @@ class BuyComponents(BaseClass):
         map = dl.Map(
             [
                 dl.TileLayer(
-                    detectRetina=True,
+                    detectRetina=False,
                 ),
                 dl.GeoJSON(
                     id='buy_geojson',
