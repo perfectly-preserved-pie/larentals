@@ -27,7 +27,7 @@ dependencies = [
   "openpyxl~=3.1.5",
   "orjson~=3.10.16",
   "pandas~=2.2.3",
-  "protobuf~=6.30.2",
+  "protobuf~=6.33.0",
   "pyarrow~=19.0.1",
   "python-dotenv~=1.1.0",
   "pyyaml",               # unpinned, take latest
