@@ -14,6 +14,28 @@ window.dash_props = Object.assign({}, window.dash_props, {
             const encodedData = encodeURIComponent(JSON.stringify(data)); // Encode the data as a JSON for the reportListing function
             const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
             const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
+
+            /**
+             * Converts placeholder values (e.g., "None", "null", empty strings) to null,
+             * returning the trimmed string for any other input.
+             *
+             * @param {unknown} value Raw value supplied from the GeoJSON properties.
+             * @returns {string|null} Normalized string or null when the value is missing/placeholder.
+             */
+            const normalizeNullableString = (value) => {
+                if (value === null || value === undefined) {
+                    return null;
+                }
+                const normalized = String(value).trim();
+                if (!normalized || ["none", "null", "nan"].includes(normalized.toLowerCase())) {
+                    return null;
+                }
+                return normalized;
+            };
+
+            const listingUrl = normalizeNullableString(data.listing_url);
+            const mlsPhoto = normalizeNullableString(data.mls_photo);
+            const fullStreetAddress = normalizeNullableString(data.full_street_address) || "Unknown Address";
             
             if (!context) {
                 //console.log("Context is undefined.");
@@ -25,17 +47,38 @@ window.dash_props = Object.assign({}, window.dash_props, {
             //console.log('Data:', data);
 
             // Function to handle MLS number hyperlink
-            function getListingUrlBlock(data) {
-                if (!data.listing_url) {
+            function getListingUrlBlock(address, listingUrlValue) {
+                if (!listingUrlValue) {
                     return `
                         <div style="text-align: center;">
-                            <h5>${data.full_street_address}</h5>
+                            <h5>${address}</h5>
                         </div>
                     `;
                 }
                 return `
                     <div style="text-align: center;">
-                        <h5><a href='${data.listing_url}' referrerPolicy='noreferrer' target='_blank'>${data.full_street_address}</a></h5>
+                        <h5><a href='${listingUrlValue}' referrerPolicy='noreferrer' target='_blank'>${address}</a></h5>
+                    </div>
+                `;
+            }
+
+            function buildImageRow(photoUrl, listingUrlValue) {
+                if (!photoUrl) {
+                    return '';
+                }
+                const imageTag = `<img src="${photoUrl}" alt="Property Image" style="width:100%;height:auto;">`;
+                if (listingUrlValue) {
+                    return `
+                        <div style="position: relative;">
+                            <a href="${listingUrlValue}" target="_blank" referrerPolicy="noreferrer">
+                                ${imageTag}
+                            </a>
+                        </div>
+                    `;
+                }
+                return `
+                    <div style="position: relative;">
+                        ${imageTag}
                     </div>
                 `;
             }
@@ -72,16 +115,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Conditionally format the listing URL as a hyperlink or plain text
-            const listingUrlBlock = getListingUrlBlock(data);
+            const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
 
             // Conditionally include the property image row if the image URL is available
-            const imageRow = data.mls_photo ? `
-            <div style="position: relative;">
-                <a href="${data.listing_url}" target="_blank" referrerPolicy="noreferrer">
-                    <img src="${data.mls_photo}" alt="Property Image" style="width:100%;height:auto;">
-                </a>
-            </div>
-            ` : '';
+            const imageRow = buildImageRow(mlsPhoto, listingUrl);
 
             // Conditionally format the phone number as a tel: link or plain text
             const phoneNumberBlock = data.phone_number ? `
