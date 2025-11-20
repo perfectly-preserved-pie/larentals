@@ -1,7 +1,0 @@
-2025-11-19 22:06:01.702 | INFO     | __main__:<module>:50 - Loaded local .env
-2025-11-19 22:06:01.767 | INFO     | functions.webscraping_utils:webscrape_bhhs:135 - Scraping BHHS page for WS25261622MR (row 1 of 472).
-2025-11-19 22:06:06.788 | WARNING  | functions.webscraping_utils:webscrape_bhhs:181 - Error scraping BHHS page for WS25261622MR: HTTPSConnectionPool(host='www.bhhscalifornia.com', port=443): Max retries exceeded with url: /for-lease/WS25261622MR-t_q;/ (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7fea185cd2b0>, 'Connection to www.bhhscalifornia.com timed out. (connect timeout=5)'))
-2025-11-19 22:06:15.791 | INFO     | functions.webscraping_utils:fetch_the_agency_data:320 - Successfully fetched data for MLS WS25261622MR
-2025-11-19 22:06:16.644 | SUCCESS  | functions.mls_image_processing_utils:imagekit_transform:62 - Transformed photo https://ik.imagekit.io/theoldesthouse/WS25261622MR?tr=h-300%2Cw-400 generated for WS25261622MR.
-2025-11-19 22:06:16.644 | INFO     | functions.webscraping_utils:webscrape_bhhs:135 - Scraping BHHS page for DW25261833MR (row 2 of 472).
-2025-11-19 22:06:21.651 | WARNING  | functions.webscraping_utils:webscrape_bhhs:181 - Error scraping BHHS page for DW25261833MR: HTTPSConnectionPool(host='www.bhhscalifornia.com', port=443): Max retries exceeded with url: /for-lease/DW25261833MR-t_q;/ (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7fea185cc0b0>, 'Connection to www.bhhscalifornia.com timed out. (connect timeout=5)'))
