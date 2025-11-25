@@ -2,6 +2,7 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
+from html import unescape
 from shapely.geometry import mapping
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -58,6 +59,28 @@ class BaseClass:
 
         # 6) store page_type for return_geojson
         self.page_type = page_type
+
+        # Turn None/NaN subtypes into "Unknown" so they show up in the checklist
+        if 'subtype' in self.df.columns:
+            self.df['subtype'] = (
+                self.df['subtype']
+                  .fillna('Unknown')                              # NaN → "Unknown"
+                  .replace({None: 'Unknown', 'None': 'Unknown'})  # None or "None" → "Unknown"
+                  .astype(str)                                    # Ensure all entries are strings
+                  .apply(unescape)                                # "&amp;" → "&"
+            )
+
+        # Do the same for Furnished
+        if 'furnished' in self.df.columns:
+            self.df['furnished'] = (
+                self.df['furnished']
+                  .fillna('Unknown')
+                  .replace({None: 'Unknown', 'None': 'Unknown'})
+            )
+
+        # Turn None/NaN laundry_category into "Unknown"
+        if 'laundry_category' in self.df.columns:
+            self.df['laundry_category'] = self.df['laundry_category'].fillna('Unknown').replace({None: 'Unknown', 'None': 'Unknown'})
 
     def return_geojson(self) -> dict:
         """
@@ -158,6 +181,7 @@ class LeaseComponents(BaseClass):
         'Duplex (Detached)': 'Duplex (Detached)',
         'Loft (Attached)': 'Loft (Attached)',
         'Loft': 'Loft',
+        'Own Your Own': 'Own Your Own',
         'Quadplex (Attached)': 'Quadplex (Attached)',
         'Quadplex (Detached)': 'Quadplex (Detached)',
         'Residential & Commercial': 'Residential & Commercial',
@@ -232,7 +256,7 @@ class LeaseComponents(BaseClass):
         """
         flattened_subtypes = [
             'Apartment', 'Cabin', 'Combo - Res & Com', 'Commercial Residential',
-            'Condominium', 'Duplex', 'Loft', 'Quadplex', 'Room For Rent',
+            'Condominium', 'Duplex', 'Loft','Own Your Own', 'Quadplex', 'Room For Rent',
             'Single Family', 'Stock Cooperative', 'Studio', 'Townhouse',
             'Triplex', 'Unknown'
         ]
@@ -1077,7 +1101,9 @@ class LeaseComponents(BaseClass):
         # Create the main map with the lease layer
         map = dl.Map(
             [
-                dl.TileLayer(),
+                dl.TileLayer(
+                    detectRetina=False,
+                ),
                 dl.GeoJSON(
                     id='lease_geojson',
                     data=None,
@@ -1816,7 +1842,9 @@ class BuyComponents(BaseClass):
         # Create the main map with the lease layer
         map = dl.Map(
             [
-                dl.TileLayer(),
+                dl.TileLayer(
+                    detectRetina=False,
+                ),
                 dl.GeoJSON(
                     id='buy_geojson',
                     data=None,

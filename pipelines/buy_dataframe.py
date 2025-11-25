@@ -20,7 +20,7 @@ if __name__ == "__main__":
   parser.add_argument("-n","--sample",  type=int, default=None,
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
-    help="Path to log file (default /var/log/larentals/buy_dataframe.log)")
+    help="Path to log file (default ~/larentals/buy_dataframe.log)")
   parser.add_argument("--use-env",   action="store_true",           
     help="Load from .env instead of SSM")
   parser.add_argument("--use-nominatim", action="store_true",
@@ -29,7 +29,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
   SAMPLE_N = args.sample
   USE_NOMINATIM  = args.use_nominatim
-  LOGFILE  = args.logfile or "/var/log/larentals/buy_dataframe.log"
+  LOGFILE  = args.logfile or "~/larentals/buy_dataframe.log"
 
   # — Setup logging — remove defaults, add stderr + chosen file only
   logger.remove()
@@ -79,9 +79,6 @@ if __name__ == "__main__":
 
     # Merge all sheets into a single DataFrame
     df = pd.concat(xlsx.values(), ignore_index=True)
-
-    if SAMPLE_N:
-      df = df.sample(SAMPLE_N, random_state=1)  # test‐mode sample
 
     # Strip leading and trailing whitespaces from the column names and convert them to lowercase
     # https://stackoverflow.com/a/36082588
@@ -144,6 +141,14 @@ if __name__ == "__main__":
 
     # Drop all rows with misc/irrelevant data
     df.dropna(subset=['mls_number'], inplace=True)
+
+    # Remove all cells in mls_number that have more than 20 characters
+    # To get rid of garbage data
+    df = df[df['mls_number'].astype(str).str.len() <= 20]
+
+    if SAMPLE_N:
+      df = df.sample(SAMPLE_N, random_state=1)
+      logger.info(f"[buy] TEST MODE: sampled {SAMPLE_N} new rows")
 
     # Define columns to remove all non-numeric characters from
     cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']
@@ -257,40 +262,71 @@ if __name__ == "__main__":
     if os.path.exists(DB_PATH):
       conn = sqlite3.connect(DB_PATH)
       try:
+        # if SAMPLE_N is set, sample historical rows too
         if SAMPLE_N:
-          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}", conn)
+          df_old = pd.read_sql_query(
+            f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}",
+            conn
+          )
         else:
-          # Read the entire existing table
           df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
       except Exception as e:
         logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
         df_old = pd.DataFrame()
       finally:
         conn.close()
+
     if not df_old.empty:
       df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
       df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
     else:
       df_combined = df.copy()
-    # Make NEW (df) rows win on deduplication
-    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="first")
+    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
 
     df_combined = flatten_subtype_column(df_combined) 
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
     df_combined.reset_index(drop=True, inplace=True)
+    
+    # Attempt to reconstruct missing base address components from full_street_address
+    required_base_fields = ['street_address', 'city', 'zip_code', 'street_number']
+    for col in required_base_fields:
+      if col not in df_combined.columns:
+        df_combined[col] = None
+
+    mask_missing = df_combined['street_address'].isna() & df_combined['full_street_address'].notna()
+
+    # Extract street_number from start of street_address, city, zip from the full address
+    reconstructed = df_combined.loc[mask_missing, 'full_street_address'].str.extract(
+      r'^(?P<street_address>.*?), (?P<city>.*?) (?P<zip_code>\d{5})$'
+    )
+
+    # Attempt to extract street_number from reconstructed street_address
+    reconstructed["street_number"] = reconstructed["street_address"].str.extract(r'^(?P<street_number>\d+)')
+
+    # Apply reconstructed values back to df_combined
+    for col in ['street_address', 'city', 'zip_code', 'street_number']:
+      df_combined.loc[mask_missing & reconstructed[col].notna(), col] = reconstructed[col]
+
     # Clean up address fields
     df_combined['city']     = df_combined['city'].fillna('').astype(str)
     df_combined['zip_code'] = df_combined['zip_code'].fillna('').astype(str)
     df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
-    df_combined["full_street_address"] = (
-      df_combined[["street_number", "street_address", "city", "zip_code"]]
-        .fillna("")  # avoid nan strings
-        .agg(" ".join, axis=1)
-        .str.replace(r"\s+", " ", regex=True)
-        .str.strip()
+
+    # Rebuild short_address and full_street_address for all rows with valid components
+    valid_address_rows = df_combined["street_address"].notna()
+
+    df_combined.loc[valid_address_rows, "short_address"] = (
+      df_combined.loc[valid_address_rows, "street_address"].str.strip()
+      + ", " + df_combined.loc[valid_address_rows, "city"].str.strip()
     )
-    df_combined["short_address"] = df_combined["city"].str.cat(df_combined["zip_code"], sep=", ", na_rep="").str.strip()
+
+    df_combined.loc[valid_address_rows, "full_street_address"] = (
+      df_combined.loc[valid_address_rows, "street_address"].str.strip()
+      + ", " + df_combined.loc[valid_address_rows, "city"].str.strip()
+      + " " + df_combined.loc[valid_address_rows, "zip_code"].str.strip()
+    )
+
     df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
     #df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
@@ -304,9 +340,16 @@ if __name__ == "__main__":
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
-    # serialize any dict‐valued columns (e.g. context) to JSON text
+    # serialize dict/list valued 'context' entries to JSON only once (to avoid double dumping existing JSON strings)
     if "context" in df_combined.columns:
-      df_combined["context"] = df_combined["context"].apply(json.dumps)
+      def _to_json_once(v):
+        if isinstance(v, (dict, list)):
+          try:
+            return json.dumps(v, ensure_ascii=False)
+          except Exception:
+            return json.dumps(str(v))  # fallback—should be rare
+        return v  # assume already a JSON string or scalar
+      df_combined["context"] = df_combined["context"].apply(_to_json_once)
 
     # decide where to write
     if SAMPLE_N:

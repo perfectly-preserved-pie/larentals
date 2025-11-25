@@ -20,7 +20,7 @@ if __name__ == "__main__":
   parser.add_argument("-n","--sample", type=int, default=None,
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
-    help="Path to log file (default /var/log/larentals/lease_dataframe.log)")
+    help="Path to log file (default ~/larentals/lease_dataframe.log)")
   parser.add_argument("--use-env",   action="store_true",           
     help="Load from .env instead of SSM")
   parser.add_argument("--use-nominatim", action="store_true",
@@ -29,7 +29,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
   SAMPLE_N = args.sample
   USE_NOMINATIM  = args.use_nominatim
-  LOGFILE  = args.logfile or "/var/log/larentals/lease_dataframe.log"
+  LOGFILE  = args.logfile or "~/larentals/lease_dataframe.log"
 
   # — Setup logging — remove defaults, add stderr + chosen file only
   logger.remove()
@@ -126,6 +126,10 @@ if __name__ == "__main__":
 
     # Drop all rows with misc/irrelevant data
     df.dropna(subset=['street_name'], inplace=True)
+
+    # Remove all cells in mls_number that have more than 20 characters
+    # To get rid of garbage data
+    df = df[df['mls_number'].astype(str).str.len() <= 20]
 
     # Columns to clean
     cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit', 'lot_size', 'sqft', 'year_built']
@@ -277,9 +281,16 @@ if __name__ == "__main__":
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_combined.loc[df_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
 
-    # serialize any dict‐valued columns (e.g. context) to JSON text
+    # serialize dict/list valued 'context' entries to JSON only once (to avoid double dumping existing JSON strings)
     if "context" in df_combined.columns:
-      df_combined["context"] = df_combined["context"].apply(json.dumps)
+      def _to_json_once(v):
+        if isinstance(v, (dict, list)):
+          try:
+            return json.dumps(v, ensure_ascii=False)
+          except Exception:
+            return json.dumps(str(v))  # fallback—should be rare
+        return v  # assume already a JSON string or scalar
+      df_combined["context"] = df_combined["context"].apply(_to_json_once)
 
     # Convert these columns to nullable integers
     for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms', 'year_built', 'parking_spaces', 'bedrooms', 'lot_size', 'olp', 'list_price', 'sqft', 'key_deposit', 'other_deposit', 'pet_deposit', 'security_deposit']:
