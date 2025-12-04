@@ -7,33 +7,46 @@
 # - Secure supply chain with SBOMs and signatures  
 # - Nonroot user by default (UID 65532)
 # - Built on Wolfi Linux "undistro" with minimal attack surface
-#
-# TRADE-OFFS:
-# - The minimal image (chainguard/python:latest, ~64MB) has no shell or package manager
-# - This version uses the dev image (chainguard/python:latest-dev, ~665MB) to support
-#   dynamic package installation via uv at startup
-# - For production with pre-built dependencies, a multi-stage build using the minimal
-#   image would be smaller and more secure
+# - Multi-stage build results in smaller, more secure production image (~64MB base)
 #
 # AVAILABLE FROM:
 # - Docker Hub: chainguard/python
 # - Chainguard Registry: cgr.dev/chainguard/python (requires authentication for some tags)
 
-# Use the dev variant which includes pip/uv for dynamic package installation at startup
-FROM chainguard/python:latest-dev
+# =============================================================================
+# BUILD STAGE: Install dependencies using the dev image (includes pip, uv, shell)
+# =============================================================================
+FROM chainguard/python:latest-dev AS builder
 
 WORKDIR /app
 
 # Bring in the uv binary from astral-sh (ensures consistent uv version)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Copy manifest, lockfile
+# Copy manifest and lockfile for dependency installation
 COPY pyproject.toml uv.lock /app/
 
-# Copy source files
+# Copy source files needed for installation
 COPY . /app/
 
-# The Chainguard image already runs as nonroot by default
-# Use uv run to lock, sync, then invoke Gunicorn
-# Note the "--" to separate uv flags from the Gunicorn command
-CMD ["uv", "run", "--", "gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "--workers=10", "--preload", "app:server"]
+# Install dependencies using uv sync (uses the lockfile)
+# Use --frozen to ensure we use the exact versions from the lockfile
+# Use --native-tls to use system CA certificates for SSL verification
+RUN uv sync --frozen --native-tls
+
+# =============================================================================
+# PRODUCTION STAGE: Minimal secure runtime image
+# =============================================================================
+FROM chainguard/python:latest
+
+WORKDIR /app
+
+# Copy the virtual environment and application from the builder stage
+COPY --from=builder /app /app
+
+# The Chainguard image already runs as nonroot by default (UID 65532)
+# Set the PATH to include the virtual environment
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Run with gunicorn using gevent workers
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "--workers=10", "--preload", "app:server"]
