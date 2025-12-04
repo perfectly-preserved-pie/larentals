@@ -41,8 +41,15 @@ FROM chainguard/python:latest
 
 WORKDIR /app
 
-# Copy the virtual environment and application from the builder stage
-COPY --from=builder /app /app
+# Copy the virtual environment from the builder stage
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy application source files (excluding build artifacts)
+COPY --from=builder /app/app.py /app/app.py
+COPY --from=builder /app/pages /app/pages
+COPY --from=builder /app/functions /app/functions
+COPY --from=builder /app/assets /app/assets
+COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 
 # The Chainguard image already runs as nonroot by default (UID 65532)
 # Set the PATH to include the virtual environment
