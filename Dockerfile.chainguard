@@ -19,13 +19,13 @@
 # - Docker Hub: chainguard/python
 # - Chainguard Registry: cgr.dev/chainguard/python (requires authentication for some tags)
 
-# Use the dev variant which includes shell support for uv run
+# Use the dev variant which includes pip/uv for dynamic package installation at startup
 FROM chainguard/python:latest-dev
 
 WORKDIR /app
 
 # Bring in the uv binary from astral-sh (ensures consistent uv version)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Copy manifest, lockfile
 COPY pyproject.toml uv.lock /app/
