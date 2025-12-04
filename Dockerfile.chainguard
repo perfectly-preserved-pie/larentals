@@ -1,0 +1,59 @@
+# Chainguard Python image - secure by default, minimal CVEs
+# This is an alternative to the python:3.11-slim based Dockerfile
+# See https://images.chainguard.dev/directory/image/python/overview
+#
+# BENEFITS over python-slim:
+# - Low/zero CVE count with daily rebuilds
+# - Secure supply chain with SBOMs and signatures  
+# - Nonroot user by default (UID 65532)
+# - Built on Wolfi Linux "undistro" with minimal attack surface
+# - Multi-stage build results in smaller, more secure production image (~64MB base)
+#
+# AVAILABLE FROM:
+# - Docker Hub: chainguard/python
+# - Chainguard Registry: cgr.dev/chainguard/python (requires authentication for some tags)
+
+# =============================================================================
+# BUILD STAGE: Install dependencies using the dev image (includes pip, uv, shell)
+# =============================================================================
+FROM chainguard/python:latest-dev AS builder
+
+WORKDIR /app
+
+# Bring in the uv binary from astral-sh (ensures consistent uv version)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Copy manifest and lockfile for dependency installation
+COPY pyproject.toml uv.lock /app/
+
+# Copy source files needed for installation
+COPY . /app/
+
+# Install dependencies using uv sync (uses the lockfile)
+# Use --frozen to ensure we use the exact versions from the lockfile
+# Use --native-tls to use system CA certificates for SSL verification
+RUN uv sync --frozen --native-tls
+
+# =============================================================================
+# PRODUCTION STAGE: Minimal secure runtime image
+# =============================================================================
+FROM chainguard/python:latest
+
+WORKDIR /app
+
+# Copy the virtual environment from the builder stage
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy application source files (excluding build artifacts)
+COPY --from=builder /app/app.py /app/app.py
+COPY --from=builder /app/pages /app/pages
+COPY --from=builder /app/functions /app/functions
+COPY --from=builder /app/assets /app/assets
+COPY --from=builder /app/pyproject.toml /app/pyproject.toml
+
+# The Chainguard image already runs as nonroot by default (UID 65532)
+# Set the PATH to include the virtual environment
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Run with gunicorn using gevent workers
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "--workers=10", "--preload", "app:server"]
