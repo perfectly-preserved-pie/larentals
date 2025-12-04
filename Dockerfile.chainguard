@@ -1,0 +1,39 @@
+# Chainguard Python image - secure by default, minimal CVEs
+# This is an alternative to the python:3.11-slim based Dockerfile
+# See https://images.chainguard.dev/directory/image/python/overview
+#
+# BENEFITS over python-slim:
+# - Low/zero CVE count with daily rebuilds
+# - Secure supply chain with SBOMs and signatures  
+# - Nonroot user by default (UID 65532)
+# - Built on Wolfi Linux "undistro" with minimal attack surface
+#
+# TRADE-OFFS:
+# - The minimal image (chainguard/python:latest, ~64MB) has no shell or package manager
+# - This version uses the dev image (chainguard/python:latest-dev, ~665MB) to support
+#   dynamic package installation via uv at startup
+# - For production with pre-built dependencies, a multi-stage build using the minimal
+#   image would be smaller and more secure
+#
+# AVAILABLE FROM:
+# - Docker Hub: chainguard/python
+# - Chainguard Registry: cgr.dev/chainguard/python (requires authentication for some tags)
+
+# Use the dev variant which includes shell support for uv run
+FROM chainguard/python:latest-dev
+
+WORKDIR /app
+
+# Bring in the uv binary from astral-sh (ensures consistent uv version)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/bin/uv
+
+# Copy manifest, lockfile
+COPY pyproject.toml uv.lock /app/
+
+# Copy source files
+COPY . /app/
+
+# The Chainguard image already runs as nonroot by default
+# Use uv run to lock, sync, then invoke Gunicorn
+# Note the "--" to separate uv flags from the Gunicorn command
+CMD ["uv", "run", "--", "gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "--workers=10", "--preload", "app:server"]
