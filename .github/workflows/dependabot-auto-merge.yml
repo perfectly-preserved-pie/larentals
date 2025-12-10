@@ -5,13 +5,16 @@ on:
     types: [opened, synchronize]
     branches: [dev]
 
+permissions:
+  contents: write
+
 jobs:
   merge-dependabot:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -46,7 +49,60 @@ jobs:
   check-dev-status:
     needs: merge-dependabot
     runs-on: ubuntu-latest
+    env:
+      DEV_PORT: 8080
+      CONTAINER_PORT: 8080
+      SMOKE_ATTEMPTS: 12
+      SMOKE_DELAY_SECONDS: 5
     steps:
+      - name: Checkout dev branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build dev image
+        run: docker build -t larentals:dev-smoke .
+
+      - name: Run dev image
+        run: |
+          docker run -d -p ${DEV_PORT}:${CONTAINER_PORT} --name larentals-dev-smoke larentals:dev-smoke
+          sleep "${SMOKE_DELAY_SECONDS}"
+
+      - name: Smoke test homepage returns 200
+        run: |
+          for attempt in $(seq 1 ${SMOKE_ATTEMPTS}); do
+            status=$(curl --max-time 10 --connect-timeout 5 -s -o /dev/null -w "%{http_code}" http://localhost:${DEV_PORT})
+            curl_exit=$?
+            if [ "$curl_exit" -eq 0 ] && [ "$status" -eq 200 ]; then
+              exit 0
+            fi
+            if [ "$curl_exit" -ne 0 ]; then
+              echo "Attempt $attempt: curl failed with exit code $curl_exit, retrying in ${SMOKE_DELAY_SECONDS}s..."
+            else
+              echo "Attempt $attempt: homepage returned $status, retrying in ${SMOKE_DELAY_SECONDS}s..."
+            fi
+            sleep "${SMOKE_DELAY_SECONDS}"
+          done
+          echo "Dev container did not return 200 within timeout"
+          docker logs larentals-dev-smoke
+          exit 1
+
+      - name: Check container logs for runtime errors
+        run: |
+          docker logs larentals-dev-smoke | tee /tmp/dev-container.log
+          if grep -E "Traceback \(most recent call last\)|Unhandled exception|Exception:|ERROR:|CRITICAL:|FATAL:" /tmp/dev-container.log; then
+            echo "Runtime errors detected in dev container"
+            exit 1
+          fi
+
+      - name: Stop dev container
+        if: always()
+        run: docker rm -f larentals-dev-smoke
+
       - name: Check dev.wheretolive.la status
         run: |
           response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.wheretolive.la)
@@ -63,19 +119,31 @@ jobs:
             exit 1
           fi
 
-  merge-to-master:
+  merge-to-main:
     needs: check-dev-status
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Merge dev into master (fast-forward only)
+      - name: Determine target branch
+        id: target_branch
+        run: |
+          if git ls-remote --exit-code origin main; then
+            echo "branch=main" >> "$GITHUB_OUTPUT"
+          elif git ls-remote --exit-code origin master; then
+            echo "branch=master" >> "$GITHUB_OUTPUT"
+          else
+            echo "No main or master branch found in origin"
+            exit 1
+          fi
+
+      - name: Merge dev into target branch (fast-forward only)
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git checkout master
+          git checkout ${{ steps.target_branch.outputs.branch }}
           git merge --ff-only dev
-          git push origin master
+          git push origin ${{ steps.target_branch.outputs.branch }}
