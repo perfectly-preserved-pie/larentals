@@ -232,8 +232,13 @@ if __name__ == "__main__":
     df['total_bathrooms'] = df['total_bathrooms'].fillna(df['full_bathrooms'] + df['half_bathrooms'] + df['three_quarter_bathrooms'] + df['extra_bathrooms'])
 
     logger.info("Bathroom columns extracted and total_bathrooms updated.")
-    logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].sample(n=10))
-
+    bathroom_cols = ['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']
+    if df.empty:
+      logger.debug("No rows available to sample for bathroom debug.")
+    else:
+      sample_size = min(10, len(df))
+      logger.debug(df[bathroom_cols].sample(n=sample_size))
+      
     # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
     df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mixed')
