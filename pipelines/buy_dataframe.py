@@ -15,6 +15,11 @@ import sqlite3
 import argparse
 import json
 
+# default values to avoid NameError before argument parsing
+SAMPLE_N = None
+USE_NOMINATIM = False
+LOGFILE = "~/larentals/buy_dataframe.log"
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample",  type=int, default=None,
@@ -238,7 +243,7 @@ if __name__ == "__main__":
     else:
       sample_size = min(10, len(df))
       logger.debug(df[bathroom_cols].sample(n=sample_size))
-      
+
     # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
     df['listed_date'] = pd.to_datetime(df['listed_date'], errors='raise', format='mixed')
