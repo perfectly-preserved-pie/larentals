@@ -1,5 +1,5 @@
-# Target explicit arm64v8 python slim image (per requirement)
-FROM --platform=linux/arm64/v8 python:3.11-slim
+# Multi-arch base (works for amd64 and arm64v8)
+FROM python:3.11-slim
 
 # 1) Prep directory and non-root user
 WORKDIR /app
