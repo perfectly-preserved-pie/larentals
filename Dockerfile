@@ -1,6 +1,5 @@
-ARG TARGETPLATFORM=linux/arm64/v8
-
-FROM --platform=${TARGETPLATFORM} python:3.11-slim
+# Target explicit arm64v8 python slim image (per requirement)
+FROM --platform=linux/arm64/v8 python:3.11-slim
 
 # 1) Prep directory and non-root user
 WORKDIR /app
@@ -8,7 +7,7 @@ USER root
 RUN adduser --disabled-password --gecos "" nonroot \
     && chown -R nonroot /app
 
-# 1.5) Install minimal runtime dependencies needed for TLS/HTTPS downloads and building wheels
+# 1.5) Install minimal runtime dependencies needed for TLS/HTTPS downloads and building wheels (needed for arm64 builds)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates build-essential python3-dev \
     && update-ca-certificates \
@@ -30,6 +29,7 @@ RUN chown -R nonroot:nonroot /app \
 # 6) Switch to non-root
 USER nonroot
 
+# Both env vars set for tools with different defaults
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
     REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
