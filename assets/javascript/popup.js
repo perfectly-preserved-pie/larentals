@@ -33,9 +33,44 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return normalized;
             };
 
+            // Strip a terminal '.0' without disturbing real decimals like 475.08
+            const stripTrailingPointZero = (value) => {
+                if (value === null || value === undefined) return value;
+                const cleaned = String(value).replace(/\.0$/, "");
+                if (typeof value === "number") {
+                    const asNum = Number(cleaned);
+                    return Number.isNaN(asNum) ? value : asNum;
+                }
+                return cleaned;
+            };
+
+            // Format lot size with commas, preserving up to two decimals and removing redundant trailing .0
+            const formatLotSize = (value) => {
+                if (value === null || value === undefined) return null;
+                if (typeof value === "string") {
+                    const normalized = value.replace(/,/g, "").trim();
+                    if (!normalized || ["none", "null", "nan"].includes(normalized.toLowerCase())) return null;
+                    const num = Number(normalized);
+                    if (Number.isNaN(num)) return null;
+                    const formatted = num % 1 === 0
+                        ? num.toLocaleString("en-US")
+                        : num.toLocaleString("en-US", { maximumFractionDigits: 2 });
+                    return stripTrailingPointZero(formatted);
+                }
+
+                const num = Number(value);
+                if (Number.isNaN(num)) return null;
+                const formatted = num % 1 === 0
+                    ? num.toLocaleString("en-US")
+                    : num.toLocaleString("en-US", { maximumFractionDigits: 2 });
+                return stripTrailingPointZero(formatted);
+            };
+
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
-            const fullStreetAddress = normalizeNullableString(data.full_street_address) || "Unknown Address";
+            const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
+            const lotSizeDisplay = formatLotSize(data.lot_size);
+            const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
             
             if (!context) {
                 //console.log("Context is undefined.");
@@ -142,7 +177,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Listing ID (MLS#) -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
-                                <span class="value">${data.mls_number}</span>
+                                <span class="value">${mlsNumberDisplay}</span>
                             </div>
                             <!-- List Office Phone -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -301,7 +336,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.mls_number}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${mlsNumberDisplay}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
@@ -328,7 +363,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Lot Size</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.lot_size ? `${data.lot_size.toLocaleString()} sq. ft` : "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : "Unknown"}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
