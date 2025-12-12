@@ -348,3 +348,13 @@ def drop_high_outliers(
 
     logger.info(f"Total rows dropped: {total_dropped}")
     return df_clean.reset_index(drop=True)
+
+def remove_trailing_zero(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove trailing '.0' from the zip_code and full_street_address columns
+    """
+    if 'zip_code' in df.columns:
+        df['zip_code'] = df['zip_code'].astype(str).str.replace(r'\.0$', '', regex=True)
+    if 'full_street_address' in df.columns:
+        df['full_street_address'] = df['full_street_address'].astype(str).str.replace(r'\.0$', '', regex=True)
+    return df
