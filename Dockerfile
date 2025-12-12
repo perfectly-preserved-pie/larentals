@@ -1,10 +1,18 @@
-FROM python:3.11-slim
+ARG TARGETPLATFORM=linux/arm64/v8
+
+FROM --platform=${TARGETPLATFORM} python:3.11-slim
 
 # 1) Prep directory and non-root user
 WORKDIR /app
 USER root
 RUN adduser --disabled-password --gecos "" nonroot \
     && chown -R nonroot /app
+
+# 1.5) Install minimal runtime dependencies needed for TLS/HTTPS downloads and building wheels
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates build-essential python3-dev \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # 2) Bring in the uv binary
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
@@ -22,6 +30,8 @@ RUN chown -R nonroot:nonroot /app \
 # 6) Switch to non-root
 USER nonroot
 
-# 7) Use uv run to lock, sync, then invoke Gunicorn
-#    Note the “--” to separate uv flags from the Gunicorn command
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
+# 7) Use uv at runtime to run the app
 CMD ["uv", "run", "--", "gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "--workers=10", "--preload", "app:server"]
