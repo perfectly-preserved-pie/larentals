@@ -10,13 +10,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             return [{display: displayStyle}, buttonText];
         },
 
-        toggleCollapse: function(n_clicks, is_open) {
-            if (n_clicks === undefined) {
-                return [false, "More Options"];
-            }
-            return [!is_open, is_open ? "More Options" : "Less Options"];
-        },
-
         toggleVisibilityBasedOnSubtype: function(selected_subtype) {
             if (selected_subtype.includes('Manufactured Home')) {
                 return {'display': 'block'};

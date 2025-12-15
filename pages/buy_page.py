@@ -28,9 +28,6 @@ components = BuyComponents()
 duration = time.time() - start_time
 logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 
-# Create a state for the collapsed section in the user options card
-collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
-
 # Create a store for the geojson data
 geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=components.return_geojson())
 #logger.debug(f"GeoJSON data: {geojson_store.data}")
@@ -40,7 +37,6 @@ geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=co
 earliest_date_store = dcc.Store(id="earliest_date_store", data=components.earliest_date) 
 
 layout = dbc.Container([
-  collapse_store,
   geojson_store,
   earliest_date_store,
   dbc.Row( # First row: title card
@@ -97,20 +93,6 @@ clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
   Output('hoa_fee_frequency_div_buy', 'style'),
   [Input('selected_subtype', 'data')]
-)
-
-# Create a callback to manage the collapsing behavior
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='toggleCollapse'
-  ),
-  [
-    Output('more-options-collapse-buy', 'is_open'),
-    Output('more-options-button-buy', 'children')
-  ],
-  [Input('more-options-button-buy', 'n_clicks')],
-  [State('more-options-collapse-buy', 'is_open')]
 )
 
 # Clientside callback to filter the full data in memory, then update the map

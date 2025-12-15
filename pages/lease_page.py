@@ -26,9 +26,6 @@ lease_components = LeaseComponents()
 duration = time.time() - start_time
 logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
 
-# Create a state for the collapsed section in the user options card
-collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
-
 # Create a store for the geojson data
 geojson_store = dcc.Store(id='lease-geojson-store', storage_type='memory', data=lease_components.return_geojson())
 #logger.debug(f"GeoJSON data: {geojson_store.data}")
@@ -38,7 +35,6 @@ geojson_store = dcc.Store(id='lease-geojson-store', storage_type='memory', data=
 earliest_date_store = dcc.Store(id="earliest_date_store", data=lease_components.earliest_date) 
 
 layout = dbc.Container([
-  collapse_store,
   geojson_store,
   earliest_date_store,
   dbc.Row(
@@ -51,21 +47,6 @@ layout = dbc.Container([
 ],
 fluid=True,
 className="dbc"
-)
-
-
-# Create a callback to manage the collapsing behavior
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='toggleCollapse'
-  ),
-  [
-    Output('more-options-collapse-lease', 'is_open'),
-    Output('more-options-button-lease', 'children')
-  ],
-  [Input('more-options-button-lease', 'n_clicks')],
-  [State('more-options-collapse-lease', 'is_open')]
 )
 
 # Callback to toggle the visibility of dynamic components

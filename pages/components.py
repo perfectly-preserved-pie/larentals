@@ -1147,7 +1147,7 @@ class LeaseComponents(BaseClass):
     # Create a button to toggle the collapsed section in the user options card
     # https://dash-bootstrap-components.opensource.faculty.ai/docs/components/collapse/
     def create_more_options(self):
-        more_options = dbc.Collapse(
+        return html.Div(
             [
                 self.square_footage_components,  
                 self.ppsqft_components,
@@ -1160,11 +1160,8 @@ class LeaseComponents(BaseClass):
                 self.pet_deposit_components,
                 self.key_deposit_components,
                 self.other_deposit_components,
-            ],
-            id='more-options-collapse-lease'
+            ]
         )
-
-        return more_options
 
     def create_user_options_card(self):
         user_options_card = dbc.Card(
@@ -1180,10 +1177,14 @@ class LeaseComponents(BaseClass):
                 self.bedrooms_slider,
                 self.bathrooms_slider,
                 self.pets_radio,
-                dbc.Button("More Options", id='more-options-button-lease', className='mt-2'),
                 self.more_options,
             ],
-            body=True
+            body=True,
+            style={
+                'maxHeight': '90vh',
+                'overflowY': 'auto',
+                'overflowX': 'hidden'
+            }
         )
         return user_options_card
     
@@ -1885,7 +1886,7 @@ class BuyComponents(BaseClass):
         return map
     
     def create_more_options(self):
-        more_options = dbc.Collapse(
+        return html.Div(
             [
                 self.ppsqft_components,
                 self.hoa_fee_components,
@@ -1894,11 +1895,8 @@ class BuyComponents(BaseClass):
                 self.year_built_components,
                 self.pet_policy_radio_button,
                 self.senior_community_components,         
-            ],
-            id='more-options-collapse-buy'
+            ]
         )
-
-        return more_options
     
     def create_user_options_card(self):
         user_options_card = dbc.Card(
@@ -1914,10 +1912,14 @@ class BuyComponents(BaseClass):
                 self.bedrooms_slider,
                 self.bathrooms_slider,
                 self.sqft_components,
-                dbc.Button("More Options", id='more-options-button-buy', className='mt-2'),
                 self.more_options,
             ],
-            body=True
+            body=True,
+            style={
+                'maxHeight': '90vh',
+                'overflowY': 'auto',
+                'overflowX': 'hidden'
+            }
         )
         return user_options_card
     
