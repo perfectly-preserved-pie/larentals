@@ -272,7 +272,7 @@ if __name__ == "__main__":
       # Drop some columns that are no longer needed
       #df_combined = reduce_geojson_columns(df=df_combined)
       # Clean up outliers
-      df_combined = drop_high_outliers(df=df_combined, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
+      df_combined = drop_high_outliers(df=df_combined, cols=None, absolute_caps={"total_bathrooms": 7, "bedrooms": 7, "parking_spaces": 5, "sqft": 10000})
     else:
       df_combined = df.copy()
 

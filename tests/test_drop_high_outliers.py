@@ -21,7 +21,7 @@ def test_drops_numeric_like_values_and_logs_reason():
     messages = []
     sink_id = logger.add(lambda msg: messages.append(str(msg)), level="INFO")
     try:
-        cleaned = drop_high_outliers(df, iqr_multiplier=1.5)
+        cleaned = drop_high_outliers(df, cols=None, iqr_multiplier=1.5)
     finally:
         logger.remove(sink_id)
 

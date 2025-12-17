@@ -298,17 +298,42 @@ def drop_high_outliers(
     absolute_caps: Optional[Dict[str, float]] = None
 ) -> pd.DataFrame:
     """
-     Remove rows from a DataFrame where values in numeric or numeric-looking columns
-     exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
-     also any domain-specific hard caps. Logs each dropped row with the reason.
-     """
+    Remove rows from a DataFrame where values in numeric or numeric-looking columns
+    exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
+    also any domain-specific hard caps. Logs each dropped row with the reason.
+    """
     df_clean = df.copy()
+    has_mls_number = "mls_number" in df_clean.columns
+    mls_series = df_clean["mls_number"] if has_mls_number else None
+    numeric_cache: Dict[str, pd.Series] = {}
+    aligned_cache: Dict[str, pd.Series] = {}
+    aligned_index = df_clean.index
 
     def _numeric_series(series: pd.Series) -> pd.Series:
         return pd.to_numeric(series, errors="coerce")
 
+    def _identifier_for_row(idx) -> object:
+        if mls_series is not None:
+            value = mls_series.get(idx)
+            if not pd.isna(value):
+                return value
+        return idx
+
+    def _aligned_numeric(col: str) -> pd.Series:
+        nonlocal aligned_index
+        if col in aligned_cache and aligned_index.equals(df_clean.index):
+            return aligned_cache[col]
+        base_series = numeric_cache.get(col)
+        if base_series is None:
+            base_series = _numeric_series(df_clean[col])
+            numeric_cache[col] = base_series
+        aligned_index = df_clean.index
+        aligned_series = base_series.reindex(aligned_index)
+        aligned_cache[col] = aligned_series
+        return aligned_series
+
     # 1) Decide which columns to inspect
-    candidate_cols = cols if cols is not None else df_clean.columns
+    candidate_cols = list(df_clean.columns) if cols is None else cols
     thresholds: Dict[str, Dict[str, float]] = {}
     for col in candidate_cols:
         if col not in df_clean.columns:
@@ -320,6 +345,7 @@ def drop_high_outliers(
             logger.warning(f"Column '{col}' has no numeric values; skipping.")
             continue
 
+        numeric_cache[col] = num_series
         q1 = num_series.quantile(0.25)
         q3 = num_series.quantile(0.75)
         iqr = q3 - q1
@@ -332,44 +358,46 @@ def drop_high_outliers(
 
     # 2) Drop using IQR thresholds
     total_dropped = 0
+    rows_to_drop_iqr = set()
     for col, info in thresholds.items():
-        num_series = _numeric_series(df_clean[col])
+        num_series = _aligned_numeric(col)
         cutoff = info["cutoff"]
         mask = num_series > cutoff
         if mask.any():
             dropped_rows = df_clean.loc[mask]
-            for idx in dropped_rows.index:
-                identifier = (
-                    dropped_rows.loc[idx, "mls_number"]
-                    if "mls_number" in dropped_rows.columns
-                    else idx
-                )
+            for idx, value in num_series[mask].items():
+                identifier = _identifier_for_row(idx)
                 logger.info(
-                    f"Dropping row '{identifier}' because '{col}'={num_series.loc[idx]} exceeds IQR threshold {cutoff:.2f} "
+                    f"Dropping row '{identifier}' because '{col}'={value} exceeds IQR threshold {cutoff:.2f} "
                     f"(Q1={info['q1']:.2f}, Q3={info['q3']:.2f}, IQR={info['iqr']:.2f})."
                 )
-            total_dropped += mask.sum()
-            df_clean = df_clean.loc[~mask]
+            rows_to_drop_iqr.update(dropped_rows.index)
+    if rows_to_drop_iqr:
+        df_clean = df_clean.drop(index=rows_to_drop_iqr)
+        total_dropped += len(rows_to_drop_iqr)
+        aligned_cache.clear()
+        aligned_index = df_clean.index
 
     # 3) Drop using absolute caps if provided
     if absolute_caps:
+        rows_to_drop_caps = set()
         for col, cap in absolute_caps.items():
             if col in df_clean.columns:
-                num_series = _numeric_series(df_clean[col])
+                num_series = _aligned_numeric(col)
                 mask = num_series > cap
                 if mask.any():
                     dropped_rows = df_clean.loc[mask]
-                    for idx in dropped_rows.index:
-                        identifier = (
-                            dropped_rows.loc[idx, "mls_number"]
-                            if "mls_number" in dropped_rows.columns
-                            else idx
-                        )
+                    for idx, value in num_series[mask].items():
+                        identifier = _identifier_for_row(idx)
                         logger.info(
-                            f"Dropping row '{identifier}' because '{col}'={num_series.loc[idx]} exceeds absolute cap {cap}."
+                            f"Dropping row '{identifier}' because '{col}'={value} exceeds absolute cap {cap}."
                         )
-                    total_dropped += mask.sum()
-                    df_clean = df_clean.loc[~mask]
+                    rows_to_drop_caps.update(dropped_rows.index)
+        if rows_to_drop_caps:
+            df_clean = df_clean.drop(index=rows_to_drop_caps)
+            total_dropped += len(rows_to_drop_caps)
+            aligned_cache.clear()
+            aligned_index = df_clean.index
 
     logger.info(f"Total rows dropped: {total_dropped}")
     return df_clean.reset_index(drop=True)
