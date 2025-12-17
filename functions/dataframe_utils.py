@@ -293,59 +293,83 @@ def reduce_geojson_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def drop_high_outliers(
     df: pd.DataFrame,
-    cols: Sequence[str] = ("sqft", "total_bathrooms", "bedrooms", "parking_spaces"),
+    cols: Optional[Sequence[str]] = None,
     iqr_multiplier: float = 1.5,
     absolute_caps: Optional[Dict[str, float]] = None
 ) -> pd.DataFrame:
     """
-     Remove rows from a DataFrame where values in specified numeric columns
+     Remove rows from a DataFrame where values in numeric or numeric-looking columns
      exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
-     also any domain-specific hard caps.
+     also any domain-specific hard caps. Logs each dropped row with the reason.
      """
     df_clean = df.copy()
-    
-    # 1) Compute IQR thresholds once on original
-    thresholds: Dict[str, float] = {}
-    for col in cols:
+
+    def _numeric_series(series: pd.Series) -> pd.Series:
+        return pd.to_numeric(series, errors="coerce")
+
+    # 1) Decide which columns to inspect
+    candidate_cols = cols if cols is not None else df_clean.columns
+    thresholds: Dict[str, Dict[str, float]] = {}
+    for col in candidate_cols:
         if col not in df_clean.columns:
             logger.warning(f"Column '{col}' not found; skipping IQR removal.")
             continue
-        if not pd.api.types.is_numeric_dtype(df_clean[col]):
-            logger.warning(f"Column '{col}' is not numeric; skipping.")
+
+        num_series = _numeric_series(df_clean[col])
+        if num_series.notna().sum() == 0:
+            logger.warning(f"Column '{col}' has no numeric values; skipping.")
             continue
 
-        q1 = df_clean[col].quantile(0.25)
-        q3 = df_clean[col].quantile(0.75)
+        q1 = num_series.quantile(0.25)
+        q3 = num_series.quantile(0.75)
         iqr = q3 - q1
 
-        if iqr == 0:
+        if pd.isna(iqr) or iqr == 0:
             logger.warning(f"IQR for '{col}' is zero; skipping.")
             continue
 
-        thresholds[col] = q3 + iqr_multiplier * iqr
+        thresholds[col] = {"cutoff": q3 + iqr_multiplier * iqr, "q1": q1, "q3": q3, "iqr": iqr}
 
     # 2) Drop using IQR thresholds
     total_dropped = 0
-    for col, cutoff in thresholds.items():
-        before = len(df_clean)
-        df_clean = df_clean[df_clean[col] <= cutoff]
-        dropped = before - len(df_clean)
-        total_dropped += dropped
-        logger.info(
-            f"Dropped {dropped} rows where '{col}' > {cutoff:.2f} "
-            f"(Q3={thresholds[col] - iqr_multiplier * (thresholds[col] - q1):.2f}, "
-            f"IQR={(thresholds[col] - q1) / iqr_multiplier:.2f})."
-        )
+    for col, info in thresholds.items():
+        num_series = _numeric_series(df_clean[col])
+        cutoff = info["cutoff"]
+        mask = num_series > cutoff
+        if mask.any():
+            dropped_rows = df_clean.loc[mask]
+            for idx in dropped_rows.index:
+                identifier = (
+                    dropped_rows.loc[idx, "mls_number"]
+                    if "mls_number" in dropped_rows.columns
+                    else idx
+                )
+                logger.info(
+                    f"Dropping row '{identifier}' because '{col}'={num_series.loc[idx]} exceeds IQR threshold {cutoff:.2f} "
+                    f"(Q1={info['q1']:.2f}, Q3={info['q3']:.2f}, IQR={info['iqr']:.2f})."
+                )
+            total_dropped += mask.sum()
+            df_clean = df_clean.loc[~mask]
 
     # 3) Drop using absolute caps if provided
     if absolute_caps:
         for col, cap in absolute_caps.items():
-            if col in df_clean.columns and pd.api.types.is_numeric_dtype(df_clean[col]):
-                before = len(df_clean)
-                df_clean = df_clean[df_clean[col] <= cap]
-                dropped = before - len(df_clean)
-                total_dropped += dropped
-                logger.info(f"Dropped {dropped} rows where '{col}' > absolute cap {cap}.")
+            if col in df_clean.columns:
+                num_series = _numeric_series(df_clean[col])
+                mask = num_series > cap
+                if mask.any():
+                    dropped_rows = df_clean.loc[mask]
+                    for idx in dropped_rows.index:
+                        identifier = (
+                            dropped_rows.loc[idx, "mls_number"]
+                            if "mls_number" in dropped_rows.columns
+                            else idx
+                        )
+                        logger.info(
+                            f"Dropping row '{identifier}' because '{col}'={num_series.loc[idx]} exceeds absolute cap {cap}."
+                        )
+                    total_dropped += mask.sum()
+                    df_clean = df_clean.loc[~mask]
 
     logger.info(f"Total rows dropped: {total_dropped}")
     return df_clean.reset_index(drop=True)
