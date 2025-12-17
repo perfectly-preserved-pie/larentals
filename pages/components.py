@@ -37,6 +37,27 @@ class BaseClass:
         self.df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
         conn.close()
 
+        # 1.5) Coerce numeric columns that may come back as object (SQLite)
+        numeric_cols = [
+            # coordinates
+            "latitude", "longitude",
+
+            # shared-ish numeric fields
+            "bedrooms", "sqft", "year_built", "ppsqft", "list_price", "olp",
+            "parking_spaces", "garage_spaces", "lot_size",
+
+            # buy bathrooms / HOA
+            "total_bathrooms", "full_bathrooms", "half_bathrooms",
+            "three_quarter_bathrooms", "quarter_bathrooms",
+            "hoa_fee", "space_rent",
+
+            # lease deposits (won’t exist on buy)
+            "key_deposit", "other_deposit", "pet_deposit", "security_deposit",
+        ]
+        for col in numeric_cols:
+            if col in self.df.columns:
+                self.df[col] = pd.to_numeric(self.df[col], errors="coerce")
+
         # 2) Coerce date columns to datetime
         for dtcol in ("listed_date", "date_processed"):
             if dtcol in self.df:
