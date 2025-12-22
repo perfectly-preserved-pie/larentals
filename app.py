@@ -24,12 +24,13 @@ external_scripts = [
 app = Dash(
 	external_scripts = external_scripts,
   external_stylesheets = external_stylesheets,
-  name = __name__, 
+  health_endpoint="health", # https://dash.plotly.com/app-monitoring
   # Add meta tags for mobile devices
   # https://community.plotly.com/t/reorder-website-for-mobile-view/33669/5?
   meta_tags = [
     {"name": "viewport", "content": "width=device-width, initial-scale=1"}
   ],
+  name = __name__, 
   use_pages = True,
 )
 
