@@ -1,4 +1,4 @@
-from dash import Dash, _dash_renderer
+from dash import Dash
 from flask import request, jsonify, abort
 from loguru import logger
 import bleach
