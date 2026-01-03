@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from loguru import logger
 from typing import Literal, Optional, Sequence
 import geopandas as gpd
 import pandas as pd
@@ -51,6 +52,7 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         Number of rows written to cfg.output_table.
     """
     providers = gpd.read_file(cfg.geopackage_path, layer=cfg.geopackage_layer)
+    logger.debug*(f"Loaded {len(providers):,} provider polygons from GeoPackage layer '{cfg.geopackage_layer}'")
 
     # Be cautious about guessing CRS. If it's missing, better to fail loudly than be wrong.
     if providers.crs is None:
@@ -75,6 +77,7 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         )
     finally:
         conn.close()
+    logger.debug(f"Loaded {len(df):,} listing points from table '{cfg.listing_table}'")
 
     points = gpd.GeoDataFrame(
         df,
@@ -121,7 +124,9 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
     else:
         # No buffer: do the join directly (still reproject providers to points CRS)
         providers_wgs = providers.to_crs(points.crs)
+        logger.debug("Performing spatial join...")
         joined = gpd.sjoin(points, providers_wgs, how=cfg.join_how, predicate=cfg.predicate)
+        logger.debug(f"Spatial join produced {len(joined):,} rows")
 
     # Drop geometry + join index
     out_df = joined.drop(columns=[c for c in ("geometry", "index_right") if c in joined.columns]).copy()
