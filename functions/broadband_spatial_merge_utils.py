@@ -6,6 +6,8 @@ import pandas as pd
 import sqlite3
 
 ListingTable = Literal["lease", "buy"]
+JoinHow = Literal["left", "inner"]
+Predicate = Literal["intersects", "within", "contains"]
 
 @dataclass(frozen=True)
 class ProviderJoinConfig:
@@ -21,16 +23,26 @@ class ProviderJoinConfig:
     lat_col: str = "latitude"
     lon_col: str = "longitude"
     provider_cols: Optional[Sequence[str]] = None
-    predicate: Literal["intersects", "within", "contains"] = "intersects"
+    predicate: Predicate = "intersects"
+
+    # help match polygons when listing coords are slightly off
+    buffer_meters: float = 50.0
+
+    # avoid writing null-provider rows
+    join_how: JoinHow = "inner"
 
 
 def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
     """
     Spatially join listings (lat/lon points) to provider polygons from a GeoPackage layer,
-    and write the joined results back into the larentals SQLite database.
+    and write the joined results back into the SQLite database.
 
-    This creates/overwrites `cfg.output_table` as a *normalized* table:
-      - one row per (listing_id × matching provider polygon)
+    Writes a normalized table: one row per (listing_id × matching provider polygon).
+
+    Notes:
+      - If cfg.buffer_meters > 0, listing points are buffered in meters (after reprojection)
+        to be robust to small coordinate differences.
+      - If cfg.join_how == "inner", only matched provider rows are written.
 
     Args:
         cfg: ProviderJoinConfig.
@@ -38,41 +50,15 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
     Returns:
         Number of rows written to cfg.output_table.
     """
-    # 1) Load provider polygons from GeoPackage
     providers = gpd.read_file(cfg.geopackage_path, layer=cfg.geopackage_layer)
 
-    # Ensure CRS is WGS84 (EPSG:4326) to match listing lat/lon
+    # Be cautious about guessing CRS. If it's missing, better to fail loudly than be wrong.
     if providers.crs is None:
-        providers = providers.set_crs("EPSG:4326")
-    else:
-        providers = providers.to_crs("EPSG:4326")
+        raise ValueError(
+            "Provider layer has no CRS. Set it in the GeoPackage or assign providers.set_crs(...) correctly."
+        )
 
-    # Choose provider columns
-    if cfg.provider_cols is None:
-        # Sensible defaults for the CPUC layer you showed (adjust as needed)
-        desired = [
-            "DBA",
-            "TechCode",
-            "MaxAdDn",
-            "MaxAdUp",
-            "MaxDnTier",
-            "MaxUpTier",
-            "MinDnTier",
-            "MinUpTier",
-            "Contact",
-            "Busconsm",
-            "Service_Type",
-        ]
-        cfg_provider_cols = [c for c in desired if c in providers.columns]
-    else:
-        missing = [c for c in cfg.provider_cols if c not in providers.columns]
-        if missing:
-            raise ValueError(f"Provider columns not found in GeoPackage layer: {missing}")
-        cfg_provider_cols = list(cfg.provider_cols)
-
-    providers = providers[cfg_provider_cols + ["geometry"]].copy()
-
-    # 2) Load listing points from SQLite
+    # Load listing points from SQLite
     conn = sqlite3.connect(cfg.larentals_db_path)
     try:
         df = pd.read_sql_query(
@@ -96,11 +82,53 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         crs="EPSG:4326",
     )
 
-    # 3) Spatial join
-    joined = gpd.sjoin(points, providers, how="left", predicate=cfg.predicate)
+    # Choose provider columns
+    if cfg.provider_cols is None:
+        desired = [
+            "DBA",
+            "TechCode",
+            "MaxAdDn",
+            "MaxAdUp",
+            "MaxDnTier",
+            "MaxUpTier",
+            "MinDnTier",
+            "MinUpTier",
+            "Contact",
+            "Busconsm",
+            "Service_Type",
+        ]
+        provider_cols = [c for c in desired if c in providers.columns]
+    else:
+        missing = [c for c in cfg.provider_cols if c not in providers.columns]
+        if missing:
+            raise ValueError(f"Provider columns not found in GeoPackage layer: {missing}")
+        provider_cols = list(cfg.provider_cols)
 
-    # 4) Write back to SQLite (drop geometry + join index)
+    providers = providers[provider_cols + ["geometry"]].copy()
+
+    # --- Buffer in meters (project to meters first) ---
+    if cfg.buffer_meters > 0:
+        # Use Web Mercator for buffering; OK for small distances like 25–100m.
+        providers_m = providers.to_crs("EPSG:3857")
+        points_m = points.to_crs("EPSG:3857")
+
+        points_m["geometry"] = points_m.geometry.buffer(cfg.buffer_meters)
+
+        joined_m = gpd.sjoin(points_m, providers_m, how=cfg.join_how, predicate=cfg.predicate)
+
+        # Back to WGS84 for consistent downstream usage (optional)
+        joined = joined_m.to_crs("EPSG:4326")
+    else:
+        # No buffer: do the join directly (still reproject providers to points CRS)
+        providers_wgs = providers.to_crs(points.crs)
+        joined = gpd.sjoin(points, providers_wgs, how=cfg.join_how, predicate=cfg.predicate)
+
+    # Drop geometry + join index
     out_df = joined.drop(columns=[c for c in ("geometry", "index_right") if c in joined.columns]).copy()
+
+    # If we used join_how="left" for any reason, ensure we don't write null-provider rows
+    if "DBA" in out_df.columns:
+        out_df = out_df[out_df["DBA"].notna()].copy()
 
     conn = sqlite3.connect(cfg.larentals_db_path)
     try:

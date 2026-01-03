@@ -4,10 +4,12 @@ from datetime import date
 from functions.convex_hull import generate_convex_hulls
 from html import unescape
 from shapely.geometry import mapping
+from typing import Any
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
 import geopandas as gpd
+import json
 import numpy as np
 import pandas as pd
 import sqlite3
@@ -26,16 +28,43 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
 class BaseClass:
     def __init__(self, table_name: str, page_type: str) -> None:
         """
-        Load a table from SQLite and prepare the GeoDataFrame.
+        Load a table/view from SQLite and prepare the GeoDataFrame.
 
         Args:
-            table_name (str): The name of the SQLite table to read (e.g. "lease" or "buy").
-            page_type  (str): The page context used for GeoJSON features ("lease" or "buy").
+            table_name: The name of the SQLite table or view to read (e.g. "lease" or "lease_with_isp_json").
+            page_type: The page context used for GeoJSON features ("lease" or "buy").
         """
-        # 1) Load raw table
         conn = sqlite3.connect(DB_PATH)
-        self.df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
-        conn.close()
+        try:
+            self.df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+
+            # If we're reading from the lease_with_isp_json view, parse ISP JSON into a real list.
+            if "isp_options_json" in self.df.columns:
+
+                def _parse_isp(value: Any) -> list[dict[str, Any]]:
+                    """
+                    Parse the isp_options_json column into a Python list of dicts.
+                    """
+                    if value is None or (isinstance(value, float) and pd.isna(value)):
+                        return []
+                    if isinstance(value, list):
+                        # Sometimes upstream code might already have parsed it
+                        return [v for v in value if isinstance(v, dict)]
+                    if isinstance(value, str):
+                        s = value.strip()
+                        if not s:
+                            return []
+                        try:
+                            parsed = json.loads(s)
+                        except json.JSONDecodeError:
+                            return []
+                        return parsed if isinstance(parsed, list) else []
+                    return []
+
+                self.df["isp_options"] = self.df["isp_options_json"].apply(_parse_isp)
+                self.df = self.df.drop(columns=["isp_options_json"])
+        finally:
+            conn.close()
 
         # 1.5) Coerce numeric columns that may come back as object (SQLite)
         numeric_cols = [
@@ -223,7 +252,7 @@ class LeaseComponents(BaseClass):
 
     def __init__(self) -> None:
         # Call the parent constructor to load the lease table
-        super().__init__(table_name="lease", page_type="lease")
+        super().__init__(table_name="lease_with_isp_json", page_type="lease") 
 
         # Apply lease-specific transformations to the DataFrame
         if 'laundry' in self.df.columns:

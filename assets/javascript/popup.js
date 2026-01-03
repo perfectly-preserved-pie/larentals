@@ -66,6 +66,56 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return stripTrailingPointZero(formatted);
             };
 
+            function formatMbps(mbps) {
+                const n = Number(mbps);
+                if (!Number.isFinite(n)) return "Unknown";
+                if (n >= 1000) return `${(n / 1000).toFixed(1)} Gbps`;
+                return `${Math.round(n)} Mbps`;
+                }
+
+                function coerceIspOptions(value) {
+                // Safety: in case something upstream stringifies it
+                if (Array.isArray(value)) return value;
+                if (typeof value === "string") {
+                    try { return JSON.parse(value); } catch { return []; }
+                }
+                return [];
+                }
+
+                function renderIspOptionsHtml(ispOptionsRaw) {
+                const ispOptions = coerceIspOptions(ispOptionsRaw);
+
+                if (!Array.isArray(ispOptions) || ispOptions.length === 0) {
+                    return `<span style="color:#666;">None found</span>`;
+                }
+
+                // Compact list; keep it short to avoid a huge popup
+                console.log("ispOptions length:", ispOptions.length, ispOptions);
+
+                const rows = ispOptions.slice(0, 6).map((p) => {
+                    const name = p?.dba ? String(p.dba) : "Unknown";
+                    const dn = formatMbps(p?.max_dn_mbps);
+                    const up = formatMbps(p?.max_up_mbps);
+
+                    const svc = p?.service_type ? String(p.service_type) : "";
+                    const svcSuffix = svc ? ` · ${svc}` : "";
+
+                    return `
+                    <div style="margin-bottom: 6px;">
+                        <div style="font-weight: 600;">${name}</div>
+                        <div style="font-size: 12px; color: #444;">↓ ${dn} · ↑ ${up}${svcSuffix}</div>
+                    </div>
+                    `;
+                }).join("");
+
+                const more =
+                    ispOptions.length > 6
+                    ? `<div style="font-size:12px; color:#666;">+${ispOptions.length - 6} more…</div>`
+                    : "";
+
+                return `<div style="text-align:right;">${rows}${more}</div>`;
+                }
+
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
             const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
@@ -265,6 +315,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Physical Sub Type</span>
                                 <span class="value">${data.subtype || "Unknown"}</span>
+                            </div>
+                            <!-- ISP Options -->
+                            <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
+                                <span class="label" style="font-weight:bold;">ISP Options</span>
+                                <div class="value" style="text-align:right;">
+                                ${renderIspOptionsHtml(data.isp_options)}
+                                </div>
                             </div>
                         </div>
                         <div style="text-align: center; margin-top: 10px;">
