@@ -87,12 +87,11 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
 
     # Spatial filter to reduce provider polygons to only those near our points
     # Hopefully speeds up the spatial join step
-    minx, miny, maxx, maxy = points.total_bounds
-    providers = providers.cx[minx:maxx, miny:maxy].copy()
+    minx, miny, maxx, maxy = points_m.total_bounds
+    pad = cfg.buffer_meters
+    providers_m = providers_m.cx[minx - pad : maxx + pad, miny - pad : maxy + pad].copy()
 
-    logger.debug(
-        f"Providers after bbox filter: {len(providers):,}"
-    )
+    logger.debug(f"Providers after bbox(+buffer) filter: {len(providers_m):,}")
 
     # Choose provider columns
     if cfg.provider_cols is None:
