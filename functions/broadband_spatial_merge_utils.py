@@ -85,14 +85,6 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         crs="EPSG:4326",
     )
 
-    # Spatial filter to reduce provider polygons to only those near our points
-    # Hopefully speeds up the spatial join step
-    minx, miny, maxx, maxy = points_m.total_bounds
-    pad = cfg.buffer_meters
-    providers_m = providers_m.cx[minx - pad : maxx + pad, miny - pad : maxy + pad].copy()
-
-    logger.debug(f"Providers after bbox(+buffer) filter: {len(providers_m):,}")
-
     # Choose provider columns
     if cfg.provider_cols is None:
         desired = [
@@ -122,6 +114,16 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         # Use Web Mercator for buffering; OK for small distances like 25–100m.
         providers_m = providers.to_crs("EPSG:3857")
         points_m = points.to_crs("EPSG:3857")
+
+        # Spatial filter in meters to speed up the join
+        minx, miny, maxx, maxy = points_m.total_bounds
+        pad = float(cfg.buffer_meters)
+        providers_m = providers_m.cx[minx - pad : maxx + pad, miny - pad : maxy + pad].copy()
+        logger.debug(f"Providers after bbox(+buffer) filter: {len(providers_m):,}")
+
+        points_m["geometry"] = points_m.geometry.buffer(cfg.buffer_meters)
+        logger.debug("Performing spatial join (buffered)...")
+        joined_m = gpd.sjoin(points_m, providers_m, how=cfg.join_how, predicate=cfg.predicate)
 
         points_m["geometry"] = points_m.geometry.buffer(cfg.buffer_meters)
 
