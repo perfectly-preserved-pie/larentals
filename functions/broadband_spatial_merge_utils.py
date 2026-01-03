@@ -52,7 +52,7 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         Number of rows written to cfg.output_table.
     """
     providers = gpd.read_file(cfg.geopackage_path, layer=cfg.geopackage_layer)
-    logger.debug*(f"Loaded {len(providers):,} provider polygons from GeoPackage layer '{cfg.geopackage_layer}'")
+    logger.debug(f"Loaded {len(providers):,} provider polygons from GeoPackage layer '{cfg.geopackage_layer}'")
 
     # Be cautious about guessing CRS. If it's missing, better to fail loudly than be wrong.
     if providers.crs is None:
