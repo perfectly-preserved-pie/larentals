@@ -121,12 +121,11 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         providers_m = providers_m.cx[minx - pad : maxx + pad, miny - pad : maxy + pad].copy()
         logger.debug(f"Providers after bbox(+buffer) filter: {len(providers_m):,}")
 
+        # Buffer points ONCE, then join ONCE
+        points_m = points_m.copy()
         points_m["geometry"] = points_m.geometry.buffer(cfg.buffer_meters)
+
         logger.debug("Performing spatial join (buffered)...")
-        joined_m = gpd.sjoin(points_m, providers_m, how=cfg.join_how, predicate=cfg.predicate)
-
-        points_m["geometry"] = points_m.geometry.buffer(cfg.buffer_meters)
-
         joined_m = gpd.sjoin(points_m, providers_m, how=cfg.join_how, predicate=cfg.predicate)
 
         # Back to WGS84 for consistent downstream usage (optional)
