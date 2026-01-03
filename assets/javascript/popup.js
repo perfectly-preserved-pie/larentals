@@ -71,57 +71,64 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 if (!Number.isFinite(n)) return "Unknown";
                 if (n >= 1000) return `${(n / 1000).toFixed(1)} Gbps`;
                 return `${Math.round(n)} Mbps`;
-                }
+            }
 
-                function coerceIspOptions(value) {
+            function coerceIspOptions(value) {
                 // Safety: in case something upstream stringifies it
                 if (Array.isArray(value)) return value;
                 if (typeof value === "string") {
                     try { return JSON.parse(value); } catch { return []; }
                 }
                 return [];
-                }
+            }
 
-                function renderIspOptionsHtml(ispOptionsRaw) {
+            function serviceLabelFromTech(p) {
+                const tech = Number(p?.tech_code);
+
+                if (tech === 50) return "Fiber";
+                if (tech === 40) return "Cable";
+                if (tech === 10) return "DSL";
+                if (tech === 60) return "Fixed Wireless";
+                if (tech === 70) return "Satellite";
+
+                // fallback to CPUC value if present
+                return p?.service_type ?? "Unknown";
+            }
+
+            function renderIspOptionsHtml(ispOptionsRaw) {
                 const ispOptions = coerceIspOptions(ispOptionsRaw);
 
                 if (!Array.isArray(ispOptions) || ispOptions.length === 0) {
                     return `<span style="color:#666;">None found</span>`;
                 }
 
-                // Compact list; keep it short to avoid a huge popup
-                console.log("ispOptions length:", ispOptions.length, ispOptions);
+                return `
+                    <div style="text-align:right;">
+                        ${ispOptions.map((p) => {
+                            const name = p?.dba ?? "Unknown";
+                            const dn = formatMbps(p?.max_dn_mbps);
+                            const up = formatMbps(p?.max_up_mbps);
+                            const svc = serviceLabelFromTech(p);
 
-                const rows = ispOptions.slice(0, 6).map((p) => {
-                    const name = p?.dba ? String(p.dba) : "Unknown";
-                    const dn = formatMbps(p?.max_dn_mbps);
-                    const up = formatMbps(p?.max_up_mbps);
-
-                    const svc = p?.service_type ? String(p.service_type) : "";
-                    const svcSuffix = svc ? ` · ${svc}` : "";
-
-                    return `
-                    <div style="margin-bottom: 6px;">
-                        <div style="font-weight: 600;">${name}</div>
-                        <div style="font-size: 12px; color: #444;">↓ ${dn} · ↑ ${up}${svcSuffix}</div>
+                            return `
+                                <div style="margin-bottom:6px;">
+                                    <div style="font-weight:600;">${name}</div>
+                                    <div style="font-size:12px; color:#444;">
+                                        ↓ ${dn} · ↑ ${up}${svc ? ` · ${svc}` : ""}
+                                    </div>
+                                </div>
+                            `;
+                        }).join("")}
                     </div>
-                    `;
-                }).join("");
-
-                const more =
-                    ispOptions.length > 6
-                    ? `<div style="font-size:12px; color:#666;">+${ispOptions.length - 6} more…</div>`
-                    : "";
-
-                return `<div style="text-align:right;">${rows}${more}</div>`;
-                }
+                `;
+            }
 
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
             const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
             const lotSizeDisplay = formatLotSize(data.lot_size);
             const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
-            
+
             if (!context) {
                 //console.log("Context is undefined.");
                 return;
