@@ -58,7 +58,7 @@ If you only see 1–2 providers here but CPUC shows 3:
 - your point location likely differs from CPUC’s rooftop/address point, and/or
 - some provider polygons don’t overlap the exact point.
 
-You can also just run this sqlite3 command against your GeoPackage to see which polygons intersect the listing point:
+You can also just run this sqlite3 command against the GPKG to see which polygons intersect the listing point:
 
 ```bash
 sqlite3 assets/datasets/larentals.db "
