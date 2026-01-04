@@ -327,7 +327,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
                                 <span class="label" style="font-weight:bold;">ISP Options</span>
                                 <div class="value" style="text-align:right;">
-                                ${renderIspOptionsHtml(data.isp_options)}
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
                                 </div>
                             </div>
                         </div>
@@ -448,7 +448,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">ISP Options</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">
-                                ${renderIspOptionsHtml(data.isp_options)}
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
                             </td>
                         </tr>
                     </table>
@@ -493,6 +493,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     className: 'responsive-popup',
                 }
             );
+            // Hydrate ISP options when the popup opens
+            layer.on("popupopen", () => {
+            const el = layer.getPopup()?.getElement?.();
+            if (!el) return;
+
+            const ispApi = window.larentals?.isp;
+            if (!ispApi) return;
+
+            ispApi.hydrateIspOptionsInPopup(el, renderIspOptionsHtml);
+            });
         }
     }
 });

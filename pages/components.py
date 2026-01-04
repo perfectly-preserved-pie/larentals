@@ -252,7 +252,7 @@ class LeaseComponents(BaseClass):
 
     def __init__(self) -> None:
         # Call the parent constructor to load the lease table
-        super().__init__(table_name="lease_with_isp_json", page_type="lease") 
+        super().__init__(table_name="lease", page_type="lease") 
 
         # Apply lease-specific transformations to the DataFrame
         if 'laundry' in self.df.columns:
