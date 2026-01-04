@@ -147,6 +147,11 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
     conn = sqlite3.connect(cfg.larentals_db_path)
     try:
         out_df.to_sql(cfg.output_table, conn, if_exists="replace", index=False)
+        conn.execute(
+            f"CREATE INDEX IF NOT EXISTS idx_{cfg.output_table}_listing_id "
+            f"ON {cfg.output_table}(listing_id)"
+        )
+        conn.commit()
     finally:
         conn.close()
 
