@@ -445,6 +445,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">ISP Options</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">
+                                ${renderIspOptionsHtml(data.isp_options)}
+                            </td>
+                        </tr>
                     </table>
                     <div style="text-align:center; margin-top: 10px;">
                         <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
