@@ -81,7 +81,7 @@ def load_lease_geojson(_: int) -> dict:
   Load the full lease GeoJSON into the browser store once, after the page renders.
 
   Returns:
-      A GeoJSON dict suitable for dl.GeoJSON(data=...).
+    A GeoJSON dict suitable for dl.GeoJSON(data=...).
   """
   components = LeaseComponents()
   return components.return_geojson()

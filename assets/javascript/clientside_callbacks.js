@@ -488,6 +488,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             spaceRentIncludeMissing,
             fullGeojson
         ) {
+            // Guard against missing or malformed GeoJSON
+            if (!fullGeojson || !Array.isArray(fullGeojson.features)) {
+                return { type: "FeatureCollection", features: [] };
+            }
             // Convert Dash boolean inputs to actual booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
             const ppsqftIncludeMissingBool         = Boolean(ppsqftIncludeMissing);

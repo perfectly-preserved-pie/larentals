@@ -108,6 +108,23 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
   base["display"] = "none" if has_data else "flex"
   return base
 
+# Server-side callbacks
+@callback(
+  Output("buy-geojson-store", "data"),
+  Input("buy-boot", "n_intervals"),
+  prevent_initial_call=False,
+)
+def load_buy_geojson(_: int) -> dict:
+  """
+  Load the full buy GeoJSON into the browser store once, after the page renders.
+
+  Returns:
+    A GeoJSON dict suitable for dl.GeoJSON(data=...).
+  """
+  components = BuyComponents()
+  return components.return_geojson()
+
+
 # Define callback to update the style property of the senior community div based on the selected subtype value
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
