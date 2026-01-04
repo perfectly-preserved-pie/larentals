@@ -1238,16 +1238,32 @@ class LeaseComponents(BaseClass):
         return user_options_card
     
     def create_map_card(self):
-        map_card = dbc.Card(
-            [self.map], 
-            body = True,
-            # Make the graph stay in view as the page is scrolled down
-            # https://getbootstrap.com/docs/4.0/utilities/position/
-            # Apply sticky-top class only on non-mobile devices
-            className='d-block d-md-block sticky-top'
+        return dbc.Card(
+            dbc.CardBody(
+                html.Div(
+                    [
+                        # Spinner overlay (toggled via callback)
+                        html.Div(
+                            id=f"{self.page_type}-map-spinner",
+                            children=dbc.Spinner(size="lg"),
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "flex",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10000",
+                            },
+                        ),
+                        # Map itself
+                        html.Div(self.map, style={"position": "relative", "zIndex": "0"}),
+                    ],
+                    style={"position": "relative"},
+                )
+            ),
+            className="d-block d-md-block sticky-top",
         )
-    
-        return map_card
     
     def create_title_card(self):
         return super().create_title_card(

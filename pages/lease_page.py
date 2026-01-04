@@ -72,7 +72,7 @@ def layout() -> dbc.Container:
     className="dbc",
   )
 
-# Server-side callback
+# Server-side callbacks
 @callback(
   Output("lease-geojson-store", "data"),
   Input("lease-boot", "n_intervals"),
@@ -87,6 +87,31 @@ def load_lease_geojson(_: int) -> dict:
   """
   components = LeaseComponents()
   return components.return_geojson()
+
+@callback(
+  Output("lease-map-spinner", "style"),
+  Input("lease_geojson", "data"),
+  State("lease-map-spinner", "style"),
+)
+def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
+  """
+  Show the spinner overlay until the GeoJSON layer has data.
+
+  This works even when the heavy work is clientside, because we’re reacting to the
+  data prop being populated.
+  """
+  base = {
+    "position": "absolute",
+    "inset": "0",
+    "alignItems": "center",
+    "justifyContent": "center",
+    "backgroundColor": "rgba(0, 0, 0, 0.25)",
+    "zIndex": "10000",
+  }
+
+  has_data = bool(geojson_data and geojson_data.get("features"))
+  base["display"] = "none" if has_data else "flex"
+  return base
 
 
 # Create a callback to manage the collapsing behavior
