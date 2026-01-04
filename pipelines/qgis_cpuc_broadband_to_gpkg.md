@@ -58,4 +58,15 @@ If you only see 1–2 providers here but CPUC shows 3:
 - your point location likely differs from CPUC’s rooftop/address point, and/or
 - some provider polygons don’t overlap the exact point.
 
+You can also just run this sqlite3 command against your GeoPackage to see which polygons intersect the listing point:
+
+```bash
+sqlite3 assets/datasets/larentals.db "
+SELECT DBA, MaxAdDn, MaxAdUp, Service_Type
+FROM lease_provider_options
+WHERE listing_id = '25584589'
+ORDER BY COALESCE(MaxAdDn,-1) DESC, COALESCE(MaxAdUp,-1) DESC, DBA ASC;
+"
+```
+
 That’s why buffering points by ~25–75m before intersecting often improves matches.
