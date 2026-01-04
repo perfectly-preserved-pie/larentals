@@ -83,7 +83,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {string[]} subtypeSelection - e.g. ["Condo", "Townhouse"]
          * @param {string[]} dateRange - e.g. ["2021-01-01", "2021-12-31"]
          * @param {boolean} dateIncludeMissing - Include listings with null/undefined date?
-         * @param {Object} rawData - GeoJSON data with .features array
+         * @param {Object} fullGeojson - GeoJSON data with .features array
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
         filterAndCluster: function( // The order here MUST match the order in the callback decorator
@@ -114,10 +114,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             dateStart,
             dateEnd,
             dateIncludeMissing,
-            rawData
+            fullGeojson
         ) {
-            if (!rawData || !rawData.features) {
-                return rawData;
+            console.log("fullGeojson type:", typeof fullGeojson, "has features:", !!(fullGeojson && fullGeojson.features));
+
+            if (!fullGeojson || !fullGeojson.features) {
+                return {
+                    type: "FeatureCollection",
+                    features: []
+                };
             }
 
             // Destructure numeric ranges
@@ -149,7 +154,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const filterMaxDate = dateEnd ? new Date(dateEnd) : null;
 
             // Filter each feature
-            const filteredFeatures = rawData.features.filter(feature => {
+            const filteredFeatures = fullGeojson.features.filter(feature => {
                 // Basic properties
                 const price = feature.properties.list_price;
                 const bedrooms = feature.properties.bedrooms;
@@ -457,7 +462,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
         * @param {Array<number>} spaceRentRange - [minSpaceRent, maxSpaceRent] for filtering by `space_rent`.
         * @param {boolean} spaceRentIncludeMissing - Whether to include properties with missing `space_rent`.
-        * @param {Object} rawData - The full buy GeoJSON data as a FeatureCollection.
+        * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
         */
         filterAndClusterBuy: function(
@@ -481,7 +486,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             hoaFeeFrequencyChecklist,
             spaceRentRange,
             spaceRentIncludeMissing,
-            rawData
+            fullGeojson
         ) {
             // Convert Dash boolean inputs to actual booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
@@ -502,10 +507,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minSpaceRent, maxSpaceRent]    = spaceRentRange;
 
             // Debug: Log raw data
-            //console.log('Raw data:', rawData);
+            //console.log('Raw data:', fullGeojson);
 
             // Filter the features based on the provided criteria
-            const filteredFeatures = rawData.features.filter((feature) => {
+            const filteredFeatures = fullGeojson.features.filter((feature) => {
                 const props = feature.properties || {};
                 const mls_number = props.mls_number || 'Unknown';
 
