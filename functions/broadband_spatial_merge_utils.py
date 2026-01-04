@@ -137,7 +137,11 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
         joined = gpd.sjoin(points, providers_wgs, how=cfg.join_how, predicate=cfg.predicate)
         logger.debug(f"Spatial join produced {len(joined):,} rows")
 
-    # drop coordinates from provider-options table
+    # Prepare output DataFrame
+    out_df = joined.drop(
+        columns=[c for c in ("geometry", "index_right", "index_left") if c in joined.columns]
+    ).copy()
+    # Drop coordinates from provider-options table
     out_df = out_df.drop(columns=[c for c in ("latitude", "longitude") if c in out_df.columns]).copy()
 
     # If we used join_how="left" for any reason, ensure we don't write null-provider rows
