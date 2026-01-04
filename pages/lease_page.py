@@ -37,9 +37,6 @@ geojson_store = dcc.Store(id='lease-geojson-store', storage_type='memory', data=
 # One-shot trigger to load data after initial render
 kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
 
-# Create a Store to hold the earliest listed date
-earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
-
 def layout() -> dbc.Container:
   """
   Build the lease page layout on demand.
@@ -52,7 +49,8 @@ def layout() -> dbc.Container:
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
   kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
-  earliest_date_store = dcc.Store(id="earliest_date_store", data=lease_components.earliest_date)
+  # Create a Store to hold the earliest listed date
+  earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
 
   return dbc.Container(
     [
@@ -112,7 +110,6 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
   has_data = bool(geojson_data and geojson_data.get("features"))
   base["display"] = "none" if has_data else "flex"
   return base
-
 
 # Create a callback to manage the collapsing behavior
 clientside_callback(

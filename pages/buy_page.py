@@ -83,6 +83,31 @@ def layout() -> dbc.Container:
 def update_selected_subtype(value):
     return value
 
+@callback(
+  Output("buy-map-spinner", "style"),
+  Input("buy_geojson", "data"),
+  State("buy-map-spinner", "style"),
+)
+def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
+  """
+  Show the spinner overlay until the GeoJSON layer has data.
+
+  This works even when the heavy work is clientside, because we’re reacting to the
+  data prop being populated.
+  """
+  base = {
+    "position": "absolute",
+    "inset": "0",
+    "alignItems": "center",
+    "justifyContent": "center",
+    "backgroundColor": "rgba(0, 0, 0, 0.25)",
+    "zIndex": "10000",
+  }
+
+  has_data = bool(geojson_data and geojson_data.get("features"))
+  base["display"] = "none" if has_data else "flex"
+  return base
+
 # Define callback to update the style property of the senior community div based on the selected subtype value
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
