@@ -77,6 +77,34 @@
   const ispFetchCache = new Map();
 
   /**
+   * Convert ALL CAPS text to Title Case.
+   * @param {string} text
+   * @returns {string}
+   */
+  function toTitleCase(text) {
+    if (!text) return text;
+    
+    // If the text is all uppercase, convert to title case
+    if (text === text.toUpperCase() && text !== text.toLowerCase()) {
+      return text
+        .toLowerCase()
+        .split(' ')
+        .map(word => {
+          // Handle common acronyms/abbreviations
+          const acronyms = ['at&t', 'mci', 'hbo', 'dsl', 'isp'];
+          if (acronyms.includes(word.toLowerCase())) {
+            return word.toUpperCase();
+          }
+          // Capitalize first letter
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(' ');
+    }
+    
+    return text;
+  }
+
+  /**
    * Fetch ISP options for a single listing id.
    * @param {string} listingId
    * @returns {Promise<Array<Record<string, unknown>>>}
@@ -130,9 +158,8 @@
    * @returns {{ dba: string, service_type: string, max_dn_mbps: number, max_up_mbps: number }}
    */
   function normalizeOptionRow(row) {
-    const dba = normalizeNullableString(row.dba ?? row.DBA) ?? "Unknown";
+    const dba = toTitleCase(normalizeNullableString(row.dba ?? row.DBA) ?? "Unknown");
     const serviceType = normalizeNullableString(row.service_type ?? row.Service_Type) ?? "Unknown";
-
     const dn = Number(row.max_dn_mbps ?? row.MaxAdDn);
     const up = Number(row.max_up_mbps ?? row.MaxAdUp);
 
