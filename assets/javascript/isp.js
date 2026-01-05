@@ -238,7 +238,7 @@
   }
 
   /**
-   * Render ISP options as opinionated buckets + expandable tiers (Option C + D).
+   * Render ISP options as opinionated buckets + expandable tiers.
    * @param {unknown} rawOptions
    * @returns {string}
    */
@@ -268,25 +268,27 @@
       const rows = items
         .map((g) => {
           const speed = `↓ ${escapeHtml(formatMbps(g.best_dn))} • ↑ ${escapeHtml(formatMbps(g.best_up))}`;
-          const label = `${escapeHtml(g.dba)} — ${escapeHtml(g.service_type)}`;
+          // Split label to bold only the ISP name, keep tech type normal weight
+          const label = `<strong>${escapeHtml(g.dba)}</strong> — ${escapeHtml(g.service_type)}`;
 
           if (g.tiers.length > 1) {
             const tierLis = g.tiers
               .map((t) => {
                 const tSpeed = `↓ ${escapeHtml(formatMbps(t.max_dn_mbps))} • ↑ ${escapeHtml(formatMbps(t.max_up_mbps))}`;
-                return `<li style="margin:2px 0;">${tSpeed}</li>`;
+                // Remove <li> wrapper - just return the speed text
+                return `<div style="margin:2px 0;">${tSpeed}</div>`;
               })
               .join("");
 
             return `
               <details style="margin:6px 0;">
                 <summary style="cursor:pointer;">
-                  <span style="font-weight:600;">${label}</span><br/>
+                  ${label}<br/>
                   <span style="color:#222;">${speed}</span>
                 </summary>
                 <div style="margin:6px 0 0 10px;">
                   <div style="color:#666; font-size:12px; margin-bottom:4px;">Available plans</div>
-                  <ul style="margin:0; padding-left:16px;">${tierLis}</ul>
+                  <div style="margin:0; padding-left:0;">${tierLis}</div>
                 </div>
               </details>
             `;
@@ -294,7 +296,7 @@
 
           return `
             <div style="margin:6px 0;">
-              <div style="font-weight:600;">${label}</div>
+              <div>${label}</div>
               <div style="color:#222;">${speed}</div>
             </div>
           `;
@@ -312,7 +314,7 @@
     return (
       `<div>` +
       renderBucket("Best Available", buckets.best) +
-      renderBucket("Other Good Options", buckets.good) +
+      renderBucket("Good Options", buckets.good) +
       renderBucket("Fallback Options", buckets.fallback) +
       `</div>`
     );
