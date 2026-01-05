@@ -4,7 +4,7 @@ from datetime import date
 from functions.convex_hull import generate_convex_hulls
 from html import unescape
 from shapely.geometry import mapping
-from typing import Any
+from typing import Optional, Sequence
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
@@ -12,6 +12,7 @@ import geopandas as gpd
 import json
 import numpy as np
 import pandas as pd
+import re
 import sqlite3
 
 DB_PATH = "assets/datasets/larentals.db"
@@ -24,47 +25,63 @@ def create_toggle_button(index, page_type, initial_label="Hide"):
         style={'display': 'inline-block'}
     )
 
+def _require_safe_identifier(name: str, *, field_name: str) -> str:
+    """
+    Validate a SQL identifier (table/column/index name).
+
+    Args:
+        name: The identifier to validate.
+        field_name: Label for error messages.
+
+    Returns:
+        The original name if valid.
+
+    Raises:
+        ValueError: If the identifier is unsafe.
+    """
+    _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+    if not _IDENTIFIER_RE.fullmatch(name):
+        raise ValueError(f"Unsafe SQL identifier for {field_name}: {name!r}")
+    return name
+
 # Create a class to hold all common components for both Lease and Buy pages
 class BaseClass:
-    def __init__(self, table_name: str, page_type: str) -> None:
+    def __init__(
+        self,
+        table_name: str,
+        page_type: str,
+        *,
+        select_columns: Optional[Sequence[str]] = None,
+    ) -> None:
         """
-        Load a table/view from SQLite and prepare the GeoDataFrame.
+        Load a table/view from SQLite and prepare the DataFrame.
 
         Args:
-            table_name: The name of the SQLite table or view to read (e.g. "lease" or "lease_with_isp_json").
-            page_type: The page context used for GeoJSON features ("lease" or "buy").
+            table_name: SQLite table/view name (e.g. "lease" or "buy").
+            page_type: Page context ("lease" or "buy").
+            select_columns: Optional list/tuple of columns to select instead of SELECT *.
+                Use this to shrink payload for faster startup and smaller GeoJSON.
         """
+        safe_table = _require_safe_identifier(table_name, field_name="table_name")
+
+        if select_columns is None:
+            sql = f"SELECT * FROM {safe_table}"
+        else:
+            if not select_columns:
+                raise ValueError("select_columns cannot be empty when provided")
+
+            safe_cols = [
+                _require_safe_identifier(col, field_name="select_columns") for col in select_columns
+            ]
+            sql = f"SELECT {', '.join(safe_cols)} FROM {safe_table}"
+
         conn = sqlite3.connect(DB_PATH)
         try:
-            self.df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
-
-            # If we're reading from the lease_with_isp_json view, parse ISP JSON into a real list.
-            if "isp_options_json" in self.df.columns:
-
-                def _parse_isp(value: Any) -> list[dict[str, Any]]:
-                    """
-                    Parse the isp_options_json column into a Python list of dicts.
-                    """
-                    if value is None or (isinstance(value, float) and pd.isna(value)):
-                        return []
-                    if isinstance(value, list):
-                        # Sometimes upstream code might already have parsed it
-                        return [v for v in value if isinstance(v, dict)]
-                    if isinstance(value, str):
-                        s = value.strip()
-                        if not s:
-                            return []
-                        try:
-                            parsed = json.loads(s)
-                        except json.JSONDecodeError:
-                            return []
-                        return parsed if isinstance(parsed, list) else []
-                    return []
-
-                self.df["isp_options"] = self.df["isp_options_json"].apply(_parse_isp)
-                self.df = self.df.drop(columns=["isp_options_json"])
+            self.df = pd.read_sql_query(sql, conn)
         finally:
             conn.close()
+
+        self.page_type = page_type
 
         # 1.5) Coerce numeric columns that may come back as object (SQLite)
         numeric_cols = [
@@ -250,9 +267,46 @@ class LeaseComponents(BaseClass):
         'Unknown': 'Unknown'
     }
 
+    # List of columns to select from the lease table
+    LEASE_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "parking_spaces",
+        "laundry",
+        "laundry_category",
+        "pet_policy",
+        "terms",
+        "furnished",
+        "phone_number",
+        "security_deposit",
+        "pet_deposit",
+        "key_deposit",
+        "other_deposit",
+        "full_street_address",
+        "listed_date",
+        "listing_url",
+        "mls_photo",
+        "lot_size",
+        "senior_community",
+        "affected_by_palisades_fire",
+        "affected_by_eaton_fire",
+    )
+
     def __init__(self) -> None:
         # Call the parent constructor to load the lease table
-        super().__init__(table_name="lease", page_type="lease") 
+        super().__init__(
+            table_name="lease",
+            page_type="lease",
+            select_columns=self.LEASE_COLUMNS,
+        )
 
         # Apply lease-specific transformations to the DataFrame
         if 'laundry' in self.df.columns:
@@ -1273,10 +1327,48 @@ class LeaseComponents(BaseClass):
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
+    BUY_COLUMNS: tuple[str, ...] = (
+        # identity + geometry
+        "mls_number",
+        "latitude",
+        "longitude",
+
+        # core property details (filters + popup)
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "lot_size",
+        "garage_spaces",
+
+        # HOA / park / restrictions
+        "hoa_fee",
+        "hoa_fee_frequency",
+        "space_rent",
+        "pets_allowed",
+        "senior_community",
+
+        # address + listing metadata
+        "full_street_address",
+        "listed_date",
+        "listing_url",
+        "mls_photo",
+
+        # environmental flags
+        "affected_by_palisades_fire",
+        "affected_by_eaton_fire",
+    )
+
     def __init__(self):
         # Call the parent constructor to load the buy table
-        super().__init__(table_name="buy", page_type="buy")
-
+        super().__init__(
+            table_name="buy",
+            page_type="buy",
+            select_columns=self.BUY_COLUMNS,
+        )
         # Now build the UI components
         self.bathrooms_slider         = self.create_bathrooms_slider()
         self.bedrooms_slider          = self.create_bedrooms_slider()

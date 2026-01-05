@@ -264,9 +264,6 @@ if __name__ == "__main__":
     # Reindex the dataframe
     df.reset_index(drop=True, inplace=True)
 
-    # Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
-    df['context'] = [{"pageType": "buy"} for _ in range(len(df))]
-
     # Remove trailing '.0' from zip_code and full_street_address columns
     df = remove_trailing_zero(df)
 
@@ -352,17 +349,6 @@ if __name__ == "__main__":
     if not df_old.empty:
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
-
-    # serialize dict/list valued 'context' entries to JSON only once (to avoid double dumping existing JSON strings)
-    if "context" in df_combined.columns:
-      def _to_json_once(v):
-        if isinstance(v, (dict, list)):
-          try:
-            return json.dumps(v, ensure_ascii=False)
-          except Exception:
-            return json.dumps(str(v))  # fallback—should be rare
-        return v  # assume already a JSON string or scalar
-      df_combined["context"] = df_combined["context"].apply(_to_json_once)
 
     # decide where to write
     if SAMPLE_N:
