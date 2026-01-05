@@ -80,6 +80,18 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return [];
             }
 
+            // Format currency with dollar sign and commas
+            // And safeguard against invalid inputs
+            function formatCurrency(value) {
+                if (value === null || value === undefined || value === "") return "Unknown";
+
+                const n = Number(value);
+                if (!Number.isFinite(n)) return "Unknown";
+
+                return `$${n.toLocaleString()}`;
+                }
+
+
             function serviceLabelFromTech(p) {
                 const tech = Number(p?.tech_code);
 
@@ -233,27 +245,27 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Rental Price -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Rental Price</span>
-                                <span class="value">$${data.list_price.toLocaleString()}</span>
+                                <span class="value">${formatCurrency(data.list_price)}</span>
                             </div>
                             <!-- Security Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Security Deposit</span>
-                                <span class="value">${data.security_deposit ? `$${data.security_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.security_deposit)}</span>
                             </div>
                             <!-- Pet Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Pet Deposit</span>
-                                <span class="value">${data.pet_deposit ? `$${data.pet_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.pet_deposit)}</span>
                             </div>
                             <!-- Key Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Key Deposit</span>
-                                <span class="value">${data.key_deposit ? `$${data.key_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.key_deposit)}</span>
                             </div>
                             <!-- Other Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Other Deposit</span>
-                                <span class="value">${data.other_deposit ? `$${data.other_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.other_deposit)}</span>
                             </div>
                             <!-- Square Feet -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -397,11 +409,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString() || "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.list_price)}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.hoa_fee)}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
@@ -412,7 +424,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.ppsqft)}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Lot Size</th>
