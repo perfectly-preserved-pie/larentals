@@ -4,12 +4,12 @@ from datetime import date
 from functions.convex_hull import generate_convex_hulls
 from functions.sql_helpers import get_latest_date_processed
 from html import unescape
-from shapely.geometry import mapping
 from typing import Optional, Sequence
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
 import geopandas as gpd
+import json
 import numpy as np
 import pandas as pd
 import re
@@ -150,35 +150,22 @@ class BaseClass:
 
     def return_geojson(self) -> dict:
         """
-        Build a valid GeoJSON FeatureCollection from self.df,
-        converting any Timestamp columns to ISO strings.
+        Return a GeoJSON FeatureCollection for the current GeoDataFrame.
+        Convert datetime-like columns to ISO strings.
         """
-        # 1) work on a copy
-        df = self.df.copy()
+        gdf = self.df.copy()
 
-        # 2) convert datetime columns
         for dtcol in ("listed_date", "date_processed"):
-            if dtcol in df:
-                df[dtcol] = df[dtcol].dt.strftime("%Y-%m-%dT%H:%M:%S").fillna("")
+            if dtcol in gdf.columns and pd.api.types.is_datetime64_any_dtype(gdf[dtcol]):
+                gdf[dtcol] = (
+                    gdf[dtcol]
+                    .dt.strftime("%Y-%m-%dT%H:%M:%S")
+                    .fillna("")
+                )
 
-        # 3) build features
-        features = []
-        for _, row in df.iterrows():
-            props = row.drop(labels=["geometry"]).to_dict()
-            geom = mapping(row.geometry) if hasattr(row, "geometry") else None
-
-            features.append({
-                "type": "Feature",
-                "geometry": geom,
-                "properties": props
-            })
-
-        # 4) return the collection
-        return {
-            "type": "FeatureCollection",
-            "features": features
-        }
-    
+        geojson_str = gdf.to_json(drop_id=True)
+        return json.loads(geojson_str)
+        
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
