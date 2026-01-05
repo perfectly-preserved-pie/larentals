@@ -74,7 +74,7 @@ def layout() -> dbc.Container:
 @callback(
   Output("lease-geojson-store", "data"),
   Input("lease-boot", "n_intervals"),
-  prevent_initial_call=False,
+  prevent_initial_call=True,
 )
 def load_lease_geojson(_: int) -> dict:
   """
