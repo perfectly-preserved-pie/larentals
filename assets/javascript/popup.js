@@ -64,22 +64,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return stripTrailingPointZero(formatted);
             };
 
-            function formatMbps(mbps) {
-                const n = Number(mbps);
-                if (!Number.isFinite(n)) return "Unknown";
-                if (n >= 1000) return `${(n / 1000).toFixed(1)} Gbps`;
-                return `${Math.round(n)} Mbps`;
-            }
-
-            function coerceIspOptions(value) {
-                // Safety: in case something upstream stringifies it
-                if (Array.isArray(value)) return value;
-                if (typeof value === "string") {
-                    try { return JSON.parse(value); } catch { return []; }
-                }
-                return [];
-            }
-
             // Format currency with dollar sign and commas
             // And safeguard against invalid inputs
             function formatCurrency(value) {
@@ -90,48 +74,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 return `$${n.toLocaleString()}`;
                 }
-
-
-            function serviceLabelFromTech(p) {
-                const tech = Number(p?.tech_code);
-
-                if (tech === 50) return "Fiber";
-                if (tech === 40) return "Cable";
-                if (tech === 10) return "DSL";
-                if (tech === 60) return "Fixed Wireless";
-                if (tech === 70) return "Satellite";
-
-                // fallback to CPUC value if present
-                return p?.service_type ?? "Unknown";
-            }
-
-            function renderIspOptionsHtml(ispOptionsRaw) {
-                const ispOptions = coerceIspOptions(ispOptionsRaw);
-
-                if (!Array.isArray(ispOptions) || ispOptions.length === 0) {
-                    return `<span style="color:#666;">None found</span>`;
-                }
-
-                return `
-                    <div style="text-align:right;">
-                        ${ispOptions.map((p) => {
-                            const name = p?.dba ?? "Unknown";
-                            const dn = formatMbps(p?.max_dn_mbps);
-                            const up = formatMbps(p?.max_up_mbps);
-                            const svc = serviceLabelFromTech(p);
-
-                            return `
-                                <div style="margin-bottom:6px;">
-                                    <div style="font-weight:600;">${name}</div>
-                                    <div style="font-size:12px; color:#444;">
-                                        ↓ ${dn} · ↑ ${up}${svc ? ` · ${svc}` : ""}
-                                    </div>
-                                </div>
-                            `;
-                        }).join("")}
-                    </div>
-                `;
-            }
 
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
@@ -511,7 +453,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             const ispApi = window.larentals?.isp;
             if (!ispApi) return;
 
-            ispApi.hydrateIspOptionsInPopup(el, renderIspOptionsHtml);
+            ispApi.hydrateIspOptionsInPopup(el);
             });
         }
     }
