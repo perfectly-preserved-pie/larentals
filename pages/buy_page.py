@@ -1,5 +1,6 @@
 from .components import BuyComponents
 from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
+from functions.sql_helpers import get_earliest_listed_date
 from dash.dependencies import Input, Output, State
 from loguru import logger
 import dash
@@ -32,30 +33,48 @@ logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
 
 # Create a store for the geojson data
-geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=components.return_geojson())
+geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=None)
 #logger.debug(f"GeoJSON data: {geojson_store.data}")
-#logger.debug(f"this is the return geojson {lease_components.return_geojson()}")
+#logger.debug(f"this is the return geojson {components.return_geojson()}")
+
+# One-shot trigger to load data after initial render
+kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
 
 # Create a Store to hold the earliest listed date
-earliest_date_store = dcc.Store(id="earliest_date_store", data=components.earliest_date) 
+earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
-layout = dbc.Container([
-  collapse_store,
-  geojson_store,
-  earliest_date_store,
-  dbc.Row( # First row: title card
+
+def layout() -> dbc.Container:
+  """
+  Build the buy page layout on demand.
+
+  Returns:
+    The buy page layout container.
+  """
+  collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
+  geojson_store = dcc.Store(id="buy-geojson-store", storage_type="memory", data=None)
+  kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
+  earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
+
+  return dbc.Container(
     [
-      dbc.Col([components.title_card, components.user_options_card], lg=3, md=6, sm=4),
-      dbc.Col([components.map_card], lg=9, md=6, sm=8),
+      collapse_store,
+      geojson_store,
+      kickstart,
+      earliest_date_store,
+      dbc.Row( # First row: title card
+        [
+          dbc.Col([components.title_card, components.user_options_card], lg=3, md=6, sm=4),
+          dbc.Col([components.map_card], lg=9, md=6, sm=8),
+        ],
+        className="g-0",
+      ),
+      # Create a hidden Store to store the selected subtype value
+      dcc.Store(id='selected_subtype', data='SFR'),
     ],
-    className="g-0",
-  ),
-  # Create a hidden Store to store the selected subtype value
-  dcc.Store(id='selected_subtype', data='SFR'),
-],
-fluid = True,
-className = "dbc"
-),
+    fluid = True,
+    className = "dbc"
+  )
 
 ## BEGIN CALLBACKS ##
 # First, we want to hide the pet policy and senior community options if the user selects a property type that doesn't have those options (anything other than a mobile home)
@@ -63,6 +82,48 @@ className = "dbc"
 @callback(Output('selected_subtype', 'data'), Input('subtype_checklist', 'value'))
 def update_selected_subtype(value):
     return value
+
+@callback(
+  Output("buy-map-spinner", "style"),
+  Input("buy_geojson", "data"),
+  State("buy-map-spinner", "style"),
+)
+def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
+  """
+  Show the spinner overlay until the GeoJSON layer has data.
+
+  This works even when the heavy work is clientside, because we’re reacting to the
+  data prop being populated.
+  """
+  base = {
+    "position": "absolute",
+    "inset": "0",
+    "alignItems": "center",
+    "justifyContent": "center",
+    "backgroundColor": "rgba(0, 0, 0, 0.25)",
+    "zIndex": "10000",
+  }
+
+  has_data = bool(geojson_data and geojson_data.get("features"))
+  base["display"] = "none" if has_data else "flex"
+  return base
+
+# Server-side callbacks
+@callback(
+  Output("buy-geojson-store", "data"),
+  Input("buy-boot", "n_intervals"),
+  prevent_initial_call=False,
+)
+def load_buy_geojson(_: int) -> dict:
+  """
+  Load the full buy GeoJSON into the browser store once, after the page renders.
+
+  Returns:
+    A GeoJSON dict suitable for dl.GeoJSON(data=...).
+  """
+  components = BuyComponents()
+  return components.return_geojson()
+
 
 # Define callback to update the style property of the senior community div based on the selected subtype value
 clientside_callback(
@@ -141,8 +202,8 @@ clientside_callback(
     Input('hoa_fee_frequency_checklist', 'value'),
     Input('space_rent_slider', 'value'),
     Input('space_rent_missing_radio', 'value'),
+    Input('buy-geojson-store', "data")
   ],
-  State('buy-geojson-store', 'data')
 )
 
 # Callback to toggle the visibility of dynamic components

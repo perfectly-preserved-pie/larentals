@@ -66,12 +66,69 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return stripTrailingPointZero(formatted);
             };
 
+            function formatMbps(mbps) {
+                const n = Number(mbps);
+                if (!Number.isFinite(n)) return "Unknown";
+                if (n >= 1000) return `${(n / 1000).toFixed(1)} Gbps`;
+                return `${Math.round(n)} Mbps`;
+            }
+
+            function coerceIspOptions(value) {
+                // Safety: in case something upstream stringifies it
+                if (Array.isArray(value)) return value;
+                if (typeof value === "string") {
+                    try { return JSON.parse(value); } catch { return []; }
+                }
+                return [];
+            }
+
+            function serviceLabelFromTech(p) {
+                const tech = Number(p?.tech_code);
+
+                if (tech === 50) return "Fiber";
+                if (tech === 40) return "Cable";
+                if (tech === 10) return "DSL";
+                if (tech === 60) return "Fixed Wireless";
+                if (tech === 70) return "Satellite";
+
+                // fallback to CPUC value if present
+                return p?.service_type ?? "Unknown";
+            }
+
+            function renderIspOptionsHtml(ispOptionsRaw) {
+                const ispOptions = coerceIspOptions(ispOptionsRaw);
+
+                if (!Array.isArray(ispOptions) || ispOptions.length === 0) {
+                    return `<span style="color:#666;">None found</span>`;
+                }
+
+                return `
+                    <div style="text-align:right;">
+                        ${ispOptions.map((p) => {
+                            const name = p?.dba ?? "Unknown";
+                            const dn = formatMbps(p?.max_dn_mbps);
+                            const up = formatMbps(p?.max_up_mbps);
+                            const svc = serviceLabelFromTech(p);
+
+                            return `
+                                <div style="margin-bottom:6px;">
+                                    <div style="font-weight:600;">${name}</div>
+                                    <div style="font-size:12px; color:#444;">
+                                        ↓ ${dn} · ↑ ${up}${svc ? ` · ${svc}` : ""}
+                                    </div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                `;
+            }
+
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
             const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
             const lotSizeDisplay = formatLotSize(data.lot_size);
             const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
-            
+
             if (!context) {
                 //console.log("Context is undefined.");
                 return;
@@ -266,6 +323,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                 <span class="label" style="font-weight: bold;">Physical Sub Type</span>
                                 <span class="value">${data.subtype || "Unknown"}</span>
                             </div>
+                            <!-- ISP Options -->
+                            <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
+                                <span class="label" style="font-weight:bold;">ISP Options</span>
+                                <div class="value" style="text-align:right;">
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                                </div>
+                            </div>
                         </div>
                         <div style="text-align: center; margin-top: 10px;">
                             <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
@@ -381,6 +445,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
                             <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
                         </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">ISP Options</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                            </td>
+                        </tr>
                     </table>
                     <div style="text-align:center; margin-top: 10px;">
                         <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
@@ -423,6 +493,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     className: 'responsive-popup',
                 }
             );
+            // Hydrate ISP options when the popup opens
+            layer.on("popupopen", () => {
+            const el = layer.getPopup()?.getElement?.();
+            if (!el) return;
+
+            const ispApi = window.larentals?.isp;
+            if (!ispApi) return;
+
+            ispApi.hydrateIspOptionsInPopup(el, renderIspOptionsHtml);
+            });
         }
     }
 });

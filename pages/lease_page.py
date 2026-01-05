@@ -1,6 +1,7 @@
 from .components import LeaseComponents
-from dash import dcc, MATCH, clientside_callback, ClientsideFunction
+from dash import dcc, MATCH, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import Input, Output, State
+from functions.sql_helpers import get_earliest_listed_date
 from loguru import logger
 import dash
 import dash_bootstrap_components as dbc
@@ -22,7 +23,6 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 
 # Create instances of the components classes and log how long it takes to create them
 start_time = time.time()
-lease_components = LeaseComponents()
 duration = time.time() - start_time
 logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
 
@@ -30,29 +30,86 @@ logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
 
 # Create a store for the geojson data
-geojson_store = dcc.Store(id='lease-geojson-store', storage_type='memory', data=lease_components.return_geojson())
+geojson_store = dcc.Store(id='lease-geojson-store', storage_type='memory', data=None)
 #logger.debug(f"GeoJSON data: {geojson_store.data}")
 #logger.debug(f"this is the return geojson {lease_components.return_geojson()}")
 
-# Create a Store to hold the earliest listed date
-earliest_date_store = dcc.Store(id="earliest_date_store", data=lease_components.earliest_date) 
+# One-shot trigger to load data after initial render
+kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
 
-layout = dbc.Container([
-  collapse_store,
-  geojson_store,
-  earliest_date_store,
-  dbc.Row(
+def layout() -> dbc.Container:
+  """
+  Build the lease page layout on demand.
+
+  Returns:
+    The lease page layout container.
+  """
+  lease_components = LeaseComponents()
+
+  collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
+  geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
+  kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
+  # Create a Store to hold the earliest listed date
+  earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
+
+  return dbc.Container(
     [
-      dbc.Col([lease_components.title_card, lease_components.user_options_card], lg=3, md=6, sm=4),
-      dbc.Col([lease_components.map_card], lg=9, md=6, sm=8),
+      collapse_store,
+      geojson_store,
+      kickstart,
+      earliest_date_store,
+      dbc.Row(
+        [
+          dbc.Col([lease_components.title_card, lease_components.user_options_card], lg=3, md=6, sm=4),
+          dbc.Col([lease_components.map_card], lg=9, md=6, sm=8),
+        ],
+        className="g-0",
+      ),
     ],
-    className="g-0",
-  ),
-],
-fluid=True,
-className="dbc"
-)
+    fluid=True,
+    className="dbc",
+  )
 
+# Server-side callbacks
+@callback(
+  Output("lease-geojson-store", "data"),
+  Input("lease-boot", "n_intervals"),
+  prevent_initial_call=False,
+)
+def load_lease_geojson(_: int) -> dict:
+  """
+  Load the full lease GeoJSON into the browser store once, after the page renders.
+
+  Returns:
+    A GeoJSON dict suitable for dl.GeoJSON(data=...).
+  """
+  components = LeaseComponents()
+  return components.return_geojson()
+
+@callback(
+  Output("lease-map-spinner", "style"),
+  Input("lease_geojson", "data"),
+  State("lease-map-spinner", "style"),
+)
+def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
+  """
+  Show the spinner overlay until the GeoJSON layer has data.
+
+  This works even when the heavy work is clientside, because we’re reacting to the
+  data prop being populated.
+  """
+  base = {
+    "position": "absolute",
+    "inset": "0",
+    "alignItems": "center",
+    "justifyContent": "center",
+    "backgroundColor": "rgba(0, 0, 0, 0.25)",
+    "zIndex": "10000",
+  }
+
+  has_data = bool(geojson_data and geojson_data.get("features"))
+  base["display"] = "none" if has_data else "flex"
+  return base
 
 # Create a callback to manage the collapsing behavior
 clientside_callback(
@@ -120,8 +177,8 @@ clientside_callback(
     Input('listed_date_datepicker_lease', 'start_date'),
     Input('listed_date_datepicker_lease', 'end_date'),
     Input('listed_date_missing_radio', 'value'),
+    Input('lease-geojson-store', "data"),
   ],
-  State('lease-geojson-store', 'data')
 )
 
 clientside_callback(
