@@ -12,7 +12,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             const data = feature.properties; // Use feature.properties directly
             const encodedData = encodeURIComponent(JSON.stringify(data)); // Encode the data as a JSON for the reportListing function
-            const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
             const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
 
             /**
@@ -128,15 +127,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
             const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
             const lotSizeDisplay = formatLotSize(data.lot_size);
             const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
-
-            if (!context) {
-                //console.log("Context is undefined.");
-                return;
-            }
-
-            // Log the context object to debug
-            //console.log('Context:', context);
-            //console.log('Data:', data);
 
             // Function to handle MLS number hyperlink
             function getListingUrlBlock(address, listingUrlValue) {
@@ -463,11 +453,15 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Determine which popup content to generate based on context
-            let popupContent = '';
-            if (context.pageType === 'lease') {
+            // Infer page type from context or URL path
+            const path = String(window.location?.pathname || "").toLowerCase();
+            const isBuyPage = path === "/buy" || path.startsWith("/buy");
+
+            let popupContent = "";
+            if (isBuyPage) {
+                popupContent = generateBuyPopupContent(data);
+            } else {
                 popupContent = generateLeasePopupContent(data);
-            } else if (context.pageType === 'buy') {
-                popupContent = generateBuyPopupContent(data, selected_subtypes);
             }
 
             // Use Leaflet's map size to determine the popup size
