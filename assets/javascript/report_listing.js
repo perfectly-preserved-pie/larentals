@@ -52,7 +52,8 @@ function reportListing(listingProps) {
                     mls_number: mlsNumber,
                     option: result.value.option,
                     text: result.value.text,
-                    properties: listingProps
+                    properties: listingProps,
+                    page_path: window.location.pathname,   // "/" or "/buy"
                 })
             }).then(response => {
                 if (response.ok) {

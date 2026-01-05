@@ -112,7 +112,7 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
 @callback(
   Output("buy-geojson-store", "data"),
   Input("buy-boot", "n_intervals"),
-  prevent_initial_call=False,
+  prevent_initial_call=True,
 )
 def load_buy_geojson(_: int) -> dict:
   """

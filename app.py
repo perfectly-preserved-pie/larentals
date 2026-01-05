@@ -1,5 +1,6 @@
 from dash import Dash
 from flask import request, jsonify, abort, Blueprint
+from flask_compress import Compress
 from loguru import logger
 from typing import Any
 import bleach
@@ -38,6 +39,19 @@ app = Dash(
 # Set the page title
 app.title = "WhereToLive.LA"
 app.description = "An interactive map of available rental & for-sale properties in Los Angeles County."
+
+# Configure compression 
+app.server.config["COMPRESS_MIN_SIZE"] = 1024  # only compress responses >= 1KB
+app.server.config["COMPRESS_MIMETYPES"] = [
+  "text/html",
+  "text/css",
+  "application/json",
+  "application/javascript",
+  "text/javascript",
+]
+
+# Enable Flask-Compress for compression
+Compress(app.server)
 
 # For Gunicorn
 server = app.server
@@ -99,7 +113,7 @@ def report_listing() -> tuple:
   mls_number: str = data.get('mls_number')
   option: str = data.get('option')
   text_report: str = data.get('text')
-  properties: dict = data.get('properties')
+  page_path: str = (data.get("page_path") or "").lower()
 
   if option not in ALLOWED_OPTIONS:
     abort(400, "Invalid option provided.")
@@ -110,10 +124,12 @@ def report_listing() -> tuple:
 
   try:
     # Determine which table to update based on context (lease or buy)
-    page_type = None
-    if properties and isinstance(properties.get('context'), dict):
-      page_type = properties['context'].get('pageType')
-    table_name = 'lease' if page_type == 'lease' else 'buy'
+    if page_path.startswith("/buy"):
+      table_name = "buy"
+    elif page_path == "" or page_path == "/":
+      table_name = "lease"
+    else:
+      abort(400, f"Invalid page context: {page_path}")
 
     conn = sqlite3.connect("assets/datasets/larentals.db")
     cur = conn.cursor()
