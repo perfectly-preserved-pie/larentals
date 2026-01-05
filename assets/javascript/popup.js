@@ -12,7 +12,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             const data = feature.properties; // Use feature.properties directly
             const encodedData = encodeURIComponent(JSON.stringify(data)); // Encode the data as a JSON for the reportListing function
-            const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
 
             /**
              * Converts placeholder values (e.g., "None", "null", empty strings) to null,
@@ -456,6 +455,8 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // Infer page type from context or URL path
             const path = String(window.location?.pathname || "").toLowerCase();
             const isBuyPage = path === "/buy" || path.startsWith("/buy");
+            console.debug("isBuyPage:", isBuyPage);
+            console.debug(path);
 
             let popupContent = "";
             if (isBuyPage) {

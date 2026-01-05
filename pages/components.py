@@ -151,8 +151,7 @@ class BaseClass:
     def return_geojson(self) -> dict:
         """
         Build a valid GeoJSON FeatureCollection from self.df,
-        converting any Timestamp columns to ISO strings and
-        tagging each feature with {"pageType": self.page_type}.
+        converting any Timestamp columns to ISO strings.
         """
         # 1) work on a copy
         df = self.df.copy()
