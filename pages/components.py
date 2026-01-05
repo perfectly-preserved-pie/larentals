@@ -121,7 +121,7 @@ class BaseClass:
             self.earliest_date = date.today()
 
         # 5) Compute last_updated
-        self.last_updated = get_latest_date_processed(DB_PATH, table_name=table_name)
+        self.last_updated = get_latest_date_processed(DB_PATH, table_name=safe_table)
 
         # 6) store page_type for return_geojson
         self.page_type = page_type
@@ -166,7 +166,6 @@ class BaseClass:
         features = []
         for _, row in df.iterrows():
             props = row.drop(labels=["geometry"]).to_dict()
-            props["context"] = {"pageType": self.page_type}
             geom = mapping(row.geometry) if hasattr(row, "geometry") else None
 
             features.append({
