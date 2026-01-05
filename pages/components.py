@@ -2,6 +2,7 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
+from functions.sql_helpers import get_latest_date_processed
 from html import unescape
 from shapely.geometry import mapping
 from typing import Optional, Sequence
@@ -9,7 +10,6 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
 import geopandas as gpd
-import json
 import numpy as np
 import pandas as pd
 import re
@@ -121,8 +121,7 @@ class BaseClass:
             self.earliest_date = date.today()
 
         # 5) Compute last_updated
-        latest = self.df.get("date_processed").max() if "date_processed" in self.df else None
-        self.last_updated = latest.strftime("%m/%d/%Y") if pd.notna(latest) else "N/A"
+        self.last_updated = get_latest_date_processed(DB_PATH, table_name=table_name)
 
         # 6) store page_type for return_geojson
         self.page_type = page_type
