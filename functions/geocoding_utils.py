@@ -159,26 +159,36 @@ def re_geocode_above_lat_threshold(
     For rows where 'latitude' exceeds lat_threshold, re-fetch coordinates
     and overwrite the 'latitude' and 'longitude' columns in-place.
     """
+    if "latitude" not in df.columns:
+        return df
+
+    # Coerce coords to numeric so comparisons and downstream logic don't break
+    lat_num = pd.to_numeric(df["latitude"], errors="coerce")
+    df["latitude"] = lat_num
+    lon_num = pd.to_numeric(df["longitude"], errors="coerce")
+    df["longitude"] = lon_num
+
     # Identify rows to re-geocode
-    mask = df['latitude'] > lat_threshold
-    total = mask.sum()
+    mask = lat_num > lat_threshold
+    total = int(mask.sum())
     if total == 0:
         return df
 
     counter = 0
     for idx in df[mask].index:
         counter += 1
-        address = df.at[idx, 'full_street_address']
-        logger.info(f"Re-geocoding row {counter} of {total}: MLS {df.at[idx,'mls_number']} "
-                    f"with latitude {df.at[idx,'latitude']} above {lat_threshold}")
+        address = df.at[idx, "full_street_address"]
+        logger.info(
+            f"Re-geocoding row {counter} of {total}: MLS {df.at[idx,'mls_number']} "
+            f"with latitude {df.at[idx,'latitude']} above {lat_threshold}"
+        )
         new_lat, new_lon = return_coordinates(
             address=address,
             row_index=idx,
             geolocator=geolocator,
-            total_rows=total
+            total_rows=total,
         )
-        # Overwrite the numeric latitude & longitude
-        df.at[idx, 'latitude']  = new_lat
-        df.at[idx, 'longitude'] = new_lon
+        df.at[idx, "latitude"] = new_lat
+        df.at[idx, "longitude"] = new_lon
 
     return df

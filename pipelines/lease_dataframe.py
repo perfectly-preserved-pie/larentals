@@ -222,6 +222,9 @@ if __name__ == "__main__":
     # Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
     df['context'] = [{"pageType": "lease"} for _ in range(len(df))]
 
+    # Remove trailing '.0' from zip_code and full_street_address columns
+    df = remove_trailing_zero(df)
+
     ### MERGE WITH EXISTING DATA ###
     # Read existing lease data from SQLite to preserve historical listings and flags
     if os.path.exists(DB_PATH):

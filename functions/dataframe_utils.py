@@ -4,6 +4,7 @@ from loguru import logger
 from typing import Sequence, Dict, Optional
 import json
 import pandas as pd
+import re
 import requests
 import sqlite3
 import sys
@@ -348,3 +349,17 @@ def drop_high_outliers(
 
     logger.info(f"Total rows dropped: {total_dropped}")
     return df_clean.reset_index(drop=True)
+
+def remove_trailing_zero(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove trailing '.0' from all columns except hoa_fee and space_rent in the given DataFrame. Convert to string if necessary.
+    """
+    for col in df.columns:
+        if col not in ['hoa_fee', 'space_rent']:
+            if df[col].dtype == object:
+                df[col] = df[col].apply(
+                    lambda x: re.sub(r"\.0$", "", x) if isinstance(x, str) else x
+                )
+            elif pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].astype(str).str.replace(r"\.0$", "", regex=True)
+    return df

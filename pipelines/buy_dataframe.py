@@ -15,6 +15,11 @@ import sqlite3
 import argparse
 import json
 
+# default values to avoid NameError before argument parsing
+SAMPLE_N = None
+USE_NOMINATIM = False
+LOGFILE = "~/larentals/buy_dataframe.log"
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample",  type=int, default=None,
@@ -232,7 +237,12 @@ if __name__ == "__main__":
     df['total_bathrooms'] = df['total_bathrooms'].fillna(df['full_bathrooms'] + df['half_bathrooms'] + df['three_quarter_bathrooms'] + df['extra_bathrooms'])
 
     logger.info("Bathroom columns extracted and total_bathrooms updated.")
-    logger.debug(df[['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']].sample(n=10))
+    bathroom_cols = ['bedrooms_bathrooms', 'total_bathrooms', 'full_bathrooms', 'half_bathrooms', 'three_quarter_bathrooms']
+    if df.empty:
+      logger.debug("No rows available to sample for bathroom debug.")
+    else:
+      sample_size = min(10, len(df))
+      logger.debug(df[bathroom_cols].sample(n=sample_size))
 
     # Convert the listed date into DateTime and use the "mixed" format to handle the different date formats
     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
@@ -256,6 +266,9 @@ if __name__ == "__main__":
 
     # Add pageType context using vectorized operations to each feature's properties to pass through to the onEachFeature JavaScript function
     df['context'] = [{"pageType": "buy"} for _ in range(len(df))]
+
+    # Remove trailing '.0' from zip_code and full_street_address columns
+    df = remove_trailing_zero(df)
 
     ### MERGE WITH EXISTING DATA ###
     df_old = pd.DataFrame()

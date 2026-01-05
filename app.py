@@ -1,4 +1,4 @@
-from dash import Dash, _dash_renderer
+from dash import Dash
 from flask import request, jsonify, abort
 from loguru import logger
 import bleach
@@ -7,10 +7,6 @@ import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import logging
 import sqlite3
-
-# Set the React version to 18.2.0
-# https://www.dash-mantine-components.com/getting-started#simple-usage
-_dash_renderer._set_react_version("18.2.0")
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -28,12 +24,13 @@ external_scripts = [
 app = Dash(
 	external_scripts = external_scripts,
   external_stylesheets = external_stylesheets,
-  name = __name__, 
+  health_endpoint="health", # https://dash.plotly.com/app-monitoring
   # Add meta tags for mobile devices
   # https://community.plotly.com/t/reorder-website-for-mobile-view/33669/5?
   meta_tags = [
     {"name": "viewport", "content": "width=device-width, initial-scale=1"}
   ],
+  name = __name__, 
   use_pages = True,
 )
 
