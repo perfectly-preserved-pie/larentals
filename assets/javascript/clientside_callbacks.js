@@ -116,8 +116,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             dateIncludeMissing,
             fullGeojson
         ) {
-            console.log("fullGeojson type:", typeof fullGeojson, "has features:", !!(fullGeojson && fullGeojson.features));
-
             if (!fullGeojson || !fullGeojson.features) {
                 return {
                     type: "FeatureCollection",

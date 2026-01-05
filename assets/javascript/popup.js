@@ -6,7 +6,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
         on_each_feature: function(feature, layer) {
             //console.log("Feature properties:", feature.properties);
             if (!feature.properties) {
-                console.log("Feature properties are missing.");
+                console.warn("Feature properties are missing.");
                 return;
             }
 
@@ -467,8 +467,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // Infer page type from context or URL path
             const path = String(window.location?.pathname || "").toLowerCase();
             const isBuyPage = path === "/buy" || path.startsWith("/buy");
-            console.debug("isBuyPage:", isBuyPage);
-            console.debug(path);
 
             let popupContent = "";
             if (isBuyPage) {
