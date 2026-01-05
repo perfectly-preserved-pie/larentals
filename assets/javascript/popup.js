@@ -139,6 +139,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
             const lotSizeDisplay = formatLotSize(data.lot_size);
             const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
 
+            // Determine property subtype flags
+            const subtype = (data?.subtype ?? "Unknown").toString();   // Coerce to string for includes()
+            const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
+            const isMh  = subtype.includes("MH")  || subtype.includes("Manufactured Home");
+
             // Function to handle MLS number hyperlink
             function getListingUrlBlock(address, listingUrlValue) {
                 if (!listingUrlValue) {
@@ -322,7 +327,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Physical Sub Type -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Physical Sub Type</span>
-                                <span class="value">${data.subtype || "Unknown"}</span>
+                                <span class="value">${subtype || "Unknown"}</span>
                             </div>
                             <!-- ISP Options -->
                             <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
@@ -346,7 +351,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             function generateBuyPopupContent(data) {
                 // Include parking spaces if subtype is not 'SFR' or 'Single Family Residence'
                 let parkingContent = '';
-                if (!(data.subtype.includes('SFR') || data.subtype.includes('Single Family Residence'))) {
+                if (!isSfr) {
                     parkingContent = `
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
@@ -357,7 +362,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 // Conditional Senior Community
                 let seniorCommunityContent = '';
-                if (data.subtype.includes('MH')) {
+                if (isMh) {
                     seniorCommunityContent = `
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
@@ -379,7 +384,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 // Conditional Space Rent
                 let spaceRentContent = '';
-                if (data.subtype.includes('MH') || data.subtype.includes('Manufactured Home')) {
+                if (isMh) {
                     spaceRentContent = `
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
@@ -444,7 +449,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${subtype}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">ISP Options</th>
