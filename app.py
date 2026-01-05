@@ -1,6 +1,8 @@
 from dash import Dash
-from flask import request, jsonify, abort
+from flask import request, jsonify, abort, Blueprint
+from flask_compress import Compress
 from loguru import logger
+from typing import Any
 import bleach
 import dash
 import dash_bootstrap_components as dbc
@@ -37,6 +39,19 @@ app = Dash(
 # Set the page title
 app.title = "WhereToLive.LA"
 app.description = "An interactive map of available rental & for-sale properties in Los Angeles County."
+
+# Configure compression 
+app.server.config["COMPRESS_MIN_SIZE"] = 1024  # only compress responses >= 1KB
+app.server.config["COMPRESS_MIMETYPES"] = [
+  "text/html",
+  "text/css",
+  "application/json",
+  "application/javascript",
+  "text/javascript",
+]
+
+# Enable Flask-Compress for compression
+Compress(app.server)
 
 # For Gunicorn
 server = app.server
@@ -98,7 +113,7 @@ def report_listing() -> tuple:
   mls_number: str = data.get('mls_number')
   option: str = data.get('option')
   text_report: str = data.get('text')
-  properties: dict = data.get('properties')
+  page_path: str = (data.get("page_path") or "").lower()
 
   if option not in ALLOWED_OPTIONS:
     abort(400, "Invalid option provided.")
@@ -109,10 +124,12 @@ def report_listing() -> tuple:
 
   try:
     # Determine which table to update based on context (lease or buy)
-    page_type = None
-    if properties and isinstance(properties.get('context'), dict):
-      page_type = properties['context'].get('pageType')
-    table_name = 'lease' if page_type == 'lease' else 'buy'
+    if page_path.startswith("/buy"):
+      table_name = "buy"
+    elif page_path == "" or page_path == "/":
+      table_name = "lease"
+    else:
+      abort(400, f"Invalid page context: {page_path}")
 
     conn = sqlite3.connect("assets/datasets/larentals.db")
     cur = conn.cursor()
@@ -151,6 +168,75 @@ def report_listing() -> tuple:
   except Exception as e:
     logger.error(f"Error handling report for MLS {mls_number}: {e}")
     return jsonify(status="error", message="Internal error, please try again later."), 500
+
+# Create a custom route for fetching ISP options
+def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.db') -> None:
+  """
+  Register HTTP routes for fetching ISP options on-demand.
+
+  Args:
+    server: The Flask server instance (typically `app.server` in Dash).
+    db_path: Path to the SQLite database file. Defaults to 'assets/datasets/larentals.db'.
+  """
+  bp = Blueprint("isp_api", __name__)
+
+  @bp.get("/api/lease/isp-options/<listing_id>")
+  def get_lease_isp_options(listing_id: str):
+    """
+    Return top ISP options for a given listing_id (mls_number).
+
+    Args:
+      listing_id: MLS/listing identifier used in `lease_provider_options.listing_id`.
+
+    Returns:
+      JSON array of provider option dicts matching the structure expected by popup.js.
+    """
+    sql = """
+    SELECT
+      DBA,
+      Service_Type,
+      TechCode,
+      MaxAdDn,
+      MaxAdUp,
+      MaxDnTier,
+      MaxUpTier,
+      MinDnTier,
+      MinUpTier
+    FROM lease_provider_options
+    WHERE listing_id = ?
+      AND DBA IS NOT NULL
+    ORDER BY
+      COALESCE(MaxAdDn, -1) DESC,
+      COALESCE(MaxAdUp, -1) DESC,
+      DBA ASC
+    LIMIT 8;
+    """
+
+    with sqlite3.connect(db_path) as conn:
+      conn.row_factory = sqlite3.Row
+      rows = conn.execute(sql, (listing_id,)).fetchall()
+
+    result: list[dict[str, Any]] = []
+    for r in rows:
+      result.append(
+        {
+          "dba": r["DBA"],
+          "service_type": r["Service_Type"],
+          "tech_code": r["TechCode"],
+          "max_dn_mbps": r["MaxAdDn"],
+          "max_up_mbps": r["MaxAdUp"],
+          "max_dn_tier": r["MaxDnTier"],
+          "max_up_tier": r["MaxUpTier"],
+          "min_dn_tier": r["MinDnTier"],
+          "min_up_tier": r["MinUpTier"],
+        }
+      )
+
+    return jsonify(result)
+
+  server.register_blueprint(bp)
+
+register_isp_routes(server, db_path="assets/datasets/larentals.db")
 
 if __name__ == '__main__':
 	app.run(debug=True)

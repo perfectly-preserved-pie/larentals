@@ -6,14 +6,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
         on_each_feature: function(feature, layer) {
             //console.log("Feature properties:", feature.properties);
             if (!feature.properties) {
-                console.log("Feature properties are missing.");
+                console.warn("Feature properties are missing.");
                 return;
             }
 
             const data = feature.properties; // Use feature.properties directly
             const encodedData = encodeURIComponent(JSON.stringify(data)); // Encode the data as a JSON for the reportListing function
-            const context = feature.properties.context; // Get the type of page (lease or buy) from the GeoJSON feature properties
-            const selected_subtypes = data.subtype; // Get the selected subtype(s) from the GeoJSON feature properties
 
             /**
              * Converts placeholder values (e.g., "None", "null", empty strings) to null,
@@ -66,20 +64,85 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return stripTrailingPointZero(formatted);
             };
 
+            function formatMbps(mbps) {
+                const n = Number(mbps);
+                if (!Number.isFinite(n)) return "Unknown";
+                if (n >= 1000) return `${(n / 1000).toFixed(1)} Gbps`;
+                return `${Math.round(n)} Mbps`;
+            }
+
+            function coerceIspOptions(value) {
+                // Safety: in case something upstream stringifies it
+                if (Array.isArray(value)) return value;
+                if (typeof value === "string") {
+                    try { return JSON.parse(value); } catch { return []; }
+                }
+                return [];
+            }
+
+            // Format currency with dollar sign and commas
+            // And safeguard against invalid inputs
+            function formatCurrency(value) {
+                if (value === null || value === undefined || value === "") return "Unknown";
+
+                const n = Number(value);
+                if (!Number.isFinite(n)) return "Unknown";
+
+                return `$${n.toLocaleString()}`;
+                }
+
+
+            function serviceLabelFromTech(p) {
+                const tech = Number(p?.tech_code);
+
+                if (tech === 50) return "Fiber";
+                if (tech === 40) return "Cable";
+                if (tech === 10) return "DSL";
+                if (tech === 60) return "Fixed Wireless";
+                if (tech === 70) return "Satellite";
+
+                // fallback to CPUC value if present
+                return p?.service_type ?? "Unknown";
+            }
+
+            function renderIspOptionsHtml(ispOptionsRaw) {
+                const ispOptions = coerceIspOptions(ispOptionsRaw);
+
+                if (!Array.isArray(ispOptions) || ispOptions.length === 0) {
+                    return `<span style="color:#666;">None found</span>`;
+                }
+
+                return `
+                    <div style="text-align:right;">
+                        ${ispOptions.map((p) => {
+                            const name = p?.dba ?? "Unknown";
+                            const dn = formatMbps(p?.max_dn_mbps);
+                            const up = formatMbps(p?.max_up_mbps);
+                            const svc = serviceLabelFromTech(p);
+
+                            return `
+                                <div style="margin-bottom:6px;">
+                                    <div style="font-weight:600;">${name}</div>
+                                    <div style="font-size:12px; color:#444;">
+                                        ↓ ${dn} · ↑ ${up}${svc ? ` · ${svc}` : ""}
+                                    </div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                `;
+            }
+
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
             const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
             const lotSizeDisplay = formatLotSize(data.lot_size);
             const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
-            
-            if (!context) {
-                //console.log("Context is undefined.");
-                return;
-            }
 
-            // Log the context object to debug
-            //console.log('Context:', context);
-            //console.log('Data:', data);
+            // Determine property subtype flags
+            const subtype = (data?.subtype ?? "Unknown").toString();   // Coerce to string for includes()
+            const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
+            const isMh  = subtype.includes("MH")  || subtype.includes("Manufactured Home");
 
             // Function to handle MLS number hyperlink
             function getListingUrlBlock(address, listingUrlValue) {
@@ -187,27 +250,27 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Rental Price -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Rental Price</span>
-                                <span class="value">$${data.list_price.toLocaleString()}</span>
+                                <span class="value">${formatCurrency(data.list_price)}</span>
                             </div>
                             <!-- Security Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Security Deposit</span>
-                                <span class="value">${data.security_deposit ? `$${data.security_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.security_deposit)}</span>
                             </div>
                             <!-- Pet Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Pet Deposit</span>
-                                <span class="value">${data.pet_deposit ? `$${data.pet_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.pet_deposit)}</span>
                             </div>
                             <!-- Key Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Key Deposit</span>
-                                <span class="value">${data.key_deposit ? `$${data.key_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.key_deposit)}</span>
                             </div>
                             <!-- Other Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Other Deposit</span>
-                                <span class="value">${data.other_deposit ? `$${data.other_deposit.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${formatCurrency(data.other_deposit)}</span>
                             </div>
                             <!-- Square Feet -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -264,7 +327,14 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Physical Sub Type -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Physical Sub Type</span>
-                                <span class="value">${data.subtype || "Unknown"}</span>
+                                <span class="value">${subtype || "Unknown"}</span>
+                            </div>
+                            <!-- ISP Options -->
+                            <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
+                                <span class="label" style="font-weight:bold;">ISP Options</span>
+                                <div class="value" style="text-align:right;">
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                                </div>
                             </div>
                         </div>
                         <div style="text-align: center; margin-top: 10px;">
@@ -281,7 +351,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             function generateBuyPopupContent(data) {
                 // Include parking spaces if subtype is not 'SFR' or 'Single Family Residence'
                 let parkingContent = '';
-                if (!(data.subtype.includes('SFR') || data.subtype.includes('Single Family Residence'))) {
+                if (!isSfr) {
                     parkingContent = `
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
@@ -292,7 +362,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 // Conditional Senior Community
                 let seniorCommunityContent = '';
-                if (data.subtype.includes('MH')) {
+                if (isMh) {
                     seniorCommunityContent = `
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
@@ -314,7 +384,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
                 // Conditional Space Rent
                 let spaceRentContent = '';
-                if (data.subtype.includes('MH') || data.subtype.includes('Manufactured Home')) {
+                if (isMh) {
                     spaceRentContent = `
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
@@ -344,11 +414,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">$${data.list_price.toLocaleString() || "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.list_price)}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee ? `$${data.hoa_fee.toLocaleString()}` : "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.hoa_fee)}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
@@ -359,7 +429,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.ppsqft)}</td>
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Lot Size</th>
@@ -379,7 +449,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </tr>
                         <tr>
                             <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.subtype || "Unknown"}</td>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">${subtype}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">ISP Options</th>
+                            <td style="padding:8px;border-bottom:1px solid #ddd;">
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                            </td>
                         </tr>
                     </table>
                     <div style="text-align:center; margin-top: 10px;">
@@ -393,11 +469,15 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Determine which popup content to generate based on context
-            let popupContent = '';
-            if (context.pageType === 'lease') {
+            // Infer page type from context or URL path
+            const path = String(window.location?.pathname || "").toLowerCase();
+            const isBuyPage = path === "/buy" || path.startsWith("/buy");
+
+            let popupContent = "";
+            if (isBuyPage) {
+                popupContent = generateBuyPopupContent(data);
+            } else {
                 popupContent = generateLeasePopupContent(data);
-            } else if (context.pageType === 'buy') {
-                popupContent = generateBuyPopupContent(data, selected_subtypes);
             }
 
             // Use Leaflet's map size to determine the popup size
@@ -423,6 +503,16 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     className: 'responsive-popup',
                 }
             );
+            // Hydrate ISP options when the popup opens
+            layer.on("popupopen", () => {
+            const el = layer.getPopup()?.getElement?.();
+            if (!el) return;
+
+            const ispApi = window.larentals?.isp;
+            if (!ispApi) return;
+
+            ispApi.hydrateIspOptionsInPopup(el, renderIspOptionsHtml);
+            });
         }
     }
 });
