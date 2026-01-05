@@ -1,5 +1,6 @@
 from dash import Dash
 from flask import request, jsonify, abort, Blueprint
+from flask_compress import Compress
 from loguru import logger
 from typing import Any
 import bleach
@@ -38,6 +39,19 @@ app = Dash(
 # Set the page title
 app.title = "WhereToLive.LA"
 app.description = "An interactive map of available rental & for-sale properties in Los Angeles County."
+
+# Configure compression 
+app.server.config["COMPRESS_MIN_SIZE"] = 1024  # only compress responses >= 1KB
+app.server.config["COMPRESS_MIMETYPES"] = [
+  "text/html",
+  "text/css",
+  "application/json",
+  "application/javascript",
+  "text/javascript",
+]
+
+# Enable Flask-Compress for compression
+Compress(app.server)
 
 # For Gunicorn
 server = app.server
