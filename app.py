@@ -192,25 +192,44 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
       JSON array of provider option dicts matching the structure expected by popup.js.
     """
     sql = """
-    SELECT
-      DBA,
-      Service_Type,
-      TechCode,
-      MaxAdDn,
-      MaxAdUp,
-      MaxDnTier,
-      MaxUpTier,
-      MinDnTier,
-      MinUpTier
-    FROM lease_provider_options
-    WHERE listing_id = ?
-      AND DBA IS NOT NULL
-    ORDER BY
-      COALESCE(MaxAdDn, -1) DESC,
-      COALESCE(MaxAdUp, -1) DESC,
-      DBA ASC
-    LIMIT 8;
+      SELECT
+        DBA,
+        Service_Type,
+        TechCode,
+        MaxAdDn,
+        MaxAdUp,
+        MaxDnTier,
+        MaxUpTier,
+        MinDnTier,
+        MinUpTier,
+
+        CASE
+          WHEN TechCode = 50 THEN 'fiber'
+          WHEN TechCode IN (40, 43) THEN 'cable'
+          WHEN TechCode IN (60, 70, 71) THEN 'fixed_wireless'
+          WHEN TechCode IN (10, 11, 12, 20) THEN 'dsl'
+          WHEN TechCode IN (90, 91) THEN 'satellite'
+          ELSE 'unknown'
+        END AS tech_class,
+
+        CASE
+          WHEN TechCode = 50 THEN 'best'
+          WHEN TechCode IN (40, 43) AND COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
+          WHEN TechCode IN (40, 43) THEN 'good'
+          WHEN TechCode IN (60, 70, 71) AND COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
+          ELSE 'fallback'
+        END AS bucket
+
+      FROM lease_provider_options
+      WHERE listing_id = ?
+        AND DBA IS NOT NULL
+      ORDER BY
+        COALESCE(MaxAdDn, -1) DESC,
+        COALESCE(MaxAdUp, -1) DESC,
+        DBA ASC
+      LIMIT 8;
     """
+
 
     with sqlite3.connect(db_path) as conn:
       conn.row_factory = sqlite3.Row
@@ -229,6 +248,8 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
           "max_up_tier": r["MaxUpTier"],
           "min_dn_tier": r["MinDnTier"],
           "min_up_tier": r["MinUpTier"],
+          "tech_class": r["tech_class"],
+          "bucket": r["bucket"],
         }
       )
 

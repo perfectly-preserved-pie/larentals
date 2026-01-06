@@ -153,9 +153,30 @@
   }
 
   /**
-   * Normalize an option row (handles both snake_case and FCC-ish column names).
+   * @typedef {"best"|"good"|"fallback"} IspBucket
+   */
+
+  /**
+   * Return a rank for comparing buckets (higher is better).
+   * @param {IspBucket} b
+   * @returns {number}
+   */
+  function bucketRank(b) {
+    switch (b) {
+      case "best":
+        return 3;
+      case "good":
+        return 2;
+      case "fallback":
+      default:
+        return 1;
+    }
+  }
+
+  /**
+   * Normalize a raw option row coming from the API / SQL.
    * @param {Record<string, unknown>} row
-   * @returns {{ dba: string, service_type: string, max_dn_mbps: number, max_up_mbps: number }}
+   * @returns {{ dba: string, service_type: string, max_dn_mbps: number, max_up_mbps: number, bucket: IspBucket }}
    */
   function normalizeOptionRow(row) {
     const dba = toTitleCase(normalizeNullableString(row.dba ?? row.DBA) ?? "Unknown");
@@ -163,11 +184,21 @@
     const dn = Number(row.max_dn_mbps ?? row.MaxAdDn);
     const up = Number(row.max_up_mbps ?? row.MaxAdUp);
 
+    /** @type {unknown} */
+    const rawBucket = row.bucket ?? row.Bucket;
+
+    /** @type {IspBucket} */
+    const bucket =
+      rawBucket === "best" || rawBucket === "good" || rawBucket === "fallback"
+        ? rawBucket
+        : "fallback";
+
     return {
       dba,
       service_type: serviceType,
       max_dn_mbps: Number.isFinite(dn) ? dn : 0,
       max_up_mbps: Number.isFinite(up) ? up : 0,
+      bucket,
     };
   }
 
@@ -200,29 +231,36 @@
   }
 
   /**
-   * Bucket groups into Best / Other / Fallback (opinionated).
-   * @param {{ service_type: string, best_dn: number }} g
-   * @returns {"best"|"good"|"fallback"}
+   * Bucket groups 
+   * @param {{ bucket?: string }} g
+   * @returns {string}
    */
   function bucketGroup(g) {
-    const s = String(g.service_type || "").toLowerCase();
-
-    if (s.includes("fiber")) return "best";
-    if (s.includes("cable") && g.best_dn >= 1000) return "best";
-
-    if (s.includes("cable")) return "good";
-    if (s.includes("fixed wireless") && g.best_dn >= 100) return "good";
-
-    return "fallback";
+    return String(g.bucket || "fallback");
   }
 
   /**
    * Group raw ISP rows into (provider + service_type) with tiers.
+   * Preserves the best bucket observed for the group.
+   *
    * @param {Array<Record<string, unknown>>} raw
-   * @returns {Array<{ key: string, dba: string, service_type: string, best_dn: number, best_up: number, tiers: Array<{max_dn_mbps:number, max_up_mbps:number}> }>}
+   * @returns {Array<{
+   *   key: string,
+   *   dba: string,
+   *   service_type: string,
+   *   best_dn: number,
+   *   best_up: number,
+   *   bucket: IspBucket,
+   *   tiers: Array<{max_dn_mbps:number, max_up_mbps:number}>
+   * }>}
    */
   function groupOptions(raw) {
-    /** @type {Map<string, { dba: string, service_type: string, tiers: Array<{max_dn_mbps:number, max_up_mbps:number}> }>} */
+    /** @type {Map<string, {
+     *   dba: string,
+     *   service_type: string,
+     *   bucket: IspBucket,
+     *   tiers: Array<{max_dn_mbps:number, max_up_mbps:number}>
+     * }>} */
     const m = new Map();
 
     for (const r of raw) {
@@ -230,13 +268,28 @@
       const x = normalizeOptionRow(/** @type {Record<string, unknown>} */ (r));
 
       const key = `${x.dba}|||${x.service_type}`;
-      if (!m.has(key)) m.set(key, { dba: x.dba, service_type: x.service_type, tiers: [] });
+      if (!m.has(key)) {
+        m.set(key, { dba: x.dba, service_type: x.service_type, bucket: x.bucket, tiers: [] });
+      }
 
       const entry = m.get(key);
       entry.tiers.push({ max_dn_mbps: x.max_dn_mbps, max_up_mbps: x.max_up_mbps });
+
+      // Keep the best bucket observed for this group
+      if (bucketRank(x.bucket) > bucketRank(entry.bucket)) {
+        entry.bucket = x.bucket;
+      }
     }
 
-    /** @type {Array<{ key: string, dba: string, service_type: string, best_dn: number, best_up: number, tiers: Array<{max_dn_mbps:number, max_up_mbps:number}> }>} */
+    /** @type {Array<{
+     *   key: string,
+     *   dba: string,
+     *   service_type: string,
+     *   best_dn: number,
+     *   best_up: number,
+     *   bucket: IspBucket,
+     *   tiers: Array<{max_dn_mbps:number, max_up_mbps:number}>
+     * }>} */
     const groups = [];
 
     for (const [key, v] of m.entries()) {
@@ -249,6 +302,7 @@
         service_type: v.service_type,
         best_dn: best.max_dn_mbps,
         best_up: best.max_up_mbps,
+        bucket: v.bucket,
         tiers,
       });
     }
@@ -263,6 +317,17 @@
 
     return groups;
   }
+
+    /**
+     * Bucket groups for rendering.
+     * @param {{ bucket?: IspBucket | null }} g
+     * @returns {IspBucket}
+     */
+    function bucketGroup(g) {
+      return g && (g.bucket === "best" || g.bucket === "good" || g.bucket === "fallback")
+        ? g.bucket
+        : "fallback";
+    }
 
   /**
    * Render ISP options as opinionated buckets + expandable tiers.
