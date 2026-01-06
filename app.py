@@ -194,7 +194,24 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
     sql = """
       SELECT
         DBA,
-        Service_Type,
+        
+        -- Normalize Service_Type based on TechCode (same logic as the SQL view)
+        CASE
+          -- DSL (copper)
+          WHEN TechCode IN (10, 11, 12, 20) THEN 'DSL'
+          
+          -- Cable / Fiber / Satellite
+          WHEN TechCode = 40 THEN 'Cable'
+          WHEN TechCode = 50 THEN 'Fiber'
+          WHEN TechCode = 60 THEN 'Satellite'
+          
+          -- Fixed wireless
+          WHEN TechCode IN (70, 71, 72) THEN 'Terrestrial Fixed Wireless'
+          
+          -- Fallback to whatever was provided
+          ELSE COALESCE(Service_Type, 'Unknown')
+        END AS Service_Type,
+        
         TechCode,
         MaxAdDn,
         MaxAdUp,
@@ -204,19 +221,12 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
         MinUpTier,
 
         CASE
-          WHEN TechCode = 50 THEN 'fiber'
-          WHEN TechCode IN (40, 43) THEN 'cable'
-          WHEN TechCode IN (60, 70, 71) THEN 'fixed_wireless'
-          WHEN TechCode IN (10, 11, 12, 20) THEN 'dsl'
-          WHEN TechCode IN (90, 91) THEN 'satellite'
-          ELSE 'unknown'
-        END AS tech_class,
-
-        CASE
           WHEN TechCode = 50 THEN 'best'
           WHEN TechCode IN (40, 43) AND COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
+          WHEN COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
           WHEN TechCode IN (40, 43) THEN 'good'
-          WHEN TechCode IN (60, 70, 71) AND COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
+          WHEN TechCode IN (70, 71, 72) AND COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
+          WHEN COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
           ELSE 'fallback'
         END AS bucket
 
@@ -230,7 +240,6 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
       LIMIT 8;
     """
 
-
     with sqlite3.connect(db_path) as conn:
       conn.row_factory = sqlite3.Row
       rows = conn.execute(sql, (listing_id,)).fetchall()
@@ -240,7 +249,7 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
       result.append(
         {
           "dba": r["DBA"],
-          "service_type": r["Service_Type"],
+          "service_type": r["Service_Type"],  # ← Now returns "Fiber", "Cable", "DSL", etc.
           "tech_code": r["TechCode"],
           "max_dn_mbps": r["MaxAdDn"],
           "max_up_mbps": r["MaxAdUp"],
@@ -248,7 +257,6 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
           "max_up_tier": r["MaxUpTier"],
           "min_dn_tier": r["MinDnTier"],
           "min_up_tier": r["MinUpTier"],
-          "tech_class": r["tech_class"],
           "bucket": r["bucket"],
         }
       )
