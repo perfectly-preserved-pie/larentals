@@ -234,10 +234,7 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
       WHERE listing_id = ?
         AND DBA IS NOT NULL
         AND NOT (COALESCE(MaxAdDn, 0) = 0 AND COALESCE(MaxAdUp, 0) = 0)
-      ORDER BY
-        COALESCE(MaxAdDn, -1) DESC,
-        COALESCE(MaxAdUp, -1) DESC,
-        DBA ASC
+      ORDER BY COALESCE(MaxAdDn, -1) DESC
       LIMIT 8;
     """
 

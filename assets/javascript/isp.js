@@ -307,11 +307,18 @@
       });
     }
 
+    // Sort groups by best speed, service type, and name
     groups.sort((a, b) => {
+      // Sort by speed first (highest to lowest)
+      if (b.best_dn !== a.best_dn) return b.best_dn - a.best_dn;
+      if (b.best_up !== a.best_up) return b.best_up - a.best_up;
+      
+      // Then by service type rank
       const ra = serviceTypeRank(a.service_type);
       const rb = serviceTypeRank(b.service_type);
       if (rb !== ra) return rb - ra;
-      if (b.best_dn !== a.best_dn) return b.best_dn - a.best_dn;
+      
+      // Finally alphabetically
       return a.dba.localeCompare(b.dba);
     });
 
