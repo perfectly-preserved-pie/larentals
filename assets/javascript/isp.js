@@ -357,17 +357,28 @@
     function renderBucket(title, items) {
       if (!items.length) return "";
 
+      // Define colors based on bucket title
+      let bgColor, borderColor;
+      if (title.includes("Best")) {
+        bgColor = "rgba(76, 175, 80, 0.15)"; // Green tint
+        borderColor = "#4CAF50";
+      } else if (title.includes("Good")) {
+        bgColor = "rgba(255, 193, 7, 0.15)"; // Yellow/amber tint
+        borderColor = "#FFC107";
+      } else {
+        bgColor = "rgba(158, 158, 158, 0.15)"; // Gray tint
+        borderColor = "#9E9E9E";
+      }
+
       const rows = items
         .map((g) => {
           const speed = `↓ ${escapeHtml(formatMbps(g.best_dn))} • ↑ ${escapeHtml(formatMbps(g.best_up))}`;
-          // Split label to bold only the ISP name, keep tech type normal weight
           const label = `<strong>${escapeHtml(g.dba)}</strong> — ${escapeHtml(g.service_type)}`;
 
           if (g.tiers.length > 1) {
             const tierLis = g.tiers
               .map((t) => {
                 const tSpeed = `↓ ${escapeHtml(formatMbps(t.max_dn_mbps))} • ↑ ${escapeHtml(formatMbps(t.max_up_mbps))}`;
-                // Remove <li> wrapper - just return the speed text
                 return `<div style="margin:2px 0;">${tSpeed}</div>`;
               })
               .join("");
@@ -396,8 +407,8 @@
         .join("");
 
       return `
-        <div style="margin:8px 0;">
-          <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(title)}</div>
+        <div style="margin:8px 0; padding:8px; background-color:${bgColor}; border-left:3px solid ${borderColor}; border-radius:4px;">
+          <div style="font-weight:700; margin-bottom:4px; color:${borderColor};">${escapeHtml(title)}</div>
           ${rows}
         </div>
       `;
