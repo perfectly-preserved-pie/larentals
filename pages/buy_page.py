@@ -62,18 +62,25 @@ def layout() -> dbc.Container:
       geojson_store,
       kickstart,
       earliest_date_store,
-      dbc.Row( # First row: title card
+      dbc.Row(
         [
-          dbc.Col([components.title_card, components.user_options_card], lg=3, md=6, sm=4),
-          dbc.Col([components.map_card], lg=9, md=6, sm=8),
+          dbc.Col(
+            [components.title_card, components.user_options_card],
+            lg=3, md=6, sm=4,
+            className="p-2",
+            style={"height": "100vh", "overflowY": "auto"}
+          ),
+          dbc.Col([components.map_card], lg=9, md=6, sm=8, className="p-2"),
         ],
         className="g-0",
+        style={"height": "100vh", "margin": "0"}
       ),
       # Create a hidden Store to store the selected subtype value
       dcc.Store(id='selected_subtype', data='SFR'),
     ],
-    fluid = True,
-    className = "dbc"
+    fluid=True,
+    className="dbc p-0",
+    style={"height": "100vh", "overflow": "hidden"}
   )
 
 ## BEGIN CALLBACKS ##
