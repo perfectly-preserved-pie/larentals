@@ -1,3 +1,10 @@
+import sys
+import os
+from pathlib import Path
+
+# Add parent directory to path so 'functions' module can be found
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
 from functions.geocoding_utils import *

@@ -21,7 +21,7 @@ dependencies = [
   "geopy~=2.4.1",
   "gevent~=25.9.1",
   "gunicorn~=23.0.0",
-  "imagekitio~=5.0.0",
+  "imagekitio==4.2.0",
   "loguru~=0.7.3",
   "numpy~=2.4.0",
   "openpyxl~=3.1.5",
