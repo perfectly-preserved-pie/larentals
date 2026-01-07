@@ -67,10 +67,9 @@ def layout() -> dbc.Container:
           dbc.Col(
             [components.title_card, components.user_options_card],
             lg=3, md=6, sm=4,
-            className="p-2",
             style={"height": "100vh", "overflowY": "auto"}
           ),
-          dbc.Col([components.map_card], lg=9, md=6, sm=8, className="p-2"),
+          dbc.Col([components.map_card], lg=9, md=6, sm=8),
         ],
         className="g-0",
         style={"height": "100vh", "margin": "0"}
