@@ -67,7 +67,7 @@ def layout() -> dbc.Container:
       ),
     ],
     fluid=True,
-    className="dbc",
+    className="dbc p-0",
   )
 
 # Server-side callbacks

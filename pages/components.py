@@ -1215,7 +1215,7 @@ class LeaseComponents(BaseClass):
             },      
             preferCanvas=True,
             closePopupOnClick=True,
-            style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
+            style={'width': '100%', 'height': '100vh', 'margin': "0", "display": "block"}
         )
 
         # Add a layer control for the additional layers
@@ -1285,7 +1285,7 @@ class LeaseComponents(BaseClass):
                             id=f"{self.page_type}-map-spinner",
                             children=dbc.Spinner(size="lg"),
                             style={
-                                "position": "absolute",
+                                "position": "relative",
                                 "inset": "0",
                                 "display": "flex",
                                 "alignItems": "center",
@@ -1298,7 +1298,8 @@ class LeaseComponents(BaseClass):
                         html.Div(self.map, style={"position": "relative", "zIndex": "0"}),
                     ],
                     style={"position": "relative"},
-                )
+                ),
+                className="p-2",
             ),
             className="d-block d-md-block sticky-top",
         )
