@@ -1299,7 +1299,7 @@ class LeaseComponents(BaseClass):
                     ],
                     style={"position": "relative"},
                 ),
-                className="p-2",
+                className="p-0",
             ),
             className="d-block d-md-block sticky-top",
         )
