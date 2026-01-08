@@ -303,26 +303,62 @@ def drop_high_outliers(
      also any domain-specific hard caps.
      """
     df_clean = df.copy()
-    
-    # 1) Compute IQR thresholds once on original
+
+    def _coerce_numeric_inplace(frame: pd.DataFrame, col: str) -> None:
+        """
+        Best-effort numeric coercion for columns that often arrive as strings:
+        strips $, commas, and whitespace; maps common placeholders to NA.
+        """
+        s = frame[col]
+
+        # If it's already numeric (includes pandas nullable Int64/Float64), do nothing.
+        if pd.api.types.is_numeric_dtype(s):
+            return
+
+        # Coerce from strings/objects
+        s2 = s.astype("string").str.strip()
+
+        # Common placeholders -> NA
+        s2 = s2.replace(
+            {"": pd.NA, "Unknown": pd.NA, "None": pd.NA, "N/A": pd.NA, "nan": pd.NA, "NaN": pd.NA}
+        )
+
+        # Remove currency/commas
+        s2 = s2.str.replace(r"[\$,]", "", regex=True)
+
+        frame[col] = pd.to_numeric(s2, errors="coerce")
+
+    # 1) Compute IQR thresholds once on original (after coercion)
     thresholds: Dict[str, float] = {}
+    stats: Dict[str, Dict[str, float]] = {}
+
     for col in cols:
         if col not in df_clean.columns:
             logger.warning(f"Column '{col}' not found; skipping IQR removal.")
             continue
+
+        _coerce_numeric_inplace(df_clean, col)
+
         if not pd.api.types.is_numeric_dtype(df_clean[col]):
-            logger.warning(f"Column '{col}' is not numeric; skipping.")
+            logger.warning(f"Column '{col}' is not numeric after coercion; skipping.")
             continue
 
-        q1 = df_clean[col].quantile(0.25)
-        q3 = df_clean[col].quantile(0.75)
+        # If everything is NA after coercion, skip
+        if df_clean[col].dropna().empty:
+            logger.warning(f"Column '{col}' has no numeric values after coercion; skipping.")
+            continue
+
+        q1 = float(df_clean[col].quantile(0.25))
+        q3 = float(df_clean[col].quantile(0.75))
         iqr = q3 - q1
 
         if iqr == 0:
             logger.warning(f"IQR for '{col}' is zero; skipping.")
             continue
 
-        thresholds[col] = q3 + iqr_multiplier * iqr
+        cutoff = q3 + iqr_multiplier * iqr
+        thresholds[col] = cutoff
+        stats[col] = {"q1": q1, "q3": q3, "iqr": iqr, "cutoff": cutoff}
 
     # 2) Drop using IQR thresholds
     total_dropped = 0
@@ -331,15 +367,24 @@ def drop_high_outliers(
         df_clean = df_clean[df_clean[col] <= cutoff]
         dropped = before - len(df_clean)
         total_dropped += dropped
-        logger.info(
-            f"Dropped {dropped} rows where '{col}' > {cutoff:.2f} "
-            f"(Q3={thresholds[col] - iqr_multiplier * (thresholds[col] - q1):.2f}, "
-            f"IQR={(thresholds[col] - q1) / iqr_multiplier:.2f})."
-        )
 
-    # 3) Drop using absolute caps if provided
+        st = stats.get(col, {})
+        if st:
+            logger.info(
+                f"Dropped {dropped} rows where '{col}' > {cutoff:.2f} "
+                f"(Q1={st['q1']:.2f}, Q3={st['q3']:.2f}, IQR={st['iqr']:.2f}, k={iqr_multiplier})."
+            )
+        else:
+            logger.info(f"Dropped {dropped} rows where '{col}' > {cutoff:.2f}.")
+
+    # 3) Drop using absolute caps if provided (coerce those cols too)
     if absolute_caps:
         for col, cap in absolute_caps.items():
+            if col not in df_clean.columns:
+                continue
+
+            _coerce_numeric_inplace(df_clean, col)
+
             if col in df_clean.columns and pd.api.types.is_numeric_dtype(df_clean[col]):
                 before = len(df_clean)
                 df_clean = df_clean[df_clean[col] <= cap]
