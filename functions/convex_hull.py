@@ -11,8 +11,9 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const clusterSize = leaves.length;
 
     // Single neutral color for all clusters
-    const color = 'rgba(100, 149, 237, 0.85)';  // Cornflower blue, higher opacity for visibility
-    
+    //const color = 'rgba(100, 149, 237, 0.85)';  // Cornflower blue, higher opacity for visibility
+    const color = 'rgba(23, 162, 184, 0.9)';  // Bootstrap info color - crisp, professional
+                               
     // Scale marker size based on cluster density instead of color
     // Larger clusters = physically bigger markers
     // Use logarithmic scaling for better distribution across all cluster sizes
