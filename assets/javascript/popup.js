@@ -438,10 +438,27 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             // Use Leaflet's map size to determine the popup size
             const isMobile = L.Browser.mobile || window.innerWidth < 768; 
-            // On mobile, constrain size more aggressively
-            // On desktop, let content determine height (remove maxHeight)
-            const maxWidth  = isMobile ? 225 : 350;
-            const maxHeight = isMobile ? 405 : 650; // 500 for desktop
+            // Clamp popup size to the visible map container so it never exceeds the viewport.
+            // Still keep the "lease-style" caps (desktop: 350x650, mobile: 225x405).
+            const mapEl = layer?._map?.getContainer?.() ?? null;
+            const rect = mapEl?.getBoundingClientRect?.() ?? null;
+
+            const availW = Math.floor(Math.min(window.innerWidth, rect?.width ?? window.innerWidth));
+            const availH = Math.floor(Math.min(window.innerHeight, rect?.height ?? window.innerHeight));
+
+            const padding = isMobile ? 24 : 48; // breathing room around popup
+            const leaseLikeMaxWidthCap = isMobile ? 225 : 350;
+            const leaseLikeMaxHeightCap = isMobile ? 405 : 650;
+
+            const maxWidth = Math.max(
+                200,
+                Math.min(leaseLikeMaxWidthCap, availW - padding)
+            );
+
+            const maxHeight = Math.max(
+                220,
+                Math.min(leaseLikeMaxHeightCap, availH - padding)
+            );
 
             // Bind the popup to the layer with the generated content and size constraints
             layer.bindPopup(
