@@ -295,10 +295,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 let parkingContent = '';
                 if (!isSfr) {
                     parkingContent = `
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Parking Spaces</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.garage_spaces || "Unknown"}</td>
-                        </tr>
+                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                            <span class="label" style="font-weight: bold;">Parking Spaces</span>
+                            <span class="value">${data.garage_spaces || "Unknown"}</span>
+                        </div>
                     `;
                 }
 
@@ -306,10 +306,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 let seniorCommunityContent = '';
                 if (isMh) {
                     seniorCommunityContent = `
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Senior Community</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.senior_community || "Unknown"}</td>
-                        </tr>
+                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                            <span class="label" style="font-weight: bold;">Senior Community</span>
+                            <span class="value">${data.senior_community || "Unknown"}</span>
+                        </div>
                     `;
                 }
 
@@ -317,10 +317,10 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 let petsAllowedContent = '';
                 if (data.pets_allowed) {
                     petsAllowedContent = `
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Pets Allowed?</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.pets_allowed || "Unknown"}</td>
-                        </tr>
+                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                            <span class="label" style="font-weight: bold;">Pets Allowed?</span>
+                            <span class="value">${data.pets_allowed || "Unknown"}</span>
+                        </div>
                     `;
                 }
 
@@ -328,85 +328,99 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 let spaceRentContent = '';
                 if (isMh) {
                     spaceRentContent = `
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Space Rent</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.space_rent || "Unknown"}</td>
-                        </tr>
+                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                            <span class="label" style="font-weight: bold;">Space Rent</span>
+                            <span class="value">${data.space_rent || "Unknown"}</span>
+                        </div>
                     `;
                 }
 
                 return `
                     <div>
-                    ${getPalisadesFireAlertBlock(data)}
-                    ${getEatonFireAlertBlock(data)}
-                    ${imageRow}
-                    ${listingUrlBlock}
-                    <table style="width:100%;border-collapse:collapse;">
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listed Date</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatDate(data.listed_date)}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Listing ID (MLS#)</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${mlsNumberDisplay}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Office Phone</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${phoneNumberBlock || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">List Price</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.list_price)}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.hoa_fee)}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">HOA Fee Frequency</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.hoa_fee_frequency || "Unknown"}</td>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Square Feet</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.sqft ? `${data.sqft.toLocaleString()}` : "Unknown"} sq. ft</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Price Per Square Foot</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${formatCurrency(data.ppsqft)}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Lot Size</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Bedrooms/Bathrooms</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.bedrooms}/${data.total_bathrooms}</td>
-                        </tr>
-                        ${parkingContent}
-                        ${petsAllowedContent}
-                        ${seniorCommunityContent}
-                        ${spaceRentContent}
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Year Built</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${data.year_built || "Unknown"}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Physical Sub Type</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">${subtype}</td>
-                        </tr>
-                        <tr>
-                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">ISP Options</th>
-                            <td style="padding:8px;border-bottom:1px solid #ddd;">
-                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
-                            </td>
-                        </tr>
-                    </table>
-                    <div style="text-align:center; margin-top: 10px;">
-                        <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
-                            <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
-                            <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
-                        </a>
+                        ${getPalisadesFireAlertBlock(data)}
+                        ${getEatonFireAlertBlock(data)}
+                        ${imageRow}
+                        ${listingUrlBlock}
+                        <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                            <!-- Listed Date -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Listed Date</span>
+                                <span class="value">${formatDate(data.listed_date)}</span>
+                            </div>
+                            <!-- Listing ID (MLS#) -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
+                                <span class="value">${mlsNumberDisplay}</span>
+                            </div>
+                            <!-- List Office Phone -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">List Office Phone</span>
+                                <span class="value">${phoneNumberBlock || "Unknown"}</span>
+                            </div>
+                            <!-- List Price -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">List Price</span>
+                                <span class="value">${formatCurrency(data.list_price)}</span>
+                            </div>
+                            <!-- HOA Fee -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">HOA Fee</span>
+                                <span class="value">${formatCurrency(data.hoa_fee)}</span>
+                            </div>
+                            <!-- HOA Fee Frequency -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">HOA Fee Frequency</span>
+                                <span class="value">${data.hoa_fee_frequency || "Unknown"}</span>
+                            </div>
+                            <!-- Square Feet -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Square Feet</span>
+                                <span class="value">${data.sqft ? `${data.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
+                            </div>
+                            <!-- Price Per Square Foot -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
+                                <span class="value">${formatCurrency(data.ppsqft)}</span>
+                            </div>
+                            <!-- Lot Size -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Lot Size</span>
+                                <span class="value">${lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : "Unknown"}</span>
+                            </div>
+                            <!-- Bedrooms/Bathrooms -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
+                                <span class="value">${data.bedrooms}/${data.total_bathrooms}</span>
+                            </div>
+                            ${parkingContent}
+                            ${petsAllowedContent}
+                            ${seniorCommunityContent}
+                            ${spaceRentContent}
+                            <!-- Year Built -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Year Built</span>
+                                <span class="value">${data.year_built || "Unknown"}</span>
+                            </div>
+                            <!-- Physical Sub Type -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span class="label" style="font-weight: bold;">Physical Sub Type</span>
+                                <span class="value">${subtype}</span>
+                            </div>
+                            <!-- ISP Options -->
+                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
+                                <span class="label" style="font-weight: bold;">ISP Options</span>
+                                <div class="value" style="text-align: right;">
+                                    ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${encodedData}"))' style="text-decoration: none; color: red;">
+                                <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
+                                <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+                            </a>
+                        </div>
                     </div>
-                </div>
                 `;
             }
 
@@ -427,7 +441,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // On mobile, constrain size more aggressively
             // On desktop, let content determine height (remove maxHeight)
             const maxWidth  = isMobile ? 225 : 350;
-            const maxHeight = isMobile ? 405 : 500; // 500 for desktop
+            const maxHeight = isMobile ? 405 : 650; // 500 for desktop
 
             // Bind the popup to the layer with the generated content and size constraints
             layer.bindPopup(
