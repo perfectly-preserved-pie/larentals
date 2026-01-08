@@ -423,14 +423,11 @@ window.dash_props = Object.assign({}, window.dash_props, {
             }
 
             // Use Leaflet's map size to determine the popup size
-            //const w = window.innerWidth;
-            //const h = window.innerHeight;
-            //const isMobile = L.Browser.mobile;
-
-            // Compute maxWidth/maxHeight
-            const isMobile = L.Browser.mobile || window.innerWidth < 768; // Use Leaflet's mobile detection or check window width
-            const maxWidth  = isMobile ? 225 : 300;
-            const maxHeight = isMobile ? 405 : 650;
+            const isMobile = L.Browser.mobile || window.innerWidth < 768; 
+            // On mobile, constrain size more aggressively
+            // On desktop, let content determine height (remove maxHeight)
+            const maxWidth  = isMobile ? 225 : 350;
+            const maxHeight = isMobile ? 405 : 500; // 500 for desktop
 
             // Bind the popup to the layer with the generated content and size constraints
             layer.bindPopup(
