@@ -62,10 +62,14 @@ def layout() -> dbc.Container:
         [
           dbc.Col(
             [lease_components.title_card, lease_components.user_options_card], 
-            lg=3, md=6, sm=4,
-            style={"height": "100vh", "overflowY": "auto"},
+            lg=3, md=12, sm=12, xs=12,  # Full width on mobile
+            style={"height": "auto", "overflowY": "auto", "maxHeight": "50vh"}  # Limit height on mobile
           ),
-          dbc.Col([lease_components.map_card], lg=9, md=6, sm=8),
+          dbc.Col(
+            [lease_components.map_card], 
+            lg=9, md=12, sm=12, xs=12,
+            style={"height": "50vh", "minHeight": "400px"}  # Give map explicit height on mobile
+          ),
         ],
         className="g-0",
         style={"height": "100vh", "margin": "0"}
