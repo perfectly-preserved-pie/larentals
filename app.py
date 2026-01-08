@@ -261,6 +261,87 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
 
     return jsonify(result)
 
+  @bp.get("/api/buy/isp-options/<listing_id>")
+  def get_buy_isp_options(listing_id: str):
+    """
+    Return top ISP options for a given listing_id (mls_number) from the buy table.
+
+    Args:
+      listing_id: MLS/listing identifier used in `buy_provider_options.listing_id`.
+
+    Returns:
+      JSON array of provider option dicts matching the structure expected by popup.js.
+    """
+    sql = """
+      SELECT
+        DBA,
+        
+        -- Normalize Service_Type based on TechCode (same logic as the SQL view)
+        CASE
+          -- DSL (copper)
+          WHEN TechCode IN (10, 11, 12, 20) THEN 'DSL'
+          
+          -- Cable / Fiber / Satellite
+          WHEN TechCode = 40 THEN 'Cable'
+          WHEN TechCode = 50 THEN 'Fiber'
+          WHEN TechCode = 60 THEN 'Satellite'
+          
+          -- Fixed wireless
+          WHEN TechCode IN (70, 71, 72) THEN 'Terrestrial Fixed Wireless'
+          
+          -- Fallback to whatever was provided
+          ELSE COALESCE(Service_Type, 'Unknown')
+        END AS Service_Type,
+        
+        TechCode,
+        MaxAdDn,
+        MaxAdUp,
+        MaxDnTier,
+        MaxUpTier,
+        MinDnTier,
+        MinUpTier,
+
+        CASE
+          WHEN TechCode = 50 THEN 'best'
+          WHEN TechCode IN (40, 43) AND COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
+          WHEN COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
+          WHEN TechCode IN (40, 43) THEN 'good'
+          WHEN TechCode IN (70, 71, 72) AND COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
+          WHEN COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
+          ELSE 'fallback'
+        END AS bucket
+
+      FROM buy_provider_options
+      WHERE listing_id = ?
+        AND DBA IS NOT NULL
+        AND NOT (COALESCE(MaxAdDn, 0) = 0 AND COALESCE(MaxAdUp, 0) = 0)
+      ORDER BY COALESCE(MaxAdDn, -1) DESC
+      LIMIT 8;
+    """
+
+    with sqlite3.connect(db_path) as conn:
+      conn.row_factory = sqlite3.Row
+      rows = conn.execute(sql, (listing_id,)).fetchall()
+
+    result: list[dict[str, Any]] = []
+    for r in rows:
+      result.append(
+        {
+          "dba": r["DBA"],
+          "service_type": r["Service_Type"],
+          "tech_code": r["TechCode"],
+          "max_dn_mbps": r["MaxAdDn"],
+          "max_up_mbps": r["MaxAdUp"],
+          "max_dn_tier": r["MaxDnTier"],
+          "max_up_tier": r["MaxUpTier"],
+          "min_dn_tier": r["MinDnTier"],
+          "min_up_tier": r["MinUpTier"],
+          "bucket": r["bucket"],
+        }
+      )
+
+    return jsonify(result)
+  
   server.register_blueprint(bp)
 
 register_isp_routes(server, db_path="assets/datasets/larentals.db")
