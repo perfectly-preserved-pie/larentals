@@ -74,7 +74,15 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     });
 
     // Don't show a popup when a cluster is clicked
-    clusterMarker.unbindPopup();
+    clusterMarker.on('click', function(e) {
+        // Stop event propagation to prevent popup
+        L.DomEvent.stopPropagation(e);
+        
+        // Remove any existing popup
+        if (clusterMarker.getPopup()) {
+            clusterMarker.unbindPopup();
+        }
+    });
 
     // Add mouseover behavior to display the convex hull
     clusterMarker.on('mouseover', function() {
