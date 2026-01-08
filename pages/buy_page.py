@@ -65,26 +65,27 @@ def layout() -> dbc.Container:
       dbc.Row(
         [
           dbc.Col(
-            [components.title_card, components.user_options_card],
-            lg=3, md=12, sm=12, xs=12,  # Full width on mobile
-            style={"height": "auto", "overflowY": "auto", "maxHeight": "50vh"}  # Limit height on mobile
-
-          ),
+          [components.title_card, components.user_options_card], 
+            lg=3, md=12, sm=12, xs=12,
+            style={"height": "100vh", "overflowY": "auto"},  # Full height with scroll on desktop
+            className="d-lg-block"  # Always visible on desktop
+        ),
           dbc.Col(
-            [components.map_card],
+          [components.map_card], 
             lg=9, md=12, sm=12, xs=12,
-            style={"height": "50vh", "minHeight": "400px"}  # Give map explicit height on mobile
+            style={"height": "100vh"},  # Full viewport height
+            className="position-lg-relative"
           ),
         ],
         className="g-0",
-        style={"height": "100vh", "margin": "0"}
+        style={"minHeight": "100vh"}
       ),
       # Create a hidden Store to store the selected subtype value
       dcc.Store(id='selected_subtype', data='SFR'),
     ],
     fluid=True,
     className="dbc p-0",
-    style={"height": "100vh", "overflow": "hidden"}
+    style={"overflowX": "hidden"}  # Prevent horizontal scroll
   )
 
 ## BEGIN CALLBACKS ##
