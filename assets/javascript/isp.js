@@ -109,13 +109,22 @@
    * @param {string} listingId
    * @returns {Promise<Array<Record<string, unknown>>>}
    */
-  function fetchIspOptionsForListing(listingId) {
-    const key = String(listingId);
+  function getIspApiBasePath() {
+    const path = String(window.location?.pathname || "").toLowerCase();
+    return path === "/buy" || path.startsWith("/buy")
+      ? "/api/buy/isp-options/"
+      : "/api/lease/isp-options/";
+  }
 
-    const cached = ispFetchCache.get(key);
+  function fetchIspOptionsForListing(listingId) {
+    const base = getIspApiBasePath();
+    const id = String(listingId);
+    const cacheKey = `${base}::${id}`;
+
+    const cached = ispFetchCache.get(cacheKey);
     if (cached) return cached;
 
-    const url = buildSameOriginDashUrl(`/api/lease/isp-options/${encodeURIComponent(key)}`);
+    const url = buildSameOriginDashUrl(`${base}${encodeURIComponent(id)}`);
 
     const p = fetch(url, {
       method: "GET",
@@ -128,12 +137,11 @@
       })
       .then((data) => coerceIspOptions(data))
       .catch((err) => {
-        // Don’t cache failures; allow retry on next open
-        ispFetchCache.delete(key);
+        ispFetchCache.delete(cacheKey);
         throw err;
       });
 
-    ispFetchCache.set(key, p);
+    ispFetchCache.set(cacheKey, p);
     return p;
   }
 
@@ -228,15 +236,6 @@
     if (s.includes("dsl")) return 100;
     if (s.includes("satellite")) return 50;
     return 0;
-  }
-
-  /**
-   * Bucket groups 
-   * @param {{ bucket?: string }} g
-   * @returns {string}
-   */
-  function bucketGroup(g) {
-    return String(g.bucket || "fallback");
   }
 
   /**
@@ -462,13 +461,12 @@
     if (!listingId) return;
 
     fetchIspOptionsForListing(listingId)
-      .then((opts) => {
-        container.innerHTML = renderIspOptionsHtml(opts);
+      .then((options) => {
+        container.innerHTML = renderIspOptionsHtml(options);
         container.setAttribute("data-loaded", "true");
       })
-      .catch((err) => {
-        console.error("ISP options failed to load:", err);
-        container.innerHTML = `<span style="color:#b00;">Failed to load ISP options</span>`;
+      .catch(() => {
+        container.innerHTML = `<span style="color:#f00;">Failed to load ISP options.</span>`;
       });
   }
 
