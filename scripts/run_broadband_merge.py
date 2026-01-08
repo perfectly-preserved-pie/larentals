@@ -1,4 +1,10 @@
 from __future__ import annotations
+from pathlib import Path
+import sys
+
+# Add parent directory to path so 'functions' module can be found
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from functions.broadband_spatial_merge_utils import (
     ProviderJoinConfig,
     write_provider_options_from_geopackage,
@@ -29,7 +35,6 @@ def main() -> None:
     for cfg in jobs:
         rows = write_provider_options_from_geopackage(cfg)
         print(f"[{cfg.listing_table}] Wrote {rows:,} rows to {cfg.output_table}")
-
 
 if __name__ == "__main__":
     main()
