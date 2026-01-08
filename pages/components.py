@@ -1293,7 +1293,10 @@ class LeaseComponents(BaseClass):
                         # Spinner overlay (toggled via callback)
                         html.Div(
                             id=f"{self.page_type}-map-spinner",
-                            children=dbc.Spinner(size="lg"),
+                            children=[
+                                dbc.Spinner(size="lg"),
+                                html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
+                            ],
                             style={
                                 "position": "relative",
                                 "inset": "0",
@@ -2082,7 +2085,10 @@ class BuyComponents(BaseClass):
                         # Spinner overlay (toggled via callback)
                         html.Div(
                             id=f"{self.page_type}-map-spinner",
-                            children=dbc.Spinner(size="lg"),
+                            children=[
+                                dbc.Spinner(size="lg"),
+                                html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
+                            ],
                             style={
                                 "position": "absolute",
                                 "inset": "0",
