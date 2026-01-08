@@ -68,10 +68,13 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
                         ${feature.properties.point_count_abbreviated}
                     </div>
                 </div>`,
-            className: 'marker-cluster', // Optional: add a class for further customization
+            className: 'marker-cluster',
             iconSize: L.point(40, 40)    // Adjust the icon size
         })
     });
+
+    // Don't show a popup when a cluster is clicked
+    clusterMarker.unbindPopup();
 
     // Add mouseover behavior to display the convex hull
     clusterMarker.on('mouseover', function() {
