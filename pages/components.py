@@ -105,9 +105,8 @@ class BaseClass:
                 self.df[col] = pd.to_numeric(self.df[col], errors="coerce")
 
         # 2) Coerce date columns to datetime
-        for dtcol in ("listed_date", "date_processed"):
-            if dtcol in self.df:
-                self.df[dtcol] = pd.to_datetime(self.df[dtcol], errors="coerce")
+        if "listed_date" in self.df.columns:
+            self.df["listed_date"] = pd.to_datetime(self.df["listed_date"], errors="coerce")
 
         # 3) Build GeoDataFrame if coords exist
         if {"latitude", "longitude"}.issubset(self.df.columns):
@@ -155,13 +154,24 @@ class BaseClass:
         """
         gdf = self.df.copy()
 
-        for dtcol in ("listed_date", "date_processed"):
-            if dtcol in gdf.columns and pd.api.types.is_datetime64_any_dtype(gdf[dtcol]):
-                gdf[dtcol] = (
-                    gdf[dtcol]
-                    .dt.strftime("%Y-%m-%dT%H:%M:%S")
-                    .fillna("")
-                )
+        if "listed_date" in gdf.columns and pd.api.types.is_datetime64_any_dtype(gdf["listed_date"]):
+            gdf["listed_date"] = (
+                gdf["listed_date"]
+                .dt.strftime("%Y-%m-%dT%H:%M:%S")
+                .fillna("")
+            )
+
+        # Round coordinates to 6 decimals (~10cm precision, plenty for map markers)
+        if "latitude" in gdf.columns:
+            gdf["latitude"] = gdf["latitude"].round(6)
+        if "longitude" in gdf.columns:
+            gdf["longitude"] = gdf["longitude"].round(6)
+
+        # Round currency/price fields to 2 decimals
+        for col in ["list_price", "ppsqft", "security_deposit", "pet_deposit", 
+                    "key_deposit", "other_deposit", "hoa_fee", "space_rent"]:
+            if col in gdf.columns:
+                gdf[col] = gdf[col].round(2)
 
         geojson_str = gdf.to_json(drop_id=True)
         return json.loads(geojson_str)
