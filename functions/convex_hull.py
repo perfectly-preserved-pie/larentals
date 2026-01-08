@@ -10,19 +10,31 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
     const clusterSize = leaves.length;
 
-    // Define a color scale (mimicking Leaflet.markercluster behavior)
-    // Default colors are at https://github.com/Leaflet/Leaflet.markercluster/blob/master/dist/MarkerCluster.Default.css
-    // Because I'm coloring the polygons (instead of using the default blue) most of the default colors look way too faint on the map
-    // So I'm adjusting them here           
-    const getColor = function(size) {
-        if (size < 50) return 'rgba(110, 204, 57, 0.6)';   // Small clusters
-        if (size < 200) return 'yellow';                   // Medium clusters
-        if (size < 500) return 'orange';                   // Larger clusters
-        return 'red';                                      // Very large clusters
-    };         
-
-    // Get the appropriate color for the cluster size
-    const color = getColor(clusterSize);
+    // Single neutral color for all clusters
+    const color = 'rgba(100, 149, 237, 0.85)';  // Cornflower blue, higher opacity for visibility
+    
+    // Scale marker size based on cluster density instead of color
+    // Larger clusters = physically bigger markers
+    // Use logarithmic scaling for better distribution across all cluster sizes
+    const getMarkerSize = function(size) {
+        const minSize = 40;
+        const maxSize = 80;
+        const minCluster = 10;
+        const maxCluster = 10000; // Adjust based on max cluster size
+        
+        // Logarithmic scale
+        const logSize = Math.log(size);
+        const logMin = Math.log(minCluster);
+        const logMax = Math.log(maxCluster);
+        
+        const normalized = (logSize - logMin) / (logMax - logMin);
+        const markerSize = minSize + (normalized * (maxSize - minSize));
+        
+        return Math.min(Math.max(markerSize, minSize), maxSize);
+    };
+    
+    const markerSize = getMarkerSize(clusterSize);
+    const innerSize = markerSize * 0.75; // Inner circle is 75% of outer circle
 
     // Collect coordinates for the cluster's children
     let features = [];
@@ -44,41 +56,38 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     if (convexHull) {
         polygonLayer = L.geoJSON(convexHull, {
             style: {
-                color: color,     // Use the same color as the cluster icon
-                weight: 2,        // Border thickness
-                fillOpacity: 0.2, // Polygon fill transparency
-                fillColor: color  // Polygon fill color
+                color: color,
+                weight: 2,
+                fillOpacity: 0.2,
+                fillColor: color
             }
         });
     }
 
-    // Create a custom marker for the cluster with Leaflet.markercluster font styling
+    // Create a custom marker with size varying by density
     const clusterMarker = L.marker(latlng, {
         icon: L.divIcon({
             html: `
-                <div style="position:relative; width:40px; height:40px; font-family: Arial, sans-serif; font-size: 12px;">
+                <div style="position:relative; width:${markerSize}px; height:${markerSize}px; font-family: Arial, sans-serif;">
                     <div style="background-color:${color}; opacity:0.6; 
-                                border-radius:50%; width:40px; height:40px; 
+                                border-radius:50%; width:${markerSize}px; height:${markerSize}px; 
                                 position:absolute; top:0; left:0;"></div>
                     <div style="background-color:${color}; 
-                                border-radius:50%; width:30px; height:30px; 
-                                position:absolute; top:5px; left:5px; 
+                                border-radius:50%; width:${innerSize}px; height:${innerSize}px; 
+                                position:absolute; top:${(markerSize - innerSize) / 2}px; left:${(markerSize - innerSize) / 2}px; 
                                 display:flex; align-items:center; justify-content:center; 
-                                font-weight:normal; color:black; font-size:12px; font-family: Arial, sans-serif;">
+                                font-weight:bold; color:white; font-size:${Math.floor(innerSize / 2.5)}px;">
                         ${feature.properties.point_count_abbreviated}
                     </div>
                 </div>`,
             className: 'marker-cluster',
-            iconSize: L.point(40, 40)    // Adjust the icon size
+            iconSize: L.point(markerSize, markerSize)
         })
     });
 
     // Don't show a popup when a cluster is clicked
     clusterMarker.on('click', function(e) {
-        // Stop event propagation to prevent popup
         L.DomEvent.stopPropagation(e);
-        
-        // Remove any existing popup
         if (clusterMarker.getPopup()) {
             clusterMarker.unbindPopup();
         }
@@ -86,12 +95,9 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
 
     // Add mouseover behavior to display the convex hull
     clusterMarker.on('mouseover', function() {
-        // Remove the previously displayed polygon, if any
         if (context.currentPolygon) {
             context.map.removeLayer(context.currentPolygon);
         }
-
-        // Add the new polygon to the map and update the reference
         if (polygonLayer) {
             polygonLayer.addTo(context.map);
             context.currentPolygon = polygonLayer;
