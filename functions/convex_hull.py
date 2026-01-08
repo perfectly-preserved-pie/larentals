@@ -34,7 +34,27 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         return Math.min(Math.max(markerSize, minSize), maxSize);
     };
     
+    // Scale marker opacity based on cluster density
+    // Larger clusters = higher opacity for visual prominence
+    const getMarkerOpacity = function(size) {
+        const minOpacity = 0.5;
+        const maxOpacity = 0.85;
+        const minCluster = 10;
+        const maxCluster = 10000;
+        
+        // Logarithmic scale matching size scaling
+        const logSize = Math.log(size);
+        const logMin = Math.log(minCluster);
+        const logMax = Math.log(maxCluster);
+        
+        const normalized = (logSize - logMin) / (logMax - logMin);
+        const opacity = minOpacity + (normalized * (maxOpacity - minOpacity));
+        
+        return Math.min(Math.max(opacity, minOpacity), maxOpacity);
+    };
+    
     const markerSize = getMarkerSize(clusterSize);
+    const markerOpacity = getMarkerOpacity(clusterSize);
     const innerSize = markerSize * 0.75; // Inner circle is 75% of outer circle
 
     // Collect coordinates for the cluster's children
@@ -65,12 +85,12 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         });
     }
 
-    // Create a custom marker with size varying by density
+    // Create a custom marker with size and opacity varying by density
     const clusterMarker = L.marker(latlng, {
         icon: L.divIcon({
             html: `
                 <div style="position:relative; width:${markerSize}px; height:${markerSize}px; font-family: Arial, sans-serif;">
-                    <div style="background-color:${color}; opacity:0.6; 
+                    <div style="background-color:${color}; opacity:${markerOpacity}; 
                                 border-radius:50%; width:${markerSize}px; height:${markerSize}px; 
                                 position:absolute; top:0; left:0;"></div>
                     <div style="background-color:${color}; 
