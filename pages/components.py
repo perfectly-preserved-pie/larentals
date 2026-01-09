@@ -1638,37 +1638,18 @@ class BuyComponents(BaseClass):
         return hoa_fee_components
 
     def create_hoa_fee_frequency_checklist(self):
-        hoa_fee_frequency_checklist = html.Div([
-            
-            # Title, subheading, and toggle button
-            html.Div([
-                html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
-            ]),
-            
-            # The actual Checklist
-            html.Div([
-                dcc.Checklist(
-                    id='hoa_fee_frequency_checklist',
-                    options=[
-                        {'label': 'N/A', 'value': 'N/A'},
-                        {'label': 'Monthly', 'value': 'Monthly'}
-                    ],
-                    value=['N/A', 'Monthly'],
-                    labelStyle={'display': 'block'},
-                    inputStyle={
-                        "marginRight": "5px",
-                        "marginLeft": "5px"
-                    },
-                ),
-            ],
-            id={'type': 'dynamic_output_div_buy', 'index': 'hoa_fee_frequency'},
+        hoa_fee_frequency_checklist = html.Div(
+            dmc.ChipGroup(
+                id='hoa_fee_frequency_checklist',
+                multiple=True,
+                value=['N/A', 'Monthly'],
+                children=[
+                    dmc.Chip(children='N/A', value='N/A', radius="sm"),
+                    dmc.Chip(children='Monthly', value='Monthly', radius="sm"),
+                ],
             ),
-            
-        ],
-        style={
-            'marginBottom': '10px',
-        },
-        id='hoa_fee_frequency_div_buy'
+            id={'type': 'dynamic_output_div_buy', 'index': 'hoa_fee_frequency'},
+            className="d-flex flex-wrap gap-2",
         )
 
         return hoa_fee_frequency_checklist
