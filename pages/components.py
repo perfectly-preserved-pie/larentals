@@ -1049,25 +1049,25 @@ class LeaseComponents(BaseClass):
         # Get unique laundry categories sorted alphabetically
         unique_categories = sorted(laundry_series.unique())
 
-        # Create options for the checklist
-        laundry_options = [
-            {'label': category, 'value': category}
-            for category in unique_categories
-        ]
+        # Use chip group for multi-select laundry categories
+        laundry_options = list(unique_categories)
 
-        laundry_checklist = html.Div([
-            html.Div([
-                dcc.Checklist(
-                    id='laundry_checklist',
-                    options=laundry_options,
-                    value=[option['value'] for option in laundry_options],
-                    labelStyle={'display': 'block'}
-                ),
-            ],
-            id={'type': 'dynamic_output_div_lease', 'index': 'laundry'}
+        laundry_checklist = html.Div(
+            dmc.ChipGroup(
+                id='laundry_checklist',
+                multiple=True,
+                value=laundry_options,
+                children=[
+                    dmc.Chip(
+                        children=category,
+                        value=category,
+                        radius="sm",
+                    )
+                    for category in laundry_options
+                ],
             ),
-        ],
-        id='laundry_checklist_div'
+            id={'type': 'dynamic_output_div_lease', 'index': 'laundry'},
+            className="d-flex flex-wrap gap-2",
         )
 
         return laundry_checklist
