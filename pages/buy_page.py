@@ -149,7 +149,6 @@ clientside_callback(
     Input('list_price_slider', 'value'),
     Input('bedrooms_slider', 'value'),
     Input('bathrooms_slider', 'value'),
-    Input('pets_radio', 'value'),
     Input('sqft_slider', 'value'),
     Input('sqft_missing_radio', 'value'),
     Input('ppsqft_slider', 'value'),

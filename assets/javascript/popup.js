@@ -296,17 +296,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     `;
                 }
 
-                // Conditional Pets Allowed
-                let petsAllowedContent = '';
-                if (data.pets_allowed) {
-                    petsAllowedContent = `
-                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                            <span class="label" style="font-weight: bold;">Pets Allowed?</span>
-                            <span class="value">${data.pets_allowed || "Unknown"}</span>
-                        </div>
-                    `;
-                }
-
                 return `
                     <div>
                         ${getPalisadesFireAlertBlock(data)}
@@ -365,7 +354,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                 <span class="value">${data.bedrooms}/${data.total_bathrooms}</span>
                             </div>
                             ${parkingContent}
-                            ${petsAllowedContent}
                             <!-- Year Built -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Year Built</span>

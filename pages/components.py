@@ -1306,7 +1306,6 @@ class BuyComponents(BaseClass):
         # HOA / park / restrictions
         "hoa_fee",
         "hoa_fee_frequency",
-        "pets_allowed",
 
         # address + listing metadata
         "full_street_address",
@@ -1335,7 +1334,6 @@ class BuyComponents(BaseClass):
         self.listed_date_components   = self.create_listed_date_components()
         self.map                      = self.create_map()
         self.map_card                 = self.create_map_card()
-        self.pet_policy_radio_button  = self.create_pets_radio_button()
         self.ppsqft_components        = self.create_ppsqft_components()
         self.sqft_components          = self.create_sqft_components()
         self.subtype_checklist        = self.create_subtype_checklist()
@@ -1539,40 +1537,6 @@ class BuyComponents(BaseClass):
 
         return ppsqft_components
     
-    def create_pets_radio_button(self):
-        pets_radio = html.Div([
-            
-            # Title, subheading, and toggle button
-            html.Div([
-                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
-            ]),
-            
-            # The actual RadioItems
-            html.Div([
-                dcc.RadioItems(
-                    id = 'pets_radio',
-                    options=[
-                        {'label': 'Pets Allowed', 'value': True},
-                        {'label': 'Pets NOT Allowed', 'value': False},
-                        {'label': 'Both', 'value': 'Both'},
-                    ],
-                    value='Both', # A value needs to be selected upon page load otherwise we error out.
-                    inputStyle = {
-                        "marginRight": "4px",
-                        "marginLeft": "0px"
-                    },
-                    className="d-flex flex-wrap align-items-center gap-3 mb-1",
-                    inline=True  
-                ),
-            ],
-            id={'type': 'dynamic_output_div_buy', 'index': 'pet_policy'},
-            ),
-        ],
-        id='pet_policy_div_buy'
-        )
-        
-        return pets_radio
-
     def create_hoa_fee_components(self):
         # Calculate the number of steps
         num_steps = 5
@@ -1861,7 +1825,6 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
                 dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
-                dbc.AccordionItem(self.pet_policy_radio_button, title="Pet Policy", item_id="pet_policy"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
@@ -1876,7 +1839,6 @@ class BuyComponents(BaseClass):
                 "list_price",
                 "bedrooms",
                 "bathrooms",
-                "pet_policy",
             ],
             className="options-accordion",
         )

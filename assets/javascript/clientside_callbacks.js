@@ -426,7 +426,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by `list_price`.
         * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by `bedrooms`.
         * @param {Array<number>} bathroomsRange - [minBaths, maxBaths] for filtering by `bathrooms`.
-        * @param {boolean|string} petsAllowed - Pet policy choice (`true`, `false`, or `"Both"`).
         * @param {Array<number>} sqftRange - [minSqft, maxSqft] for filtering by `sqft`.
         * @param {boolean} sqftIncludeMissing - Whether to include properties with missing `sqft`.
         * @param {Array<number>} ppsqftRange - [minPpsqft, maxPpsqft] for filtering by `ppsqft`.
@@ -447,7 +446,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             priceRange,
             bedroomsRange,
             bathroomsRange,
-            petsAllowed,
             sqftRange,
             sqftIncludeMissing,
             ppsqftRange,
@@ -503,38 +501,28 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const bathroomsVal = parseFloat(props.total_bathrooms) || 0;
                 const bathroomsInRange = (bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms);
 
-                // 4) Pets Allowed Filter
-                let petsFilter = true;
-                const petsPolicy = (props.pets_allowed || '').toLowerCase();
-                if (petsAllowed === true) {
-                    petsFilter = petsPolicy.includes('yes');
-                } else if (petsAllowed === false) {
-                    petsFilter = petsPolicy.includes('no');
-                }
-                // If petsAllowed is "Both", do not filter
-
-                // 5) Sqft Filter
+                // 4) Sqft Filter
                 const sqftVal = parseFloat(props.sqft);
                 let sqftFilter = !isNaN(sqftVal) && (sqftVal >= minSqft && sqftVal <= maxSqft);
                 if (sqftIncludeMissingBool && (props.sqft == null || isNaN(sqftVal))) {
                     sqftFilter = true;
                 }
 
-                // 6) PPSqft Filter
+                // 5) PPSqft Filter
                 const ppsqftVal = parseFloat(props.ppsqft);
                 let ppsqftFilter = !isNaN(ppsqftVal) && (ppsqftVal >= minPpsqft && ppsqftVal <= maxPpsqft);
                 if (ppsqftIncludeMissingBool && (props.ppsqft == null || isNaN(ppsqftVal))) {
                     ppsqftFilter = true;
                 }
 
-                // 7) Year Built Filter
+                // 6) Year Built Filter
                 const yearBuiltVal = parseFloat(props.year_built);
                 let yrBuiltFilter = !isNaN(yearBuiltVal) && (yearBuiltVal >= minYearBuilt && yearBuiltVal <= maxYearBuilt);
                 if (yearBuiltIncludeMissingBool && (props.year_built == null || isNaN(yearBuiltVal))) {
                     yrBuiltFilter = true;
                 }
 
-                // 8) Subtype Filter
+                // 7) Subtype Filter
                 let subtypeFilter = false;
                 const propertySubtype = (props.subtype || '').toUpperCase();
                 if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
@@ -543,7 +531,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
                 }
 
-                // 9) Listed Date Filter
+                // 8) Listed Date Filter
                 let dateFilter = false;
                 const listedDateStr = props.listed_date || '';
                 if (!listedDateStr) {
@@ -561,14 +549,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     }
                 }
 
-                // 10) HOA Fee Filter
+                // 9) HOA Fee Filter
                 const hoaVal = parseFloat(props.hoa_fee);
                 let hoaFilter = !isNaN(hoaVal) && (hoaVal >= minHOA && hoaVal <= maxHOA);
                 if (hoaFeeIncludeMissingBool && (props.hoa_fee == null || isNaN(hoaVal))) {
                     hoaFilter = true;
                 }
 
-                // 11) HOA Fee Frequency Filter
+                // 10) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
                 const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
@@ -578,7 +566,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     priceInRange &&
                     bedroomsInRange &&
                     bathroomsInRange &&
-                    petsFilter &&
                     sqftFilter &&
                     ppsqftFilter &&
                     yrBuiltFilter &&
@@ -594,7 +581,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         priceVal,
                         bedroomsVal,
                         bathroomsVal,
-                        petsAllowed,
                         sqftVal,
                         ppsqftVal,
                         yearBuiltVal,
@@ -606,7 +592,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                             priceInRange,
                             bedroomsInRange,
                             bathroomsInRange,
-                            petsFilter,
                             sqftFilter,
                             ppsqftFilter,
                             yrBuiltFilter,
