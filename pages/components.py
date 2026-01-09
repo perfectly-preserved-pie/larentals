@@ -1218,19 +1218,19 @@ class LeaseComponents(BaseClass):
     def create_user_options_card(self):
         accordion = dbc.Accordion(
             [
-                dbc.AccordionItem(self.listed_date_components, title="Listed Date"),
-                dbc.AccordionItem(self.subtype_checklist, title="Subtypes"),
-                dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent"),
-                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms"),
-                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms"),
-                dbc.AccordionItem(self.pets_radio, title="Pet Policy"),
-                dbc.AccordionItem(self.square_footage_components, title="Square Footage"),
-                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft"),
-                dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces"),
-                dbc.AccordionItem(self.year_built_components, title="Year Built"),
-                dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms"),
-                dbc.AccordionItem(self.furnished_checklist, title="Furnished"),
-                dbc.AccordionItem(self.laundry_checklist, title="Laundry"),
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
+                dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent"),
+                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
+                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
+                dbc.AccordionItem(self.pets_radio, title="Pet Policy", item_id="pet_policy"),
+                dbc.AccordionItem(self.square_footage_components, title="Square Footage", item_id="square_footage"),
+                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
+                dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces"),
+                dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),
+                dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms"),
+                dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished"),
+                dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
                 dbc.AccordionItem(
                     [
                         self.security_deposit_components,
@@ -1239,10 +1239,19 @@ class LeaseComponents(BaseClass):
                         self.other_deposit_components,
                     ],
                     title="Deposits",
+                    item_id="deposits",
                 ),
             ],
             flush=True,
             always_open=False,
+            active_item=[
+                "listed_date",
+                "subtypes",
+                "monthly_rent",
+                "bedrooms",
+                "bathrooms",
+                "pet_policy",
+            ],
         )
 
         user_options_card = dbc.Card(
@@ -2002,22 +2011,28 @@ class BuyComponents(BaseClass):
     def create_user_options_card(self):
         accordion = dbc.Accordion(
             [
-                dbc.AccordionItem(self.listed_date_components, title="Listed Date"),
-                dbc.AccordionItem(self.subtype_checklist, title="Subtypes"),
-                dbc.AccordionItem(self.list_price_slider, title="List Price"),
-                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms"),
-                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms"),
-                dbc.AccordionItem(self.sqft_components, title="Square Footage"),
-                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft"),
-                dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees"),
-                dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency"),
-                dbc.AccordionItem(self.space_rent_components, title="Space Rent"),
-                dbc.AccordionItem(self.year_built_components, title="Year Built"),
-                dbc.AccordionItem(self.pet_policy_radio_button, title="Pet Policy"),
-                dbc.AccordionItem(self.senior_community_components, title="Senior Community"),
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
+                dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
+                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
+                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
+                dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
+                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
+                dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
+                dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
+                dbc.AccordionItem(self.space_rent_components, title="Space Rent", item_id="space_rent"),
+                dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),
+                dbc.AccordionItem(self.senior_community_components, title="Senior Community", item_id="senior_community"),
             ],
             flush=True,
             always_open=False,
+            active_item=[
+                "listed_date",
+                "subtypes",
+                "list_price",
+                "bedrooms",
+                "bathrooms",
+            ],
         )
 
         user_options_card = dbc.Card(
