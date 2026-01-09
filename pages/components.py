@@ -1243,7 +1243,7 @@ class LeaseComponents(BaseClass):
                 ),
             ],
             flush=True,
-            always_open=False,
+            always_open=True,
             active_item=[
                 "listed_date",
                 "subtypes",
@@ -2026,7 +2026,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.senior_community_components, title="Senior Community", item_id="senior_community"),
             ],
             flush=True,
-            always_open=False,
+            always_open=True,
             active_item=[
                 "listed_date",
                 "subtypes",
