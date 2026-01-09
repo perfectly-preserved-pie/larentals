@@ -605,21 +605,23 @@ class LeaseComponents(BaseClass):
 
         terms = {k: term_abbreviations.get(k, k) for k in unique_terms}
 
-        # Create the Dash component
-        rental_terms_checklist = html.Div([
-            html.Div([
-                dcc.Checklist(
-                    id='terms_checklist',
-                    options=[{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
-                    value=unique_terms,  # Select all terms by default
-                    inputStyle={"marginRight": "5px", "marginLeft": "5px"},
-                    inline=False
-                ),
-            ],
-                id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
+        # Create the Dash component as a chip-based multi-select
+        rental_terms_checklist = html.Div(
+            dmc.ChipGroup(
+                id='terms_checklist',
+                multiple=True,
+                value=list(unique_terms),
+                children=[
+                    dmc.Chip(
+                        children=f"{terms[term]} ({term})",
+                        value=term,
+                        radius="sm",
+                    )
+                    for term in unique_terms
+                ],
             ),
-        ],
-            id='rental_terms_div'
+            id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
+            className="d-flex flex-wrap gap-2",
         )
         return rental_terms_checklist
 
