@@ -547,8 +547,6 @@ class LeaseComponents(BaseClass):
     def create_pets_radio_button(self):
         pets_radio = html.Div([
             html.Div([
-            ], style={'display': 'inline-block'}),
-            html.Div([
                 dcc.RadioItems(
                     id='pets_radio',
                     options=[
@@ -558,9 +556,10 @@ class LeaseComponents(BaseClass):
                     ],
                     value='Both',
                     inputStyle={
-                        "marginRight": "5px",
-                        "marginLeft": "5px"
+                        "marginRight": "4px",
+                        "marginLeft": "0px"
                     },
+                    className="d-flex flex-wrap align-items-center gap-3 mb-1",
                     inline=True
                 ),
             ],
@@ -1571,9 +1570,10 @@ class BuyComponents(BaseClass):
                     ],
                     value='Both', # A value needs to be selected upon page load otherwise we error out.
                     inputStyle = {
-                        "marginRight": "5px",
-                        "marginLeft": "5px"
+                        "marginRight": "4px",
+                        "marginLeft": "0px"
                     },
+                    className="d-flex flex-wrap align-items-center gap-3 mb-1",
                     inline=True  
                 ),
             ],
