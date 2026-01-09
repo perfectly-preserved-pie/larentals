@@ -89,8 +89,7 @@ def layout() -> dbc.Container:
   )
 
 ## BEGIN CALLBACKS ##
-# First, we want to hide the pet policy and senior community options if the user selects a property type that doesn't have those options (anything other than a mobile home)
-# Define callback to update selected_subtype store with the value of the subtype radio button
+# Keep subtype selection in sync with the store
 @callback(Output('selected_subtype', 'data'), Input('subtype_checklist', 'value'))
 def update_selected_subtype(value):
     return value
@@ -157,7 +156,6 @@ clientside_callback(
     Input('ppsqft_missing_radio', 'value'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_radio', 'value'),
-    Input('senior_community_radio', 'value'),
     Input('subtype_checklist', 'value'),
     Input('listed_date_datepicker_buy', 'start_date'),
     Input('listed_date_datepicker_buy', 'end_date'),
@@ -165,8 +163,6 @@ clientside_callback(
     Input('hoa_fee_slider', 'value'),
     Input('hoa_fee_missing_radio', 'value'),
     Input('hoa_fee_frequency_checklist', 'value'),
-    Input('space_rent_slider', 'value'),
-    Input('space_rent_missing_radio', 'value'),
     Input('buy-geojson-store', "data")
   ],
 )

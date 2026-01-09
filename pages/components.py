@@ -1306,9 +1306,7 @@ class BuyComponents(BaseClass):
         # HOA / park / restrictions
         "hoa_fee",
         "hoa_fee_frequency",
-        "space_rent",
         "pets_allowed",
-        "senior_community",
 
         # address + listing metadata
         "full_street_address",
@@ -1339,8 +1337,6 @@ class BuyComponents(BaseClass):
         self.map_card                 = self.create_map_card()
         self.pet_policy_radio_button  = self.create_pets_radio_button()
         self.ppsqft_components        = self.create_ppsqft_components()
-        self.senior_community_components = self.create_senior_community_components()
-        self.space_rent_components    = self.create_space_rent_components()
         self.sqft_components          = self.create_sqft_components()
         self.subtype_checklist        = self.create_subtype_checklist()
         self.title_card               = self.create_title_card()
@@ -1654,99 +1650,6 @@ class BuyComponents(BaseClass):
 
         return hoa_fee_frequency_checklist
 
-    def create_space_rent_components(self):
-        space_rent_components = html.Div([
-            
-            # Title, subheading, and toggle button
-            html.Div([
-                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
-            ]),
-            
-            # The actual RangeSlider
-            html.Div([
-                dcc.RangeSlider(
-                    id='space_rent_slider',
-                    min=self.df['space_rent'].min(),
-                    max=self.df['space_rent'].max(),
-                    value=[self.df['space_rent'].min(), self.df['space_rent'].max()],
-                    tooltip={
-                        'always_visible': True,
-                        'placement': 'bottom',
-                        'transform': 'formatCurrency'
-                    },
-                ),
-                # Radio button for unknown space rent
-                dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown space rent?",
-                        dcc.RadioItems(
-                            id='space_rent_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
-                    color="info",
-                    style={'marginTop': '5px'}
-                ),
-            ],
-            id={'type': 'dynamic_output_div_buy', 'index': 'space_rent'},
-            ),
-            
-        ],
-        style={
-            'marginBottom': '10px',
-        },
-        id='space_rent_div_buy'
-        )
-
-        return space_rent_components
-    
-    def create_senior_community_components(self):
-        senior_community_components = html.Div([
-            
-            # Title, subheading, and toggle button
-            html.Div([
-                html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
-            ]),
-            
-            # The actual RadioItems
-            html.Div([
-                dcc.RadioItems(
-                    id='senior_community_radio',
-                    options=[
-                        {'label': 'Yes', 'value': True},
-                        {'label': 'No', 'value': False},
-                        {'label': 'Both', 'value': 'Both'},
-                    ],
-                    value='Both',
-                    inputStyle={
-                        "marginRight": "5px",
-                        "marginLeft": "5px"
-                    },
-                    inline=True
-                ),
-            ],
-            id={'type': 'dynamic_output_div_buy', 'index': 'senior_community'},
-            ),
-            
-        ],
-        style={
-            'marginBottom': '10px',
-        },
-        id='senior_community_div_buy'
-        )
-
-        return senior_community_components
-    
     def create_list_price_slider(self):
         list_price_slider = html.Div([
             
@@ -1963,9 +1866,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
-                dbc.AccordionItem(self.space_rent_components, title="Space Rent", item_id="space_rent"),
                 dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),
-                dbc.AccordionItem(self.senior_community_components, title="Senior Community", item_id="senior_community"),
             ],
             flush=True,
             always_open=True,

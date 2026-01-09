@@ -84,7 +84,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
             // Determine property subtype flags
             const subtype = (data?.subtype ?? "Unknown").toString();   // Coerce to string for includes()
             const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
-            const isMh  = subtype.includes("MH")  || subtype.includes("Manufactured Home");
 
             // Function to handle MLS number hyperlink
             function getListingUrlBlock(address, listingUrlValue) {
@@ -251,11 +250,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                                     ${data.laundry || "Unknown"}
                                 </span>
                             </div>
-                            <!-- Senior Community -->
-                            <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span class="label" style="font-weight: bold;">Senior Community</span>
-                                <span class="value">${data.senior_community || "Unknown"}</span>
-                            </div>
                             <!-- Year Built -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Year Built</span>
@@ -302,17 +296,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                     `;
                 }
 
-                // Conditional Senior Community
-                let seniorCommunityContent = '';
-                if (isMh) {
-                    seniorCommunityContent = `
-                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                            <span class="label" style="font-weight: bold;">Senior Community</span>
-                            <span class="value">${data.senior_community || "Unknown"}</span>
-                        </div>
-                    `;
-                }
-
                 // Conditional Pets Allowed
                 let petsAllowedContent = '';
                 if (data.pets_allowed) {
@@ -320,17 +303,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                             <span class="label" style="font-weight: bold;">Pets Allowed?</span>
                             <span class="value">${data.pets_allowed || "Unknown"}</span>
-                        </div>
-                    `;
-                }
-
-                // Conditional Space Rent
-                let spaceRentContent = '';
-                if (isMh) {
-                    spaceRentContent = `
-                        <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                            <span class="label" style="font-weight: bold;">Space Rent</span>
-                            <span class="value">${data.space_rent || "Unknown"}</span>
                         </div>
                     `;
                 }
@@ -394,8 +366,6 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             </div>
                             ${parkingContent}
                             ${petsAllowedContent}
-                            ${seniorCommunityContent}
-                            ${spaceRentContent}
                             <!-- Year Built -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Year Built</span>
