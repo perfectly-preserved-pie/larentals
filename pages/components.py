@@ -608,8 +608,6 @@ class LeaseComponents(BaseClass):
         # Create the Dash component
         rental_terms_checklist = html.Div([
             html.Div([
-            ], style={'display': 'inline-block'}),
-            html.Div([
                 dcc.Checklist(
                     id='terms_checklist',
                     options=[{'label': f"{terms[term]} ({term})", 'value': term} for term in terms],
@@ -710,8 +708,6 @@ class LeaseComponents(BaseClass):
 
         year_built_components = html.Div([
             html.Div([
-            ], style={'display': 'inline-block'}),
-            html.Div([
                 dcc.RangeSlider(
                     min=min_year,
                     max=max_year,
@@ -760,8 +756,6 @@ class LeaseComponents(BaseClass):
 
     def create_furnished_checklist(self):
         furnished_checklist = html.Div([
-            html.Div([
-            ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.Checklist(
                     id='furnished_checklist',
@@ -1064,8 +1058,6 @@ class LeaseComponents(BaseClass):
         ]
 
         laundry_checklist = html.Div([
-            html.Div([
-            ]),
             html.Div([
                 dcc.Checklist(
                     id='laundry_checklist',
@@ -1813,12 +1805,6 @@ class BuyComponents(BaseClass):
         max_year = int(self.df['year_built'].max())
         marks_range = np.linspace(min_year, max_year, 5, dtype=int)  # 5 equally spaced marks
         year_built_components = html.Div([
-            
-            # Title and toggle button
-            html.Div([
-            ]),
-            
-            # The actual RangeSlider and Radio button
             html.Div([
                 dcc.RangeSlider(
                     min=min_year,
