@@ -1,0 +1,21 @@
+/* Default (mobile): let content size naturally, no forced height/scroll */
+.options-col {
+  height: auto;
+  overflow-y: visible;
+}
+
+.map-col {
+  height: auto;
+}
+
+/* Desktop (lg ≥ 992px): retain previous fixed heights/scroll */
+@media (min-width: 992px) {
+  .options-col {
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .map-col {
+    height: 100vh;
+  }
+}
