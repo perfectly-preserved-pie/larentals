@@ -172,20 +172,6 @@ clientside_callback(
   [Input('selected_subtype', 'data')]
 )
 
-# Create a callback to manage the collapsing behavior
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='toggleCollapse'
-  ),
-  [
-    Output('more-options-collapse-buy', 'is_open'),
-    Output('more-options-button-buy', 'children')
-  ],
-  [Input('more-options-button-buy', 'n_clicks')],
-  [State('more-options-collapse-buy', 'is_open')]
-)
-
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(
@@ -216,19 +202,6 @@ clientside_callback(
     Input('space_rent_missing_radio', 'value'),
     Input('buy-geojson-store', "data")
   ],
-)
-
-# Callback to toggle the visibility of dynamic components
-# When the toggle button with a specific index is clicked, this function toggles the visibility of the corresponding dynamic_output_div with the same index
-# If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
-# If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='toggleVisibility'),
-  [
-    Output({'type': 'dynamic_output_div_buy', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'children')
-  ],
-  [Input({'type': 'dynamic_toggle_button_buy', 'index': MATCH}, 'n_clicks')]
 )
 
 clientside_callback(

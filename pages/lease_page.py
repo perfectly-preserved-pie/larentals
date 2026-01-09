@@ -123,37 +123,6 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
   base["display"] = "none" if has_data else "flex"
   return base
 
-# Create a callback to manage the collapsing behavior
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='toggleCollapse'
-  ),
-  [
-    Output('more-options-collapse-lease', 'is_open'),
-    Output('more-options-button-lease', 'children')
-  ],
-  [Input('more-options-button-lease', 'n_clicks')],
-  [State('more-options-collapse-lease', 'is_open')]
-)
-
-# Callback to toggle the visibility of dynamic components
-# When the toggle button with a specific index is clicked, this function toggles the visibility of the corresponding dynamic_output_div with the same index
-# If the toggle button is clicked an even number of times, the dynamic_output_div is shown and the button label is set to "Hide"
-# If the toggle button is clicked an odd number of times, the dynamic_output_div is hidden and the button label is set to "Show"
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='toggleVisibility'
-  ),
-  [
-    Output({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style'),
-    Output({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'children')
-  ],
-  [Input({'type': 'dynamic_toggle_button_lease', 'index': MATCH}, 'n_clicks')],
-  [State({'type': 'dynamic_output_div_lease', 'index': MATCH}, 'style')]
-)
-
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(

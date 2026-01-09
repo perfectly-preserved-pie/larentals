@@ -17,14 +17,6 @@ import sqlite3
 
 DB_PATH = "assets/datasets/larentals.db"
 
-def create_toggle_button(index, page_type, initial_label="Hide"):
-    """Creates a toggle button with an initial label."""
-    return html.Button(
-        id={'type': f'dynamic_toggle_button_{page_type}', 'index': index},
-        children=initial_label, 
-        style={'display': 'inline-block'}
-    )
-
 def _require_safe_identifier(name: str, *, field_name: str) -> str:
     """
     Validate a SQL identifier (table/column/index name).
@@ -329,7 +321,6 @@ class LeaseComponents(BaseClass):
         self.year_built_components       = self.create_year_built_components()
 
         # Dependent components last
-        self.more_options      = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
     
     def categorize_laundry_features(self, feature):
@@ -378,7 +369,6 @@ class LeaseComponents(BaseClass):
         subtype_checklist = html.Div([
             html.Div([
                 html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='subtype', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dmc.MultiSelect(
@@ -406,7 +396,6 @@ class LeaseComponents(BaseClass):
         bedrooms_slider = html.Div([
             html.Div([
                 html.H5("Bedrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='bedrooms', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -434,7 +423,6 @@ class LeaseComponents(BaseClass):
         bathrooms_slider = html.Div([
             html.Div([
                 html.H5("Bathrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='bathrooms', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -462,7 +450,6 @@ class LeaseComponents(BaseClass):
         square_footage_components = html.Div([
             html.Div([
                 html.H5("Square Footage", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='sqft', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -514,7 +501,6 @@ class LeaseComponents(BaseClass):
         ppsqft_components = html.Div([
             html.Div([
                 html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='ppsqft', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -567,7 +553,6 @@ class LeaseComponents(BaseClass):
         pets_radio = html.Div([
             html.Div([
                 html.H5("Pet Policy", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='pets', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.RadioItems(
@@ -631,7 +616,6 @@ class LeaseComponents(BaseClass):
         rental_terms_checklist = html.Div([
             html.Div([
                 html.H5("Rental Terms", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='rental_terms', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.Checklist(
@@ -653,7 +637,6 @@ class LeaseComponents(BaseClass):
         garage_spaces_components = html.Div([
             html.Div([
                 html.H5("Parking Spaces", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='garage_spaces', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -704,7 +687,6 @@ class LeaseComponents(BaseClass):
         rental_price_components = html.Div([
             html.Div([
                 html.H5("Price (Monthly)", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='rental_price', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -739,7 +721,6 @@ class LeaseComponents(BaseClass):
         year_built_components = html.Div([
             html.Div([
                 html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='year_built', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.RangeSlider(
@@ -792,7 +773,6 @@ class LeaseComponents(BaseClass):
         furnished_checklist = html.Div([
             html.Div([
                 html.H5("Furnished/Unfurnished", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='furnished', initial_label="Hide", page_type='lease')
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.Checklist(
@@ -832,7 +812,6 @@ class LeaseComponents(BaseClass):
         security_deposit_components = html.Div([
             html.Div([
                 html.H5("Security Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='security_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -884,7 +863,6 @@ class LeaseComponents(BaseClass):
         other_deposit_components = html.Div([
             html.Div([
                 html.H5("Other Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='other_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -936,7 +914,6 @@ class LeaseComponents(BaseClass):
         pet_deposit_components = html.Div([
             html.Div([
                 html.H5("Pet Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='pet_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -988,7 +965,6 @@ class LeaseComponents(BaseClass):
         key_deposit_components = html.Div([
             html.Div([
                 html.H5("Key Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='key_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -1040,7 +1016,6 @@ class LeaseComponents(BaseClass):
         key_deposit_components = html.Div([
             html.Div([
                 html.H5("Key Deposit", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='key_deposit', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -1103,7 +1078,6 @@ class LeaseComponents(BaseClass):
         laundry_checklist = html.Div([
             html.Div([
                 html.H5("Laundry Features", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='laundry', initial_label="Hide", page_type='lease')
             ]),
             html.Div([
                 dcc.Checklist(
@@ -1129,7 +1103,6 @@ class LeaseComponents(BaseClass):
             # Top header: Listed Date Range with toggle button
             html.Div([
                 html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='listed_date', initial_label="Hide", page_type='lease')
             ]),
             # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
@@ -1242,29 +1215,36 @@ class LeaseComponents(BaseClass):
 
         return map
         
-    # Create a button to toggle the collapsed section in the user options card
-    # https://dash-bootstrap-components.opensource.faculty.ai/docs/components/collapse/
-    def create_more_options(self):
-        more_options = dbc.Collapse(
+    def create_user_options_card(self):
+        accordion = dbc.Accordion(
             [
-                self.square_footage_components,  
-                self.ppsqft_components,
-                self.garage_spaces_components,
-                self.year_built_components,
-                self.rental_terms_checklist,
-                self.furnished_checklist,
-                self.laundry_checklist,
-                self.security_deposit_components,
-                self.pet_deposit_components,
-                self.key_deposit_components,
-                self.other_deposit_components,
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes"),
+                dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent"),
+                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms"),
+                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms"),
+                dbc.AccordionItem(self.pets_radio, title="Pet Policy"),
+                dbc.AccordionItem(self.square_footage_components, title="Square Footage"),
+                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft"),
+                dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces"),
+                dbc.AccordionItem(self.year_built_components, title="Year Built"),
+                dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms"),
+                dbc.AccordionItem(self.furnished_checklist, title="Furnished"),
+                dbc.AccordionItem(self.laundry_checklist, title="Laundry"),
+                dbc.AccordionItem(
+                    [
+                        self.security_deposit_components,
+                        self.pet_deposit_components,
+                        self.key_deposit_components,
+                        self.other_deposit_components,
+                    ],
+                    title="Deposits",
+                ),
             ],
-            id='more-options-collapse-lease'
+            flush=True,
+            always_open=False,
         )
 
-        return more_options
-
-    def create_user_options_card(self):
         user_options_card = dbc.Card(
             [
                 html.P(
@@ -1272,14 +1252,7 @@ class LeaseComponents(BaseClass):
                     "according to your needs.",
                     className="card-text",
                 ),
-                self.listed_date_components,
-                self.subtype_checklist,
-                self.rental_price_slider,
-                self.bedrooms_slider,
-                self.bathrooms_slider,
-                self.pets_radio,
-                dbc.Button("More Options", id='more-options-button-lease', className='mt-2'),
-                self.more_options,
+                accordion,
             ],
             body=True
         )
@@ -1386,7 +1359,6 @@ class BuyComponents(BaseClass):
         self.year_built_components    = self.create_year_built_components()
 
         # 7) Dependent components
-        self.more_options      = self.create_more_options()
         self.user_options_card = self.create_user_options_card()
     
     # Create a checklist for the user to select the subtypes they want to see
@@ -1402,7 +1374,6 @@ class BuyComponents(BaseClass):
             # Title and toggle button
             html.Div([
                 html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='subtype', initial_label="Hide", page_type='buy')
             ]),
 
             # The actual checklist
@@ -1431,7 +1402,6 @@ class BuyComponents(BaseClass):
             # Title and toggle button
             html.Div([
                 html.H5("bedrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='bedrooms', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual range slider
@@ -1463,7 +1433,6 @@ class BuyComponents(BaseClass):
             # Title and toggle button
             html.Div([
                 html.H5("Bathrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='bathrooms', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual range slider
@@ -1493,7 +1462,6 @@ class BuyComponents(BaseClass):
         square_footage_components = html.Div([
             html.Div([
                 html.H5("Square Footage", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='sqft', initial_label="Hide", page_type='buy')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -1545,7 +1513,6 @@ class BuyComponents(BaseClass):
         ppsqft_components = html.Div([
             html.Div([
                 html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='ppsqft', initial_label="Hide", page_type='buy')
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -1600,7 +1567,6 @@ class BuyComponents(BaseClass):
             html.Div([
                 html.H5("Pet Policy", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='pet_policy', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual RadioItems
@@ -1640,7 +1606,6 @@ class BuyComponents(BaseClass):
             html.Div([
                 html.H5("HOA Fee", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='hoa_fee', initial_label="Hide", page_type='buy')
             ]),
             # The actual RangeSlider and RadioItems
             html.Div([
@@ -1697,7 +1662,6 @@ class BuyComponents(BaseClass):
             html.Div([
                 html.H5("HOA Fee Frequency", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='hoa_fee_frequency', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual Checklist
@@ -1735,7 +1699,6 @@ class BuyComponents(BaseClass):
             html.Div([
                 html.H5("Space Rent", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='space_rent', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual RangeSlider
@@ -1793,7 +1756,6 @@ class BuyComponents(BaseClass):
             html.Div([
                 html.H5("Senior Community", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='senior_community', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual RadioItems
@@ -1831,7 +1793,6 @@ class BuyComponents(BaseClass):
             # Title and toggle button
             html.Div([
                 html.H5("List Price", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='list_price', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual RangeSlider
@@ -1870,7 +1831,6 @@ class BuyComponents(BaseClass):
             # Title and toggle button
             html.Div([
                 html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='year_built', initial_label="Hide", page_type='buy')
             ]),
             
             # The actual RangeSlider and Radio button
@@ -1929,7 +1889,6 @@ class BuyComponents(BaseClass):
             # Top header: Listed Date Range with toggle button
             html.Div([
                 html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
-                create_toggle_button(index='listed_date', initial_label="Hide", page_type='buy')
             ]),
             # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
@@ -2040,23 +1999,27 @@ class BuyComponents(BaseClass):
 
         return map
     
-    def create_more_options(self):
-        more_options = dbc.Collapse(
+    def create_user_options_card(self):
+        accordion = dbc.Accordion(
             [
-                self.ppsqft_components,
-                self.hoa_fee_components,
-                self.hoa_fee_frequency_checklist,
-                self.space_rent_components,
-                self.year_built_components,
-                self.pet_policy_radio_button,
-                self.senior_community_components,         
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes"),
+                dbc.AccordionItem(self.list_price_slider, title="List Price"),
+                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms"),
+                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms"),
+                dbc.AccordionItem(self.sqft_components, title="Square Footage"),
+                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft"),
+                dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees"),
+                dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency"),
+                dbc.AccordionItem(self.space_rent_components, title="Space Rent"),
+                dbc.AccordionItem(self.year_built_components, title="Year Built"),
+                dbc.AccordionItem(self.pet_policy_radio_button, title="Pet Policy"),
+                dbc.AccordionItem(self.senior_community_components, title="Senior Community"),
             ],
-            id='more-options-collapse-buy'
+            flush=True,
+            always_open=False,
         )
 
-        return more_options
-    
-    def create_user_options_card(self):
         user_options_card = dbc.Card(
             [
                 html.P(
@@ -2064,14 +2027,7 @@ class BuyComponents(BaseClass):
                     "according to your needs.",
                     className="card-text",
                 ),
-                self.listed_date_components,
-                self.subtype_checklist,
-                self.list_price_slider,
-                self.bedrooms_slider,
-                self.bathrooms_slider,
-                self.sqft_components,
-                dbc.Button("More Options", id='more-options-button-buy', className='mt-2'),
-                self.more_options,
+                accordion,
             ],
             body=True
         )
