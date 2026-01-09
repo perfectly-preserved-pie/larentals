@@ -1,22 +1,5 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
-        toggleVisibility: function(n_clicks) {
-            if (n_clicks === undefined) {
-                // PreventUpdate equivalent
-                return [window.dash_clientside.no_update, window.dash_clientside.no_update];
-            }
-            const displayStyle = (n_clicks % 2 === 0) ? 'block' : 'none';
-            const buttonText = (n_clicks % 2 === 0) ? "Hide" : "Show";
-            return [{display: displayStyle}, buttonText];
-        },
-
-        toggleCollapse: function(n_clicks, is_open) {
-            if (n_clicks === undefined) {
-                return [false, "More Options"];
-            }
-            return [!is_open, is_open ? "More Options" : "Less Options"];
-        },
-
         toggleVisibilityBasedOnSubtype: function(selected_subtype) {
             if (selected_subtype.includes('Manufactured Home')) {
                 return {'display': 'block'};
@@ -443,14 +426,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by `list_price`.
         * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by `bedrooms`.
         * @param {Array<number>} bathroomsRange - [minBaths, maxBaths] for filtering by `bathrooms`.
-        * @param {boolean|string} petsAllowed - Pet policy choice (`true`, `false`, or `"Both"`).
         * @param {Array<number>} sqftRange - [minSqft, maxSqft] for filtering by `sqft`.
         * @param {boolean} sqftIncludeMissing - Whether to include properties with missing `sqft`.
         * @param {Array<number>} ppsqftRange - [minPpsqft, maxPpsqft] for filtering by `ppsqft`.
         * @param {boolean} ppsqftIncludeMissing - Whether to include properties with missing `ppsqft`.
         * @param {Array<number>} yearBuiltRange - [minYearBuilt, maxYearBuilt] for filtering by `year_built`.
         * @param {boolean} yearBuiltIncludeMissing - Whether to include properties with missing `year_built`.
-        * @param {boolean|string} seniorCommunityOption - Senior community choice (`true`, `false`, or `"Both"`).
         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
@@ -458,8 +439,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
         * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
         * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
-        * @param {Array<number>} spaceRentRange - [minSpaceRent, maxSpaceRent] for filtering by `space_rent`.
-        * @param {boolean} spaceRentIncludeMissing - Whether to include properties with missing `space_rent`.
         * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
         */
@@ -467,14 +446,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             priceRange,
             bedroomsRange,
             bathroomsRange,
-            petsAllowed,
             sqftRange,
             sqftIncludeMissing,
             ppsqftRange,
             ppsqftIncludeMissing,
             yearBuiltRange,
             yearBuiltIncludeMissing,
-            seniorCommunityOption,
             subtypeSelection,
             dateStart,
             dateEnd,
@@ -482,8 +459,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             hoaFeeRange,
             hoaFeeIncludeMissing,
             hoaFeeFrequencyChecklist,
-            spaceRentRange,
-            spaceRentIncludeMissing,
             fullGeojson
         ) {
             // Guard against missing or malformed GeoJSON
@@ -496,7 +471,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const yearBuiltIncludeMissingBool      = Boolean(yearBuiltIncludeMissing);
             const dateIncludeMissingBool           = Boolean(dateIncludeMissing);
             const hoaFeeIncludeMissingBool         = Boolean(hoaFeeIncludeMissing);
-            const spaceRentIncludeMissingBool      = Boolean(spaceRentIncludeMissing);
 
             // Deconstruct range arrays for easier access
             const [minPrice, maxPrice]            = priceRange;
@@ -506,7 +480,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minPpsqft, maxPpsqft]          = ppsqftRange;
             const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
             const [minHOA, maxHOA]                = hoaFeeRange;
-            const [minSpaceRent, maxSpaceRent]    = spaceRentRange;
 
             // Debug: Log raw data
             //console.log('Raw data:', fullGeojson);
@@ -528,48 +501,28 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const bathroomsVal = parseFloat(props.total_bathrooms) || 0;
                 const bathroomsInRange = (bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms);
 
-                // 4) Pets Allowed Filter
-                let petsFilter = true;
-                const petsPolicy = (props.pets_allowed || '').toLowerCase();
-                if (petsAllowed === true) {
-                    petsFilter = petsPolicy.includes('yes');
-                } else if (petsAllowed === false) {
-                    petsFilter = petsPolicy.includes('no');
-                }
-                // If petsAllowed is "Both", do not filter
-
-                // 5) Sqft Filter
+                // 4) Sqft Filter
                 const sqftVal = parseFloat(props.sqft);
                 let sqftFilter = !isNaN(sqftVal) && (sqftVal >= minSqft && sqftVal <= maxSqft);
                 if (sqftIncludeMissingBool && (props.sqft == null || isNaN(sqftVal))) {
                     sqftFilter = true;
                 }
 
-                // 6) PPSqft Filter
+                // 5) PPSqft Filter
                 const ppsqftVal = parseFloat(props.ppsqft);
                 let ppsqftFilter = !isNaN(ppsqftVal) && (ppsqftVal >= minPpsqft && ppsqftVal <= maxPpsqft);
                 if (ppsqftIncludeMissingBool && (props.ppsqft == null || isNaN(ppsqftVal))) {
                     ppsqftFilter = true;
                 }
 
-                // 7) Year Built Filter
+                // 6) Year Built Filter
                 const yearBuiltVal = parseFloat(props.year_built);
                 let yrBuiltFilter = !isNaN(yearBuiltVal) && (yearBuiltVal >= minYearBuilt && yearBuiltVal <= maxYearBuilt);
                 if (yearBuiltIncludeMissingBool && (props.year_built == null || isNaN(yearBuiltVal))) {
                     yrBuiltFilter = true;
                 }
 
-                // 8) Senior Community Filter
-                let seniorFilter = true;
-                const seniorVal = String(props.senior_community).toUpperCase();
-                if (seniorCommunityOption === true) {
-                    seniorFilter = seniorVal.includes('Y');
-                } else if (seniorCommunityOption === false) {
-                    seniorFilter = seniorVal.includes('N');
-                }
-                // If seniorCommunityOption is "Both", do not filter
-
-                // 9) Subtype Filter
+                // 7) Subtype Filter
                 let subtypeFilter = false;
                 const propertySubtype = (props.subtype || '').toUpperCase();
                 if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
@@ -578,7 +531,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
                 }
 
-                // 10) Listed Date Filter
+                // 8) Listed Date Filter
                 let dateFilter = false;
                 const listedDateStr = props.listed_date || '';
                 if (!listedDateStr) {
@@ -596,40 +549,30 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     }
                 }
 
-                // 11) HOA Fee Filter
+                // 9) HOA Fee Filter
                 const hoaVal = parseFloat(props.hoa_fee);
                 let hoaFilter = !isNaN(hoaVal) && (hoaVal >= minHOA && hoaVal <= maxHOA);
                 if (hoaFeeIncludeMissingBool && (props.hoa_fee == null || isNaN(hoaVal))) {
                     hoaFilter = true;
                 }
 
-                // 12) HOA Fee Frequency Filter
+                // 10) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
                 const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
-
-                // 13) Space Rent Filter
-                const spaceVal = parseFloat(props.space_rent);
-                let spaceRentFilter = !isNaN(spaceVal) && (spaceVal >= minSpaceRent && spaceVal <= maxSpaceRent);
-                if (spaceRentIncludeMissingBool && (props.space_rent == null || isNaN(spaceVal))) {
-                    spaceRentFilter = true;
-                }
 
                 // Combine all filters
                 const includeFeature =
                     priceInRange &&
                     bedroomsInRange &&
                     bathroomsInRange &&
-                    petsFilter &&
                     sqftFilter &&
                     ppsqftFilter &&
                     yrBuiltFilter &&
-                    seniorFilter &&
                     subtypeFilter &&
                     dateFilter &&
                     hoaFilter &&
-                    hoaFeeFreqFilter &&
-                    spaceRentFilter;
+                    hoaFeeFreqFilter;
 
                 // Debug if excluded
                 if (!includeFeature) {
@@ -638,30 +581,24 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         priceVal,
                         bedroomsVal,
                         bathroomsVal,
-                        petsAllowed,
                         sqftVal,
                         ppsqftVal,
                         yearBuiltVal,
-                        seniorVal,
                         propertySubtype,
                         listedDateStr,
                         hoaVal,
                         hoaFreqVal,
-                        spaceVal,
                         filters: {
                             priceInRange,
                             bedroomsInRange,
                             bathroomsInRange,
-                            petsFilter,
                             sqftFilter,
                             ppsqftFilter,
                             yrBuiltFilter,
-                            seniorFilter,
                             subtypeFilter,
                             dateFilter,
                             hoaFilter,
-                            hoaFeeFreqFilter,
-                            spaceRentFilter
+                            hoaFeeFreqFilter
                         }
                     });
                 }
