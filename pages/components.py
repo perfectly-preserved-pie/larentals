@@ -4,7 +4,7 @@ from datetime import date
 from functions.convex_hull import generate_convex_hulls
 from functions.sql_helpers import get_latest_date_processed
 from html import unescape
-from typing import Optional, Sequence
+from typing import Optional, Sequence, List
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
@@ -754,41 +754,39 @@ class LeaseComponents(BaseClass):
 
         return year_built_components
 
-    def create_furnished_checklist(self):
-        furnished_checklist = html.Div([
-            html.Div([
-                dcc.Checklist(
-                    id='furnished_checklist',
-                    options=[
-                        {'label': 'Furnished Or Unfurnished', 'value': 'Furnished Or Unfurnished'},
-                        {'label': 'Furnished', 'value': 'Furnished'},
-                        {'label': 'Negotiable', 'value': 'Negotiable'},
-                        {'label': 'Partially', 'value': 'Partially'},
-                        {'label': 'Unfurnished', 'value': 'Unfurnished'},
-                        {'label': 'Unknown', 'value': 'Unknown'},
-                    ],
-                    value=[
-                        'Furnished Or Unfurnished',
-                        'Furnished',
-                        'Negotiable',
-                        'Partially',
-                        'Unfurnished',
-                        'Unknown',
-                    ],
-                    labelStyle={'display': 'block'},
-                    inputStyle={
-                        "marginRight": "5px",
-                        "marginLeft": "5px"
-                    },
-                ),
-            ],
-            id={'type': 'dynamic_output_div_lease', 'index': 'furnished'},
-            ),
-        ],
-        id='furnished_div'
-        )
+    def create_furnished_checklist(self) -> html.Div:
+        """
+        Create a checklist-style ChipGroup for furnished status filtering.
 
-        return furnished_checklist
+        Returns:
+            html.Div: A Dash component containing a multi-select ChipGroup.
+        """
+        furnished_options: List[str] = [
+            "Furnished Or Unfurnished",
+            "Furnished",
+            "Negotiable",
+            "Partially",
+            "Unfurnished",
+            "Unknown",
+        ]
+
+        return html.Div(
+            dmc.ChipGroup(
+                id="furnished_checklist",
+                multiple=True,               
+                value=furnished_options,  # all selected by default
+                children=[
+                    dmc.Chip(
+                        children=label,
+                        value=label,
+                        radius="sm",
+                    )
+                    for label in furnished_options
+                ],
+            ),
+            id="furnished_div",
+            className="d-flex flex-wrap gap-2",
+        )
 
     def create_security_deposit_components(self):
         security_deposit_components = html.Div([
