@@ -2016,6 +2016,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
                 dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
+                dbc.AccordionItem(self.pet_policy_radio_button, title="Pet Policy", item_id="pet_policy"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
@@ -2032,6 +2033,7 @@ class BuyComponents(BaseClass):
                 "list_price",
                 "bedrooms",
                 "bathrooms",
+                "pet_policy",
             ],
         )
 

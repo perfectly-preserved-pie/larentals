@@ -137,40 +137,7 @@ def load_buy_geojson(_: int) -> dict:
   return components.return_geojson()
 
 
-# Define callback to update the style property of the senior community div based on the selected subtype value
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
-  Output('senior_community_div_buy', 'style'),
-  [Input('selected_subtype', 'data')]
-)
-    
-# Define callback to update the style property of the pet policy div based on the selected subtype value
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
-  Output('pet_policy_div_buy', 'style'),
-  [Input('selected_subtype', 'data')]
-)
-  
-# Define callback to update the style property of the space rent div based on the selected subtype value
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='toggleVisibilityBasedOnSubtype'),
-  Output('space_rent_div_buy', 'style'),
-  [Input('selected_subtype', 'data')]
-)
-
-# Define callback to update the style property of the missing HOA Fee div based on the selected subtype value
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
-  Output('hoa_fee_div_buy', 'style'),
-  [Input('selected_subtype', 'data')]
-)
-  
-# Define callback to update the style property of the HOA Fee frequency div based on the selected subtype value
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='toggleHOAVisibility'),
-  Output('hoa_fee_frequency_div_buy', 'style'),
-  [Input('selected_subtype', 'data')]
-)
+"""Keep subtype-dependent sections visible; dynamic hiding removed."""
 
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
