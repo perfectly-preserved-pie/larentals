@@ -368,7 +368,6 @@ class LeaseComponents(BaseClass):
 
         subtype_checklist = html.Div([
             html.Div([
-                html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dmc.MultiSelect(
@@ -395,7 +394,6 @@ class LeaseComponents(BaseClass):
     def create_bedrooms_slider(self):
         bedrooms_slider = html.Div([
             html.Div([
-                html.H5("Bedrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -422,7 +420,6 @@ class LeaseComponents(BaseClass):
     def create_bathrooms_slider(self):
         bathrooms_slider = html.Div([
             html.Div([
-                html.H5("Bathrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -449,7 +446,6 @@ class LeaseComponents(BaseClass):
     def create_sqft_components(self):
         square_footage_components = html.Div([
             html.Div([
-                html.H5("Square Footage", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -500,7 +496,6 @@ class LeaseComponents(BaseClass):
     def create_ppsqft_components(self):
         ppsqft_components = html.Div([
             html.Div([
-                html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -552,7 +547,6 @@ class LeaseComponents(BaseClass):
     def create_pets_radio_button(self):
         pets_radio = html.Div([
             html.Div([
-                html.H5("Pet Policy", style={'display': 'inline-block', 'marginRight': '10px'}),
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.RadioItems(
@@ -615,7 +609,6 @@ class LeaseComponents(BaseClass):
         # Create the Dash component
         rental_terms_checklist = html.Div([
             html.Div([
-                html.H5("Rental Terms", style={'display': 'inline-block', 'marginRight': '10px'}),
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.Checklist(
@@ -636,7 +629,6 @@ class LeaseComponents(BaseClass):
     def create_garage_spaces_components(self):
         garage_spaces_components = html.Div([
             html.Div([
-                html.H5("Parking Spaces", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -686,7 +678,6 @@ class LeaseComponents(BaseClass):
     def create_rental_price_slider(self):
         rental_price_components = html.Div([
             html.Div([
-                html.H5("Price (Monthly)", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -720,7 +711,6 @@ class LeaseComponents(BaseClass):
 
         year_built_components = html.Div([
             html.Div([
-                html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.RangeSlider(
@@ -772,7 +762,6 @@ class LeaseComponents(BaseClass):
     def create_furnished_checklist(self):
         furnished_checklist = html.Div([
             html.Div([
-                html.H5("Furnished/Unfurnished", style={'display': 'inline-block', 'marginRight': '10px'}),
             ], style={'display': 'inline-block'}),
             html.Div([
                 dcc.Checklist(
@@ -1077,7 +1066,6 @@ class LeaseComponents(BaseClass):
 
         laundry_checklist = html.Div([
             html.Div([
-                html.H5("Laundry Features", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.Checklist(
@@ -1102,7 +1090,6 @@ class LeaseComponents(BaseClass):
         listed_date_components = html.Div([
             # Top header: Listed Date Range with toggle button
             html.Div([
-                html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
@@ -1383,7 +1370,6 @@ class BuyComponents(BaseClass):
         subtype_checklist = html.Div([ 
             # Title and toggle button
             html.Div([
-                html.H5("Subtypes", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
 
             # The actual checklist
@@ -1411,7 +1397,6 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("bedrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
             # The actual range slider
@@ -1442,7 +1427,6 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("Bathrooms", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
             # The actual range slider
@@ -1471,7 +1455,6 @@ class BuyComponents(BaseClass):
     def create_sqft_components(self):
         square_footage_components = html.Div([
             html.Div([
-                html.H5("Square Footage", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -1522,7 +1505,6 @@ class BuyComponents(BaseClass):
     def create_ppsqft_components(self):
         ppsqft_components = html.Div([
             html.Div([
-                html.H5("Price Per Square Foot ($)", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             html.Div([
                 dcc.RangeSlider(
@@ -1575,7 +1557,6 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("Pet Policy", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
@@ -1614,7 +1595,6 @@ class BuyComponents(BaseClass):
         hoa_fee_components = html.Div([
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("HOA Fee", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             # The actual RangeSlider and RadioItems
@@ -1670,7 +1650,6 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("HOA Fee Frequency", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to SFR and CONDO/TWNHS.")], style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
@@ -1707,7 +1686,6 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("Space Rent", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
@@ -1764,7 +1742,6 @@ class BuyComponents(BaseClass):
             
             # Title, subheading, and toggle button
             html.Div([
-                html.H5("Senior Community", style={'display': 'inline-block', 'marginRight': '10px'}),
                 html.H6([html.Em("Applies only to Mobile Homes (MH).")], style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
@@ -1802,7 +1779,6 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("List Price", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
             # The actual RangeSlider
@@ -1840,7 +1816,6 @@ class BuyComponents(BaseClass):
             
             # Title and toggle button
             html.Div([
-                html.H5("Year Built", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             
             # The actual RangeSlider and Radio button
@@ -1898,7 +1873,6 @@ class BuyComponents(BaseClass):
         listed_date_components = html.Div([
             # Top header: Listed Date Range with toggle button
             html.Div([
-                html.H5("Listed Date Range", style={'display': 'inline-block', 'marginRight': '10px'}),
             ]),
             # Main content for listed date: radio buttons then DatePicker and alert
             html.Div([
