@@ -1252,6 +1252,7 @@ class LeaseComponents(BaseClass):
                 "bathrooms",
                 "pet_policy",
             ],
+            className="options-accordion",
         )
 
         user_options_card = dbc.Card(
@@ -2035,6 +2036,7 @@ class BuyComponents(BaseClass):
                 "bathrooms",
                 "pet_policy",
             ],
+            className="options-accordion",
         )
 
         user_options_card = dbc.Card(
