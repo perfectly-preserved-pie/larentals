@@ -461,23 +461,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown square footage?",
-                        dcc.RadioItems(
-                            id='sqft_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='sqft_missing_switch',
+                        label="Include properties with an unknown square footage",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '15px'}
                 ),
@@ -511,23 +501,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown price per square foot?",
-                        dcc.RadioItems(
-                            id='ppsqft_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='ppsqft_missing_switch',
+                        label="Include properties with an unknown price per square foot",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -642,23 +622,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown number of garage spaces?",
-                        dcc.RadioItems(
-                            id='garage_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='garage_missing_switch',
+                        label="Include properties with an unknown number of garage spaces",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -724,23 +694,13 @@ class LeaseComponents(BaseClass):
                     marks={int(year): str(int(year)) for year in marks_range},
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown year built?",
-                        dcc.RadioItems(
-                            id='yrbuilt_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='yrbuilt_missing_switch',
+                        label="Include properties with an unknown year built",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -809,23 +769,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown security deposit?",
-                        dcc.RadioItems(
-                            id='security_deposit_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='security_deposit_missing_switch',
+                        label="Include properties with an unknown security deposit",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -860,23 +810,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown misc/other deposit?",
-                        dcc.RadioItems(
-                            id='other_deposit_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='other_deposit_missing_switch',
+                        label="Include properties with an unknown misc/other deposit",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -911,23 +851,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown pet deposit?",
-                        dcc.RadioItems(
-                            id='pet_deposit_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='pet_deposit_missing_switch',
+                        label="Include properties with an unknown pet deposit",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -962,23 +892,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown key deposit?",
-                        dcc.RadioItems(
-                            id='key_deposit_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='key_deposit_missing_switch',
+                        label="Include properties with an unknown key deposit",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -1013,23 +933,13 @@ class LeaseComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown key deposit?",
-                        dcc.RadioItems(
-                            id='key_deposit_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='key_deposit_missing_switch',
+                        label="Include properties with an unknown key deposit",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -1111,20 +1021,13 @@ class LeaseComponents(BaseClass):
                 ),
                 # Alert about missing listed dates
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown listed date?",
-                        dcc.RadioItems(
-                            id='listed_date_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={"marginRight": "5px", "marginLeft": "5px"},
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='listed_date_missing_switch',
+                        label="Include properties with an unknown listed date",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -1455,23 +1358,13 @@ class BuyComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown square footage?",
-                        dcc.RadioItems(
-                            id='sqft_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='sqft_missing_switch',
+                        label="Include properties with an unknown square footage",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '15px'}
                 ),
@@ -1505,23 +1398,13 @@ class BuyComponents(BaseClass):
                     },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown price per square foot?",
-                        dcc.RadioItems(
-                            id='ppsqft_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='ppsqft_missing_switch',
+                        label="Include properties with an unknown price per square foot",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -1564,23 +1447,13 @@ class BuyComponents(BaseClass):
                         },
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown HOA fee?",
-                        dcc.RadioItems(
-                            id='hoa_fee_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='hoa_fee_missing_switch',
+                        label="Include properties with an unknown HOA fee",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -1667,23 +1540,13 @@ class BuyComponents(BaseClass):
                     updatemode='mouseup'
                 ),
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown year built?",
-                        dcc.RadioItems(
-                            id='yrbuilt_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={
-                                "marginRight": "5px",
-                                "marginLeft": "5px"
-                            },
-                            inline=True     
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='yrbuilt_missing_switch',
+                        label="Include properties with an unknown year built",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
@@ -1737,20 +1600,13 @@ class BuyComponents(BaseClass):
                 ),
                 # Alert about missing listed dates
                 dbc.Alert(
-                    [
-                        html.I(className="bi bi-info-circle-fill me-2"),
-                        "Should we include properties with an unknown listed date?",
-                        dcc.RadioItems(
-                            id='listed_date_missing_radio',
-                            options=[
-                                {'label': 'Yes', 'value': True},
-                                {'label': 'No', 'value': False}
-                            ],
-                            value=True,
-                            inputStyle={"marginRight": "5px", "marginLeft": "5px"},
-                            inline=True
-                        ),
-                    ],
+                    dmc.Switch(
+                        id='listed_date_missing_switch',
+                        label="Include properties with an unknown listed date",
+                        checked=True,
+                        size="md",
+                        color="teal",
+                    ),
                     color="info",
                     style={'marginTop': '5px'}
                 ),
