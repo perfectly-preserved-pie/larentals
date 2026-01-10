@@ -460,16 +460,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatSqFt"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='sqft_missing_switch',
-                        label="Include properties with an unknown square footage",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '15px'}
+                dmc.Switch(
+                    id='sqft_missing_switch',
+                    label="Include properties with an unknown square footage",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '15px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'sqft'}
@@ -500,16 +497,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='ppsqft_missing_switch',
-                        label="Include properties with an unknown price per square foot",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='ppsqft_missing_switch',
+                    label="Include properties with an unknown price per square foot",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'ppsqft'}
@@ -621,16 +615,13 @@ class LeaseComponents(BaseClass):
                         "always_visible": True
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='garage_missing_switch',
-                        label="Include properties with an unknown number of garage spaces",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='garage_missing_switch',
+                    label="Include properties with an unknown number of garage spaces",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'garage_spaces'}
@@ -693,16 +684,13 @@ class LeaseComponents(BaseClass):
                     #marks={str(year): str(year) for year in marks_range}
                     marks={int(year): str(int(year)) for year in marks_range},
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='yrbuilt_missing_switch',
-                        label="Include properties with an unknown year built",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='yrbuilt_missing_switch',
+                    label="Include properties with an unknown year built",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'year_built'}
@@ -768,16 +756,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='security_deposit_missing_switch',
-                        label="Include properties with an unknown security deposit",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='security_deposit_missing_switch',
+                    label="Include properties with an unknown security deposit",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'security_deposit'}
@@ -809,16 +794,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='other_deposit_missing_switch',
-                        label="Include properties with an unknown misc/other deposit",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='other_deposit_missing_switch',
+                    label="Include properties with an unknown misc/other deposit",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'other_deposit'}
@@ -850,16 +832,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='pet_deposit_missing_switch',
-                        label="Include properties with an unknown pet deposit",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='pet_deposit_missing_switch',
+                    label="Include properties with an unknown pet deposit",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'pet_deposit'}
@@ -891,16 +870,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='key_deposit_missing_switch',
-                        label="Include properties with an unknown key deposit",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='key_deposit_missing_switch',
+                    label="Include properties with an unknown key deposit",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
@@ -932,16 +908,13 @@ class LeaseComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='key_deposit_missing_switch',
-                        label="Include properties with an unknown key deposit",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='key_deposit_missing_switch',
+                    label="Include properties with an unknown key deposit",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
@@ -1020,16 +993,13 @@ class LeaseComponents(BaseClass):
                     initial_visible_month=today,
                 ),
                 # Alert about missing listed dates
-                dbc.Alert(
-                    dmc.Switch(
-                        id='listed_date_missing_switch',
-                        label="Include properties with an unknown listed date",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='listed_date_missing_switch',
+                    label="Include properties with an unknown listed date",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ], id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'})
         ], style={'marginBottom': '10px'}, id='listed_date_div_lease')
@@ -1357,16 +1327,13 @@ class BuyComponents(BaseClass):
                         "transform": "formatSqFt"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='sqft_missing_switch',
-                        label="Include properties with an unknown square footage",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '15px'}
+                dmc.Switch(
+                    id='sqft_missing_switch',
+                    label="Include properties with an unknown square footage",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'}
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'sqft'}
@@ -1397,16 +1364,13 @@ class BuyComponents(BaseClass):
                         "transform": "formatCurrency"
                     },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='ppsqft_missing_switch',
-                        label="Include properties with an unknown price per square foot",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='ppsqft_missing_switch',
+                    label="Include properties with an unknown price per square foot",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'ppsqft'}
@@ -1446,16 +1410,13 @@ class BuyComponents(BaseClass):
                         'transform': 'formatCurrency'
                         },
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='hoa_fee_missing_switch',
-                        label="Include properties with an unknown HOA fee",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='hoa_fee_missing_switch',
+                    label="Include properties with an unknown HOA fee",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'hoa_fee'},
@@ -1539,16 +1500,13 @@ class BuyComponents(BaseClass):
                     marks={int(year): str(int(year)) for year in marks_range},
                     updatemode='mouseup'
                 ),
-                dbc.Alert(
-                    dmc.Switch(
-                        id='yrbuilt_missing_switch',
-                        label="Include properties with an unknown year built",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='yrbuilt_missing_switch',
+                    label="Include properties with an unknown year built",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'year_built'}
@@ -1599,16 +1557,13 @@ class BuyComponents(BaseClass):
                     initial_visible_month=today,
                 ),
                 # Alert about missing listed dates
-                dbc.Alert(
-                    dmc.Switch(
-                        id='listed_date_missing_switch',
-                        label="Include properties with an unknown listed date",
-                        checked=True,
-                        size="md",
-                        color="teal",
-                    ),
-                    color="info",
-                    style={'marginTop': '5px'}
+                dmc.Switch(
+                    id='listed_date_missing_switch',
+                    label="Include properties with an unknown listed date",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={'marginTop': '10px'},
                 ),
             ], id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'})
         ], style={'marginBottom': '10px'}, id='listed_date_div_buy')
