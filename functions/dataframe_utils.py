@@ -1,7 +1,7 @@
 from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
 from loguru import logger
-from typing import Sequence, Dict, Optional
+from typing import Sequence, Dict, Optional, Tuple
 import json
 import pandas as pd
 import re
@@ -295,13 +295,34 @@ def drop_high_outliers(
     df: pd.DataFrame,
     cols: Sequence[str] = ("sqft", "total_bathrooms", "bedrooms", "parking_spaces"),
     iqr_multiplier: float = 1.5,
-    absolute_caps: Optional[Dict[str, float]] = None
+    absolute_caps: Optional[Dict[str, float]] = None,
 ) -> pd.DataFrame:
     """
-     Remove rows from a DataFrame where values in specified numeric columns
-     exceed the upper bound defined by Q3 + iqr_multiplier * IQR, and optionally
-     also any domain-specific hard caps.
-     """
+    Remove rows from a DataFrame where values in specified numeric columns exceed an
+    upper outlier bound and optionally exceed domain-specific hard caps.
+
+    Outlier rule (per column):
+        - Coerce the column to numeric (best-effort).
+        - Compute Q1, Q3, and IQR on non-null numeric values.
+        - Upper cutoff = Q3 + iqr_multiplier * IQR.
+        - Drop rows where the value is NOT null AND value > cutoff.
+
+    Absolute cap rule (per column):
+        - Coerce the column to numeric (best-effort).
+        - Drop rows where the value is NOT null AND value > cap.
+
+    Important:
+        - NULL/NaN values are preserved (never dropped solely due to being null).
+
+    Args:
+        df: Input DataFrame.
+        cols: Column names to apply IQR-based high-outlier removal to.
+        iqr_multiplier: Multiplier applied to IQR when computing the upper cutoff.
+        absolute_caps: Optional mapping of column -> maximum allowed value.
+
+    Returns:
+        A filtered DataFrame with high outliers removed, index reset.
+    """
     df_clean = df.copy()
 
     def _coerce_numeric_inplace(frame: pd.DataFrame, col: str) -> None:
@@ -315,18 +336,25 @@ def drop_high_outliers(
         if pd.api.types.is_numeric_dtype(s):
             return
 
-        # Coerce from strings/objects
         s2 = s.astype("string").str.strip()
-
-        # Common placeholders -> NA
         s2 = s2.replace(
             {"": pd.NA, "Unknown": pd.NA, "None": pd.NA, "N/A": pd.NA, "nan": pd.NA, "NaN": pd.NA}
         )
-
-        # Remove currency/commas
         s2 = s2.str.replace(r"[\$,]", "", regex=True)
 
         frame[col] = pd.to_numeric(s2, errors="coerce")
+
+    def _apply_upper_bound_keep_nulls(frame: pd.DataFrame, col: str, upper: float) -> Tuple[pd.DataFrame, int]:
+        """
+        Keep rows where col is null OR col <= upper. Drops only non-null values above upper.
+
+        Returns:
+            (filtered_frame, dropped_count)
+        """
+        before = len(frame)
+        mask = frame[col].isna() | (frame[col] <= upper)
+        out = frame[mask]
+        return out, before - len(out)
 
     # 1) Compute IQR thresholds once on original (after coercion)
     thresholds: Dict[str, float] = {}
@@ -343,13 +371,13 @@ def drop_high_outliers(
             logger.warning(f"Column '{col}' is not numeric after coercion; skipping.")
             continue
 
-        # If everything is NA after coercion, skip
-        if df_clean[col].dropna().empty:
+        numeric_non_null = df_clean[col].dropna()
+        if numeric_non_null.empty:
             logger.warning(f"Column '{col}' has no numeric values after coercion; skipping.")
             continue
 
-        q1 = float(df_clean[col].quantile(0.25))
-        q3 = float(df_clean[col].quantile(0.75))
+        q1 = float(numeric_non_null.quantile(0.25))
+        q3 = float(numeric_non_null.quantile(0.75))
         iqr = q3 - q1
 
         if iqr == 0:
@@ -360,12 +388,10 @@ def drop_high_outliers(
         thresholds[col] = cutoff
         stats[col] = {"q1": q1, "q3": q3, "iqr": iqr, "cutoff": cutoff}
 
-    # 2) Drop using IQR thresholds
+    # 2) Drop using IQR thresholds (KEEP NULLS)
     total_dropped = 0
     for col, cutoff in thresholds.items():
-        before = len(df_clean)
-        df_clean = df_clean[df_clean[col] <= cutoff]
-        dropped = before - len(df_clean)
+        df_clean, dropped = _apply_upper_bound_keep_nulls(df_clean, col, cutoff)
         total_dropped += dropped
 
         st = stats.get(col, {})
@@ -377,7 +403,7 @@ def drop_high_outliers(
         else:
             logger.info(f"Dropped {dropped} rows where '{col}' > {cutoff:.2f}.")
 
-    # 3) Drop using absolute caps if provided (coerce those cols too)
+    # 3) Drop using absolute caps if provided (KEEP NULLS)
     if absolute_caps:
         for col, cap in absolute_caps.items():
             if col not in df_clean.columns:
@@ -385,10 +411,8 @@ def drop_high_outliers(
 
             _coerce_numeric_inplace(df_clean, col)
 
-            if col in df_clean.columns and pd.api.types.is_numeric_dtype(df_clean[col]):
-                before = len(df_clean)
-                df_clean = df_clean[df_clean[col] <= cap]
-                dropped = before - len(df_clean)
+            if pd.api.types.is_numeric_dtype(df_clean[col]):
+                df_clean, dropped = _apply_upper_bound_keep_nulls(df_clean, col, cap)
                 total_dropped += dropped
                 logger.info(f"Dropped {dropped} rows where '{col}' > absolute cap {cap}.")
 
