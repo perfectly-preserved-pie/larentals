@@ -297,6 +297,8 @@ if __name__ == "__main__":
       df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
       df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
+      # Clean up outliers
+      df_combined = drop_high_outliers(df=df_combined, cols=["lot_size"])
     else:
       df_combined = df.copy()
     df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
