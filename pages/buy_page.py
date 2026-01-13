@@ -153,6 +153,8 @@ clientside_callback(
     Input('sqft_missing_switch', 'checked'),
     Input('ppsqft_slider', 'value'),
     Input('ppsqft_missing_switch', 'checked'),
+    Input('lot_size_slider', 'value'),
+    Input('lot_size_missing_switch', 'checked'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_switch', 'checked'),
     Input('subtype_checklist', 'value'),

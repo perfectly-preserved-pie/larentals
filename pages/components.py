@@ -1208,6 +1208,7 @@ class BuyComponents(BaseClass):
         self.map                      = self.create_map()
         self.map_card                 = self.create_map_card()
         self.ppsqft_components        = self.create_ppsqft_components()
+        self.lot_size_components      = self.create_lot_size_components()
         self.sqft_components          = self.create_sqft_components()
         self.subtype_checklist        = self.create_subtype_checklist()
         self.title_card               = self.create_title_card()
@@ -1383,6 +1384,54 @@ class BuyComponents(BaseClass):
         )
 
         return ppsqft_components
+
+    def create_lot_size_components(self):
+        lot_sizes = self.df["lot_size"]
+        has_values = lot_sizes.notna().any()
+
+        lot_min = float(np.nanmin(lot_sizes)) if has_values else 0.0
+        lot_max = float(np.nanmax(lot_sizes)) if has_values else 1.0
+
+        if not np.isfinite(lot_min):
+            lot_min = 0.0
+        if not np.isfinite(lot_max) or lot_max < lot_min:
+            lot_max = max(lot_min, 1.0)
+
+        lot_size_components = html.Div([
+            html.Div([
+            ]),
+            html.Div([
+                dcc.RangeSlider(
+                    min=lot_min,
+                    max=lot_max,
+                    value=[lot_min, lot_max],
+                    id="lot_size_slider",
+                    updatemode="mouseup",
+                    tooltip={
+                        "placement": "bottom",
+                        "always_visible": True,
+                        "transform": "formatSqFt"
+                    },
+                ),
+                dmc.Switch(
+                    id="lot_size_missing_switch",
+                    label="Include properties with an unknown lot size",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={"marginTop": "10px"},
+                ),
+            ],
+            id={'type': 'dynamic_output_div_buy', 'index': 'lot_size'}
+            ),
+        ],
+        style={
+            "marginBottom": "10px",
+        },
+        id="lot_size_div_buy"
+        )
+
+        return lot_size_components
     
     def create_hoa_fee_components(self):
         # Calculate the number of steps
@@ -1638,6 +1687,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
+                dbc.AccordionItem(self.lot_size_components, title="Lot Size", item_id="lot_size"),
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
                 dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),

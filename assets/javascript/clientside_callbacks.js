@@ -430,6 +430,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {boolean} sqftIncludeMissing - Whether to include properties with missing `sqft`.
         * @param {Array<number>} ppsqftRange - [minPpsqft, maxPpsqft] for filtering by `ppsqft`.
         * @param {boolean} ppsqftIncludeMissing - Whether to include properties with missing `ppsqft`.
+        * @param {Array<number>} lotSizeRange - [minLotSize, maxLotSize] for filtering by `lot_size`.
+        * @param {boolean} lotSizeIncludeMissing - Whether to include properties with missing `lot_size`.
         * @param {Array<number>} yearBuiltRange - [minYearBuilt, maxYearBuilt] for filtering by `year_built`.
         * @param {boolean} yearBuiltIncludeMissing - Whether to include properties with missing `year_built`.
         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
@@ -450,6 +452,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             sqftIncludeMissing,
             ppsqftRange,
             ppsqftIncludeMissing,
+            lotSizeRange,
+            lotSizeIncludeMissing,
             yearBuiltRange,
             yearBuiltIncludeMissing,
             subtypeSelection,
@@ -468,6 +472,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             // Convert Dash boolean inputs to actual booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
             const ppsqftIncludeMissingBool         = Boolean(ppsqftIncludeMissing);
+            const lotSizeIncludeMissingBool        = Boolean(lotSizeIncludeMissing);
             const yearBuiltIncludeMissingBool      = Boolean(yearBuiltIncludeMissing);
             const dateIncludeMissingBool           = Boolean(dateIncludeMissing);
             const hoaFeeIncludeMissingBool         = Boolean(hoaFeeIncludeMissing);
@@ -478,6 +483,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minBathrooms, maxBathrooms]    = bathroomsRange;
             const [minSqft, maxSqft]              = sqftRange;
             const [minPpsqft, maxPpsqft]          = ppsqftRange;
+            const [minLotSize, maxLotSize]        = lotSizeRange;
             const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
             const [minHOA, maxHOA]                = hoaFeeRange;
 
@@ -515,14 +521,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     ppsqftFilter = true;
                 }
 
-                // 6) Year Built Filter
+                // 6) Lot Size Filter
+                const lotSizeVal = parseFloat(props.lot_size);
+                let lotSizeFilter = !isNaN(lotSizeVal) && (lotSizeVal >= minLotSize && lotSizeVal <= maxLotSize);
+                if (lotSizeIncludeMissingBool && (props.lot_size == null || isNaN(lotSizeVal))) {
+                    lotSizeFilter = true;
+                }
+
+                // 7) Year Built Filter
                 const yearBuiltVal = parseFloat(props.year_built);
                 let yrBuiltFilter = !isNaN(yearBuiltVal) && (yearBuiltVal >= minYearBuilt && yearBuiltVal <= maxYearBuilt);
                 if (yearBuiltIncludeMissingBool && (props.year_built == null || isNaN(yearBuiltVal))) {
                     yrBuiltFilter = true;
                 }
 
-                // 7) Subtype Filter
+                // 8) Subtype Filter
                 let subtypeFilter = false;
                 const propertySubtype = (props.subtype || '').toUpperCase();
                 if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
@@ -531,7 +544,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
                 }
 
-                // 8) Listed Date Filter
+                // 9) Listed Date Filter
                 let dateFilter = false;
                 const listedDateStr = props.listed_date || '';
                 if (!listedDateStr) {
@@ -549,14 +562,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     }
                 }
 
-                // 9) HOA Fee Filter
+                // 10) HOA Fee Filter
                 const hoaVal = parseFloat(props.hoa_fee);
                 let hoaFilter = !isNaN(hoaVal) && (hoaVal >= minHOA && hoaVal <= maxHOA);
                 if (hoaFeeIncludeMissingBool && (props.hoa_fee == null || isNaN(hoaVal))) {
                     hoaFilter = true;
                 }
 
-                // 10) HOA Fee Frequency Filter
+                // 11) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
                 const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
@@ -568,6 +581,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     bathroomsInRange &&
                     sqftFilter &&
                     ppsqftFilter &&
+                    lotSizeFilter &&
                     yrBuiltFilter &&
                     subtypeFilter &&
                     dateFilter &&
@@ -583,6 +597,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         bathroomsVal,
                         sqftVal,
                         ppsqftVal,
+                        lotSizeVal,
                         yearBuiltVal,
                         propertySubtype,
                         listedDateStr,
@@ -594,6 +609,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                             bathroomsInRange,
                             sqftFilter,
                             ppsqftFilter,
+                            lotSizeFilter,
                             yrBuiltFilter,
                             subtypeFilter,
                             dateFilter,
