@@ -10,13 +10,13 @@ from functions.dataframe_utils import *
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
+from functions.normalization_utils import normalize_terms
 from functions.popup_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
 import argparse
 import glob
-import json
 import os
 import pandas as pd
 import sqlite3
@@ -287,6 +287,15 @@ if __name__ == "__main__":
     if not df_old.empty:
       previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
       df_combined.loc[df_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+
+    # --- Normalize lease terms (canonical + structured) ---
+    canon_lists = df_combined["terms"].apply(normalize_terms)
+
+    # Add a comma-joined canonical string version for simple filtering/display
+    df_combined["terms"] = canon_lists.apply(lambda xs: ", ".join(xs) if xs != ["Unknown"] else "")
+
+    # Add structured version for debugging/future (JSON stored as TEXT in SQLite)
+    df_combined["terms_norm"] = canon_lists.apply(lambda xs: json.dumps(xs, separators=(",", ":")))
 
     # Convert these columns to nullable integers
     for col in ['total_bathrooms', 'full_bathrooms', 'three_quarter_bathrooms', 'half_bathrooms', 'quarter_bathrooms', 'year_built', 'parking_spaces', 'bedrooms', 'lot_size', 'olp', 'list_price', 'sqft', 'key_deposit', 'other_deposit', 'pet_deposit', 'security_deposit']:
