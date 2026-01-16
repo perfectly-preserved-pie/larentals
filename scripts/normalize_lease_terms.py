@@ -1,9 +1,9 @@
 from __future__ import annotations
-
+from pathlib import Path
+from typing import Optional
 import json
 import re
 import sqlite3
-from typing import Optional
 
 # This normalizes lease terms into canonical codes so we don't get redundant terms for the same thing
 # Should only need to be run once to backfill existing data
@@ -221,4 +221,5 @@ def backfill_lease_terms(db_path: str) -> None:
 
 
 if __name__ == "__main__":
-    backfill_lease_terms("/assets/datasets/larentals.db")
+    db_path = Path(__file__).resolve().parent.parent / "assets/datasets/larentals.db"
+    backfill_lease_terms(str(db_path))
