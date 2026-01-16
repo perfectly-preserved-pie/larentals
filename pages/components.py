@@ -556,8 +556,11 @@ class LeaseComponents(BaseClass):
 
         # Split terms and flatten the list
         unique_terms = pd.Series([
-            term.strip() for sublist in terms_series.str.split(',')
-            if sublist for term in sublist
+            term.strip()
+            for sublist in terms_series.str.split(',')
+            if sublist
+            for term in sublist
+            if term and term.strip()
         ]).unique()
 
         unique_terms = sorted(unique_terms)
@@ -568,8 +571,11 @@ class LeaseComponents(BaseClass):
             '24M': '24 Months',
             '6M': '6 Months',
             'DL': 'Day-to-Day',
+            'DR': 'Deposit Required',
             'MO': 'Month-to-Month',
             'NG': 'Negotiable',
+            'Other': 'Other',
+            'RO': 'Renewal Options',
             'SN': 'Seasonal',
             'STL': 'Short Term Lease',
             'Unknown': 'Unknown',
@@ -597,7 +603,22 @@ class LeaseComponents(BaseClass):
             id={'type': 'dynamic_output_div_lease', 'index': 'rental_terms'},
             className="d-flex flex-wrap gap-2",
         )
-        return rental_terms_checklist
+
+        return html.Div(
+            [
+                rental_terms_checklist,
+                dmc.Switch(
+                    id="terms_missing_switch",
+                    label="Include properties with an unknown rental term",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={"marginTop": "10px"},
+                ),
+            ],
+            id="rental_terms_wrapper",
+            style={"marginBottom": "10px"},
+        )
 
     def create_garage_spaces_components(self):
         garage_spaces_components = html.Div([
