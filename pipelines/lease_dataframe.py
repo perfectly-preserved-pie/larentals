@@ -292,7 +292,7 @@ if __name__ == "__main__":
     canon_lists = df_combined["terms"].apply(normalize_terms)
 
     # Add a comma-joined canonical string version for simple filtering/display
-    df_combined["terms"] = canon_lists.apply(lambda xs: ", ".join(xs) if xs != ["Unknown"] else "")
+    df_combined["terms"] = canon_lists.apply(lambda xs: ", ".join(xs) if xs != ["Unknown"] else None)
 
     # Add structured version for debugging/future (JSON stored as TEXT in SQLite)
     df_combined["terms_norm"] = canon_lists.apply(lambda xs: json.dumps(xs, separators=(",", ":")))

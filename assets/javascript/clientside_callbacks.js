@@ -219,6 +219,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 } else {
                     let unknownFilter = false;
                     let chosenTerms = [...rentalTerms];
+                    chosenTerms = chosenTerms.filter(t => t && String(t).trim().length > 0);
                     if (chosenTerms.includes("Unknown")) {
                         // If user wants "Unknown," pass if no terms
                         unknownFilter = !feature.properties.terms;

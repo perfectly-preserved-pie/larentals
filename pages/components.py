@@ -556,8 +556,11 @@ class LeaseComponents(BaseClass):
 
         # Split terms and flatten the list
         unique_terms = pd.Series([
-            term.strip() for sublist in terms_series.str.split(',')
-            if sublist for term in sublist
+            term.strip()
+            for sublist in terms_series.str.split(',')
+            if sublist
+            for term in sublist
+            if term and term.strip()
         ]).unique()
 
         unique_terms = sorted(unique_terms)
