@@ -456,7 +456,7 @@ SUBTYPE_SYNONYMS: dict[str, str] = {
     "TRIPLEX": "Triplex",
 
     # -----------------
-    # Single-family variants → canonical
+    # Single-family variants
     # -----------------
     "SINGLE FAMILY": "Single Family Residence",
     "SINGLE FAMILY RESIDENCE": "Single Family Residence",
@@ -502,8 +502,7 @@ def normalize_subtype(raw: Optional[str]) -> str:
     if mapped:
         return mapped
 
-    # New canonical subtype: keep it stable and readable.
-    # Title-case is usually what you want for UI.
+    # New canonical subtype should be title-cased
     canonical = value.title()
 
     return canonical
