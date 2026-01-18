@@ -81,7 +81,7 @@ def layout() -> dbc.Container:
         style={"minHeight": "100vh"}
       ),
       # Create a hidden Store to store the selected subtype value
-      dcc.Store(id='selected_subtype', data='SFR'),
+      dcc.Store(id='selected_subtype', data='Single Family Residence')
     ],
     fluid=True,
     className="dbc p-0",

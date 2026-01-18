@@ -10,17 +10,17 @@ from functions.dataframe_utils import *
 from functions.geocoding_utils import *
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
+from functions.normalization_utils import flatten_subtype_column, normalize_subtype
 from functions.popup_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
 from loguru import logger
+import argparse
 import glob
 import os
 import pandas as pd
-import sys
 import sqlite3
-import argparse
-import json
+import sys
 
 # default values to avoid NameError before argument parsing
 SAMPLE_N = None
@@ -303,7 +303,8 @@ if __name__ == "__main__":
       df_combined = df.copy()
     df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
 
-    df_combined = flatten_subtype_column(df_combined) 
+    df_combined = flatten_subtype_column(df_combined)
+    df_combined['subtype'] = df_combined['subtype'].apply(normalize_subtype)
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
     df_combined.reset_index(drop=True, inplace=True)
     

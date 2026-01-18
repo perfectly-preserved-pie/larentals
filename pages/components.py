@@ -341,23 +341,23 @@ class LeaseComponents(BaseClass):
     
     def create_subtype_checklist(self):
         """
-        Creates a Dash MultiSelect of the flattened subtypes, without grouping.
+        Creates a Dash MultiSelect of subtypes present in the dataset.
         """
-        flattened_subtypes = [
-            'Apartment', 'Cabin', 'Combo - Res & Com', 'Commercial Residential',
-            'Condominium', 'Duplex', 'Loft','Own Your Own', 'Quadplex', 'Room For Rent',
-            'Single Family', 'Stock Cooperative', 'Studio', 'Townhouse',
-            'Triplex', 'Unknown'
-        ]
+        subtype_series = (
+            self.df["subtype"]
+            .fillna("Unknown")
+            .replace({None: "Unknown", "None": "Unknown"})
+            .astype(str)
+        )
 
-        # Create data in the format dmc.MultiSelect expects
-        # Each item is { 'label': '...', 'value': '...' }
-        data = [{"label": st, "value": st} for st in sorted(flattened_subtypes)]
+        unique_subtypes = sorted(set(subtype_series.unique()))
+        if "Unknown" not in unique_subtypes:
+            unique_subtypes.append("Unknown")
+            unique_subtypes = sorted(unique_subtypes)
 
-        # Default to everything selected
+        data = [{"label": st, "value": st} for st in unique_subtypes]
         initial_values = [item["value"] for item in data]
 
-        # Custom styles for the MultiSelect
         custom_styles = {
             "dropdown": {"color": "white"},
             "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
@@ -366,31 +366,23 @@ class LeaseComponents(BaseClass):
             "pill": {"color": "white"},
         }
 
-        subtype_checklist = html.Div([
-            html.Div([
-            ]),
+        return html.Div([
             html.Div([
                 dmc.MultiSelect(
-                    id='subtype_checklist',
+                    id="subtype_checklist",
                     data=data,
                     value=initial_values,
                     searchable=False,
                     nothingFoundMessage="No options found",
                     clearable=True,
                     style={"marginBottom": "10px"},
-                    styles=custom_styles
+                    styles=custom_styles,
                 ),
             ],
-            id={'type': 'dynamic_output_div_lease', 'index': 'subtype'},
-            style={
-                "overflowY": "scroll",
-                "overflowX": 'hidden',
-                "maxHeight": '120px',
-            })
+            id={"type": "dynamic_output_div_lease", "index": "subtype"},
+            style={"overflowY": "scroll", "overflowX": "hidden", "maxHeight": "120px"})
         ])
-
-        return subtype_checklist
-    
+        
     def create_bedrooms_slider(self):
         bedrooms_slider = html.Div([
             html.Div([
