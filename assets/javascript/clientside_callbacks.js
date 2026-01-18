@@ -53,6 +53,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} yearBuiltRange - [minYear, maxYear]
          * @param {boolean} yearBuiltIncludeMissing - Whether to include listings with null/undefined year_built
          * @param {string[]} rentalTerms - Array of user-selected rental terms (e.g. ["12 Months", "Unknown"])
+         * @param {boolean} termsIncludeMissing - Include listings with null/undefined terms?
          * @param {string[]} furnishedChoices - Array of furnished options (e.g. ["Furnished", "Unfurnished", "Unknown"])
          * @param {[number, number]} securityDepositRange - [minSecurityDeposit, maxSecurityDeposit]
          * @param {boolean} securityDepositIncludeMissing - Include listings with null/undefined deposit?
@@ -83,6 +84,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             yearBuiltRange,
             yearBuiltIncludeMissing,
             rentalTerms,
+            termsIncludeMissing,
             furnishedChoices,
             securityDepositRange,
             securityDepositIncludeMissing,
@@ -124,6 +126,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const ppsqftIncludeMissingBool         = Boolean(ppsqftIncludeMissing);
             const parkingSpacesIncludeMissingBool  = Boolean(parkingSpacesIncludeMissing);
             const yearBuiltIncludeMissingBool      = Boolean(yearBuiltIncludeMissing);
+            const termsIncludeMissingBool          = Boolean(termsIncludeMissing);
             const securityDepositIncludeMissingBool= Boolean(securityDepositIncludeMissing);
             const petDepositIncludeMissingBool     = Boolean(petDepositIncludeMissing);
             const keyDepositIncludeMissingBool     = Boolean(keyDepositIncludeMissing);
@@ -149,6 +152,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const subtype = feature.properties.subtype;
                 const date = feature.properties.listed_date;
                 const mls_number = feature.properties.mls_number;
+                const termsValue = feature.properties.terms;
+                const isTermsMissing = (termsValue === null || termsValue === undefined || termsValue === "");
 
                 // Transform "Both" -> "Furnished Or Unfurnished"
                 let furnished = feature.properties.furnished;
@@ -215,13 +220,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 6) termsFilter
                 let termsFilter = true;
                 if (!rentalTerms || rentalTerms.length === 0) {
-                    termsFilter = false;
+                    termsFilter = termsIncludeMissingBool ? isTermsMissing : false;
                 } else {
                     let unknownFilter = false;
                     let chosenTerms = [...rentalTerms];
+                    chosenTerms = chosenTerms.filter(t => t && String(t).trim().length > 0);
+                    if (termsIncludeMissingBool) {
+                        unknownFilter = unknownFilter || isTermsMissing;
+                    }
                     if (chosenTerms.includes("Unknown")) {
-                        // If user wants "Unknown," pass if no terms
-                        unknownFilter = !feature.properties.terms;
+                        unknownFilter = unknownFilter || isTermsMissing;
                         chosenTerms = chosenTerms.filter(t => t !== "Unknown");
                     }
                     if (chosenTerms.length > 0) {
@@ -229,7 +237,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                             term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
                         ).join("|");
                         const regex = new RegExp(pattern, "i");
-                        termsFilter = (feature.properties.terms && regex.test(feature.properties.terms)) || unknownFilter;
+                        termsFilter = (termsValue && regex.test(termsValue)) || unknownFilter;
                     } else {
                         termsFilter = unknownFilter;
                     }
