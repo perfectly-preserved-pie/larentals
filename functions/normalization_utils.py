@@ -3,7 +3,6 @@ from typing import Optional
 import html
 import json
 import re
-import sqlite3
 
 # This normalizes lease terms into canonical codes so we don't get redundant terms for the same thing
 TERM_SYNONYMS: dict[str, str] = {
@@ -185,40 +184,6 @@ def normalize_terms(raw: Optional[str]) -> list[str]:
     ordered = [c for c in CANONICAL_ORDER if c in canon_set]
     extras = sorted(canon_set.difference(CANONICAL_ORDER))
     return ordered + extras
-
-
-def backfill_lease_terms(db_path: str) -> None:
-    """
-    Backfill lease.terms and lease.terms_norm with canonical values.
-
-    - lease.terms: a comma-joined canonical string (for simple filtering / display)
-    - lease.terms_norm: JSON list of canonical codes (structured)
-    """
-    conn = sqlite3.connect(db_path)
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT rowid, terms FROM lease")
-        rows = cur.fetchall()
-
-        updates: list[tuple[str, str, int]] = []
-        for rowid, terms in rows:
-            canon_list = normalize_terms(terms)
-            canon_string = ", ".join(canon_list) if canon_list != ["Unknown"] else ""
-            canon_json = json.dumps(canon_list, separators=(",", ":"))
-
-            updates.append((canon_string, canon_json, rowid))
-
-        cur.executemany(
-            "UPDATE lease SET terms = ?, terms_norm = ? WHERE rowid = ?",
-            updates,
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-
-if __name__ == "__main__":
-    backfill_lease_terms("/assets/datasets/larentals.db")
 
 SUBTYPE_SYNONYMS: dict[str, str] = {
     # -----------------
