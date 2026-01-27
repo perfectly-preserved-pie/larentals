@@ -115,7 +115,7 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
     "zIndex": "10000",
   }
 
-  has_data = bool(geojson_data and geojson_data.get("features"))
+  has_data = geojson_data is not None and "features" in geojson_data
   base["display"] = "none" if has_data else "flex"
   return base
 
