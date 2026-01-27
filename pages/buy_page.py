@@ -166,6 +166,7 @@ clientside_callback(
     Input('hoa_fee_frequency_checklist', 'value'),
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
+    Input('isp_speed_missing_switch', 'checked'),
     Input('buy-geojson-store', "data")
   ],
 )

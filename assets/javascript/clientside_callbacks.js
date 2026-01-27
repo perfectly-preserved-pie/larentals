@@ -2,10 +2,10 @@ function safeNumber(value) {
     return value == null ? NaN : Number(value);
 }
 
-// Null/undefined values pass the filter, NaN values fail.
-function speedRangeFilter(value, minValue, maxValue) {
+// Null/undefined values pass the filter only when includeMissing is true.
+function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     if (value == null) {
-        return true;
+        return Boolean(includeMissing);
     }
     const numericValue = safeNumber(value);
     if (Number.isNaN(numericValue)) {
@@ -117,10 +117,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
              dateStart,
              dateEnd,
              dateIncludeMissing,
-             downloadSpeedRange,
-             uploadSpeedRange,
-             fullGeojson
-         ) {
+            downloadSpeedRange,
+            uploadSpeedRange,
+            speedIncludeMissing,
+            fullGeojson
+        ) {
             if (!fullGeojson || !fullGeojson.features) {
                 return {
                     type: "FeatureCollection",
@@ -142,6 +143,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minOtherDeposit, maxOtherDeposit] = otherDepositRange;
             const [minDownloadSpeed, maxDownloadSpeed] = downloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = uploadSpeedRange;
+            const speedIncludeMissingBool = Boolean(speedIncludeMissing);
 
             // Convert the "include missing" flags from dash into booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
@@ -391,11 +393,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     downloadSpeed,
                     minDownloadSpeed,
                     maxDownloadSpeed,
+                    speedIncludeMissingBool,
                 );
                 const uploadSpeedFilter = speedRangeFilter(
                     uploadSpeed,
                     minUploadSpeed,
                     maxUploadSpeed,
+                    speedIncludeMissingBool,
                 );
 
                 // Decide if we include this feature
@@ -515,10 +519,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
              hoaFeeRange,
              hoaFeeIncludeMissing,
              hoaFeeFrequencyChecklist,
-             downloadSpeedRange,
-             uploadSpeedRange,
-             fullGeojson
-         ) {
+            downloadSpeedRange,
+            uploadSpeedRange,
+            speedIncludeMissing,
+            fullGeojson
+        ) {
             // Guard against missing or malformed GeoJSON
             if (!fullGeojson || !Array.isArray(fullGeojson.features)) {
                 return { type: "FeatureCollection", features: [] };
@@ -542,6 +547,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minHOA, maxHOA]                = hoaFeeRange;
             const [minDownloadSpeed, maxDownloadSpeed] = downloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = uploadSpeedRange;
+            const speedIncludeMissingBool = Boolean(speedIncludeMissing);
 
             // Debug: Log raw data
             //console.log('Raw data:', fullGeojson);
@@ -635,11 +641,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     props.best_dn,
                     minDownloadSpeed,
                     maxDownloadSpeed,
+                    speedIncludeMissingBool,
                 );
                 const uploadSpeedFilter = speedRangeFilter(
                     props.best_up,
                     minUploadSpeed,
                     maxUploadSpeed,
+                    speedIncludeMissingBool,
                 );
 
                 // Combine all filters

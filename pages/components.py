@@ -199,8 +199,8 @@ class BaseClass:
                 f"""
                 SELECT
                     listing_id AS mls_number,
-                    MAX(COALESCE(MaxAdDn, 0)) AS best_dn,
-                    MAX(COALESCE(MaxAdUp, 0)) AS best_up
+                    MAX(MaxAdDn) AS best_dn,
+                    MAX(MaxAdUp) AS best_up
                 FROM {provider_table}
                 GROUP BY listing_id
                 """,
@@ -208,17 +208,16 @@ class BaseClass:
             )
         except sqlite3.Error as exc:
             logger.warning("Failed to load ISP speeds from %s: %s", provider_table, exc)
-            self.df["best_dn"] = 0.0
-            self.df["best_up"] = 0.0
+            self.df["best_dn"] = np.nan
+            self.df["best_up"] = np.nan
             return
 
         if speed_df.empty:
-            self.df["best_dn"] = 0.0
-            self.df["best_up"] = 0.0
+            self.df["best_dn"] = np.nan
+            self.df["best_up"] = np.nan
             return
 
         self.df = self.df.merge(speed_df, on="mls_number", how="left")
-        self.df[["best_dn", "best_up"]] = self.df[["best_dn", "best_up"]].fillna(0.0)
 
     def _safe_speed_max(self, column: str) -> float:
         if column not in self.df.columns:
@@ -266,6 +265,14 @@ class BaseClass:
                             },
                         ),
                     ],
+                ),
+                dmc.Switch(
+                    id="isp_speed_missing_switch",
+                    label="Include properties with an unknown ISP speed",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={"marginTop": "15px"},
                 ),
             ],
             id="isp_speed_div",
