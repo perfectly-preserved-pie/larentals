@@ -10,12 +10,15 @@ import dash_leaflet as dl
 import dash_mantine_components as dmc
 import geopandas as gpd
 import json
+import logging
 import numpy as np
 import pandas as pd
 import re
 import sqlite3
 
 DB_PATH = "assets/datasets/larentals.db"
+DEFAULT_SPEED_MAX = 1.0
+logger = logging.getLogger(__name__)
 
 def _require_safe_identifier(name: str, *, field_name: str) -> str:
     """
@@ -70,6 +73,13 @@ class BaseClass:
         conn = sqlite3.connect(DB_PATH)
         try:
             self.df = pd.read_sql_query(sql, conn)
+            self._attach_isp_speeds(conn, table_name=safe_table)
+            if select_columns is not None:
+                keep_cols = [col for col in select_columns if col in self.df.columns]
+                for col in ("best_dn", "best_up"):
+                    if col in self.df.columns and col not in keep_cols:
+                        keep_cols.append(col)
+                self.df = self.df[keep_cols]
         finally:
             conn.close()
 
@@ -91,6 +101,7 @@ class BaseClass:
 
             # lease deposits (won’t exist on buy)
             "key_deposit", "other_deposit", "pet_deposit", "security_deposit",
+            "best_dn", "best_up",
         ]
         for col in numeric_cols:
             if col in self.df.columns:
@@ -164,10 +175,114 @@ class BaseClass:
                     "key_deposit", "other_deposit", "hoa_fee", "space_rent"]:
             if col in gdf.columns:
                 gdf[col] = gdf[col].round(2)
+        
+        if {"best_dn", "best_up"}.issubset(gdf.columns):
+            gdf[["best_dn", "best_up"]] = gdf[["best_dn", "best_up"]].replace({np.nan: None})
 
         geojson_str = gdf.to_json(drop_id=True)
         return json.loads(geojson_str)
-        
+
+    def _attach_isp_speeds(self, conn: sqlite3.Connection, table_name: str) -> None:
+        if table_name not in {"lease", "buy"}:
+            return
+
+        safe_table = _require_safe_identifier(table_name, field_name="table_name")
+        provider_table = {
+            "lease": "lease_provider_options",
+            "buy": "buy_provider_options",
+        }.get(safe_table)
+        if not provider_table:
+            return
+        provider_table = _require_safe_identifier(
+            provider_table,
+            field_name="provider_table",
+        )
+        try:
+            speed_df = pd.read_sql_query(
+                f"""
+                SELECT
+                    listing_id AS mls_number,
+                    MAX(MaxAdDn) AS best_dn,
+                    MAX(MaxAdUp) AS best_up
+                FROM {provider_table}
+                GROUP BY listing_id
+                """,
+                conn,
+            )
+        except sqlite3.Error as exc:
+            logger.warning("Failed to load ISP speeds from %s: %s", provider_table, exc)
+            self.df["best_dn"] = np.nan
+            self.df["best_up"] = np.nan
+            return
+
+        if speed_df.empty:
+            self.df["best_dn"] = np.nan
+            self.df["best_up"] = np.nan
+            return
+
+        self.df = self.df.merge(speed_df, on="mls_number", how="left")
+
+    def _safe_speed_max(self, column: str) -> float:
+        if column not in self.df.columns:
+            return DEFAULT_SPEED_MAX
+
+        max_value = pd.to_numeric(self.df[column], errors="coerce").max()
+        if not np.isfinite(max_value) or max_value <= 0:
+            return DEFAULT_SPEED_MAX
+        return float(max_value)
+
+    def create_isp_speed_components(self):
+        max_download = self._safe_speed_max("best_dn")
+        max_upload = self._safe_speed_max("best_up")
+        return html.Div(
+            [
+                html.Div(
+                    [
+                        html.H6("Download Speed (Mbps)", style={"marginBottom": "5px"}),
+                        dcc.RangeSlider(
+                            min=0,
+                            max=max_download,
+                            value=[0, max_download],
+                            id="isp_download_speed_slider",
+                            updatemode="mouseup",
+                            tooltip={
+                                "placement": "bottom",
+                                "always_visible": True,
+                                "transform": "formatIspSpeed",
+                            },
+                        ),
+                    ],
+                    style={"marginBottom": "15px"},
+                ),
+                html.Div(
+                    [
+                        html.H6("Upload Speed (Mbps)", style={"marginBottom": "5px"}),
+                        dcc.RangeSlider(
+                            min=0,
+                            max=max_upload,
+                            value=[0, max_upload],
+                            id="isp_upload_speed_slider",
+                            updatemode="mouseup",
+                            tooltip={
+                                "placement": "bottom",
+                                "always_visible": True,
+                                "transform": "formatIspSpeed",
+                            },
+                        ),
+                    ],
+                ),
+                dmc.Switch(
+                    id="isp_speed_missing_switch",
+                    label="Include properties with an unknown ISP speed",
+                    checked=True,
+                    size="md",
+                    color="teal",
+                    style={"marginTop": "15px"},
+                ),
+            ],
+            id="isp_speed_div",
+        )
+
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
@@ -319,6 +434,7 @@ class LeaseComponents(BaseClass):
         self.subtype_checklist           = self.create_subtype_checklist()
         self.title_card                  = self.create_title_card()
         self.year_built_components       = self.create_year_built_components()
+        self.isp_speed_components        = self.create_isp_speed_components()
 
         # Dependent components last
         self.user_options_card = self.create_user_options_card()
@@ -1099,8 +1215,9 @@ class LeaseComponents(BaseClass):
                     item_id="deposits",
                 ),
                 dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished"),
-                dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
                 dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces"),
+                dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms"),
                 dbc.AccordionItem(self.square_footage_components, title="Square Footage", item_id="square_footage"),
@@ -1226,6 +1343,7 @@ class BuyComponents(BaseClass):
         self.subtype_checklist        = self.create_subtype_checklist()
         self.title_card               = self.create_title_card()
         self.year_built_components    = self.create_year_built_components()
+        self.isp_speed_components     = self.create_isp_speed_components()
 
         # 7) Dependent components
         self.user_options_card = self.create_user_options_card()
@@ -1693,16 +1811,17 @@ class BuyComponents(BaseClass):
     def create_user_options_card(self):
         accordion = dbc.Accordion(
             [
-                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
-                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
-                dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
-                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
                 dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
+                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
+                dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.lot_size_components, title="Lot Size", item_id="lot_size"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),
             ],
             flush=True,

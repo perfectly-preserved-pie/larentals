@@ -119,8 +119,8 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
     "zIndex": "10000",
   }
 
-  has_data = bool(geojson_data and geojson_data.get("features"))
-  base["display"] = "none" if has_data else "flex"
+  has_features = geojson_data is not None and "features" in geojson_data
+  base["display"] = "none" if has_features else "flex"
   return base
 
 # Clientside callback to filter the full data in memory, then update the map
@@ -159,6 +159,9 @@ clientside_callback(
     Input('listed_date_datepicker_lease', 'start_date'),
     Input('listed_date_datepicker_lease', 'end_date'),
     Input('listed_date_missing_switch', 'checked'),
+    Input('isp_download_speed_slider', 'value'),
+    Input('isp_upload_speed_slider', 'value'),
+    Input('isp_speed_missing_switch', 'checked'),
     Input('lease-geojson-store', "data"),
   ],
 )

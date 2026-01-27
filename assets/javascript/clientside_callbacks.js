@@ -1,3 +1,28 @@
+function safeNumber(value) {
+    return value == null ? NaN : Number(value);
+}
+
+// Null/undefined values pass the filter only when includeMissing is true.
+function speedRangeFilter(value, minValue, maxValue, includeMissing) {
+    if (value == null) {
+        return Boolean(includeMissing);
+    }
+    const numericValue = safeNumber(value);
+    if (Number.isNaN(numericValue)) {
+        return Boolean(includeMissing);
+    }
+    const minNumericValue = safeNumber(minValue);
+    const maxNumericValue = safeNumber(maxValue);
+    if (Number.isNaN(minNumericValue) || Number.isNaN(maxNumericValue)) {
+        // If the slider bounds aren't valid numbers, don't filter on speed.
+        return true;
+    }
+    if (minNumericValue === maxNumericValue) {
+        return numericValue === minNumericValue;
+    }
+    return numericValue >= minNumericValue && numericValue <= maxNumericValue;
+}
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
         toggleVisibilityBasedOnSubtype: function(selected_subtype) {
@@ -67,38 +92,43 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {string[]} subtypeSelection - e.g. ["Condo", "Townhouse"]
          * @param {string[]} dateRange - e.g. ["2021-01-01", "2021-12-31"]
          * @param {boolean} dateIncludeMissing - Include listings with null/undefined date?
+         * @param {[number, number]} downloadSpeedRange - [minDownload, maxDownload]
+         * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
          * @param {Object} fullGeojson - GeoJSON data with .features array
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
-        filterAndCluster: function( // The order here MUST match the order in the callback decorator
-            priceRange,
-            bedroomsRange,
-            bathroomsRange,
-            petPolicy,
-            sqftRange,
-            sqftIncludeMissing,
-            ppsqftRange,
-            ppsqftIncludeMissing,
-            parkingSpacesRange,
-            parkingSpacesIncludeMissing,
-            yearBuiltRange,
-            yearBuiltIncludeMissing,
-            rentalTerms,
-            termsIncludeMissing,
-            furnishedChoices,
-            securityDepositRange,
-            securityDepositIncludeMissing,
-            petDepositRange,
-            petDepositIncludeMissing,
-            keyDepositRange,
-            keyDepositIncludeMissing,
-            otherDepositRange,
-            otherDepositIncludeMissing,
-            laundryChoices,
-            subtypeSelection,
-            dateStart,
-            dateEnd,
-            dateIncludeMissing,
+         filterAndCluster: function( // The order here MUST match the order in the callback decorator
+             priceRange,
+             bedroomsRange,
+             bathroomsRange,
+             petPolicy,
+             sqftRange,
+             sqftIncludeMissing,
+             ppsqftRange,
+             ppsqftIncludeMissing,
+             parkingSpacesRange,
+             parkingSpacesIncludeMissing,
+             yearBuiltRange,
+             yearBuiltIncludeMissing,
+             rentalTerms,
+             termsIncludeMissing,
+             furnishedChoices,
+             securityDepositRange,
+             securityDepositIncludeMissing,
+             petDepositRange,
+             petDepositIncludeMissing,
+             keyDepositRange,
+             keyDepositIncludeMissing,
+             otherDepositRange,
+             otherDepositIncludeMissing,
+             laundryChoices,
+             subtypeSelection,
+             dateStart,
+             dateEnd,
+             dateIncludeMissing,
+            downloadSpeedRange,
+            uploadSpeedRange,
+            speedIncludeMissing,
             fullGeojson
         ) {
             if (!fullGeojson || !fullGeojson.features) {
@@ -120,6 +150,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minPetDeposit, maxPetDeposit] = petDepositRange;
             const [minKeyDeposit, maxKeyDeposit] = keyDepositRange;
             const [minOtherDeposit, maxOtherDeposit] = otherDepositRange;
+            const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
+                ? downloadSpeedRange
+                : [downloadSpeedRange, downloadSpeedRange];
+            const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
+                ? uploadSpeedRange
+                : [uploadSpeedRange, uploadSpeedRange];
+            const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
+            const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
+            const speedIncludeMissingBool = Boolean(speedIncludeMissing);
 
             // Convert the "include missing" flags from dash into booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
@@ -152,6 +191,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const subtype = feature.properties.subtype;
                 const date = feature.properties.listed_date;
                 const mls_number = feature.properties.mls_number;
+                const downloadSpeed = feature.properties.best_dn;
+                const uploadSpeed = feature.properties.best_up;
                 const termsValue = feature.properties.terms;
                 const isTermsMissing = (termsValue === null || termsValue === undefined || termsValue === "");
 
@@ -362,6 +403,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                  (listingDate >= filterMinDate && listingDate <= filterMaxDate);
                 }
 
+                // 15) ISP speed filters
+                const downloadSpeedFilter = speedRangeFilter(
+                    downloadSpeed,
+                    minDownloadSpeed,
+                    maxDownloadSpeed,
+                    speedIncludeMissingBool,
+                );
+                const uploadSpeedFilter = speedRangeFilter(
+                    uploadSpeed,
+                    minUploadSpeed,
+                    maxUploadSpeed,
+                    speedIncludeMissingBool,
+                );
+
                 // Decide if we include this feature
                 const includeFeature =
                     price >= minPrice && price <= maxPrice &&
@@ -380,46 +435,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     otherDepositFilter &&
                     laundryFilter &&
                     subtypeFilterResult &&
-                    dateFilter;
-
-                // Debug if excluded
-                if (!includeFeature) {
-                    console.log('Feature excluded:', {
-                        mls_number,
-                        price,
-                        bedrooms,
-                        bathrooms,
-                        petPolicyValue,
-                        sqft,
-                        ppsqft,
-                        parkingSpaces,
-                        yearBuilt,
-                        furnished,
-                        securityDeposit,
-                        petDeposit,
-                        keyDeposit,
-                        otherDeposit,
-                        laundryCategory,
-                        subtype,
-                        date,
-                        filters: {
-                            petPolicyFilter,
-                            sqftFilter,
-                            ppsqftFilter,
-                            parkingFilter,
-                            yearBuiltFilter,
-                            termsFilter,
-                            furnishedFilter,
-                            securityDepositFilter,
-                            petDepositFilter,
-                            keyDepositFilter,
-                            otherDepositFilter,
-                            laundryFilter,
-                            subtypeFilterResult,
-                            dateFilter
-                        }
-                    });
-                }
+                    dateFilter &&
+                    downloadSpeedFilter &&
+                    uploadSpeedFilter;
 
                 return includeFeature;
             });
@@ -446,31 +464,36 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
         * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
-        * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
-        * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
-        * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
-        * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
+         * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
+         * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
+         * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
+         * @param {Array<number>} downloadSpeedRange - [minDownload, maxDownload] for filtering by `best_dn`.
+         * @param {Array<number>} uploadSpeedRange - [minUpload, maxUpload] for filtering by `best_up`.
+         * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
         */
-        filterAndClusterBuy: function(
-            priceRange,
-            bedroomsRange,
-            bathroomsRange,
-            sqftRange,
-            sqftIncludeMissing,
-            ppsqftRange,
-            ppsqftIncludeMissing,
-            lotSizeRange,
-            lotSizeIncludeMissing,
-            yearBuiltRange,
-            yearBuiltIncludeMissing,
-            subtypeSelection,
-            dateStart,
-            dateEnd,
-            dateIncludeMissing,
-            hoaFeeRange,
-            hoaFeeIncludeMissing,
-            hoaFeeFrequencyChecklist,
+         filterAndClusterBuy: function(
+             priceRange,
+             bedroomsRange,
+             bathroomsRange,
+             sqftRange,
+             sqftIncludeMissing,
+             ppsqftRange,
+             ppsqftIncludeMissing,
+             lotSizeRange,
+             lotSizeIncludeMissing,
+             yearBuiltRange,
+             yearBuiltIncludeMissing,
+             subtypeSelection,
+             dateStart,
+             dateEnd,
+             dateIncludeMissing,
+             hoaFeeRange,
+             hoaFeeIncludeMissing,
+             hoaFeeFrequencyChecklist,
+            downloadSpeedRange,
+            uploadSpeedRange,
+            speedIncludeMissing,
             fullGeojson
         ) {
             // Guard against missing or malformed GeoJSON
@@ -494,6 +517,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minLotSize, maxLotSize]        = lotSizeRange;
             const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
             const [minHOA, maxHOA]                = hoaFeeRange;
+            const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
+                ? downloadSpeedRange
+                : [downloadSpeedRange, downloadSpeedRange];
+            const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
+                ? uploadSpeedRange
+                : [uploadSpeedRange, uploadSpeedRange];
+            const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
+            const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
+            const speedIncludeMissingBool = Boolean(speedIncludeMissing);
 
             // Debug: Log raw data
             //console.log('Raw data:', fullGeojson);
@@ -582,6 +614,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
                 const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
 
+                // 12) ISP Speed Filters
+                const downloadSpeedFilter = speedRangeFilter(
+                    props.best_dn,
+                    minDownloadSpeed,
+                    maxDownloadSpeed,
+                    speedIncludeMissingBool,
+                );
+                const uploadSpeedFilter = speedRangeFilter(
+                    props.best_up,
+                    minUploadSpeed,
+                    maxUploadSpeed,
+                    speedIncludeMissingBool,
+                );
+
                 // Combine all filters
                 const includeFeature =
                     priceInRange &&
@@ -594,38 +640,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     subtypeFilter &&
                     dateFilter &&
                     hoaFilter &&
-                    hoaFeeFreqFilter;
-
-                // Debug if excluded
-                if (!includeFeature) {
-                    console.log('Feature excluded:', {
-                        mls_number,
-                        priceVal,
-                        bedroomsVal,
-                        bathroomsVal,
-                        sqftVal,
-                        ppsqftVal,
-                        lotSizeVal,
-                        yearBuiltVal,
-                        propertySubtype,
-                        listedDateStr,
-                        hoaVal,
-                        hoaFreqVal,
-                        filters: {
-                            priceInRange,
-                            bedroomsInRange,
-                            bathroomsInRange,
-                            sqftFilter,
-                            ppsqftFilter,
-                            lotSizeFilter,
-                            yrBuiltFilter,
-                            subtypeFilter,
-                            dateFilter,
-                            hoaFilter,
-                            hoaFeeFreqFilter
-                        }
-                    });
-                }
+                    hoaFeeFreqFilter &&
+                    downloadSpeedFilter &&
+                    uploadSpeedFilter;
 
                 return includeFeature;
             });

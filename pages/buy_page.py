@@ -115,8 +115,8 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
     "zIndex": "10000",
   }
 
-  has_data = bool(geojson_data and geojson_data.get("features"))
-  base["display"] = "none" if has_data else "flex"
+  has_features = geojson_data is not None and "features" in geojson_data
+  base["display"] = "none" if has_features else "flex"
   return base
 
 # Server-side callbacks
@@ -164,6 +164,9 @@ clientside_callback(
     Input('hoa_fee_slider', 'value'),
     Input('hoa_fee_missing_switch', 'checked'),
     Input('hoa_fee_frequency_checklist', 'value'),
+    Input('isp_download_speed_slider', 'value'),
+    Input('isp_upload_speed_slider', 'value'),
+    Input('isp_speed_missing_switch', 'checked'),
     Input('buy-geojson-store', "data")
   ],
 )
