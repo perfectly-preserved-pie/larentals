@@ -150,8 +150,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minPetDeposit, maxPetDeposit] = petDepositRange;
             const [minKeyDeposit, maxKeyDeposit] = keyDepositRange;
             const [minOtherDeposit, maxOtherDeposit] = otherDepositRange;
-            const [minDownloadSpeed, maxDownloadSpeed] = downloadSpeedRange;
-            const [minUploadSpeed, maxUploadSpeed] = uploadSpeedRange;
+            const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
+                ? downloadSpeedRange
+                : [downloadSpeedRange, downloadSpeedRange];
+            const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
+                ? uploadSpeedRange
+                : [uploadSpeedRange, uploadSpeedRange];
+            const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
+            const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
 
             // Convert the "include missing" flags from dash into booleans
@@ -511,8 +517,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minLotSize, maxLotSize]        = lotSizeRange;
             const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
             const [minHOA, maxHOA]                = hoaFeeRange;
-            const [minDownloadSpeed, maxDownloadSpeed] = downloadSpeedRange;
-            const [minUploadSpeed, maxUploadSpeed] = uploadSpeedRange;
+            const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
+                ? downloadSpeedRange
+                : [downloadSpeedRange, downloadSpeedRange];
+            const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
+                ? uploadSpeedRange
+                : [uploadSpeedRange, uploadSpeedRange];
+            const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
+            const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
 
             // Debug: Log raw data
