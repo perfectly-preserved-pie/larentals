@@ -43,13 +43,14 @@ window.dccFunctions.formatSqFt = function(value) {
  */
 window.dccFunctions = window.dccFunctions || {};
 window.dccFunctions.formatIspSpeed = function(value) {
+  const ISP_SPEED_EPSILON = 1e-9;
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    console.error('formatIspSpeed expects a number as the input');
+    console.error('formatIspSpeed expects a finite number as the input:', value);
     return value;
   }
   if (value >= 1000) {
     const gbps = value / 1000;
-    const rounded = Math.abs(gbps - Math.round(gbps)) < 1e-9 ? Math.round(gbps) : gbps.toFixed(1);
+    const rounded = Math.abs(gbps - Math.round(gbps)) < ISP_SPEED_EPSILON ? Math.round(gbps) : gbps.toFixed(1);
     return `${rounded} Gbps`;
   }
   return `${Math.round(value)} Mbps`;
