@@ -218,9 +218,11 @@ class BaseClass:
             return
 
         self.df = self.df.merge(speed_df, on="mls_number", how="left")
-        isp_speed_columns = self.df[["best_dn", "best_up"]]
-        isp_speed_mask = pd.notna(isp_speed_columns)
-        self.df[["best_dn", "best_up"]] = isp_speed_columns.where(isp_speed_mask, None)
+        isp_speed_mask = pd.notna(self.df[["best_dn", "best_up"]])
+        self.df[["best_dn", "best_up"]] = self.df[["best_dn", "best_up"]].where(
+            isp_speed_mask,
+            None,
+        )
 
     def _safe_speed_max(self, column: str) -> float:
         if column not in self.df.columns:
