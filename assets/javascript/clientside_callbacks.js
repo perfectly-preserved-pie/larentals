@@ -11,6 +11,9 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     if (Number.isNaN(numericValue)) {
         return false;
     }
+    if (minValue === maxValue) {
+        return numericValue === minValue;
+    }
     return numericValue >= minValue && numericValue <= maxValue;
 }
 
@@ -424,49 +427,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     downloadSpeedFilter &&
                     uploadSpeedFilter;
 
-                // Debug if excluded
-                if (!includeFeature) {
-                    console.log('Feature excluded:', {
-                        mls_number,
-                        price,
-                        bedrooms,
-                        bathrooms,
-                        petPolicyValue,
-                        sqft,
-                        ppsqft,
-                        parkingSpaces,
-                        yearBuilt,
-                        furnished,
-                        securityDeposit,
-                        petDeposit,
-                        keyDeposit,
-                        otherDeposit,
-                        laundryCategory,
-                        subtype,
-                        date,
-                        downloadSpeed,
-                        uploadSpeed,
-                        filters: {
-                            petPolicyFilter,
-                            sqftFilter,
-                            ppsqftFilter,
-                            parkingFilter,
-                            yearBuiltFilter,
-                            termsFilter,
-                            furnishedFilter,
-                            securityDepositFilter,
-                            petDepositFilter,
-                            keyDepositFilter,
-                            otherDepositFilter,
-                            laundryFilter,
-                            subtypeFilterResult,
-                            dateFilter,
-                            downloadSpeedFilter,
-                            uploadSpeedFilter
-                        }
-                    });
-                }
-
                 return includeFeature;
             });
 
@@ -665,41 +625,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     hoaFeeFreqFilter &&
                     downloadSpeedFilter &&
                     uploadSpeedFilter;
-
-                // Debug if excluded
-                if (!includeFeature) {
-                    console.log('Feature excluded:', {
-                        mls_number,
-                        priceVal,
-                        bedroomsVal,
-                        bathroomsVal,
-                        sqftVal,
-                        ppsqftVal,
-                        lotSizeVal,
-                        yearBuiltVal,
-                        propertySubtype,
-                        listedDateStr,
-                        hoaVal,
-                        downloadSpeedValue: safeNumber(props.best_dn),
-                        uploadSpeedValue: safeNumber(props.best_up),
-                        hoaFreqVal,
-                        filters: {
-                            priceInRange,
-                            bedroomsInRange,
-                            bathroomsInRange,
-                            sqftFilter,
-                            ppsqftFilter,
-                            lotSizeFilter,
-                            yrBuiltFilter,
-                            subtypeFilter,
-                            dateFilter,
-                            hoaFilter,
-                            hoaFeeFreqFilter,
-                            downloadSpeedFilter,
-                            uploadSpeedFilter
-                        }
-                    });
-                }
 
                 return includeFeature;
             });
