@@ -14,6 +14,7 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     const minNumericValue = safeNumber(minValue);
     const maxNumericValue = safeNumber(maxValue);
     if (Number.isNaN(minNumericValue) || Number.isNaN(maxNumericValue)) {
+        // If the slider bounds aren't valid numbers, don't filter on speed.
         return true;
     }
     if (minNumericValue === maxNumericValue) {
