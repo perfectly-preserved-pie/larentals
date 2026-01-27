@@ -43,6 +43,10 @@ window.dccFunctions.formatSqFt = function(value) {
  */
 window.dccFunctions = window.dccFunctions || {};
 window.dccFunctions.formatIspSpeed = function(value) {
+  const roundIfClose = (valueToRound, epsilon) => (
+    Math.abs(valueToRound - Math.round(valueToRound)) < epsilon ? Math.round(valueToRound) : valueToRound
+  );
+  // Epsilon guards against floating-point precision when converting Mbps to Gbps.
   const ISP_SPEED_EPSILON = 1e-9;
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     console.error('formatIspSpeed expects a finite number as the input:', value);
@@ -50,8 +54,9 @@ window.dccFunctions.formatIspSpeed = function(value) {
   }
   if (value >= 1000) {
     const gbps = value / 1000;
-    const rounded = Math.abs(gbps - Math.round(gbps)) < ISP_SPEED_EPSILON ? Math.round(gbps) : gbps.toFixed(1);
-    return `${rounded} Gbps`;
+    const roundedGbps = roundIfClose(gbps, ISP_SPEED_EPSILON);
+    const displayGbps = Number.isInteger(roundedGbps) ? roundedGbps : roundedGbps.toFixed(1);
+    return `${displayGbps} Gbps`;
   }
   return `${Math.round(value)} Mbps`;
 }
