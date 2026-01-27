@@ -245,6 +245,7 @@ class BaseClass:
                             tooltip={
                                 "placement": "bottom",
                                 "always_visible": True,
+                                "transform": "formatIspSpeed",
                             },
                         ),
                     ],
@@ -262,6 +263,7 @@ class BaseClass:
                             tooltip={
                                 "placement": "bottom",
                                 "always_visible": True,
+                                "transform": "formatIspSpeed",
                             },
                         ),
                     ],

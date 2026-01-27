@@ -35,3 +35,22 @@ window.dccFunctions.formatSqFt = function(value) {
   return value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' sq. ft';
 }
 
+/**
+ * Formats ISP speeds in Mbps/Gbps depending on magnitude.
+ *
+ * @param {number} value - The speed in Mbps.
+ * @returns {string} The formatted speed string.
+ */
+window.dccFunctions = window.dccFunctions || {};
+window.dccFunctions.formatIspSpeed = function(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    console.error('formatIspSpeed expects a number as the input');
+    return value;
+  }
+  if (value >= 1000) {
+    const gbps = value / 1000;
+    const rounded = Math.abs(gbps - Math.round(gbps)) < 1e-9 ? Math.round(gbps) : gbps.toFixed(1);
+    return `${rounded} Gbps`;
+  }
+  return `${Math.round(value)} Mbps`;
+}
