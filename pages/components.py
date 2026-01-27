@@ -177,11 +177,7 @@ class BaseClass:
                 gdf[col] = gdf[col].round(2)
         
         if {"best_dn", "best_up"}.issubset(gdf.columns):
-            isp_speed_columns = gdf[["best_dn", "best_up"]].astype(object)
-            gdf[["best_dn", "best_up"]] = isp_speed_columns.where(
-                pd.notna(isp_speed_columns),
-                None,
-            )
+            gdf[["best_dn", "best_up"]] = gdf[["best_dn", "best_up"]].replace({np.nan: None})
 
         geojson_str = gdf.to_json(drop_id=True)
         return json.loads(geojson_str)
