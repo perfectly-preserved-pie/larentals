@@ -11,10 +11,15 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     if (Number.isNaN(numericValue)) {
         return Boolean(includeMissing);
     }
-    if (minValue === maxValue) {
-        return numericValue === minValue;
+    const minNumericValue = safeNumber(minValue);
+    const maxNumericValue = safeNumber(maxValue);
+    if (Number.isNaN(minNumericValue) || Number.isNaN(maxNumericValue)) {
+        return true;
     }
-    return numericValue >= minValue && numericValue <= maxValue;
+    if (minNumericValue === maxNumericValue) {
+        return numericValue === minNumericValue;
+    }
+    return numericValue >= minNumericValue && numericValue <= maxNumericValue;
 }
 
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
