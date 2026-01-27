@@ -1811,17 +1811,17 @@ class BuyComponents(BaseClass):
     def create_user_options_card(self):
         accordion = dbc.Accordion(
             [
-                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
+                dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
+                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
-                dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
-                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.lot_size_components, title="Lot Size", item_id="lot_size"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
-                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),
             ],
             flush=True,
