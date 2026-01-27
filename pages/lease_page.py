@@ -100,7 +100,7 @@ def load_lease_geojson(_: int) -> dict:
 
 @callback(
   Output("lease-map-spinner", "style"),
-  Input("lease_geojson", "data"),
+  Input("lease-geojson-store", "data"),
   State("lease-map-spinner", "style"),
 )
 def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:

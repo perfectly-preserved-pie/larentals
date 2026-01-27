@@ -96,7 +96,7 @@ def update_selected_subtype(value):
 
 @callback(
   Output("buy-map-spinner", "style"),
-  Input("buy_geojson", "data"),
+  Input("buy-geojson-store", "data"),
   State("buy-map-spinner", "style"),
 )
 def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
