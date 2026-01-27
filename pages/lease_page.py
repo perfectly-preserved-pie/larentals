@@ -159,6 +159,8 @@ clientside_callback(
     Input('listed_date_datepicker_lease', 'start_date'),
     Input('listed_date_datepicker_lease', 'end_date'),
     Input('listed_date_missing_switch', 'checked'),
+    Input('isp_download_speed_slider', 'value'),
+    Input('isp_upload_speed_slider', 'value'),
     Input('lease-geojson-store', "data"),
   ],
 )
