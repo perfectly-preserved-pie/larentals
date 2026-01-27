@@ -9,7 +9,7 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     }
     const numericValue = safeNumber(value);
     if (Number.isNaN(numericValue)) {
-        return false;
+        return Boolean(includeMissing);
     }
     if (minValue === maxValue) {
         return numericValue === minValue;
