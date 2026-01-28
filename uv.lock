@@ -536,14 +536,14 @@ wheels = [
 
 [[package]]
 name = "dash-mantine-components"
-version = "2.4.1"
+version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9e/24/031ea3620ab7cd10b0a3ad5e579b987773951cb33b9cb313b0a083778db0/dash_mantine_components-2.4.1.tar.gz", hash = "sha256:617b01592dac3eba9154c7371c08cd52907fefb3317c2fb8538ad697402d1902", size = 907575, upload-time = "2025-12-20T17:35:37.654Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/be/e807e5a34fb85d8612ead0bafd92d7e4a2fd2b463d2dc4298e7b38051a41/dash_mantine_components-2.5.0.tar.gz", hash = "sha256:fa977da9094b931f9082aa1a1eb89f2c34c90dff3bd607d9de4eae006a7feef9", size = 938527, upload-time = "2026-01-25T21:42:30.892Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/55/7b0aac3707afebcd829bf315a9b3fcf2c66556008152bafe37cf85ce3697/dash_mantine_components-2.4.1-py3-none-any.whl", hash = "sha256:f3259350e14db34225a584826c4ad800a61c13ca3d9a1e2e82ab0180c162d5d4", size = 1343051, upload-time = "2025-12-20T17:35:35.422Z" },
+    { url = "https://files.pythonhosted.org/packages/76/92/8836145ee5c09032673bf8e4ead4c04bc01b3c76ef1fdb28d39d42d2b115/dash_mantine_components-2.5.0-py3-none-any.whl", hash = "sha256:d99f2a432921ef9ff1e8fbb9f69e71a235bd85b1e912e2b69a74ab23a9de7a62", size = 1379216, upload-time = "2026-01-25T21:42:28.511Z" },
 ]
 
 [[package]]
@@ -2137,7 +2137,7 @@ requires-dist = [
     { name = "dash-bootstrap-components", specifier = "~=2.0.4" },
     { name = "dash-extensions", specifier = "~=2.0.4" },
     { name = "dash-leaflet", specifier = "~=1.1.3" },
-    { name = "dash-mantine-components", specifier = "~=2.4.1" },
+    { name = "dash-mantine-components", specifier = "~=2.5.0" },
     { name = "flask", specifier = "~=3.1.2" },
     { name = "flask-compress", specifier = ">=1.23" },
     { name = "geopandas", specifier = "~=1.1.2" },
