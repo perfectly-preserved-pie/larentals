@@ -9,7 +9,7 @@ requires-python = ">=3.11"
 dependencies = [
   "beautifulsoup4~=4.14.3",
   "bleach~=6.3.0",
-  "boto3~=1.42.22",
+  "boto3~=1.42.34",
   "brotli~=1.2.0",
   "dash-bootstrap-components~=2.0.4",
   "dash-extensions~=2.0.4",
