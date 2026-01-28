@@ -2150,7 +2150,7 @@ requires-dist = [
     { name = "openpyxl", specifier = "~=3.1.5" },
     { name = "orjson", specifier = "~=3.11.5" },
     { name = "pandas", specifier = "~=3.0.0" },
-    { name = "protobuf", specifier = "~=6.33.2" },
+    { name = "protobuf", specifier = "~=6.33.4" },
     { name = "pyarrow", specifier = "~=23.0.0" },
     { name = "pytest", specifier = "~=9.0.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "~=9.0.2" },
