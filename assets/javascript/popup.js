@@ -77,7 +77,15 @@ window.dash_props = Object.assign({}, window.dash_props, {
 
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
-            const fullStreetAddress = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
+            // Titlecase function for addresses
+            function toTitleCase(str) {
+                return str.replace(/\w\S*/g, function(txt) {
+                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+                });
+            }
+
+            const fullStreetAddressRaw = stripTrailingPointZero(normalizeNullableString(data.full_street_address)) || "Unknown Address";
+            const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
             const lotSizeDisplay = formatLotSize(data.lot_size);
             const mlsNumberDisplay = stripTrailingPointZero(data.mls_number);
 
