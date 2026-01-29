@@ -139,6 +139,8 @@ def fetch_missing_zip_codes(df: pd.DataFrame, geolocator) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The updated DataFrame with fixed zip codes.
     """
+    if "zip_code" in df.columns:
+        df["zip_code"] = df["zip_code"].astype("string")
     missing_zip_df = df.loc[(df['zip_code'].isnull()) | (df['zip_code'] == 'Assessor')]
     total_missing = len(missing_zip_df)
     counter = 0

@@ -314,8 +314,8 @@ if __name__ == "__main__":
     df_combined['latitude'] = pd.to_numeric(df_combined['latitude'], errors='coerce')
     df_combined['longitude'] = pd.to_numeric(df_combined['longitude'], errors='coerce')
     df_combined['ppsqft'] = pd.to_numeric(df_combined['ppsqft'], errors='coerce')
-    # Convert the rest of the object columns to string type
-    for col in df_combined.select_dtypes(include=['object']).columns:
+    # Convert the rest of the object/string columns to string type
+    for col in df_combined.select_dtypes(include=['object', 'string']).columns:
       df_combined[col] = df_combined[col].astype("string")
 
     # decide where to write
