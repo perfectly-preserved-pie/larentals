@@ -21,7 +21,7 @@ def _normalize_place_query(query: str) -> str:
         return ""
     lowered = normalized.lower()
     if "los angeles" not in lowered and "ca" not in lowered and "california" not in lowered:
-        normalized = f"{normalized}, Los Angeles, CA"
+        normalized = f"{normalized}, CA"
     return normalized
 
 
