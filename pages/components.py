@@ -290,7 +290,7 @@ class BaseClass:
                     id=f"{self.page_type}-location-input",
                     type="text",
                     debounce=True,
-                    placeholder="ZIP or neighborhood (e.g., 90026 or Highland Park)",
+                    placeholder="ZIP code or neighborhood (e.g., 90042 or Highland Park)",
                     className="form-control",
                     style={
                         "color": "white",
