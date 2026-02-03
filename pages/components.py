@@ -451,7 +451,6 @@ class LeaseComponents(BaseClass):
         self.listed_date_components      = self.create_listed_date_components()
         self.location_filter_components  = self.create_location_filter_components()
         self.map                         = self.create_map()
-        self.place_filter_components     = self.create_location_filter_components()
         self.map_card                    = self.create_map_card()
         self.other_deposit_components    = self.create_other_deposit_components()
         self.pet_deposit_components      = self.create_pet_deposit_components()

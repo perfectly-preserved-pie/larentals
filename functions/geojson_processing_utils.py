@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 _ZIP_RE = re.compile(r"^\d{5}$")
 _DEFAULT_ZIP_GEOJSON_PATH = Path("assets/datasets/la_county_zip_codes.geojson")
-_DEFAULT_PLACE_CACHE_PATH = Path("assets/datasets/place_geocode_cache.json")
+_DEFAULT_PLACE_CACHE_PATH = Path("/mnt/data/place_geocode_cache.json")
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 def optimize_geojson(input_filepath: str, output_filepath: str, fields_to_keep: List[str]) -> None:
