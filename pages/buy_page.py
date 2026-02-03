@@ -103,12 +103,14 @@ def update_selected_subtype(value):
   Input("buy-geojson-store", "data"),
   Input("buy-location-input", "value"),
   Input("buy-zip-boundary-store", "data"),
+  Input("buy_geojson", "data"),
   State("buy-map-spinner", "style"),
 )
 def toggle_map_spinner(
   geojson_data: dict | None,
   location_value: str | None,
   zip_boundary_data: dict | None,
+  layer_data: dict | None,
   current_style: dict | None,
 ) -> dict:
   """
@@ -127,17 +129,22 @@ def toggle_map_spinner(
   }
 
   trigger = dash.ctx.triggered_id
+  # Hide once the map layer actually updates
+  if trigger == "buy_geojson":
+    has_features = layer_data is not None and "features" in layer_data
+    base["display"] = "none" if has_features else "flex"
+    return base
+
+  # Show on location/ZIP filter changes
   if trigger in {"buy-location-input", "buy-zip-boundary-store"}:
-    text = (location_value or "").strip()
-    if not text:
-      base["display"] = "none"
-      return base
     if zip_boundary_data and zip_boundary_data.get("error"):
       base["display"] = "none"
       return base
-    base["display"] = "flex"
+    text = (location_value or "").strip()
+    base["display"] = "flex" if text else "none"
     return base
 
+  # Initial load fallback
   has_features = geojson_data is not None and "features" in geojson_data
   base["display"] = "none" if has_features else "flex"
   return base
