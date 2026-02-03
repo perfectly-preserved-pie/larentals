@@ -2,6 +2,20 @@ function safeNumber(value) {
     return value == null ? NaN : Number(value);
 }
 
+function normalizeCoordinatePair(coords) {
+    if (!Array.isArray(coords) || coords.length < 2) {
+        return null;
+    }
+    const rawLng = typeof coords[0] === "string" ? coords[0].replace(/,/g, "") : coords[0];
+    const rawLat = typeof coords[1] === "string" ? coords[1].replace(/,/g, "") : coords[1];
+    const lng = Number(rawLng);
+    const lat = Number(rawLat);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+        return null;
+    }
+    return [lng, lat];
+}
+
 // Null/undefined values pass the filter only when includeMissing is true.
 function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     if (value == null) {
@@ -94,6 +108,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {boolean} dateIncludeMissing - Include listings with null/undefined date?
          * @param {[number, number]} downloadSpeedRange - [minDownload, maxDownload]
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
+         * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
          * @param {Object} fullGeojson - GeoJSON data with .features array
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
@@ -129,6 +144,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             downloadSpeedRange,
             uploadSpeedRange,
             speedIncludeMissing,
+            zipBoundaryData,
             fullGeojson
         ) {
             if (!fullGeojson || !fullGeojson.features) {
@@ -159,6 +175,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
+            const zipCode = zipBoundaryData?.zip_code ? String(zipBoundaryData.zip_code).trim() : "";
+            const zipFeature = zipBoundaryData?.feature || null;
+            const shouldFilterByZip = Boolean(zipCode);
+            const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
 
             // Convert the "include missing" flags from dash into booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
@@ -417,6 +437,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     speedIncludeMissingBool,
                 );
 
+                // 16) ZIP boundary filter (Census ZCTA)
+                let zipFilter = true;
+                if (shouldFilterByZip) {
+                    if (!zipFeature || !zipFeature.geometry || !turfAvailable || !feature.geometry) {
+                        return false;
+                    }
+                    const coords = normalizeCoordinatePair(feature.geometry.coordinates);
+                    if (!coords) {
+                        return false;
+                    }
+                    const point = turf.point(coords);
+                    zipFilter = turf.booleanPointInPolygon(point, zipFeature);
+                }
+
                 // Decide if we include this feature
                 const includeFeature =
                     price >= minPrice && price <= maxPrice &&
@@ -437,7 +471,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     subtypeFilterResult &&
                     dateFilter &&
                     downloadSpeedFilter &&
-                    uploadSpeedFilter;
+                    uploadSpeedFilter &&
+                    zipFilter;
 
                 return includeFeature;
             });
@@ -469,6 +504,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
          * @param {Array<number>} downloadSpeedRange - [minDownload, maxDownload] for filtering by `best_dn`.
          * @param {Array<number>} uploadSpeedRange - [minUpload, maxUpload] for filtering by `best_up`.
+         * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
         */
@@ -494,6 +530,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             downloadSpeedRange,
             uploadSpeedRange,
             speedIncludeMissing,
+            zipBoundaryData,
             fullGeojson
         ) {
             // Guard against missing or malformed GeoJSON
@@ -526,6 +563,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
+            const zipCode = zipBoundaryData?.zip_code ? String(zipBoundaryData.zip_code).trim() : "";
+            const zipFeature = zipBoundaryData?.feature || null;
+            const shouldFilterByZip = Boolean(zipCode);
+            const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
 
             // Debug: Log raw data
             //console.log('Raw data:', fullGeojson);
@@ -628,6 +669,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     speedIncludeMissingBool,
                 );
 
+                // 13) ZIP boundary filter (Census ZCTA)
+                let zipFilter = true;
+                if (shouldFilterByZip) {
+                    if (!zipFeature || !zipFeature.geometry || !turfAvailable || !feature.geometry) {
+                        return false;
+                    }
+                    const coords = normalizeCoordinatePair(feature.geometry.coordinates);
+                    if (!coords) {
+                        return false;
+                    }
+                    const point = turf.point(coords);
+                    zipFilter = turf.booleanPointInPolygon(point, zipFeature);
+                }
+
                 // Combine all filters
                 const includeFeature =
                     priceInRange &&
@@ -642,7 +697,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     hoaFilter &&
                     hoaFeeFreqFilter &&
                     downloadSpeedFilter &&
-                    uploadSpeedFilter;
+                    uploadSpeedFilter &&
+                    zipFilter;
 
                 return includeFeature;
             });

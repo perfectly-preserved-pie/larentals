@@ -1,8 +1,10 @@
 from .components import LeaseComponents
 from dash import dcc, MATCH, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import Input, Output, State
+from functions.geojson_processing_utils import fetch_zip_boundary_feature, geocode_place_cached, find_zip_for_point
 from functions.sql_helpers import get_earliest_listed_date
 from loguru import logger
+import re
 import dash
 import dash_bootstrap_components as dbc
 import sys
@@ -48,6 +50,7 @@ def layout() -> dbc.Container:
 
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
+  zip_boundary_store = dcc.Store(id="lease-zip-boundary-store", storage_type="memory", data=None)
   kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
   # Create a Store to hold the earliest listed date
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
@@ -56,6 +59,7 @@ def layout() -> dbc.Container:
     [
       collapse_store,
       geojson_store,
+      zip_boundary_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -97,6 +101,37 @@ def load_lease_geojson(_: int) -> dict:
   """
   components = LeaseComponents()
   return components.return_geojson()
+
+
+@callback(
+  Output("lease-zip-boundary-store", "data"),
+  Output("lease-location-status", "children"),
+  Input("lease-location-input", "value"),
+)
+def update_lease_zip_boundary(location_value: str | None) -> tuple[dict, str]:
+  text = (location_value or "").strip()
+  if not text:
+    return {"zip_code": None, "feature": None, "error": None}, ""
+
+  if re.fullmatch(r"\d{5}", text):
+    feature = fetch_zip_boundary_feature(text)
+    if not feature:
+      return {"zip_code": text, "feature": None, "error": "not_found"}, "No boundary found for that ZIP."
+    return {"zip_code": text, "feature": feature, "error": None}, f"Filtering by ZIP {text}."
+
+  geocoded = geocode_place_cached(text)
+  if not geocoded:
+    return {"zip_code": None, "feature": None, "error": "place_not_found"}, "Place not found."
+
+  zip_code = find_zip_for_point(geocoded["lat"], geocoded["lon"])
+  if not zip_code:
+    return {"zip_code": None, "feature": None, "error": "place_outside"}, "Place is outside LA County ZIPs."
+
+  feature = fetch_zip_boundary_feature(zip_code)
+  if not feature:
+    return {"zip_code": zip_code, "feature": None, "error": "not_found"}, "ZIP boundary not found."
+
+  return {"zip_code": zip_code, "feature": feature, "error": None}, f"Using {text} → ZIP {zip_code}."
 
 @callback(
   Output("lease-map-spinner", "style"),
@@ -162,6 +197,7 @@ clientside_callback(
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
+    Input('lease-zip-boundary-store', 'data'),
     Input('lease-geojson-store', "data"),
   ],
 )
