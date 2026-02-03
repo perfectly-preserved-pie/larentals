@@ -136,15 +136,11 @@ def update_lease_zip_boundary(location_value: str | None) -> tuple[dict, str]:
 @callback(
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
-  Input("lease-location-input", "value"),
-  Input("lease-zip-boundary-store", "data"),
   Input("lease_geojson", "data"),
   State("lease-map-spinner", "style"),
 )
 def toggle_map_spinner(
   geojson_data: dict | None,
-  location_value: str | None,
-  zip_boundary_data: dict | None,
   layer_data: dict | None,
   current_style: dict | None,
 ) -> dict:
@@ -168,15 +164,6 @@ def toggle_map_spinner(
   if trigger == "lease_geojson":
     has_features = layer_data is not None and "features" in layer_data
     base["display"] = "none" if has_features else "flex"
-    return base
-
-  # Show on location/ZIP filter changes
-  if trigger in {"lease-location-input", "lease-zip-boundary-store"}:
-    if zip_boundary_data and zip_boundary_data.get("error"):
-      base["display"] = "none"
-      return base
-    text = (location_value or "").strip()
-    base["display"] = "flex" if text else "none"
     return base
 
   # Initial load fallback
