@@ -175,9 +175,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
-            const zipCode = zipBoundaryData?.zip_code ? String(zipBoundaryData.zip_code).trim() : "";
-            const zipFeature = zipBoundaryData?.feature || null;
-            const shouldFilterByZip = Boolean(zipCode);
+            const zipCodes = Array.isArray(zipBoundaryData?.zip_codes)
+                ? zipBoundaryData.zip_codes
+                : (zipBoundaryData?.zip_code ? [String(zipBoundaryData.zip_code).trim()] : []);
+            const zipFeatures = Array.isArray(zipBoundaryData?.features)
+                ? zipBoundaryData.features
+                : (zipBoundaryData?.feature ? [zipBoundaryData.feature] : []);
+            const shouldFilterByZip = zipFeatures.length > 0 || zipCodes.length > 0;
             const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
 
             // Convert the "include missing" flags from dash into booleans
@@ -440,7 +444,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 16) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
-                    if (!zipFeature || !zipFeature.geometry || !turfAvailable || !feature.geometry) {
+                    if (!zipFeatures.length || !turfAvailable || !feature.geometry) {
                         return false;
                     }
                     const coords = normalizeCoordinatePair(feature.geometry.coordinates);
@@ -448,7 +452,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         return false;
                     }
                     const point = turf.point(coords);
-                    zipFilter = turf.booleanPointInPolygon(point, zipFeature);
+                    zipFilter = zipFeatures.some((zipFeature) => (
+                        zipFeature && zipFeature.geometry &&
+                        turf.booleanPointInPolygon(point, zipFeature)
+                    ));
                 }
 
                 // Decide if we include this feature
@@ -563,9 +570,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
-            const zipCode = zipBoundaryData?.zip_code ? String(zipBoundaryData.zip_code).trim() : "";
-            const zipFeature = zipBoundaryData?.feature || null;
-            const shouldFilterByZip = Boolean(zipCode);
+            const zipCodes = Array.isArray(zipBoundaryData?.zip_codes)
+                ? zipBoundaryData.zip_codes
+                : (zipBoundaryData?.zip_code ? [String(zipBoundaryData.zip_code).trim()] : []);
+            const zipFeatures = Array.isArray(zipBoundaryData?.features)
+                ? zipBoundaryData.features
+                : (zipBoundaryData?.feature ? [zipBoundaryData.feature] : []);
+            const shouldFilterByZip = zipFeatures.length > 0 || zipCodes.length > 0;
             const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
 
             // Debug: Log raw data
@@ -672,7 +683,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 13) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
-                    if (!zipFeature || !zipFeature.geometry || !turfAvailable || !feature.geometry) {
+                    if (!zipFeatures.length || !turfAvailable || !feature.geometry) {
                         return false;
                     }
                     const coords = normalizeCoordinatePair(feature.geometry.coordinates);
@@ -680,7 +691,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         return false;
                     }
                     const point = turf.point(coords);
-                    zipFilter = turf.booleanPointInPolygon(point, zipFeature);
+                    zipFilter = zipFeatures.some((zipFeature) => (
+                        zipFeature && zipFeature.geometry &&
+                        turf.booleanPointInPolygon(point, zipFeature)
+                    ));
                 }
 
                 // Combine all filters

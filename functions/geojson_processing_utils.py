@@ -6,7 +6,7 @@ import logging
 import re
 import uuid
 import requests
-from shapely.geometry import Point, shape
+from shapely.geometry import Point, shape, box
 from shapely.prepared import prep
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,15 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
     except (TypeError, ValueError):
         return None
 
-    result = {"lat": lat, "lon": lon, "query": normalized}
+    bbox_raw = item.get("boundingbox")
+    bbox = None
+    if isinstance(bbox_raw, (list, tuple)) and len(bbox_raw) == 4:
+        try:
+            bbox = [float(x) for x in bbox_raw]
+        except (TypeError, ValueError):
+            bbox = None
+
+    result = {"lat": lat, "lon": lon, "query": normalized, "bbox": bbox}
     cache[cache_key] = result
     _save_place_cache(cache_file, cache)
     return result
@@ -172,6 +180,68 @@ def _load_zip_shapes(file_path: str) -> List[tuple[str, Any]]:
         results.append((zip_code, polygon))
 
     return results
+
+
+@lru_cache(maxsize=4)
+def _load_zip_polygons(file_path: str) -> List[tuple[str, Any]]:
+    path = Path(file_path)
+    if not path.exists():
+        return []
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except Exception as exc:
+        logger.warning("Failed reading ZIP geometry %s: %s", path, exc)
+        return []
+
+    results: List[tuple[str, Any]] = []
+    for feature in data.get("features", []):
+        props = feature.get("properties") or {}
+        raw_zip = props.get("ZIPCODE")
+        if raw_zip is None:
+            continue
+        zip_code = str(raw_zip).strip().zfill(5)
+        if not _ZIP_RE.fullmatch(zip_code):
+            continue
+        geometry = feature.get("geometry")
+        if not geometry:
+            continue
+        try:
+            polygon = shape(geometry)
+        except Exception:
+            continue
+        results.append((zip_code, polygon))
+
+    return results
+
+
+def find_zip_features_for_bounds(
+    bounds: List[float],
+    file_path: str | None = None,
+) -> List[Dict[str, Any]]:
+    if not bounds or len(bounds) != 4:
+        return []
+
+    path = file_path or str(_DEFAULT_ZIP_GEOJSON_PATH)
+    lookup = _load_zip_boundaries(path)
+
+    try:
+        south, north, west, east = [float(v) for v in bounds]
+    except (TypeError, ValueError):
+        return []
+
+    bbox_polygon = box(west, south, east, north)
+    matches: List[Dict[str, Any]] = []
+    for zip_code, polygon in _load_zip_polygons(path):
+        try:
+            if polygon.intersects(bbox_polygon):
+                feature = lookup.get(zip_code)
+                if feature:
+                    matches.append(feature)
+        except Exception:
+            continue
+
+    return matches
 
 
 def find_zip_for_point(lat: float, lon: float, file_path: str | None = None) -> str | None:

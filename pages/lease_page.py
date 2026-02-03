@@ -1,7 +1,12 @@
 from .components import LeaseComponents
 from dash import dcc, MATCH, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import Input, Output, State
-from functions.geojson_processing_utils import fetch_zip_boundary_feature, geocode_place_cached, find_zip_for_point
+from functions.geojson_processing_utils import (
+  fetch_zip_boundary_feature,
+  geocode_place_cached,
+  find_zip_for_point,
+  find_zip_features_for_bounds,
+)
 from functions.sql_helpers import get_earliest_listed_date
 from loguru import logger
 import re
@@ -111,27 +116,39 @@ def load_lease_geojson(_: int) -> dict:
 def update_lease_zip_boundary(location_value: str | None) -> tuple[dict, str]:
   text = (location_value or "").strip()
   if not text:
-    return {"zip_code": None, "feature": None, "error": None}, ""
+    return {"zip_codes": [], "features": [], "error": None}, ""
 
   if re.fullmatch(r"\d{5}", text):
     feature = fetch_zip_boundary_feature(text)
     if not feature:
-      return {"zip_code": text, "feature": None, "error": "not_found"}, "No boundary found for that ZIP."
-    return {"zip_code": text, "feature": feature, "error": None}, f"Filtering by ZIP {text}."
+      return {"zip_codes": [text], "features": [], "error": "not_found"}, "No boundary found for that ZIP."
+    return {"zip_codes": [text], "features": [feature], "error": None}, f"Filtering by ZIP {text}."
 
   geocoded = geocode_place_cached(text)
   if not geocoded:
-    return {"zip_code": None, "feature": None, "error": "place_not_found"}, "Place not found."
+    return {"zip_codes": [], "features": [], "error": "place_not_found"}, "Place not found."
+
+  bbox = geocoded.get("bbox")
+  if bbox:
+    features = find_zip_features_for_bounds(bbox)
+    if not features:
+      return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
+    zip_codes = [f.get("properties", {}).get("zip_code") for f in features]
+    zip_codes = [z for z in zip_codes if z]
+    label = ", ".join(zip_codes[:5])
+    if len(zip_codes) > 5:
+      label = f"{label} +{len(zip_codes) - 5} more"
+    return {"zip_codes": zip_codes, "features": features, "error": None}, f"Filtering by ZIPs: {label}."
 
   zip_code = find_zip_for_point(geocoded["lat"], geocoded["lon"])
   if not zip_code:
-    return {"zip_code": None, "feature": None, "error": "place_outside"}, "Place is outside LA County ZIPs."
+    return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
 
   feature = fetch_zip_boundary_feature(zip_code)
   if not feature:
-    return {"zip_code": zip_code, "feature": None, "error": "not_found"}, "ZIP boundary not found."
+    return {"zip_codes": [zip_code], "features": [], "error": "not_found"}, "ZIP boundary not found."
 
-  return {"zip_code": zip_code, "feature": feature, "error": None}, f"Using {text} → ZIP {zip_code}."
+  return {"zip_codes": [zip_code], "features": [feature], "error": None}, f"Using {text} → ZIP {zip_code}."
 
 @callback(
   Output("lease-map-spinner", "style"),
