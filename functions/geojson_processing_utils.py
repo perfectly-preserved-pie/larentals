@@ -4,7 +4,6 @@ from pathlib import Path
 import json
 import logging
 import re
-import uuid
 import requests
 from shapely.geometry import Point, shape, box
 from shapely.prepared import prep

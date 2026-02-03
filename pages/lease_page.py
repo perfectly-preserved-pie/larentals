@@ -1,5 +1,5 @@
 from .components import LeaseComponents
-from dash import dcc, MATCH, clientside_callback, ClientsideFunction, callback
+from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import Input, Output, State
 from functions.geojson_processing_utils import (
   fetch_zip_boundary_feature,
