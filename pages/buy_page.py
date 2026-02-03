@@ -1,11 +1,13 @@
 from .components import BuyComponents
 from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
+from functions.geojson_processing_utils import fetch_zip_boundary_feature
 from functions.sql_helpers import get_earliest_listed_date
 from dash.dependencies import Input, Output, State
 from loguru import logger
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
+import re
 import sys
 import time
 
@@ -53,6 +55,7 @@ def layout() -> dbc.Container:
   """
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="buy-geojson-store", storage_type="memory", data=None)
+  zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data=None)
   kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
@@ -60,6 +63,7 @@ def layout() -> dbc.Container:
     [
       collapse_store,
       geojson_store,
+      zip_boundary_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -136,6 +140,29 @@ def load_buy_geojson(_: int) -> dict:
   return components.return_geojson()
 
 
+@callback(
+  Output("buy-zip-boundary-store", "data"),
+  Output("buy-zip-status", "children"),
+  Input("buy-zip-input", "value"),
+)
+def update_buy_zip_boundary(zip_value: str | None) -> tuple[dict, str]:
+  zip_text = (zip_value or "").strip()
+  if not zip_text:
+    return {"zip_code": None, "feature": None, "error": None}, ""
+
+  if not re.fullmatch(r"\d{5}", zip_text):
+    return {"zip_code": zip_text, "feature": None, "error": "invalid"}, "Enter a 5-digit ZIP code."
+
+  feature = fetch_zip_boundary_feature(zip_text)
+  if not feature:
+    return {"zip_code": zip_text, "feature": None, "error": "not_found"}, "No boundary found for that ZIP."
+
+  return (
+    {"zip_code": zip_text, "feature": feature, "error": None},
+    f"Filtering by ZIP {zip_text} (Census ZCTA).",
+  )
+
+
 """Keep subtype-dependent sections visible; dynamic hiding removed."""
 
 # Clientside callback to filter the full data in memory, then update the map
@@ -167,6 +194,7 @@ clientside_callback(
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
+    Input('buy-zip-boundary-store', 'data'),
     Input('buy-geojson-store', "data")
   ],
 )

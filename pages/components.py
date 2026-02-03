@@ -283,6 +283,36 @@ class BaseClass:
             id="isp_speed_div",
         )
 
+    def create_zip_filter_components(self) -> html.Div:
+        return html.Div(
+            [
+                dcc.Input(
+                    id=f"{self.page_type}-zip-input",
+                    type="text",
+                    inputMode="numeric",
+                    pattern="\\d{5}",
+                    maxLength=5,
+                    debounce=True,
+                    placeholder="e.g., 90026",
+                    className="form-control",
+                    style={
+                        "color": "white",
+                        "backgroundColor": "#1b1f24",
+                        "borderColor": "#495057",
+                    },
+                ),
+                html.Div(
+                    id=f"{self.page_type}-zip-status",
+                    style={
+                        "marginTop": "6px",
+                        "fontSize": "0.85rem",
+                        "color": "#9aa0a6",
+                    },
+                ),
+            ],
+            style={"marginBottom": "10px"},
+        )
+
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
@@ -373,6 +403,7 @@ class LeaseComponents(BaseClass):
         "mls_number",
         "latitude",
         "longitude",
+        "zip_code",
         "subtype",
         "list_price",
         "bedrooms",
@@ -421,6 +452,7 @@ class LeaseComponents(BaseClass):
         self.key_deposit_components      = self.create_key_deposit_components()
         self.laundry_checklist           = self.create_laundry_checklist()
         self.listed_date_components      = self.create_listed_date_components()
+        self.zip_filter_components       = self.create_zip_filter_components()
         self.map                         = self.create_map()
         self.map_card                    = self.create_map_card()
         self.other_deposit_components    = self.create_other_deposit_components()
@@ -1199,6 +1231,7 @@ class LeaseComponents(BaseClass):
         accordion = dbc.Accordion(
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
+                dbc.AccordionItem(self.zip_filter_components, title="ZIP Code", item_id="zip_code"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -1227,6 +1260,7 @@ class LeaseComponents(BaseClass):
             always_open=True,
             active_item=[
                 "listed_date",
+                "zip_code",
                 "subtypes",
                 "monthly_rent",
                 "bedrooms",
@@ -1294,6 +1328,7 @@ class BuyComponents(BaseClass):
         "mls_number",
         "latitude",
         "longitude",
+        "zip_code",
 
         # core property details (filters + popup)
         "subtype",
@@ -1335,6 +1370,7 @@ class BuyComponents(BaseClass):
         self.hoa_fee_frequency_checklist = self.create_hoa_fee_frequency_checklist()
         self.list_price_slider        = self.create_list_price_slider()
         self.listed_date_components   = self.create_listed_date_components()
+        self.zip_filter_components    = self.create_zip_filter_components()
         self.map                      = self.create_map()
         self.map_card                 = self.create_map_card()
         self.ppsqft_components        = self.create_ppsqft_components()
@@ -1812,6 +1848,7 @@ class BuyComponents(BaseClass):
         accordion = dbc.Accordion(
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
+                dbc.AccordionItem(self.zip_filter_components, title="ZIP Code", item_id="zip_code"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -1828,6 +1865,7 @@ class BuyComponents(BaseClass):
             always_open=True,
             active_item=[
                 "listed_date",
+                "zip_code",
                 "subtypes",
                 "list_price",
                 "bedrooms",
