@@ -17,4 +17,4 @@ RUN chown -R 1337:1337 /app && chmod -R 700 /app
 
 # 7) Use uv run to lock, sync, then invoke Gunicorn
 #    Note the “--” to separate uv flags from the Gunicorn command
-CMD ["uv", "run", "--", "gunicorn", "-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
+CMD ["uv", "run", "--", "gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "--workers=10", "--preload", "app:server"]
