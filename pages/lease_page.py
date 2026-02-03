@@ -136,9 +136,16 @@ def update_lease_zip_boundary(location_value: str | None) -> tuple[dict, str]:
 @callback(
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
+  Input("lease-location-input", "value"),
+  Input("lease-zip-boundary-store", "data"),
   State("lease-map-spinner", "style"),
 )
-def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
+def toggle_map_spinner(
+  geojson_data: dict | None,
+  location_value: str | None,
+  zip_boundary_data: dict | None,
+  current_style: dict | None,
+) -> dict:
   """
   Show the spinner overlay until the GeoJSON layer has data.
 
@@ -153,6 +160,18 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
     "backgroundColor": "rgba(0, 0, 0, 0.25)",
     "zIndex": "10000",
   }
+
+  trigger = dash.ctx.triggered_id
+  if trigger in {"lease-location-input", "lease-zip-boundary-store"}:
+    text = (location_value or "").strip()
+    if not text:
+      base["display"] = "none"
+      return base
+    if zip_boundary_data and zip_boundary_data.get("error"):
+      base["display"] = "none"
+      return base
+    base["display"] = "flex"
+    return base
 
   has_features = geojson_data is not None and "features" in geojson_data
   base["display"] = "none" if has_features else "flex"
