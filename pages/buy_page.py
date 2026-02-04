@@ -162,8 +162,12 @@ def load_buy_geojson(_: int) -> dict:
   Output("buy-zip-boundary-store", "data"),
   Output("buy-location-status", "children"),
   Input("buy-location-input", "value"),
+  Input("buy-nearby-zip-switch", "checked"),
 )
-def update_buy_zip_boundary(location_value: str | None) -> tuple[dict, str]:
+def update_buy_zip_boundary(
+  location_value: str | None,
+  include_nearby: bool | None,
+) -> tuple[dict, str]:
   text = (location_value or "").strip()
   if not text:
     return {"zip_codes": [], "features": [], "error": None}, ""
@@ -178,17 +182,18 @@ def update_buy_zip_boundary(location_value: str | None) -> tuple[dict, str]:
   if not geocoded:
     return {"zip_codes": [], "features": [], "error": "place_not_found"}, "Place not found."
 
-  bbox = geocoded.get("bbox")
-  if bbox:
-    features = find_zip_features_for_bounds(bbox)
-    if not features:
-      return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
-    zip_codes = [f.get("properties", {}).get("zip_code") for f in features]
-    zip_codes = [z for z in zip_codes if z]
-    label = ", ".join(zip_codes[:5])
-    if len(zip_codes) > 5:
-      label = f"{label} +{len(zip_codes) - 5} more"
-    return {"zip_codes": zip_codes, "features": features, "error": None}, f"Filtering by ZIPs: {label}."
+  if include_nearby:
+    bbox = geocoded.get("bbox")
+    if bbox:
+      features = find_zip_features_for_bounds(bbox)
+      if not features:
+        return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
+      zip_codes = [f.get("properties", {}).get("zip_code") for f in features]
+      zip_codes = [z for z in zip_codes if z]
+      label = ", ".join(zip_codes[:5])
+      if len(zip_codes) > 5:
+        label = f"{label} +{len(zip_codes) - 5} more"
+      return {"zip_codes": zip_codes, "features": features, "error": None}, f"Filtering by ZIPs: {label}."
 
   zip_code = find_zip_for_point(geocoded["lat"], geocoded["lon"])
   if not zip_code:

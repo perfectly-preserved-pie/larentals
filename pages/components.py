@@ -306,6 +306,14 @@ class BaseClass:
                         "color": "#9aa0a6",
                     },
                 ),
+                dmc.Switch(
+                    id=f"{self.page_type}-nearby-zip-switch",
+                    label="Include nearby ZIP codes",
+                    checked=False,
+                    size="sm",
+                    color="teal",
+                    style={"marginTop": "8px"},
+                ),
             ],
             style={"marginBottom": "10px"},
         )
