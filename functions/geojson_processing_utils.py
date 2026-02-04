@@ -1,14 +1,12 @@
-from typing import Dict, List, Any
 from functools import lru_cache
+from loguru import logger
 from pathlib import Path
-import json
-import logging
-import re
-import requests
 from shapely.geometry import Point, shape, box
 from shapely.prepared import prep
-
-logger = logging.getLogger(__name__)
+from typing import Dict, List, Any
+import json
+import re
+import requests
 
 _ZIP_RE = re.compile(r"^\d{5}$")
 _DEFAULT_ZIP_GEOJSON_PATH = Path("assets/datasets/la_county_zip_codes.geojson")
@@ -103,6 +101,7 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
     result = {"lat": lat, "lon": lon, "query": normalized, "bbox": bbox}
     cache[cache_key] = result
     _save_place_cache(cache_file, cache)
+    logger.debug(f"Geocoded place '{query}' to {result}")
     return result
 
 
