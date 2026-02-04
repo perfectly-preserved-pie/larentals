@@ -1,11 +1,18 @@
 from .components import BuyComponents
-from dash import dcc, callback, MATCH, clientside_callback, ClientsideFunction
+from dash import dcc, callback, clientside_callback, ClientsideFunction
+from functions.geojson_processing_utils import (
+  fetch_zip_boundary_feature,
+  geocode_place_cached,
+  find_zip_for_point,
+  find_zip_features_for_bounds,
+)
 from functions.sql_helpers import get_earliest_listed_date
 from dash.dependencies import Input, Output, State
 from loguru import logger
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
+import re
 import sys
 import time
 
@@ -53,6 +60,7 @@ def layout() -> dbc.Container:
   """
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="buy-geojson-store", storage_type="memory", data=None)
+  zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data=None)
   kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
@@ -60,6 +68,7 @@ def layout() -> dbc.Container:
     [
       collapse_store,
       geojson_store,
+      zip_boundary_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -97,9 +106,14 @@ def update_selected_subtype(value):
 @callback(
   Output("buy-map-spinner", "style"),
   Input("buy-geojson-store", "data"),
+  Input("buy_geojson", "data"),
   State("buy-map-spinner", "style"),
 )
-def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) -> dict:
+def toggle_map_spinner(
+  geojson_data: dict | None,
+  layer_data: dict | None,
+  current_style: dict | None,
+) -> dict:
   """
   Show the spinner overlay until the GeoJSON layer has data.
 
@@ -115,6 +129,14 @@ def toggle_map_spinner(geojson_data: dict | None, current_style: dict | None) ->
     "zIndex": "10000",
   }
 
+  trigger = dash.ctx.triggered_id
+  # Hide once the map layer actually updates
+  if trigger == "buy_geojson":
+    has_features = layer_data is not None and "features" in layer_data
+    base["display"] = "none" if has_features else "flex"
+    return base
+
+  # Initial load fallback
   has_features = geojson_data is not None and "features" in geojson_data
   base["display"] = "none" if has_features else "flex"
   return base
@@ -134,6 +156,54 @@ def load_buy_geojson(_: int) -> dict:
   """
   components = BuyComponents()
   return components.return_geojson()
+
+
+@callback(
+  Output("buy-zip-boundary-store", "data"),
+  Output("buy-location-status", "children"),
+  Input("buy-location-input", "value"),
+  Input("buy-nearby-zip-switch", "checked"),
+)
+def update_buy_zip_boundary(
+  location_value: str | None,
+  include_nearby: bool | None,
+) -> tuple[dict, str]:
+  text = (location_value or "").strip()
+  if not text:
+    return {"zip_codes": [], "features": [], "error": None}, ""
+
+  if re.fullmatch(r"\d{5}", text):
+    feature = fetch_zip_boundary_feature(text)
+    if not feature:
+      return {"zip_codes": [text], "features": [], "error": "not_found"}, "No boundary found for that ZIP."
+    return {"zip_codes": [text], "features": [feature], "error": None}, f"Filtering by ZIP {text}."
+
+  geocoded = geocode_place_cached(text)
+  if not geocoded:
+    return {"zip_codes": [], "features": [], "error": "place_not_found"}, "Place not found."
+
+  if include_nearby:
+    bbox = geocoded.get("bbox")
+    if bbox:
+      features = find_zip_features_for_bounds(bbox)
+      if not features:
+        return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
+      zip_codes = [f.get("properties", {}).get("zip_code") for f in features]
+      zip_codes = [z for z in zip_codes if z]
+      label = ", ".join(zip_codes[:5])
+      if len(zip_codes) > 5:
+        label = f"{label} +{len(zip_codes) - 5} more"
+      return {"zip_codes": zip_codes, "features": features, "error": None}, f"Filtering by ZIPs: {label}."
+
+  zip_code = find_zip_for_point(geocoded["lat"], geocoded["lon"])
+  if not zip_code:
+    return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
+
+  feature = fetch_zip_boundary_feature(zip_code)
+  if not feature:
+    return {"zip_codes": [zip_code], "features": [], "error": "not_found"}, "ZIP boundary not found."
+
+  return {"zip_codes": [zip_code], "features": [feature], "error": None}, f"Using {text} → ZIP {zip_code}."
 
 
 """Keep subtype-dependent sections visible; dynamic hiding removed."""
@@ -167,6 +237,7 @@ clientside_callback(
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
+    Input('buy-zip-boundary-store', 'data'),
     Input('buy-geojson-store', "data")
   ],
 )
