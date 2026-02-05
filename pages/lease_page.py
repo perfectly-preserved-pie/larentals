@@ -2,10 +2,10 @@ from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import Input, Output, State
 from functions.geojson_processing_utils import (
-  fetch_zip_boundary_feature,
   geocode_place_cached,
-  find_zip_for_point,
-  find_zip_features_for_bounds,
+  get_zip_feature_for_point,
+  intersect_bbox_with_zip_polygons,
+  load_zip_polygons,
 )
 from functions.sql_helpers import get_earliest_listed_date
 from loguru import logger
@@ -32,6 +32,9 @@ external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_A
 start_time = time.time()
 duration = time.time() - start_time
 logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
+
+# Load the ZIP polygons once at module load time
+ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
@@ -115,45 +118,56 @@ def load_lease_geojson(_: int) -> dict:
   Input("lease-nearby-zip-switch", "checked"),
 )
 def update_lease_zip_boundary(
-  location_value: str | None,
+  location: str | None,
   include_nearby: bool | None,
 ) -> tuple[dict, str]:
-  text = (location_value or "").strip()
-  if not text:
+  """
+  Update the ZIP boundary store based on the user-entered location.
+
+  Returns:
+    A tuple of (GeoJSON feature dict or None, status message).
+  """
+  # Do some validation checks
+  if not location or location.strip() == "":
     return {"zip_codes": [], "features": [], "error": None}, ""
 
-  if re.fullmatch(r"\d{5}", text):
-    feature = fetch_zip_boundary_feature(text)
-    if not feature:
-      return {"zip_codes": [text], "features": [], "error": "not_found"}, "No boundary found for that ZIP."
-    return {"zip_codes": [text], "features": [feature], "error": None}, f"Filtering by ZIP {text}."
-
-  geocoded = geocode_place_cached(text)
+  geocoded = geocode_place_cached(location)
   if not geocoded:
-    return {"zip_codes": [], "features": [], "error": "place_not_found"}, "Place not found."
+    return {"zip_codes": [], "features": [], "error": "place_not_found"}, f"Could not geocode location: '{location}'."
 
+  lat = geocoded["lat"]
+  lon = geocoded["lon"]
+  bbox = geocoded["bbox"]
+
+  zip_features = []
+
+  # Always include the ZIP containing the point
+  zip_feature = get_zip_feature_for_point(lat, lon, ZIP_POLYGONS)
+  if zip_feature:
+    zip_features.append(zip_feature)
+
+  # Optionally include nearby ZIPs intersecting the bounding box
   if include_nearby:
-    bbox = geocoded.get("bbox")
-    if bbox:
-      features = find_zip_features_for_bounds(bbox)
-      if not features:
-        return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
-      zip_codes = [f.get("properties", {}).get("zip_code") for f in features]
-      zip_codes = [z for z in zip_codes if z]
-      label = ", ".join(zip_codes[:5])
-      if len(zip_codes) > 5:
-        label = f"{label} +{len(zip_codes) - 5} more"
-      return {"zip_codes": zip_codes, "features": features, "error": None}, f"Filtering by ZIPs: {label}."
+    nearby_features = intersect_bbox_with_zip_polygons(bbox, ZIP_POLYGONS)
+    for feature in nearby_features:
+      # Skip if already included
+      if feature not in zip_features:
+        zip_features.append(feature)
 
-  zip_code = find_zip_for_point(geocoded["lat"], geocoded["lon"])
-  if not zip_code:
-    return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
+  if not zip_features:
+    return {"zip_codes": [], "features": [], "error": "place_outside"}, "No ZIP code boundaries found for the specified location."
 
-  feature = fetch_zip_boundary_feature(zip_code)
-  if not feature:
-    return {"zip_codes": [zip_code], "features": [], "error": "not_found"}, "ZIP boundary not found."
+  # Extract ZIP codes from the features
+  zip_codes = [feature.get("properties", {}).get("zip_code") for feature in zip_features]
+  # Filter out any None values
+  zip_codes = [zip for zip in zip_codes if zip]
 
-  return {"zip_codes": [zip_code], "features": [feature], "error": None}, f"Using {text} → ZIP {zip_code}."
+  # Generate a label for the status message based on the number of ZIPs found (up to 5)
+  label = ", ".join(zip_codes[:5])
+  if len(zip_codes) > 5:
+    label = f"{label} +{len(zip_codes) - 5} more"
+
+  return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIPs: {label}."
 
 @callback(
   Output("lease-map-spinner", "style"),

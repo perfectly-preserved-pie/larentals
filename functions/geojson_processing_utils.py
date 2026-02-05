@@ -97,173 +97,53 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
     logger.debug(f"Geocoded place '{query}' to {result}")
     return result
 
-
-@lru_cache(maxsize=4)
-def _load_zip_boundaries(file_path: str) -> Dict[str, Dict[str, Any]]:
+def load_zip_polygons(geojson_path):
     """
-    Load LA County ZIP boundaries from a local GeoJSON file.
+    Load ZIP code polygons from a GeoJSON file.
 
     Returns:
-        Dict mapping ZIP code strings to GeoJSON Features.
+        List of GeoJSON features.
     """
-    path = Path(file_path)
-    if not path.exists():
-        logger.warning(f"ZIP boundary file not found: {path}")
-        return {}
+    with open(geojson_path, "r", encoding="utf-8") as handle:
+        geojson = json.load(handle)
+    return geojson.get("features", [])
 
-    try:
-        with path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
-    except Exception as exc:
-        logger.warning(f"Failed reading ZIP geometry {path}: {exc}")
-        return {}
-
-    features = data.get("features", [])
-    lookup: Dict[str, Dict[str, Any]] = {}
-    for feature in features:
-        props = feature.get("properties") or {}
-        raw_zip = props.get("ZIPCODE")
-        if raw_zip is None:
-            continue
-        zip_code = str(raw_zip).strip().zfill(5)
-        if not _ZIP_RE.fullmatch(zip_code):
-            continue
+def intersect_bbox_with_zip_polygons(nominatim_bbox: List[float], zip_polygons: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    # Initalize an empty list to hold matching features
+    matches = []
+    # Turn the Nominatim bbox into a Shapely box
+    bbox_shape = box(nominatim_bbox[2], nominatim_bbox[0], nominatim_bbox[3], nominatim_bbox[1])
+    # Prepare the box for faster intersection tests
+    prepared_bbox = prep(bbox_shape)
+    # Since the ZIP features are already polygons we can prepare them directly
+    for feature in zip_polygons:
+        # Get the geometry from the feature
         geometry = feature.get("geometry")
         if not geometry:
             continue
-        lookup[zip_code] = {
-            "type": "Feature",
-            "properties": {"zip_code": zip_code},
-            "geometry": geometry,
-        }
-
-    return lookup
-
-
-@lru_cache(maxsize=4)
-def _load_zip_shapes(file_path: str) -> List[tuple[str, Any]]:
-    path = Path(file_path)
-    if not path.exists():
-        return []
-    try:
-        with path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
-    except Exception as exc:
-        logger.warning("Failed reading ZIP geometry %s: %s", path, exc)
-        return []
-
-    results: List[tuple[str, Any]] = []
-    for feature in data.get("features", []):
-        props = feature.get("properties") or {}
-        raw_zip = props.get("ZIPCODE")
-        if raw_zip is None:
-            continue
-        zip_code = str(raw_zip).strip().zfill(5)
-        if not _ZIP_RE.fullmatch(zip_code):
-            continue
-        geometry = feature.get("geometry")
-        if not geometry:
-            continue
-        try:
-            polygon = prep(shape(geometry))
-        except Exception:
-            continue
-        results.append((zip_code, polygon))
-
-    return results
-
-
-@lru_cache(maxsize=4)
-def _load_zip_polygons(file_path: str) -> List[tuple[str, Any]]:
-    path = Path(file_path)
-    if not path.exists():
-        return []
-    try:
-        with path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
-    except Exception as exc:
-        logger.warning("Failed reading ZIP geometry %s: %s", path, exc)
-        return []
-
-    results: List[tuple[str, Any]] = []
-    for feature in data.get("features", []):
-        props = feature.get("properties") or {}
-        raw_zip = props.get("ZIPCODE")
-        if raw_zip is None:
-            continue
-        zip_code = str(raw_zip).strip().zfill(5)
-        if not _ZIP_RE.fullmatch(zip_code):
-            continue
-        geometry = feature.get("geometry")
-        if not geometry:
-            continue
-        try:
-            polygon = shape(geometry)
-        except Exception:
-            continue
-        results.append((zip_code, polygon))
-
-    return results
-
-
-def find_zip_features_for_bounds(
-    bounds: List[float],
-    file_path: str | None = None,
-) -> List[Dict[str, Any]]:
-    if not bounds or len(bounds) != 4:
-        return []
-
-    path = file_path or str(_DEFAULT_ZIP_GEOJSON_PATH)
-    lookup = _load_zip_boundaries(path)
-
-    try:
-        south, north, west, east = [float(v) for v in bounds]
-    except (TypeError, ValueError):
-        return []
-
-    bbox_polygon = box(west, south, east, north)
-    matches: List[Dict[str, Any]] = []
-    for zip_code, polygon in _load_zip_polygons(path):
-        try:
-            if polygon.intersects(bbox_polygon):
-                feature = lookup.get(zip_code)
-                if feature:
-                    matches.append(feature)
-        except Exception:
-            continue
+        # Turn the feature geometry into a Shapely shape
+        feature_boundary = shape(geometry)
+        # Now check for intersection
+        if prepared_bbox.intersects(feature_boundary):
+            matches.append(feature)
 
     return matches
 
-
-def find_zip_for_point(lat: float, lon: float, file_path: str | None = None) -> str | None:
-    path = file_path or str(_DEFAULT_ZIP_GEOJSON_PATH)
-    shapes = _load_zip_shapes(path)
-    point = Point(lon, lat)
-    for zip_code, polygon in shapes:
-        if polygon.contains(point):
-            return zip_code
-    return None
-
-
-@lru_cache(maxsize=512)
-def fetch_zip_boundary_feature(zip_code: str, file_path: str | None = None) -> Dict[str, Any] | None:
+def get_zip_feature_for_point(lat: float, lon: float, zip_polygons: List[Dict[str, Any]]) -> Dict[str, Any] | None:
     """
-    Fetch a LA County ZIP polygon from a local GeoJSON file.
-
-    Args:
-        zip_code: 5-digit ZIP code.
-        file_path: Optional file path to the local ZIP GeoJSON.
+    Find the ZIP code feature that contains the given point.
 
     Returns:
-        GeoJSON Feature dict or None when not found/invalid.
+        The GeoJSON feature dict if found, else None.
     """
-    if not zip_code:
-        return None
+    point = Point(lon, lat)
 
-    zip_code = str(zip_code).strip()
-    if not _ZIP_RE.fullmatch(zip_code):
-        return None
+    for feature in zip_polygons:
+        geometry = feature.get("geometry")
+        if not geometry:
+            continue
+        feature_boundary = shape(geometry)
+        if point.within(feature_boundary):
+            return feature
 
-    path = file_path or str(_DEFAULT_ZIP_GEOJSON_PATH)
-    lookup = _load_zip_boundaries(path)
-    return lookup.get(zip_code)
+    return None
