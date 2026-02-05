@@ -1,15 +1,11 @@
-from functools import lru_cache
 from loguru import logger
 from pathlib import Path
 from shapely.geometry import Point, shape, box
 from shapely.prepared import prep
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Sequence
 import json
-import re
 import requests
 
-_ZIP_RE = re.compile(r"^\d{5}$")
-_DEFAULT_ZIP_GEOJSON_PATH = Path("assets/datasets/la_county_zip_codes.geojson")
 _DEFAULT_PLACE_CACHE_PATH = Path("/mnt/cache/location/place_geocode_cache.json")
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
@@ -97,18 +93,34 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
     logger.debug(f"Geocoded place '{query}' to {result}")
     return result
 
-def load_zip_polygons(geojson_path):
+def load_zip_polygons(geojson_path: str | Path) -> List[Dict[str, Any]]:
     """
     Load ZIP code polygons from a GeoJSON file.
 
+    Args:
+        geojson_path: Path to a GeoJSON file with a top-level FeatureCollection.
+
     Returns:
-        List of GeoJSON features.
+        A list of GeoJSON feature dicts (may be empty).
     """
     with open(geojson_path, "r", encoding="utf-8") as handle:
         geojson = json.load(handle)
     return geojson.get("features", [])
 
-def intersect_bbox_with_zip_polygons(nominatim_bbox: List[float], zip_polygons: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def intersect_bbox_with_zip_polygons(
+    nominatim_bbox: Sequence[float],
+    zip_polygons: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """
+    Return ZIP polygon features that intersect a Nominatim bounding box.
+
+    Args:
+        nominatim_bbox: Nominatim bbox as [south, north, west, east] floats.
+        zip_polygons: List of GeoJSON feature dicts (Polygon/MultiPolygon).
+
+    Returns:
+        A list of feature dicts that intersect the bbox.
+    """
     # Initalize an empty list to hold matching features
     matches = []
     # Turn the Nominatim bbox into a Shapely box
