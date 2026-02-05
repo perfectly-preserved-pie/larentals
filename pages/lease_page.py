@@ -9,7 +9,6 @@ from functions.geojson_processing_utils import (
 )
 from functions.sql_helpers import get_earliest_listed_date
 from loguru import logger
-import re
 import dash
 import dash_bootstrap_components as dbc
 import sys
