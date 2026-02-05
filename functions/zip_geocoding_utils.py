@@ -27,7 +27,7 @@ def _load_place_cache(cache_path: Path) -> Dict[str, Dict[str, Any]]:
             data = json.load(handle)
             return data if isinstance(data, dict) else {}
     except Exception as exc:
-        logger.warning("Failed reading place cache %s: %s", cache_path, exc)
+        logger.warning(f"Failed loading place cache {cache_path}: {exc}")
         return {}
 
 
@@ -37,7 +37,7 @@ def _save_place_cache(cache_path: Path, cache: Dict[str, Dict[str, Any]]) -> Non
         with cache_path.open("w", encoding="utf-8") as handle:
             json.dump(cache, handle)
     except Exception as exc:
-        logger.warning("Failed writing place cache %s: %s", cache_path, exc)
+        logger.warning(f"Failed writing place cache {cache_path}: {exc}")
 
 
 def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str, Any] | None:
@@ -73,7 +73,7 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
         response.raise_for_status()
         payload = response.json()
     except Exception as exc:
-        logger.warning("Geocoding failed for %s: %s", normalized, exc)
+        logger.warning(f"Nominatim geocoding request failed for '{query}': {exc}")
         return None
 
     if not payload:
