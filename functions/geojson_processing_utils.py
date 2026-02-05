@@ -83,20 +83,13 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
     if not payload:
         return None
 
-    item = payload[0]
-    try:
-        lat = float(item.get("lat"))
-        lon = float(item.get("lon"))
-    except (TypeError, ValueError):
-        return None
+    logger.debug(f"Nominatim response for '{query}': {payload}")
 
-    bbox_raw = item.get("boundingbox")
-    bbox = None
-    if isinstance(bbox_raw, (list, tuple)) and len(bbox_raw) == 4:
-        try:
-            bbox = [float(x) for x in bbox_raw]
-        except (TypeError, ValueError):
-            bbox = None
+    lat = float(payload[0].get("lat", None))
+    lon = float(payload[0].get("lon", None))
+
+    # Get the bounding box if available and convert it to a list of floats
+    bbox = [float(coords) for coords in (payload[0].get("boundingbox", None))]
 
     result = {"lat": lat, "lon": lon, "query": normalized, "bbox": bbox}
     cache[cache_key] = result
@@ -115,14 +108,14 @@ def _load_zip_boundaries(file_path: str) -> Dict[str, Dict[str, Any]]:
     """
     path = Path(file_path)
     if not path.exists():
-        logger.warning("ZIP boundary file not found: %s", path)
+        logger.warning(f"ZIP boundary file not found: {path}")
         return {}
 
     try:
         with path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
     except Exception as exc:
-        logger.warning("Failed reading ZIP boundary file %s: %s", path, exc)
+        logger.warning(f"Failed reading ZIP geometry {path}: {exc}")
         return {}
 
     features = data.get("features", [])
