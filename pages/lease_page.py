@@ -158,9 +158,10 @@ def update_lease_zip_boundary(
     return {"zip_codes": [], "features": [], "error": "place_outside"}, "No ZIP code boundaries found for the specified location."
 
   # Extract ZIP codes from the features
-  zip_codes = [feature.get("properties", {}).get("zip_code") for feature in zip_features]
+  zip_codes = [feature.get("properties", {}).get("ZIPCODE") for feature in zip_features]
   # Filter out any None values
   zip_codes = [zip for zip in zip_codes if zip]
+  logger.debug(f"Found ZIP codes for location '{location}': {zip_codes}")
 
   # Generate a label for the status message based on the number of ZIPs found (up to 5)
   label = ", ".join(zip_codes[:5])
