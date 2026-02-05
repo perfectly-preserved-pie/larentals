@@ -168,7 +168,7 @@ def update_lease_zip_boundary(
   if len(zip_codes) > 5:
     label = f"{label} +{len(zip_codes) - 5} more"
 
-  return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIPs: {label}."
+  return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
 @callback(
   Output("lease-map-spinner", "style"),
