@@ -1,7 +1,7 @@
 from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import Input, Output, State
-from functions.geojson_processing_utils import (
+from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
   intersect_bbox_with_zip_polygons,
