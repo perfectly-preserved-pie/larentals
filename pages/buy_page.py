@@ -44,21 +44,6 @@ ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
 # Load the HUD ZIP-to-city crosswalk once at module load time
 ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
 
-# Create a state for the collapsed section in the user options card
-collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
-
-# Create a store for the geojson data
-geojson_store = dcc.Store(id='buy-geojson-store', storage_type='memory', data=None)
-#logger.debug(f"GeoJSON data: {geojson_store.data}")
-#logger.debug(f"this is the return geojson {components.return_geojson()}")
-
-# One-shot trigger to load data after initial render
-kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
-
-# Create a Store to hold the earliest listed date
-earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
-
-
 def layout() -> dbc.Container:
   """
   Build the buy page layout on demand.
@@ -68,7 +53,7 @@ def layout() -> dbc.Container:
   """
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="buy-geojson-store", storage_type="memory", data=None)
-  zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data=None)
+  zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
   kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
