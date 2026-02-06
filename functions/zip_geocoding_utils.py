@@ -3,6 +3,7 @@ from pathlib import Path
 from shapely.geometry import Point, shape, box
 from shapely.prepared import prep
 from typing import Dict, List, Any, Sequence
+import bleach
 import json
 import requests
 
@@ -17,7 +18,6 @@ def _normalize_place_query(query: str) -> str:
     if "los angeles" not in lowered and "ca" not in lowered and "california" not in lowered:
         normalized = f"{normalized}, CA"
     return normalized
-
 
 def _load_place_cache(cache_path: Path) -> Dict[str, Dict[str, Any]]:
     if not cache_path.exists():
@@ -39,6 +39,25 @@ def _save_place_cache(cache_path: Path, cache: Dict[str, Dict[str, Any]]) -> Non
     except Exception as exc:
         logger.warning(f"Failed writing place cache {cache_path}: {exc}")
 
+def sanitize_location_input(user_input: str) -> str:
+    """
+    Sanitize user input for location queries to prevent injection attacks.
+
+    This is a basic sanitization that allows only letters, numbers, spaces, commas, and periods.
+    It also collapses multiple spaces into one and trims leading/trailing whitespace.
+
+    Args:
+        user_input: The raw input string from the user.
+    Returns:
+        A sanitized version of the input string.
+    """
+    if not user_input:
+        return ""
+    # Use bleach to clean the input
+    cleaned = bleach.clean(user_input, tags=[], attributes={}, styles=[], strip=True)
+    # Collapse multiple spaces and trim
+    normalized = " ".join(cleaned.strip().split())
+    return normalized
 
 def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str, Any] | None:
     """
@@ -47,7 +66,8 @@ def geocode_place_cached(query: str, cache_path: Path | None = None) -> Dict[str
     Returns:
         Dict with "lat" and "lon" floats on success, or None.
     """
-    normalized = _normalize_place_query(query)
+    sanitized_query = sanitize_location_input(query)
+    normalized = _normalize_place_query(sanitized_query)
     if not normalized:
         return None
 

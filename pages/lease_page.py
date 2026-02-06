@@ -9,6 +9,7 @@ from functions.zip_geocoding_utils import (
 )
 from functions.sql_helpers import get_earliest_listed_date
 from loguru import logger
+import bleach
 import dash
 import dash_bootstrap_components as dbc
 import sys
@@ -129,8 +130,10 @@ def update_lease_zip_boundary(
   # Do some validation checks
   if not location or location.strip() == "":
     return {"zip_codes": [], "features": [], "error": None}, ""
+  
+  sanitized_location = bleach.clean(location or "", tags=[], attributes={}, strip=True)
 
-  geocoded = geocode_place_cached(location)
+  geocoded = geocode_place_cached(sanitized_location)
   if not geocoded:
     return {"zip_codes": [], "features": [], "error": "place_not_found"}, f"Could not geocode location: '{location}'."
 
@@ -160,7 +163,7 @@ def update_lease_zip_boundary(
   zip_codes = [feature.get("properties", {}).get("ZIPCODE") for feature in zip_features]
   # Filter out any None values
   zip_codes = [zip for zip in zip_codes if zip]
-  logger.debug(f"Found ZIP codes for location '{location}': {zip_codes}")
+  logger.debug(f"Found ZIP codes for location '{sanitized_location}': {zip_codes}")
 
   # Generate a label for the status message based on the number of ZIPs found (up to 5)
   label = ", ".join(zip_codes[:5])
