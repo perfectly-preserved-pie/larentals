@@ -1,18 +1,20 @@
 from .components import BuyComponents
 from dash import dcc, callback, clientside_callback, ClientsideFunction
-from functions.geojson_processing_utils import (
-  fetch_zip_boundary_feature,
+from functions.zip_geocoding_utils import (
   geocode_place_cached,
-  find_zip_for_point,
-  find_zip_features_for_bounds,
+  get_zip_feature_for_point,
+  intersect_bbox_with_zip_polygons,
+  get_zip_features_for_place,
+  load_zip_place_crosswalk,
+  load_zip_polygons,
 )
 from functions.sql_helpers import get_earliest_listed_date
 from dash.dependencies import Input, Output, State
 from loguru import logger
+import bleach
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-import re
 import sys
 import time
 
@@ -35,6 +37,12 @@ start_time = time.time()
 components = BuyComponents()
 duration = time.time() - start_time
 logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
+
+# Load the ZIP polygons once at module load time
+ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
+
+# Load the HUD ZIP-to-city crosswalk once at module load time
+ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
@@ -157,7 +165,6 @@ def load_buy_geojson(_: int) -> dict:
   components = BuyComponents()
   return components.return_geojson()
 
-
 @callback(
   Output("buy-zip-boundary-store", "data"),
   Output("buy-location-status", "children"),
@@ -165,48 +172,118 @@ def load_buy_geojson(_: int) -> dict:
   Input("buy-nearby-zip-switch", "checked"),
 )
 def update_buy_zip_boundary(
-  location_value: str | None,
+  location: str | None,
   include_nearby: bool | None,
 ) -> tuple[dict, str]:
-  text = (location_value or "").strip()
-  if not text:
+  """
+  Update the ZIP boundary store based on the user-entered location.
+
+  Uses the HUD crosswalk to find ALL ZIPs belonging to the place first.
+  Falls back to point-in-polygon + optional bbox intersection if the
+  crosswalk has no match.
+
+  Returns:
+    A tuple of (boundary payload dict, status message string).
+  """
+  # Do some validation checks
+  if not location or location.strip() == "":
     return {"zip_codes": [], "features": [], "error": None}, ""
+  
+  sanitized_location = bleach.clean(location or "", tags=[], attributes={}, strip=True)
 
-  if re.fullmatch(r"\d{5}", text):
-    feature = fetch_zip_boundary_feature(text)
-    if not feature:
-      return {"zip_codes": [text], "features": [], "error": "not_found"}, "No boundary found for that ZIP."
-    return {"zip_codes": [text], "features": [feature], "error": None}, f"Filtering by ZIP {text}."
+  # Try the crosswalk first
+  crosswalk_features = get_zip_features_for_place(sanitized_location, ZIP_PLACE_CROSSWALK, ZIP_POLYGONS)
 
-  geocoded = geocode_place_cached(text)
+  # Get the geocode bbox in case the "include nearby" switch is on
+  geocoded = geocode_place_cached(sanitized_location)
+
+  if crosswalk_features:
+    # Start with crosswalk results
+    zip_features = list(crosswalk_features)  
+
+    # Optionally expand with nearby ZIPs from the geocoded bbox
+    if include_nearby and geocoded:
+      bbox = geocoded["bbox"]
+      nearby_features = intersect_bbox_with_zip_polygons(bbox, ZIP_POLYGONS)
+      existing_zips = {
+        f.get("properties", {}).get("ZIPCODE") for f in zip_features
+      }
+      for feature in nearby_features:
+        fzip = feature.get("properties", {}).get("ZIPCODE")
+        if fzip and fzip not in existing_zips:
+          zip_features.append(feature)
+          existing_zips.add(fzip)
+
+    # Extract ZIP codes from the features
+    zip_codes = [
+      f.get("properties", {}).get("ZIPCODE")
+      for f in zip_features
+    ]
+    # Filter out any None values
+    zip_codes = [z for z in zip_codes if z]
+    logger.debug(f"Crosswalk matched '{sanitized_location}' → {zip_codes}")
+
+    # Generate the label
+    label = ", ".join(sorted(zip_codes)[:5])
+    if len(zip_codes) > 5:
+      label = f"{label} +{len(zip_codes) - 5} more"
+
+    return (
+      {"zip_codes": zip_codes, "features": zip_features, "error": None},
+      f"Filtering by ZIP codes: {label}.",
+    )
+  
+  # Fallback to geocoding + point-in-polygon if no crosswalk match
   if not geocoded:
-    return {"zip_codes": [], "features": [], "error": "place_not_found"}, "Place not found."
+    return (
+      {"zip_codes": [], "features": [], "error": "place_not_found"},
+      f"Could not geocode location: '{sanitized_location}'.",
+    )
 
+  lat = geocoded["lat"]
+  lon = geocoded["lon"]
+  bbox = geocoded["bbox"]
+
+  zip_features = []
+
+  # Always include the ZIP containing the point
+  zip_feature = get_zip_feature_for_point(lat, lon, ZIP_POLYGONS)
+  if zip_feature:
+    zip_features.append(zip_feature)
+
+  # Optionally include nearby ZIPs intersecting the bounding box
   if include_nearby:
-    bbox = geocoded.get("bbox")
-    if bbox:
-      features = find_zip_features_for_bounds(bbox)
-      if not features:
-        return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
-      zip_codes = [f.get("properties", {}).get("zip_code") for f in features]
-      zip_codes = [z for z in zip_codes if z]
-      label = ", ".join(zip_codes[:5])
-      if len(zip_codes) > 5:
-        label = f"{label} +{len(zip_codes) - 5} more"
-      return {"zip_codes": zip_codes, "features": features, "error": None}, f"Filtering by ZIPs: {label}."
+    nearby_features = intersect_bbox_with_zip_polygons(bbox, ZIP_POLYGONS)
+    # First get the existing ZIPs to avoid duplicates
+    existing_zips = {
+      f.get("properties", {}).get("ZIPCODE") for f in zip_features
+    }
+    # Then add any nearby features that aren't already included
+    for feature in nearby_features:
+      fzip = feature.get("properties", {}).get("ZIPCODE")
+      # If the feature has a ZIP code and it's not already in our list, add it
+      if fzip and fzip not in existing_zips:
+        zip_features.append(feature)
+        existing_zips.add(fzip)
 
-  zip_code = find_zip_for_point(geocoded["lat"], geocoded["lon"])
-  if not zip_code:
-    return {"zip_codes": [], "features": [], "error": "place_outside"}, "Place is outside LA County ZIPs."
+  if not zip_features:
+    return (
+      {"zip_codes": [], "features": [], "error": "place_outside"},
+      "No ZIP code boundaries found for the specified location.",
+    )
 
-  feature = fetch_zip_boundary_feature(zip_code)
-  if not feature:
-    return {"zip_codes": [zip_code], "features": [], "error": "not_found"}, "ZIP boundary not found."
+  # Extract ZIP codes from the features
+  zip_codes = [feature.get("properties", {}).get("ZIPCODE") for feature in zip_features]
+  # Filter out any None values
+  zip_codes = [zip for zip in zip_codes if zip]
+  logger.debug(f"Spatial fallback for '{sanitized_location}': {zip_codes}")
 
-  return {"zip_codes": [zip_code], "features": [feature], "error": None}, f"Using {text} → ZIP {zip_code}."
+  # Generate a label for the status message based on the number of ZIPs found (up to 5)
+  label = ", ".join(zip_codes[:5])
+  if len(zip_codes) > 5:
+    label = f"{label} +{len(zip_codes) - 5} more"
 
-
-"""Keep subtype-dependent sections visible; dynamic hiding removed."""
+  return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
