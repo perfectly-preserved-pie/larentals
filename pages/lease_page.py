@@ -237,7 +237,7 @@ clientside_callback(
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',
-    function_name='filterAndCluster'
+    function_name='filterAndClusterLease'
   ),
   Output('lease_geojson', 'data'),
   [ # The order of these inputs must match the order of the arguments in the filterAndCluster function
