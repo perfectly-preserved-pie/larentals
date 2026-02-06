@@ -236,43 +236,40 @@ def update_lease_zip_boundary(
 
   return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
-@callback(
+clientside_callback(
+  """
+  function(geojsonData, layerData, currentStyle) {
+    const base = {
+      position: "absolute",
+      inset: "0",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(0, 0, 0, 0.25)",
+      zIndex: "10000",
+    };
+
+    // Determine which input triggered the callback
+    const triggered = dash_clientside.callback_context.triggered;
+    const triggerId = triggered && triggered.length > 0
+      ? triggered[0].prop_id.split('.')[0]
+      : null;
+
+    if (triggerId === "lease_geojson") {
+      const hasFeatures = layerData != null && layerData.features != null;
+      base.display = hasFeatures ? "none" : "flex";
+      return base;
+    }
+
+    const hasFeatures = geojsonData != null && geojsonData.features != null;
+    base.display = hasFeatures ? "none" : "flex";
+    return base;
+  }
+  """,
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
   Input("lease_geojson", "data"),
   State("lease-map-spinner", "style"),
 )
-def toggle_map_spinner(
-  geojson_data: dict | None,
-  layer_data: dict | None,
-  current_style: dict | None,
-) -> dict:
-  """
-  Show the spinner overlay until the GeoJSON layer has data.
-
-  This works even when the heavy work is clientside, because we’re reacting to the
-  data prop being populated.
-  """
-  base = {
-    "position": "absolute",
-    "inset": "0",
-    "alignItems": "center",
-    "justifyContent": "center",
-    "backgroundColor": "rgba(0, 0, 0, 0.25)",
-    "zIndex": "10000",
-  }
-
-  trigger = dash.ctx.triggered_id
-  # Hide once the map layer actually updates
-  if trigger == "lease_geojson":
-    has_features = layer_data is not None and "features" in layer_data
-    base["display"] = "none" if has_features else "flex"
-    return base
-
-  # Initial load fallback
-  has_features = geojson_data is not None and "features" in geojson_data
-  base["display"] = "none" if has_features else "flex"
-  return base
 
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
