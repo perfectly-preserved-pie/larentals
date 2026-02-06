@@ -4,6 +4,7 @@ from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
   intersect_bbox_with_zip_polygons,
+  load_zip_place_crosswalk,
   load_zip_polygons,
 )
 from functions.sql_helpers import get_earliest_listed_date
@@ -38,6 +39,9 @@ logger.info(f"Created BuyComponents object in {duration:.2f} seconds.")
 
 # Load the ZIP polygons once at module load time
 ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
+
+# Load the HUD ZIP-to-city crosswalk once at module load time
+ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})

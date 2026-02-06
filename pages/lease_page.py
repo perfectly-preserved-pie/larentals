@@ -4,7 +4,9 @@ from dash.dependencies import Input, Output, State
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
+  get_zip_features_for_place,
   intersect_bbox_with_zip_polygons,
+  load_zip_place_crosswalk,
   load_zip_polygons,
 )
 from functions.sql_helpers import get_earliest_listed_date
@@ -35,6 +37,9 @@ logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
 
 # Load the ZIP polygons once at module load time
 ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
+
+# Load the HUD ZIP-to-city crosswalk once at module load time
+ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
 
 # Create a state for the collapsed section in the user options card
 collapse_store = dcc.Store(id='collapse-store', data={'is_open': False})
@@ -124,8 +129,12 @@ def update_lease_zip_boundary(
   """
   Update the ZIP boundary store based on the user-entered location.
 
+  Uses the HUD crosswalk to find ALL ZIPs belonging to the place first.
+  Falls back to point-in-polygon + optional bbox intersection if the
+  crosswalk has no match.
+
   Returns:
-    A tuple of (GeoJSON feature dict or None, status message).
+    A tuple of (boundary payload dict, status message string).
   """
   # Do some validation checks
   if not location or location.strip() == "":
@@ -133,9 +142,30 @@ def update_lease_zip_boundary(
   
   sanitized_location = bleach.clean(location or "", tags=[], attributes={}, strip=True)
 
+  # Try the crosswalk first
+  crosswalk_features = get_zip_features_for_place(sanitized_location, ZIP_PLACE_CROSSWALK, ZIP_POLYGONS)
+
+  if crosswalk_features:
+    zip_codes = [
+      f.get("properties", {}).get("ZIPCODE")
+      for f in crosswalk_features
+    ]
+    zip_codes = [z for z in zip_codes if z]
+    logger.debug(f"Crosswalk matched '{sanitized_location}' → {zip_codes}")
+
+    label = ", ".join(sorted(zip_codes)[:5])
+    if len(zip_codes) > 5:
+      label = f"{label} +{len(zip_codes) - 5} more"
+
+    return (
+      {"zip_codes": zip_codes, "features": crosswalk_features, "error": None},
+      f"Filtering by ZIP codes: {label}.",
+    )
+  
+  # Fallback to geocoding + point-in-polygon if no crosswalk match
   geocoded = geocode_place_cached(sanitized_location)
   if not geocoded:
-    return {"zip_codes": [], "features": [], "error": "place_not_found"}, f"Could not geocode location: '{location}'."
+    return {"zip_codes": [], "features": [], "error": "place_not_found"}, f"Could not geocode location: '{sanitized_location}'."
 
   lat = geocoded["lat"]
   lon = geocoded["lon"]
@@ -163,7 +193,7 @@ def update_lease_zip_boundary(
   zip_codes = [feature.get("properties", {}).get("ZIPCODE") for feature in zip_features]
   # Filter out any None values
   zip_codes = [zip for zip in zip_codes if zip]
-  logger.debug(f"Found ZIP codes for location '{sanitized_location}': {zip_codes}")
+  logger.debug(f"Spatial fallback for '{sanitized_location}': {zip_codes}")
 
   # Generate a label for the status message based on the number of ZIPs found (up to 5)
   label = ", ".join(zip_codes[:5])

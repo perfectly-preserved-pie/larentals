@@ -1,10 +1,13 @@
+from collections import defaultdict
 from loguru import logger
 from pathlib import Path
 from shapely.geometry import Point, shape, box
 from shapely.prepared import prep
 from typing import Dict, List, Any, Sequence
 import bleach
+import csv
 import json
+import pandas as pd
 import requests
 
 _DEFAULT_PLACE_CACHE_PATH = Path("/mnt/cache/location/place_geocode_cache.json")
@@ -179,3 +182,66 @@ def get_zip_feature_for_point(lat: float, lon: float, zip_polygons: List[Dict[st
             return feature
 
     return None
+
+def load_zip_place_crosswalk(
+    csv_path: str | Path,
+    state: str | None = "CA",
+) -> Dict[str, set[str]]:
+    """
+    Load and build a mapping of uppercase city name → set of ZIP code strings from the HUD crosswalk CSV.
+    Get the dataset from https://www.huduser.gov/apps/public/uspscrosswalk/home
+
+    Args:
+        csv_path: Path to the HUD ZIP-COUNTY crosswalk CSV.
+        state: Only include rows matching this USPS_ZIP_PREF_STATE (default "CA").
+                Pass None to include all states.
+
+    Returns:
+        Dict mapping e.g. "SANTA MONICA" → {"90401", "90402", "90403", ...}.
+    """
+
+    mapping: Dict[str, set[str]] = defaultdict(set)
+    df = pd.read_csv(csv_path, dtype=str)
+    for row in df.itertuples():
+        # Skip rows that don't match the specified state (if given)
+        if state and getattr(row, "USPS_ZIP_PREF_STATE", None) != state:
+            continue
+        city = (getattr(row, "USPS_ZIP_PREF_CITY", "") or "").strip().upper()
+        zip_code = (getattr(row, "ZIP", "") or "").strip()
+        if city and zip_code:
+            mapping[city].add(zip_code)
+
+    return dict(mapping)
+
+def get_zip_features_for_place(
+    place_name: str,
+    zip_place_crosswalk: Dict[str, set[str]],
+    zip_polygons: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """
+    Return all ZIP polygon features belonging to a place using the HUD crosswalk.
+
+    Args:
+        place_name: User-entered place name (e.g. "Santa Monica").
+        zip_place_crosswalk: Mapping from uppercase city → set of ZIP strings.
+        zip_polygons: List of GeoJSON feature dicts with a "ZIPCODE" property.
+
+    Returns:
+        List of matching GeoJSON feature dicts.
+    """
+    normalized = place_name.strip().upper()
+    # Strip trailing state/country info like ", CA" or ", California"
+    for suffix in [", CA", ", CALIFORNIA", ", LOS ANGELES", " CA"]:
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)].strip()
+
+    target_zips = zip_place_crosswalk.get(normalized)
+    if not target_zips:
+        return []
+
+    features = []
+    for feature in zip_polygons:
+        zip_code = feature.get("properties", {}).get("ZIPCODE", "")
+        if zip_code in target_zips:
+            features.append(feature)
+    return features
