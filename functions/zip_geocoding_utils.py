@@ -57,7 +57,7 @@ def sanitize_location_input(user_input: str) -> str:
     if not user_input:
         return ""
     # Use bleach to clean the input
-    cleaned = bleach.clean(user_input, tags=[], attributes={}, styles=[], strip=True)
+    cleaned = bleach.clean(user_input, tags=[], attributes={}, strip=True)
     # Collapse multiple spaces and trim
     normalized = " ".join(cleaned.strip().split())
     return normalized
