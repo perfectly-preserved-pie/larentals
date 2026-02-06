@@ -8,8 +8,9 @@ function normalizeCoordinatePair(coords) {
     if (!Array.isArray(coords) || coords.length < 2) return null;
     const [a, b] = coords;
     if (typeof a !== "number" || typeof b !== "number") return null;
-    if (Math.abs(a) <= 90 && Math.abs(b) > 90) return [a, b];
-    if (Math.abs(b) <= 90 && Math.abs(a) > 90) return [b, a];
+    // Normalize to [lon, lat] for GeoJSON / turf compatibility
+    if (Math.abs(a) <= 90 && Math.abs(b) > 90) return [b, a];  // a=lat, b=lon → [lon, lat]
+    if (Math.abs(b) <= 90 && Math.abs(a) > 90) return [a, b];  // a=lon, b=lat → already [lon, lat]
     return [a, b];
 }
 
