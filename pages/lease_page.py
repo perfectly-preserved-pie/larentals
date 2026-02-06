@@ -237,34 +237,7 @@ def update_lease_zip_boundary(
   return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
 clientside_callback(
-  """
-  function(geojsonData, layerData, currentStyle) {
-    const base = {
-      position: "absolute",
-      inset: "0",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(0, 0, 0, 0.25)",
-      zIndex: "10000",
-    };
-
-    // Determine which input triggered the callback
-    const triggered = dash_clientside.callback_context.triggered;
-    const triggerId = triggered && triggered.length > 0
-      ? triggered[0].prop_id.split('.')[0]
-      : null;
-
-    if (triggerId === "lease_geojson") {
-      const hasFeatures = layerData != null && layerData.features != null;
-      base.display = hasFeatures ? "none" : "flex";
-      return base;
-    }
-
-    const hasFeatures = geojsonData != null && geojsonData.features != null;
-    base.display = hasFeatures ? "none" : "flex";
-    return base;
-  }
-  """,
+  ClientsideFunction(namespace='clientside', function_name='loadingMapSpinner'),
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
   Input("lease_geojson", "data"),

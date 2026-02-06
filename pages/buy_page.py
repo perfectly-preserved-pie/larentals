@@ -112,34 +112,7 @@ def update_selected_subtype(value):
     return value
 
 clientside_callback(
-  """
-  function(geojsonData, layerData, currentStyle) {
-    const base = {
-      position: "absolute",
-      inset: "0",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(0, 0, 0, 0.25)",
-      zIndex: "10000",
-    };
-
-    // Determine which input triggered the callback
-    const triggered = dash_clientside.callback_context.triggered;
-    const triggerId = triggered && triggered.length > 0
-      ? triggered[0].prop_id.split('.')[0]
-      : null;
-
-    if (triggerId === "buy_geojson") {
-      const hasFeatures = layerData != null && layerData.features != null;
-      base.display = hasFeatures ? "none" : "flex";
-      return base;
-    }
-
-    const hasFeatures = geojsonData != null && geojsonData.features != null;
-    base.display = hasFeatures ? "none" : "flex";
-    return base;
-  }
-  """,
+  ClientsideFunction(namespace='clientside', function_name='loadingMapSpinner'),
   Output("buy-map-spinner", "style"),
   Input("buy-geojson-store", "data"),
   Input("buy_geojson", "data"),
