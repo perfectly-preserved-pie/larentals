@@ -19,39 +19,3 @@
     height: 100vh;
   }
 }
-
-  /* Dark styling for filter accordions */
-  .options-accordion .accordion-item {
-    background-color: #1b1f24;
-    border: 1px solid #2a3038;
-  }
-
-  .options-accordion .accordion-button {
-    background-color: #1f242a;
-    color: #f8f9fa;
-    box-shadow: none;
-    position: relative;
-  }
-
-  .options-accordion .accordion-button:not(.collapsed) {
-    background-color: #242a32;
-    color: #f8f9fa;
-    box-shadow: none;
-  }
-
-.options-accordion .accordion-button::after {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='%23f8f9fa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 6l5 5 5-5'/%3e%3c/svg%3e");
-}
-
-.options-accordion .accordion-button:not(.collapsed)::after {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='%23f8f9fa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 10l5-5 5 5'/%3e%3c/svg%3e");
-}
-
-  .options-accordion .accordion-button:focus {
-    box-shadow: none;
-  }
-
-  .options-accordion .accordion-body {
-    background-color: #1b1f24;
-    color: #f8f9fa;
-  }
