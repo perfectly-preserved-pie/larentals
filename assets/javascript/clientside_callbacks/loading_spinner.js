@@ -1,7 +1,7 @@
 // A clientside callback to hide or show a Loading spinner overlay based on the presence of GeoJSON data in the map layer.
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
   clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
-    loadingMapSpinner: function(geojsonData, layerData, currentStyle) {
+    loadingMapSpinner: function(geojsonData, layerData) {
       const base = {
         position: "absolute",
         inset: "0",
