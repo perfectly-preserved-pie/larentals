@@ -107,9 +107,9 @@ ALLOWED_OPTIONS = {
 }
 
 clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='themeSwitch'),
-    Output("theme-switch-store", "data"),
-    Input("color-scheme-switch", "checked"),
+  ClientsideFunction(namespace='clientside', function_name='themeSwitch'),
+  Output("theme-switch-store", "data"),
+  Input("color-scheme-switch", "checked"),
 )
 
 # Create a custom route for the report form submission
