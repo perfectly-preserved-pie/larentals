@@ -56,6 +56,7 @@ def layout() -> dbc.Container:
   zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
   kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
+  theme_store = dcc.Store(id="theme-switch-store", data=None)
 
   return dbc.Container(
     [
@@ -64,6 +65,7 @@ def layout() -> dbc.Container:
       zip_boundary_store,
       kickstart,
       earliest_date_store,
+      theme_store,
       dbc.Row(
         [
           dbc.Col(
@@ -282,4 +284,16 @@ clientside_callback(
   Output('listed_date_datepicker_buy', 'start_date'),
   Input('listed_time_range_radio', 'value'),
   State('earliest_date_store', 'data'),
+)
+
+clientside_callback(
+  """
+  (switchOn) => {
+      document.documentElement.setAttribute('data-mantine-color-scheme', switchOn ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-bs-theme', switchOn ? 'dark' : 'light');
+      return window.dash_clientside.no_update;
+  }
+  """,
+  Output("theme-switch-store", "data"),
+  Input("color-scheme-switch", "checked"),
 )
