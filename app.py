@@ -13,7 +13,7 @@ import sqlite3
 logging.getLogger().setLevel(logging.INFO)
 
 external_stylesheets = [
-	dbc.themes.DARKLY,
+	dbc.themes.BOOTSTRAP,
   dbc.icons.BOOTSTRAP,
   dbc.icons.FONT_AWESOME
 ]

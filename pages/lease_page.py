@@ -285,3 +285,15 @@ clientside_callback(
   State('earliest_date_store', 'data'),
   
 )
+
+clientside_callback(
+    """
+    (switchOn) => {
+       document.documentElement.setAttribute('data-mantine-color-scheme', switchOn ? 'dark' : 'light'); // For Mantine components
+       document.documentElement.setAttribute('data-bs-theme', switchOn ? 'dark' : 'light'); // For Bootstrap components
+       return window.dash_clientside.no_update
+    }
+    """,
+    Output("color-scheme-switch", "id"),
+    Input("color-scheme-switch", "checked"),
+)

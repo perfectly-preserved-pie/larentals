@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import re
 import sqlite3
+from dash_iconify import DashIconify
 
 DB_PATH = "assets/datasets/larentals.db"
 DEFAULT_SPEED_MAX = 1.0
@@ -292,12 +293,7 @@ class BaseClass:
                     type="text",
                     debounce=True,
                     placeholder="Neighborhood or ZIP code (e.g., Highland Park or 90042)",
-                    className="form-control",
-                    style={
-                        "color": "white",
-                        "backgroundColor": "#1b1f24",
-                        "borderColor": "#495057",
-                    },
+                    className="form-control dmc",
                 ),
                 html.Div(
                     id=f"{self.page_type}-location-status",
@@ -366,6 +362,15 @@ class BaseClass:
                 style={"marginRight": "5px", "marginLeft": "15px"},
             ),
             html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
+            html.Br(),
+            dmc.Switch(
+                offLabel=DashIconify(icon="radix-icons:sun", width=15, color= "var(--mantine-color-yellow-8)"),
+                onLabel=DashIconify(icon="radix-icons:moon", width=15, color= "var(--mantine-color-yellow-6)"),
+                id="color-scheme-switch",
+                persistence=True,
+                color="grey",
+                className="dmc",
+            )
         ]
 
         title_card = dbc.Card(title_card_children, body=True, className="dbc")
@@ -1152,7 +1157,8 @@ class LeaseComponents(BaseClass):
                         ],
                         value=0,
                         inline=True,
-                        labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'}
+                        labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'},
+                        className="dmc"
                     )
                 ], style={'marginBottom': '5px'}),
                 # DatePicker component
@@ -1162,7 +1168,7 @@ class LeaseComponents(BaseClass):
                     start_date=self.earliest_date,
                     end_date=today,
                     initial_visible_month=today,
-                    className="dbc"
+                    className="dmc"
                 ),
                 # Alert about missing listed dates
                 dmc.Switch(
@@ -1173,7 +1179,7 @@ class LeaseComponents(BaseClass):
                     color="teal",
                     style={'marginTop': '10px'},
                     className="dmc"
-                ),
+                ), 
             ], id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'})
         ], style={'marginBottom': '10px'}, id='listed_date_div_lease')
         
@@ -1242,7 +1248,7 @@ class LeaseComponents(BaseClass):
     def create_user_options_card(self):
         accordion = dbc.Accordion(
             [
-                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date", className="dbc"),
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date", className="dmc"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location", className="dbc"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes", className="dbc"),
                 dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent", className="dbc"),
@@ -1280,7 +1286,7 @@ class LeaseComponents(BaseClass):
                 "bathrooms",
                 "pet_policy",
             ],
-            className="options-accordion dbc",
+            className="options-accordion dmc",
         )
 
         user_options_card = dbc.Card(
