@@ -1,5 +1,6 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
+from dash_iconify import DashIconify
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
 from functions.sql_helpers import get_latest_date_processed
@@ -275,7 +276,7 @@ class BaseClass:
                     id="isp_speed_missing_switch",
                     label="Include properties with an unknown ISP speed",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={"marginTop": "15px"},
                 ),
@@ -291,12 +292,7 @@ class BaseClass:
                     type="text",
                     debounce=True,
                     placeholder="Neighborhood or ZIP code (e.g., Highland Park or 90042)",
-                    className="form-control",
-                    style={
-                        "color": "white",
-                        "backgroundColor": "#1b1f24",
-                        "borderColor": "#495057",
-                    },
+                    #className="form-control",
                 ),
                 html.Div(
                     id=f"{self.page_type}-location-status",
@@ -363,6 +359,17 @@ class BaseClass:
                 style={"marginRight": "5px", "marginLeft": "15px"},
             ),
             html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
+            html.Br(),
+            dmc.Switch(
+                color="grey",
+                description="Toggle light/dark mode",
+                id="color-scheme-switch",
+                offLabel=DashIconify(icon="radix-icons:sun", width=15, color= "var(--mantine-color-yellow-8)"),
+                onLabel=DashIconify(icon="radix-icons:moon", width=15, color= "var(--mantine-color-yellow-6)"),
+                persistence=True,
+                size="md",
+                style={"marginTop": "5px"},
+            )
         ]
 
         title_card = dbc.Card(title_card_children, body=True)
@@ -511,29 +518,21 @@ class LeaseComponents(BaseClass):
         data = [{"label": st, "value": st} for st in unique_subtypes]
         initial_values = [item["value"] for item in data]
 
-        custom_styles = {
-            "dropdown": {"color": "white"},
-            "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
-            "input": {"color": "white"},
-            "label": {"color": "white"},
-            "pill": {"color": "white"},
-        }
-
         return html.Div([
             html.Div([
-                dmc.MultiSelect(
-                    id="subtype_checklist",
-                    data=data,
-                    value=initial_values,
-                    searchable=False,
-                    nothingFoundMessage="No options found",
+                dcc.Dropdown(
                     clearable=True,
-                    style={"marginBottom": "10px"},
-                    styles=custom_styles,
+                    id="subtype_checklist",
+                    maxHeight=400,
+                    multi=True,
+                    options=data,
+                    placeholder="Type of home (e.g. Apartment, Single Family Residence, Townhouse)",
+                    searchable=True,
+                    value=initial_values,
                 ),
             ],
             id={"type": "dynamic_output_div_lease", "index": "subtype"},
-            style={"overflowY": "scroll", "overflowX": "hidden", "maxHeight": "120px"})
+            )
         ])
         
     def create_bedrooms_slider(self):
@@ -609,7 +608,7 @@ class LeaseComponents(BaseClass):
                     id='sqft_missing_switch',
                     label="Include properties with an unknown square footage",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '15px'},
                 ),
@@ -646,7 +645,7 @@ class LeaseComponents(BaseClass):
                     id='ppsqft_missing_switch',
                     label="Include properties with an unknown price per square foot",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -756,7 +755,7 @@ class LeaseComponents(BaseClass):
                     id="terms_missing_switch",
                     label="Include properties with an unknown rental term",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={"marginTop": "10px"},
                 ),
@@ -785,7 +784,7 @@ class LeaseComponents(BaseClass):
                     id='garage_missing_switch',
                     label="Include properties with an unknown number of garage spaces",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -854,7 +853,7 @@ class LeaseComponents(BaseClass):
                     id='yrbuilt_missing_switch',
                     label="Include properties with an unknown year built",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -926,7 +925,7 @@ class LeaseComponents(BaseClass):
                     id='security_deposit_missing_switch',
                     label="Include properties with an unknown security deposit",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -964,7 +963,7 @@ class LeaseComponents(BaseClass):
                     id='other_deposit_missing_switch',
                     label="Include properties with an unknown misc/other deposit",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1002,7 +1001,7 @@ class LeaseComponents(BaseClass):
                     id='pet_deposit_missing_switch',
                     label="Include properties with an unknown pet deposit",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1040,7 +1039,7 @@ class LeaseComponents(BaseClass):
                     id='key_deposit_missing_switch',
                     label="Include properties with an unknown key deposit",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1078,7 +1077,7 @@ class LeaseComponents(BaseClass):
                     id='key_deposit_missing_switch',
                     label="Include properties with an unknown key deposit",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1147,7 +1146,7 @@ class LeaseComponents(BaseClass):
                         ],
                         value=0,
                         inline=True,
-                        labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'}
+                        labelStyle={'fontSize': '0.8rem', 'marginRight': '10px'},
                     )
                 ], style={'marginBottom': '5px'}),
                 # DatePicker component
@@ -1163,10 +1162,10 @@ class LeaseComponents(BaseClass):
                     id='listed_date_missing_switch',
                     label="Include properties with an unknown listed date",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
-                ),
+                ), 
             ], id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'})
         ], style={'marginBottom': '10px'}, id='listed_date_div_lease')
         
@@ -1272,7 +1271,7 @@ class LeaseComponents(BaseClass):
                 "bathrooms",
                 "pet_policy",
             ],
-            className="options-accordion",
+            className="options-accordion dmc",
         )
 
         user_options_card = dbc.Card(
@@ -1284,7 +1283,7 @@ class LeaseComponents(BaseClass):
                 ),
                 accordion,
             ],
-            body=True
+            body=True,
         )
         return user_options_card
     
@@ -1315,9 +1314,9 @@ class LeaseComponents(BaseClass):
                     ],
                     style={"position": "relative"},
                 ),
-                className="p-2 g-0",
+                className="p-2 g-0 dbc",
             ),
-            className="d-block d-md-block sticky-top",
+            className="d-block d-md-block sticky-top dbc",
         )
     
     def create_title_card(self):
@@ -1405,15 +1404,17 @@ class BuyComponents(BaseClass):
 
             # The actual checklist
             html.Div([
-                dmc.MultiSelect(
-                id='subtype_checklist',
-                data=data,
-                value=[item['value'] for item in data],
-                searchable=True,
-                nothingFoundMessage="No options found",
-                clearable=True,
-                style={"marginBottom": "10px"},
-            ),
+                dcc.Dropdown(
+                    clearable=True,
+                    id='subtype_checklist',
+                    maxHeight=400,
+                    multi=True,
+                    options=data,
+                    placeholder="Type of home (e.g. Condominium, Single Family Residence, Townhouse)",
+                    searchable=True,
+                    style={"marginBottom": "10px"},
+                    value=[item['value'] for item in data],
+                ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
             ),
@@ -1504,9 +1505,9 @@ class BuyComponents(BaseClass):
                     id='sqft_missing_switch',
                     label="Include properties with an unknown square footage",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
-                    style={'marginTop': '10px'}
+                    style={'marginTop': '10px'},
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'sqft'}
@@ -1541,7 +1542,7 @@ class BuyComponents(BaseClass):
                     id='ppsqft_missing_switch',
                     label="Include properties with an unknown price per square foot",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1589,7 +1590,7 @@ class BuyComponents(BaseClass):
                     id="lot_size_missing_switch",
                     label="Include properties with an unknown lot size",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={"marginTop": "10px"},
                 ),
@@ -1635,7 +1636,7 @@ class BuyComponents(BaseClass):
                     id='hoa_fee_missing_switch',
                     label="Include properties with an unknown HOA fee",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1725,7 +1726,7 @@ class BuyComponents(BaseClass):
                     id='yrbuilt_missing_switch',
                     label="Include properties with an unknown year built",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),
@@ -1782,7 +1783,7 @@ class BuyComponents(BaseClass):
                     id='listed_date_missing_switch',
                     label="Include properties with an unknown listed date",
                     checked=True,
-                    size="md",
+                    size="sm",
                     color="teal",
                     style={'marginTop': '10px'},
                 ),

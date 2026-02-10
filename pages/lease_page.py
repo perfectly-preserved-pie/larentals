@@ -70,13 +70,11 @@ def layout() -> dbc.Container:
             [lease_components.title_card, lease_components.user_options_card], 
             lg=3, md=12, sm=12, xs=12,
             className="options-col d-lg-block",  # Always visible on desktop
-            # style={"height": "100vh", "overflowY": "auto"}  # moved to CSS for desktop only
           ),
           dbc.Col(
             [lease_components.map_card], 
             lg=9, md=12, sm=12, xs=12,
             className="map-col position-lg-relative"
-            # style={"height": "100vh"},  # moved to CSS for desktop only
           ),
         ],
         className="g-0",

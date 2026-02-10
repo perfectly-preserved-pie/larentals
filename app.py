@@ -1,4 +1,4 @@
-from dash import Dash
+from dash import Dash, clientside_callback, Input, Output, dcc, ClientsideFunction
 from flask import request, jsonify, abort, Blueprint
 from flask_compress import Compress
 from loguru import logger
@@ -13,7 +13,7 @@ import sqlite3
 logging.getLogger().setLevel(logging.INFO)
 
 external_stylesheets = [
-	dbc.themes.DARKLY,
+	dbc.themes.BOOTSTRAP,
   dbc.icons.BOOTSTRAP,
   dbc.icons.FONT_AWESOME
 ]
@@ -80,7 +80,8 @@ app.index_string = """<!DOCTYPE html>
 """
 
 app.layout = dmc.MantineProvider(
-  dbc.Container([
+  dmc.Container([
+    dcc.Store(id="theme-switch-store", storage_type="local"),
     dbc.Row( # Second row: the rest
       [
         dash.page_container
@@ -92,9 +93,9 @@ app.layout = dmc.MantineProvider(
   #html.Link(href='/assets/style.css', rel='stylesheet'),
   ],
   fluid = True,
-  className = "dbc",
+  className = "dmc",
   ),
-forceColorScheme="dark"
+#forceColorScheme="dark",
 )
 
 ALLOWED_OPTIONS = {
@@ -104,6 +105,12 @@ ALLOWED_OPTIONS = {
   "Incorrect Price",
   "Other"
 }
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='themeSwitch'),
+  Output("theme-switch-store", "data"),
+  Input("color-scheme-switch", "checked"),
+)
 
 # Create a custom route for the report form submission
 @app.server.route('/report_listing', methods=['POST'])
