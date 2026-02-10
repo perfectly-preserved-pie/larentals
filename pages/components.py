@@ -1,5 +1,6 @@
 from dash import html, dcc
 from dash_extensions.javascript import Namespace
+from dash_iconify import DashIconify
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
 from functions.sql_helpers import get_latest_date_processed
@@ -15,7 +16,6 @@ import numpy as np
 import pandas as pd
 import re
 import sqlite3
-from dash_iconify import DashIconify
 
 DB_PATH = "assets/datasets/larentals.db"
 DEFAULT_SPEED_MAX = 1.0
