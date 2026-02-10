@@ -1,0 +1,18 @@
+.dbc {
+    --Dash-Stroke-Strong: var(--bs-border-color);
+    --Dash-Fill-Interactive-Strong: var(--bs-primary);
+    --Dash-Fill-Inverse-Strong: var(--bs-body-bg);
+    --Dash-Text-Primary: var(--bs-body-color);
+    --Dash-Text-Strong: var(--bs-body-color);
+}
+
+
+:root[data-bs-theme="dark"] .dbc {
+    --Dash-Stroke-Weak: rgba(255, 255, 255, 0.15);
+    --Dash-Fill-Weak: rgba(255, 255, 255, 0.06);
+    --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.08);
+    --Dash-Fill-Primary-Active: rgba(255, 255, 255, 0.12);
+    --Dash-Fill-Disabled: rgba(255, 255, 255, 0.2);
+    --Dash-Text-Disabled: rgba(255, 255, 255, 0.3);
+    --Dash-Text-Weak: rgba(255, 255, 255, 0.3);
+}

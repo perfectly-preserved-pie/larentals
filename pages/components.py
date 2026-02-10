@@ -511,14 +511,6 @@ class LeaseComponents(BaseClass):
         data = [{"label": st, "value": st} for st in unique_subtypes]
         initial_values = [item["value"] for item in data]
 
-        custom_styles = {
-            "dropdown": {"color": "white"},
-            "groupLabel": {"color": "#ADD8E6", "fontWeight": "bold"},
-            "input": {"color": "white"},
-            "label": {"color": "white"},
-            "pill": {"color": "white"},
-        }
-
         return html.Div([
             html.Div([
                 dcc.Dropdown(
@@ -527,12 +519,11 @@ class LeaseComponents(BaseClass):
                     value=initial_values,
                     searchable=True,
                     multi=True,
-                    #search_value="Type to search...",
                     placeholder="No options found.",
-                    maxHeight=209,  # Show up to 7 options before scrolling
+                    maxHeight=200,
                     clearable=True,
                     style={"marginBottom": "10px"},
-                    #styles=custom_styles,
+                    className="dbc",
                 ),
             ],
             id={"type": "dynamic_output_div_lease", "index": "subtype"},
@@ -1160,6 +1151,7 @@ class LeaseComponents(BaseClass):
                     start_date=self.earliest_date,
                     end_date=today,
                     initial_visible_month=today,
+                    className="dbc"
                 ),
                 # Alert about missing listed dates
                 dmc.Switch(
