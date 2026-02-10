@@ -521,18 +521,18 @@ class LeaseComponents(BaseClass):
         return html.Div([
             html.Div([
                 dcc.Dropdown(
-                    id="subtype_checklist",
-                    options=data,
-                    value=initial_values,
-                    searchable=True,
-                    multi=True,
-                    placeholder="No options found.",
-                    maxHeight=200,
                     clearable=True,
+                    id="subtype_checklist",
+                    maxHeight=400,
+                    multi=True,
+                    options=data,
+                    placeholder="Type of home (e.g. Apartment, Single Family Residence, Townhouse)",
+                    searchable=True,
+                    value=initial_values,
                 ),
             ],
             id={"type": "dynamic_output_div_lease", "index": "subtype"},
-            style={"overflowY": "scroll", "overflowX": "hidden", "maxHeight": "120px"})
+            )
         ])
         
     def create_bedrooms_slider(self):
@@ -1404,15 +1404,17 @@ class BuyComponents(BaseClass):
 
             # The actual checklist
             html.Div([
-                dmc.MultiSelect(
-                id='subtype_checklist',
-                data=data,
-                value=[item['value'] for item in data],
-                searchable=True,
-                nothingFoundMessage="No options found",
-                clearable=True,
-                style={"marginBottom": "10px"},
-            ),
+                dcc.Dropdown(
+                    clearable=True,
+                    id='subtype_checklist',
+                    maxHeight=400,
+                    multi=True,
+                    options=data,
+                    placeholder="Type of home (e.g. Condominium, Single Family Residence, Townhouse)",
+                    searchable=True,
+                    style={"marginBottom": "10px"},
+                    value=[item['value'] for item in data],
+                ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
             ),
