@@ -1,4 +1,4 @@
-from dash import Dash, clientside_callback, Input, Output, dcc
+from dash import Dash, clientside_callback, Input, Output, dcc, ClientsideFunction
 from flask import request, jsonify, abort, Blueprint
 from flask_compress import Compress
 from loguru import logger
@@ -107,13 +107,7 @@ ALLOWED_OPTIONS = {
 }
 
 clientside_callback(
-    """
-    (switchOn) => {
-       document.documentElement.setAttribute('data-mantine-color-scheme', switchOn ? 'dark' : 'light');
-       document.documentElement.setAttribute('data-bs-theme', switchOn ? 'dark' : 'light');
-       return switchOn;
-    }
-    """,
+    ClientsideFunction(namespace='clientside', function_name='themeSwitch'),
     Output("theme-switch-store", "data"),
     Input("color-scheme-switch", "checked"),
 )
