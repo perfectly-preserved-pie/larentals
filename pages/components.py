@@ -292,7 +292,7 @@ class BaseClass:
                     type="text",
                     debounce=True,
                     placeholder="Neighborhood or ZIP code (e.g., Highland Park or 90042)",
-                    className="form-control dmc",
+                    className="form-control",
                 ),
                 html.Div(
                     id=f"{self.page_type}-location-status",
