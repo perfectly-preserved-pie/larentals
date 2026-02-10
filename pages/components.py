@@ -347,6 +347,7 @@ class BaseClass:
                     ),
                 ],
                 align="center",
+                className="dbc"
             ),
             html.P(subtitle),
             html.P(f"Last updated: {self.last_updated}", style={'marginBottom': '5px'}),
@@ -367,7 +368,7 @@ class BaseClass:
             html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
         ]
 
-        title_card = dbc.Card(title_card_children, body=True)
+        title_card = dbc.Card(title_card_children, body=True, className="dbc")
         return title_card
 
 # Create a class to hold all of the Dash components for the Lease page
@@ -1291,7 +1292,8 @@ class LeaseComponents(BaseClass):
                 ),
                 accordion,
             ],
-            body=True
+            body=True,
+            className="dbc"
         )
         return user_options_card
     
@@ -1322,9 +1324,9 @@ class LeaseComponents(BaseClass):
                     ],
                     style={"position": "relative"},
                 ),
-                className="p-2 g-0",
+                className="p-2 g-0 dbc",
             ),
-            className="d-block d-md-block sticky-top",
+            className="d-block d-md-block sticky-top dbc",
         )
     
     def create_title_card(self):
