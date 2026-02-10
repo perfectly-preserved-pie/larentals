@@ -521,15 +521,18 @@ class LeaseComponents(BaseClass):
 
         return html.Div([
             html.Div([
-                dmc.MultiSelect(
+                dcc.Dropdown(
                     id="subtype_checklist",
-                    data=data,
+                    options=data,
                     value=initial_values,
-                    searchable=False,
-                    nothingFoundMessage="No options found",
+                    searchable=True,
+                    multi=True,
+                    #search_value="Type to search...",
+                    placeholder="No options found.",
+                    maxHeight=209,  # Show up to 7 options before scrolling
                     clearable=True,
                     style={"marginBottom": "10px"},
-                    styles=custom_styles,
+                    #styles=custom_styles,
                 ),
             ],
             id={"type": "dynamic_output_div_lease", "index": "subtype"},

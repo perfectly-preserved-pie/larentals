@@ -93,8 +93,14 @@ app.layout = dmc.MantineProvider(
   ],
   fluid = True,
   className = "dbc",
+  style={
+            "--Dash-Fill-Interactive-Strong": "var(--bs-primary)",
+            "--Dash-Text-Primary": "#f8f9fa",
+            "--Dash-Fill-Inverse-Strong": "#1b1f24",
+            "--Dash-Fill-Primary-Hover": "rgba(255,255,255,0.04)",
+        },
   ),
-forceColorScheme="dark"
+forceColorScheme="dark",
 )
 
 ALLOWED_OPTIONS = {

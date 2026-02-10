@@ -1,0 +1,16 @@
+:root {
+  /* Match Bootstrap/Mantine dark tokens and improve contrast for Dash 4 components */
+  --Dash-Fill-Interactive-Strong: var(--bs-primary);
+  --Dash-Fill-Interactive-Weak: rgba(255,255,255,0.03);
+  --Dash-Fill-Inverse-Strong: #1b1f24;
+  --Dash-Fill-Primary-Hover: rgba(255,255,255,0.04);
+
+  --Dash-Text-Primary: #f8f9fa; /* main text */
+  --Dash-Text-Strong: #ffffff;  /* emphasized text */
+  --Dash-Text-Weak: #9aa0a6;    /* secondary text */
+  --Dash-Text-Disabled: rgba(255,255,255,0.35);
+
+  --Dash-Fill-Disabled: rgba(255,255,255,0.02);
+  --Dash-Shading-Strong: rgba(0,0,0,0.6);
+  --Dash-Shading-Weak: rgba(0,0,0,0.35);
+}
