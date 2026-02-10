@@ -524,7 +524,6 @@ class LeaseComponents(BaseClass):
                     placeholder="No options found.",
                     maxHeight=200,
                     clearable=True,
-                    style={"marginBottom": "10px"},
                 ),
             ],
             id={"type": "dynamic_output_div_lease", "index": "subtype"},

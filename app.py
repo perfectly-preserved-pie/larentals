@@ -80,7 +80,7 @@ app.index_string = """<!DOCTYPE html>
 """
 
 app.layout = dmc.MantineProvider(
-  dbc.Container([
+  dmc.Container([
     dbc.Row( # Second row: the rest
       [
         dash.page_container
@@ -92,7 +92,7 @@ app.layout = dmc.MantineProvider(
   #html.Link(href='/assets/style.css', rel='stylesheet'),
   ],
   fluid = True,
-  className = "dbc",
+  className = "dmc",
   ),
 #forceColorScheme="dark",
 )
