@@ -1,4 +1,4 @@
-from dash import Dash
+from dash import Dash, clientside_callback, Input, Output, dcc
 from flask import request, jsonify, abort, Blueprint
 from flask_compress import Compress
 from loguru import logger
@@ -81,6 +81,7 @@ app.index_string = """<!DOCTYPE html>
 
 app.layout = dmc.MantineProvider(
   dmc.Container([
+    dcc.Store(id="theme-switch-store", storage_type="local"),
     dbc.Row( # Second row: the rest
       [
         dash.page_container
@@ -104,6 +105,18 @@ ALLOWED_OPTIONS = {
   "Incorrect Price",
   "Other"
 }
+
+clientside_callback(
+    """
+    (switchOn) => {
+       document.documentElement.setAttribute('data-mantine-color-scheme', switchOn ? 'dark' : 'light');
+       document.documentElement.setAttribute('data-bs-theme', switchOn ? 'dark' : 'light');
+       return switchOn;
+    }
+    """,
+    Output("theme-switch-store", "data"),
+    Input("color-scheme-switch", "checked"),
+)
 
 # Create a custom route for the report form submission
 @app.server.route('/report_listing', methods=['POST'])

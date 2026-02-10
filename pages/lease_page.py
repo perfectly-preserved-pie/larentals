@@ -56,7 +56,6 @@ def layout() -> dbc.Container:
   kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
   # Create a Store to hold the earliest listed date
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
-  theme_store = dcc.Store(id="theme-switch-store", data=None)
 
   return dbc.Container(
     [
@@ -285,16 +284,4 @@ clientside_callback(
   Input('listed_time_range_radio', 'value'),
   State('earliest_date_store', 'data'),
   
-)
-
-clientside_callback(
-    """
-    (switchOn) => {
-       document.documentElement.setAttribute('data-mantine-color-scheme', switchOn ? 'dark' : 'light');
-       document.documentElement.setAttribute('data-bs-theme', switchOn ? 'dark' : 'light');
-       return window.dash_clientside.no_update;
-    }
-    """,
-    Output("theme-switch-store", "data"),
-    Input("color-scheme-switch", "checked"),
 )
