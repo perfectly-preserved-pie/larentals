@@ -278,6 +278,7 @@ class BaseClass:
                     size="md",
                     color="teal",
                     style={"marginTop": "15px"},
+                    className="dmc",
                 ),
             ],
             id="isp_speed_div",
@@ -313,6 +314,7 @@ class BaseClass:
                     size="sm",
                     color="teal",
                     style={"marginTop": "8px"},
+                    className="dmc"
                 ),
             ],
             style={"marginBottom": "10px"},
@@ -523,7 +525,6 @@ class LeaseComponents(BaseClass):
                     maxHeight=200,
                     clearable=True,
                     style={"marginBottom": "10px"},
-                    className="dbc",
                 ),
             ],
             id={"type": "dynamic_output_div_lease", "index": "subtype"},
@@ -606,6 +607,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '15px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'sqft'}
@@ -643,6 +645,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'ppsqft'}
@@ -753,6 +756,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={"marginTop": "10px"},
+                    className="dmc",
                 ),
             ],
             id="rental_terms_wrapper",
@@ -782,6 +786,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'garage_spaces'}
@@ -851,6 +856,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'year_built'}
@@ -923,6 +929,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'security_deposit'}
@@ -961,6 +968,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'other_deposit'}
@@ -999,6 +1007,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'pet_deposit'}
@@ -1037,6 +1046,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
@@ -1075,6 +1085,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_lease', 'index': 'key_deposit'}
@@ -1161,6 +1172,7 @@ class LeaseComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc"
                 ),
             ], id={'type': 'dynamic_output_div_lease', 'index': 'listed_date'})
         ], style={'marginBottom': '10px'}, id='listed_date_div_lease')
@@ -1230,13 +1242,13 @@ class LeaseComponents(BaseClass):
     def create_user_options_card(self):
         accordion = dbc.Accordion(
             [
-                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
-                dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
-                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
-                dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent"),
-                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
-                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms"),
-                dbc.AccordionItem(self.pets_radio, title="Pet Policy", item_id="pet_policy"),
+                dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date", className="dbc"),
+                dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location", className="dbc"),
+                dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes", className="dbc"),
+                dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent", className="dbc"),
+                dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms", className="dbc"),
+                dbc.AccordionItem(self.bathrooms_slider, title="Bathrooms", item_id="bathrooms", className="dbc"),
+                dbc.AccordionItem(self.pets_radio, title="Pet Policy", item_id="pet_policy", className="dbc"),
                 dbc.AccordionItem(
                     [
                         self.key_deposit_components,
@@ -1246,15 +1258,16 @@ class LeaseComponents(BaseClass):
                     ],
                     title="Deposits",
                     item_id="deposits",
+                    className="dbc"
                 ),
-                dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished"),
-                dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces"),
-                dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
-                dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
-                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
-                dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms"),
-                dbc.AccordionItem(self.square_footage_components, title="Square Footage", item_id="square_footage"),
-                dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built"),
+                dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished", className="dbc"),
+                dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces", className="dbc"),
+                dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed", className="dbc"),
+                dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry", className="dbc"),
+                dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft", className="dbc"),
+                dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms", className="dbc"),
+                dbc.AccordionItem(self.square_footage_components, title="Square Footage", item_id="square_footage", className="dbc"),
+                dbc.AccordionItem(self.year_built_components, title="Year Built", item_id="year_built", className="dbc"),
             ],
             flush=True,
             always_open=True,
@@ -1267,7 +1280,7 @@ class LeaseComponents(BaseClass):
                 "bathrooms",
                 "pet_policy",
             ],
-            className="options-accordion",
+            className="options-accordion dbc",
         )
 
         user_options_card = dbc.Card(
@@ -1408,6 +1421,7 @@ class BuyComponents(BaseClass):
                 nothingFoundMessage="No options found",
                 clearable=True,
                 style={"marginBottom": "10px"},
+                className="dmc"
             ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'subtype'},
@@ -1501,7 +1515,8 @@ class BuyComponents(BaseClass):
                     checked=True,
                     size="md",
                     color="teal",
-                    style={'marginTop': '10px'}
+                    style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'sqft'}
@@ -1539,6 +1554,7 @@ class BuyComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'ppsqft'}
@@ -1587,6 +1603,7 @@ class BuyComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={"marginTop": "10px"},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'lot_size'}
@@ -1633,6 +1650,7 @@ class BuyComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'hoa_fee'},
@@ -1723,6 +1741,7 @@ class BuyComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ],
             id={'type': 'dynamic_output_div_buy', 'index': 'year_built'}
@@ -1780,6 +1799,7 @@ class BuyComponents(BaseClass):
                     size="md",
                     color="teal",
                     style={'marginTop': '10px'},
+                    className="dmc",
                 ),
             ], id={'type': 'dynamic_output_div_buy', 'index': 'listed_date'})
         ], style={'marginBottom': '10px'}, id='listed_date_div_buy')

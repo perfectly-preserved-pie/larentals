@@ -92,9 +92,9 @@ app.layout = dmc.MantineProvider(
   #html.Link(href='/assets/style.css', rel='stylesheet'),
   ],
   fluid = True,
-  className = "dmc",
+  className = "dbc",
   ),
-forceColorScheme="dark",
+#forceColorScheme="dark",
 )
 
 ALLOWED_OPTIONS = {
