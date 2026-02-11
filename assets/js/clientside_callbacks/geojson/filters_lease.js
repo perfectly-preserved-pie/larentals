@@ -143,8 +143,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const mls_number = feature.properties.mls_number;
                 const downloadSpeed = feature.properties.best_dn;
                 const uploadSpeed = feature.properties.best_up;
-                const termsValue = feature.properties.terms;
-                const isTermsMissing = (termsValue === null || termsValue === undefined || termsValue === "");
+                const termsValueRaw = feature.properties.terms;
+                // Normalize terms: null/undefined stay null, non-null strings are trimmed.
+                const termsValue = (termsValueRaw === null || termsValueRaw === undefined)
+                    ? null
+                    : String(termsValueRaw).trim();
+                const isTermsMissing = (termsValue === null || termsValue === "");
 
                 // Transform "Both" -> "Furnished Or Unfurnished"
                 let furnished = feature.properties.furnished;
@@ -213,22 +217,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 if (!rentalTerms || rentalTerms.length === 0) {
                     termsFilter = termsIncludeMissingBool ? isTermsMissing : false;
                 } else {
-                    let unknownFilter = false;
-                    let chosenTerms = [...rentalTerms];
-                    chosenTerms = chosenTerms.filter(t => t && String(t).trim().length > 0);
-                    if (termsIncludeMissingBool) {
-                        unknownFilter = unknownFilter || isTermsMissing;
-                    }
-                    if (chosenTerms.includes("Unknown")) {
-                        unknownFilter = unknownFilter || isTermsMissing;
-                        chosenTerms = chosenTerms.filter(t => t !== "Unknown");
-                    }
+                    // Normalize and remove empty values
+                    let chosenTerms = [...rentalTerms].filter(t => t && String(t).trim().length > 0);
+
+                    // Include missing terms only if the listing is missing terms AND
+                    // the "include missing" switch is on
+                    const unknownFilter = isTermsMissing && termsIncludeMissingBool;
+
                     if (chosenTerms.length > 0) {
                         const pattern = chosenTerms.map(term =>
                             term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
                         ).join("|");
                         const regex = new RegExp(pattern, "i");
-                        termsFilter = (termsValue && regex.test(termsValue)) || unknownFilter;
+                        termsFilter = (termsValue !== null && termsValue !== "" && regex.test(termsValue)) || unknownFilter;
                     } else {
                         termsFilter = unknownFilter;
                     }

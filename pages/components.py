@@ -707,7 +707,8 @@ class LeaseComponents(BaseClass):
             if term and term.strip()
         ]).unique()
 
-        unique_terms = sorted(unique_terms)
+        # Remove 'Unknown' from the chip list because we're controlling it via a separate dmc.Switch
+        unique_terms = sorted([t for t in unique_terms if t != 'Unknown'])
 
         # Define term abbreviations and labels
         term_abbreviations = {
