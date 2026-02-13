@@ -20,15 +20,12 @@ COPY . /app
 # Datasets and JS assets need to be writable by the non-root user (65532)
 RUN mkdir -p /app/assets/datasets \
  && touch /app/assets/dashExtensions_default.js \
- && chown 65532:65532 /app/assets \
- && chown 65532:65532 /app/assets/dashExtensions_default.js \
- && chown -R 65532:65532 /app/assets/datasets \
+ && chown nonroot:nonroot /app/assets \
+ && chown nonroot:nonroot /app/assets/dashExtensions_default.js \
+ && chown -R nonroot:nonroot /app/assets/datasets \
  && chmod 755 /app/assets \
  && chmod 664 /app/assets/dashExtensions_default.js \
- && chmod 755 /app/assets/datasets \
- && test -f /app/assets/datasets/larentals.db \
- && chown 65532:65532 /app/assets/datasets/larentals.db \
- && chmod 664 /app/assets/datasets/larentals.db
+ && chmod 755 /app/assets/datasets
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT ["gunicorn"]
