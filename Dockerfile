@@ -17,6 +17,16 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY . /app
 
+# Datasets and JS assets need to be writable by the non-root user (65532)
+RUN mkdir -p /app/assets/datasets \
+ && chown 65532:65532 /app/assets \
+ && chown -R 65532:65532 /app/assets/datasets \
+ && chmod 755 /app/assets \
+ && chmod 755 /app/assets/datasets \
+ && test -f /app/assets/datasets/larentals.db \
+ && chown 65532:65532 /app/assets/datasets/larentals.db \
+ && chmod 664 /app/assets/datasets/larentals.db
+
 ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT ["gunicorn"]
 CMD ["-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
