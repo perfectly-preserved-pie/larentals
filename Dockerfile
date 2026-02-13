@@ -18,4 +18,7 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY . /app
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
+
+# override base image `uv` ENTRYPOINT and run gunicorn directly
+ENTRYPOINT ["gunicorn"]
+CMD ["-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
