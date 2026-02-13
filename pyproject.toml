@@ -4,7 +4,7 @@ version     = "1.0.0"
 description = "An interactive map of available rentals in Los Angeles County. Updated weekly."             
 readme      = "README.md"
 license     = {  } # 
-requires-python = ">=3.11"
+requires-python = ">=3.13,<3.14"
 
 dependencies = [
   "beautifulsoup4~=4.14.3",
@@ -31,11 +31,9 @@ dependencies = [
   "pandas~=3.0.0",
   "protobuf~=6.33.4",
   "pyarrow~=23.0.0",
-  "pytest~=9.0.2",
   "python-dotenv~=1.2.1",
   "pyyaml~=6.0.3",
   "requests~=2.32.5",
-  "tables~=3.10.2",
   "user-agents~=2.2.0",
 ]
 

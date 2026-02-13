@@ -1,20 +1,21 @@
-FROM python:3.11-slim
+FROM dhi.io/uv:0.10-dev AS builder
 
-# 1) Prep directory
+# Force uv to use uv-managed Python (not the image's system Python)
+ENV UV_PYTHON_PREFERENCE=only-managed
+ENV UV_PYTHON_INSTALL_DIR=/opt/uv-python
+
 WORKDIR /app
+COPY pyproject.toml uv.lock ./
 
-# 2) Bring in the uv binary
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+# Install a stable Python and sync using it
+RUN uv python install 3.13
+RUN uv sync --frozen --python 3.13
 
-# 3) Copy manifest, lockfile 
-COPY pyproject.toml uv.lock /app/
-
-# 4) Copy source files
 COPY . /app
 
-# Set permissions to 1337:1337 for /app and owner only
-RUN chown -R 1337:1337 /app && chmod -R 700 /app
-
-# 7) Use uv run to lock, sync, then invoke Gunicorn
-#    Note the “--” to separate uv flags from the Gunicorn command
-CMD ["uv", "run", "--", "gunicorn", "-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
+FROM dhi.io/uv:0.10 AS runtime
+WORKDIR /app
+COPY --from=builder /app/.venv /app/.venv
+COPY . /app
+ENV PATH="/app/.venv/bin:$PATH"
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
