@@ -284,7 +284,7 @@ wheels = [
 
 [[package]]
 name = "dash-extensions"
-version = "2.0.4"
+version = "2.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dash" },
@@ -294,9 +294,9 @@ dependencies = [
     { name = "more-itertools" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/71/12/acaa0d1740bb31741dc984e833cc9c481ae643f66038e972503f3f1765ba/dash_extensions-2.0.4.tar.gz", hash = "sha256:fdab16f15349422c28e1fe3bf39f064f96fc54eb1dcd8d02440a45a63d8b1a6a", size = 1008215, upload-time = "2025-04-22T13:07:51.595Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/c2/feb284e47ba3a1f759d6c95003b83522c970690cf6baf3a21096c4f36263/dash_extensions-2.0.5.tar.gz", hash = "sha256:5ee9b444d5e4318637019fcd513857f9b4f488569963fa270f77ee07802e5405", size = 998632, upload-time = "2026-03-05T12:02:58.782Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a5/4f/af00ec901b3be747877f69fe91ca548080105d47d92688229b0a058ca3f7/dash_extensions-2.0.4-py3-none-any.whl", hash = "sha256:fae5cbac985f28cbb330be3600d784f69416f6fb6016e25c0f14e436e5cc0cd1", size = 1028796, upload-time = "2025-04-22T13:07:49.616Z" },
+    { url = "https://files.pythonhosted.org/packages/15/8b/cff245f82a869ca897545c2adbeacaddd6cc7851f7c9f9832337b4cdd976/dash_extensions-2.0.5-py3-none-any.whl", hash = "sha256:e672f693c799614c6ca802c2ca07f0c083042647983114d42b7c5fd1c7fa25e6", size = 1019240, upload-time = "2026-03-05T12:02:57.095Z" },
 ]
 
 [[package]]
