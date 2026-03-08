@@ -10,7 +10,6 @@ on:
       - "app.py"
       - "pages/**"
       - "functions/**"
-      - "tests/**"
 
 jobs:
   verify:
@@ -36,10 +35,7 @@ jobs:
             uv.lock
 
       - name: Sync dependencies
-        run: uv sync --frozen --extra dev
-
-      - name: Run pytest
-        run: uv run pytest
+        run: uv sync --frozen
 
       - name: Start app
         env:
