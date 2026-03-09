@@ -360,9 +360,12 @@ class BaseClass:
             ),
             html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
             html.Br(),
-            html.P("Toggle light/dark mode", style={"marginTop": "5px", "marginBottom": "5px"}),
+            dmc.Text("Toggle light/dark mode", id="color-scheme-toggle-label", size="sm", mt=5, mb=5),
             dmc.ColorSchemeToggle(
                 id="color-scheme-toggle",
+                attributes={
+                    "aria-labelledby": "color-scheme-toggle-label",
+                },
                 lightIcon=DashIconify(icon="radix-icons:sun", width=15, color="var(--mantine-color-yellow-8)"),
                 darkIcon=DashIconify(icon="radix-icons:moon", width=15, color="var(--mantine-color-yellow-6)"),
                 color="yellow",

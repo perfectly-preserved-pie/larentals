@@ -64,6 +64,55 @@ server = app.server
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
+    <script>
+      (() => {
+        const resolveColorScheme = (value) => {
+          if (value === "dark" || value === "light") {
+            return value;
+          }
+
+          if (value === "auto") {
+            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+
+          return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        };
+
+        const applyBootstrapColorScheme = () => {
+          const storedColorScheme = localStorage.getItem("mantine-color-scheme-value") || "auto";
+          document.documentElement.setAttribute("data-bs-theme", resolveColorScheme(storedColorScheme));
+        };
+
+        applyBootstrapColorScheme();
+
+        const observer = new MutationObserver(() => {
+          const mantineColorScheme = document.documentElement.getAttribute("data-mantine-color-scheme");
+          if (mantineColorScheme === "dark" || mantineColorScheme === "light") {
+            document.documentElement.setAttribute("data-bs-theme", mantineColorScheme);
+          } else {
+            applyBootstrapColorScheme();
+          }
+        });
+
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["data-mantine-color-scheme"],
+        });
+
+        const colorSchemeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const handleColorSchemeChange = () => {
+          if ((localStorage.getItem("mantine-color-scheme-value") || "auto") === "auto") {
+            applyBootstrapColorScheme();
+          }
+        };
+
+        if (typeof colorSchemeMediaQuery.addEventListener === "function") {
+          colorSchemeMediaQuery.addEventListener("change", handleColorSchemeChange);
+        } else if (typeof colorSchemeMediaQuery.addListener === "function") {
+          colorSchemeMediaQuery.addListener(handleColorSchemeChange);
+        }
+      })();
+    </script>
     <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.io/js/plausible.js" type="application/javascript"></script>
     {%metas%}
     <title>{%title%}</title>
