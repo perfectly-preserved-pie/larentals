@@ -360,15 +360,13 @@ class BaseClass:
             ),
             html.A("hey@wheretolive.la", href='mailto:hey@wheretolive.la', target='_blank'),
             html.Br(),
-            dmc.Switch(
-                color="grey",
-                description="Toggle light/dark mode",
-                id="color-scheme-switch",
-                offLabel=DashIconify(icon="radix-icons:sun", width=15, color= "var(--mantine-color-yellow-8)"),
-                onLabel=DashIconify(icon="radix-icons:moon", width=15, color= "var(--mantine-color-yellow-6)"),
-                persistence=True,
+            html.P("Toggle light/dark mode", style={"marginTop": "5px", "marginBottom": "5px"}),
+            dmc.ColorSchemeToggle(
+                id="color-scheme-toggle",
+                lightIcon=DashIconify(icon="radix-icons:sun", width=15, color="var(--mantine-color-yellow-8)"),
+                darkIcon=DashIconify(icon="radix-icons:moon", width=15, color="var(--mantine-color-yellow-6)"),
+                color="yellow",
                 size="md",
-                style={"marginTop": "5px"},
             )
         ]
 

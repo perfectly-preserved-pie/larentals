@@ -7,7 +7,8 @@
 }
 
 
-:root[data-bs-theme="dark"] .dbc {
+:root[data-bs-theme="dark"] .dbc,
+:root[data-mantine-color-scheme="dark"] .dbc {
     --Dash-Stroke-Weak: rgba(255, 255, 255, 0.15);
     --Dash-Fill-Weak: rgba(255, 255, 255, 0.06);
     --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.08);
