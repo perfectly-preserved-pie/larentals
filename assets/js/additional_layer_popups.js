@@ -42,6 +42,19 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function formatPopupDate(value) {
+    if (isBlankValue(value)) {
+        return 'N/A';
+    }
+
+    const valueAsString = String(value).trim();
+    if (valueAsString.includes('T')) {
+        return escapeHtml(valueAsString.split('T')[0]);
+    }
+
+    return escapeHtml(valueAsString);
+}
+
 function formatPropertyLabel(key) {
     const labels = {
         OBJECTID: 'Object ID',
@@ -230,25 +243,43 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
             
             // Check if the required properties exist and create the popup content
             if (feature.properties) {
+                const statusLabels = {
+                    A: 'Active',
+                    B: 'Buried',
+                    I: 'Idle',
+                    N: 'New',
+                    P: 'Plugged',
+                    U: 'Unknown',
+                };
+                const statusColors = {
+                    A: 'red',
+                    B: '#6c757d',
+                    I: '#DAA520',
+                    N: '#0d6efd',
+                    P: 'green',
+                    U: 'black',
+                };
+                const statusCode = isBlankValue(feature.properties.WellStatus)
+                    ? null
+                    : String(feature.properties.WellStatus).trim();
+                const statusLabel = statusCode && statusLabels[statusCode]
+                    ? `${statusLabels[statusCode]} (${statusCode})`
+                    : (statusCode || 'N/A');
+                const statusColor = statusCode && statusColors[statusCode]
+                    ? statusColors[statusCode]
+                    : 'black';
                 var popupContent = '<h4>Oil/Gas Well Info</h4>';
-                popupContent += 'API Number: ' + (feature.properties.API || 'N/A') + '<br>';
-                popupContent += 'Lease Name: ' + (feature.properties.LeaseName || 'N/A') + '<br>';
-                popupContent += 'Start Date: ' + (feature.properties.SpudDate || 'N/A') + '<br>';
-                popupContent += 'Well Operator: ' + (feature.properties.OperatorNa || 'N/A') + '<br>';
-                // Check the Well Status and set the color
-                var wellStatus = feature.properties.WellStatus || 'N/A';
-                var wellStatusColor = 'black';
-                if (wellStatus === 'Plugged') {
-                    wellStatusColor = 'green';
-                } 
-                else if (wellStatus === 'Active') {
-                    wellStatusColor = 'red';
-                } 
-                else if (wellStatus === 'Idle') {
-                    wellStatusColor = '#DAA520';  // Dark yellow
+                popupContent += 'API Number: ' + (feature.properties.APINumber || feature.properties.API || 'N/A') + '<br>';
+                popupContent += 'Operator: ' + (feature.properties.OperatorNa || 'N/A') + '<br>';
+                popupContent += 'Field Name: ' + (feature.properties.FieldName || 'N/A') + '<br>';
+                popupContent += 'County: ' + (feature.properties.CountyName || 'N/A') + '<br>';
+                popupContent += 'Start Date: ' + formatPopupDate(feature.properties.SPUDDate) + '<br>';
+                popupContent += 'Completion Date: ' + formatPopupDate(feature.properties.Completion) + '<br>';
+                if (!isBlankValue(feature.properties.AbandonedD)) {
+                    popupContent += 'Abandoned Date: ' + formatPopupDate(feature.properties.AbandonedD) + '<br>';
                 }
-                popupContent += 'Well Status: <span style="color:' + wellStatusColor + ';">' + wellStatus + '</span><br>';
-                popupContent += 'Well Type: ' + (feature.properties.WellTypeLa || 'N/A') + '<br>';
+                popupContent += 'Latest Update: ' + formatPopupDate(feature.properties.LatestUpdate) + '<br>';
+                popupContent += 'Well Status: <span style="color:' + statusColor + ';">' + statusLabel + '</span><br>';
                 
                 marker.bindPopup(popupContent);
             }

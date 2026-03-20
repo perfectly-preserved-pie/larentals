@@ -389,7 +389,7 @@ class BaseClass:
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
-    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ("farmers_markets",)
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ("farmers_markets", "oil_well")
 
     # Class Variables
     subtype_meaning = {
@@ -1329,7 +1329,7 @@ class LeaseComponents(BaseClass):
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
-    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ("farmers_markets",)
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ("farmers_markets", "oil_well")
 
     BUY_COLUMNS: tuple[str, ...] = (
         # identity + geometry

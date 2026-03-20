@@ -40,6 +40,7 @@ class LayerConfig:
         zoom_to_bounds_on_click: Whether clicking a feature/cluster should fit its bounds.
         bubbling_mouse_events: Whether layer mouse events should bubble to the map.
         supercluster_options: Optional supercluster configuration passed to `dl.GeoJSON`.
+        valid_bounds: Optional lon/lat bounding box used to discard clearly invalid points.
     """
     name: str
     dataset: str
@@ -49,6 +50,7 @@ class LayerConfig:
     zoom_to_bounds_on_click: bool = True
     bubbling_mouse_events: bool = False
     supercluster_options: Optional[dict[str, Any]] = None
+    valid_bounds: Optional[tuple[float, float, float, float]] = None
 
 # Create a base class for the additional layers
 # The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
@@ -71,9 +73,10 @@ class LayersClass:
         'oil_well': LayerConfig(
             name='Oil & Gas Wells',
             dataset='oil_well',
-            filepath='assets/datasets/oil_well_optimized.geojson',
+            filepath='assets/datasets/oil_wells.geojson',
             point_to_layer='drawOilIcon',
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
+            valid_bounds=(-125.0, -113.0, 32.0, 35.5),
         ),
         'crime': LayerConfig(
             name='Crime',
@@ -135,10 +138,75 @@ class LayersClass:
         with open(filepath, 'r') as f:
             loaded_data = json.load(f)
 
+        spec = cls.get_layer_config_by_dataset(dataset)
+        if spec is not None and spec.valid_bounds is not None:
+            loaded_data = cls.filter_geojson_to_bounds(loaded_data, spec.valid_bounds)
+
         cls.geojson_cache[dataset] = loaded_data
         duration = time.time() - start_time
         logger.info(f"Loaded '{dataset}' dataset in {duration:.2f} seconds.")
         return loaded_data
+
+    @classmethod
+    def get_layer_config_by_dataset(cls, dataset: str) -> LayerConfig | None:
+        """
+        Return the first registered layer config matching a dataset cache key.
+
+        Args:
+            dataset: Dataset/cache identifier, such as `"oil_well"`.
+
+        Returns:
+            The matching `LayerConfig`, or `None` when no config uses that dataset key.
+        """
+        for spec in cls.LAYER_CONFIGS.values():
+            if spec.dataset == dataset:
+                return spec
+        return None
+
+    @classmethod
+    def filter_geojson_to_bounds(
+        cls,
+        geojson_data: GeoJsonDict,
+        bounds: tuple[float, float, float, float],
+    ) -> GeoJsonDict:
+        """
+        Filter point features to a valid lon/lat bounding box.
+
+        Args:
+            geojson_data: GeoJSON FeatureCollection payload to filter.
+            bounds: Tuple of `(min_lon, max_lon, min_lat, max_lat)`.
+
+        Returns:
+            A GeoJSON payload whose point features fall within the supplied bounds.
+            Non-point features are preserved unchanged.
+        """
+        min_lon, max_lon, min_lat, max_lat = bounds
+        features = geojson_data.get("features", [])
+        filtered_features: list[GeoJsonDict] = []
+        dropped_count = 0
+
+        for feature in features:
+            geometry = feature.get("geometry") or {}
+            coords = geometry.get("coordinates") or []
+            if geometry.get("type") != "Point" or len(coords) < 2:
+                filtered_features.append(feature)
+                continue
+
+            lon, lat = coords[0], coords[1]
+            if min_lon <= lon <= max_lon and min_lat <= lat <= max_lat:
+                filtered_features.append(feature)
+            else:
+                dropped_count += 1
+
+        if dropped_count:
+            logger.warning(
+                f"Filtered {dropped_count} out-of-bounds point features from GeoJSON payload."
+            )
+
+        return {
+            **geojson_data,
+            "features": filtered_features,
+        }
 
     @classmethod
     def create_geojson_layer(
