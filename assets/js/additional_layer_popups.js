@@ -20,6 +20,192 @@ function militaryToStandard(time) {
     return hours + ':' + minutes + ' ' + suffix;
 }
 
+function isBlankValue(value) {
+    if (value === null || value === undefined) {
+        return true;
+    }
+
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === '' || normalized === 'null' || normalized === 'none' || normalized === 'nan';
+    }
+
+    return false;
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatPropertyLabel(key) {
+    const labels = {
+        OBJECTID: 'Object ID',
+        OBJECTID_1: 'Object ID 1',
+        POINT_X: 'Point X',
+        POINT_Y: 'Point Y',
+        addrln1: 'Address Line 1',
+        addrln2: 'Address Line 2',
+        allcats: 'All Categories',
+        cat1: 'Category 1',
+        cat2: 'Category 2',
+        cat3: 'Category 3',
+        date_updated: 'Date Updated',
+        dis_status: 'Display Status',
+        ext_id: 'External ID',
+        info1: 'Info 1',
+        info2: 'Info 2',
+        isCounty: 'County Market',
+        nameUrlFriendly: 'URL Friendly Name',
+        org_name: 'Organization',
+        phones: 'Phone',
+        post_id: 'Post ID',
+        use_type: 'Use Type'
+    };
+
+    if (labels[key]) {
+        return labels[key];
+    }
+
+    return key
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, function(char) {
+            return char.toUpperCase();
+        });
+}
+
+function formatFarmersMarketValue(key, value) {
+    if (isBlankValue(value)) {
+        return 'N/A';
+    }
+
+    const valueAsString = String(value).trim();
+
+    if ((key === 'url' || key === 'link') && /^https?:\/\//i.test(valueAsString)) {
+        const safeUrl = escapeHtml(valueAsString);
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+    }
+
+    if (key === 'email') {
+        const safeEmail = escapeHtml(valueAsString);
+        return `<a href="mailto:${safeEmail}">${safeEmail}</a>`;
+    }
+
+    if (key === 'isCounty') {
+        return Number(value) === 1 ? 'Yes' : 'No';
+    }
+
+    return escapeHtml(valueAsString);
+}
+
+function joinAddressParts(parts) {
+    return parts
+        .filter(function(part) {
+            return !isBlankValue(part);
+        })
+        .map(function(part) {
+            return String(part).trim();
+        })
+        .join(', ');
+}
+
+function buildFarmersMarketAddress(properties) {
+    const street = joinAddressParts([properties.addrln1, properties.addrln2]);
+    const cityStateZip = joinAddressParts([properties.city, properties.state, properties.zip]);
+
+    if (!street && !cityStateZip) {
+        return 'N/A';
+    }
+    if (!street) {
+        return escapeHtml(cityStateZip);
+    }
+    if (!cityStateZip) {
+        return escapeHtml(street);
+    }
+    return escapeHtml(`${street}, ${cityStateZip}`);
+}
+
+function buildFarmersMarketWebsite(properties) {
+    const url = isBlankValue(properties.url) ? null : String(properties.url).trim();
+    const link = isBlankValue(properties.link) ? null : String(properties.link).trim();
+    const candidates = [];
+
+    if (url) {
+        candidates.push(url);
+    }
+    if (link && link !== url) {
+        candidates.push(link);
+    }
+    if (candidates.length === 0) {
+        return 'N/A';
+    }
+
+    return candidates
+        .map(function(candidate) {
+            const safeUrl = escapeHtml(candidate);
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+        })
+        .join('<br>');
+}
+
+function buildFarmersMarketRows(properties) {
+    return [
+        {
+            label: 'Address',
+            value: buildFarmersMarketAddress(properties),
+        },
+        {
+            label: 'Hours',
+            value: formatFarmersMarketValue('hours', properties.hours),
+        },
+        {
+            label: 'Website',
+            value: buildFarmersMarketWebsite(properties),
+        },
+        {
+            label: 'County Market',
+            value: formatFarmersMarketValue('isCounty', properties.isCounty),
+        },
+    ];
+}
+
+function buildFarmersMarketPopupContent(properties) {
+    const name = isBlankValue(properties.name)
+        ? 'Farmers Market'
+        : escapeHtml(properties.name.trim());
+    const propertyRows = buildFarmersMarketRows(properties)
+        .map(function(row) {
+            return `
+                <div style="display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 8px 12px; align-items: start; padding: 8px 0; border-bottom: 1px solid #ddd;">
+                    <div style="font-weight: bold;">${escapeHtml(row.label)}</div>
+                    <div style="min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word;">
+                        ${row.value}
+                    </div>
+                </div>
+            `;
+        })
+        .join('');
+
+    const rowsContent = propertyRows || `
+        <div style="padding: 8px 0; color: #666;">No additional details available.</div>
+    `;
+
+    return `
+        <div style="width: 360px; max-width: 70vw;">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <h5 style="margin: 0;">${name}</h5>
+            </div>
+            <div style="max-height: 320px; overflow-y: auto; padding-right: 4px;">
+                ${rowsContent}
+            </div>
+        </div>
+    `;
+}
+
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
         drawOilIcon: function(feature, latlng) {
@@ -89,13 +275,13 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
             const marker = L.marker(latlng, {icon: MarketIcon});
         
             if (feature.properties) {
-                let popupContent = '<h4>Farmers Market Info</h4>';
-                popupContent += 'Name: ' + (feature.properties.name || 'N/A') + '<br>';
-                popupContent += 'Address: ' + (feature.properties.addrln1 || 'N/A') + '<br>';
-                popupContent += 'City: ' + (feature.properties.city || 'N/A') + '<br>';
-                popupContent += 'Hours: ' + (feature.properties.hours || 'N/A') + '<br>';
-                popupContent += 'URL: ' + (feature.properties.url || 'N/A') + '<br>';
-                marker.bindPopup(popupContent);
+                marker.bindPopup(
+                    buildFarmersMarketPopupContent(feature.properties),
+                    {
+                        maxWidth: 420,
+                        minWidth: 320,
+                    }
+                );
             }
         
             return marker;

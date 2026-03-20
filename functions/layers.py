@@ -32,35 +32,30 @@ class LayersClass:
         """
         #logger.debug(f"load_geojson_data called from:\n{traceback.format_stack()}")
 
-        start_time = time.time()  # Start timing
-        if dataset == 'oil_well' and cls.oil_well_data is None:
-            with open(filepath, 'r') as f:
-                cls.oil_well_data = json.load(f)
-                duration = time.time() - start_time  # Calculate duration
-                logger.info(f"Loaded 'oil_well' dataset in {duration:.2f} seconds.")
-            return cls.oil_well_data
-        elif dataset == 'crime' and cls.crime_data is None:
-            with open(filepath, 'r') as f:
-                cls.crime_data = json.load(f)
-                duration = time.time() - start_time  # Calculate duration
-                logger.info(f"Loaded 'crime' dataset in {duration:.2f} seconds.")
-            return cls.crime_data
-        elif dataset == 'farmers_markets' and cls.farmers_markets_data is None:
-            with open(filepath, 'r') as f:
-                cls.farmers_markets_data = json.load(f)
-                duration = time.time() - start_time
-                logger.info(f"Loaded 'farmers_markets' dataset in {duration:.2f} seconds.")
-            return cls.farmers_markets_data
-        elif dataset not in ['oil_well', 'crime']:
-            raise ValueError(f"Invalid dataset: {dataset}. Expected 'oil_well' or 'crime'.")
-        else:  # If data is already loaded, log that instead of loading time
-            logger.info(f"'{dataset}' dataset already loaded; skipping reload.")
+        dataset_attrs = {
+            'oil_well': 'oil_well_data',
+            'crime': 'crime_data',
+            'farmers_markets': 'farmers_markets_data',
+        }
+        data_attr = dataset_attrs.get(dataset)
+        if data_attr is None:
+            raise ValueError(
+                f"Invalid dataset: {dataset}. Expected one of {sorted(dataset_attrs)}."
+            )
 
-        # If data was previously loaded, we didn't measure loading time
-        if dataset == 'oil_well':
-            return cls.oil_well_data
-        elif dataset == 'crime':
-            return cls.crime_data
+        cached_data = getattr(cls, data_attr)
+        if cached_data is not None:
+            logger.info(f"'{dataset}' dataset already loaded; skipping reload.")
+            return cached_data
+
+        start_time = time.time()
+        with open(filepath, 'r') as f:
+            loaded_data = json.load(f)
+
+        setattr(cls, data_attr, loaded_data)
+        duration = time.time() - start_time
+        logger.info(f"Loaded '{dataset}' dataset in {duration:.2f} seconds.")
+        return loaded_data
 
     @classmethod
     def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
@@ -98,8 +93,9 @@ class LayersClass:
             data=cls.farmers_markets_data,
             cluster=True,
             zoomToBoundsOnClick=True,
+            bubblingMouseEvents=False,
+            pointToLayer=ns("drawFarmersMarketIcon"),
             superClusterOptions={'radius':160,'maxClusterRadius':40,'minZoom':3},
-            options=dict(pointToLayer=ns("drawFarmersMarketIcon"))
         )
 
     def create_crime_layer(cls) -> dl.GeoJSON:

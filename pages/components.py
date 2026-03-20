@@ -3,6 +3,7 @@ from dash_extensions.javascript import Namespace
 from dash_iconify import DashIconify
 from datetime import date
 from functions.convex_hull import generate_convex_hulls
+from functions.layers import LayersClass
 from functions.sql_helpers import get_latest_date_processed
 from html import unescape
 from typing import Optional, Sequence, List
@@ -1179,12 +1180,19 @@ class LeaseComponents(BaseClass):
         Returns:
             dl.Map: A Dash Leaflet Map component.
         """
-        # Create additional layers
-        #oil_well_layer = self.create_oil_well_geojson_layer()
-        #crime_layer = self.create_crime_layer()
-        #farmers_market_layer = LayersClass.create_farmers_markets_layer()
-
         ns = Namespace("dash_props", "module")
+        farmers_market_layer = LayersClass.create_farmers_markets_layer()
+        layers_control = dl.LayersControl(
+            [
+                dl.Overlay(
+                    farmers_market_layer,
+                    name="Farmers Markets",
+                    checked=False,
+                ),
+            ],
+            collapsed=True,
+            position='topleft',
+        )
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -1204,7 +1212,8 @@ class LeaseComponents(BaseClass):
                         'minZoom': 3,
                     },
                 ),
-                dl.FullScreenControl()
+                dl.FullScreenControl(),
+                layers_control,
             ],
             id='map',
             zoom=9,
@@ -1217,18 +1226,6 @@ class LeaseComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '100vh', 'margin': "0", "display": "block"}
         )
-
-        # Add a layer control for the additional layers
-        layers_control = dl.LayersControl(
-            [ # Create a list of layers to add to the control
-                #dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-                #dl.Overlay(crime_layer, name="Crime", checked=False),
-                #dl.Overlay(farmers_market_layer, name="Farmers Markets", checked=False),
-            ],
-            collapsed=True,
-            position='topleft'
-        )
-        map.children.append(layers_control)
 
         return map
         
@@ -1800,11 +1797,19 @@ class BuyComponents(BaseClass):
         Returns:
             dl.Map: A Dash Leaflet Map component.
         """
-        # Create additional layers
-        #oil_well_layer = self.create_oil_well_geojson_layer()
-        #crime_layer = self.create_crime_layer()
-
         ns = Namespace("dash_props", "module")
+        farmers_market_layer = LayersClass.create_farmers_markets_layer()
+        layers_control = dl.LayersControl(
+            [
+                dl.Overlay(
+                    farmers_market_layer,
+                    name="Farmers Markets",
+                    checked=False,
+                ),
+            ],
+            collapsed=True,
+            position='topleft',
+        )
 
         # Create the main map with the lease layer
         map = dl.Map(
@@ -1824,7 +1829,8 @@ class BuyComponents(BaseClass):
                         'minZoom': 3,
                     },
                 ),
-                dl.FullScreenControl()
+                dl.FullScreenControl(),
+                layers_control,
             ],
             id='map',
             zoom=9,
@@ -1837,17 +1843,6 @@ class BuyComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
-
-        # Add a layer control for the additional layers
-        #layers_control = dl.LayersControl(
-        #    [ # Create a list of layers to add to the control
-        #        dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-        #        dl.Overlay(crime_layer, name="Crime", checked=False),
-        #    ],
-        #    collapsed=True,
-        #    position='topleft'
-        #)
-        #map.children.append(layers_control)
 
         return map
     
