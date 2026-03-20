@@ -268,7 +268,21 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
                 const statusColor = statusCode && statusColors[statusCode]
                     ? statusColors[statusCode]
                     : 'black';
-                var popupContent = '<h4>Oil/Gas Well Info</h4>';
+                const wellNumber = isBlankValue(feature.properties.WellNumber)
+                    ? null
+                    : escapeHtml(String(feature.properties.WellNumber).trim());
+                const fieldName = isBlankValue(feature.properties.FieldName)
+                    ? null
+                    : escapeHtml(String(feature.properties.FieldName).trim());
+                const apiNumber = isBlankValue(feature.properties.APINumber)
+                    ? null
+                    : escapeHtml(String(feature.properties.APINumber).trim());
+                const popupTitle = fieldName && wellNumber
+                    ? `${fieldName} • Well ${wellNumber}`
+                    : wellNumber
+                    ? `Oil/Gas Well Number ${wellNumber}`
+                    : `Oil/Gas Well API ${apiNumber || 'Unknown'}`;
+                var popupContent = `<h4>${popupTitle}</h4>`;
                 popupContent += 'API Number: ' + (feature.properties.APINumber || feature.properties.API || 'N/A') + '<br>';
                 popupContent += 'Operator: ' + (feature.properties.OperatorNa || 'N/A') + '<br>';
                 popupContent += 'Field Name: ' + (feature.properties.FieldName || 'N/A') + '<br>';
