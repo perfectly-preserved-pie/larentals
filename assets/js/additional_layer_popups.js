@@ -173,10 +173,23 @@ function buildFarmersMarketRows(properties) {
     ];
 }
 
+function buildFarmersMarketTitle(properties) {
+    if (isBlankValue(properties.name)) {
+        return 'Farmers Market';
+    }
+
+    const rawName = String(properties.name).trim();
+    const expandedName = rawName.replace(/\bCFM\b/g, 'Certified Farmers Market').trim();
+
+    if (/farmers market/i.test(expandedName)) {
+        return escapeHtml(expandedName);
+    }
+
+    return escapeHtml(`${expandedName} Farmers Market`);
+}
+
 function buildFarmersMarketPopupContent(properties) {
-    const name = isBlankValue(properties.name)
-        ? 'Farmers Market'
-        : escapeHtml(properties.name.trim());
+    const marketName = buildFarmersMarketTitle(properties);
     const propertyRows = buildFarmersMarketRows(properties)
         .map(function(row) {
             return `
@@ -197,7 +210,7 @@ function buildFarmersMarketPopupContent(properties) {
     return `
         <div style="width: 360px; max-width: 70vw;">
             <div style="text-align: center; margin-bottom: 10px;">
-                <h5 style="margin: 0;">${name}</h5>
+                <h5 style="margin: 0;">${marketName}</h5>
             </div>
             <div style="max-height: 320px; overflow-y: auto; padding-right: 4px;">
                 ${rowsContent}
