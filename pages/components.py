@@ -43,6 +43,8 @@ def _require_safe_identifier(name: str, *, field_name: str) -> str:
 
 # Create a class to hold all common components for both Lease and Buy pages
 class BaseClass:
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ()
+
     def __init__(
         self,
         table_name: str,
@@ -151,6 +153,15 @@ class BaseClass:
         # Turn None/NaN laundry_category into "Unknown"
         if 'laundry_category' in self.df.columns:
             self.df['laundry_category'] = self.df['laundry_category'].fillna('Unknown').replace({None: 'Unknown', 'None': 'Unknown'})
+
+    def create_optional_layers_control(self) -> Optional[dl.LayersControl]:
+        if not self.OPTIONAL_LAYER_KEYS:
+            return None
+
+        return LayersClass.create_layers_control(
+            page_key=self.page_type,
+            layer_keys=self.OPTIONAL_LAYER_KEYS,
+        )
 
     def return_geojson(self) -> dict:
         """
@@ -378,6 +389,8 @@ class BaseClass:
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ("farmers_markets",)
+
     # Class Variables
     subtype_meaning = {
         'Apartment (Attached)': 'Apartment (Attached)',
@@ -1181,40 +1194,31 @@ class LeaseComponents(BaseClass):
             dl.Map: A Dash Leaflet Map component.
         """
         ns = Namespace("dash_props", "module")
-        farmers_market_layer = LayersClass.create_farmers_markets_layer()
-        layers_control = dl.LayersControl(
-            [
-                dl.Overlay(
-                    farmers_market_layer,
-                    name="Farmers Markets",
-                    checked=False,
-                ),
-            ],
-            collapsed=True,
-            position='topleft',
-        )
+        layers_control = self.create_optional_layers_control()
+        map_children = [
+            dl.TileLayer(
+                detectRetina=False,
+            ),
+            dl.GeoJSON(
+                id='lease_geojson',
+                data=None,
+                cluster=True,
+                clusterToLayer=generate_convex_hulls,
+                onEachFeature=ns("on_each_feature"),
+                zoomToBoundsOnClick=True,
+                superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                    'radius': 160,
+                    'minZoom': 3,
+                },
+            ),
+            dl.FullScreenControl(),
+        ]
+        if layers_control is not None:
+            map_children.append(layers_control)
 
         # Create the main map with the lease layer
         map = dl.Map(
-            [
-                dl.TileLayer(
-                    detectRetina=False,
-                ),
-                dl.GeoJSON(
-                    id='lease_geojson',
-                    data=None,
-                    cluster=True,
-                    clusterToLayer=generate_convex_hulls,
-                    onEachFeature=ns("on_each_feature"),
-                    zoomToBoundsOnClick=True,
-                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
-                        'radius': 160,
-                        'minZoom': 3,
-                    },
-                ),
-                dl.FullScreenControl(),
-                layers_control,
-            ],
+            map_children,
             id='map',
             zoom=9,
             minZoom=9,
@@ -1325,6 +1329,8 @@ class LeaseComponents(BaseClass):
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ("farmers_markets",)
+
     BUY_COLUMNS: tuple[str, ...] = (
         # identity + geometry
         "mls_number",
@@ -1798,40 +1804,31 @@ class BuyComponents(BaseClass):
             dl.Map: A Dash Leaflet Map component.
         """
         ns = Namespace("dash_props", "module")
-        farmers_market_layer = LayersClass.create_farmers_markets_layer()
-        layers_control = dl.LayersControl(
-            [
-                dl.Overlay(
-                    farmers_market_layer,
-                    name="Farmers Markets",
-                    checked=False,
-                ),
-            ],
-            collapsed=True,
-            position='topleft',
-        )
+        layers_control = self.create_optional_layers_control()
+        map_children = [
+            dl.TileLayer(
+                detectRetina=False,
+            ),
+            dl.GeoJSON(
+                id='buy_geojson',
+                data=None,
+                cluster=True,
+                clusterToLayer=generate_convex_hulls,
+                onEachFeature=ns("on_each_feature"),
+                zoomToBoundsOnClick=True,
+                superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                    'radius': 160,
+                    'minZoom': 3,
+                },
+            ),
+            dl.FullScreenControl(),
+        ]
+        if layers_control is not None:
+            map_children.append(layers_control)
 
         # Create the main map with the lease layer
         map = dl.Map(
-            [
-                dl.TileLayer(
-                    detectRetina=False,
-                ),
-                dl.GeoJSON(
-                    id='buy_geojson',
-                    data=None,
-                    cluster=True,
-                    clusterToLayer=generate_convex_hulls,
-                    onEachFeature=ns("on_each_feature"),
-                    zoomToBoundsOnClick=True,
-                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
-                        'radius': 160,
-                        'minZoom': 3,
-                    },
-                ),
-                dl.FullScreenControl(),
-                layers_control,
-            ],
+            map_children,
             id='map',
             zoom=9,
             minZoom=9,

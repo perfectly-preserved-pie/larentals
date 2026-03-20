@@ -1,6 +1,7 @@
 from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
-from dash.dependencies import Input, Output, State
+from dash.dependencies import ALL, Input, Output, State
+from functions.layers import LayersClass
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
@@ -101,6 +102,26 @@ def load_lease_geojson(_: int) -> dict:
   """
   components = LeaseComponents()
   return components.return_geojson()
+
+@callback(
+  Output({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+)
+def load_lease_optional_layers(
+  selected_overlays: list[str] | None,
+  layer_ids: list[dict[str, str]] | None,
+  current_data: list[dict] | None,
+) -> list[dict]:
+  """
+  Lazy-load optional map layers only after the user enables them.
+  """
+  return LayersClass.resolve_lazy_layer_data(
+    selected_overlays=selected_overlays,
+    layer_ids=layer_ids,
+    current_data=current_data,
+  )
 
 
 @callback(
