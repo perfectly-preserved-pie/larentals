@@ -232,6 +232,94 @@ function buildFarmersMarketPopupContent(properties) {
     `;
 }
 
+function toDisplayTitleCase(value) {
+    if (isBlankValue(value)) {
+        return null;
+    }
+
+    const normalized = String(value).trim().replace(/\s+/g, ' ');
+    const needsNormalization = normalized === normalized.toUpperCase() || normalized === normalized.toLowerCase();
+    if (!needsNormalization) {
+        return normalized;
+    }
+
+    return normalized
+        .toLowerCase()
+        .replace(/\b([a-z])([a-z']*)/g, function(match, firstLetter, restOfWord) {
+            return firstLetter.toUpperCase() + restOfWord;
+        });
+}
+
+function buildSupermarketTitle(properties) {
+    const dbaName = isBlankValue(properties.dba_name)
+        ? null
+        : String(properties.dba_name).trim();
+    const businessName = isBlankValue(properties.business_name)
+        ? null
+        : String(properties.business_name).trim();
+    const title = toDisplayTitleCase(dbaName || businessName || 'Supermarket / Grocery Store');
+
+    return escapeHtml(title);
+}
+
+function buildSupermarketAddress(properties) {
+    if (!isBlankValue(properties.full_address)) {
+        return escapeHtml(toDisplayTitleCase(properties.full_address));
+    }
+
+    const address = joinAddressParts([
+        properties.street_address,
+        properties.city,
+        properties.zip_code,
+    ]);
+    return address ? escapeHtml(toDisplayTitleCase(address)) : 'N/A';
+}
+
+function buildSupermarketPopupContent(properties) {
+    const rows = [
+        {
+            label: 'Address',
+            value: buildSupermarketAddress(properties),
+        },
+        {
+            label: 'NAICS',
+            value: isBlankValue(properties.naics)
+                ? 'N/A'
+                : `${escapeHtml(String(properties.naics).trim())} - ${escapeHtml(String(properties.primary_naics_description || '').trim())}`,
+        },
+        {
+            label: 'Opened',
+            value: isBlankValue(properties.location_start_date)
+                ? 'N/A'
+                : escapeHtml(String(properties.location_start_date).trim()),
+        },
+    ];
+
+    const propertyRows = rows
+        .map(function(row) {
+            return `
+                <div style="display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 8px 12px; align-items: start; padding: 8px 0; border-bottom: 1px solid #ddd;">
+                    <div style="font-weight: bold;">${escapeHtml(row.label)}</div>
+                    <div style="min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word;">
+                        ${row.value}
+                    </div>
+                </div>
+            `;
+        })
+        .join('');
+
+    return `
+        <div style="width: 360px; max-width: 70vw;">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <h5 style="margin: 0;">${buildSupermarketTitle(properties)}</h5>
+            </div>
+            <div style="max-height: 320px; overflow-y: auto; padding-right: 4px;">
+                ${propertyRows}
+            </div>
+        </div>
+    `;
+}
+
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
         drawOilIcon: function(feature, latlng) {
@@ -342,6 +430,32 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
                 );
             }
         
+            return marker;
+        },
+        drawSupermarketIcon: function(feature, latlng) {
+            const SupermarketIcon = L.divIcon({
+                className: 'supermarket-div-icon',
+                html: `
+                    <div style="width: 22px; height: 22px; border-radius: 50%; background: #2f7d32; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);">
+                        <span style="color: #ffffff; font-size: 12px; line-height: 1;">&#128722;</span>
+                    </div>
+                `,
+                iconSize: [22, 22],
+                iconAnchor: [11, 11],
+                popupAnchor: [0, -12],
+            });
+            const marker = L.marker(latlng, {icon: SupermarketIcon});
+
+            if (feature.properties) {
+                marker.bindPopup(
+                    buildSupermarketPopupContent(feature.properties),
+                    {
+                        maxWidth: 420,
+                        minWidth: 320,
+                    }
+                );
+            }
+
             return marker;
         },
     }

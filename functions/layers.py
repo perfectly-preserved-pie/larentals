@@ -93,6 +93,15 @@ class LayersClass:
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
         ),
+        'supermarkets_grocery': LayerConfig(
+            name='Supermarkets & Grocery Stores',
+            dataset='supermarkets_grocery',
+            filepath='assets/datasets/supermarkets_and_grocery_stores.geojson',
+            point_to_layer='drawSupermarketIcon',
+            bubbling_mouse_events=False,
+            supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
+            valid_bounds=(-125.0, -113.0, 32.0, 35.5),
+        ),
     }
     geojson_cache: ClassVar[dict[str, GeoJsonDict]] = {}
 
@@ -414,6 +423,20 @@ class LayersClass:
         spec = cls.get_layer_config('farmers_markets')
         return cls.create_geojson_layer(
             'farmers_markets',
+            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+        )
+
+    @classmethod
+    def create_supermarkets_grocery_layer(cls) -> dl.GeoJSON:
+        """
+        Create an eagerly loaded supermarkets and grocery stores GeoJSON layer.
+
+        Returns:
+            A configured `dl.GeoJSON` component for supermarket and grocery store data.
+        """
+        spec = cls.get_layer_config('supermarkets_grocery')
+        return cls.create_geojson_layer(
+            'supermarkets_grocery',
             data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
         )
 
