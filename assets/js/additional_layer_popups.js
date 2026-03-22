@@ -275,25 +275,39 @@ function buildSupermarketAddress(properties) {
     return address ? escapeHtml(toDisplayTitleCase(address)) : 'N/A';
 }
 
+function buildSupermarketCategoryRow(properties) {
+    if (!isBlankValue(properties.naics)) {
+        const description = isBlankValue(properties.primary_naics_description)
+            ? ''
+            : ` - ${escapeHtml(String(properties.primary_naics_description).trim())}`;
+        return {
+            label: 'NAICS',
+            value: `${escapeHtml(String(properties.naics).trim())}${description}`,
+        };
+    }
+
+    if (!isBlankValue(properties.business_type)) {
+        return {
+            label: 'Business Type',
+            value: escapeHtml(String(properties.business_type).trim()),
+        };
+    }
+
+    return null;
+}
+
 function buildSupermarketPopupContent(properties) {
     const rows = [
         {
             label: 'Address',
             value: buildSupermarketAddress(properties),
         },
-        {
-            label: 'NAICS',
-            value: isBlankValue(properties.naics)
-                ? 'N/A'
-                : `${escapeHtml(String(properties.naics).trim())} - ${escapeHtml(String(properties.primary_naics_description || '').trim())}`,
-        },
-        {
+        buildSupermarketCategoryRow(properties),
+        isBlankValue(properties.location_start_date) ? null : {
             label: 'Opened',
-            value: isBlankValue(properties.location_start_date)
-                ? 'N/A'
-                : escapeHtml(String(properties.location_start_date).trim()),
+            value: escapeHtml(String(properties.location_start_date).trim()),
         },
-    ];
+    ].filter(Boolean);
 
     const propertyRows = rows
         .map(function(row) {

@@ -1,0 +1,110 @@
+{
+  "1000 wilshire blvd, santa monica, ca, 90401-1907": {
+    "display_name": "Santa Monica Seafood, 1000, Wilshire Boulevard, Santa Monica, Los Angeles County, California, 90401, United States",
+    "latitude": 34.0236798,
+    "longitude": -118.4923317
+  },
+  "1311 wilshire blvd, santa monica, ca, 90403-5410": {
+    "display_name": "Vons, 1311, Wilshire Boulevard, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0265628,
+    "longitude": -118.489841
+  },
+  "1425 montana ave, santa monica, ca, 90403": {
+    "display_name": "Whole Foods Market, 1425, Montana Avenue, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0329135,
+    "longitude": -118.4947462
+  },
+  "1438 10th st apt 11, santa monica, ca, 90401-2816": null,
+  "1517 lincoln blvd, santa monica, ca, 90401-2776": {
+    "display_name": "Bay Cities Italian Deli, 1517, Lincoln Boulevard, Downtown Santa Monica, Santa Monica, Los Angeles County, California, 90401, United States",
+    "latitude": 34.0179803,
+    "longitude": -118.4891866
+  },
+  "1644 cloverfield blvd, santa monica, ca, 90404-4006": {
+    "display_name": "Ralphs, 1644, Cloverfield Boulevard, Santa Monica, Los Angeles County, California, 90404, United States",
+    "latitude": 34.0271061,
+    "longitude": -118.4739052
+  },
+  "1650 ocean park blvd, santa monica, ca, 90405-4822": {
+    "display_name": "1650, Ocean Park Boulevard, Santa Monica, Los Angeles County, California, 90405, United States",
+    "latitude": 34.0118951,
+    "longitude": -118.4676433
+  },
+  "1804 california ave, santa monica, ca, 90403-4411": {
+    "display_name": "1804, California Avenue, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0312933,
+    "longitude": -118.4864426
+  },
+  "1808 wilshire blvd, santa monica, ca, 90403-5610": {
+    "display_name": "Wilshire Boulevard, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0305016,
+    "longitude": -118.4842889
+  },
+  "1865 lincoln blvd, santa monica, ca, 90404-6510": {
+    "display_name": "Subway, 1865, Lincoln Boulevard, Santa Monica, Los Angeles County, California, 90404, United States",
+    "latitude": 34.0126914,
+    "longitude": -118.4829675
+  },
+  "2030 montana ave, santa monica, ca, 90403-2007": {
+    "display_name": "2030, Montana Avenue, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0372967,
+    "longitude": -118.4887337
+  },
+  "2121 cloverfield blvd, santa monica, ca, 90404-5226": {
+    "display_name": "Whole Foods Market, 2121, Cloverfield Boulevard, Santa Monica, Los Angeles County, California, 90404, United States",
+    "latitude": 34.0221947,
+    "longitude": -118.4655909
+  },
+  "2201 wilshire blvd, santa monica, ca, 90403-5705": {
+    "display_name": "Whole Foods Market, 2201, Wilshire Boulevard, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0333237,
+    "longitude": -118.4812962
+  },
+  "2209 main st #c, santa monica, ca, 90405-2272": null,
+  "2225 4th st, santa monica, ca, 90405-2382": {
+    "display_name": "2225, 4th Street, Ocean Park, Santa Monica, Los Angeles County, California, 90405, United States",
+    "latitude": 34.0071815,
+    "longitude": -118.4845141
+  },
+  "2627 lincoln blvd, santa monica, ca, 90405-4619": {
+    "display_name": "Gelson's, 2627, Lincoln Boulevard, Santa Monica, Los Angeles County, California, 90405, United States",
+    "latitude": 34.0069822,
+    "longitude": -118.4746055
+  },
+  "2800 wilshire blvd, santa monica, ca, 90403-4802": {
+    "display_name": "2800, Wilshire Boulevard, Santa Monica, Los Angeles County, California, 90025, United States",
+    "latitude": 34.0375224,
+    "longitude": -118.4752006
+  },
+  "3105 wilshire blvd, santa monica, ca, 90403-2303": {
+    "display_name": "Wilshire Boulevard, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0299763,
+    "longitude": -118.4849302
+  },
+  "314 santa monica blvd, santa monica, ca, 90401": {
+    "display_name": "314, Santa Monica Boulevard, Third Street Promenade, Santa Monica, Los Angeles County, California, 90401, United States",
+    "latitude": 34.0158614,
+    "longitude": -118.4956859
+  },
+  "3212 pico blvd, santa monica, ca, 90405-2114": {
+    "display_name": "Trader Joe's, 3212, Pico Boulevard, Santa Monica, Los Angeles County, California, 90405, United States",
+    "latitude": 34.0263503,
+    "longitude": -118.4558412
+  },
+  "325 bay st apt 103, santa monica, ca, 90405-1101": null,
+  "630 wilshire blvd, santa monica, ca, 90401-1515": {
+    "display_name": "7-Eleven, 630, Wilshire Boulevard, Downtown Santa Monica, Santa Monica, Los Angeles County, California, 90401, United States",
+    "latitude": 34.0209613,
+    "longitude": -118.495461
+  },
+  "672 marine st, santa monica, ca, 90405-5667": {
+    "display_name": "672, Marine Street, Santa Monica, Los Angeles County, California, 90405, United States",
+    "latitude": 34.0020389,
+    "longitude": -118.4739872
+  },
+  "820 montana ave, santa monica, ca, 90403-1503": {
+    "display_name": "Pavilions, 820, Montana Avenue, Santa Monica, Los Angeles County, California, 90403, United States",
+    "latitude": 34.0279136,
+    "longitude": -118.4999416
+  }
+}
