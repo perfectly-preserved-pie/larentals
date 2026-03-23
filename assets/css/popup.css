@@ -8,6 +8,152 @@
   height: auto;
 }
 
+/* Additional layer popups */
+.additional-layer-popup {
+  width: 360px;
+  max-width: 70vw;
+}
+
+.additional-layer-popup--wide {
+  width: 380px;
+  max-width: 72vw;
+}
+
+.additional-layer-popup__header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.additional-layer-popup__title {
+  margin: 0;
+}
+
+.additional-layer-popup__body {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.additional-layer-popup__body--tall {
+  max-height: 340px;
+}
+
+.additional-layer-popup__row {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.additional-layer-popup__label {
+  font-weight: 700;
+}
+
+.additional-layer-popup__value {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.additional-layer-popup__empty {
+  padding: 8px 0;
+  color: #666;
+}
+
+.additional-layer-popup__attribution {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff3d6;
+  border: 1px solid #e5c98a;
+  color: #5b3312;
+  line-height: 1.4;
+}
+
+.additional-layer-popup__attribution-title {
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.additional-layer-popup__attribution-links {
+  margin-top: 4px;
+}
+
+.additional-layer-popup__status {
+  font-weight: 700;
+}
+
+.additional-layer-popup__status--active {
+  color: red;
+}
+
+.additional-layer-popup__status--buried {
+  color: #6c757d;
+}
+
+.additional-layer-popup__status--idle {
+  color: #daa520;
+}
+
+.additional-layer-popup__status--new {
+  color: #0d6efd;
+}
+
+.additional-layer-popup__status--plugged {
+  color: green;
+}
+
+.additional-layer-popup__status--unknown {
+  color: black;
+}
+
+.additional-layer-popup a {
+  overflow-wrap: anywhere;
+}
+
+.breakfast-burrito-div-icon,
+.supermarket-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.breakfast-burrito-marker__chip {
+  display: flex;
+  width: 28px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f4c978, #d87f2d);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.breakfast-burrito-marker__icon {
+  display: block;
+}
+
+.supermarket-marker__chip {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #2f7d32;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.supermarket-marker__symbol {
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+}
+
 /* Desktop (lg ≥ 992px): retain previous fixed heights/scroll */
 @media (min-width: 992px) {
   .options-col {
