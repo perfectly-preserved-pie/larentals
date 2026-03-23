@@ -93,6 +93,15 @@ class LayersClass:
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
         ),
+        'breakfast_burritos': LayerConfig(
+            name='Breakfast Burritos (via LABreakfastBurrito)',
+            dataset='breakfast_burritos',
+            filepath='assets/datasets/breakfast_burritos.geojson',
+            point_to_layer='drawBreakfastBurritoIcon',
+            bubbling_mouse_events=False,
+            supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
+            valid_bounds=(-125.0, -113.0, 32.0, 35.5),
+        ),
         'supermarkets_grocery': LayerConfig(
             name='Supermarkets & Grocery Stores',
             dataset='supermarkets_grocery',
@@ -437,6 +446,20 @@ class LayersClass:
         spec = cls.get_layer_config('supermarkets_grocery')
         return cls.create_geojson_layer(
             'supermarkets_grocery',
+            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+        )
+
+    @classmethod
+    def create_breakfast_burritos_layer(cls) -> dl.GeoJSON:
+        """
+        Create an eagerly loaded breakfast burritos GeoJSON layer.
+
+        Returns:
+            A configured `dl.GeoJSON` component for breakfast burrito data.
+        """
+        spec = cls.get_layer_config('breakfast_burritos')
+        return cls.create_geojson_layer(
+            'breakfast_burritos',
             data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
         )
 

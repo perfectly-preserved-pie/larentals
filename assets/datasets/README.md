@@ -6,6 +6,18 @@ This file dictates where to get the various additional datasets in this folder.
 
 https://data.lacounty.gov/datasets/lacounty::farmers-markets/about
 
+## Breakfast Burritos
+
+https://labreakfastburrito.com/
+https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true
+
+Derived GeoJSON:
+
+- `breakfast_burritos.geojson`
+- Built from the published LABreakfastBurrito rankings spreadsheet
+- Uses spreadsheet `LatLong` values when present
+- Falls back to coordinates embedded in the linked Google Maps place URLs
+
 ## Oil & Gas Wells
 
 https://egis-lacounty.hub.arcgis.com/datasets/lacounty::oil-and-gas-wells/about

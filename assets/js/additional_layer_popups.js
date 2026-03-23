@@ -334,6 +334,189 @@ function buildSupermarketPopupContent(properties) {
     `;
 }
 
+function buildBreakfastBurritoAddress(properties) {
+    if (isBlankValue(properties.address)) {
+        if (isBlankValue(properties.maps_url)) {
+            return 'N/A';
+        }
+
+        const safeUrl = escapeHtml(String(properties.maps_url).trim());
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>`;
+    }
+
+    const safeAddress = escapeHtml(String(properties.address).trim());
+    if (isBlankValue(properties.maps_url)) {
+        return safeAddress;
+    }
+
+    const safeUrl = escapeHtml(String(properties.maps_url).trim());
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeAddress}</a>`;
+}
+
+function buildBreakfastBurritoRating(properties) {
+    if (isBlankValue(properties.rating)) {
+        return 'N/A';
+    }
+
+    return `${escapeHtml(String(properties.rating).trim())} / 10`;
+}
+
+function buildBreakfastBurritoPhoto(properties) {
+    if (isBlankValue(properties.picture_url)) {
+        return 'N/A';
+    }
+
+    const safeUrl = escapeHtml(String(properties.picture_url).trim());
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">View photo</a>`;
+}
+
+function buildBreakfastBurritoOriginalReview(properties) {
+    if (!isBlankValue(properties.review_url)) {
+        const safeUrl = escapeHtml(String(properties.review_url).trim());
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Read on LABreakfastBurrito</a>`;
+    }
+
+    if (!isBlankValue(properties.source_url)) {
+        const safeUrl = escapeHtml(String(properties.source_url).trim());
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Browse LABreakfastBurrito</a>`;
+    }
+
+    if (!isBlankValue(properties.source_sheet_url)) {
+        const safeUrl = escapeHtml(String(properties.source_sheet_url).trim());
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Open rankings sheet</a>`;
+    }
+
+    return 'N/A';
+}
+
+function buildBreakfastBurritoSource(properties) {
+    const links = [];
+
+    if (!isBlankValue(properties.review_url)) {
+        const safeUrl = escapeHtml(String(properties.review_url).trim());
+        links.push(`<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Original review</a>`);
+    }
+
+    if (!isBlankValue(properties.source_url)) {
+        const safeUrl = escapeHtml(String(properties.source_url).trim());
+        links.push(`<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">LABreakfastBurrito</a>`);
+    }
+
+    if (!isBlankValue(properties.source_sheet_url)) {
+        const safeUrl = escapeHtml(String(properties.source_sheet_url).trim());
+        links.push(`<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Rankings sheet</a>`);
+    }
+
+    return links.length > 0 ? links.join(' | ') : 'N/A';
+}
+
+function buildBreakfastBurritoAttribution(properties) {
+    const sourceLinks = buildBreakfastBurritoSource(properties);
+    if (sourceLinks === 'N/A') {
+        return '';
+    }
+
+    return `
+        <div style="margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: #fff3d6; border: 1px solid #e5c98a; color: #5b3312; line-height: 1.4;">
+            <div style="font-weight: bold; margin-bottom: 4px;">Source Attribution</div>
+            <div>
+                Breakfast burrito rankings and review content are sourced from LABreakfastBurrito.
+            </div>
+            <div style="margin-top: 4px;">
+                ${sourceLinks}
+            </div>
+        </div>
+    `;
+}
+
+function buildBreakfastBurritoRows(properties) {
+    return [
+        {
+            label: 'Status',
+            value: isBlankValue(properties.review_status)
+                ? 'N/A'
+                : escapeHtml(String(properties.review_status).trim()),
+        },
+        {
+            label: 'Rating',
+            value: buildBreakfastBurritoRating(properties),
+        },
+        {
+            label: 'Neighborhood',
+            value: isBlankValue(properties.neighborhood)
+                ? 'N/A'
+                : escapeHtml(String(properties.neighborhood).trim()),
+        },
+        {
+            label: 'Price',
+            value: isBlankValue(properties.price)
+                ? 'N/A'
+                : escapeHtml(String(properties.price).trim()),
+        },
+        {
+            label: 'Size',
+            value: isBlankValue(properties.size)
+                ? 'N/A'
+                : escapeHtml(String(properties.size).trim()),
+        },
+        {
+            label: 'Value',
+            value: isBlankValue(properties.value_rating)
+                ? 'N/A'
+                : escapeHtml(String(properties.value_rating).trim()),
+        },
+        {
+            label: 'Address',
+            value: buildBreakfastBurritoAddress(properties),
+        },
+        {
+            label: "What's Inside",
+            value: isBlankValue(properties.whats_inside)
+                ? 'N/A'
+                : escapeHtml(String(properties.whats_inside).trim()),
+        },
+        {
+            label: 'Photo',
+            value: buildBreakfastBurritoPhoto(properties),
+        },
+        {
+            label: isBlankValue(properties.review_url) ? 'Source' : 'Original Review',
+            value: buildBreakfastBurritoOriginalReview(properties),
+        },
+    ];
+}
+
+function buildBreakfastBurritoPopupContent(properties) {
+    const title = isBlankValue(properties.name)
+        ? 'Breakfast Burrito'
+        : escapeHtml(String(properties.name).trim());
+    const propertyRows = buildBreakfastBurritoRows(properties)
+        .map(function(row) {
+            return `
+                <div style="display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 8px 12px; align-items: start; padding: 8px 0; border-bottom: 1px solid #ddd;">
+                    <div style="font-weight: bold;">${escapeHtml(row.label)}</div>
+                    <div style="min-width: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word;">
+                        ${row.value}
+                    </div>
+                </div>
+            `;
+        })
+        .join('');
+    return `
+        <div style="width: 380px; max-width: 72vw;">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <h5 style="margin: 0;">${title}</h5>
+            </div>
+            <div style="max-height: 340px; overflow-y: auto; padding-right: 4px;">
+                ${buildBreakfastBurritoAttribution(properties)}
+                ${propertyRows}
+            </div>
+        </div>
+    `;
+}
+
+const BREAKFAST_BURRITO_ICON_URL = 'https://api.iconify.design/twemoji/burrito.svg?width=18&height=18';
+
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
         drawOilIcon: function(feature, latlng) {
@@ -424,7 +607,39 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
         
                 marker.bindPopup(popupContent);
             }
-        
+
+            return marker;
+        },
+        drawBreakfastBurritoIcon: function(feature, latlng) {
+            const BreakfastBurritoIcon = L.divIcon({
+                className: 'breakfast-burrito-div-icon',
+                html: `
+                    <div style="width: 28px; height: 22px; border-radius: 999px; background: linear-gradient(135deg, #f4c978, #d87f2d); display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);">
+                        <img
+                            src="${BREAKFAST_BURRITO_ICON_URL}"
+                            alt=""
+                            width="18"
+                            height="18"
+                            style="display: block;"
+                        >
+                    </div>
+                `,
+                iconSize: [28, 22],
+                iconAnchor: [14, 11],
+                popupAnchor: [0, -12],
+            });
+            const marker = L.marker(latlng, {icon: BreakfastBurritoIcon});
+
+            if (feature.properties) {
+                marker.bindPopup(
+                    buildBreakfastBurritoPopupContent(feature.properties),
+                    {
+                        maxWidth: 440,
+                        minWidth: 320,
+                    }
+                );
+            }
+
             return marker;
         },
         drawFarmersMarketIcon: function(feature, latlng) {
