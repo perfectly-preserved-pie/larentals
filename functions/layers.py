@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from dash import no_update
+from dash import ClientsideFunction, clientside_callback, no_update
+from dash.dependencies import Input, Output, State
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
 from loguru import logger
@@ -476,3 +477,19 @@ class LayersClass:
             'crime',
             data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
         )
+
+
+def register_responsive_layers_control_callback(page_key: str) -> None:
+    """
+    Register the shared clientside callback for a page's `dl.LayersControl`.
+
+    Args:
+        page_key: Page identifier, such as `"lease"` or `"buy"`.
+    """
+    clientside_callback(
+        ClientsideFunction(namespace="clientside", function_name="layersControlCollapsed"),
+        Output(LayersClass.layers_control_id(page_key), "collapsed"),
+        Input("viewport-sync-initial", "n_intervals"),
+        Input("viewport-listener", "event"),
+        State(LayersClass.layers_control_id(page_key), "collapsed"),
+    )

@@ -1,7 +1,7 @@
 from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import ALL, Input, Output, State
-from functions.layers import LayersClass
+from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
@@ -254,6 +254,8 @@ clientside_callback(
   Input("lease_geojson", "data"),
   State("lease-map-spinner", "style"),
 )
+
+register_responsive_layers_control_callback("lease")
 
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(

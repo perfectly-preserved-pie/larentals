@@ -1,6 +1,6 @@
 from .components import BuyComponents
 from dash import dcc, callback, clientside_callback, ClientsideFunction
-from functions.layers import LayersClass
+from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
@@ -107,6 +107,8 @@ clientside_callback(
   Input("buy_geojson", "data"),
   State("buy-map-spinner", "style"),
 )
+
+register_responsive_layers_control_callback("buy")
 
 # Server-side callbacks
 @callback(

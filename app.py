@@ -1,4 +1,5 @@
 from dash import Dash, clientside_callback, Input, Output, dcc, ClientsideFunction
+from dash_extensions import EventListener
 from flask import request, jsonify, abort, Blueprint, Response
 from flask_compress import Compress
 from loguru import logger
@@ -11,6 +12,8 @@ import logging
 import sqlite3
 
 logging.getLogger().setLevel(logging.INFO)
+
+VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
 external_stylesheets = [
 	dbc.themes.BOOTSTRAP,
@@ -79,8 +82,32 @@ app.index_string = """<!DOCTYPE html>
 </html>
 """
 
+def create_initial_viewport_sync() -> dcc.Interval:
+  """
+  Create a one-shot interval used to seed responsive clientside state.
+
+  Returns:
+    A short-lived interval that fires once after the app mounts.
+  """
+  return dcc.Interval(id="viewport-sync-initial", interval=250, n_intervals=0, max_intervals=1)
+
+def create_viewport_listener() -> EventListener:
+  """
+  Create the hidden event bridge for viewport-aware Dash callbacks.
+
+  Returns:
+    An `EventListener` configured to forward browser `viewportchange` events.
+  """
+  return EventListener(
+    id="viewport-listener",
+    events=[{"event": "viewportchange", "props": VIEWPORT_EVENT_PROPS}],
+    style={"display": "none"},
+  )
+
 app.layout = dmc.MantineProvider(
   dmc.Container([
+    create_initial_viewport_sync(),
+    create_viewport_listener(),
     dcc.Store(id="theme-switch-store", storage_type="local"),
     dbc.Row( # Second row: the rest
       [
