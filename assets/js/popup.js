@@ -1,8 +1,29 @@
 // This is a JavaScript file to customize the Leaflet popup
 // It should be used with dl.GeoJSON's `onEachFeature` option
 // See https://github.com/perfectly-preserved-pie/larentals/issues/86#issuecomment-1585304809
+
+/**
+ * @typedef {{ properties?: Record<string, unknown> }} PopupFeature
+ */
+
+/**
+ * @typedef {{
+ *   bindPopup: (content: string, options?: Record<string, unknown>) => unknown,
+ *   on: (eventName: string, handler: () => void) => unknown,
+ *   getPopup?: () => ({ getElement?: () => HTMLElement | null } | null),
+ *   _map?: { getContainer?: () => HTMLElement | null } | null,
+ * }} PopupLayer
+ */
+
 window.dash_props = Object.assign({}, window.dash_props, {
     module: {
+        /**
+         * Build and bind the main property popup for a GeoJSON listing feature.
+         *
+         * @param {PopupFeature} feature GeoJSON feature emitted by Dash Leaflet.
+         * @param {PopupLayer} layer Leaflet layer receiving the popup binding.
+         * @returns {void} Does not return a value; mutates the supplied layer.
+         */
         on_each_feature: function(feature, layer) {
             //console.log("Feature properties:", feature.properties);
             if (!feature.properties) {
@@ -31,7 +52,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return normalized;
             };
 
-            // Strip a terminal '.0' without disturbing real decimals like 475.08
+            /**
+             * Strip a terminal `.0` without disturbing meaningful decimals like `475.08`.
+             *
+             * @param {string|number|null|undefined} value String or numeric display value.
+             * @returns {string|number|null|undefined} Cleaned display value preserving the input shape when possible.
+             */
             const stripTrailingPointZero = (value) => {
                 if (value === null || value === undefined) return value;
                 const cleaned = String(value).replace(/\.0$/, "");
@@ -42,7 +68,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return cleaned;
             };
 
-            // Format lot size with commas, preserving up to two decimals and removing redundant trailing .0
+            /**
+             * Format lot size with thousands separators while preserving up to two decimals.
+             *
+             * @param {unknown} value Raw lot-size value from the listing payload.
+             * @returns {string|null} Human-readable lot size, or `null` when the value is unusable.
+             */
             const formatLotSize = (value) => {
                 if (value === null || value === undefined) return null;
                 if (typeof value === "string") {
@@ -64,8 +95,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return stripTrailingPointZero(formatted);
             };
 
-            // Format currency with dollar sign and commas
-            // And safeguard against invalid inputs
+            /**
+             * Format a numeric value as US currency without decimals.
+             *
+             * @param {unknown} value Raw currency-like value from the listing data.
+             * @returns {string} Currency string, or `"Unknown"` when the value is missing or invalid.
+             */
             function formatCurrency(value) {
                 if (value === null || value === undefined || value === "") return "Unknown";
 
@@ -73,11 +108,17 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 if (!Number.isFinite(n)) return "Unknown";
 
                 return `$${n.toLocaleString()}`;
-                }
+            }
 
             const listingUrl = normalizeNullableString(data.listing_url);
             const mlsPhoto = normalizeNullableString(data.mls_photo);
-            // Titlecase function for addresses
+
+            /**
+             * Convert a street address string into title case for popup display.
+             *
+             * @param {string} str Address string to normalize.
+             * @returns {string} Title-cased address string.
+             */
             function toTitleCase(str) {
                 return str.replace(/\w\S*/g, function(txt) {
                     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
@@ -93,7 +134,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
             const subtype = (data?.subtype ?? "Unknown").toString();   // Coerce to string for includes()
             const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
 
-            // Function to handle MLS number hyperlink
+            /**
+             * Render the popup title block, linking the address when a listing URL exists.
+             *
+             * @param {string|number} address Display-ready street address.
+             * @param {string|null} listingUrlValue Listing detail URL, if available.
+             * @returns {string} HTML string for the popup heading.
+             */
             function getListingUrlBlock(address, listingUrlValue) {
                 if (!listingUrlValue) {
                     return `
@@ -109,6 +156,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 `;
             }
 
+            /**
+             * Render the property photo row, optionally wrapping the image in the listing URL.
+             *
+             * @param {string|null} photoUrl Image URL for the listing.
+             * @param {string|null} listingUrlValue Listing detail URL, if available.
+             * @returns {string} HTML string for the image row, or an empty string.
+             */
             function buildImageRow(photoUrl, listingUrlValue) {
                 if (!photoUrl) {
                     return '';
@@ -130,9 +184,14 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 `;
             }
 
-            // Function to handle the Palisades fire alert
-            function getPalisadesFireAlertBlock(data) {
-                if (data.affected_by_palisades_fire === true || data.affected_by_palisades_fire === "True") {
+            /**
+             * Render the Palisades fire warning banner when the listing is flagged.
+             *
+             * @param {Record<string, unknown>} popupData Listing properties used by the popup.
+             * @returns {string} Warning-banner HTML, or an empty string when not applicable.
+             */
+            function getPalisadesFireAlertBlock(popupData) {
+                if (popupData.affected_by_palisades_fire === true || popupData.affected_by_palisades_fire === "True") {
                     return `
                         <div style="color: red; text-align: center;">
                             ⚠️ Affected by Palisades Fire. Please verify at <a href="https://recovery.lacounty.gov/palisades-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
@@ -142,9 +201,14 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return '';
             }
 
-            // Function to handle the Eaton fire alert
-            function getEatonFireAlertBlock(data) {
-                if (data.affected_by_eaton_fire === true || data.affected_by_eaton_fire === "True") {
+            /**
+             * Render the Eaton fire warning banner when the listing is flagged.
+             *
+             * @param {Record<string, unknown>} popupData Listing properties used by the popup.
+             * @returns {string} Warning-banner HTML, or an empty string when not applicable.
+             */
+            function getEatonFireAlertBlock(popupData) {
+                if (popupData.affected_by_eaton_fire === true || popupData.affected_by_eaton_fire === "True") {
                     return `
                         <div style="color: red; text-align: center;">
                             ⚠️ Affected by Eaton Fire. Please verify at <a href="https://recovery.lacounty.gov/eaton-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
@@ -154,7 +218,12 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 return '';
             }
 
-            // Function to format date string
+            /**
+             * Format a date-like value as `YYYY-MM-DD`.
+             *
+             * @param {unknown} dateString Date value pulled from the listing payload.
+             * @returns {string} ISO-style date string, or `"Unknown"` when missing.
+             */
             function formatDate(dateString) {
                 if (!dateString) return "Unknown";
                 const date = new Date(dateString);
@@ -172,19 +241,24 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 <a href="tel:${data.phone_number}">${data.phone_number}</a>
             ` : 'Unknown';
 
-            // Function to generate popup content for lease page
-            function generateLeasePopupContent(data) {
+            /**
+             * Build the lease-page popup body for a single listing.
+             *
+             * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
+             * @returns {string} HTML string bound to the Leaflet popup.
+             */
+            function generateLeasePopupContent(popupData) {
                 return `
                     <div>
-                        ${getPalisadesFireAlertBlock(data)}
-                        ${getEatonFireAlertBlock(data)}
+                        ${getPalisadesFireAlertBlock(popupData)}
+                        ${getEatonFireAlertBlock(popupData)}
                         ${imageRow}
                         ${listingUrlBlock}
                         <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                             <!-- Listed Date -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Listed Date</span>
-                                <span class="value">${formatDate(data.listed_date)}</span>
+                                <span class="value">${formatDate(popupData.listed_date)}</span>
                             </div>
                             <!-- Listing ID (MLS#) -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -199,74 +273,74 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Rental Price -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Rental Price</span>
-                                <span class="value">${formatCurrency(data.list_price)}</span>
+                                <span class="value">${formatCurrency(popupData.list_price)}</span>
                             </div>
                             <!-- Security Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Security Deposit</span>
-                                <span class="value">${formatCurrency(data.security_deposit)}</span>
+                                <span class="value">${formatCurrency(popupData.security_deposit)}</span>
                             </div>
                             <!-- Pet Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Pet Deposit</span>
-                                <span class="value">${formatCurrency(data.pet_deposit)}</span>
+                                <span class="value">${formatCurrency(popupData.pet_deposit)}</span>
                             </div>
                             <!-- Key Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Key Deposit</span>
-                                <span class="value">${formatCurrency(data.key_deposit)}</span>
+                                <span class="value">${formatCurrency(popupData.key_deposit)}</span>
                             </div>
                             <!-- Other Deposit -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Other Deposit</span>
-                                <span class="value">${formatCurrency(data.other_deposit)}</span>
+                                <span class="value">${formatCurrency(popupData.other_deposit)}</span>
                             </div>
                             <!-- Square Feet -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Square Feet</span>
-                                <span class="value">${data.sqft ? `${data.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
+                                <span class="value">${popupData.sqft ? `${popupData.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
                             </div>
                             <!-- Price Per Square Foot -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
-                                <span class="value">${data.ppsqft ? `$${data.ppsqft.toLocaleString()}` : "Unknown"}</span>
+                                <span class="value">${popupData.ppsqft ? `$${popupData.ppsqft.toLocaleString()}` : "Unknown"}</span>
                             </div>
                             <!-- Bedrooms/Bathrooms -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
-                                <span class="value">${data.bedrooms}/${data.total_bathrooms}</span>
+                                <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
                             </div>
                             <!-- Parking Spaces -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Parking Spaces</span>
-                                <span class="value">${data.parking_spaces || "Unknown"}</span>
+                                <span class="value">${popupData.parking_spaces || "Unknown"}</span>
                             </div>
                             <!-- Pets Allowed? -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Pets Allowed?</span>
-                                <span class="value">${data.pet_policy || "Unknown"}</span>
+                                <span class="value">${popupData.pet_policy || "Unknown"}</span>
                             </div>
                             <!-- Furnished? -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Furnished?</span>
-                                <span class="value">${data.furnished || "Unknown"}</span>
+                                <span class="value">${popupData.furnished || "Unknown"}</span>
                             </div>
                             <!-- Laundry Features -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Laundry Features</span>
                                 <span class="value" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
-                                    ${data.laundry || "Unknown"}
+                                    ${popupData.laundry || "Unknown"}
                                 </span>
                             </div>
                             <!-- Year Built -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Year Built</span>
-                                <span class="value">${data.year_built || "Unknown"}</span>
+                                <span class="value">${popupData.year_built || "Unknown"}</span>
                             </div>
                             <!-- Rental Terms -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Rental Terms</span>
-                                <span class="value">${data.terms || "Unknown"}</span>
+                                <span class="value">${popupData.terms || "Unknown"}</span>
                             </div>
                             <!-- Physical Sub Type -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -277,7 +351,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
                                 <span class="label" style="font-weight:bold;">ISP Options</span>
                                 <div class="value" style="text-align:right;">
-                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                                ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
                                 </div>
                             </div>
                         </div>
@@ -291,30 +365,35 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 `;
             }
 
-            // Function to generate popup content for buy page
-            function generateBuyPopupContent(data) {
+            /**
+             * Build the buy-page popup body for a single listing.
+             *
+             * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
+             * @returns {string} HTML string bound to the Leaflet popup.
+             */
+            function generateBuyPopupContent(popupData) {
                 // Include parking spaces if subtype is not 'SFR' or 'Single Family Residence'
                 let parkingContent = '';
                 if (!isSfr) {
                     parkingContent = `
                         <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                             <span class="label" style="font-weight: bold;">Parking Spaces</span>
-                            <span class="value">${data.garage_spaces || "Unknown"}</span>
+                            <span class="value">${popupData.garage_spaces || "Unknown"}</span>
                         </div>
                     `;
                 }
 
                 return `
                     <div>
-                        ${getPalisadesFireAlertBlock(data)}
-                        ${getEatonFireAlertBlock(data)}
+                        ${getPalisadesFireAlertBlock(popupData)}
+                        ${getEatonFireAlertBlock(popupData)}
                         ${imageRow}
                         ${listingUrlBlock}
                         <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                             <!-- Listed Date -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Listed Date</span>
-                                <span class="value">${formatDate(data.listed_date)}</span>
+                                <span class="value">${formatDate(popupData.listed_date)}</span>
                             </div>
                             <!-- Listing ID (MLS#) -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -329,27 +408,27 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- List Price -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">List Price</span>
-                                <span class="value">${formatCurrency(data.list_price)}</span>
+                                <span class="value">${formatCurrency(popupData.list_price)}</span>
                             </div>
                             <!-- HOA Fee -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">HOA Fee</span>
-                                <span class="value">${formatCurrency(data.hoa_fee)}</span>
+                                <span class="value">${formatCurrency(popupData.hoa_fee)}</span>
                             </div>
                             <!-- HOA Fee Frequency -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">HOA Fee Frequency</span>
-                                <span class="value">${data.hoa_fee_frequency || "Unknown"}</span>
+                                <span class="value">${popupData.hoa_fee_frequency || "Unknown"}</span>
                             </div>
                             <!-- Square Feet -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Square Feet</span>
-                                <span class="value">${data.sqft ? `${data.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
+                                <span class="value">${popupData.sqft ? `${popupData.sqft.toLocaleString()} sq. ft` : "Unknown"}</span>
                             </div>
                             <!-- Price Per Square Foot -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
-                                <span class="value">${formatCurrency(data.ppsqft)}</span>
+                                <span class="value">${formatCurrency(popupData.ppsqft)}</span>
                             </div>
                             <!-- Lot Size -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -359,13 +438,13 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <!-- Bedrooms/Bathrooms -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
-                                <span class="value">${data.bedrooms}/${data.total_bathrooms}</span>
+                                <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
                             </div>
                             ${parkingContent}
                             <!-- Year Built -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                                 <span class="label" style="font-weight: bold;">Year Built</span>
-                                <span class="value">${data.year_built || "Unknown"}</span>
+                                <span class="value">${popupData.year_built || "Unknown"}</span>
                             </div>
                             <!-- Physical Sub Type -->
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
@@ -376,7 +455,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                             <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
                                 <span class="label" style="font-weight: bold;">ISP Options</span>
                                 <div class="value" style="text-align: right;">
-                                    ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(data.mls_number) ?? ""}
+                                    ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
                                 </div>
                             </div>
                         </div>
@@ -388,6 +467,21 @@ window.dash_props = Object.assign({}, window.dash_props, {
                         </div>
                     </div>
                 `;
+            }
+
+            /**
+             * Load ISP options into the popup once Leaflet has inserted the popup DOM.
+             *
+             * @returns {void} Does not return a value; mutates the popup container in place.
+             */
+            function handlePopupOpen() {
+                const el = layer.getPopup?.()?.getElement?.();
+                if (!el) return;
+
+                const ispApi = window.larentals?.isp;
+                if (!ispApi) return;
+
+                ispApi.hydrateIspOptionsInPopup(el);
             }
 
             // Determine which popup content to generate based on context
@@ -440,15 +534,7 @@ window.dash_props = Object.assign({}, window.dash_props, {
                 }
             );
             // Hydrate ISP options when the popup opens
-            layer.on("popupopen", () => {
-            const el = layer.getPopup()?.getElement?.();
-            if (!el) return;
-
-            const ispApi = window.larentals?.isp;
-            if (!ispApi) return;
-
-            ispApi.hydrateIspOptionsInPopup(el);
-            });
+            layer.on("popupopen", handlePopupOpen);
         }
     }
 });

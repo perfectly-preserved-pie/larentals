@@ -1,3 +1,21 @@
+/**
+ * @typedef {Record<string, unknown>} LayerProperties
+ */
+
+/**
+ * @typedef {{ label: string, value: string }} PopupRow
+ */
+
+/**
+ * @typedef {{ properties?: LayerProperties }} LayerFeature
+ */
+
+/**
+ * Convert a military-style time value into a 12-hour display string.
+ *
+ * @param {unknown} time Raw time value, typically in `HHMM` form.
+ * @returns {string} Formatted 12-hour time string.
+ */
 function militaryToStandard(time) {
     // Convert the time to a string if it's not already
     time = String(time);
@@ -7,8 +25,8 @@ function militaryToStandard(time) {
         time = '0' + time;
     }
 
-    var hours = parseInt(time.substring(0, 2));
-    var minutes = parseInt(time.substring(2, 4));
+    var hours = parseInt(time.substring(0, 2), 10);
+    var minutes = parseInt(time.substring(2, 4), 10);
     var suffix = hours >= 12 ? 'PM' : 'AM';
 
     // Convert to 12-hour time
@@ -20,6 +38,12 @@ function militaryToStandard(time) {
     return hours + ':' + minutes + ' ' + suffix;
 }
 
+/**
+ * Check whether a popup value should be treated as blank.
+ *
+ * @param {unknown} value Raw property value.
+ * @returns {boolean} `true` when the value is empty or null-like.
+ */
 function isBlankValue(value) {
     if (value === null || value === undefined) {
         return true;
@@ -33,6 +57,12 @@ function isBlankValue(value) {
     return false;
 }
 
+/**
+ * Escape text for safe HTML interpolation inside popup content.
+ *
+ * @param {unknown} value Raw text value to escape.
+ * @returns {string} HTML-safe string.
+ */
 function escapeHtml(value) {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -42,6 +72,12 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+/**
+ * Format a popup date value for display.
+ *
+ * @param {unknown} value Raw date-like value from a feature property.
+ * @returns {string} Escaped date string, or `N/A` when the value is blank.
+ */
 function formatPopupDate(value) {
     if (isBlankValue(value)) {
         return 'N/A';
@@ -55,6 +91,12 @@ function formatPopupDate(value) {
     return escapeHtml(valueAsString);
 }
 
+/**
+ * Convert a raw property key into a human-friendly label.
+ *
+ * @param {string} key Raw property key.
+ * @returns {string} Display label for popup rows.
+ */
 function formatPropertyLabel(key) {
     const labels = {
         OBJECTID: 'Object ID',
@@ -91,6 +133,13 @@ function formatPropertyLabel(key) {
         });
 }
 
+/**
+ * Format a farmers market property value for popup display.
+ *
+ * @param {string} key Property key being rendered.
+ * @param {unknown} value Raw property value.
+ * @returns {string} Escaped HTML string for the property value.
+ */
 function formatFarmersMarketValue(key, value) {
     if (isBlankValue(value)) {
         return 'N/A';
@@ -115,6 +164,12 @@ function formatFarmersMarketValue(key, value) {
     return escapeHtml(valueAsString);
 }
 
+/**
+ * Join address fragments while filtering blank values.
+ *
+ * @param {unknown[]} parts Address fragments in display order.
+ * @returns {string} Comma-separated address string.
+ */
 function joinAddressParts(parts) {
     return parts
         .filter(function(part) {
@@ -126,6 +181,12 @@ function joinAddressParts(parts) {
         .join(', ');
 }
 
+/**
+ * Build the formatted address line for a farmers market popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the farmers market.
+ * @returns {string} Escaped address string, or `N/A` when unavailable.
+ */
 function buildFarmersMarketAddress(properties) {
     const street = joinAddressParts([properties.addrln1, properties.addrln2]);
     const cityStateZip = joinAddressParts([properties.city, properties.state, properties.zip]);
@@ -142,6 +203,12 @@ function buildFarmersMarketAddress(properties) {
     return escapeHtml(`${street}, ${cityStateZip}`);
 }
 
+/**
+ * Build the website block for a farmers market popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the farmers market.
+ * @returns {string} HTML link block, or `N/A` when no site is available.
+ */
 function buildFarmersMarketWebsite(properties) {
     const url = isBlankValue(properties.url) ? null : String(properties.url).trim();
     const link = isBlankValue(properties.link) ? null : String(properties.link).trim();
@@ -165,6 +232,12 @@ function buildFarmersMarketWebsite(properties) {
         .join('<br>');
 }
 
+/**
+ * Build the ordered rows rendered in a farmers market popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the farmers market.
+ * @returns {PopupRow[]} Popup rows for the feature.
+ */
 function buildFarmersMarketRows(properties) {
     return [
         {
@@ -186,6 +259,12 @@ function buildFarmersMarketRows(properties) {
     ];
 }
 
+/**
+ * Build the popup title for a farmers market feature.
+ *
+ * @param {LayerProperties} properties Feature properties for the farmers market.
+ * @returns {string} Escaped display title.
+ */
 function buildFarmersMarketTitle(properties) {
     if (isBlankValue(properties.name)) {
         return 'Farmers Market';
@@ -201,6 +280,12 @@ function buildFarmersMarketTitle(properties) {
     return escapeHtml(`${expandedName} Farmers Market`);
 }
 
+/**
+ * Build the complete farmers market popup markup.
+ *
+ * @param {LayerProperties} properties Feature properties for the farmers market.
+ * @returns {string} HTML string bound to the Leaflet popup.
+ */
 function buildFarmersMarketPopupContent(properties) {
     const marketName = buildFarmersMarketTitle(properties);
     const propertyRows = buildFarmersMarketRows(properties)
@@ -232,6 +317,12 @@ function buildFarmersMarketPopupContent(properties) {
     `;
 }
 
+/**
+ * Normalize text into title case when the source is all upper or all lower case.
+ *
+ * @param {unknown} value Raw text value to normalize.
+ * @returns {string|null} Title-cased string, or `null` when blank.
+ */
 function toDisplayTitleCase(value) {
     if (isBlankValue(value)) {
         return null;
@@ -250,6 +341,12 @@ function toDisplayTitleCase(value) {
         });
 }
 
+/**
+ * Build the popup title for a supermarket feature.
+ *
+ * @param {LayerProperties} properties Feature properties for the supermarket.
+ * @returns {string} Escaped title for the popup header.
+ */
 function buildSupermarketTitle(properties) {
     const dbaName = isBlankValue(properties.dba_name)
         ? null
@@ -262,6 +359,12 @@ function buildSupermarketTitle(properties) {
     return escapeHtml(title);
 }
 
+/**
+ * Build the formatted address string for a supermarket popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the supermarket.
+ * @returns {string} Escaped address string, or `N/A` when unavailable.
+ */
 function buildSupermarketAddress(properties) {
     if (!isBlankValue(properties.full_address)) {
         return escapeHtml(toDisplayTitleCase(properties.full_address));
@@ -275,6 +378,12 @@ function buildSupermarketAddress(properties) {
     return address ? escapeHtml(toDisplayTitleCase(address)) : 'N/A';
 }
 
+/**
+ * Build the category row for a supermarket popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the supermarket.
+ * @returns {PopupRow|null} Category row, or `null` when no category metadata exists.
+ */
 function buildSupermarketCategoryRow(properties) {
     if (!isBlankValue(properties.naics)) {
         const description = isBlankValue(properties.primary_naics_description)
@@ -296,6 +405,12 @@ function buildSupermarketCategoryRow(properties) {
     return null;
 }
 
+/**
+ * Build the complete supermarket popup markup.
+ *
+ * @param {LayerProperties} properties Feature properties for the supermarket.
+ * @returns {string} HTML string bound to the Leaflet popup.
+ */
 function buildSupermarketPopupContent(properties) {
     const rows = [
         {
@@ -334,6 +449,12 @@ function buildSupermarketPopupContent(properties) {
     `;
 }
 
+/**
+ * Build the address row value for a breakfast burrito popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} Escaped address or linked map destination.
+ */
 function buildBreakfastBurritoAddress(properties) {
     if (isBlankValue(properties.address)) {
         if (isBlankValue(properties.maps_url)) {
@@ -353,6 +474,12 @@ function buildBreakfastBurritoAddress(properties) {
     return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeAddress}</a>`;
 }
 
+/**
+ * Build the rating row value for a breakfast burrito popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} Rating display string, or `N/A`.
+ */
 function buildBreakfastBurritoRating(properties) {
     if (isBlankValue(properties.rating)) {
         return 'N/A';
@@ -361,6 +488,12 @@ function buildBreakfastBurritoRating(properties) {
     return `${escapeHtml(String(properties.rating).trim())} / 10`;
 }
 
+/**
+ * Build the photo row value for a breakfast burrito popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} HTML link to the photo, or `N/A`.
+ */
 function buildBreakfastBurritoPhoto(properties) {
     if (isBlankValue(properties.picture_url)) {
         return 'N/A';
@@ -370,6 +503,12 @@ function buildBreakfastBurritoPhoto(properties) {
     return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">View photo</a>`;
 }
 
+/**
+ * Build the review/source row value for a breakfast burrito popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} HTML link to the best available review/source page, or `N/A`.
+ */
 function buildBreakfastBurritoOriginalReview(properties) {
     if (!isBlankValue(properties.review_url)) {
         const safeUrl = escapeHtml(String(properties.review_url).trim());
@@ -389,6 +528,12 @@ function buildBreakfastBurritoOriginalReview(properties) {
     return 'N/A';
 }
 
+/**
+ * Build the attribution source links for a breakfast burrito popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} Joined attribution links, or `N/A`.
+ */
 function buildBreakfastBurritoSource(properties) {
     const links = [];
 
@@ -410,6 +555,12 @@ function buildBreakfastBurritoSource(properties) {
     return links.length > 0 ? links.join(' | ') : 'N/A';
 }
 
+/**
+ * Build the attribution banner displayed above breakfast burrito popup rows.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} HTML banner, or an empty string when no attribution links exist.
+ */
 function buildBreakfastBurritoAttribution(properties) {
     const sourceLinks = buildBreakfastBurritoSource(properties);
     if (sourceLinks === 'N/A') {
@@ -429,6 +580,12 @@ function buildBreakfastBurritoAttribution(properties) {
     `;
 }
 
+/**
+ * Build the detail rows rendered inside a breakfast burrito popup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {PopupRow[]} Popup rows for the feature.
+ */
 function buildBreakfastBurritoRows(properties) {
     return [
         {
@@ -486,6 +643,12 @@ function buildBreakfastBurritoRows(properties) {
     ];
 }
 
+/**
+ * Build the complete breakfast burrito popup markup.
+ *
+ * @param {LayerProperties} properties Feature properties for the breakfast burrito entry.
+ * @returns {string} HTML string bound to the Leaflet popup.
+ */
 function buildBreakfastBurritoPopupContent(properties) {
     const title = isBlankValue(properties.name)
         ? 'Breakfast Burrito'
@@ -519,6 +682,13 @@ const BREAKFAST_BURRITO_ICON_URL = 'https://api.iconify.design/twemoji/burrito.s
 
 window.myNamespace = Object.assign({}, window.myNamespace, {
     mySubNamespace: {
+        /**
+         * Create the oil/gas well marker and bind its popup content.
+         *
+         * @param {LayerFeature} feature GeoJSON feature for the oil/gas well.
+         * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+         * @returns {L.Marker} Marker configured for the feature.
+         */
         drawOilIcon: function(feature, latlng) {
             const OilIcon = L.icon({
                 iconUrl: '/assets/oil_derrick_icon.png',
@@ -585,6 +755,13 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
 
             return marker;
         },
+        /**
+         * Create the crime marker and bind its popup content.
+         *
+         * @param {LayerFeature} feature GeoJSON feature for the crime record.
+         * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+         * @returns {L.Marker} Marker configured for the feature.
+         */
         drawCrimeIcon: function(feature, latlng) {
             const CrimeIcon = L.icon({
                 iconUrl: '/assets/crime_icon.png',
@@ -610,6 +787,13 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
 
             return marker;
         },
+        /**
+         * Create the breakfast burrito marker and bind its popup content.
+         *
+         * @param {LayerFeature} feature GeoJSON feature for the breakfast burrito location.
+         * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+         * @returns {L.Marker} Marker configured for the feature.
+         */
         drawBreakfastBurritoIcon: function(feature, latlng) {
             const BreakfastBurritoIcon = L.divIcon({
                 className: 'breakfast-burrito-div-icon',
@@ -642,6 +826,13 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
 
             return marker;
         },
+        /**
+         * Create the farmers market marker and bind its popup content.
+         *
+         * @param {LayerFeature} feature GeoJSON feature for the farmers market.
+         * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+         * @returns {L.Marker} Marker configured for the feature.
+         */
         drawFarmersMarketIcon: function(feature, latlng) {
             const MarketIcon = L.icon({
                 iconUrl: '/assets/farmers_market_icon.png',
@@ -661,6 +852,13 @@ window.myNamespace = Object.assign({}, window.myNamespace, {
         
             return marker;
         },
+        /**
+         * Create the supermarket marker and bind its popup content.
+         *
+         * @param {LayerFeature} feature GeoJSON feature for the supermarket.
+         * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+         * @returns {L.Marker} Marker configured for the feature.
+         */
         drawSupermarketIcon: function(feature, latlng) {
             const SupermarketIcon = L.divIcon({
                 className: 'supermarket-div-icon',

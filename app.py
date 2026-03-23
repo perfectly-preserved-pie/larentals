@@ -1,5 +1,5 @@
 from dash import Dash, clientside_callback, Input, Output, dcc, ClientsideFunction
-from flask import request, jsonify, abort, Blueprint
+from flask import request, jsonify, abort, Blueprint, Response
 from flask_compress import Compress
 from loguru import logger
 from typing import Any
@@ -114,8 +114,16 @@ clientside_callback(
 
 # Create a custom route for the report form submission
 @app.server.route('/report_listing', methods=['POST'])
-def report_listing() -> tuple:
-  """Handle listing reports. If marked 'Unavailable/Sold/Rented', update the database flag."""
+def report_listing() -> tuple[Response, int]:
+  """
+  Persist a user-submitted listing report from the popup action.
+
+  Args:
+    None. Reads the JSON payload from the active Flask request context.
+
+  Returns:
+    Tuple of JSON response payload and HTTP status code.
+  """
   data = request.get_json()
   mls_number: str = data.get('mls_number')
   option: str = data.get('option')
@@ -176,6 +184,36 @@ def report_listing() -> tuple:
     logger.error(f"Error handling report for MLS {mls_number}: {e}")
     return jsonify(status="error", message="Internal error, please try again later."), 500
 
+
+def build_provider_option_payload(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
+  """
+  Convert ISP database rows into the JSON payload expected by the popup renderer.
+
+  Args:
+    rows: SQLite rows returned from the lease/buy provider-options queries.
+
+  Returns:
+    List of normalized provider option dictionaries consumed by `assets/js/isp.js`.
+  """
+  result: list[dict[str, Any]] = []
+  for row in rows:
+    result.append(
+      {
+        "dba": row["DBA"],
+        "service_type": row["Service_Type"],
+        "tech_code": row["TechCode"],
+        "max_dn_mbps": row["MaxAdDn"],
+        "max_up_mbps": row["MaxAdUp"],
+        "max_dn_tier": row["MaxDnTier"],
+        "max_up_tier": row["MaxUpTier"],
+        "min_dn_tier": row["MinDnTier"],
+        "min_up_tier": row["MinUpTier"],
+        "bucket": row["bucket"],
+      }
+    )
+  return result
+
+
 # Create a custom route for fetching ISP options
 def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.db') -> None:
   """
@@ -184,19 +222,22 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
   Args:
     server: The Flask server instance (typically `app.server` in Dash).
     db_path: Path to the SQLite database file. Defaults to 'assets/datasets/larentals.db'.
+
+  Returns:
+    None. Registers a Flask blueprint on the supplied server.
   """
   bp = Blueprint("isp_api", __name__)
 
   @bp.get("/api/lease/isp-options/<listing_id>")
-  def get_lease_isp_options(listing_id: str):
+  def get_lease_isp_options(listing_id: str) -> Response:
     """
-    Return top ISP options for a given listing_id (mls_number).
+    Return top ISP options for a lease listing.
 
     Args:
       listing_id: MLS/listing identifier used in `lease_provider_options.listing_id`.
 
     Returns:
-      JSON array of provider option dicts matching the structure expected by popup.js.
+      JSON response containing provider option dicts for the popup ISP section.
     """
     sql = """
       SELECT
@@ -249,35 +290,18 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
       conn.row_factory = sqlite3.Row
       rows = conn.execute(sql, (listing_id,)).fetchall()
 
-    result: list[dict[str, Any]] = []
-    for r in rows:
-      result.append(
-        {
-          "dba": r["DBA"],
-          "service_type": r["Service_Type"],  # ← Now returns "Fiber", "Cable", "DSL", etc.
-          "tech_code": r["TechCode"],
-          "max_dn_mbps": r["MaxAdDn"],
-          "max_up_mbps": r["MaxAdUp"],
-          "max_dn_tier": r["MaxDnTier"],
-          "max_up_tier": r["MaxUpTier"],
-          "min_dn_tier": r["MinDnTier"],
-          "min_up_tier": r["MinUpTier"],
-          "bucket": r["bucket"],
-        }
-      )
-
-    return jsonify(result)
+    return jsonify(build_provider_option_payload(rows))
 
   @bp.get("/api/buy/isp-options/<listing_id>")
-  def get_buy_isp_options(listing_id: str):
+  def get_buy_isp_options(listing_id: str) -> Response:
     """
-    Return top ISP options for a given listing_id (mls_number) from the buy table.
+    Return top ISP options for a buy listing.
 
     Args:
       listing_id: MLS/listing identifier used in `buy_provider_options.listing_id`.
 
     Returns:
-      JSON array of provider option dicts matching the structure expected by popup.js.
+      JSON response containing provider option dicts for the popup ISP section.
     """
     sql = """
       SELECT
@@ -330,24 +354,7 @@ def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.d
       conn.row_factory = sqlite3.Row
       rows = conn.execute(sql, (listing_id,)).fetchall()
 
-    result: list[dict[str, Any]] = []
-    for r in rows:
-      result.append(
-        {
-          "dba": r["DBA"],
-          "service_type": r["Service_Type"],
-          "tech_code": r["TechCode"],
-          "max_dn_mbps": r["MaxAdDn"],
-          "max_up_mbps": r["MaxAdUp"],
-          "max_dn_tier": r["MaxDnTier"],
-          "max_up_tier": r["MaxUpTier"],
-          "min_dn_tier": r["MinDnTier"],
-          "min_up_tier": r["MinUpTier"],
-          "bucket": r["bucket"],
-        }
-      )
-
-    return jsonify(result)
+    return jsonify(build_provider_option_payload(rows))
   
   server.register_blueprint(bp)
 
