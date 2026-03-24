@@ -2,6 +2,7 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from dash_iconify import DashIconify
 from datetime import date
+from functools import lru_cache
 from functions.convex_hull import generate_convex_hulls
 from functions.layers import LayersClass
 from functions.sql_helpers import get_latest_date_processed
@@ -14,6 +15,7 @@ import geopandas as gpd
 import json
 import logging
 import numpy as np
+import os
 import pandas as pd
 import re
 import sqlite3
@@ -21,6 +23,44 @@ import sqlite3
 DB_PATH = "assets/datasets/larentals.db"
 DEFAULT_SPEED_MAX = 1.0
 logger = logging.getLogger(__name__)
+
+
+def _db_cache_token(db_path: str = DB_PATH) -> int:
+    """Return a cheap cache-busting token derived from the backing SQLite file."""
+    try:
+        return os.stat(db_path).st_mtime_ns
+    except OSError:
+        return 0
+
+
+@lru_cache(maxsize=8)
+def _build_cached_geojson_payload(
+    table_name: str,
+    page_type: str,
+    select_columns: tuple[str, ...],
+    db_mtime_ns: int,
+) -> dict:
+    """
+    Build and cache a GeoJSON payload without constructing any Dash UI components.
+
+    The cache key includes the database mtime so weekly data refreshes invalidate
+    stale payloads automatically inside each worker process.
+    """
+    del db_mtime_ns  # Used only as part of the cache key.
+
+    loader = BaseClass(
+        table_name=table_name,
+        page_type=page_type,
+        select_columns=select_columns,
+        include_last_updated=False,
+    )
+
+    if table_name == "lease" and "laundry" in loader.df.columns:
+        loader.df["laundry"] = loader.df["laundry"].apply(
+            LeaseComponents.categorize_laundry_features
+        )
+
+    return loader.return_geojson()
 
 def _require_safe_identifier(name: str, *, field_name: str) -> str:
     """
@@ -51,6 +91,7 @@ class BaseClass:
         page_type: str,
         *,
         select_columns: Optional[Sequence[str]] = None,
+        include_last_updated: bool = True,
     ) -> None:
         """
         Load a table/view from SQLite and prepare the DataFrame.
@@ -60,6 +101,7 @@ class BaseClass:
             page_type: Page context ("lease" or "buy").
             select_columns: Optional list/tuple of columns to select instead of SELECT *.
                 Use this to shrink payload for faster startup and smaller GeoJSON.
+            include_last_updated: Whether to query the table's processed timestamp.
         """
         safe_table = _require_safe_identifier(table_name, field_name="table_name")
 
@@ -126,8 +168,12 @@ class BaseClass:
         else:
             self.earliest_date = date.today()
 
-        # 5) Compute last_updated
-        self.last_updated = get_latest_date_processed(DB_PATH, table_name=safe_table)
+        # 5) Compute last_updated only when the UI needs it.
+        self.last_updated = (
+            get_latest_date_processed(DB_PATH, table_name=safe_table)
+            if include_last_updated
+            else None
+        )
 
         # 6) store page_type for return_geojson
         self.page_type = page_type
@@ -459,9 +505,40 @@ class LeaseComponents(BaseClass):
         "mls_photo",
         "lot_size",
         "senior_community",
-        "affected_by_palisades_fire",
-        "affected_by_eaton_fire",
     )
+
+    LEASE_MAP_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "parking_spaces",
+        "laundry_category",
+        "pet_policy",
+        "terms",
+        "furnished",
+        "security_deposit",
+        "pet_deposit",
+        "key_deposit",
+        "other_deposit",
+        "listed_date",
+    )
+
+    @classmethod
+    def get_cached_geojson_payload(cls) -> dict:
+        """Return the cached lease GeoJSON payload for the current database version."""
+        return _build_cached_geojson_payload(
+            table_name="lease",
+            page_type="lease",
+            select_columns=cls.LEASE_MAP_COLUMNS,
+            db_mtime_ns=_db_cache_token(),
+        )
 
     def __init__(self) -> None:
         # Call the parent constructor to load the lease table
@@ -502,7 +579,8 @@ class LeaseComponents(BaseClass):
         # Dependent components last
         self.user_options_card = self.create_user_options_card()
     
-    def categorize_laundry_features(self, feature):
+    @staticmethod
+    def categorize_laundry_features(feature):
         if pd.isna(feature) or feature in ['Unknown', '']:
             return 'Unknown'
         if any(keyword in feature for keyword in ['In Closet', 'In Kitchen', 'In Garage', 'Inside', 'Individual Room']):
@@ -1368,11 +1446,35 @@ class BuyComponents(BaseClass):
         "listed_date",
         "listing_url",
         "mls_photo",
-
-        # environmental flags
-        "affected_by_palisades_fire",
-        "affected_by_eaton_fire",
     )
+
+    BUY_MAP_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "lot_size",
+        "garage_spaces",
+        "hoa_fee",
+        "hoa_fee_frequency",
+        "listed_date",
+    )
+
+    @classmethod
+    def get_cached_geojson_payload(cls) -> dict:
+        """Return the cached buy GeoJSON payload for the current database version."""
+        return _build_cached_geojson_payload(
+            table_name="buy",
+            page_type="buy",
+            select_columns=cls.BUY_MAP_COLUMNS,
+            db_mtime_ns=_db_cache_token(),
+        )
 
     def __init__(self):
         # Call the parent constructor to load the buy table
