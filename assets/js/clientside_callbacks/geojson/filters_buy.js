@@ -57,6 +57,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             if (!fullGeojson || !Array.isArray(fullGeojson.features)) {
                 return { type: "FeatureCollection", features: [] };
             }
+
+            const exclusionCollector = window.larentals?.filterDevtools?.createRunCollector(
+                "buy",
+                fullGeojson.features.length,
+            );
+
             // Convert Dash boolean inputs to actual booleans
             const sqftIncludeMissingBool           = Boolean(sqftIncludeMissing);
             const ppsqftIncludeMissingBool         = Boolean(ppsqftIncludeMissing);
@@ -197,17 +203,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 let zipFilter = true;
                 if (shouldFilterByZip) {
                     if (!zipFeatures.length || !turfAvailable || !feature.geometry) {
-                        return false;
+                        zipFilter = false;
+                    } else {
+                        const coords = normalizeCoordinatePair(feature.geometry.coordinates);
+                        if (!coords) {
+                            zipFilter = false;
+                        } else {
+                            const point = turf.point(coords);
+                            zipFilter = zipFeatures.some((zipFeature) => (
+                                zipFeature && zipFeature.geometry &&
+                                turf.booleanPointInPolygon(point, zipFeature)
+                            ));
+                        }
                     }
-                    const coords = normalizeCoordinatePair(feature.geometry.coordinates);
-                    if (!coords) {
-                        return false;
-                    }
-                    const point = turf.point(coords);
-                    zipFilter = zipFeatures.some((zipFeature) => (
-                        zipFeature && zipFeature.geometry &&
-                        turf.booleanPointInPolygon(point, zipFeature)
-                    ));
                 }
 
                 // Combine all filters
@@ -227,8 +235,31 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     uploadSpeedFilter &&
                     zipFilter;
 
+                if (!includeFeature && exclusionCollector) {
+                    const failedReasons = [];
+
+                    if (!priceInRange) failedReasons.push("Price");
+                    if (!bedroomsInRange) failedReasons.push("Bedrooms");
+                    if (!bathroomsInRange) failedReasons.push("Bathrooms");
+                    if (!sqftFilter) failedReasons.push("Sqft");
+                    if (!ppsqftFilter) failedReasons.push("Price per sqft");
+                    if (!lotSizeFilter) failedReasons.push("Lot size");
+                    if (!yrBuiltFilter) failedReasons.push("Year built");
+                    if (!subtypeFilter) failedReasons.push("Subtype");
+                    if (!dateFilter) failedReasons.push("Listed date");
+                    if (!hoaFilter) failedReasons.push("HOA fee");
+                    if (!hoaFeeFreqFilter) failedReasons.push("HOA frequency");
+                    if (!downloadSpeedFilter) failedReasons.push("Download speed");
+                    if (!uploadSpeedFilter) failedReasons.push("Upload speed");
+                    if (!zipFilter) failedReasons.push("ZIP boundary");
+
+                    exclusionCollector.capture(mls_number, failedReasons);
+                }
+
                 return includeFeature;
             });
+
+            exclusionCollector?.publish(filteredFeatures.length);
 
             // Return the filtered FeatureCollection
             return {

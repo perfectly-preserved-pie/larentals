@@ -77,6 +77,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 return window.dash_clientside.no_update;
             }
 
+            const exclusionCollector = window.larentals?.filterDevtools?.createRunCollector(
+                "lease",
+                fullGeojson.features.length,
+            );
+
             // Deconstruct range arrays
             const [minPrice, maxPrice]           = priceRange;
             const [minBedrooms, maxBedrooms]     = bedroomsRange;
@@ -347,17 +352,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 let zipFilter = true;
                 if (shouldFilterByZip) {
                     if (!zipFeatures.length || !turfAvailable || !feature.geometry) {
-                        return false;
+                        zipFilter = false;
+                    } else {
+                        const coords = normalizeCoordinatePair(feature.geometry.coordinates);
+                        if (!coords) {
+                            zipFilter = false;
+                        } else {
+                            const point = turf.point(coords);
+                            zipFilter = zipFeatures.some((zipFeature) => (
+                                zipFeature && zipFeature.geometry &&
+                                turf.booleanPointInPolygon(point, zipFeature)
+                            ));
+                        }
                     }
-                    const coords = normalizeCoordinatePair(feature.geometry.coordinates);
-                    if (!coords) {
-                        return false;
-                    }
-                    const point = turf.point(coords);
-                    zipFilter = zipFeatures.some((zipFeature) => (
-                        zipFeature && zipFeature.geometry &&
-                        turf.booleanPointInPolygon(point, zipFeature)
-                    ));
                 }
 
                 // Combine all filters
@@ -383,8 +390,37 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     uploadSpeedFilter &&
                     zipFilter;
 
+                if (!includeFeature && exclusionCollector) {
+                    const failedReasons = [];
+
+                    if (!priceFilter) failedReasons.push("Price");
+                    if (!bedroomsFilter) failedReasons.push("Bedrooms");
+                    if (!bathroomsFilter) failedReasons.push("Bathrooms");
+                    if (!petPolicyFilter) failedReasons.push("Pet policy");
+                    if (!sqftFilter) failedReasons.push("Sqft");
+                    if (!ppsqftFilter) failedReasons.push("Price per sqft");
+                    if (!parkingFilter) failedReasons.push("Parking");
+                    if (!yearBuiltFilter) failedReasons.push("Year built");
+                    if (!termsFilter) failedReasons.push("Lease terms");
+                    if (!furnishedFilter) failedReasons.push("Furnished");
+                    if (!securityDepositFilter) failedReasons.push("Security deposit");
+                    if (!petDepositFilter) failedReasons.push("Pet deposit");
+                    if (!keyDepositFilter) failedReasons.push("Key deposit");
+                    if (!otherDepositFilter) failedReasons.push("Other deposit");
+                    if (!laundryFilter) failedReasons.push("Laundry");
+                    if (!subtypeFilter) failedReasons.push("Subtype");
+                    if (!dateFilter) failedReasons.push("Listed date");
+                    if (!downloadSpeedFilter) failedReasons.push("Download speed");
+                    if (!uploadSpeedFilter) failedReasons.push("Upload speed");
+                    if (!zipFilter) failedReasons.push("ZIP boundary");
+
+                    exclusionCollector.capture(mls_number, failedReasons);
+                }
+
                 return includeFeature;
             });
+
+            exclusionCollector?.publish(filteredFeatures.length);
 
             // Return the filtered FeatureCollection
             return {
