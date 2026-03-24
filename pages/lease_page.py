@@ -103,8 +103,7 @@ def load_lease_geojson(_: int) -> dict:
   Returns:
     A GeoJSON dict suitable for dl.GeoJSON(data=...).
   """
-  components = LeaseComponents()
-  return components.return_geojson()
+  return LeaseComponents.get_cached_geojson_payload()
 
 @callback(
   Output({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
