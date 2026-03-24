@@ -3,6 +3,46 @@
     const STORE_KEY = "__larentalsFilterExclusionRun";
     const SEARCH_INDEX_KEY = "__larentalsFilterExclusionSearchIndex";
     const DEFAULT_VISIBLE_LIMIT = 25; // Max number of excluded listings to keep in memory and show in the panel
+    const REASON_PROPERTY_MAP = {
+        buy: {
+            "Price": ["list_price"],
+            "Bedrooms": ["bedrooms"],
+            "Bathrooms": ["total_bathrooms"],
+            "Sqft": ["sqft"],
+            "Price per sqft": ["ppsqft"],
+            "Lot size": ["lot_size"],
+            "Year built": ["year_built"],
+            "Subtype": ["subtype"],
+            "Listed date": ["listed_date"],
+            "HOA fee": ["hoa_fee"],
+            "HOA frequency": ["hoa_fee_frequency"],
+            "Download speed": ["best_dn"],
+            "Upload speed": ["best_up"],
+            "ZIP boundary": [],
+        },
+        lease: {
+            "Price": ["list_price"],
+            "Bedrooms": ["bedrooms"],
+            "Bathrooms": ["total_bathrooms"],
+            "Pet policy": ["pet_policy"],
+            "Sqft": ["sqft"],
+            "Price per sqft": ["ppsqft"],
+            "Parking": ["parking_spaces"],
+            "Year built": ["year_built"],
+            "Lease terms": ["terms"],
+            "Furnished": ["furnished"],
+            "Security deposit": ["security_deposit"],
+            "Pet deposit": ["pet_deposit"],
+            "Key deposit": ["key_deposit"],
+            "Other deposit": ["other_deposit"],
+            "Laundry": ["laundry_category"],
+            "Subtype": ["subtype"],
+            "Listed date": ["listed_date"],
+            "Download speed": ["best_dn"],
+            "Upload speed": ["best_up"],
+            "ZIP boundary": [],
+        },
+    };
 
     function formatPageLabel(page) {
         if (page === "buy") {
@@ -42,6 +82,60 @@
         return normalizedValue || "Unknown";
     }
 
+    function cloneProperties(properties) {
+        if (!properties || typeof properties !== "object" || Array.isArray(properties)) {
+            return {};
+        }
+
+        return Object.assign({}, properties);
+    }
+
+    function formatPropertyLabel(key) {
+        return String(key || "")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, function (char) {
+                return char.toUpperCase();
+            });
+    }
+
+    function formatPropertyValue(value) {
+        if (value === null || value === undefined || value === "") {
+            return "None";
+        }
+
+        if (typeof value === "object") {
+            try {
+                return JSON.stringify(value);
+            } catch (_error) {
+                return String(value);
+            }
+        }
+
+        return String(value);
+    }
+
+    function getHighlightedPropertyKeys(page, reasons) {
+        const pageMap = REASON_PROPERTY_MAP[page] || {};
+        const keys = new Set();
+
+        (reasons || []).forEach(function (reason) {
+            (pageMap[reason] || []).forEach(function (propertyKey) {
+                keys.add(propertyKey);
+            });
+        });
+
+        return keys;
+    }
+
+    function buildListingEntry(page, mlsNumber, failedReasons, properties) {
+        return {
+            page: page,
+            mlsNumber: formatMlsValue(mlsNumber),
+            reasons: failedReasons.slice(),
+            properties: cloneProperties(properties),
+        };
+    }
+
     function publishFilterRun(payload, searchIndex) {
         if (!payload || typeof payload !== "object") {
             return;
@@ -78,7 +172,7 @@
         let excludedCount = 0;
 
         return {
-            capture: function (mlsNumber, failedReasons) {
+            capture: function (mlsNumber, failedReasons, properties) {
                 if (!Array.isArray(failedReasons) || failedReasons.length === 0) {
                     return;
                 }
@@ -89,10 +183,7 @@
                     reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
                 });
 
-                const listingEntry = {
-                    mlsNumber: formatMlsValue(mlsNumber),
-                    reasons: failedReasons.slice(),
-                };
+                const listingEntry = buildListingEntry(page, mlsNumber, failedReasons, properties);
                 const normalizedMls = normalizeMlsValue(mlsNumber);
 
                 if (normalizedMls) {
@@ -159,11 +250,13 @@
         const [isOpen, setIsOpen] = React.useState(false);
         const [payload, setPayload] = React.useState(getLatestFilterRun);
         const [searchValue, setSearchValue] = React.useState("");
+        const [selectedListingMls, setSelectedListingMls] = React.useState("");
 
         React.useEffect(function () {
             function handleFilterRun(event) {
                 setPayload(event.detail || null);
                 setSearchValue("");
+                setSelectedListingMls("");
             }
 
             window.addEventListener(EVENT_NAME, handleFilterRun);
@@ -193,12 +286,32 @@
         const excludedCount = latestPayload.excluded || 0;
         const buttonLabel = title + " (" + excludedCount + ")";
         const normalizedSearchValue = normalizeMlsValue(searchValue);
+        const searchIndex = getLatestSearchIndex();
         const matchedListing = normalizedSearchValue
-            ? getLatestSearchIndex()[normalizedSearchValue] || null
+            ? searchIndex[normalizedSearchValue] || null
             : null;
         const visibleListings = normalizedSearchValue
             ? (matchedListing ? [matchedListing] : [])
             : latestPayload.excludedListings;
+        const normalizedSelectedListingMls = normalizeMlsValue(selectedListingMls);
+        const selectedListing = normalizedSelectedListingMls
+            ? searchIndex[normalizedSelectedListingMls] || null
+            : null;
+        const highlightedPropertyKeys = selectedListing
+            ? getHighlightedPropertyKeys(selectedListing.page || latestPayload.page, selectedListing.reasons)
+            : new Set();
+        const selectedPropertyEntries = selectedListing
+            ? Object.entries(selectedListing.properties || {}).sort(function (a, b) {
+                const aHighlighted = highlightedPropertyKeys.has(a[0]) ? 0 : 1;
+                const bHighlighted = highlightedPropertyKeys.has(b[0]) ? 0 : 1;
+
+                if (aHighlighted !== bHighlighted) {
+                    return aHighlighted - bHighlighted;
+                }
+
+                return a[0].localeCompare(b[0]);
+            })
+            : [];
 
         const buttonStyle = {
             appearance: "none",
@@ -435,27 +548,47 @@
                             },
                         },
                         visibleListings.map(function (listing, index) {
+                            const isSelected = normalizeMlsValue(listing.mlsNumber) === normalizedSelectedListingMls;
+
                             return React.createElement(
                                 "div",
                                 {
                                     key: "listing-" + listing.mlsNumber + "-" + index,
                                     style: {
-                                        background: "#111827",
+                                        background: isSelected ? "#1e293b" : "#111827",
+                                        border: "1px solid " + (
+                                            isSelected
+                                                ? "#60a5fa"
+                                                : "#334155"
+                                        ),
                                         borderRadius: "8px",
                                         padding: "10px 12px",
                                     },
                                 },
                                 [
                                     React.createElement(
-                                        "div",
+                                        "button",
                                         {
-                                            key: "mls",
+                                            key: "listing-toggle",
+                                            onClick: function () {
+                                                setSelectedListingMls(isSelected ? "" : listing.mlsNumber);
+                                            },
                                             style: {
+                                                appearance: "none",
+                                                background: "transparent",
+                                                border: "none",
+                                                color: "inherit",
+                                                cursor: "pointer",
+                                                display: "block",
                                                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                                                 fontSize: "12px",
                                                 fontWeight: 700,
                                                 marginBottom: "4px",
+                                                padding: 0,
+                                                textAlign: "left",
+                                                width: "100%",
                                             },
+                                            type: "button",
                                         },
                                         "MLS " + listing.mlsNumber,
                                     ),
@@ -471,6 +604,123 @@
                                         },
                                         listing.reasons.join(", "),
                                     ),
+                                    isSelected && selectedListing
+                                        ? React.createElement(
+                                            "div",
+                                            {
+                                                key: "selected-inline",
+                                                style: {
+                                                    borderTop: "1px solid #334155",
+                                                    marginTop: "10px",
+                                                    paddingTop: "10px",
+                                                },
+                                            },
+                                            [
+                                                React.createElement(
+                                                    "div",
+                                                    {
+                                                        key: "selected-copy",
+                                                        style: {
+                                                            color: "#94a3b8",
+                                                            fontSize: "11px",
+                                                            marginBottom: "10px",
+                                                        },
+                                                    },
+                                                    "Highlighted fields correspond to failed filters.",
+                                                ),
+                                                React.createElement(
+                                                    "div",
+                                                    {
+                                                        key: "selected-reasons",
+                                                        style: {
+                                                            display: "flex",
+                                                            flexWrap: "wrap",
+                                                            gap: "6px",
+                                                            marginBottom: "12px",
+                                                        },
+                                                    },
+                                                    (selectedListing.reasons || []).map(function (reason) {
+                                                        return React.createElement(
+                                                            "span",
+                                                            {
+                                                                key: "reason-pill-" + reason,
+                                                                style: {
+                                                                    background: "#7f1d1d",
+                                                                    border: "1px solid #ef4444",
+                                                                    borderRadius: "999px",
+                                                                    color: "#fecaca",
+                                                                    fontSize: "11px",
+                                                                    padding: "4px 8px",
+                                                                },
+                                                            },
+                                                            reason,
+                                                        );
+                                                    }),
+                                                ),
+                                                React.createElement(
+                                                    "div",
+                                                    {
+                                                        key: "properties",
+                                                        style: {
+                                                            display: "grid",
+                                                            gap: "6px",
+                                                            maxHeight: "260px",
+                                                            overflowY: "auto",
+                                                        },
+                                                    },
+                                                    selectedPropertyEntries.map(function (entry) {
+                                                        const propertyKey = entry[0];
+                                                        const propertyValue = entry[1];
+                                                        const isHighlighted = highlightedPropertyKeys.has(propertyKey);
+
+                                                        return React.createElement(
+                                                            "div",
+                                                            {
+                                                                key: "property-" + propertyKey,
+                                                                style: {
+                                                                    background: isHighlighted ? "#3f1d1d" : "#0f172a",
+                                                                    border: "1px solid " + (isHighlighted ? "#ef4444" : "#334155"),
+                                                                    borderRadius: "8px",
+                                                                    padding: "8px 10px",
+                                                                },
+                                                            },
+                                                            [
+                                                                React.createElement(
+                                                                    "div",
+                                                                    {
+                                                                        key: "property-label",
+                                                                        style: {
+                                                                            color: isHighlighted ? "#fecaca" : "#93c5fd",
+                                                                            fontSize: "11px",
+                                                                            fontWeight: 700,
+                                                                            marginBottom: "3px",
+                                                                            textTransform: "none",
+                                                                        },
+                                                                    },
+                                                                    formatPropertyLabel(propertyKey),
+                                                                ),
+                                                                React.createElement(
+                                                                    "div",
+                                                                    {
+                                                                        key: "property-value",
+                                                                        style: {
+                                                                            color: "#f8fafc",
+                                                                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                                                            fontSize: "11px",
+                                                                            lineHeight: 1.45,
+                                                                            overflowWrap: "anywhere",
+                                                                            whiteSpace: "pre-wrap",
+                                                                        },
+                                                                    },
+                                                                    formatPropertyValue(propertyValue),
+                                                                ),
+                                                            ],
+                                                        );
+                                                    }),
+                                                ),
+                                            ],
+                                        )
+                                        : null,
                                 ],
                             );
                         }),

@@ -253,7 +253,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!uploadSpeedFilter) failedReasons.push("Upload speed");
                     if (!zipFilter) failedReasons.push("ZIP boundary");
 
-                    exclusionCollector.capture(mls_number, failedReasons);
+                    exclusionCollector.capture(mls_number, failedReasons, props);
                 }
 
                 return includeFeature;
