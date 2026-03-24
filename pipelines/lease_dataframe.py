@@ -308,7 +308,7 @@ if __name__ == "__main__":
     for col in ['listed_date', 'date_processed']:
       df_combined[col] = pd.to_datetime(df_combined[col], errors='coerce')
     # Convert boolean columns to bool dtype
-    for col in ['affected_by_eaton_fire', 'affected_by_palisades_fire', 'reported_as_inactive']:
+    for col in ['reported_as_inactive']:
       df_combined[col] = df_combined[col].astype(bool)
     # Convert latitude and longitude and ppsqft to float
     df_combined['latitude'] = pd.to_numeric(df_combined['latitude'], errors='coerce')

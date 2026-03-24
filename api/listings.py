@@ -26,9 +26,7 @@ LEASE_LISTING_DETAIL_SQL = """
     listed_date,
     listing_url,
     mls_photo,
-    COALESCE(laundry_category, 'Unknown') AS laundry,
-    affected_by_palisades_fire,
-    affected_by_eaton_fire
+    COALESCE(laundry_category, 'Unknown') AS laundry
   FROM lease
   WHERE mls_number = ?
   LIMIT 1
@@ -51,30 +49,11 @@ BUY_LISTING_DETAIL_SQL = """
     full_street_address,
     listed_date,
     listing_url,
-    mls_photo,
-    affected_by_palisades_fire,
-    affected_by_eaton_fire
+    mls_photo
   FROM buy
   WHERE mls_number = ?
   LIMIT 1
 """
-
-
-def _normalize_truthy_flag(value: Any) -> bool | None:
-    """Normalize mixed SQLite truthy values to booleans for JSON responses."""
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return bool(value)
-
-    normalized = str(value).strip().lower()
-    if normalized in {"1", "true", "t", "yes", "y"}:
-        return True
-    if normalized in {"0", "false", "f", "no", "n", ""}:
-        return False
-    return None
 
 
 def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -90,11 +69,7 @@ def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | No
     if row is None:
         return None
 
-    payload = {key: row[key] for key in row.keys()}
-    for key in ("affected_by_palisades_fire", "affected_by_eaton_fire"):
-        if key in payload:
-            payload[key] = _normalize_truthy_flag(payload[key])
-    return payload
+    return {key: row[key] for key in row.keys()}
 
 
 def register_listing_routes(server: Any, db_path: str = "assets/datasets/larentals.db") -> None:

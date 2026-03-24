@@ -505,8 +505,6 @@ class LeaseComponents(BaseClass):
         "mls_photo",
         "lot_size",
         "senior_community",
-        "affected_by_palisades_fire",
-        "affected_by_eaton_fire",
     )
 
     LEASE_MAP_COLUMNS: tuple[str, ...] = (
@@ -1448,10 +1446,6 @@ class BuyComponents(BaseClass):
         "listed_date",
         "listing_url",
         "mls_photo",
-
-        # environmental flags
-        "affected_by_palisades_fire",
-        "affected_by_eaton_fire",
     )
 
     BUY_MAP_COLUMNS: tuple[str, ...] = (

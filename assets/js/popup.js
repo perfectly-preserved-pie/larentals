@@ -259,55 +259,6 @@
     }
 
     /**
-     * Normalize mixed truthy flag values used by the fire-warning fields.
-     *
-     * @param {unknown} value Raw flag value.
-     * @returns {boolean} Whether the flag should be treated as true.
-     */
-    function hasTruthyFlag(value) {
-        if (value === true) return true;
-        if (typeof value === "number") return value !== 0;
-        if (typeof value === "string") {
-            return ["true", "1", "yes", "y"].includes(value.trim().toLowerCase());
-        }
-        return false;
-    }
-
-    /**
-     * Render the Palisades fire warning banner when the listing is flagged.
-     *
-     * @param {Record<string, unknown>} popupData Listing properties used by the popup.
-     * @returns {string} Warning-banner HTML or an empty string.
-     */
-    function getPalisadesFireAlertBlock(popupData) {
-        if (hasTruthyFlag(popupData.affected_by_palisades_fire)) {
-            return `
-                <div style="color: red; text-align: center;">
-                    ⚠️ Affected by Palisades Fire. Please verify at <a href="https://recovery.lacounty.gov/palisades-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
-                </div>
-            `;
-        }
-        return "";
-    }
-
-    /**
-     * Render the Eaton fire warning banner when the listing is flagged.
-     *
-     * @param {Record<string, unknown>} popupData Listing properties used by the popup.
-     * @returns {string} Warning-banner HTML or an empty string.
-     */
-    function getEatonFireAlertBlock(popupData) {
-        if (hasTruthyFlag(popupData.affected_by_eaton_fire)) {
-            return `
-                <div style="color: red; text-align: center;">
-                    ⚠️ Affected by Eaton Fire. Please verify at <a href="https://recovery.lacounty.gov/eaton-fire/" target="_blank" style="color: red;">recovery.lacounty.gov</a>.
-                </div>
-            `;
-        }
-        return "";
-    }
-
-    /**
      * Format a date-like value as `YYYY-MM-DD`.
      *
      * @param {unknown} dateString Date value pulled from the listing payload.
@@ -365,8 +316,6 @@
 
         return `
             <div>
-                ${getPalisadesFireAlertBlock(popupData)}
-                ${getEatonFireAlertBlock(popupData)}
                 ${imageRow}
                 ${listingUrlBlock}
                 <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
@@ -489,8 +438,6 @@
 
         return `
             <div>
-                ${getPalisadesFireAlertBlock(popupData)}
-                ${getEatonFireAlertBlock(popupData)}
                 ${imageRow}
                 ${listingUrlBlock}
                 <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
