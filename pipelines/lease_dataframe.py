@@ -8,6 +8,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
 from functions.geocoding_utils import *
+from functions.listing_report_utils import (
+  get_reported_inactive_mls_numbers,
+  normalize_mls_number,
+)
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
 from functions.normalization_utils import normalize_terms, normalize_subtype
@@ -281,13 +285,33 @@ if __name__ == "__main__":
     else:
       df_combined = df.copy()
 
+    reported_inactive_mls_numbers = set()
+    try:
+      with sqlite3.connect(DB_PATH) as conn:
+        reported_inactive_mls_numbers = get_reported_inactive_mls_numbers(
+          conn,
+          listing_type=TABLE_NAME,
+        )
+    except Exception as e:
+      logger.warning(f"Could not load append-only listing reports for {TABLE_NAME}: {e}")
+
     if "reported_as_inactive" not in df_combined.columns:
       df_combined["reported_as_inactive"] = False
     else:
       df_combined["reported_as_inactive"] = df_combined["reported_as_inactive"].fillna(False)
+    previously_flagged = set()
     if not df_old.empty:
-      previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
-      df_combined.loc[df_combined["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+      previously_flagged.update(
+        normalize_mls_number(value)
+        for value in df_old[df_old["reported_as_inactive"] == True]["mls_number"]
+      )
+    previously_flagged.update(reported_inactive_mls_numbers)
+    if previously_flagged:
+      normalized_combined_mls = df_combined["mls_number"].apply(normalize_mls_number)
+      df_combined.loc[
+        normalized_combined_mls.isin(previously_flagged),
+        "reported_as_inactive",
+      ] = True
 
     # --- Normalize lease terms (canonical + structured) ---
     canon_lists = df_combined["terms"].apply(normalize_terms)
