@@ -4,6 +4,7 @@ from flask import request, jsonify, abort, Blueprint, Response
 from flask_compress import Compress
 from loguru import logger
 from typing import Any
+from functions.devtools import register_filter_exclusion_devtool
 import bleach
 import dash
 import dash_bootstrap_components as dbc
@@ -24,6 +25,8 @@ external_scripts = [
   'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js', # Turf.js for convex hulls
   'https://cdn.jsdelivr.net/npm/sweetalert2@11' # SweetAlert2 for popups
 ]
+
+register_filter_exclusion_devtool()
 
 # Create the app
 app = Dash(
