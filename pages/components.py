@@ -509,13 +509,36 @@ class LeaseComponents(BaseClass):
         "affected_by_eaton_fire",
     )
 
+    LEASE_MAP_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "parking_spaces",
+        "laundry_category",
+        "pet_policy",
+        "terms",
+        "furnished",
+        "security_deposit",
+        "pet_deposit",
+        "key_deposit",
+        "other_deposit",
+        "listed_date",
+    )
+
     @classmethod
     def get_cached_geojson_payload(cls) -> dict:
         """Return the cached lease GeoJSON payload for the current database version."""
         return _build_cached_geojson_payload(
             table_name="lease",
             page_type="lease",
-            select_columns=cls.LEASE_COLUMNS,
+            select_columns=cls.LEASE_MAP_COLUMNS,
             db_mtime_ns=_db_cache_token(),
         )
 
@@ -1431,13 +1454,31 @@ class BuyComponents(BaseClass):
         "affected_by_eaton_fire",
     )
 
+    BUY_MAP_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "lot_size",
+        "garage_spaces",
+        "hoa_fee",
+        "hoa_fee_frequency",
+        "listed_date",
+    )
+
     @classmethod
     def get_cached_geojson_payload(cls) -> dict:
         """Return the cached buy GeoJSON payload for the current database version."""
         return _build_cached_geojson_payload(
             table_name="buy",
             page_type="buy",
-            select_columns=cls.BUY_COLUMNS,
+            select_columns=cls.BUY_MAP_COLUMNS,
             db_mtime_ns=_db_cache_token(),
         )
 
