@@ -436,6 +436,7 @@ class BaseClass:
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
     OPTIONAL_LAYER_KEYS: tuple[str, ...] = (
+        "parking_tickets_density",
         "breakfast_burritos",
         "farmers_markets",
         "supermarkets_grocery",
@@ -1413,6 +1414,7 @@ class LeaseComponents(BaseClass):
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
     OPTIONAL_LAYER_KEYS: tuple[str, ...] = (
+        "parking_tickets_density",
         "breakfast_burritos",
         "farmers_markets",
         "supermarkets_grocery",
