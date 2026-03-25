@@ -14,6 +14,7 @@
 
     /**
      * @typedef {{
+     *   location?: unknown,
      *   citation_count?: unknown,
      *   total_fine_amount?: unknown,
      *   average_fine_amount?: unknown,
@@ -100,9 +101,14 @@
      * @returns {string} Popup title.
      */
     function buildParkingTicketsTitle(properties) {
+        const location = String(properties.location || "").trim();
+        if (location) {
+            return escapeHtml(location);
+        }
+
         const citationCount = Number(properties.citation_count);
         if (!Number.isFinite(citationCount) || citationCount <= 0) {
-            return "Parking Ticket Density";
+            return "Parking Ticket Hotspot";
         }
 
         return `${Math.round(citationCount).toLocaleString("en-US")} Parking Tickets`;

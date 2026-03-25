@@ -14,7 +14,10 @@ PARKING_TICKETS_V3_QUERY_URL = "https://data.lacity.org/api/v3/views/4f5p-udkv/q
 PARKING_TICKETS_WINDOW_DAYS = 30
 PARKING_TICKETS_SPOT_DECIMALS = 4
 PARKING_TICKETS_MAX_HEAT_POINTS = 50000
+PARKING_TICKETS_MAX_MARKER_POINTS = 8000
 PARKING_TICKETS_HEAT_INTENSITY_FLOOR = 0.14
+PARKING_TICKETS_MARKER_ZOOM_MIN = 15
+PARKING_TICKETS_HEAT_ZOOM_MAX = 16
 PARKING_TICKETS_REQUEST_TIMEOUT_SECONDS = 45
 MIN_STABLE_DAILY_CITATIONS = 100
 LATEST_ACTIVITY_LOOKBACK_START = date(2024, 1, 1)
@@ -55,6 +58,38 @@ class ParkingLayerMetadata(TypedDict):
 
 GeoJsonDict: TypeAlias = dict[str, Any]
 HeatPointTuple: TypeAlias = list[float]
+MarkerPointTuple: TypeAlias = list[float | int | str]
+
+
+class ParkingMarkerPoint(TypedDict):
+    """Rich parking hotspot used for zoomed-in point rendering."""
+
+    lat: float
+    lon: float
+    citation_count: int
+    total_fine_amount: float
+    average_fine_amount: float
+    location: str
+
+
+def _pick_quantile_threshold(values: list[int], fraction: float) -> int:
+    """
+    Return a stable integer quantile threshold from a sorted integer distribution.
+
+    Args:
+        values: Sorted positive integer values.
+        fraction: Quantile fraction in the inclusive `(0, 1]` range.
+
+    Returns:
+        Integer threshold value for the requested quantile.
+    """
+    if not values:
+        return 0
+    if len(values) == 1:
+        return int(values[0])
+
+    index = min(len(values) - 1, max(0, math.ceil(fraction * len(values)) - 1))
+    return int(values[index])
 
 
 def _format_socrata_day(value: date) -> str:
@@ -439,6 +474,76 @@ def _fetch_grouped_parking_ticket_rows(window_start: date, window_end: date) -> 
     return all_rows[:PARKING_TICKETS_MAX_HEAT_POINTS]
 
 
+def _fetch_grouped_marker_rows(window_start: date, window_end: date) -> list[JsonDict]:
+    """
+    Fetch grouped parking hotspots for zoomed-in marker rendering.
+
+    These rows keep the human-readable `location` string so close-up markers can
+    behave more like the LA Controller reference, while still being aggressively
+    reduced server-side before reaching the browser.
+
+    Args:
+        window_start: Inclusive start date for the citation window.
+        window_end: Inclusive end date for the citation window.
+
+    Returns:
+        Row list containing grouped hotspot markers ordered by descending volume.
+    """
+    valid_where = _build_valid_coordinate_where_clause()
+    where_clause = (
+        f"{valid_where} "
+        "AND location IS NOT NULL "
+        "AND location != '' "
+        f"AND issue_date >= '{_format_socrata_day(window_start)}' "
+        f"AND issue_date < '{_format_socrata_day(window_end + timedelta(days=1))}'"
+    )
+
+    all_rows: list[dict[str, Any]] = []
+    page_size = 50000
+    page_number = 1
+
+    while len(all_rows) < PARKING_TICKETS_MAX_MARKER_POINTS:
+        remaining_rows = PARKING_TICKETS_MAX_MARKER_POINTS - len(all_rows)
+        requested_page_size = min(page_size, remaining_rows)
+        rows = _request_parking_ticket_rows(
+            v3_query=(
+                f"SELECT round(`loc_lat`, {PARKING_TICKETS_SPOT_DECIMALS}) AS `lat_bin`, "
+                f"round(`loc_long`, {PARKING_TICKETS_SPOT_DECIMALS}) AS `lon_bin`, "
+                "`location`, "
+                "count(*) AS `citation_count`, "
+                "sum(`fine_amount`) AS `total_fine_amount` "
+                f"WHERE {where_clause} "
+                "GROUP BY `lat_bin`, `lon_bin`, `location` "
+                "ORDER BY `citation_count` DESC, `lat_bin` ASC, `lon_bin` ASC"
+            ),
+            page_number=page_number,
+            page_size=requested_page_size,
+            legacy_params={
+                "$select": (
+                    f"round(loc_lat, {PARKING_TICKETS_SPOT_DECIMALS}) AS lat_bin, "
+                    f"round(loc_long, {PARKING_TICKETS_SPOT_DECIMALS}) AS lon_bin, "
+                    "location, "
+                    "count(*) AS citation_count, "
+                    "sum(fine_amount) AS total_fine_amount"
+                ),
+                "$where": where_clause,
+                "$group": "lat_bin, lon_bin, location",
+                "$order": "citation_count DESC, lat_bin ASC, lon_bin ASC",
+                "$limit": requested_page_size,
+                "$offset": (page_number - 1) * page_size,
+            },
+        )
+        if not rows:
+            break
+
+        all_rows.extend(rows)
+        if len(rows) < requested_page_size:
+            break
+        page_number += 1
+
+    return all_rows[:PARKING_TICKETS_MAX_MARKER_POINTS]
+
+
 def _coerce_grouped_heat_rows(grouped_rows: list[JsonDict]) -> list[ParkingHeatPoint]:
     """
     Validate and normalize grouped hotspot rows returned from the city API.
@@ -496,6 +601,66 @@ def _coerce_grouped_heat_rows(grouped_rows: list[JsonDict]) -> list[ParkingHeatP
     return normalized_rows
 
 
+def _coerce_grouped_marker_rows(grouped_rows: list[JsonDict]) -> list[ParkingMarkerPoint]:
+    """
+    Validate and normalize grouped hotspot rows used for zoomed-in markers.
+
+    Args:
+        grouped_rows: Raw grouped marker payload emitted by the Socrata endpoint.
+
+    Returns:
+        Normalized marker rows with popup-ready values.
+    """
+    normalized_rows: list[ParkingMarkerPoint] = []
+
+    for row in grouped_rows:
+        try:
+            lat = float(row["lat_bin"])
+            lon = float(row["lon_bin"])
+            citation_count = int(row["citation_count"])
+        except (KeyError, TypeError, ValueError):
+            continue
+
+        location = str(row.get("location") or "").strip()
+        if not location:
+            continue
+        if not math.isfinite(lat) or not math.isfinite(lon):
+            continue
+        if not (
+            LA_CITY_COORDINATE_BOUNDS["min_lat"] <= lat <= LA_CITY_COORDINATE_BOUNDS["max_lat"]
+            and LA_CITY_COORDINATE_BOUNDS["min_lon"] <= lon <= LA_CITY_COORDINATE_BOUNDS["max_lon"]
+        ):
+            continue
+        if citation_count <= 0:
+            continue
+
+        raw_total_fine_amount = row.get("total_fine_amount")
+        try:
+            total_fine_amount = (
+                float(raw_total_fine_amount) if raw_total_fine_amount not in (None, "") else 0.0
+            )
+        except (TypeError, ValueError):
+            total_fine_amount = 0.0
+
+        if not math.isfinite(total_fine_amount):
+            total_fine_amount = 0.0
+        if total_fine_amount < 0 or total_fine_amount > (citation_count * MAX_REASONABLE_FINE_AMOUNT):
+            continue
+
+        normalized_rows.append(
+            {
+                "lat": lat,
+                "lon": lon,
+                "citation_count": citation_count,
+                "total_fine_amount": round(total_fine_amount, 2),
+                "average_fine_amount": round(total_fine_amount / citation_count, 2),
+                "location": location,
+            }
+        )
+
+    return normalized_rows
+
+
 def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPoint]:
     """
     Attach normalized heat intensities to hotspot rows.
@@ -539,7 +704,42 @@ def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPo
     return weighted_points
 
 
-def _build_heat_anchor_feature(points: list[ParkingHeatPoint]) -> GeoJsonDict:
+def _marker_frequency_thresholds(marker_points: list[ParkingMarkerPoint]) -> tuple[int, int, int, int]:
+    """
+    Derive discrete ticket-frequency thresholds for zoomed-in marker styling.
+
+    Args:
+        marker_points: Normalized hotspot rows used for close-up markers.
+
+    Returns:
+        Tuple of lower-bound thresholds for moderate, high, very-high, and
+        extreme-frequency marker tiers.
+    """
+    counts = sorted(
+        int(point["citation_count"])
+        for point in marker_points
+        if int(point["citation_count"]) > 0
+    )
+    if not counts:
+        return (0, 0, 0, 0)
+
+    return (
+        _pick_quantile_threshold(counts, 0.50),
+        _pick_quantile_threshold(counts, 0.75),
+        _pick_quantile_threshold(counts, 0.90),
+        _pick_quantile_threshold(counts, 0.975),
+    )
+
+
+def _build_heat_anchor_feature(
+    points: list[ParkingHeatPoint],
+    marker_points: list[ParkingMarkerPoint],
+    *,
+    window_start: date,
+    window_end: date,
+    max_citation_count: int,
+    marker_frequency_breaks: tuple[int, int, int, int],
+) -> GeoJsonDict:
     """
     Build the single invisible GeoJSON anchor used to mount the heat layer.
 
@@ -549,6 +749,12 @@ def _build_heat_anchor_feature(points: list[ParkingHeatPoint]) -> GeoJsonDict:
 
     Args:
         points: Weighted hotspot rows used to determine a stable anchor position.
+        marker_points: Rich hotspot rows used for zoomed-in marker rendering.
+        window_start: Inclusive start date for the current citation window.
+        window_end: Inclusive end date for the current citation window.
+        max_citation_count: Largest citation count in the current hotspot set.
+        marker_frequency_breaks: Quantile-derived citation-count thresholds for
+            zoomed-in marker color tiers.
 
     Returns:
         A GeoJSON point feature positioned near the center of the hotspot cloud.
@@ -568,6 +774,17 @@ def _build_heat_anchor_feature(points: list[ParkingHeatPoint]) -> GeoJsonDict:
         ]
         for point in points
     ]
+    marker_point_tuples: list[MarkerPointTuple] = [
+        [
+            round(point["lat"], 6),
+            round(point["lon"], 6),
+            int(point["citation_count"]),
+            round(point["total_fine_amount"], 2),
+            round(point["average_fine_amount"], 2),
+            point["location"],
+        ]
+        for point in marker_points
+    ]
 
     return {
         "type": "Feature",
@@ -578,7 +795,14 @@ def _build_heat_anchor_feature(points: list[ParkingHeatPoint]) -> GeoJsonDict:
         "properties": {
             "layer_role": "parking_tickets_heat_anchor",
             "heat_points": heat_points,
+            "marker_points": marker_point_tuples,
             "heat_max_intensity": 1.0,
+            "max_citation_count": max_citation_count,
+            "marker_frequency_breaks": list(marker_frequency_breaks),
+            "marker_zoom_min": PARKING_TICKETS_MARKER_ZOOM_MIN,
+            "heat_zoom_max": PARKING_TICKETS_HEAT_ZOOM_MAX,
+            "window_start": window_start.isoformat(),
+            "window_end": window_end.isoformat(),
         },
     }
 
@@ -589,8 +813,8 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
 
     Returns:
         GeoJSON `FeatureCollection` containing a single invisible anchor feature
-        whose properties hold the weighted heat points, plus metadata describing
-        the current citation window.
+        whose properties hold the weighted heat points and zoomed-in marker
+        hotspots, plus metadata describing the current citation window.
     """
     try:
         latest_issue_date = _find_latest_stable_issue_date()
@@ -603,9 +827,15 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
             window_start=window_start,
             window_end=latest_issue_date,
         )
+        grouped_marker_rows = _fetch_grouped_marker_rows(
+            window_start=window_start,
+            window_end=latest_issue_date,
+        )
         heat_points = _attach_heat_intensity(_coerce_grouped_heat_rows(grouped_heat_rows))
+        marker_points = _coerce_grouped_marker_rows(grouped_marker_rows)
 
         max_citation_count = max((int(point["citation_count"]) for point in heat_points), default=0)
+        marker_frequency_breaks = _marker_frequency_thresholds(marker_points)
         metadata: ParkingLayerMetadata = {
             "window_start": window_start.isoformat(),
             "window_end": latest_issue_date.isoformat(),
@@ -623,7 +853,16 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
         )
         return {
             "type": "FeatureCollection",
-            "features": [_build_heat_anchor_feature(heat_points)],
+            "features": [
+                _build_heat_anchor_feature(
+                    heat_points,
+                    marker_points,
+                    window_start=window_start,
+                    window_end=latest_issue_date,
+                    max_citation_count=max_citation_count,
+                    marker_frequency_breaks=marker_frequency_breaks,
+                )
+            ],
             "metadata": metadata,
         }
     except requests.RequestException as exc:
