@@ -1,9 +1,12 @@
 from dotenv import find_dotenv, load_dotenv
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from loguru import logger
+from pathlib import Path
 from typing import Any, TypeAlias, TypedDict
+import gzip
 import math
 import os
+import orjson
 import requests
 import time
 
@@ -11,7 +14,9 @@ load_dotenv(find_dotenv(), override=False)
 
 PARKING_TICKETS_DATASET_URL = "https://data.lacity.org/resource/4f5p-udkv.json"
 PARKING_TICKETS_V3_QUERY_URL = "https://data.lacity.org/api/v3/views/4f5p-udkv/query.json"
-PARKING_TICKETS_WINDOW_DAYS = 30
+PARKING_TICKETS_DATASET_YEAR = 2025
+PARKING_TICKETS_WINDOW_START = date(PARKING_TICKETS_DATASET_YEAR, 1, 1)
+PARKING_TICKETS_WINDOW_END = date(PARKING_TICKETS_DATASET_YEAR, 12, 31)
 PARKING_TICKETS_SPOT_DECIMALS = 4
 PARKING_TICKETS_MAX_HEAT_POINTS = 50000
 PARKING_TICKETS_MAX_MARKER_POINTS = 8000
@@ -19,9 +24,12 @@ PARKING_TICKETS_HEAT_INTENSITY_FLOOR = 0.14
 PARKING_TICKETS_MARKER_ZOOM_MIN = 15
 PARKING_TICKETS_HEAT_ZOOM_MAX = 16
 PARKING_TICKETS_REQUEST_TIMEOUT_SECONDS = 45
-MIN_STABLE_DAILY_CITATIONS = 100
-LATEST_ACTIVITY_LOOKBACK_START = date(2024, 1, 1)
+PARKING_TICKETS_ARTIFACT_VERSION = 1
 MAX_REASONABLE_FINE_AMOUNT = 2500.0
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PARKING_TICKETS_LOCAL_ARTIFACT_PATH = (
+    PROJECT_ROOT / "assets" / "datasets" / f"parking_tickets_heatmap_{PARKING_TICKETS_DATASET_YEAR}.json.gz"
+)
 LA_CITY_COORDINATE_BOUNDS = {
     "min_lat": 33.70,
     "max_lat": 34.35,
@@ -50,10 +58,15 @@ class ParkingLayerMetadata(TypedDict):
 
     window_start: str
     window_end: str
+    dataset_year: int
     spot_decimals: int
     heat_point_count: int
+    marker_point_count: int
     max_citation_count: int
     heat_max_intensity: float
+    data_source: str
+    generated_at: str
+    artifact_version: int
 
 
 GeoJsonDict: TypeAlias = dict[str, Any]
@@ -70,6 +83,99 @@ class ParkingMarkerPoint(TypedDict):
     total_fine_amount: float
     average_fine_amount: float
     location: str
+
+
+def _generated_timestamp() -> str:
+    """
+    Return an RFC 3339-like UTC timestamp for payload metadata.
+
+    Returns:
+        Timestamp string such as `2026-03-25T20:15:42Z`.
+    """
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _is_valid_parking_heat_geojson(payload: Any) -> bool:
+    """
+    Check whether a decoded object looks like the expected parking layer payload.
+
+    Args:
+        payload: Decoded JSON object loaded from disk or built in memory.
+
+    Returns:
+        `True` when the payload is a GeoJSON `FeatureCollection` with a `features`
+        list, otherwise `False`.
+    """
+    return (
+        isinstance(payload, dict)
+        and payload.get("type") == "FeatureCollection"
+        and isinstance(payload.get("features"), list)
+    )
+
+
+def load_local_parking_tickets_heat_geojson() -> GeoJsonDict | None:
+    """
+    Load the precomputed local 2025 parking heatmap artifact when present.
+
+    Returns:
+        Parsed GeoJSON payload from `assets/datasets/parking_tickets_heatmap_2025.json.gz`,
+        or `None` when the artifact is missing or invalid.
+    """
+    artifact_path = PARKING_TICKETS_LOCAL_ARTIFACT_PATH
+    if not artifact_path.exists():
+        return None
+
+    try:
+        with gzip.open(artifact_path, "rb") as artifact_file:
+            payload = orjson.loads(artifact_file.read())
+    except OSError as exc:
+        logger.warning("Failed reading parking tickets artifact from {}: {}", artifact_path, exc)
+        return None
+    except orjson.JSONDecodeError as exc:
+        logger.warning("Failed decoding parking tickets artifact at {}: {}", artifact_path, exc)
+        return None
+
+    if not _is_valid_parking_heat_geojson(payload):
+        logger.warning("Parking tickets artifact at {} is not a valid GeoJSON FeatureCollection.", artifact_path)
+        return None
+
+    metadata = payload.get("metadata")
+    if isinstance(metadata, dict):
+        metadata["data_source"] = "local_artifact"
+        metadata.setdefault("artifact_version", PARKING_TICKETS_ARTIFACT_VERSION)
+
+    logger.info("Loaded parking tickets heatmap artifact from {}.", artifact_path)
+    return payload
+
+
+def write_local_parking_tickets_heat_geojson(
+    payload: GeoJsonDict,
+    output_path: Path | None = None,
+) -> Path:
+    """
+    Persist a derived parking heatmap payload to the local datasets folder.
+
+    Args:
+        payload: GeoJSON `FeatureCollection` to save as a gzipped JSON artifact.
+        output_path: Optional artifact destination. Defaults to the canonical
+            `assets/datasets/parking_tickets_heatmap_2025.json.gz` path.
+
+    Returns:
+        Absolute path to the saved artifact file.
+
+    Raises:
+        ValueError: If `payload` is not a valid parking heatmap `FeatureCollection`.
+    """
+    if not _is_valid_parking_heat_geojson(payload):
+        raise ValueError("Parking tickets artifact payload must be a GeoJSON FeatureCollection.")
+
+    artifact_path = (output_path or PARKING_TICKETS_LOCAL_ARTIFACT_PATH).resolve()
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(artifact_path, "wb") as artifact_file:
+        artifact_file.write(orjson.dumps(payload))
+
+    logger.info("Wrote parking tickets heatmap artifact to {}.", artifact_path)
+    return artifact_path
 
 
 def _pick_quantile_threshold(values: list[int], fraction: float) -> int:
@@ -334,77 +440,6 @@ def _request_parking_ticket_rows(
         _MISSING_SOCRATA_TOKEN_WARNING_EMITTED = True
 
     return _request_socrata_rows(legacy_params)
-
-
-def _find_latest_stable_issue_date(today: date | None = None) -> date | None:
-    """
-    Return the most recent citation date with a meaningful row count.
-
-    The feed contains occasional future-dated or clearly anomalous one-off rows.
-    This helper looks for the latest date whose grouped daily count exceeds a
-    minimum threshold, then falls back to the raw max date if needed.
-
-    Args:
-        today: Optional override for the current date, primarily for testing.
-
-    Returns:
-        Most recent plausible issue date, or `None` when the dataset yields no
-        usable dates after filtering.
-    """
-    current_day = today or date.today()
-    valid_where = _build_valid_coordinate_where_clause()
-    bounded_where = (
-        f"{valid_where} AND issue_date >= '{_format_socrata_day(LATEST_ACTIVITY_LOOKBACK_START)}' "
-        f"AND issue_date < '{_format_socrata_day(current_day + timedelta(days=1))}'"
-    )
-
-    latest_grouped_rows = _request_parking_ticket_rows(
-        v3_query=(
-            "SELECT `issue_date`, count(*) AS `citation_count` "
-            f"WHERE {bounded_where} "
-            "GROUP BY `issue_date` "
-            "ORDER BY `issue_date` DESC"
-        ),
-        page_number=1,
-        page_size=1200,
-        legacy_params={
-            "$select": "issue_date, count(*) AS citation_count",
-            "$where": bounded_where,
-            "$group": "issue_date",
-            "$order": "issue_date DESC",
-            "$limit": 1200,
-        },
-    )
-
-    for row in latest_grouped_rows:
-        issue_date = _parse_socrata_date(row.get("issue_date"))
-        if issue_date is None:
-            continue
-
-        try:
-            citation_count = int(row.get("citation_count", 0))
-        except (TypeError, ValueError):
-            citation_count = 0
-
-        if citation_count >= MIN_STABLE_DAILY_CITATIONS:
-            return issue_date
-
-    fallback_rows = _request_parking_ticket_rows(
-        v3_query=(
-            "SELECT max(`issue_date`) AS `max_issue_date` "
-            f"WHERE {bounded_where}"
-        ),
-        page_number=1,
-        page_size=1,
-        legacy_params={
-            "$select": "max(issue_date) AS max_issue_date",
-            "$where": bounded_where,
-        },
-    )
-    if not fallback_rows:
-        return None
-
-    return _parse_socrata_date(fallback_rows[0].get("max_issue_date"))
 
 
 def _fetch_grouped_parking_ticket_rows(window_start: date, window_end: date) -> list[JsonDict]:
@@ -807,29 +842,25 @@ def _build_heat_anchor_feature(
     }
 
 
-def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
+def _build_live_parking_tickets_heat_geojson() -> GeoJsonDict:
     """
-    Build the latest 30-day parking-ticket heatmap payload as GeoJSON.
+    Build the full-year 2025 parking-ticket heatmap payload from Socrata.
 
     Returns:
         GeoJSON `FeatureCollection` containing a single invisible anchor feature
         whose properties hold the weighted heat points and zoomed-in marker
-        hotspots, plus metadata describing the current citation window.
+        hotspots, plus metadata describing the fixed 2025 citation window.
     """
     try:
-        latest_issue_date = _find_latest_stable_issue_date()
-        if latest_issue_date is None:
-            logger.warning("Parking tickets layer could not find a stable latest issue date.")
-            return {"type": "FeatureCollection", "features": []}
-
-        window_start = latest_issue_date - timedelta(days=PARKING_TICKETS_WINDOW_DAYS - 1)
+        window_start = PARKING_TICKETS_WINDOW_START
+        window_end = PARKING_TICKETS_WINDOW_END
         grouped_heat_rows = _fetch_grouped_parking_ticket_rows(
             window_start=window_start,
-            window_end=latest_issue_date,
+            window_end=window_end,
         )
         grouped_marker_rows = _fetch_grouped_marker_rows(
             window_start=window_start,
-            window_end=latest_issue_date,
+            window_end=window_end,
         )
         heat_points = _attach_heat_intensity(_coerce_grouped_heat_rows(grouped_heat_rows))
         marker_points = _coerce_grouped_marker_rows(grouped_marker_rows)
@@ -838,18 +869,22 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
         marker_frequency_breaks = _marker_frequency_thresholds(marker_points)
         metadata: ParkingLayerMetadata = {
             "window_start": window_start.isoformat(),
-            "window_end": latest_issue_date.isoformat(),
+            "window_end": window_end.isoformat(),
+            "dataset_year": PARKING_TICKETS_DATASET_YEAR,
             "spot_decimals": PARKING_TICKETS_SPOT_DECIMALS,
             "heat_point_count": len(heat_points),
+            "marker_point_count": len(marker_points),
             "max_citation_count": max_citation_count,
             "heat_max_intensity": 1.0,
+            "data_source": "socrata_live",
+            "generated_at": _generated_timestamp(),
+            "artifact_version": PARKING_TICKETS_ARTIFACT_VERSION,
         }
 
         logger.info(
-            "Built parking tickets heatmap with {} weighted hotspots for {} through {}.",
+            "Built parking tickets heatmap with {} weighted hotspots for calendar year {}.",
             len(heat_points),
-            window_start,
-            latest_issue_date,
+            PARKING_TICKETS_DATASET_YEAR,
         )
         return {
             "type": "FeatureCollection",
@@ -858,7 +893,7 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
                     heat_points,
                     marker_points,
                     window_start=window_start,
-                    window_end=latest_issue_date,
+                    window_end=window_end,
                     max_citation_count=max_citation_count,
                     marker_frequency_breaks=marker_frequency_breaks,
                 )
@@ -871,3 +906,53 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
         logger.exception("Failed building parking tickets heatmap: {}", exc)
 
     return {"type": "FeatureCollection", "features": []}
+
+
+def build_parking_tickets_heat_geojson() -> GeoJsonDict:
+    """
+    Return the preferred parking heatmap payload for the fixed 2025 dataset.
+
+    The app should use the precomputed local artifact when present because that
+    avoids re-querying and regrouping the same yearly dataset on every worker.
+    When the artifact is missing, the function falls back to rebuilding the
+    payload live from Socrata so local development still works.
+
+    Returns:
+        GeoJSON `FeatureCollection` loaded from the local artifact or, if needed,
+        built live from Socrata.
+    """
+    local_payload = load_local_parking_tickets_heat_geojson()
+    if local_payload is not None:
+        return local_payload
+
+    return _build_live_parking_tickets_heat_geojson()
+
+
+def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
+    """
+    Return the preferred parking heatmap payload.
+
+    Returns:
+        GeoJSON `FeatureCollection` for the fixed 2025 dataset.
+    """
+    return build_parking_tickets_heat_geojson()
+
+
+def refresh_local_parking_tickets_heat_geojson(output_path: Path | None = None) -> Path:
+    """
+    Rebuild the parking heatmap payload from Socrata and write it to disk.
+
+    Args:
+        output_path: Optional artifact destination. Defaults to the canonical
+            2025 parking heatmap artifact path.
+
+    Returns:
+        Absolute path to the refreshed local artifact.
+
+    Raises:
+        RuntimeError: If the live rebuild produced an empty payload.
+    """
+    payload = _build_live_parking_tickets_heat_geojson()
+    if not payload.get("features"):
+        raise RuntimeError("Live parking tickets heatmap build returned no features.")
+    return write_local_parking_tickets_heat_geojson(payload, output_path=output_path)

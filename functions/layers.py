@@ -3,7 +3,7 @@ from dash import ClientsideFunction, clientside_callback, no_update
 from dash.dependencies import Input, Output, State
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
-from functions.parking_tickets import build_latest_parking_tickets_heat_geojson
+from functions.parking_tickets import build_parking_tickets_heat_geojson
 from loguru import logger
 from typing import Any, Callable, ClassVar, Optional, Sequence, TypedDict, TypeAlias
 import dash_leaflet as dl
@@ -119,9 +119,9 @@ class LayersClass:
             valid_bounds=(-125.0, -113.0, 32.0, 35.5),
         ),
         'parking_tickets_density': LayerConfig(
-            name='Parking Tickets Heatmap (Latest 30d)',
+            name='Parking Tickets Heatmap (2025)',
             dataset='parking_tickets_density',
-            loader=build_latest_parking_tickets_heat_geojson,
+            loader=build_parking_tickets_heat_geojson,
             point_to_layer='drawParkingHeatLayer',
             cluster=False,
             zoom_to_bounds_on_click=False,
