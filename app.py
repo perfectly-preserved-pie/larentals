@@ -18,8 +18,8 @@ external_stylesheets = [
   dbc.icons.FONT_AWESOME
 ]
 external_scripts = [
-  'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js', # Turf.js for convex hulls
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11' # SweetAlert2 for popups
+  'https://cdn.jsdelivr.net/npm/@turf/turf@7.3.0/turf.min.js', # Turf.js for convex hulls
+  'https://cdn.jsdelivr.net/npm/sweetalert2@11.26.24/dist/sweetalert2.all.min.js' # SweetAlert2 for popups
 ]
 
 register_filter_exclusion_devtool()
