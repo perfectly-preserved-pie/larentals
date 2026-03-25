@@ -198,7 +198,7 @@ def update_lease_zip_boundary(
   if not geocoded:
     return (
       {"zip_codes": [], "features": [], "error": "place_not_found"},
-      f"Could not geocode location: '{sanitized_location}'.",
+      f"Could not find a California location matching '{sanitized_location}'.",
     )
 
   lat = geocoded["lat"]
