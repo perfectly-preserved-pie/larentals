@@ -1,9 +1,13 @@
 (function() {
     "use strict";
 
-    const popupUtils = window.additionalLayerPopups && window.additionalLayerPopups.utils;
+    const popupApi = window.additionalLayerPopups;
+    const popupRuntime = popupApi && popupApi.runtime;
+    const popupUtils = popupApi && popupApi.utils;
+    const registerPopupBuilder = popupRuntime && popupRuntime.registerPopupBuilder;
+    const toDisplayTitleCase = popupUtils.toDisplayTitleCase;
 
-    if (!popupUtils) {
+    if (!popupUtils || typeof registerPopupBuilder !== "function") {
         console.error("Additional layer popup utils did not load before the parking tickets popup builder.");
         return;
     }
@@ -103,7 +107,7 @@
     function buildParkingTicketsTitle(properties) {
         const location = String(properties.location || "").trim();
         if (location) {
-            return escapeHtml(location);
+            return toDisplayTitleCase(escapeHtml(location));
         }
 
         const citationCount = Number(properties.citation_count);
@@ -127,9 +131,5 @@
         });
     }
 
-    window.additionalLayerPopups = Object.assign({}, window.additionalLayerPopups, {
-        builders: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.builders, {
-            buildParkingTicketsPopupContent: buildParkingTicketsPopupContent,
-        }),
-    });
+    registerPopupBuilder("buildParkingTicketsPopupContent", buildParkingTicketsPopupContent);
 })();
