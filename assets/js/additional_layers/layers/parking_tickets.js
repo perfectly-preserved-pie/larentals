@@ -40,6 +40,17 @@
      */
 
     /**
+     * @typedef {{
+     *   showHeat: boolean,
+     *   showMarkers: boolean,
+     * }} ParkingLegendOptions
+     */
+
+    /**
+     * @typedef {[string, string, string | null]} ParkingLegendMarkerEntry
+     */
+
+    /**
      * Create the invisible anchor marker used to mount a true Leaflet heat layer.
      *
      * Dash Leaflet renders one Leaflet layer per GeoJSON feature. For the parking
@@ -146,6 +157,196 @@
             },
         };
         const markerRenderer = L.canvas({ padding: 0.5 });
+
+        /**
+         * Format citation counts for compact, readable legend labels.
+         *
+         * @param {unknown} value Candidate citation count.
+         * @returns {string} Localized citation-count label.
+         */
+        function formatCitationCount(value) {
+            const numericValue = Number(value);
+            if (!Number.isFinite(numericValue)) {
+                return "0";
+            }
+
+            return numericValue.toLocaleString("en-US");
+        }
+
+        /**
+         * Lazily create the Leaflet legend control owned by this overlay instance.
+         *
+         * @param {L.Map} map Active Leaflet map.
+         * @returns {L.Control} Legend control for the parking citations layer.
+         */
+        function ensureLegendControl(map) {
+            void map;
+            if (anchorMarker._parkingTicketsLegendControl) {
+                return anchorMarker._parkingTicketsLegendControl;
+            }
+
+            anchorMarker._parkingTicketsLegendControl = L.control({ position: "topright" });
+            anchorMarker._parkingTicketsLegendControl.onAdd = function() {
+                const container = L.DomUtil.create(
+                    "div",
+                    "leaflet-control parking-tickets-legend"
+                );
+                container.innerHTML = "";
+                container.style.minWidth = "208px";
+                container.style.maxWidth = "240px";
+                container.style.padding = "12px 14px";
+                container.style.border = "1px solid rgba(15, 27, 38, 0.18)";
+                container.style.borderRadius = "14px";
+                container.style.background = "rgba(255, 255, 255, 0.94)";
+                container.style.boxShadow = "0 10px 24px rgba(15, 27, 38, 0.18)";
+                container.style.color = "#0f1b26";
+                container.style.backdropFilter = "blur(8px)";
+                container.style.marginTop = "10px";
+                container.style.marginRight = "10px";
+                container.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif";
+                L.DomEvent.disableClickPropagation(container);
+                L.DomEvent.disableScrollPropagation(container);
+                anchorMarker._parkingTicketsLegendContainer = container;
+                return container;
+            };
+
+            return anchorMarker._parkingTicketsLegendControl;
+        }
+
+        /**
+         * Rebuild the legend contents to match the current zoom presentation.
+         *
+         * @param {ParkingLegendOptions | null | undefined} options Current legend visibility state.
+         * @returns {void}
+         */
+        function renderLegend(options) {
+            if (!anchorMarker._parkingTicketsLegendContainer) {
+                return;
+            }
+
+            const showHeat = Boolean(options && options.showHeat);
+            const showMarkers = Boolean(options && options.showMarkers);
+            const q50 = markerFrequencyBreaks[0] || 0;
+            const q75 = markerFrequencyBreaks[1] || 0;
+            const q90 = markerFrequencyBreaks[2] || 0;
+            const q975 = markerFrequencyBreaks[3] || 0;
+            const windowLabel = [
+                String(properties.window_start || "").trim(),
+                String(properties.window_end || "").trim(),
+            ]
+                .filter(Boolean)
+                .join(" to ");
+            /** @type {string[]} */
+            const legendSections = [];
+
+            if (showHeat) {
+                legendSections.push(
+                    [
+                        '<div class="parking-tickets-legend__section" style="margin-top: 10px;">',
+                        '<div class="parking-tickets-legend__subtitle" style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 600;">Heat intensity</div>',
+                        '<div class="parking-tickets-legend__gradient" aria-hidden="true" style="height: 10px; border-radius: 999px; background: linear-gradient(90deg, #2748ff 0%, #00b6ff 22%, #19d889 46%, #ffe34d 68%, #ff9730 84%, #ff2f1f 100%);"></div>',
+                        '<div class="parking-tickets-legend__range" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; color: #556270;">',
+                        "<span>Lower</span>",
+                        "<span>Higher</span>",
+                        "</div>",
+                        "</div>",
+                    ].join("")
+                );
+            }
+
+            if (showMarkers) {
+                /** @type {ParkingLegendMarkerEntry[]} */
+                const markerLegendEntries = [
+                    ['#3da1ff', 'Typical', q50 > 0 ? "< " + formatCitationCount(q50) : null],
+                    ['#2ecf7f', 'Busy', q50 > 0 && q75 > 0 ? formatCitationCount(q50) + "\u2013" + formatCitationCount(q75 - 1) : null],
+                    ['#ffd43b', 'Very busy', q75 > 0 && q90 > 0 ? formatCitationCount(q75) + "\u2013" + formatCitationCount(q90 - 1) : null],
+                    ['#ff8f1f', 'Heavy', q90 > 0 && q975 > 0 ? formatCitationCount(q90) + "\u2013" + formatCitationCount(q975 - 1) : null],
+                    ['#ff3123', 'Extreme', q975 > 0 ? formatCitationCount(q975) + "+" : null],
+                ];
+
+                legendSections.push(
+                    [
+                        '<div class="parking-tickets-legend__section" style="margin-top: 10px;">',
+                        '<div class="parking-tickets-legend__subtitle" style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 600;">Street-level hotspots</div>',
+                        '<div class="parking-tickets-legend__marker-list" style="display: grid; gap: 5px;">',
+                        markerLegendEntries
+                            .filter(function(item) {
+                                return item[2];
+                            })
+                            .map(function(item) {
+                                return [
+                                    '<div class="parking-tickets-legend__marker-row" style="display: flex; align-items: center; gap: 8px; font-size: 0.74rem; line-height: 1.25;">',
+                                    '<span class="parking-tickets-legend__marker-swatch" style="display: inline-block; width: 10px; height: 10px; flex: 0 0 10px; border: 1px solid rgba(15, 27, 38, 0.35); border-radius: 999px; background:',
+                                    item[0],
+                                    ';"></span>',
+                                    '<span class="parking-tickets-legend__label" style="color: #1f2d3a;">',
+                                    item[1],
+                                    " (",
+                                    item[2],
+                                    ")</span>",
+                                    "</div>",
+                                ].join("");
+                            })
+                            .join(""),
+                        "</div>",
+                        "</div>",
+                    ].join("")
+                );
+            }
+
+            anchorMarker._parkingTicketsLegendContainer.innerHTML = [
+                '<div class="parking-tickets-legend__title" style="font-size: 0.95rem; font-weight: 700; line-height: 1.2;">Parking citations</div>',
+                windowLabel
+                    ? '<div class="parking-tickets-legend__caption" style="margin-top: 2px; font-size: 0.72rem; color: #556270;">' + windowLabel + "</div>"
+                    : "",
+                legendSections.join(""),
+                '<div class="parking-tickets-legend__hint" style="margin-top: 10px; font-size: 0.7rem; color: #556270;">Zoom in for hotspot circles.</div>',
+            ].join("");
+        }
+
+        /**
+         * Ensure the legend control is mounted and refreshed for the active zoom state.
+         *
+         * @param {L.Map} map Active Leaflet map.
+         * @param {ParkingLegendOptions} options Current legend visibility state.
+         * @returns {void}
+         */
+        function syncLegend(map, options) {
+            const legendControl = ensureLegendControl(map);
+            if (!map.hasLayer || typeof map.hasLayer !== "function") {
+                return;
+            }
+
+            if (!map._controlCorners || !map._controlContainer) {
+                return;
+            }
+
+            if (!map._parkingTicketsLegendMounted) {
+                legendControl.addTo(map);
+                map._parkingTicketsLegendMounted = true;
+            }
+
+            renderLegend(options);
+        }
+
+        /**
+         * Remove the parking legend when the overlay is unmounted.
+         *
+         * @param {L.Map | null | undefined} map Active Leaflet map, when still attached.
+         * @returns {void}
+         */
+        function removeLegend(map) {
+            if (
+                map &&
+                anchorMarker._parkingTicketsLegendControl &&
+                map._parkingTicketsLegendMounted
+            ) {
+                anchorMarker._parkingTicketsLegendControl.remove();
+                map._parkingTicketsLegendMounted = false;
+            }
+
+            anchorMarker._parkingTicketsLegendContainer = null;
+        }
 
         function ensureParkingTicketsMarkerPane(map) {
             if (!map.getPane("parkingTicketsMarkerPane")) {
@@ -258,6 +459,7 @@
             const zoom = map.getZoom();
             const showMarkers = zoom >= markerZoomMin;
             const showHeat = zoom < heatZoomMax;
+            syncLegend(map, { showHeat: showHeat, showMarkers: showMarkers });
 
             if (showMarkers && markerPoints.length) {
                 refreshMarkerLayer(map);
@@ -338,8 +540,11 @@
             }
             if (map) {
                 hideMarkerLayer(map);
+                removeLegend(map);
             }
             anchorMarker._parkingTicketsMarkerLayer = null;
+            anchorMarker._parkingTicketsLegendControl = null;
+            anchorMarker._parkingTicketsLegendContainer = null;
             anchorMarker._parkingTicketsSync = null;
         });
 
