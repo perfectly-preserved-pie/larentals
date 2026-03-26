@@ -49,7 +49,7 @@ Preferred local derived artifact:
 - Built from the fixed calendar-year window `2025-01-01` through `2025-12-31`
 - Stores the top `50,000` grouped ticketed spots used for the heat surface
 - Also stores the top `8,000` grouped hotspot markers used for close-up popups
-- Refresh locally with `uv run python scripts/build_parking_tickets_heatmap.py`
+- Refresh locally with `uv run build-parking-tickets-heatmap`
 - Preferred API: Socrata v3 query endpoint for view `4f5p-udkv`
 - Set `SOCRATA_APP_TOKEN` in `.env` or the environment to enable faster offline v3 requests
 - Filters out zero/out-of-bounds coordinates before grouping

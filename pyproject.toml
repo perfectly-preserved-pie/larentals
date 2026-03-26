@@ -1,9 +1,9 @@
 [project]
 name        = "WhereToLive.LA"
-version     = "1.0.0"
-description = "An interactive map of available rentals in Los Angeles County. Updated weekly."             
+version     = "1.2.0"
+description = "An interactive map of available rentals and for-sale properties in Los Angeles County. Updated weekly."             
 readme      = "README.md"
-license     = {  } # 
+license     = { text = "All rights reserved" }
 requires-python = ">=3.13,<3.14"
 
 dependencies = [
@@ -41,3 +41,23 @@ dependencies = [
 dev = [
   "pytest~=9.0.2",
 ]
+
+[project.scripts]
+wheretolive-la = "app:main"
+buy-dataframe = "pipelines.buy_dataframe:main"
+lease-dataframe = "pipelines.lease_dataframe:main"
+build-breakfast-burritos-geojson = "scripts.build_breakfast_burritos_geojson:main"
+build-parking-tickets-heatmap = "scripts.build_parking_tickets_heatmap:main"
+build-supermarkets-geojson = "scripts.build_supermarkets_geojson:main"
+normalize-lease-terms = "scripts.normalize_lease_terms:main"
+run-broadband-merge = "scripts.run_broadband_merge:main"
+
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["app"]
+
+[tool.setuptools.packages.find]
+include = ["api", "functions", "pipelines", "scripts"]

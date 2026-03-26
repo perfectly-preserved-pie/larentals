@@ -31,7 +31,7 @@ SAMPLE_N = None
 USE_NOMINATIM = False
 LOGFILE = "~/larentals/buy_dataframe.log"
 
-if __name__ == "__main__":
+def main() -> None:
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample",  type=int, default=None,
     help="If set, run on a sample and exit before write")
@@ -413,3 +413,7 @@ if __name__ == "__main__":
 
     # Reclaim space in ImageKit
     #reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
+
+
+if __name__ == "__main__":
+  main()

@@ -1108,7 +1108,7 @@ def build_parking_tickets_heat_geojson() -> GeoJsonDict:
 
     logger.warning(
         "Parking tickets heatmap artifact is missing at {}. "
-        "Generate it offline with `uv run python scripts/build_parking_tickets_heatmap.py`.",
+        "Generate it offline with `uv run build-parking-tickets-heatmap`.",
         PARKING_TICKETS_LOCAL_ARTIFACT_PATH,
     )
     return {"type": "FeatureCollection", "features": []}
