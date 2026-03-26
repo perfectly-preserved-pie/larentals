@@ -1,5 +1,6 @@
 from .components import BuyComponents
 from dash import dcc, callback, clientside_callback, ClientsideFunction
+from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
@@ -9,7 +10,7 @@ from functions.zip_geocoding_utils import (
   load_zip_polygons,
 )
 from functions.sql_helpers import get_earliest_listed_date
-from dash.dependencies import Input, Output, State
+from dash.dependencies import ALL, Input, Output, State
 from loguru import logger
 import bleach
 import dash
@@ -44,9 +45,12 @@ ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
 # Load the HUD ZIP-to-city crosswalk once at module load time
 ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
 
-def layout() -> dbc.Container:
+def layout(**_: object) -> dbc.Container:
   """
   Build the buy page layout on demand.
+
+  Dash Pages may pass query-string parameters into page layout
+  callables. This page does not use them, so extra kwargs are ignored.
 
   Returns:
     The buy page layout container.
@@ -104,6 +108,8 @@ clientside_callback(
   State("buy-map-spinner", "style"),
 )
 
+register_responsive_layers_control_callback("buy")
+
 # Server-side callbacks
 @callback(
   Output("buy-geojson-store", "data"),
@@ -117,8 +123,27 @@ def load_buy_geojson(_: int) -> dict:
   Returns:
     A GeoJSON dict suitable for dl.GeoJSON(data=...).
   """
-  components = BuyComponents()
-  return components.return_geojson()
+  return BuyComponents.get_cached_geojson_payload()
+
+@callback(
+  Output({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "data"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "id"),
+  State({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "data"),
+)
+def load_buy_optional_layers(
+  selected_overlays: list[str] | None,
+  layer_ids: list[dict[str, str]] | None,
+  current_data: list[dict] | None,
+) -> list[dict]:
+  """
+  Lazy-load optional map layers only after the user enables them.
+  """
+  return LayersClass.resolve_lazy_layer_data(
+    selected_overlays=selected_overlays,
+    layer_ids=layer_ids,
+    current_data=current_data,
+  )
 
 @callback(
   Output("buy-zip-boundary-store", "data"),
@@ -192,7 +217,7 @@ def update_buy_zip_boundary(
   if not geocoded:
     return (
       {"zip_codes": [], "features": [], "error": "place_not_found"},
-      f"Could not geocode location: '{sanitized_location}'.",
+      f"Could not find a California location matching '{sanitized_location}'.",
     )
 
   lat = geocoded["lat"]

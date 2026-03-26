@@ -7,7 +7,7 @@ version: 2
 updates:
   - package-ecosystem: "uv" # See https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#package-ecosystem-
     directory: "/" # Location of package manifests
-    target-branch: "dev"
+    target-branch: "master"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 25

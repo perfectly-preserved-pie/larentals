@@ -2,7 +2,9 @@ from dash import html, dcc
 from dash_extensions.javascript import Namespace
 from dash_iconify import DashIconify
 from datetime import date
+from functools import lru_cache
 from functions.convex_hull import generate_convex_hulls
+from functions.layers import LayersClass
 from functions.sql_helpers import get_latest_date_processed
 from html import unescape
 from typing import Optional, Sequence, List
@@ -13,6 +15,7 @@ import geopandas as gpd
 import json
 import logging
 import numpy as np
+import os
 import pandas as pd
 import re
 import sqlite3
@@ -20,6 +23,44 @@ import sqlite3
 DB_PATH = "assets/datasets/larentals.db"
 DEFAULT_SPEED_MAX = 1.0
 logger = logging.getLogger(__name__)
+
+
+def _db_cache_token(db_path: str = DB_PATH) -> int:
+    """Return a cheap cache-busting token derived from the backing SQLite file."""
+    try:
+        return os.stat(db_path).st_mtime_ns
+    except OSError:
+        return 0
+
+
+@lru_cache(maxsize=8)
+def _build_cached_geojson_payload(
+    table_name: str,
+    page_type: str,
+    select_columns: tuple[str, ...],
+    db_mtime_ns: int,
+) -> dict:
+    """
+    Build and cache a GeoJSON payload without constructing any Dash UI components.
+
+    The cache key includes the database mtime so weekly data refreshes invalidate
+    stale payloads automatically inside each worker process.
+    """
+    del db_mtime_ns  # Used only as part of the cache key.
+
+    loader = BaseClass(
+        table_name=table_name,
+        page_type=page_type,
+        select_columns=select_columns,
+        include_last_updated=False,
+    )
+
+    if table_name == "lease" and "laundry" in loader.df.columns:
+        loader.df["laundry"] = loader.df["laundry"].apply(
+            LeaseComponents.categorize_laundry_features
+        )
+
+    return loader.return_geojson()
 
 def _require_safe_identifier(name: str, *, field_name: str) -> str:
     """
@@ -42,12 +83,15 @@ def _require_safe_identifier(name: str, *, field_name: str) -> str:
 
 # Create a class to hold all common components for both Lease and Buy pages
 class BaseClass:
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = ()
+
     def __init__(
         self,
         table_name: str,
         page_type: str,
         *,
         select_columns: Optional[Sequence[str]] = None,
+        include_last_updated: bool = True,
     ) -> None:
         """
         Load a table/view from SQLite and prepare the DataFrame.
@@ -57,6 +101,7 @@ class BaseClass:
             page_type: Page context ("lease" or "buy").
             select_columns: Optional list/tuple of columns to select instead of SELECT *.
                 Use this to shrink payload for faster startup and smaller GeoJSON.
+            include_last_updated: Whether to query the table's processed timestamp.
         """
         safe_table = _require_safe_identifier(table_name, field_name="table_name")
 
@@ -123,8 +168,12 @@ class BaseClass:
         else:
             self.earliest_date = date.today()
 
-        # 5) Compute last_updated
-        self.last_updated = get_latest_date_processed(DB_PATH, table_name=safe_table)
+        # 5) Compute last_updated only when the UI needs it.
+        self.last_updated = (
+            get_latest_date_processed(DB_PATH, table_name=safe_table)
+            if include_last_updated
+            else None
+        )
 
         # 6) store page_type for return_geojson
         self.page_type = page_type
@@ -150,6 +199,15 @@ class BaseClass:
         # Turn None/NaN laundry_category into "Unknown"
         if 'laundry_category' in self.df.columns:
             self.df['laundry_category'] = self.df['laundry_category'].fillna('Unknown').replace({None: 'Unknown', 'None': 'Unknown'})
+
+    def create_optional_layers_control(self) -> Optional[dl.LayersControl]:
+        if not self.OPTIONAL_LAYER_KEYS:
+            return None
+
+        return LayersClass.create_layers_control(
+            page_key=self.page_type,
+            layer_keys=self.OPTIONAL_LAYER_KEYS,
+        )
 
     def return_geojson(self) -> dict:
         """
@@ -377,6 +435,14 @@ class BaseClass:
 
 # Create a class to hold all of the Dash components for the Lease page
 class LeaseComponents(BaseClass):
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = (
+        "parking_tickets_density",
+        "breakfast_burritos",
+        "farmers_markets",
+        "supermarkets_grocery",
+        "oil_well",
+    )
+
     # Class Variables
     subtype_meaning = {
         'Apartment (Attached)': 'Apartment (Attached)',
@@ -440,9 +506,40 @@ class LeaseComponents(BaseClass):
         "mls_photo",
         "lot_size",
         "senior_community",
-        "affected_by_palisades_fire",
-        "affected_by_eaton_fire",
     )
+
+    LEASE_MAP_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "parking_spaces",
+        "laundry_category",
+        "pet_policy",
+        "terms",
+        "furnished",
+        "security_deposit",
+        "pet_deposit",
+        "key_deposit",
+        "other_deposit",
+        "listed_date",
+    )
+
+    @classmethod
+    def get_cached_geojson_payload(cls) -> dict:
+        """Return the cached lease GeoJSON payload for the current database version."""
+        return _build_cached_geojson_payload(
+            table_name="lease",
+            page_type="lease",
+            select_columns=cls.LEASE_MAP_COLUMNS,
+            db_mtime_ns=_db_cache_token(),
+        )
 
     def __init__(self) -> None:
         # Call the parent constructor to load the lease table
@@ -483,7 +580,8 @@ class LeaseComponents(BaseClass):
         # Dependent components last
         self.user_options_card = self.create_user_options_card()
     
-    def categorize_laundry_features(self, feature):
+    @staticmethod
+    def categorize_laundry_features(feature):
         if pd.isna(feature) or feature in ['Unknown', '']:
             return 'Unknown'
         if any(keyword in feature for keyword in ['In Closet', 'In Kitchen', 'In Garage', 'Inside', 'Individual Room']):
@@ -1179,33 +1277,32 @@ class LeaseComponents(BaseClass):
         Returns:
             dl.Map: A Dash Leaflet Map component.
         """
-        # Create additional layers
-        #oil_well_layer = self.create_oil_well_geojson_layer()
-        #crime_layer = self.create_crime_layer()
-        #farmers_market_layer = LayersClass.create_farmers_markets_layer()
-
         ns = Namespace("dash_props", "module")
+        layers_control = self.create_optional_layers_control()
+        map_children = [
+            dl.TileLayer(
+                detectRetina=False,
+            ),
+            dl.GeoJSON(
+                id='lease_geojson',
+                data=None,
+                cluster=True,
+                clusterToLayer=generate_convex_hulls,
+                onEachFeature=ns("on_each_feature"),
+                zoomToBoundsOnClick=True,
+                superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                    'radius': 160,
+                    'minZoom': 3,
+                },
+            ),
+            dl.FullScreenControl(),
+        ]
+        if layers_control is not None:
+            map_children.append(layers_control)
 
         # Create the main map with the lease layer
         map = dl.Map(
-            [
-                dl.TileLayer(
-                    detectRetina=False,
-                ),
-                dl.GeoJSON(
-                    id='lease_geojson',
-                    data=None,
-                    cluster=True,
-                    clusterToLayer=generate_convex_hulls,
-                    onEachFeature=ns("on_each_feature"),
-                    zoomToBoundsOnClick=True,
-                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
-                        'radius': 160,
-                        'minZoom': 3,
-                    },
-                ),
-                dl.FullScreenControl()
-            ],
+            map_children,
             id='map',
             zoom=9,
             minZoom=9,
@@ -1217,18 +1314,6 @@ class LeaseComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '100vh', 'margin': "0", "display": "block"}
         )
-
-        # Add a layer control for the additional layers
-        layers_control = dl.LayersControl(
-            [ # Create a list of layers to add to the control
-                #dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-                #dl.Overlay(crime_layer, name="Crime", checked=False),
-                #dl.Overlay(farmers_market_layer, name="Farmers Markets", checked=False),
-            ],
-            collapsed=True,
-            position='topleft'
-        )
-        map.children.append(layers_control)
 
         return map
         
@@ -1328,6 +1413,14 @@ class LeaseComponents(BaseClass):
 
 # Create a class to hold all the components for the buy page
 class BuyComponents(BaseClass):
+    OPTIONAL_LAYER_KEYS: tuple[str, ...] = (
+        "parking_tickets_density",
+        "breakfast_burritos",
+        "farmers_markets",
+        "supermarkets_grocery",
+        "oil_well",
+    )
+
     BUY_COLUMNS: tuple[str, ...] = (
         # identity + geometry
         "mls_number",
@@ -1355,11 +1448,35 @@ class BuyComponents(BaseClass):
         "listed_date",
         "listing_url",
         "mls_photo",
-
-        # environmental flags
-        "affected_by_palisades_fire",
-        "affected_by_eaton_fire",
     )
+
+    BUY_MAP_COLUMNS: tuple[str, ...] = (
+        "mls_number",
+        "latitude",
+        "longitude",
+        "subtype",
+        "list_price",
+        "bedrooms",
+        "total_bathrooms",
+        "sqft",
+        "ppsqft",
+        "year_built",
+        "lot_size",
+        "garage_spaces",
+        "hoa_fee",
+        "hoa_fee_frequency",
+        "listed_date",
+    )
+
+    @classmethod
+    def get_cached_geojson_payload(cls) -> dict:
+        """Return the cached buy GeoJSON payload for the current database version."""
+        return _build_cached_geojson_payload(
+            table_name="buy",
+            page_type="buy",
+            select_columns=cls.BUY_MAP_COLUMNS,
+            db_mtime_ns=_db_cache_token(),
+        )
 
     def __init__(self):
         # Call the parent constructor to load the buy table
@@ -1800,32 +1917,32 @@ class BuyComponents(BaseClass):
         Returns:
             dl.Map: A Dash Leaflet Map component.
         """
-        # Create additional layers
-        #oil_well_layer = self.create_oil_well_geojson_layer()
-        #crime_layer = self.create_crime_layer()
-
         ns = Namespace("dash_props", "module")
+        layers_control = self.create_optional_layers_control()
+        map_children = [
+            dl.TileLayer(
+                detectRetina=False,
+            ),
+            dl.GeoJSON(
+                id='buy_geojson',
+                data=None,
+                cluster=True,
+                clusterToLayer=generate_convex_hulls,
+                onEachFeature=ns("on_each_feature"),
+                zoomToBoundsOnClick=True,
+                superClusterOptions={ # https://github.com/mapbox/supercluster#options
+                    'radius': 160,
+                    'minZoom': 3,
+                },
+            ),
+            dl.FullScreenControl(),
+        ]
+        if layers_control is not None:
+            map_children.append(layers_control)
 
         # Create the main map with the lease layer
         map = dl.Map(
-            [
-                dl.TileLayer(
-                    detectRetina=False,
-                ),
-                dl.GeoJSON(
-                    id='buy_geojson',
-                    data=None,
-                    cluster=True,
-                    clusterToLayer=generate_convex_hulls,
-                    onEachFeature=ns("on_each_feature"),
-                    zoomToBoundsOnClick=True,
-                    superClusterOptions={ # https://github.com/mapbox/supercluster#options
-                        'radius': 160,
-                        'minZoom': 3,
-                    },
-                ),
-                dl.FullScreenControl()
-            ],
+            map_children,
             id='map',
             zoom=9,
             minZoom=9,
@@ -1837,17 +1954,6 @@ class BuyComponents(BaseClass):
             closePopupOnClick=True,
             style={'width': '100%', 'height': '90vh', 'margin': "auto", "display": "inline-block"}
         )
-
-        # Add a layer control for the additional layers
-        #layers_control = dl.LayersControl(
-        #    [ # Create a list of layers to add to the control
-        #        dl.Overlay(oil_well_layer, name="Oil & Gas Wells", checked=False),
-        #        dl.Overlay(crime_layer, name="Crime", checked=False),
-        #    ],
-        #    collapsed=True,
-        #    position='topleft'
-        #)
-        #map.children.append(layers_control)
 
         return map
     

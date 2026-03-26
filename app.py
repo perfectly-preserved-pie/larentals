@@ -1,16 +1,16 @@
 from dash import Dash, clientside_callback, Input, Output, dcc, ClientsideFunction
-from flask import request, jsonify, abort, Blueprint
+from api import register_api_routes
+from dash_extensions import EventListener
 from flask_compress import Compress
-from loguru import logger
-from typing import Any
-import bleach
+from functions.devtools import register_filter_exclusion_devtool
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import logging
-import sqlite3
 
 logging.getLogger().setLevel(logging.INFO)
+
+VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
 external_stylesheets = [
 	dbc.themes.BOOTSTRAP,
@@ -18,9 +18,11 @@ external_stylesheets = [
   dbc.icons.FONT_AWESOME
 ]
 external_scripts = [
-  'https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js', # Turf.js for convex hulls
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11' # SweetAlert2 for popups
+  'https://cdn.jsdelivr.net/npm/@turf/turf@7.3.0/turf.min.js', # Turf.js for convex hulls
+  'https://cdn.jsdelivr.net/npm/sweetalert2@11.26.24/dist/sweetalert2.all.min.js' # SweetAlert2 for popups
 ]
+
+register_filter_exclusion_devtool()
 
 # Create the app
 app = Dash(
@@ -79,8 +81,32 @@ app.index_string = """<!DOCTYPE html>
 </html>
 """
 
+def create_initial_viewport_sync() -> dcc.Interval:
+  """
+  Create a one-shot interval used to seed responsive clientside state.
+
+  Returns:
+    A short-lived interval that fires once after the app mounts.
+  """
+  return dcc.Interval(id="viewport-sync-initial", interval=250, n_intervals=0, max_intervals=1)
+
+def create_viewport_listener() -> EventListener:
+  """
+  Create the hidden event bridge for viewport-aware Dash callbacks.
+
+  Returns:
+    An `EventListener` configured to forward browser `viewportchange` events.
+  """
+  return EventListener(
+    id="viewport-listener",
+    events=[{"event": "viewportchange", "props": VIEWPORT_EVENT_PROPS}],
+    style={"display": "none"},
+  )
+
 app.layout = dmc.MantineProvider(
   dmc.Container([
+    create_initial_viewport_sync(),
+    create_viewport_listener(),
     dcc.Store(id="theme-switch-store", storage_type="local"),
     dbc.Row( # Second row: the rest
       [
@@ -98,260 +124,16 @@ app.layout = dmc.MantineProvider(
 #forceColorScheme="dark",
 )
 
-ALLOWED_OPTIONS = {
-  "Wrong Location",
-  "Unavailable/Sold/Rented",
-  "Wrong Details",
-  "Incorrect Price",
-  "Other"
-}
-
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='themeSwitch'),
   Output("theme-switch-store", "data"),
   Input("color-scheme-switch", "checked"),
 )
+register_api_routes(server, db_path="assets/datasets/larentals.db")
 
-# Create a custom route for the report form submission
-@app.server.route('/report_listing', methods=['POST'])
-def report_listing() -> tuple:
-  """Handle listing reports. If marked 'Unavailable/Sold/Rented', update the database flag."""
-  data = request.get_json()
-  mls_number: str = data.get('mls_number')
-  option: str = data.get('option')
-  text_report: str = data.get('text')
-  page_path: str = (data.get("page_path") or "").lower()
+def main() -> None:
+  app.run(debug=True)
 
-  if option not in ALLOWED_OPTIONS:
-    abort(400, "Invalid option provided.")
-
-  # Sanitize text input (disallow any tags)
-  sanitized_text = bleach.clean(text_report, tags=[], attributes={}, strip=True)
-  logger.info(f"Received report for MLS {mls_number}: Option='{option}', Details='{sanitized_text}'")
-
-  try:
-    # Determine which table to update based on context (lease or buy)
-    if page_path.startswith("/buy"):
-      table_name = "buy"
-    elif page_path == "" or page_path == "/":
-      table_name = "lease"
-    else:
-      abort(400, f"Invalid page context: {page_path}")
-
-    conn = sqlite3.connect("assets/datasets/larentals.db")
-    cur = conn.cursor()
-
-    # make sure our two new columns exist
-    cur.execute(f"PRAGMA table_info({table_name});")
-    cols = [r[1] for r in cur.fetchall()]
-    if 'report_option' not in cols:
-      cur.execute(f"ALTER TABLE {table_name} ADD COLUMN report_option TEXT;")
-    if 'report_text' not in cols:
-      cur.execute(f"ALTER TABLE {table_name} ADD COLUMN report_text TEXT;")
-
-    if option == "Unavailable/Sold/Rented":
-      # mark tenatively inactive
-      cur.execute(
-        f"UPDATE {table_name} SET reported_as_inactive = 1 WHERE mls_number = ?",
-        (mls_number,)
-      )
-      logger.success(f"Marked MLS {mls_number} as inactive in '{table_name}' table.")
-    else:
-      # record the other option + free‐form text
-      cur.execute(
-        f"""UPDATE {table_name}
-          SET report_option = ?, report_text = ?
-          WHERE mls_number = ?""",
-        (option, sanitized_text, mls_number)
-      )
-      logger.success(
-        f"Saved user-submitted report for MLS {mls_number}: option={option}, text='{sanitized_text}'"
-      )
-
-    conn.commit()
-    conn.close()
-    return jsonify(status="success"), 200
-
-  except Exception as e:
-    logger.error(f"Error handling report for MLS {mls_number}: {e}")
-    return jsonify(status="error", message="Internal error, please try again later."), 500
-
-# Create a custom route for fetching ISP options
-def register_isp_routes(server: Any, db_path: str = 'assets/datasets/larentals.db') -> None:
-  """
-  Register HTTP routes for fetching ISP options on-demand.
-
-  Args:
-    server: The Flask server instance (typically `app.server` in Dash).
-    db_path: Path to the SQLite database file. Defaults to 'assets/datasets/larentals.db'.
-  """
-  bp = Blueprint("isp_api", __name__)
-
-  @bp.get("/api/lease/isp-options/<listing_id>")
-  def get_lease_isp_options(listing_id: str):
-    """
-    Return top ISP options for a given listing_id (mls_number).
-
-    Args:
-      listing_id: MLS/listing identifier used in `lease_provider_options.listing_id`.
-
-    Returns:
-      JSON array of provider option dicts matching the structure expected by popup.js.
-    """
-    sql = """
-      SELECT
-        DBA,
-        
-        -- Normalize Service_Type based on TechCode (same logic as the SQL view)
-        CASE
-          -- DSL (copper)
-          WHEN TechCode IN (10, 11, 12, 20) THEN 'DSL'
-          
-          -- Cable / Fiber / Satellite
-          WHEN TechCode = 40 THEN 'Cable'
-          WHEN TechCode = 50 THEN 'Fiber'
-          WHEN TechCode = 60 THEN 'Satellite'
-          
-          -- Fixed wireless
-          WHEN TechCode IN (70, 71, 72) THEN 'Terrestrial Fixed Wireless'
-          
-          -- Fallback to whatever was provided
-          ELSE COALESCE(Service_Type, 'Unknown')
-        END AS Service_Type,
-        
-        TechCode,
-        MaxAdDn,
-        MaxAdUp,
-        MaxDnTier,
-        MaxUpTier,
-        MinDnTier,
-        MinUpTier,
-
-        CASE
-          WHEN TechCode = 50 THEN 'best'
-          WHEN TechCode IN (40, 43) AND COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
-          WHEN COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
-          WHEN TechCode IN (40, 43) THEN 'good'
-          WHEN TechCode IN (70, 71, 72) AND COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
-          WHEN COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
-          ELSE 'fallback'
-        END AS bucket
-
-      FROM lease_provider_options
-      WHERE listing_id = ?
-        AND DBA IS NOT NULL
-        AND NOT (COALESCE(MaxAdDn, 0) = 0 AND COALESCE(MaxAdUp, 0) = 0)
-      ORDER BY COALESCE(MaxAdDn, -1) DESC
-      LIMIT 8;
-    """
-
-    with sqlite3.connect(db_path) as conn:
-      conn.row_factory = sqlite3.Row
-      rows = conn.execute(sql, (listing_id,)).fetchall()
-
-    result: list[dict[str, Any]] = []
-    for r in rows:
-      result.append(
-        {
-          "dba": r["DBA"],
-          "service_type": r["Service_Type"],  # ← Now returns "Fiber", "Cable", "DSL", etc.
-          "tech_code": r["TechCode"],
-          "max_dn_mbps": r["MaxAdDn"],
-          "max_up_mbps": r["MaxAdUp"],
-          "max_dn_tier": r["MaxDnTier"],
-          "max_up_tier": r["MaxUpTier"],
-          "min_dn_tier": r["MinDnTier"],
-          "min_up_tier": r["MinUpTier"],
-          "bucket": r["bucket"],
-        }
-      )
-
-    return jsonify(result)
-
-  @bp.get("/api/buy/isp-options/<listing_id>")
-  def get_buy_isp_options(listing_id: str):
-    """
-    Return top ISP options for a given listing_id (mls_number) from the buy table.
-
-    Args:
-      listing_id: MLS/listing identifier used in `buy_provider_options.listing_id`.
-
-    Returns:
-      JSON array of provider option dicts matching the structure expected by popup.js.
-    """
-    sql = """
-      SELECT
-        DBA,
-        
-        -- Normalize Service_Type based on TechCode (same logic as the SQL view)
-        CASE
-          -- DSL (copper)
-          WHEN TechCode IN (10, 11, 12, 20) THEN 'DSL'
-          
-          -- Cable / Fiber / Satellite
-          WHEN TechCode = 40 THEN 'Cable'
-          WHEN TechCode = 50 THEN 'Fiber'
-          WHEN TechCode = 60 THEN 'Satellite'
-          
-          -- Fixed wireless
-          WHEN TechCode IN (70, 71, 72) THEN 'Terrestrial Fixed Wireless'
-          
-          -- Fallback to whatever was provided
-          ELSE COALESCE(Service_Type, 'Unknown')
-        END AS Service_Type,
-        
-        TechCode,
-        MaxAdDn,
-        MaxAdUp,
-        MaxDnTier,
-        MaxUpTier,
-        MinDnTier,
-        MinUpTier,
-
-        CASE
-          WHEN TechCode = 50 THEN 'best'
-          WHEN TechCode IN (40, 43) AND COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
-          WHEN COALESCE(MaxAdDn, 0) >= 1000 THEN 'best'
-          WHEN TechCode IN (40, 43) THEN 'good'
-          WHEN TechCode IN (70, 71, 72) AND COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
-          WHEN COALESCE(MaxAdDn, 0) >= 100 THEN 'good'
-          ELSE 'fallback'
-        END AS bucket
-
-      FROM buy_provider_options
-      WHERE listing_id = ?
-        AND DBA IS NOT NULL
-        AND NOT (COALESCE(MaxAdDn, 0) = 0 AND COALESCE(MaxAdUp, 0) = 0)
-      ORDER BY COALESCE(MaxAdDn, -1) DESC
-      LIMIT 8;
-    """
-
-    with sqlite3.connect(db_path) as conn:
-      conn.row_factory = sqlite3.Row
-      rows = conn.execute(sql, (listing_id,)).fetchall()
-
-    result: list[dict[str, Any]] = []
-    for r in rows:
-      result.append(
-        {
-          "dba": r["DBA"],
-          "service_type": r["Service_Type"],
-          "tech_code": r["TechCode"],
-          "max_dn_mbps": r["MaxAdDn"],
-          "max_up_mbps": r["MaxAdUp"],
-          "max_dn_tier": r["MaxDnTier"],
-          "max_up_tier": r["MaxUpTier"],
-          "min_dn_tier": r["MinDnTier"],
-          "min_up_tier": r["MinUpTier"],
-          "bucket": r["bucket"],
-        }
-      )
-
-    return jsonify(result)
-  
-  server.register_blueprint(bp)
-
-register_isp_routes(server, db_path="assets/datasets/larentals.db")
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	main()

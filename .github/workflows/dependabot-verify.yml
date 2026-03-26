@@ -1,0 +1,77 @@
+name: Dependabot Verify
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Dockerfile"
+      - "app.py"
+      - "pages/**"
+      - "functions/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Start app
+        env:
+          PORT: "8050"
+        run: |
+          uv run gunicorn --chdir /home/runner/work/larentals/larentals -b 127.0.0.1:${PORT} --workers=1 app:server > gunicorn.log 2>&1 &
+          echo $! > gunicorn.pid
+
+      - name: Wait for /health
+        env:
+          PORT: "8050"
+        run: |
+          for attempt in $(seq 1 30); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${PORT}/health" || true)
+            if [ "$status" = "200" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check did not return 200"
+          cat gunicorn.log
+          exit 1
+
+      - name: Check logs for runtime errors
+        run: |
+          if rg -n "Traceback|Unhandled exception|CRITICAL|ERROR|ModuleNotFoundError|ImportError" gunicorn.log; then
+            echo "Runtime errors detected in app logs"
+            exit 1
+          fi
+
+      - name: Stop app
+        if: always()
+        run: |
+          kill "$(cat gunicorn.pid)" || true

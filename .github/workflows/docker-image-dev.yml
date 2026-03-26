@@ -7,12 +7,15 @@ on:
       - '*.md'
       - 'dataframe.pickle'
       - '.gitignore'
-      - '.github'
+      - '.github/**'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "dev" ]
   schedule:
     - cron: '35 10 * * 5'
+
+permissions:
+  contents: read
 
 jobs:
   # define job to build and publish docker image
@@ -24,36 +27,42 @@ jobs:
     # steps to perform in job
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       # setup Docker buld action
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PAT }}
 
       - name: Login to Docker Hardened Images
-        uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           registry: dhi.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PAT }}
 
       - name: Build image and push to Docker Hub 
-        uses: docker/build-push-action@v2
+        id: docker_build
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
         with:
           # relative path to the place where source code with Dockerfile is located
           context: .
           # Note: tags has to be all lower-case
           tags: |
             strayingfromthepath/larentals:dev
-          # build on feature branches, push only on main branch
-          push: true
+          # build on PRs, push only on direct pushes to dev
+          push: ${{ github.event_name == 'push' }}
 
       - name: Image digest
+        if: github.event_name == 'push'
         run: echo ${{ steps.docker_build.outputs.digest }}

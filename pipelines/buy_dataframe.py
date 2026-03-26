@@ -8,6 +8,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
 from functions.geocoding_utils import *
+from functions.listing_report_utils import (
+  get_reported_inactive_mls_numbers,
+  normalize_mls_number,
+)
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
 from functions.normalization_utils import normalize_subtype
@@ -27,7 +31,7 @@ SAMPLE_N = None
 USE_NOMINATIM = False
 LOGFILE = "~/larentals/buy_dataframe.log"
 
-if __name__ == "__main__":
+def main() -> None:
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample",  type=int, default=None,
     help="If set, run on a sample and exit before write")
@@ -351,14 +355,33 @@ if __name__ == "__main__":
     #df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
     df_combined.reset_index(drop=True, inplace=True)
-    df_final = pd.DataFrame(df_combined)
-    if "reported_as_inactive" not in df_final.columns:
-      df_final["reported_as_inactive"] = False
+    reported_inactive_mls_numbers = set()
+    try:
+      with sqlite3.connect(DB_PATH) as conn:
+        reported_inactive_mls_numbers = get_reported_inactive_mls_numbers(
+          conn,
+          listing_type=TABLE_NAME,
+        )
+    except Exception as e:
+      logger.warning(f"Could not load append-only listing reports for {TABLE_NAME}: {e}")
+
+    if "reported_as_inactive" not in df_combined.columns:
+      df_combined["reported_as_inactive"] = False
     else:
-      df_final["reported_as_inactive"] = df_final["reported_as_inactive"].fillna(False)
+      df_combined["reported_as_inactive"] = df_combined["reported_as_inactive"].fillna(False)
+    previously_flagged = set()
     if not df_old.empty:
-      previously_flagged = set(df_old[df_old["reported_as_inactive"] == True]["mls_number"])
-      df_final.loc[df_final["mls_number"].isin(previously_flagged), "reported_as_inactive"] = True
+      previously_flagged.update(
+        normalize_mls_number(value)
+        for value in df_old[df_old["reported_as_inactive"] == True]["mls_number"]
+      )
+    previously_flagged.update(reported_inactive_mls_numbers)
+    if previously_flagged:
+      normalized_combined_mls = df_combined["mls_number"].apply(normalize_mls_number)
+      df_combined.loc[
+        normalized_combined_mls.isin(previously_flagged),
+        "reported_as_inactive",
+      ] = True
 
     # decide where to write
     if SAMPLE_N:
@@ -390,3 +413,7 @@ if __name__ == "__main__":
 
     # Reclaim space in ImageKit
     #reclaim_imagekit_space(geojson_path="assets/datasets/buy.geojson", imagekit_instance=imagekit)
+
+
+if __name__ == "__main__":
+  main()

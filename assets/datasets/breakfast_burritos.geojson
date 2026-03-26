@@ -1,0 +1,1400 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "COFAX -Fairfax-",
+        "rating": "9.30",
+        "rating_value": 9.3,
+        "neighborhood": "Weho",
+        "price": "$18.00",
+        "price_value": 18.0,
+        "size": "Large",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Toasted Tortilla, Tater Tots, Scrambled Eggs, Cheese, Sausage, Jalape\u00f1os, Salsa Side, Bacon, Pastrami",
+        "overall_thoughts": "Cofax's breakfast burrito remains a masterclass in morning comfort, evolving steadily over the years into near perfection. The current standout is their pastrami burrito, skillfully layered with savory pastrami, crispy tater tots, a perfectly fried egg, melted cheese, pickled jalape\u00f1os, and a bold deli mustard. Close behind, the classic bacon burrito continues to delight, showcasing smoky bacon, impeccably crisped tater tots, and velvety scrambled eggs. Bludso's hot link burrito, with its robust sausage and luscious fried egg, remains a strong third choice. The meticulous ratios and textures here are extraordinary, each bite enhanced by crispy tots and the subtle kick of fresh jalape\u00f1os. I personally favor the vibrant, fiery red salsa; though a milder green salsa is available, it doesn't quite measure up. A gentle warning: consider steering clear of the chorizo breakfast burrito, as it doesn't quite match the excellence of the other offerings. And remember\u2014Cofax burritos are best enjoyed fresh, as delivery can compromise their essential crispness.",
+        "address": "440 N Fairfax Ave, Los Angeles, CA 90036",
+        "latlong": "34.079975910618494, -118.36096599260163",
+        "picture_url": "https://www.instagram.com/p/CvIUP2dJhH2/",
+        "maps_url": "https://www.google.com/maps/place/COFAX+-Fairfax-/@34.0793361,-118.3612664,15z/data=!4m2!3m1!1s0x0:0xb70e90989afb8535?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/cofax",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.360966,
+          34.079976
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sobuneh",
+        "rating": "9.10",
+        "rating_value": 9.1,
+        "neighborhood": "Santa Monica",
+        "price": "$18.00",
+        "price_value": 18.0,
+        "size": "Large",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Toasted Tortilla, Chorizo, Scrambled Eggs, Beans, Tater Tots, Cheese",
+        "overall_thoughts": "Sobuneh, a Santa Monica gem tucked within Colony Kitchen's bustling ghost-kitchen complex, gets its name from the Farsi word for breakfast. Specializing exclusively in breakfast burritos, Sobuneh was born from a backyard pop-up driven by owners on a mission to craft the ultimate breakfast burrito. Judging by their current rank at number two, they're remarkably close to achieving this goal. Among their offerings, \"The Signature\" burrito stands out impressively, wrapping fluffy scrambled eggs in an indulgent embrace of house-blend beef chorizo, velvety black bean spread, ripe avocado, and melted cheddar cheese. Crispy tater tots add texture, though their uneven distribution somewhat hinders the ideal bite. The natural flavors shine brilliantly, though the honey chipotle aioli, while tasty, suggests the burrito might better benefit from a zesty salsa or hot sauce for balance. \"The BB,\" meanwhile, doesn't reach the same heights, notably due to its overly thick and chewy beef bacon, despite its enjoyable egg-forward approach. Although pricier, Sobuneh's burrito experience merits a splurge for special occasions or simply when craving something exceptional in the area.",
+        "address": "11419 Santa Monica Blvd, Los Angeles, CA 90025",
+        "latlong": "34.0458929, -118.4515097",
+        "picture_url": "https://www.instagram.com/p/CyjSsrZvmJN/?hl=en",
+        "maps_url": "https://www.google.com/maps/place/Sobuneh/data=!4m2!3m1!1s0x0:0x7168a8d6b1ef83dd?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/sobuneh",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.45151,
+          34.045893
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "WAKE AND LATE",
+        "rating": "9.00",
+        "rating_value": 9.0,
+        "neighborhood": "DTLA",
+        "price": "$18.00",
+        "price_value": 18.0,
+        "size": "Tiny",
+        "value_rating": "\u2605\u2605\u2606\u2606\u2606",
+        "whats_inside": "Scrambled Eggs, Tater Tots, Avocado, Steak, Toasted Tortilla, Cheese, Hot Sauce Side, Crema Side",
+        "overall_thoughts": "Wake and Late still crafts one of the city's most compelling bacon breakfast burritos, a handheld symphony worthy of your morning attention. The brilliance lies in its harmony\u2014crispy bacon that's neither overly brittle nor disappointingly limp, golden-crisp tater tots crackling gently beneath a creamy layer of perfectly scrambled eggs, and ripe avocado that lends just enough buttery freshness, all cocooned within a delicately toasted tortilla. Each bite sings in balanced proportions, every ingredient clearly articulated. Yet, the burrito has succumbed undeniably to shrinkflation, a quiet yet disheartening compromise. It now rivals the modest dimensions of a Tacos Villa Corona burrito\u2014albeit at nearly three times the price, raising the question of value in a city abundant with breakfast brilliance. Compounding this culinary lamentation is the loss of their beloved \"kill sauce,\" that fiery elixir once elevating every bite, now tragically absent from their lineup. Still, despite these quibbles, the elemental mastery of Wake and Late's breakfast burrito remains intact, a testament to how enduring flavor can often transcend the setbacks of portion and price.",
+        "address": "105 E 6th St, Los Angeles, CA 90014",
+        "latlong": "34.04553959421485, -118.24945746931476",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/WAKE+AND+LATE/@34.045184,-118.2495433,15z/data=!4m2!3m1!1s0x0:0xf43867d4ce09fade?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/wake-and-late",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.249457,
+          34.04554
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cerveteca Culver City",
+        "rating": "8.90",
+        "rating_value": 8.9,
+        "neighborhood": "Culver City",
+        "price": "$15.00",
+        "price_value": 15.0,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2605",
+        "whats_inside": "Toasted Tortilla, Scrambled Eggs, Tater Tots, Chorizo, Salsa Side, Guac Side",
+        "overall_thoughts": "Cerveteca in Culver City serves a breakfast burrito that approaches the divine, a morning indulgence constructed with thoughtful precision and respect for the art of ratio. Here, eggs are not merely present\u2014they flourish, generously portioned and prepared with care, enveloping each bite in silky, custard-like comfort. The subtle smear of bean spread beneath lends depth, harmonizing quietly rather than competing for attention. The tater tots, a requisite crisp counterpoint, provide delightful textural contrast without overwhelming the ensemble\u2014though a touch more crispness wouldn't go amiss. Opting for the chorizo proves a wise choice; deeply spiced and richly satisfying, it elevates the burrito's complexity in every bite. On the side, \"Mama\u2019s guac\" is both comforting and fresh, completing the experience with a homey, avocado-laden flourish. It's clear that Cerveteca understands the breakfast burrito as not simply a meal, but as an intricate culinary narrative told through well-balanced layers and intentional flavors.",
+        "address": "105 E 6th St, Los Angeles, CA 90014",
+        "latlong": "34.02517837966565, -118.3953333018496",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Cerveteca+Culver+City/@34.025045,-118.3952582,15z/data=!4m2!3m1!1s0x0:0x39b7ba06ea0aa26d?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/cerveteca",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.395333,
+          34.025178
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Baran's 2239",
+        "rating": "8.80",
+        "rating_value": 8.8,
+        "neighborhood": "South Bay",
+        "price": "$13.50",
+        "price_value": 13.5,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2605",
+        "whats_inside": "Scrambled Eggs, Cheese, Tater Tots, Untoasted Tortilla, Salsa Side, Bacon",
+        "overall_thoughts": "Barran's 2239, known widely for its Michelin (bib gourmand) finesse, has unexpectedly yet joyously found breakfast-burrito enlightenment amid the constraints of the pandemic era. What they've achieved is nothing short of a mathematician's precision expressed in culinary form: precisely thirteen crisped-to-perfection tater tots, four ounces of meticulously cooked eggs, two ounces each of smoky bacon and melty cheese\u2014all harmonized in an equation that proves deliciously reliable. The resulting burrito achieves a rare kind of rhythmic beauty. Each ingredient's carefully measured presence ensures every bite resonates equally, balancing crunch, creaminess, and savory depth in perfect measure. Accompanying the burrito is a salsa of commendable brightness and depth, delivering an essential spark that elevates the dish. However, perfection comes tempered by reality; the burrito's modest dimensions reflect a chef\u2019s refined restraint, perhaps too much for those craving heartier fare. The untoasted tortilla, though necessary, remains merely functional\u2014a humble supporting actor overshadowed by the symphonic blend within. Yet even these minor critiques fail to diminish the artistry Barran's 2239 has brought to the humble breakfast burrito.",
+        "address": "502 Pacific Coast Hwy, Hermosa Beach, CA 90254",
+        "latlong": "33.85968045717091, -118.39029903123114",
+        "picture_url": "https://www.instagram.com/p/CZfj-qzPl6Q/",
+        "maps_url": "https://www.google.com/maps/place/Baran's+2239/@33.8588608,-118.3907711,15z/data=!4m2!3m1!1s0x0:0x9b22fb061578deaa?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/barans-2239",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.390299,
+          33.85968
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Great White",
+        "rating": "8.75",
+        "rating_value": 8.75,
+        "neighborhood": "Venice",
+        "price": "$18.00",
+        "price_value": 18.0,
+        "size": "Small",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Toasted Tortilla, Tater Tots, Scrambled Eggs, Bacon, Cheese",
+        "overall_thoughts": "Great White, Venice's relaxed all-day cafe celebrated for fresh, local fare, immediately impresses with its breakfast burrito. The first bite introduces an exceptionally toasted, flaky tortilla enveloping immaculately fluffy, buttery scrambled eggs. Crispy bacon and the subtle freshness of chives and scallions further enhance each satisfying mouthful. While the tater tots, though tasty, fall short in crispness and the Oaxaca cheese adds little distinction, the accompanying salsa delivers a delightful, mildly spicy accent. The ratios are almost excellently balanced, though a touch more bacon would elevate it further. Overall, it's a remarkably pleasing morning indulgence.",
+        "address": "1604 Pacific Ave, Venice, CA 90291",
+        "latlong": "33.9877317,-118.4743678",
+        "picture_url": "https://www.instagram.com/p/CpvCuoHMWF2/",
+        "maps_url": "https://www.google.com/maps/place/Great+White,+North+Larchmont+Boulevard,+Los+Angeles,+CA/@34.0730357,-118.2643563,15z/data=!4m5!3m4!1s0x80c2b985e71f5afd:0xdd17cc95fbe1227b!8m2!3d34.0758785!4d-118.3233931?entry=ttu&g_ep=EgoyMDI0MTAyMS4xIKXMDSoASAFQAw==",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/great-white",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.474368,
+          33.987732
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Erewhon Venice",
+        "rating": "8.70",
+        "rating_value": 8.7,
+        "neighborhood": "Venice",
+        "price": "$18.00",
+        "price_value": 18.0,
+        "size": "Large",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Toasted Tortilla, Hashbrowns, Scrambled Eggs, Cheese, Bacon, Salsa Side",
+        "overall_thoughts": "Erewhon, LA\u2019s upscale temple of wellness and edible opulence, might be better known for avocado toasts priced as if each avocado attended therapy, but their breakfast burrito surprisingly maintains relative financial sanity\u2014comparable, at least, to other high-end spots around town. Wrapped neatly in a lightly toasted spinach tortilla, the burrito reveals itself thoughtfully assembled, generously layered with crisp hash browns and smoky bacon, nestled alongside fluffy, softly scrambled eggs. Admittedly egg-forward, the burrito nonetheless triumphs in balance, each bite achieving perfect harmony with savory hash browns, bacon, and just the right touch of white cheddar cheese. It arrives with a salsa verde that's slightly too sweet for my palate; my only genuine critique is the noticeable absence of a fiery roasted salsa to complement its savory richness. In a store famed for celebrity smoothies and gleaming kale, this burrito stands out as Erewhon\u2019s most grounded indulgence\u2014a truly exceptional grab-and-go experience.",
+        "address": "585 Venice Blvd., Venice, CA 90291",
+        "latlong": "33.9897769, -118.4622094",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Erewhon+Venice/data=!4m2!3m1!1s0x0:0xc99d148aed57c2d3?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/erewhon-venice",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.462209,
+          33.989777
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "La Azteca Tortilleria",
+        "rating": "8.60",
+        "rating_value": 8.6,
+        "neighborhood": "East LA",
+        "price": "$12.00",
+        "price_value": 12.0,
+        "size": "THICC",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Roasted Potatoes, Scrambled Eggs, Chorizo, Cheese, Untoasted Tortilla, Refried Beans, Salsa Side",
+        "overall_thoughts": "At La Azteca Tortilleria, the flour tortilla isn't just a vehicle\u2014it's the reason itself. Crafted meticulously by hand each morning in full, mesmerizing view, these tortillas possess an uncommon richness, a luxurious chew that is simply unmatched in the city. My ideal order: Chorizo, bolstered by cheese and potatoes, nestled warmly within this edible masterpiece. Yes, the 20 to 30-minute wait feels lengthy, but it's a small price for such profound handmade perfection.",
+        "address": "4538 E Cesar E Chavez Ave, Los Angeles, CA 90022",
+        "latlong": "34.04123657192405, -118.16688480109183",
+        "picture_url": "https://www.instagram.com/p/Cq8rWp-vG2Y/",
+        "maps_url": "https://www.google.com/maps/place/La+Azteca+Tortilleria/@34.0403831,-118.1680006,15z/data=!4m2!3m1!1s0x0:0x655392a5d2d51a9d?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/la-azteca-tortilleria",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.166885,
+          34.041237
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "The Rooster",
+        "rating": "8.50",
+        "rating_value": 8.5,
+        "neighborhood": "Pico-Robertson",
+        "price": "$12.50",
+        "price_value": 12.5,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Tater Tots, Fried Eggs, Bacon, Salsa Side, Untoasted Tortilla, Avocado, Cheese",
+        "overall_thoughts": "The Rooster, once a humble food truck now rooted firmly in Pico-Robertson, delivers a breakfast burrito that sings with satisfying crispness, thoughtfully lined with a rich, comforting cheese. Yet, the choice of a fried egg\u2014usually a crowd-pleaser\u2014misses its mark here, where a gentle scramble might have better balanced the assertively crispy bacon and tots. Likewise, the salsa is merely adequate, lacking the spark to elevate an otherwise commendable offering.",
+        "address": "8809 W Pico Blvd, Los Angeles, CA 90035",
+        "latlong": "34.056890418643114, -118.38338119449718",
+        "picture_url": "https://www.instagram.com/p/C973O4vP9c6/?hl=en",
+        "maps_url": "https://www.google.com/maps/place/The+Rooster/@34.0550178,-118.384037,15z/data=!4m2!3m1!1s0x0:0x59d078f8db45b255?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/the-rooster",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.383381,
+          34.05689
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Doubting Thomas",
+        "rating": "8.40",
+        "rating_value": 8.4,
+        "neighborhood": "Echo Park",
+        "price": "$16.00",
+        "price_value": 16.0,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Fried Eggs, Pork Shoulder, Cheese, Onions, Roasted Potatoes, Cilantro, Toasted Tortilla, Smoked Chili",
+        "overall_thoughts": "Doubting Thomas in Echo Park serves up a breakfast burrito that feels elegantly ambitious yet comforting. The decision to incorporate gently fried eggs provides an indulgent counterpoint, while pork shoulder\u2014expertly cooked to tender perfection\u2014adds a depth and richness seldom encountered in morning fare. Ratios are impeccable, each bite thoughtfully composed, transforming the humble burrito into something uniquely refined and memorably luxurious.",
+        "address": "2510 W Temple St, Los Angeles, CA 90026",
+        "latlong": "34.072562214909055, -118.27120191752626",
+        "picture_url": "https://www.instagram.com/p/CuZh_00rHKI/",
+        "maps_url": "https://www.google.com/maps/place/Doubting+Thomas/@34.0718868,-118.2733906,15z/data=!4m2!3m1!1s0x0:0x279f1bce10c671b3?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/doubting-thomas",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.271202,
+          34.072562
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jacks N Joe",
+        "rating": "8.30",
+        "rating_value": 8.3,
+        "neighborhood": "DTLA",
+        "price": "$16.50",
+        "price_value": 16.5,
+        "size": "MASSIVE",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Cheese, Toasted Tortilla, Sausage, Bacon, Ham, Hashbrowns, Salsa Side, Over Easy Eggs",
+        "overall_thoughts": "At Jacks N Joe, a beloved USC breakfast institution, there's an off-menu legend quietly known as \"The 78,\" named affectionately after the jersey number of a USC football player who famously favored this hearty burrito. It's a breakfast creation of unapologetic ambition\u2014eggs, hash browns, cheese, creamy avocado, bacon, sausage, and ham, all wrapped generously in a single, satisfying package. The promise here is immense, yet slight missteps temper what could have been transcendent: the hash browns congregate awkwardly at the bottom rather than blending throughout, and the salsa, a vital accent, remains frustratingly lackluster. Even so, it's undeniably compelling\u2014a burrito with the heart of greatness that just narrowly misses full acclaim.",
+        "address": "2498 S Figueroa St, Los Angeles, CA 90007",
+        "latlong": "34.029187495503585, -118.27374775506397",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Jacks+N+Joe/@34.0287607,-118.2749923,15z/data=!4m2!3m1!1s0x0:0x871c3927bc00a30c?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/jacks-n-joe",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.273748,
+          34.029187
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Egg Tuck",
+        "rating": "8.20",
+        "rating_value": 8.2,
+        "neighborhood": "Echo Park",
+        "price": "$10.98",
+        "price_value": 10.98,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Tater Tots, Cheese, Sausage, Grilled Onions",
+        "overall_thoughts": "Egg Tuck, a small Korean chain known for indulgent soft-scrambled egg sandwiches, offers intriguing breakfast burritos at its Echo Park location. I tried the traditional \"Original - Eggcellent Burrito\" with added bacon and avocado, and the distinctive Royal Burrito featuring their flagship Korean sausage patty. The soft scrambled eggs are among the best I've had\u2014rich, velvety, and beautifully egg-forward. However, the \"Original\" was hindered by undercooked bacon and scarce tater tots. The Royal Burrito's Korean sausage patty added delightful sweet-and-savory notes, but it shared similar ratio issues, particularly the lack of crispy tots. While Tapat\u00edo packets provided a familiar spicy kick, a house-made sauce would have elevated the experience. Ultimately, exceptional eggs couldn't fully overcome the burritos' imbalance, though Egg Tuck still impresses with egg craftsmanship.",
+        "address": "2213 W Sunset Blvd, Los Angeles, CA 90026",
+        "latlong": "34.0778046, -118.2656963",
+        "picture_url": "https://www.instagram.com/p/DHtrfsbTkJU/",
+        "maps_url": "https://maps.app.goo.gl/LycfmhacEaPmJXCn6",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/egg-tuck",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.265696,
+          34.077805
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Tacos Villa Corona",
+        "rating": "8.00",
+        "rating_value": 8.0,
+        "neighborhood": "Atwater",
+        "price": "$5.99",
+        "price_value": 5.99,
+        "size": "Small",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2605",
+        "whats_inside": "Scrambled Eggs, Cheese, Roasted Potatoes, Chorizo, Untoasted Tortilla, Salsa Side",
+        "overall_thoughts": "Tacos Villa Corona, nestled comfortably in Atwater, embraces simplicity with admirable zeal. The burrito unapologetically doubles down on potatoes and generous layers of cheese, delivering exactly what it promises. Yes, the portions are modest\u2014but at a price point that invites you to order two without guilt, it becomes a breakfast bargain of unparalleled satisfaction. Truly, twice the joy, half the cost\u2014a winning formula that's difficult to resist.",
+        "address": "3185 Glendale Blvd, Los Angeles, CA 90039",
+        "latlong": "34.11863696325655, -118.2617550613705",
+        "picture_url": "https://www.instagram.com/p/C35iBaPxaHQ/",
+        "maps_url": "https://www.google.com/maps/place/Tacos+Villa+Corona/@34.1178198,-118.2615834,15z/data=!4m2!3m1!1s0x0:0x723d2fd2dd76cd96?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/tacos-villa-corona",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.261755,
+          34.118637
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Benny's Tacos",
+        "rating": "7.90",
+        "rating_value": 7.9,
+        "neighborhood": "Santa Monica",
+        "price": "$12.95",
+        "price_value": 12.95,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Scrambled Eggs, Roasted Potatoes, Chorizo, Pico de Gallo, Cheese, Untoasted Tortilla",
+        "overall_thoughts": "Benny's Tacos serves up a breakfast burrito anchored by standout potatoes and thoughtfully balanced ratios. The chorizo, available for just a dollar more, proves a worthy indulgence. Solid, dependable, and pleasingly straightforward\u2014a morning well spent.",
+        "address": "915 Wilshire Blvd #1811, Santa Monica, CA 90401",
+        "latlong": "34.02429311100627, -118.49237193177707",
+        "picture_url": "https://www.instagram.com/p/CejUs2alh_c/",
+        "maps_url": null,
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/bennys-tacos",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.492372,
+          34.024293
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lucky Boy",
+        "rating": "7.80",
+        "rating_value": 7.8,
+        "neighborhood": "Pasadena",
+        "price": "$10.88",
+        "price_value": 10.88,
+        "size": "THICC",
+        "value_rating": "\u2605\u2605\u2605\u2605\u2606",
+        "whats_inside": "Scrambled Eggs, Hashbrowns, Untoasted Tortilla, Sausage, Cheese",
+        "overall_thoughts": "Lucky Boy, a Pasadena burger institution since 1961, generously lets your imagination run wild by offering to tuck nearly anything from their kitchen into a breakfast burrito. The sizeable burrito earns easy praise, boosted by abundant cheddar cheese and a favorable egg-to-sausage ratio. Hash browns over potatoes is a welcome choice, though they sadly lack crispness, and while the sausage does its job, it stops short of exceptional. Still, it's hearty, filling, and unapologetically comforting.",
+        "address": "640 S Arroyo Pkwy, Pasadena, CA 91105",
+        "latlong": "34.13488355323533, -118.14709881534263",
+        "picture_url": "https://www.instagram.com/p/CrO-NnTPbQm/",
+        "maps_url": "https://www.google.com/maps/place/Lucky+Boy/@34.1346393,-118.1496308,16z/data=!3m1!4b1!4m6!3m5!1s0x80c2c362c9382859:0x9db0b57aee61f529!8m2!3d34.1346349!4d-118.1470559!16s/g/1vhq3zpf?entry=ttu&g_ep=EgoyMDI0MTAyMS4xIKXMDSoASAFQAw==",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/lucky-boy",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.147099,
+          34.134884
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Poppy + Rose",
+        "rating": "7.70",
+        "rating_value": 7.7,
+        "neighborhood": "DTLA",
+        "price": "$20.00",
+        "price_value": 20.0,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Scrambled Eggs, Hashbrowns, Cheese, Onions, Steak",
+        "overall_thoughts": "Nestled unexpectedly within DTLA's bustling Flower District, Poppy + Rose serves up a breakfast burrito defined by thoughtful ratios and culinary promise. Their house-smoked steak\u2014thinly sliced rather than the chunkier texture one might prefer\u2014offers a subtle disappointment, compounded by the absence of crispy hash and a much-needed salsa accompaniment. While the burrito, with eggs, cheese, brick hash, and intriguing sides of cr\u00e8me fra\u00eeche and BBQ sauce, carries undeniable ambition, it falls short of the restaurant's once-legendary short-rib breakfast burrito, a lamented classic still warmly remembered.",
+        "address": "765 Wall St, Los Angeles, CA 90014",
+        "latlong": "34.041249480241845, -118.2475906101279",
+        "picture_url": "https://www.instagram.com/p/CEM5wF2Dxzj/",
+        "maps_url": "https://www.google.com/maps/place/Poppy+++Rose/@34.0406805,-118.2500797,15z/data=!4m2!3m1!1s0x0:0x2ce19c3f81dfd664?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/poppy-rose",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.247591,
+          34.041249
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "The Magnolia Grille",
+        "rating": "7.40",
+        "rating_value": 7.4,
+        "neighborhood": "NoHo",
+        "price": "$12.99",
+        "price_value": 12.99,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Scrambled Eggs, Hashbrowns, Bacon, Untoasted Tortilla, Cheese, Salsa Side",
+        "overall_thoughts": "Magnolia Grille in North Hollywood offers a breakfast burrito bursting with potential, yet falls short due to overly soggy bacon and hash browns. Still, the vibrant salsa and generous cheese rescue this burrito, delivering a spark that nearly redeems its shortcomings.",
+        "address": "10530 Magnolia Blvd, North Hollywood, CA 91601",
+        "latlong": "34.16518675680697, -118.35990715451805",
+        "picture_url": "https://www.instagram.com/p/CDqHSHYgy8l/",
+        "maps_url": "https://www.google.com/maps/place/The+Magnolia+Grille/@34.1645831,-118.3605938,15z/data=!4m2!3m1!1s0x0:0x3e3532922d93bbae?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/the-magnolia-grille",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.359907,
+          34.165187
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hash Restaurant",
+        "rating": "7.10",
+        "rating_value": 7.1,
+        "neighborhood": "Playa Vista",
+        "price": "$17.75",
+        "price_value": 17.75,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2606\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Tater Tots, Cheese, Onions, Salsa Inside, Crema Side",
+        "overall_thoughts": "At Hash Restaurant in Playa Vista, the breakfast burrito is reliably enjoyable, with crispy tater tots doing admirable work alongside three fluffy scrambled eggs, dual cheeses (pepper jack and cheddar), and a pleasant touch of green onion. The red chili crema and house salsa are fine complements, yet despite these thoughtful details, nothing quite reaches the level of greatness. Solid, but stops shy of extraordinary.",
+        "address": "12181 Bluff Creek Dr unit b, Playa Vista, CA 90094",
+        "latlong": "33.97939469355435, -118.40414487095246",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Hash+Restaurant/@33.9782559,-118.4059044,15z/data=!4m2!3m1!1s0x0:0x7a8a243835f9b9a6?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/hash-restaurant",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.404145,
+          33.979395
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Pico Pica Rico . Co",
+        "rating": "7.00",
+        "rating_value": 7.0,
+        "neighborhood": "The Valley",
+        "price": "$12.50",
+        "price_value": 12.5,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Hashbrowns, Bacon, Cheese, Salsa Side",
+        "overall_thoughts": "Pico Pica Rico Co., a beloved Sherman Oaks eatery renowned locally for its authentic huaraches and approachable Mexican cuisine throughout breakfast, lunch, and dinner, offers a \u201cClassic Breakfast Burrito\u201d that\u2019s reassuringly familiar. The menu confidently proclaims it as \u201cranked #2 by LA Eater,\u201d a claim I couldn\u2019t independently confirm. For its modest price, the burrito is comfortably solid\u2014though overall somewhat bland and lacking distinction. Its tortilla slightly overwhelms the filling, and neither the hash browns nor bacon reach an ideal crispness. Still, it satisfies as straightforward morning comfort food, appropriately priced for casual breakfast indulgence.",
+        "address": "14834 Magnolia Blvd, Sherman Oaks, CA 91403",
+        "latlong": "34.164701,-118.456392",
+        "picture_url": null,
+        "maps_url": "https://maps.app.goo.gl/kstNSpSDMHoTcccT9",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/pico-pica-rico-co",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.456392,
+          34.164701
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Tacos Delta",
+        "rating": "6.90",
+        "rating_value": 6.9,
+        "neighborhood": "Silver Lake",
+        "price": "$14.94",
+        "price_value": 14.94,
+        "size": "THICC",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Roasted Potatoes, Chorizo, Salsa Side, Cheese",
+        "overall_thoughts": "Tacos Delta, a humble cornerstone in Silver Lake\u2019s culinary landscape, offers a breakfast burrito defined by generosity and warmth. The chorizo remains a standout\u2014vividly seasoned and gratifyingly abundant. However, the eggs are now notably scarce, appearing as mere fragments scattered sparsely throughout, reminiscent of egg-fried rice rather than a robust breakfast burrito. Whether due to the recent egg shortage or other reasons remains unclear. The potatoes, though comforting, could still benefit from added crispness. Despite these shortcomings, the outstanding hot sauce continues to unite the flavors, ensuring the burrito remains reliable on hungry mornings.",
+        "address": "3806 W Sunset Blvd, Los Angeles, CA 90026",
+        "latlong": "34.09136068252744, -118.27810711643443",
+        "picture_url": "https://www.instagram.com/p/CB3Y6LGDU2Y/",
+        "maps_url": "https://www.google.com/maps/place/Tacos+Delta/@34.0909342,-118.27918,15z/data=!4m2!3m1!1s0x0:0xbdb82d6045a582bf?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/tacos-delta",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.278107,
+          34.091361
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Burrito Bomba",
+        "rating": "6.80",
+        "rating_value": 6.8,
+        "neighborhood": "Glendale",
+        "price": "$9.99",
+        "price_value": 9.99,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Cheese, Tater Tots, Bacon, Steak, Pico de Gallo",
+        "overall_thoughts": "Burrito Bomba in NoHo arrived with promise yet left disappointment in its wake. The steak and bacon burrito, ordered \"Bomba style\" with fried cheese, faltered on execution\u2014the cheese lacked its crucial crispness, the bacon was disappointingly limp, and the potatoes flavorful but sadly devoid of crunch. The promised red tomato tortilla was inexplicably swapped for standard flour, stripping away another distinctive touch. Only the steak stood out positively, tender and flavorful amidst otherwise unfulfilled potential.",
+        "address": "1360 E Colorado St Unit A, Glendale, CA 91205",
+        "latlong": "34.14332600598739, -118.2342582084902",
+        "picture_url": "https://www.instagram.com/p/DF8-LEvyecw/",
+        "maps_url": "https://www.google.com/maps/place/Burrito+Bomba/@34.1425446,-118.2350736,15z/data=!4m2!3m1!1s0x0:0xa046f16b8bfbd70c?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/burrito-bomba",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.234258,
+          34.143326
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Larry's Chili Dog",
+        "rating": "6.70",
+        "rating_value": 6.7,
+        "neighborhood": "The Valley",
+        "price": "$12.00",
+        "price_value": 12.0,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Toasted Tortilla, Scrambled Eggs, Hashbrowns, Cheese, Bacon, Sausage, Salsa Side",
+        "overall_thoughts": "Larry's Chili Dog, a beloved Burbank fixture since 1953, draws locals with its nostalgic charm and comfort-driven menu. Priced attractively at $12, their breakfast burrito generously combines delightfully crispy bacon and sausage, promising hearty satisfaction. Unfortunately, the mushy hash browns and overcooked, flattened eggs detract significantly from the experience, leaving the burrito disappointingly bland overall. A notable redemption comes via the spicy, presumably habanero salsa, brightening the flavors considerably. Despite its shortcomings, the burrito's highlights\u2014the bacon, salsa, and price\u2014offer some solace to hungry regulars.",
+        "address": "3122 W Burbank Blvd, Burbank, CA 91505",
+        "latlong": "34.1761724,-118.3449603",
+        "picture_url": "https://www.instagram.com/p/B-lj20vjQ5W/",
+        "maps_url": "https://maps.app.goo.gl/43mWR2o9FVU75CQF9",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/larrys-chili-dog",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.34496,
+          34.176172
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cafe Los Feliz",
+        "rating": "6.50",
+        "rating_value": 6.5,
+        "neighborhood": "Los Feliz",
+        "price": "$17.50",
+        "price_value": 17.5,
+        "size": "Large",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Toasted Tortilla, Scrambled Eggs, Roasted Potatoes, Bacon, Cheese",
+        "overall_thoughts": "Cafe Los Feliz, a cozy neighborhood staple renowned for pastries and traditional breakfast fare, came highly recommended by locals for its breakfast burrito. Unfortunately, it arrived as an underwhelming, soggy disappointment. Undercooked bacon and mushy, textureless roasted potatoes dominated the experience, obscuring any presence of scrambled eggs to the point of near-invisibility. Its only redeeming quality was a fresh, notably spicy habanero salsa\u2014bright and flavorful enough to momentarily distract from the potato-heavy letdown.",
+        "address": "2118 Hillhurst Ave, Los Angeles, CA 90027",
+        "latlong": "34.1106428,-118.3254337",
+        "picture_url": "https://www.instagram.com/p/DA1H9TXPguG/",
+        "maps_url": "https://maps.app.goo.gl/vjnFGaT2ZMPjcUSx6",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/cafe-los-feliz",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.325434,
+          34.110643
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jugos Azteca",
+        "rating": "6.10",
+        "rating_value": 6.1,
+        "neighborhood": "Highland Park",
+        "price": "$9.50",
+        "price_value": 9.5,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2605\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Chorizo, Cheese, Hashbrowns",
+        "overall_thoughts": "Jugos Azteca in Highland Park serves a breakfast burrito weighed down by soggy hash browns, reminiscent more of dry mashed potatoes than crisp accompaniment. The eggs appear barely present, overshadowed completely. Its saving grace arrives solely in the form of flavorful chorizo and cheese\u2014a bright spot amidst a burrito otherwise marked by disappointment.",
+        "address": "5213 York Blvd, Los Angeles, CA 90042",
+        "latlong": "34.1213559700516, -118.20186967725903",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Jugos+Azteca/@34.120752,-118.202213,15z/data=!4m2!3m1!1s0x0:0xbd11be7d63ae838?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/jugos-azteca",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.20187,
+          34.121356
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Groundwork Coffee Co.",
+        "rating": "5.40",
+        "rating_value": 5.4,
+        "neighborhood": "DTLA",
+        "price": "$17.50",
+        "price_value": 17.5,
+        "size": "Average",
+        "value_rating": "\u2605\u2606\u2606\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Scrambled Eggs, Roasted Potatoes, Bacon, Salsa Side, Avocado, Peppers, Onions",
+        "overall_thoughts": "Groundwork Coffee Co, a ubiquitous LA caffeine staple, offers a breakfast burrito with commendable eggs and a vibrant, fiery salsa that nearly salvages the dish. Unfortunately, softness plagues both potatoes and bacon, neither achieving necessary crispness, while misplaced bell peppers\u2014seemingly never suited for breakfast burritos\u2014introduce an unwelcome texture. Wrapped in an unremarkable tortilla, it\u2019s a burrito that falls short of its full potential.",
+        "address": "811 Traction Ave, Los Angeles, CA 90013",
+        "latlong": "34.04589018698051, -118.23590053808363",
+        "picture_url": "https://www.instagram.com/p/CDJiW5clfeM/",
+        "maps_url": "https://www.google.com/maps/place/Groundwork+Coffee+Co./@34.045179,-118.2355143,15z/data=!4m2!3m1!1s0x0:0x70b62d0cdf261b1e?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/groundwork-coffee-co",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.235901,
+          34.04589
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cafe Dulce",
+        "rating": "5.10",
+        "rating_value": 5.1,
+        "neighborhood": "DTLA",
+        "price": "$11.40",
+        "price_value": 11.4,
+        "size": "Average",
+        "value_rating": "\u2605\u2605\u2606\u2606\u2606",
+        "whats_inside": "Bacon, Untoasted Tortilla, Scrambled Eggs, Spicy Mayo, Roasted Potatoes, Cilantro, Onions, Cheese, Salsa Inside",
+        "overall_thoughts": "Cafe Dulce in DTLA delivers a breakfast burrito that, regrettably, underwhelms. Soggy bacon, uninspired potatoes, and a notably poor egg ratio leave the burrito lacking the balance and texture essential to morning greatness.",
+        "address": "134 Japanese Village Plaza Mall, Los Angeles, CA 90012",
+        "latlong": "34.04931015221442, -118.23873768629512",
+        "picture_url": "https://www.instagram.com/p/Bgl5cS5FGwp/",
+        "maps_url": "https://www.google.com/maps/place/Cafe+Dulce/@34.0488479,-118.2404543,15z/data=!4m2!3m1!1s0x0:0xbe2738868d2dfd4d?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "Reviewed",
+        "review_url": "https://labreakfastburrito.com/cafe-dulce",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.238738,
+          34.04931
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Huckleberry Bakery & Cafe",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Santa Monica",
+        "price": "$24.50",
+        "price_value": 24.5,
+        "size": "Average",
+        "value_rating": "\u2605\u2606\u2606\u2606\u2606",
+        "whats_inside": "Untoasted Tortilla, Roasted Potatoes, Salsa Inside, Cheese, Bacon, Guac Inside",
+        "overall_thoughts": "The guac overpowers this burrito. Honestly, might have to retry this without it. Update 2024: Apparently it has changed to the following: scrambled eggs, breakfast potatoes, salsa roja, cheddar cheese, avocado, Tehachapi flour tortilla and house-made tortilla chips (available gluten-free) add organic turkey chorizo +4.5, add applewood smoked bacon. Will retry the new burrito. Price on sheet is with added bacon.",
+        "address": "1014 Wilshire Blvd, Santa Monica, CA 90401",
+        "latlong": "34.0244029247954, -118.48923148738695",
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Huckleberry+Bakery+&+Cafe/@34.0238694,-118.4920639,15z/data=!4m2!3m1!1s0x0:0xbe1d5c4bbd5534b?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.489231,
+          34.024403
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Zinc Caf\u00e9 & Market",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "DTLA",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Zinc+Caf\u00e9+&+Market/@34.0393725,-118.2325458,15z/data=!4m2!3m1!1s0x0:0x221e66a24ee08f64?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.232546,
+          34.039372
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cindy's",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Eagle Rock",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Cindy's/@34.1390101,-118.1983914,15z/data=!4m2!3m1!1s0x0:0xbc46a28252ccbbba?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.198391,
+          34.13901
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Dialog Cafe",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Weho",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Dialog+Cafe/@34.0904505,-118.3827789,15z/data=!4m2!3m1!1s0x0:0xbf173e28bb6b030d?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.382779,
+          34.090451
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Corner Cottage",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "The Valley",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Corner+Cottage/@34.170771,-118.3149051,15z/data=!4m2!3m1!1s0x0:0x9072694526e1020b?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.314905,
+          34.170771
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Coffee Commissary",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "The Valley",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Coffee+Commissary/@34.156084,-118.3351788,15z/data=!4m2!3m1!1s0x0:0x6b485dab9cd64155?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.335179,
+          34.156084
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Pablito's Tacos",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "The Valley",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Pablito's+Tacos,+West+Burbank+Boulevard,+Burbank,+CA/@34.0730357,-118.2643563,15z/data=!4m5!3m4!1s0x80c2959ca9365353:0x9c02f19f17130e1f!8m2!3d34.174417!4d-118.351708?entry=ttu&g_ep=EgoyMDI0MTAyMS4xIKXMDSoASAFQAw==",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.351708,
+          34.174417
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Poached Neighborhood Kitchen",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Hollywood",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Poached+Neighborhood+Kitchen/@33.9538686,-118.113443,15z/data=!4m2!3m1!1s0x0:0xeaf367c10ef66d16?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.113443,
+          33.953869
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "The Corner Deli & Grill",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Westwood",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/The+Corner+Deli+&+Grill/@34.048067,-118.4443051,15z/data=!4m2!3m1!1s0x0:0xe1cfbb992595fe79?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.444305,
+          34.048067
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Pico Pica Rico . Co",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "The Valley",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Pico+Pica+Rico+.+Co/@34.164701,-118.456392,15z/data=!4m2!3m1!1s0x0:0x8a8c567a8c47e38e?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": "https://labreakfastburrito.com/pico-pica-rico-co",
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.456392,
+          34.164701
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Bagel Nosh Deli",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Santa Monica",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Bagel+Nosh+Deli/@34.0291105,-118.4863491,15z/data=!4m2!3m1!1s0x0:0xa128fb03e31b9a9e?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.486349,
+          34.029111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "The Win~Dow at American Beauty",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Venice",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/The+Win~Dow+at+American+Beauty/@33.9980933,-118.4745792,15z/data=!4m2!3m1!1s0x0:0x38bce034fcb9a0cb?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.474579,
+          33.998093
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Maria's Ricos Tacos",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Inglewood",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Maria's+Ricos+Tacos/@33.961994,-118.3667971,15z/data=!4m2!3m1!1s0x0:0x2bf4124c75d40d6f?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.366797,
+          33.961994
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Phanny's",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "South Bay",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Phanny's/@33.825857,-118.385762,15z/data=!4m2!3m1!1s0x0:0x3994960a74b14f57?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.385762,
+          33.825857
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Country Kitchen",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Malibu",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Country+Kitchen/@34.03735,-118.6377083,15z/data=!4m2!3m1!1s0x0:0x15860fa9d1c7ec59?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.637708,
+          34.03735
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lily's Malibu",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Malibu",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Lily's+Malibu/@34.0212829,-118.8099614,15z/data=!4m2!3m1!1s0x0:0x1913d8e1c675b4e2?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.809961,
+          34.021283
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "LAMILL Coffee - Silverlake",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "Silver Lake",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/LAMILL+Coffee+-+Silverlake/@34.088841,-118.2686477,15z/data=!4m2!3m1!1s0x0:0x4f635800aafb2b34?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.268648,
+          34.088841
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Un Caffe Altamura",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "South Bay",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Un+Caffe+Altamura/@33.8855638,-118.4097915,15z/data=!4m2!3m1!1s0x0:0x6ca4d28f8068111d?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.409791,
+          33.885564
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Macheen",
+        "rating": null,
+        "rating_value": null,
+        "neighborhood": "East LA",
+        "price": "$xx",
+        "price_value": null,
+        "size": null,
+        "value_rating": null,
+        "whats_inside": null,
+        "overall_thoughts": "TO BE REVIEWED",
+        "address": null,
+        "latlong": null,
+        "picture_url": null,
+        "maps_url": "https://www.google.com/maps/place/Macheen/@34.0454073,-118.2042116,15z/data=!4m2!3m1!1s0x0:0xce54dd02d526792d?sa=X&ved=1t:2428&ictx=111",
+        "review_status": "To Be Reviewed",
+        "review_url": null,
+        "source_name": "LABreakfastBurrito",
+        "source_url": "https://labreakfastburrito.com/",
+        "source_sheet_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/pubhtml?gid=0&single=true"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.204212,
+          34.045407
+        ]
+      }
+    }
+  ]
+}

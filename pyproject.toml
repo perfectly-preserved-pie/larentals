@@ -1,39 +1,39 @@
 [project]
 name        = "WhereToLive.LA"
-version     = "1.0.0"
-description = "An interactive map of available rentals in Los Angeles County. Updated weekly."             
+version     = "1.2.0"
+description = "An interactive map of available rentals and for-sale properties in Los Angeles County. Updated weekly."             
 readme      = "README.md"
-license     = {  } # 
+license     = { text = "All rights reserved" }
 requires-python = ">=3.13,<3.14"
 
 dependencies = [
   "beautifulsoup4~=4.14.3",
   "bleach~=6.3.0",
-  "boto3~=1.42.34",
+  "boto3~=1.42.59",
   "brotli~=1.2.0",
   "dash-bootstrap-components~=2.0.4",
   "dash-extensions~=2.0.4",
   "dash-iconify>=0.1.2",
   "dash-leaflet~=1.1.3",
-  "dash-mantine-components~=2.5.1",
+  "dash-mantine-components~=2.6.0",
   "dash~=4.0.0",
   "flask-compress>=1.23",
-  "flask~=3.1.2",
+  "flask~=3.1.3",
   "geopandas~=1.1.2",
   "geopy~=2.4.1",
   "gevent~=25.9.1",
-  "gunicorn~=24.1.1",
+  "gunicorn~=25.1.0",
   "imagekitio==4.2.0",
   "loguru~=0.7.3",
-  "numpy~=2.4.1",
+  "numpy~=2.4.2",
   "openpyxl~=3.1.5",
-  "orjson~=3.11.5",
-  "pandas~=3.0.0",
+  "orjson~=3.11.7",
+  "pandas~=3.0.1",
   "protobuf~=7.34.0",
-  "pyarrow~=23.0.0",
-  "python-dotenv~=1.2.1",
+  "pyarrow~=23.0.1",
+  "python-dotenv~=1.2.2",
   "pyyaml~=6.0.3",
-  "requests~=2.32.5",
+  "requests~=2.33.0",
   "user-agents~=2.2.0",
 ]
 
@@ -41,3 +41,23 @@ dependencies = [
 dev = [
   "pytest~=9.0.2",
 ]
+
+[project.scripts]
+wheretolive-la = "app:main"
+buy-dataframe = "pipelines.buy_dataframe:main"
+lease-dataframe = "pipelines.lease_dataframe:main"
+build-breakfast-burritos-geojson = "scripts.build_breakfast_burritos_geojson:main"
+build-parking-tickets-heatmap = "scripts.build_parking_tickets_heatmap:main"
+build-supermarkets-geojson = "scripts.build_supermarkets_geojson:main"
+normalize-lease-terms = "scripts.normalize_lease_terms:main"
+run-broadband-merge = "scripts.run_broadband_merge:main"
+
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["app"]
+
+[tool.setuptools.packages.find]
+include = ["api", "functions", "pipelines", "scripts"]

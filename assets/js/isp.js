@@ -8,9 +8,40 @@
   "use strict";
 
   /**
+   * @typedef {"best"|"good"|"fallback"} IspBucket
+   */
+
+  /**
+   * @typedef {{ max_dn_mbps: number, max_up_mbps: number }} IspTier
+   */
+
+  /**
+   * @typedef {{
+   *   dba: string,
+   *   service_type: string,
+   *   max_dn_mbps: number,
+   *   max_up_mbps: number,
+   *   bucket: IspBucket,
+   * }} NormalizedIspOption
+   */
+
+  /**
+   * @typedef {{
+   *   key: string,
+   *   dba: string,
+   *   service_type: string,
+   *   best_dn: number,
+   *   best_up: number,
+   *   bucket: IspBucket,
+   *   tiers: IspTier[],
+   * }} IspGroup
+   */
+
+  /**
    * Escape text for safe HTML injection.
-   * @param {unknown} value
-   * @returns {string}
+   *
+   * @param {unknown} value Raw text value to escape.
+   * @returns {string} HTML-safe string.
    */
   function escapeHtml(value) {
     const s = value === null || value === undefined ? "" : String(value);
@@ -24,8 +55,9 @@
 
   /**
    * Normalize nullable strings.
-   * @param {unknown} v
-   * @returns {string|null}
+   *
+   * @param {unknown} v Raw value to normalize.
+   * @returns {string|null} Trimmed string, or `null` when blank.
    */
   function normalizeNullableString(v) {
     if (v === null || v === undefined) return null;
@@ -35,8 +67,9 @@
 
   /**
    * Coerce unknown input into an array of objects.
-   * @param {unknown} raw
-   * @returns {Array<Record<string, unknown>>}
+   *
+   * @param {unknown} raw Unknown payload returned by the ISP API.
+   * @returns {Array<Record<string, unknown>>} Array of ISP option-like objects.
    */
   function coerceIspOptions(raw) {
     if (!raw) return [];
@@ -47,7 +80,8 @@
   /**
    * Get Dash's requests pathname prefix if app is mounted under a subpath.
    * Examples: "/" or "/larentals/".
-   * @returns {string}
+   *
+   * @returns {string} Prefix without a trailing slash, or an empty string for root apps.
    */
   function getDashPrefix() {
     const cfg = window.__dash_config || {};
@@ -60,8 +94,9 @@
   /**
    * Build a same-origin URL that respects Dash's prefix.
    * This is critical for WSL2 + Windows + VS Code port forwarding.
-   * @param {string} path
-   * @returns {string}
+   *
+   * @param {string} path App-relative API path.
+   * @returns {string} Absolute same-origin URL for `fetch`.
    */
   function buildSameOriginDashUrl(path) {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
@@ -78,8 +113,9 @@
 
   /**
    * Convert ALL CAPS text to Title Case.
-   * @param {string} text
-   * @returns {string}
+   *
+   * @param {string} text Provider display name to normalize.
+   * @returns {string} Title-cased provider name.
    */
   function toTitleCase(text) {
     if (!text) return text;
@@ -105,9 +141,9 @@
   }
 
   /**
-   * Fetch ISP options for a single listing id.
-   * @param {string} listingId
-   * @returns {Promise<Array<Record<string, unknown>>>}
+   * Resolve the page-specific ISP API base path.
+   *
+   * @returns {string} Lease or buy ISP API prefix for the current page.
    */
   function getIspApiBasePath() {
     const path = String(window.location?.pathname || "").toLowerCase();
@@ -116,6 +152,12 @@
       : "/api/lease/isp-options/";
   }
 
+  /**
+   * Fetch ISP options for a single listing and cache the in-flight request.
+   *
+   * @param {string|number} listingId Listing identifier used by the ISP tables.
+   * @returns {Promise<Array<Record<string, unknown>>>} Promise resolving to ISP option rows.
+   */
   function fetchIspOptionsForListing(listingId) {
     const base = getIspApiBasePath();
     const id = String(listingId);
@@ -147,8 +189,9 @@
 
   /**
    * Format Mbps into a human-friendly string.
-   * @param {number} mbps
-   * @returns {string}
+   *
+   * @param {number} mbps Download or upload speed expressed in Mbps.
+   * @returns {string} Human-readable speed string.
    */
   function formatMbps(mbps) {
     if (!Number.isFinite(mbps) || mbps <= 0) return "—";
@@ -161,13 +204,10 @@
   }
 
   /**
-   * @typedef {"best"|"good"|"fallback"} IspBucket
-   */
-
-  /**
    * Return a rank for comparing buckets (higher is better).
-   * @param {IspBucket} b
-   * @returns {number}
+   *
+   * @param {IspBucket} b ISP quality bucket.
+   * @returns {number} Numeric rank used for sorting.
    */
   function bucketRank(b) {
     switch (b) {
@@ -183,8 +223,9 @@
 
   /**
    * Normalize a raw option row coming from the API / SQL.
-   * @param {Record<string, unknown>} row
-   * @returns {{ dba: string, service_type: string, max_dn_mbps: number, max_up_mbps: number, bucket: IspBucket }}
+   *
+   * @param {Record<string, unknown>} row Raw ISP row returned by the API / SQL layer.
+   * @returns {NormalizedIspOption} Normalized ISP option used by the popup renderer.
    */
   function normalizeOptionRow(row) {
     const dba = toTitleCase(normalizeNullableString(row.dba ?? row.DBA) ?? "Unknown");
@@ -212,8 +253,9 @@
 
   /**
    * Sort tiers best-to-worst.
-   * @param {{ max_dn_mbps: number, max_up_mbps: number }[]} tiers
-   * @returns {{ max_dn_mbps: number, max_up_mbps: number }[]}
+   *
+   * @param {IspTier[]} tiers ISP plan tiers for a provider/service pair.
+   * @returns {IspTier[]} Sorted copy with the fastest tiers first.
    */
   function sortTiersDesc(tiers) {
     return [...tiers].sort((a, b) => {
@@ -225,8 +267,9 @@
   /**
    * Rank service types for sorting and opinionation.
    * Higher is better.
-   * @param {string} serviceType
-   * @returns {number}
+   *
+   * @param {string} serviceType Provider service type label.
+   * @returns {number} Numeric rank used to break ties between equally fast options.
    */
   function serviceTypeRank(serviceType) {
     const s = String(serviceType || "").toLowerCase();
@@ -242,23 +285,15 @@
    * Group raw ISP rows into (provider + service_type) with tiers.
    * Preserves the best bucket observed for the group.
    *
-   * @param {Array<Record<string, unknown>>} raw
-   * @returns {Array<{
-   *   key: string,
-   *   dba: string,
-   *   service_type: string,
-   *   best_dn: number,
-   *   best_up: number,
-   *   bucket: IspBucket,
-   *   tiers: Array<{max_dn_mbps:number, max_up_mbps:number}>
-   * }>}
+   * @param {Array<Record<string, unknown>>} raw Raw ISP rows returned by the API.
+   * @returns {IspGroup[]} Grouped ISP options with deduplicated tiers.
    */
   function groupOptions(raw) {
     /** @type {Map<string, {
      *   dba: string,
      *   service_type: string,
      *   bucket: IspBucket,
-     *   tiers: Array<{max_dn_mbps:number, max_up_mbps:number}>
+     *   tiers: IspTier[]
      * }>} */
     const m = new Map();
 
@@ -280,15 +315,7 @@
       }
     }
 
-    /** @type {Array<{
-     *   key: string,
-     *   dba: string,
-     *   service_type: string,
-     *   best_dn: number,
-     *   best_up: number,
-     *   bucket: IspBucket,
-     *   tiers: Array<{max_dn_mbps:number, max_up_mbps:number}>
-     * }>} */
+    /** @type {IspGroup[]} */
     const groups = [];
 
     for (const [key, v] of m.entries()) {
@@ -324,21 +351,23 @@
     return groups;
   }
 
-    /**
-     * Bucket groups for rendering.
-     * @param {{ bucket?: IspBucket | null }} g
-     * @returns {IspBucket}
-     */
-    function bucketGroup(g) {
-      return g && (g.bucket === "best" || g.bucket === "good" || g.bucket === "fallback")
-        ? g.bucket
-        : "fallback";
-    }
+  /**
+   * Normalize a grouped ISP record to a valid render bucket.
+   *
+   * @param {{ bucket?: IspBucket | null }} g Grouped ISP record.
+   * @returns {IspBucket} Safe bucket value for rendering.
+   */
+  function bucketGroup(g) {
+    return g && (g.bucket === "best" || g.bucket === "good" || g.bucket === "fallback")
+      ? g.bucket
+      : "fallback";
+  }
 
   /**
    * Render ISP options as opinionated buckets + expandable tiers.
-   * @param {unknown} rawOptions
-   * @returns {string}
+   *
+   * @param {unknown} rawOptions Raw ISP API response data.
+   * @returns {string} HTML string for the ISP options row.
    */
   function renderIspOptionsHtml(rawOptions) {
     const raw = coerceIspOptions(rawOptions);
@@ -356,9 +385,11 @@
     }
 
     /**
-     * @param {string} title
-     * @param {typeof groups} items
-     * @returns {string}
+     * Render one ISP bucket section.
+     *
+     * @param {string} title Bucket heading shown in the popup.
+     * @param {IspGroup[]} items ISP groups that belong in the bucket.
+     * @returns {string} HTML string for a single bucket section.
      */
     function renderBucket(title, items) {
       if (!items.length) return "";
@@ -431,8 +462,9 @@
 
   /**
    * Render placeholder HTML to be inserted into the popup.
-   * @param {unknown} listingIdRaw
-   * @returns {string}
+   *
+   * @param {unknown} listingIdRaw Listing id pulled from popup properties.
+   * @returns {string} Placeholder HTML rendered before the API request completes.
    */
   function renderIspOptionsPlaceholderHtml(listingIdRaw) {
     const listingId = normalizeNullableString(listingIdRaw);
@@ -448,8 +480,9 @@
 
   /**
    * Hydrate the ISP placeholder within an opened popup.
-   * @param {HTMLElement} popupRootEl
-   * @returns {void}
+   *
+   * @param {HTMLElement} popupRootEl Root popup element created by Leaflet.
+   * @returns {void} Does not return a value; mutates the placeholder container in place.
    */
   function hydrateIspOptionsInPopup(popupRootEl) {
     const container = popupRootEl.querySelector('[data-isp-container="true"]');
