@@ -50,12 +50,8 @@ Preferred local derived artifact:
 - Stores the top `50,000` grouped ticketed spots used for the heat surface
 - Also stores the top `8,000` grouped hotspot markers used for close-up popups
 - Refresh locally with `uv run python scripts/build_parking_tickets_heatmap.py`
-
-Live build fallback when the local artifact is missing:
-
 - Preferred API: Socrata v3 query endpoint for view `4f5p-udkv`
-- Fallback API: `https://data.lacity.org/resource/4f5p-udkv.json` when no Socrata app token is configured locally
-- Set `SOCRATA_APP_TOKEN` in `.env` or the environment to enable v3 requests
+- Set `SOCRATA_APP_TOKEN` in `.env` or the environment to enable faster offline v3 requests
 - Filters out zero/out-of-bounds coordinates before grouping
 - Excludes rows with missing coordinates, implausible bounds, or invalid fine amounts
 - Groups citations into rounded hotspot coordinates for weighted heatmap rendering

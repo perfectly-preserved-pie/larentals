@@ -1095,20 +1095,23 @@ def build_parking_tickets_heat_geojson() -> GeoJsonDict:
     """
     Return the preferred parking heatmap payload for the fixed 2025 dataset.
 
-    The app should use the precomputed local artifact when present because that
-    avoids re-querying and regrouping the same yearly dataset on every worker.
-    When the artifact is missing, the function falls back to rebuilding the
-    payload live from Socrata so local development still works.
+    The app should use the precomputed local artifact because rebuilding this
+    full-year dataset live is intentionally handled offline.
 
     Returns:
-        GeoJSON `FeatureCollection` loaded from the local artifact or, if needed,
-        built live from Socrata.
+        GeoJSON `FeatureCollection` loaded from the local artifact, or an empty
+        feature collection when the artifact is unavailable.
     """
     local_payload = load_local_parking_tickets_heat_geojson()
     if local_payload is not None:
         return local_payload
 
-    return _build_live_parking_tickets_heat_geojson()
+    logger.warning(
+        "Parking tickets heatmap artifact is missing at {}. "
+        "Generate it offline with `uv run python scripts/build_parking_tickets_heatmap.py`.",
+        PARKING_TICKETS_LOCAL_ARTIFACT_PATH,
+    )
+    return {"type": "FeatureCollection", "features": []}
 
 
 def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
