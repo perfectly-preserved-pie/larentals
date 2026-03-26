@@ -24,6 +24,7 @@
      *   average_fine_amount?: unknown,
      *   window_start?: unknown,
      *   window_end?: unknown,
+     *   merged_geocode_count?: unknown,
      * }} ParkingDensityProperties
      */
 
@@ -74,11 +75,17 @@
      * @returns {PopupRow[]} Popup rows for the feature.
      */
     function buildParkingTicketRows(properties) {
+        const mergedGeocodeCount = Number(properties.merged_geocode_count);
+
         return [
             {
                 label: "Tickets at Spot",
                 value: formatWholeNumber(properties.citation_count),
             },
+            Number.isFinite(mergedGeocodeCount) && mergedGeocodeCount > 1 ? {
+                label: "Merged Geocodes",
+                value: formatWholeNumber(mergedGeocodeCount),
+            } : null,
             {
                 label: "Total Fines",
                 value: formatCurrency(properties.total_fine_amount),

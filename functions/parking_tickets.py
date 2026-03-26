@@ -7,6 +7,7 @@ import gzip
 import math
 import os
 import orjson
+import re
 import requests
 import time
 
@@ -23,8 +24,9 @@ PARKING_TICKETS_MAX_MARKER_POINTS = 8000
 PARKING_TICKETS_HEAT_INTENSITY_FLOOR = 0.14
 PARKING_TICKETS_MARKER_ZOOM_MIN = 15
 PARKING_TICKETS_HEAT_ZOOM_MAX = 16
+PARKING_TICKETS_MARKER_MERGE_DISTANCE_METERS = 40.0
 PARKING_TICKETS_REQUEST_TIMEOUT_SECONDS = 45
-PARKING_TICKETS_ARTIFACT_VERSION = 1
+PARKING_TICKETS_ARTIFACT_VERSION = 4
 MAX_REASONABLE_FINE_AMOUNT = 2500.0
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PARKING_TICKETS_LOCAL_ARTIFACT_PATH = (
@@ -39,6 +41,36 @@ LA_CITY_COORDINATE_BOUNDS = {
 _SOCRATA_SESSION = requests.Session()
 SOCRATA_V3_MAX_ACCEPTED_RETRIES = 5
 _MISSING_SOCRATA_TOKEN_WARNING_EMITTED = False
+_LOCATION_SUFFIX_NORMALIZATION = {
+    "ALY": "ALY",
+    "AVE": "AVE",
+    "AV": "AVE",
+    "AVENUE": "AVE",
+    "BLVD": "BLVD",
+    "BL": "BLVD",
+    "BOULEVARD": "BLVD",
+    "CT": "CT",
+    "COURT": "CT",
+    "DR": "DR",
+    "DRIVE": "DR",
+    "HWY": "HWY",
+    "HIGHWAY": "HWY",
+    "LN": "LN",
+    "LANE": "LN",
+    "PKWY": "PKWY",
+    "PARKWAY": "PKWY",
+    "PL": "PL",
+    "PLACE": "PL",
+    "PLZ": "PLZ",
+    "PLAZA": "PLZ",
+    "RD": "RD",
+    "ROAD": "RD",
+    "ST": "ST",
+    "STREET": "ST",
+    "TER": "TER",
+    "TERRACE": "TER",
+    "WAY": "WAY",
+}
 
 JsonDict: TypeAlias = dict[str, Any]
 
@@ -83,6 +115,7 @@ class ParkingMarkerPoint(TypedDict):
     total_fine_amount: float
     average_fine_amount: float
     location: str
+    merged_geocode_count: int
 
 
 def _generated_timestamp() -> str:
@@ -513,9 +546,11 @@ def _fetch_grouped_marker_rows(window_start: date, window_end: date) -> list[Jso
     """
     Fetch grouped parking hotspots for zoomed-in marker rendering.
 
-    These rows keep the human-readable `location` string so close-up markers can
-    behave more like the LA Controller reference, while still being aggressively
-    reduced server-side before reaching the browser.
+    These rows keep the human-readable `location` string and the source point
+    coordinates used by the Socrata `geocodelocation` field so close-up markers
+    can sit on the original geocoded point instead of a rounded heatmap bin.
+    We still aggregate server-side before sending the marker payload to the
+    browser.
 
     Args:
         window_start: Inclusive start date for the citation window.
@@ -542,28 +577,28 @@ def _fetch_grouped_marker_rows(window_start: date, window_end: date) -> list[Jso
         requested_page_size = min(page_size, remaining_rows)
         rows = _request_parking_ticket_rows(
             v3_query=(
-                f"SELECT round(`loc_lat`, {PARKING_TICKETS_SPOT_DECIMALS}) AS `lat_bin`, "
-                f"round(`loc_long`, {PARKING_TICKETS_SPOT_DECIMALS}) AS `lon_bin`, "
+                "SELECT `loc_lat` AS `lat_point`, "
+                "`loc_long` AS `lon_point`, "
                 "`location`, "
                 "count(*) AS `citation_count`, "
                 "sum(`fine_amount`) AS `total_fine_amount` "
                 f"WHERE {where_clause} "
-                "GROUP BY `lat_bin`, `lon_bin`, `location` "
-                "ORDER BY `citation_count` DESC, `lat_bin` ASC, `lon_bin` ASC"
+                "GROUP BY `lat_point`, `lon_point`, `location` "
+                "ORDER BY `citation_count` DESC, `lat_point` ASC, `lon_point` ASC"
             ),
             page_number=page_number,
             page_size=requested_page_size,
             legacy_params={
                 "$select": (
-                    f"round(loc_lat, {PARKING_TICKETS_SPOT_DECIMALS}) AS lat_bin, "
-                    f"round(loc_long, {PARKING_TICKETS_SPOT_DECIMALS}) AS lon_bin, "
+                    "loc_lat AS lat_point, "
+                    "loc_long AS lon_point, "
                     "location, "
                     "count(*) AS citation_count, "
                     "sum(fine_amount) AS total_fine_amount"
                 ),
                 "$where": where_clause,
-                "$group": "lat_bin, lon_bin, location",
-                "$order": "citation_count DESC, lat_bin ASC, lon_bin ASC",
+                "$group": "lat_point, lon_point, location",
+                "$order": "citation_count DESC, lat_point ASC, lon_point ASC",
                 "$limit": requested_page_size,
                 "$offset": (page_number - 1) * page_size,
             },
@@ -649,9 +684,12 @@ def _coerce_grouped_marker_rows(grouped_rows: list[JsonDict]) -> list[ParkingMar
     normalized_rows: list[ParkingMarkerPoint] = []
 
     for row in grouped_rows:
+        lat_value = row.get("lat_point", row.get("lat_bin"))
+        lon_value = row.get("lon_point", row.get("lon_bin"))
+
         try:
-            lat = float(row["lat_bin"])
-            lon = float(row["lon_bin"])
+            lat = float(lat_value)
+            lon = float(lon_value)
             citation_count = int(row["citation_count"])
         except (KeyError, TypeError, ValueError):
             continue
@@ -690,10 +728,152 @@ def _coerce_grouped_marker_rows(grouped_rows: list[JsonDict]) -> list[ParkingMar
                 "total_fine_amount": round(total_fine_amount, 2),
                 "average_fine_amount": round(total_fine_amount / citation_count, 2),
                 "location": location,
+                "merged_geocode_count": 1,
             }
         )
 
     return normalized_rows
+
+
+def _normalize_marker_location_key(location: str) -> str:
+    """
+    Return a stable normalized key for same-address marker merging.
+
+    Args:
+        location: Raw location string from the city dataset.
+
+    Returns:
+        Uppercased, whitespace-collapsed location key.
+    """
+    tokens = [
+        re.sub(r"[^A-Z0-9]", "", token)
+        for token in location.strip().upper().split()
+    ]
+    tokens = [token for token in tokens if token]
+
+    if tokens:
+        tokens[-1] = _LOCATION_SUFFIX_NORMALIZATION.get(tokens[-1], tokens[-1])
+
+    return " ".join(tokens)
+
+
+def _distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Estimate the distance between two nearby coordinates in meters.
+
+    Args:
+        lat1: Latitude of point A.
+        lon1: Longitude of point A.
+        lat2: Latitude of point B.
+        lon2: Longitude of point B.
+
+    Returns:
+        Approximate ground distance in meters.
+    """
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    mean_lat = (lat1_rad + lat2_rad) / 2
+    x = math.radians(lon2 - lon1) * math.cos(mean_lat)
+    y = math.radians(lat2 - lat1)
+    return 6371000 * math.sqrt((x * x) + (y * y))
+
+
+def _merge_marker_points_by_location_proximity(
+    marker_points: list[ParkingMarkerPoint],
+) -> list[ParkingMarkerPoint]:
+    """
+    Merge same-address marker points that are effectively the same curb spot.
+
+    The source dataset can assign slightly different geocodes to the same block
+    address, which creates duplicate-looking markers. We collapse those nearby
+    duplicates into a citation-weighted centroid, while preserving separate
+    markers when the same address is meaningfully farther apart.
+
+    Args:
+        marker_points: Normalized marker hotspots prior to de-duplication.
+
+    Returns:
+        Marker hotspots with near-duplicate same-address points merged.
+    """
+    if not marker_points:
+        return []
+
+    grouped_points: dict[str, list[ParkingMarkerPoint]] = {}
+    for point in marker_points:
+        grouped_points.setdefault(_normalize_marker_location_key(point["location"]), []).append(point)
+
+    merged_points: list[ParkingMarkerPoint] = []
+
+    for points_for_location in grouped_points.values():
+        clusters: list[dict[str, float | int | str]] = []
+
+        for point in sorted(points_for_location, key=lambda item: int(item["citation_count"]), reverse=True):
+            matched_cluster: dict[str, float | int | str] | None = None
+
+            for cluster in clusters:
+                if _distance_meters(
+                    point["lat"],
+                    point["lon"],
+                    float(cluster["lat"]),
+                    float(cluster["lon"]),
+                ) <= PARKING_TICKETS_MARKER_MERGE_DISTANCE_METERS:
+                    matched_cluster = cluster
+                    break
+
+            if matched_cluster is None:
+                clusters.append(
+                    {
+                        "lat": float(point["lat"]),
+                        "lon": float(point["lon"]),
+                        "citation_count": int(point["citation_count"]),
+                        "total_fine_amount": float(point["total_fine_amount"]),
+                        "location": point["location"],
+                        "merged_geocode_count": int(point.get("merged_geocode_count", 1)),
+                    }
+                )
+                continue
+
+            existing_count = int(matched_cluster["citation_count"])
+            added_count = int(point["citation_count"])
+            total_count = existing_count + added_count
+
+            matched_cluster["lat"] = (
+                (float(matched_cluster["lat"]) * existing_count) + (float(point["lat"]) * added_count)
+            ) / total_count
+            matched_cluster["lon"] = (
+                (float(matched_cluster["lon"]) * existing_count) + (float(point["lon"]) * added_count)
+            ) / total_count
+            matched_cluster["citation_count"] = total_count
+            matched_cluster["total_fine_amount"] = (
+                float(matched_cluster["total_fine_amount"]) + float(point["total_fine_amount"])
+            )
+            matched_cluster["merged_geocode_count"] = (
+                int(matched_cluster["merged_geocode_count"]) + int(point.get("merged_geocode_count", 1))
+            )
+
+        for cluster in clusters:
+            citation_count = int(cluster["citation_count"])
+            total_fine_amount = round(float(cluster["total_fine_amount"]), 2)
+            merged_points.append(
+                {
+                    "lat": round(float(cluster["lat"]), 6),
+                    "lon": round(float(cluster["lon"]), 6),
+                    "citation_count": citation_count,
+                    "total_fine_amount": total_fine_amount,
+                    "average_fine_amount": round(total_fine_amount / citation_count, 2),
+                    "location": str(cluster["location"]),
+                    "merged_geocode_count": int(cluster["merged_geocode_count"]),
+                }
+            )
+
+    merged_points.sort(
+        key=lambda point: (
+            -int(point["citation_count"]),
+            float(point["lat"]),
+            float(point["lon"]),
+        )
+    )
+    return merged_points[:PARKING_TICKETS_MAX_MARKER_POINTS]
 
 
 def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPoint]:
@@ -817,6 +997,7 @@ def _build_heat_anchor_feature(
             round(point["total_fine_amount"], 2),
             round(point["average_fine_amount"], 2),
             point["location"],
+            int(point.get("merged_geocode_count", 1)),
         ]
         for point in marker_points
     ]
@@ -863,7 +1044,9 @@ def _build_live_parking_tickets_heat_geojson() -> GeoJsonDict:
             window_end=window_end,
         )
         heat_points = _attach_heat_intensity(_coerce_grouped_heat_rows(grouped_heat_rows))
-        marker_points = _coerce_grouped_marker_rows(grouped_marker_rows)
+        marker_points = _merge_marker_points_by_location_proximity(
+            _coerce_grouped_marker_rows(grouped_marker_rows)
+        )
 
         max_citation_count = max((int(point["citation_count"]) for point in heat_points), default=0)
         marker_frequency_breaks = _marker_frequency_thresholds(marker_points)

@@ -36,7 +36,7 @@
      */
 
     /**
-     * @typedef {[number, number, number, number, number, string]} MarkerPointTuple
+    * @typedef {[number, number, number, number, number, string, number?]} MarkerPointTuple
      */
 
     /**
@@ -94,18 +94,20 @@
                 const totalFineAmount = Number(point[3]);
                 const averageFineAmount = Number(point[4]);
                 const location = String(point[5] || "").trim();
+                const mergedGeocodeCount = Number(point[6] || 1);
                 if (
                     !Number.isFinite(lat) ||
                     !Number.isFinite(lon) ||
                     !Number.isFinite(citationCount) ||
                     !Number.isFinite(totalFineAmount) ||
                     !Number.isFinite(averageFineAmount) ||
+                    !Number.isFinite(mergedGeocodeCount) ||
                     !location
                 ) {
                     return null;
                 }
 
-                return [lat, lon, citationCount, totalFineAmount, averageFineAmount, location];
+                return [lat, lon, citationCount, totalFineAmount, averageFineAmount, location, mergedGeocodeCount];
             })
             .filter(function(point) {
                 return Array.isArray(point);
@@ -217,6 +219,7 @@
                     average_fine_amount: point[4],
                     window_start: properties.window_start,
                     window_end: properties.window_end,
+                    merged_geocode_count: point[6],
                 };
                 const markerLayerItem = L.circleMarker([point[0], point[1]], buildMarkerStyle(point[2]));
 
