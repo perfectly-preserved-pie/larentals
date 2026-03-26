@@ -38,6 +38,9 @@ Derived GeoJSON:
 
 ## Parking Tickets Heatmap Layer
 
+Inspired by the LA Controller's parking citation map:
+https://parkingtickets.lacontroller.app/
+
 https://data.lacity.org/Transportation/Parking-Citations/4f5p-udkv/about_data
 
 Preferred local derived artifact:
