@@ -2,6 +2,20 @@
     "use strict";
 
     /**
+     * Shared popup/runtime helpers for the optional map overlays.
+     *
+     * Folder layout:
+     * - `additional_layers/popups/*.js` registers popup HTML builders.
+     * - `additional_layers/layers/*.js` registers Dash Leaflet point-to-layer hooks.
+     */
+
+    const BREAKFAST_BURRITO_ICON_URL = "https://api.iconify.design/twemoji/burrito.svg?width=18&height=18";
+    const LEAFLET_HEAT_SCRIPT_URLS = [
+        "https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js",
+        "https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js",
+    ];
+
+    /**
      * @typedef {{ label: string, value: string }} PopupRow
      */
 
@@ -241,7 +255,169 @@
         `;
     }
 
+    /**
+     * Resolve a popup builder lazily so folder load order does not break marker registration.
+     *
+     * @param {string} builderName Popup builder name.
+     * @returns {((properties: Record<string, unknown>) => string)|null} Popup builder function or `null`.
+     */
+    function getPopupBuilder(builderName) {
+        const popupBuilders = window.additionalLayerPopups && window.additionalLayerPopups.builders;
+        const builder = popupBuilders && popupBuilders[builderName];
+
+        if (typeof builder !== "function") {
+            console.error(`Additional layer popup builder "${builderName}" is unavailable.`);
+            return null;
+        }
+
+        return builder;
+    }
+
+    /**
+     * Register a popup content builder on the shared popup namespace.
+     *
+     * @param {string} builderName Stable builder name used by layer renderers.
+     * @param {(properties: Record<string, unknown>) => string} builder Popup content builder.
+     * @returns {void}
+     */
+    function registerPopupBuilder(builderName, builder) {
+        window.additionalLayerPopups = Object.assign({}, window.additionalLayerPopups, {
+            builders: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.builders, {
+                [builderName]: builder,
+            }),
+        });
+    }
+
+    /**
+     * Register a Dash Leaflet point-to-layer renderer under the shared namespace.
+     *
+     * @param {string} rendererName Stable renderer name referenced from Python.
+     * @param {(feature: Record<string, unknown>, latlng: unknown) => L.Layer} renderer Renderer function.
+     * @returns {void}
+     */
+    function registerLayerRenderer(rendererName, renderer) {
+        window.myNamespace = Object.assign({}, window.myNamespace, {
+            mySubNamespace: Object.assign({}, window.myNamespace && window.myNamespace.mySubNamespace, {
+                [rendererName]: renderer,
+            }),
+        });
+    }
+
+    /**
+     * Create a marker and bind popup content when properties are present.
+     *
+     * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the marker.
+     * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     * @param {L.Icon|L.DivIcon} icon Marker icon to use.
+     * @param {string} builderName Popup content builder name registered on `window.additionalLayerPopups.builders`.
+     * @param {L.PopupOptions=} popupOptions Optional Leaflet popup options.
+     * @returns {L.Marker} Marker configured for the feature.
+     */
+    function createPopupMarker(feature, latlng, icon, builderName, popupOptions) {
+        const marker = L.marker(latlng, { icon: icon });
+
+        bindAdditionalLayerPopup(marker, feature, builderName, popupOptions);
+
+        return marker;
+    }
+
+    /**
+     * Bind popup content to an additional-layer marker/path when possible.
+     *
+     * @param {L.Layer} layer Leaflet layer to receive the popup.
+     * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the layer.
+     * @param {string} builderName Popup content builder name.
+     * @param {L.PopupOptions=} popupOptions Optional Leaflet popup options.
+     * @returns {void}
+     */
+    function bindAdditionalLayerPopup(layer, feature, builderName, popupOptions) {
+        if (!feature || !feature.properties) {
+            return;
+        }
+
+        const buildPopupContent = getPopupBuilder(builderName);
+        if (buildPopupContent) {
+            layer.bindPopup(buildPopupContent(feature.properties), popupOptions);
+        }
+    }
+
+    /**
+     * Ensure the Leaflet heatmap plugin is available before mounting the layer.
+     *
+     * This avoids depending on global script load order, which is brittle with
+     * Dash component bundles and external CDN scripts.
+     *
+     * @returns {Promise<void>} Promise that resolves once `L.heatLayer` is ready.
+     */
+    function ensureLeafletHeatLoaded() {
+        if (typeof L !== "undefined" && typeof L.heatLayer === "function") {
+            return Promise.resolve();
+        }
+
+        if (window.larentalsLeafletHeatPromise) {
+            return window.larentalsLeafletHeatPromise;
+        }
+
+        window.larentalsLeafletHeatPromise = new Promise(function(resolve, reject) {
+            if (typeof document === "undefined") {
+                reject(new Error("Document is unavailable; cannot load Leaflet heatmap plugin."));
+                return;
+            }
+
+            let scriptIndex = 0;
+
+            function tryNextScript() {
+                if (typeof L !== "undefined" && typeof L.heatLayer === "function") {
+                    resolve();
+                    return;
+                }
+
+                if (scriptIndex >= LEAFLET_HEAT_SCRIPT_URLS.length) {
+                    reject(new Error("Unable to load Leaflet heatmap plugin from the configured CDNs."));
+                    return;
+                }
+
+                const scriptUrl = LEAFLET_HEAT_SCRIPT_URLS[scriptIndex++];
+                const existingScript = Array.from(document.scripts || []).find(function(scriptTag) {
+                    return scriptTag.src === scriptUrl;
+                });
+
+                if (existingScript) {
+                    existingScript.addEventListener("load", tryNextScript, { once: true });
+                    existingScript.addEventListener("error", tryNextScript, { once: true });
+                    return;
+                }
+
+                const scriptTag = document.createElement("script");
+                scriptTag.src = scriptUrl;
+                scriptTag.async = true;
+                scriptTag.onload = tryNextScript;
+                scriptTag.onerror = tryNextScript;
+                document.head.appendChild(scriptTag);
+            }
+
+            tryNextScript();
+        }).catch(function(error) {
+            console.error("Leaflet heatmap plugin failed to load.", error);
+            window.larentalsLeafletHeatPromise = null;
+            throw error;
+        });
+
+        return window.larentalsLeafletHeatPromise;
+    }
+
     window.additionalLayerPopups = Object.assign({}, window.additionalLayerPopups, {
+        constants: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.constants, {
+            BREAKFAST_BURRITO_ICON_URL: BREAKFAST_BURRITO_ICON_URL,
+        }),
+        runtime: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.runtime, {
+            bindAdditionalLayerPopup: bindAdditionalLayerPopup,
+            createPopupMarker: createPopupMarker,
+            ensureLeafletHeatLoaded: ensureLeafletHeatLoaded,
+            getPopupBuilder: getPopupBuilder,
+            registerLayerRenderer: registerLayerRenderer,
+            registerPopupBuilder: registerPopupBuilder,
+        }),
         utils: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.utils, {
             buildExternalLink: buildExternalLink,
             escapeHtml: escapeHtml,

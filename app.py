@@ -131,5 +131,9 @@ clientside_callback(
 )
 register_api_routes(server, db_path="assets/datasets/larentals.db")
 
+def main() -> None:
+  app.run(debug=True)
+
+
 if __name__ == '__main__':
-	app.run(debug=True)
+	main()

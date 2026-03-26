@@ -3,8 +3,9 @@ from dash import ClientsideFunction, clientside_callback, no_update
 from dash.dependencies import Input, Output, State
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
+from functions.parking_tickets import build_parking_tickets_heat_geojson
 from loguru import logger
-from typing import Any, ClassVar, Optional, Sequence, TypedDict, TypeAlias
+from typing import Any, Callable, ClassVar, Optional, Sequence, TypedDict, TypeAlias
 import dash_leaflet as dl
 import json
 import time
@@ -35,23 +36,28 @@ class LayerConfig:
     Attributes:
         name: Display name shown in `dl.LayersControl`.
         dataset: Internal cache key for the loaded GeoJSON payload.
-        filepath: On-disk path to the GeoJSON source file.
+        filepath: Optional on-disk path to the GeoJSON source file.
+        loader: Optional callable used to build or fetch GeoJSON data dynamically.
         point_to_layer: JavaScript namespace function used to render point features.
         cluster: Whether the layer should use Dash Leaflet marker clustering.
         zoom_to_bounds_on_click: Whether clicking a feature/cluster should fit its bounds.
         bubbling_mouse_events: Whether layer mouse events should bubble to the map.
         supercluster_options: Optional supercluster configuration passed to `dl.GeoJSON`.
         valid_bounds: Optional lon/lat bounding box used to discard clearly invalid points.
+        cache_ttl_seconds: Optional TTL for in-process layer cache entries. `None`
+            means cache indefinitely for the current worker process.
     """
     name: str
     dataset: str
-    filepath: str
     point_to_layer: str
+    filepath: str | None = None
+    loader: Callable[[], GeoJsonDict] | None = None
     cluster: bool = True
     zoom_to_bounds_on_click: bool = True
     bubbling_mouse_events: bool = False
     supercluster_options: Optional[dict[str, Any]] = None
     valid_bounds: Optional[tuple[float, float, float, float]] = None
+    cache_ttl_seconds: int | None = None
 
 # Create a base class for the additional layers
 # The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
@@ -112,8 +118,18 @@ class LayersClass:
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
             valid_bounds=(-125.0, -113.0, 32.0, 35.5),
         ),
+        'parking_tickets_density': LayerConfig(
+            name='Parking Tickets Heatmap (2025)',
+            dataset='parking_tickets_density',
+            loader=build_parking_tickets_heat_geojson,
+            point_to_layer='drawParkingHeatLayer',
+            cluster=False,
+            zoom_to_bounds_on_click=False,
+            bubbling_mouse_events=False,
+            cache_ttl_seconds=3600,
+        ),
     }
-    geojson_cache: ClassVar[dict[str, GeoJsonDict]] = {}
+    geojson_cache: ClassVar[dict[str, tuple[float, GeoJsonDict]]] = {}
 
     @classmethod
     def get_layer_config(cls, layer_key: str) -> LayerConfig:
@@ -137,31 +153,40 @@ class LayersClass:
             ) from exc
 
     @classmethod
-    def load_geojson_data(cls, filepath: str, dataset: str) -> GeoJsonDict:
+    def load_layer_data(cls, layer_key: str) -> GeoJsonDict:
         """
-        Load a GeoJSON payload from disk with simple per-process caching.
+        Load a registered layer payload with simple per-process caching.
 
         Args:
-            filepath: Path to the GeoJSON file on disk.
-            dataset: Cache key used to store and retrieve the parsed payload.
+            layer_key: Internal layer identifier, such as `"farmers_markets"`.
 
         Returns:
             The parsed GeoJSON object.
         """
-        cached_data = cls.geojson_cache.get(dataset)
-        if cached_data is not None:
-            logger.info(f"'{dataset}' dataset already loaded; skipping reload.")
-            return cached_data
+        spec = cls.get_layer_config(layer_key)
+        dataset = spec.dataset
+        cached_entry = cls.geojson_cache.get(dataset)
+        if cached_entry is not None:
+            cached_at, cached_data = cached_entry
+            if spec.cache_ttl_seconds is None or (time.time() - cached_at) < spec.cache_ttl_seconds:
+                logger.info(f"'{dataset}' dataset already loaded; skipping reload.")
+                return cached_data
 
         start_time = time.time()
-        with open(filepath, 'r') as f:
-            loaded_data = json.load(f)
+        if spec.loader is not None:
+            loaded_data = spec.loader()
+        elif spec.filepath is not None:
+            with open(spec.filepath, 'r') as f:
+                loaded_data = json.load(f)
+        else:
+            raise ValueError(
+                f"Layer '{layer_key}' is missing both filepath and loader configuration."
+            )
 
-        spec = cls.get_layer_config_by_dataset(dataset)
         if spec is not None and spec.valid_bounds is not None:
             loaded_data = cls.filter_geojson_to_bounds(loaded_data, spec.valid_bounds)
 
-        cls.geojson_cache[dataset] = loaded_data
+        cls.geojson_cache[dataset] = (time.time(), loaded_data)
         duration = time.time() - start_time
         logger.info(f"Loaded '{dataset}' dataset in {duration:.2f} seconds.")
         return loaded_data
@@ -403,7 +428,7 @@ class LayersClass:
                 continue
 
             resolved_payloads.append(
-                cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset)
+                cls.load_layer_data(layer_key)
             )
 
         return resolved_payloads
@@ -419,7 +444,7 @@ class LayersClass:
         spec = cls.get_layer_config('oil_well')
         return cls.create_geojson_layer(
             'oil_well',
-            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+            data=cls.load_layer_data('oil_well'),
         )
     
     @classmethod
@@ -433,7 +458,7 @@ class LayersClass:
         spec = cls.get_layer_config('farmers_markets')
         return cls.create_geojson_layer(
             'farmers_markets',
-            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+            data=cls.load_layer_data('farmers_markets'),
         )
 
     @classmethod
@@ -447,7 +472,7 @@ class LayersClass:
         spec = cls.get_layer_config('supermarkets_grocery')
         return cls.create_geojson_layer(
             'supermarkets_grocery',
-            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+            data=cls.load_layer_data('supermarkets_grocery'),
         )
 
     @classmethod
@@ -461,7 +486,7 @@ class LayersClass:
         spec = cls.get_layer_config('breakfast_burritos')
         return cls.create_geojson_layer(
             'breakfast_burritos',
-            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+            data=cls.load_layer_data('breakfast_burritos'),
         )
 
     @classmethod
@@ -475,7 +500,7 @@ class LayersClass:
         spec = cls.get_layer_config('crime')
         return cls.create_geojson_layer(
             'crime',
-            data=cls.load_geojson_data(filepath=spec.filepath, dataset=spec.dataset),
+            data=cls.load_layer_data('crime'),
         )
 
 

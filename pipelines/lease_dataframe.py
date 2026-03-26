@@ -27,7 +27,7 @@ import pandas as pd
 import sqlite3
 import sys
 
-if __name__ == "__main__":
+def main() -> None:
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample", type=int, default=None,
     help="If set, run on a sample and exit before write")
@@ -370,3 +370,7 @@ if __name__ == "__main__":
   except Exception as e:
     logger.exception(f"Error in lease pipeline: {e}")
     sys.exit(1)
+
+
+if __name__ == "__main__":
+  main()

@@ -1,9 +1,12 @@
 (function() {
     "use strict";
 
-    const popupUtils = window.additionalLayerPopups && window.additionalLayerPopups.utils;
+    const popupApi = window.additionalLayerPopups;
+    const popupUtils = popupApi && popupApi.utils;
+    const popupRuntime = popupApi && popupApi.runtime;
+    const registerPopupBuilder = popupRuntime && popupRuntime.registerPopupBuilder;
 
-    if (!popupUtils) {
+    if (!popupUtils || typeof registerPopupBuilder !== "function") {
         console.error("Additional layer popup utils did not load before the farmers market popup builder.");
         return;
     }
@@ -161,9 +164,5 @@
         });
     }
 
-    window.additionalLayerPopups = Object.assign({}, window.additionalLayerPopups, {
-        builders: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.builders, {
-            buildFarmersMarketPopupContent: buildFarmersMarketPopupContent,
-        }),
-    });
+    registerPopupBuilder("buildFarmersMarketPopupContent", buildFarmersMarketPopupContent);
 })();

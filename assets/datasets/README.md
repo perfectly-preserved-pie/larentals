@@ -35,3 +35,24 @@ Derived GeoJSON:
 - Santa Monica addresses are geocoded at build time with cached Nominatim lookups
 - Filtered to NAICS `445100` and `445110`
 - Excludes gas-station-branded businesses based on name matching
+
+## Parking Tickets Heatmap Layer
+
+Inspired by the LA Controller's parking citation map:
+https://parkingtickets.lacontroller.app/
+
+https://data.lacity.org/Transportation/Parking-Citations/4f5p-udkv/about_data
+
+Preferred local derived artifact:
+
+- `parking_tickets_heatmap_2025.json.gz`
+- Built from the fixed calendar-year window `2025-01-01` through `2025-12-31`
+- Stores the top `50,000` grouped ticketed spots used for the heat surface
+- Also stores the top `8,000` grouped hotspot markers used for close-up popups
+- Refresh locally with `uv run build-parking-tickets-heatmap`
+- Preferred API: Socrata v3 query endpoint for view `4f5p-udkv`
+- Set `SOCRATA_APP_TOKEN` in `.env` or the environment to enable faster offline v3 requests
+- Filters out zero/out-of-bounds coordinates before grouping
+- Excludes rows with missing coordinates, implausible bounds, or invalid fine amounts
+- Groups citations into rounded hotspot coordinates for weighted heatmap rendering
+- Keeps up to the top `50,000` 2025 hotspots, similar to the LA Controller reference map

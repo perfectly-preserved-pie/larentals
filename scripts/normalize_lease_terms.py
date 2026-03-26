@@ -220,6 +220,10 @@ def backfill_lease_terms(db_path: str) -> None:
         conn.close()
 
 
-if __name__ == "__main__":
+def main() -> None:
     db_path = Path(__file__).resolve().parent.parent / "assets/datasets/larentals.db"
     backfill_lease_terms(str(db_path))
+
+
+if __name__ == "__main__":
+    main()

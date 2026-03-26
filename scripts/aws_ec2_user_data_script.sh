@@ -74,18 +74,18 @@ systemctl restart amazon-cloudwatch-agent
 
 # Sample both in parallel
 (
-  uv run python -m pipelines.lease_dataframe \
+  uv run lease-dataframe \
     --sample 15 \
     --logfile "$SAMPLE_LOG_DIR/lease_sample.log" \
-  && uv run python -m pipelines.lease_dataframe \
+  && uv run lease-dataframe \
     --logfile "$FULL_LOG_DIR/lease_full.log"
 ) &
 
 (
-  uv run python -m pipelines.buy_dataframe \
+  uv run buy-dataframe \
     --sample 15 \
     --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
-  && uv run python -m pipelines.buy_dataframe \
+  && uv run buy-dataframe \
     --logfile "$FULL_LOG_DIR/buy_full.log"
 ) &
 
