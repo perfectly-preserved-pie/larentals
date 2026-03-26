@@ -51,6 +51,93 @@
      */
 
     /**
+     * Return the inclusive upper percentile threshold from a sorted count distribution.
+     *
+     * @param {number[]} counts Sorted positive citation counts.
+     * @param {number} fraction Percentile fraction in the inclusive `(0, 1]` range.
+     * @returns {number} Integer threshold for the requested percentile.
+     */
+    function pickPercentileThreshold(counts, fraction) {
+        if (!Array.isArray(counts) || !counts.length) {
+            return 0;
+        }
+
+        const clampedFraction = Math.min(1, Math.max(0, Number(fraction) || 0));
+        const index = Math.min(
+            counts.length - 1,
+            Math.max(0, Math.ceil(clampedFraction * counts.length) - 1)
+        );
+        return Math.max(1, Math.round(Number(counts[index]) || 0));
+    }
+
+    /**
+     * Round a citation count up to a label-friendly threshold.
+     *
+     * @param {number} value Candidate citation-count threshold.
+     * @returns {number} Rounded-up threshold suitable for a legend label.
+     */
+    function roundUpToFriendlyCount(value) {
+        const numericValue = Math.max(1, Math.round(Number(value) || 0));
+
+        if (numericValue <= 25) {
+            return Math.ceil(numericValue / 5) * 5;
+        }
+        if (numericValue <= 100) {
+            return Math.ceil(numericValue / 10) * 10;
+        }
+        if (numericValue <= 500) {
+            return Math.ceil(numericValue / 25) * 25;
+        }
+        if (numericValue <= 1000) {
+            return Math.ceil(numericValue / 50) * 50;
+        }
+        return Math.ceil(numericValue / 100) * 100;
+    }
+
+    /**
+     * Derive hybrid marker tiers that stay user-readable while isolating outliers.
+     *
+     * The first tiers use fixed yearly frequencies:
+     * - monthly-ish: 12 per year
+     * - weekly-ish: 52 per year
+     * - several per week: 156 per year
+     *
+     * The highest tier is reserved for statistical outliers using the larger of:
+     * - 520 citations/year (roughly 10 per week)
+     * - the rounded 99th-percentile threshold in the current dataset
+     *
+     * @param {number[]} counts Positive citation counts.
+     * @returns {number[]} Ascending integer thresholds for five marker tiers.
+     */
+    function deriveHybridMarkerBreaks(counts) {
+        const sanitizedCounts = Array.isArray(counts)
+            ? counts
+                .map(function(value) {
+                    return Number(value);
+                })
+                .filter(function(value) {
+                    return Number.isFinite(value) && value > 0;
+                })
+                .sort(function(a, b) {
+                    return a - b;
+                })
+            : [];
+
+        const baselineBreaks = [12, 52, 156, 520];
+        if (!sanitizedCounts.length) {
+            return baselineBreaks;
+        }
+
+        const percentile99 = pickPercentileThreshold(sanitizedCounts, 0.99);
+        const extremeThreshold = Math.max(
+            baselineBreaks[3],
+            roundUpToFriendlyCount(percentile99)
+        );
+
+        return [baselineBreaks[0], baselineBreaks[1], baselineBreaks[2], extremeThreshold];
+    }
+
+    /**
      * Create the invisible anchor marker used to mount a true Leaflet heat layer.
      *
      * Dash Leaflet renders one Leaflet layer per GeoJSON feature. For the parking
@@ -127,11 +214,14 @@
         const markerZoomMin = Number(properties.marker_zoom_min) || 15;
         const heatZoomMax = Number(properties.heat_zoom_max) || 16;
         const maxCitationCount = Math.max(1, Number(properties.max_citation_count) || 1);
-        const markerFrequencyBreaks = Array.isArray(properties.marker_frequency_breaks)
-            ? properties.marker_frequency_breaks.map(function(value) {
-                return Number(value) || 0;
+        const markerCitationCounts = markerPoints
+            .map(function(point) {
+                return Number(point[2]);
             })
-            : [0, 0, 0, 0];
+            .filter(function(value) {
+                return Number.isFinite(value) && value > 0;
+            });
+        const markerFrequencyBreaks = deriveHybridMarkerBreaks(markerCitationCounts);
 
         const anchorMarker = L.marker(latlng, {
             opacity: 0,
@@ -219,6 +309,18 @@
          * @param {ParkingLegendOptions | null | undefined} options Current legend visibility state.
          * @returns {void}
          */
+        /**
+         * Renders a parking citations legend in the marker's container.
+         * 
+         * The legend displays:
+         * - Heat intensity gradient: visual representation of ticket density (lower to higher)
+         * - Street-level citations: five frequency tiers from occasional to extreme hotspots
+         * - Time window: applicable date range for the citation data
+         * 
+         * @param {Object} options - Configuration options
+         * @param {boolean} [options.showHeat] - Whether to display the heat map intensity guide
+         * @param {boolean} [options.showMarkers] - Whether to display the hotspot frequency tiers
+         */
         function renderLegend(options) {
             if (!anchorMarker._parkingTicketsLegendContainer) {
                 return;
@@ -226,10 +328,10 @@
 
             const showHeat = Boolean(options && options.showHeat);
             const showMarkers = Boolean(options && options.showMarkers);
-            const q50 = markerFrequencyBreaks[0] || 0;
-            const q75 = markerFrequencyBreaks[1] || 0;
-            const q90 = markerFrequencyBreaks[2] || 0;
-            const q975 = markerFrequencyBreaks[3] || 0;
+            const tier2 = markerFrequencyBreaks[0] || 0;
+            const tier3 = markerFrequencyBreaks[1] || 0;
+            const tier4 = markerFrequencyBreaks[2] || 0;
+            const tier5 = markerFrequencyBreaks[3] || 0;
             const windowLabel = [
                 String(properties.window_start || "").trim(),
                 String(properties.window_end || "").trim(),
@@ -257,17 +359,17 @@
             if (showMarkers) {
                 /** @type {ParkingLegendMarkerEntry[]} */
                 const markerLegendEntries = [
-                    ['#3da1ff', 'Typical', q50 > 0 ? "< " + formatCitationCount(q50) : null],
-                    ['#2ecf7f', 'Busy', q50 > 0 && q75 > 0 ? formatCitationCount(q50) + "\u2013" + formatCitationCount(q75 - 1) : null],
-                    ['#ffd43b', 'Very busy', q75 > 0 && q90 > 0 ? formatCitationCount(q75) + "\u2013" + formatCitationCount(q90 - 1) : null],
-                    ['#ff8f1f', 'Heavy', q90 > 0 && q975 > 0 ? formatCitationCount(q90) + "\u2013" + formatCitationCount(q975 - 1) : null],
-                    ['#ff3123', 'Extreme', q975 > 0 ? formatCitationCount(q975) + "+" : null],
+                    ['#3da1ff', 'Occasional', tier2 > 0 ? "< " + formatCitationCount(tier2) + "/year" : null],
+                    ['#2ecf7f', 'Monthly', tier2 > 0 && tier3 > 0 ? formatCitationCount(tier2) + "\u2013" + formatCitationCount(tier3 - 1) + "/year" : null],
+                    ['#ffd43b', 'Weekly', tier3 > 0 && tier4 > 0 ? formatCitationCount(tier3) + "\u2013" + formatCitationCount(tier4 - 1) + "/year" : null],
+                    ['#ff8f1f', 'Several per week', tier4 > 0 && tier5 > 0 ? formatCitationCount(tier4) + "\u2013" + formatCitationCount(tier5 - 1) + "/year" : null],
+                    ['#ff3123', 'Extreme Hotspot', tier5 > 0 ? formatCitationCount(tier5) + "+/year" : null],
                 ];
 
                 legendSections.push(
                     [
                         '<div class="parking-tickets-legend__section" style="margin-top: 10px;">',
-                        '<div class="parking-tickets-legend__subtitle" style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 600;">Street-level hotspots</div>',
+                        '<div class="parking-tickets-legend__subtitle" style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 600;">Street-level citations</div>',
                         '<div class="parking-tickets-legend__marker-list" style="display: grid; gap: 5px;">',
                         markerLegendEntries
                             .filter(function(item) {
@@ -300,7 +402,7 @@
                     ? '<div class="parking-tickets-legend__caption" style="margin-top: 2px; font-size: 0.72rem; color: #556270;">' + windowLabel + "</div>"
                     : "",
                 legendSections.join(""),
-                '<div class="parking-tickets-legend__hint" style="margin-top: 10px; font-size: 0.7rem; color: #556270;">Zoom in for hotspot circles.</div>',
+                '<div class="parking-tickets-legend__hint" style="margin-top: 10px; font-size: 0.7rem; color: #556270;">Warmer colors mean more citations.</div>',
             ].join("");
         }
 
@@ -357,24 +459,24 @@
 
         function buildMarkerStyle(citationCount) {
             const normalizedCount = Math.sqrt(citationCount / maxCitationCount);
-            const q50 = markerFrequencyBreaks[0] || 0;
-            const q75 = markerFrequencyBreaks[1] || 0;
-            const q90 = markerFrequencyBreaks[2] || 0;
-            const q975 = markerFrequencyBreaks[3] || 0;
+            const tier2 = markerFrequencyBreaks[0] || 0;
+            const tier3 = markerFrequencyBreaks[1] || 0;
+            const tier4 = markerFrequencyBreaks[2] || 0;
+            const tier5 = markerFrequencyBreaks[3] || 0;
 
             let fillColor = "#3da1ff";
             let strokeColor = "#0f1b26";
 
-            if (citationCount >= q975 && q975 > 0) {
+            if (citationCount >= tier5 && tier5 > 0) {
                 fillColor = "#ff3123";
                 strokeColor = "#4f0a06";
-            } else if (citationCount >= q90 && q90 > 0) {
+            } else if (citationCount >= tier4 && tier4 > 0) {
                 fillColor = "#ff8f1f";
                 strokeColor = "#5c2d00";
-            } else if (citationCount >= q75 && q75 > 0) {
+            } else if (citationCount >= tier3 && tier3 > 0) {
                 fillColor = "#ffd43b";
                 strokeColor = "#665200";
-            } else if (citationCount >= q50 && q50 > 0) {
+            } else if (citationCount >= tier2 && tier2 > 0) {
                 fillColor = "#2ecf7f";
                 strokeColor = "#0f4a2a";
             }
