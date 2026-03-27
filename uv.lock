@@ -328,14 +328,14 @@ wheels = [
 
 [[package]]
 name = "dash-mantine-components"
-version = "2.6.0"
+version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/1c/922819c3a1fc096d11221a2f788aa5df61a4c6575582f29417e69944d38f/dash_mantine_components-2.6.0.tar.gz", hash = "sha256:46dadc90cf261b951f087eb96fb64b4b2d9616f854354e1f382c66209dce82c4", size = 930821, upload-time = "2026-02-14T21:47:48.58Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/db/4ac4aa86c1ac7ea10aa70eac555871ef602fab6897ec43e1e8b6ae3212f4/dash_mantine_components-2.6.1.tar.gz", hash = "sha256:40fd21b94784ebc4c2248eff702a7ce705f67bf9b7e75c0dc3c3389745744a84", size = 906739, upload-time = "2026-03-26T16:57:47.631Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/10/416c602674d67082c41851cacaf521e27989aaf45f93d479b59ab48849c1/dash_mantine_components-2.6.0-py3-none-any.whl", hash = "sha256:55db031186b83febc9d320fe00337f60f33d6d47cdb4160434e9cfb8f29fd105", size = 1377793, upload-time = "2026-02-14T21:47:47.052Z" },
+    { url = "https://files.pythonhosted.org/packages/55/b0/821417b0ecbee8f9074c08f85229a7fbf04fe3fa8cb9d4b8ea128def1ef8/dash_mantine_components-2.6.1-py3-none-any.whl", hash = "sha256:4fe2a9f0b47020c8c9d14c80236fce21ae5482133fe0a82d08bd49b972790f3d", size = 1353426, upload-time = "2026-03-26T16:57:45.929Z" },
 ]
 
 [[package]]
