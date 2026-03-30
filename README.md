@@ -73,6 +73,12 @@ docker compose -f docker-compose.valhalla.yml up -d
 
 Setup details, GTFS folder layout, and the app env vars for switching to the
 local service live in [docker/valhalla/README.md](docker/valhalla/README.md).
+There is also a helper to pull common LA-area GTFS feeds into the expected
+folders:
+
+```bash
+uv run download-gtfs-feeds all
+```
 
 ### Non-Docker
 

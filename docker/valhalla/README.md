@@ -15,8 +15,36 @@ focused on the region this app cares about.
    mkdir -p docker/valhalla/custom_files docker/valhalla/gtfs_feeds
    ```
 
-2. Put any GTFS feeds you want Valhalla to index into subfolders under
-   `docker/valhalla/gtfs_feeds/`, for example:
+2. Download a curated LA-area GTFS set into the right agency folders:
+
+   ```bash
+   uv run download-gtfs-feeds all
+   ```
+
+   Or just the feeds you want:
+
+   ```bash
+   uv run download-gtfs-feeds metro_bus metro_rail culver_citybus big_blue_bus metrolink
+   ```
+
+   To see the currently supported feed keys:
+
+   ```bash
+   uv run download-gtfs-feeds --list
+   ```
+
+   The script currently includes:
+   - `metro_bus`
+   - `metro_rail`
+   - `culver_citybus`
+   - `big_blue_bus`
+   - `metrolink`
+   - `ladot`
+   - `foothill`
+   - `torrance`
+
+3. If you want to add agencies manually, put each unzipped GTFS feed into its
+   own subfolder under `docker/valhalla/gtfs_feeds/`, for example:
 
    ```text
    docker/valhalla/gtfs_feeds/la_metro/
@@ -25,13 +53,13 @@ focused on the region this app cares about.
 
    Each agency directory should contain the unzipped GTFS `.txt` files.
 
-3. Start Valhalla:
+4. Start Valhalla:
 
    ```bash
    docker compose -f docker-compose.valhalla.yml up -d
    ```
 
-4. Watch the initial tile build:
+5. Watch the initial tile build:
 
    ```bash
    docker compose -f docker-compose.valhalla.yml logs -f valhalla
@@ -40,6 +68,10 @@ focused on the region this app cares about.
 The first boot can take a while because the container downloads/builds graph
 tiles, admins, and time zones. Transit builds also depend on the GTFS feeds
 present in `docker/valhalla/gtfs_feeds/`.
+
+The `api.metro.net` endpoints are useful for Metro realtime data, but Valhalla
+needs static GTFS bundles for transit graph builds, so the script above pulls
+the static ZIP feeds instead.
 
 ## Point the app at the local service
 
