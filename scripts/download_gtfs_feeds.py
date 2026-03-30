@@ -6,10 +6,19 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Mapping
 
 import requests
 
 DEFAULT_GTFS_ROOT = Path("docker/valhalla/gtfs_feeds")
+DEFAULT_REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/zip,application/octet-stream,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 
 @dataclass(frozen=True)
@@ -21,11 +30,13 @@ class GtfsFeed:
         key: Stable CLI key used to select the feed.
         label: Human-readable agency label.
         url: Static GTFS ZIP download URL.
+        headers: Optional per-feed HTTP headers.
     """
 
     key: str
     label: str
     url: str
+    headers: Mapping[str, str] | None = None
 
 
 GTFS_FEEDS: tuple[GtfsFeed, ...] = (
@@ -33,7 +44,15 @@ GTFS_FEEDS: tuple[GtfsFeed, ...] = (
     GtfsFeed("metro_rail", "LA Metro Rail", "https://gitlab.com/LACMTA/gtfs_rail/raw/master/gtfs_rail.zip"),
     GtfsFeed("culver_citybus", "Culver CityBus", "https://web.culvercity.org/gtfs/gtfsexport.zip"),
     GtfsFeed("big_blue_bus", "Big Blue Bus", "https://gtfs.bigbluebus.com/current.zip"),
-    GtfsFeed("metrolink", "Metrolink", "https://metrolinktrains.com/globalassets/about/gtfs/gtfs.zip"),
+    GtfsFeed(
+        "metrolink",
+        "Metrolink",
+        "https://metrolinktrains.com/globalassets/about/gtfs/gtfs.zip",
+        headers={
+            "Referer": "https://metrolinktrains.com/about/gtfs/",
+            "Origin": "https://metrolinktrains.com",
+        },
+    ),
     GtfsFeed("ladot", "LADOT Transit", "https://ladotbus.com/gtfs"),
     GtfsFeed("foothill", "Foothill Transit", "https://foothilltransit.rideralerts.com/myStop/gtfs-zip.ashx"),
     GtfsFeed("torrance", "Torrance Transit", "https://transit.torranceca.gov/home/showpublisheddocument/16673/639033196638970000"),
@@ -157,13 +176,28 @@ def download_feed(
     """
     destination_dir = output_root / feed.key
     print(f"Downloading {feed.key:<16} {feed.url}")
+    request_headers = {
+        **DEFAULT_REQUEST_HEADERS,
+        **dict(feed.headers or {}),
+    }
 
     with tempfile.NamedTemporaryFile(prefix=f"{feed.key}.", suffix=".zip", delete=False) as temp_file:
         temp_path = Path(temp_file.name)
 
     try:
-        with requests.get(feed.url, stream=True, timeout=timeout_seconds) as response:
-            response.raise_for_status()
+        with requests.get(
+            feed.url,
+            headers=request_headers,
+            stream=True,
+            timeout=timeout_seconds,
+        ) as response:
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as exc:
+                raise requests.HTTPError(
+                    f"{exc}. Feed={feed.key} URL={feed.url}",
+                    response=response,
+                ) from exc
             with temp_path.open("wb") as output_file:
                 for chunk in response.iter_content(chunk_size=1024 * 1024):
                     if chunk:
@@ -198,12 +232,15 @@ def main() -> None:
     output_root = Path(args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    for feed in selected_feeds:
-        download_feed(
-            feed=feed,
-            output_root=output_root,
-            timeout_seconds=float(args.timeout_seconds),
-        )
+    try:
+        for feed in selected_feeds:
+            download_feed(
+                feed=feed,
+                output_root=output_root,
+                timeout_seconds=float(args.timeout_seconds),
+            )
+    except requests.RequestException as exc:
+        raise SystemExit(f"Failed downloading GTFS feed: {exc}") from exc
 
 
 if __name__ == "__main__":
