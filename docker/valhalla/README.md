@@ -81,8 +81,9 @@ If the Dash app is running on your host machine, set:
 VALHALLA_BASE_URL=http://127.0.0.1:8002
 VALHALLA_SERVICE_LABEL=Self-hosted Valhalla
 VALHALLA_IS_PUBLIC_DEMO=False
-VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES=400
-VALHALLA_EXACT_COMMUTE_MAX_WORKERS=8
+VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES=2000
+VALHALLA_EXACT_COMMUTE_MAX_WORKERS=16
+VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS=4
 ```
 
 If the app is running in another container on the same Docker network, use:
@@ -91,9 +92,10 @@ If the app is running in another container on the same Docker network, use:
 VALHALLA_BASE_URL=http://valhalla:8002
 ```
 
-`VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES` is intentionally still capped. A
-five-figure route burst on every filter change is expensive even on your own
-box, so raise it gradually after you see how your host performs.
+`VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES` is intentionally still capped. The app
+will push much harder on self-hosted Valhalla now, but a five-figure route
+burst on every filter change can still bog down your box, so keep an eye on how
+your host performs before raising it further.
 
 ## Common rebuilds
 

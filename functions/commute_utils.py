@@ -95,7 +95,7 @@ VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES = max(
     int(
         os.getenv(
             "VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES",
-            "60" if VALHALLA_IS_PUBLIC_DEMO else "400",
+            "60" if VALHALLA_IS_PUBLIC_DEMO else "2000",
         )
     ),
 )
@@ -104,7 +104,7 @@ VALHALLA_EXACT_COMMUTE_MAX_WORKERS = max(
     int(
         os.getenv(
             "VALHALLA_EXACT_COMMUTE_MAX_WORKERS",
-            "4" if VALHALLA_IS_PUBLIC_DEMO else "8",
+            "4" if VALHALLA_IS_PUBLIC_DEMO else "16",
         )
     ),
 )
@@ -113,7 +113,7 @@ VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS = max(
     int(
         os.getenv(
             "VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS",
-            "1",
+            "1" if VALHALLA_IS_PUBLIC_DEMO else "4",
         )
     ),
 )
