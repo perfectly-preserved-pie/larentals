@@ -232,3 +232,4 @@ __marimo__/
 .streamlit/secrets.toml
 
 .codex
+valhalla/
