@@ -1,7 +1,7 @@
 services:
   valhalla:
     image: ghcr.io/valhalla/valhalla-scripted:latest
-    container_name: larentals-valhalla
+    container_name: valhalla
     restart: unless-stopped
     ports:
       - "${VALHALLA_HOST_PORT:-8002}:8002"
