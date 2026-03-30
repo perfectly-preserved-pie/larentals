@@ -397,7 +397,7 @@ class BaseClass:
         return html.Div(
             [
                 html.P(
-                    "Filter listings to an approximate travel-time area around a destination.",
+                    "Filter listings to a travel-time area around a destination.",
                     style={"marginBottom": "10px"},
                 ),
                 dcc.Input(
@@ -454,6 +454,14 @@ class BaseClass:
                     id=f"{self.page_type}-commute-status",
                     style={
                         "marginTop": "8px",
+                        "fontSize": "0.85rem",
+                        "color": "#9aa0a6",
+                    },
+                ),
+                html.Div(
+                    id=f"{self.page_type}-commute-exact-status",
+                    style={
+                        "marginTop": "6px",
                         "fontSize": "0.85rem",
                         "color": "#9aa0a6",
                     },
@@ -1399,6 +1407,10 @@ class LeaseComponents(BaseClass):
                     'minZoom': 3,
                 },
             ),
+            dl.LayerGroup(
+                id=f"{self.page_type}-commute-target-layer",
+                children=[],
+            ),
             dl.FullScreenControl(),
         ]
         if layers_control is not None:
@@ -2054,6 +2066,10 @@ class BuyComponents(BaseClass):
                     'radius': 160,
                     'minZoom': 3,
                 },
+            ),
+            dl.LayerGroup(
+                id=f"{self.page_type}-commute-target-layer",
+                children=[],
             ),
             dl.FullScreenControl(),
         ]

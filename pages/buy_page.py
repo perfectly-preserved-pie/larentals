@@ -1,6 +1,12 @@
 from .components import BuyComponents
 from dash import dcc, callback, clientside_callback, ClientsideFunction
-from functions.commute_utils import build_commute_boundary_result
+import dash_leaflet as dl
+from functions.commute_utils import (
+  build_commute_boundary_result,
+  empty_commute_exact_result,
+  empty_commute_request_data,
+  verify_exact_commute_matches,
+)
 from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
@@ -58,7 +64,10 @@ def layout(**_: object) -> dbc.Container:
   """
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="buy-geojson-store", storage_type="memory", data=None)
+  prefilter_geojson_store = dcc.Store(id="buy-prefilter-geojson-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
+  commute_request_store = dcc.Store(id="buy-commute-request-store", storage_type="memory", data=empty_commute_request_data())
+  commute_exact_store = dcc.Store(id="buy-commute-exact-store", storage_type="memory", data=empty_commute_exact_result())
   kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
@@ -66,7 +75,10 @@ def layout(**_: object) -> dbc.Container:
     [
       collapse_store,
       geojson_store,
+      prefilter_geojson_store,
       zip_boundary_store,
+      commute_request_store,
+      commute_exact_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -279,6 +291,7 @@ def update_buy_zip_boundary(
 @callback(
   Output("buy-commute-geojson", "data"),
   Output("buy-commute-status", "children"),
+  Output("buy-commute-request-store", "data"),
   Input("buy-commute-input", "value"),
   Input("buy-commute-mode", "value"),
   Input("buy-commute-minutes", "value"),
@@ -287,9 +300,9 @@ def update_buy_commute_boundary(
   destination: str | None,
   mode: str | None,
   minutes: int | float | None,
-) -> tuple[dict, str]:
+) -> tuple[dict, str, dict]:
   """
-  Update the approximate commute boundary overlay for the buy page.
+  Update the coarse commute boundary overlay and request metadata.
 
   Args:
     destination: User-entered destination text.
@@ -297,7 +310,7 @@ def update_buy_commute_boundary(
     minutes: Selected maximum commute duration.
 
   Returns:
-    A tuple of (GeoJSON FeatureCollection, status message string).
+    A tuple of (GeoJSON FeatureCollection, coarse status string, request metadata).
   """
   sanitized_destination = bleach.clean(
     destination or "",
@@ -312,7 +325,79 @@ def update_buy_commute_boundary(
     mode=mode,
     minutes=minutes,
   )
-  return result["geojson"], result["status"]
+  return result["geojson"], result["status"], result["request"]
+
+
+@callback(
+  Output("buy-commute-target-layer", "children"),
+  Input("buy-commute-request-store", "data"),
+)
+def update_buy_commute_target_marker(
+  commute_request: dict | None,
+) -> list[object]:
+  """
+  Render a destination marker for the current commute target.
+
+  Args:
+    commute_request: Normalized commute request metadata from the coarse boundary callback.
+
+  Returns:
+    A target halo + pin list when the destination has coordinates, otherwise an empty list.
+  """
+  if not isinstance(commute_request, dict):
+    return []
+
+  lat = commute_request.get("center_lat")
+  lon = commute_request.get("center_lon")
+  if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+    return []
+
+  display_name = commute_request.get("display_name") or commute_request.get("destination") or "Commute target"
+  marker_position = [float(lat), float(lon)]
+  return [
+    dl.CircleMarker(
+      center=marker_position,
+      radius=10,
+      color="#f4a261",
+      weight=3,
+      fill=True,
+      fillColor="#f4a261",
+      fillOpacity=0.25,
+      children=[
+        dl.Tooltip(str(display_name), direction="top", offset=[0, -12]),
+      ],
+    ),
+    dl.Marker(
+      position=marker_position,
+      zIndexOffset=1000,
+      riseOnHover=True,
+    ),
+  ]
+
+
+@callback(
+  Output("buy-commute-exact-store", "data"),
+  Input("buy-prefilter-geojson-store", "data"),
+  Input("buy-commute-request-store", "data"),
+)
+def update_buy_exact_commute_matches(
+  prefiltered_geojson: dict | None,
+  commute_request: dict | None,
+) -> dict:
+  """
+  Verify coarse commute matches against exact Valhalla route durations.
+
+  Args:
+    prefiltered_geojson: Current clientside-filtered buy FeatureCollection.
+    commute_request: Normalized commute request metadata from the coarse boundary callback.
+
+  Returns:
+    Exact route-check results for the current candidate set.
+  """
+  return verify_exact_commute_matches(
+    prefiltered_geojson=prefiltered_geojson,
+    commute_request=commute_request,
+  )
 
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
@@ -320,7 +405,7 @@ clientside_callback(
     namespace='clientside',
     function_name='filterAndClusterBuy'
   ),
-  Output('buy_geojson', 'data'),
+  Output('buy-prefilter-geojson-store', 'data'),
   [
     Input('list_price_slider', 'value'),
     Input('bedrooms_slider', 'value'),
@@ -347,6 +432,18 @@ clientside_callback(
     Input('buy-commute-geojson', 'data'),
     Input('buy-geojson-store', "data")
   ],
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='applyExactCommuteFilter'
+  ),
+  Output('buy_geojson', 'data'),
+  Output('buy-commute-exact-status', 'children'),
+  Input('buy-prefilter-geojson-store', 'data'),
+  Input('buy-commute-request-store', 'data'),
+  Input('buy-commute-exact-store', 'data'),
 )
 
 clientside_callback(
