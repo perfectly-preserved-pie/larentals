@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from typing import Any, Iterable, TypeAlias, TypedDict
 import os
+import time
 
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
@@ -106,6 +107,23 @@ VALHALLA_EXACT_COMMUTE_MAX_WORKERS = max(
             "4" if VALHALLA_IS_PUBLIC_DEMO else "8",
         )
     ),
+)
+VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS = max(
+    1,
+    int(
+        os.getenv(
+            "VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS",
+            "1",
+        )
+    ),
+)
+VALHALLA_ROUTE_MAX_RETRIES = max(
+    0,
+    int(os.getenv("VALHALLA_ROUTE_MAX_RETRIES", "1")),
+)
+VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS = max(
+    0.0,
+    float(os.getenv("VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS", "0.75")),
 )
 
 COMMUTE_HELP_TEXT = ""
@@ -763,22 +781,31 @@ def fetch_valhalla_route_time_seconds(
         normalized_mode,
     )
 
-    try:
-        response = requests.post(
-            f"{VALHALLA_BASE_URL}/route",
-            json=payload,
-            headers=VALHALLA_HTTP_HEADERS,
-            timeout=VALHALLA_TIMEOUT_SECONDS,
-        )
-    except requests.RequestException as exc:
-        logger.warning(
-            "Valhalla route request failed for "
-            f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
-            f"via {normalized_mode}: {exc}"
-        )
-        return None
+    max_attempts = VALHALLA_ROUTE_MAX_RETRIES + 1
+    response: requests.Response | None = None
+    for attempt in range(max_attempts):
+        try:
+            response = requests.post(
+                f"{VALHALLA_BASE_URL}/route",
+                json=payload,
+                headers=VALHALLA_HTTP_HEADERS,
+                timeout=VALHALLA_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            logger.warning(
+                "Valhalla route request failed for "
+                f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
+                f"via {normalized_mode}: {exc}"
+            )
+            return None
 
-    if not response.ok:
+        if response.ok:
+            break
+
+        if response.status_code == 429 and attempt + 1 < max_attempts:
+            time.sleep(VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS * (attempt + 1))
+            continue
+
         logger.warning(
             "Valhalla route request failed for "
             f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
@@ -895,7 +922,12 @@ def verify_exact_commute_matches(
     checked_candidates = 0
     failed_candidates = 0
 
-    max_workers = min(VALHALLA_EXACT_COMMUTE_MAX_WORKERS, len(candidates))
+    worker_limit = (
+        VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS
+        if mode == "transit"
+        else VALHALLA_EXACT_COMMUTE_MAX_WORKERS
+    )
+    max_workers = min(worker_limit, len(candidates))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_candidate = {
             executor.submit(
