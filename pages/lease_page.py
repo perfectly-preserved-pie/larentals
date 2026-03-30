@@ -1,5 +1,12 @@
 from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
+import dash_leaflet as dl
+from functions.commute_utils import (
+  build_commute_boundary_result,
+  empty_commute_exact_result,
+  empty_commute_request_data,
+  verify_exact_commute_matches,
+)
 from dash.dependencies import ALL, Input, Output, State
 from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
@@ -56,7 +63,10 @@ def layout(**_: object) -> dbc.Container:
 
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
+  prefilter_geojson_store = dcc.Store(id="lease-prefilter-geojson-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="lease-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
+  commute_request_store = dcc.Store(id="lease-commute-request-store", storage_type="memory", data=empty_commute_request_data())
+  commute_exact_store = dcc.Store(id="lease-commute-exact-store", storage_type="memory", data=empty_commute_exact_result())
   kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
   # Create a Store to hold the earliest listed date
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
@@ -65,7 +75,10 @@ def layout(**_: object) -> dbc.Container:
     [
       collapse_store,
       geojson_store,
+      prefilter_geojson_store,
       zip_boundary_store,
+      commute_request_store,
+      commute_exact_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -246,6 +259,118 @@ def update_lease_zip_boundary(
 
   return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
+
+@callback(
+  Output("lease-commute-geojson", "data"),
+  Output("lease-commute-status", "children"),
+  Output("lease-commute-request-store", "data"),
+  Input("lease-commute-input", "value"),
+  Input("lease-commute-mode", "value"),
+  Input("lease-commute-minutes", "value"),
+)
+def update_lease_commute_boundary(
+  destination: str | None,
+  mode: str | None,
+  minutes: int | float | None,
+) -> tuple[dict, str, dict]:
+  """
+  Update the coarse commute boundary overlay and request metadata.
+
+  Args:
+    destination: User-entered destination text.
+    mode: Selected commute mode.
+    minutes: Selected maximum commute duration.
+
+  Returns:
+    A tuple of (GeoJSON FeatureCollection, coarse status string, request metadata).
+  """
+  sanitized_destination = bleach.clean(
+    destination or "",
+    tags=[],
+    attributes={},
+    strip=True,
+  ).strip()
+  geocoded = geocode_place_cached(sanitized_destination) if sanitized_destination else None
+  result = build_commute_boundary_result(
+    destination=sanitized_destination,
+    geocoded=geocoded,
+    mode=mode,
+    minutes=minutes,
+  )
+  return result["geojson"], result["status"], result["request"]
+
+
+@callback(
+  Output("lease-commute-target-layer", "children"),
+  Input("lease-commute-request-store", "data"),
+)
+def update_lease_commute_target_marker(
+  commute_request: dict | None,
+) -> list[object]:
+  """
+  Render a destination marker for the current commute target.
+
+  Args:
+    commute_request: Normalized commute request metadata from the coarse boundary callback.
+
+  Returns:
+    A target halo + pin list when the destination has coordinates, otherwise an empty list.
+  """
+  if not isinstance(commute_request, dict):
+    return []
+
+  lat = commute_request.get("center_lat")
+  lon = commute_request.get("center_lon")
+  if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+    return []
+
+  display_name = commute_request.get("display_name") or commute_request.get("destination") or "Commute target"
+  marker_position = [float(lat), float(lon)]
+  return [
+    dl.CircleMarker(
+      center=marker_position,
+      radius=10,
+      color="#f4a261",
+      weight=3,
+      fill=True,
+      fillColor="#f4a261",
+      fillOpacity=0.25,
+      children=[
+        dl.Tooltip(str(display_name), direction="top", offset=[0, -12]),
+      ],
+    ),
+    dl.Marker(
+      position=marker_position,
+      zIndexOffset=1000,
+      riseOnHover=True,
+    ),
+  ]
+
+
+@callback(
+  Output("lease-commute-exact-store", "data"),
+  Input("lease-prefilter-geojson-store", "data"),
+  Input("lease-commute-request-store", "data"),
+)
+def update_lease_exact_commute_matches(
+  prefiltered_geojson: dict | None,
+  commute_request: dict | None,
+) -> dict:
+  """
+  Verify coarse commute matches against exact Valhalla route durations.
+
+  Args:
+    prefiltered_geojson: Current clientside-filtered lease FeatureCollection.
+    commute_request: Normalized commute request metadata from the coarse boundary callback.
+
+  Returns:
+    Exact route-check results for the current candidate set.
+  """
+  return verify_exact_commute_matches(
+    prefiltered_geojson=prefiltered_geojson,
+    commute_request=commute_request,
+  )
+
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='loadingMapSpinner'),
   Output("lease-map-spinner", "style"),
@@ -262,7 +387,7 @@ clientside_callback(
     namespace='clientside',
     function_name='filterAndClusterLease'
   ),
-  Output('lease_geojson', 'data'),
+  Output('lease-prefilter-geojson-store', 'data'),
   [ # The order of these inputs must match the order of the arguments in the filterAndCluster function
     Input('rental_price_slider', 'value'),
     Input('bedrooms_slider', 'value'),
@@ -296,8 +421,21 @@ clientside_callback(
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
     Input('lease-zip-boundary-store', 'data'),
+    Input('lease-commute-geojson', 'data'),
     Input('lease-geojson-store', "data"),
   ],
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='applyExactCommuteFilter'
+  ),
+  Output('lease_geojson', 'data'),
+  Output('lease-commute-exact-status', 'children'),
+  Input('lease-prefilter-geojson-store', 'data'),
+  Input('lease-commute-request-store', 'data'),
+  Input('lease-commute-exact-store', 'data'),
 )
 
 clientside_callback(

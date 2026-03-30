@@ -47,3 +47,43 @@ You can click the toggle buttons next to the title to switch between For Rent an
 1. Clone the repo `git clone https://github.com/perfectly-preserved-pie/larentals.git`
 2. `cd` into the new directory
 3. Run `uv run wheretolive-la`. `uv` will install the project into its managed environment and expose the configured CLI commands from `pyproject.toml`.
+
+### Docker
+
+Build the app image:
+
+```bash
+docker build -t larentals .
+```
+
+Run the app container:
+
+```bash
+docker run --rm -p 8080:8080 larentals
+```
+
+### Self-Hosted Valhalla
+
+The commute filter can use a self-hosted Valhalla instance instead of the
+public demo service. This repo includes a sidecar Compose file for that setup:
+
+```bash
+docker compose -f docker-compose.valhalla.yml up -d
+```
+
+Setup details, GTFS folder layout, and the app env vars for switching to the
+local service live in [docker/valhalla/README.md](docker/valhalla/README.md).
+There is also a helper to pull common LA-area GTFS feeds into the expected
+folders:
+
+```bash
+uv run download-gtfs-feeds all
+```
+
+### Non-Docker
+
+Run the Dash app directly:
+
+```bash
+uv run wheretolive-la
+```

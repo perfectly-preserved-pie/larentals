@@ -1,0 +1,22 @@
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:latest
+    container_name: valhalla
+    restart: unless-stopped
+    ports:
+      - "${VALHALLA_HOST_PORT:-8002}:8002"
+    environment:
+      tile_urls: "${VALHALLA_TILE_URLS:-https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf}"
+      build_admins: "${VALHALLA_BUILD_ADMINS:-True}"
+      build_time_zones: "${VALHALLA_BUILD_TIME_ZONES:-True}"
+      build_transit: "${VALHALLA_BUILD_TRANSIT:-True}"
+      build_tar: "${VALHALLA_BUILD_TAR:-True}"
+      use_tiles_ignore_pbf: "${VALHALLA_USE_TILES_IGNORE_PBF:-True}"
+      force_rebuild: "${VALHALLA_FORCE_REBUILD:-False}"
+      build_elevation: "${VALHALLA_BUILD_ELEVATION:-False}"
+      server_threads: "${VALHALLA_SERVER_THREADS:-8}"
+      tileset_name: "${VALHALLA_TILESET_NAME:-valhalla_tiles}"
+      serve_tiles: "${VALHALLA_SERVE_TILES:-True}"
+    volumes:
+      - ./docker/valhalla/custom_files:/custom_files
+      - ./docker/valhalla/gtfs_feeds:/gtfs_feeds
