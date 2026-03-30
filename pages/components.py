@@ -404,7 +404,7 @@ class BaseClass:
                     id=f"{self.page_type}-commute-input",
                     type="text",
                     debounce=True,
-                    placeholder="Destination (e.g., UCLA or Culver City)",
+                    placeholder="Destination (e.g., UCLA or 2738 Hyperion Ave)",
                 ),
                 html.Div(
                     [
