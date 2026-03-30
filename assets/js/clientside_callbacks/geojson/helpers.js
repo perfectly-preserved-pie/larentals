@@ -22,3 +22,19 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     if (isNaN(num)) return Boolean(includeMissing);
     return num >= minValue && num <= maxValue;
 }
+
+function featureWithinAnyPolygon(feature, polygonFeatures) {
+    const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
+    if (!turfAvailable || !feature?.geometry || !Array.isArray(polygonFeatures) || !polygonFeatures.length) {
+        return false;
+    }
+
+    const coords = normalizeCoordinatePair(feature.geometry.coordinates);
+    if (!coords) return false;
+
+    const point = turf.point(coords);
+    return polygonFeatures.some((polygonFeature) => (
+        polygonFeature && polygonFeature.geometry &&
+        turf.booleanPointInPolygon(point, polygonFeature)
+    ));
+}

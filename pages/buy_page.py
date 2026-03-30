@@ -1,5 +1,6 @@
 from .components import BuyComponents
 from dash import dcc, callback, clientside_callback, ClientsideFunction
+from functions.commute_utils import build_commute_boundary_result
 from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
@@ -97,7 +98,16 @@ def layout(**_: object) -> dbc.Container:
 ## BEGIN CALLBACKS ##
 # Keep subtype selection in sync with the store
 @callback(Output('selected_subtype', 'data'), Input('subtype_checklist', 'value'))
-def update_selected_subtype(value):
+def update_selected_subtype(value: list[str] | None) -> list[str] | None:
+    """
+    Keep the subtype store synchronized with the current checklist selection.
+
+    Args:
+        value: Selected subtype values from the checklist.
+
+    Returns:
+        The same selected subtype values for storage.
+    """
     return value
 
 clientside_callback(
@@ -265,6 +275,45 @@ def update_buy_zip_boundary(
 
   return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
+
+@callback(
+  Output("buy-commute-geojson", "data"),
+  Output("buy-commute-status", "children"),
+  Input("buy-commute-input", "value"),
+  Input("buy-commute-mode", "value"),
+  Input("buy-commute-minutes", "value"),
+)
+def update_buy_commute_boundary(
+  destination: str | None,
+  mode: str | None,
+  minutes: int | float | None,
+) -> tuple[dict, str]:
+  """
+  Update the approximate commute boundary overlay for the buy page.
+
+  Args:
+    destination: User-entered destination text.
+    mode: Selected commute mode.
+    minutes: Selected maximum commute duration.
+
+  Returns:
+    A tuple of (GeoJSON FeatureCollection, status message string).
+  """
+  sanitized_destination = bleach.clean(
+    destination or "",
+    tags=[],
+    attributes={},
+    strip=True,
+  ).strip()
+  geocoded = geocode_place_cached(sanitized_destination) if sanitized_destination else None
+  result = build_commute_boundary_result(
+    destination=sanitized_destination,
+    geocoded=geocoded,
+    mode=mode,
+    minutes=minutes,
+  )
+  return result["geojson"], result["status"]
+
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(
@@ -295,6 +344,7 @@ clientside_callback(
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
     Input('buy-zip-boundary-store', 'data'),
+    Input('buy-commute-geojson', 'data'),
     Input('buy-geojson-store', "data")
   ],
 )

@@ -3,6 +3,15 @@ from dash_extensions.javascript import Namespace
 from dash_iconify import DashIconify
 from datetime import date
 from functools import lru_cache
+from functions.commute_utils import (
+    COMMUTE_DEFAULT_MODE,
+    COMMUTE_HELP_TEXT,
+    COMMUTE_MAX_MINUTES,
+    COMMUTE_MIN_MINUTES,
+    COMMUTE_MODE_OPTIONS,
+    COMMUTE_STEP_MINUTES,
+    normalize_commute_minutes,
+)
 from functions.convex_hull import generate_convex_hulls
 from functions.layers import LayersClass
 from functions.sql_helpers import get_latest_date_processed
@@ -372,6 +381,87 @@ class BaseClass:
             style={"marginBottom": "10px"},
         )
 
+    def create_commute_filter_components(self) -> html.Div:
+        """
+        Create the commute-time filter controls shown in the sidebar.
+
+        Returns:
+            A container with destination, mode, duration, and status controls.
+        """
+        default_minutes = normalize_commute_minutes(30)
+        slider_marks = {
+            minutes: str(minutes)
+            for minutes in (10, 20, 30, 45, 60, 90)
+        }
+
+        return html.Div(
+            [
+                html.P(
+                    "Filter listings to an approximate travel-time area around a destination.",
+                    style={"marginBottom": "10px"},
+                ),
+                dcc.Input(
+                    id=f"{self.page_type}-commute-input",
+                    type="text",
+                    debounce=True,
+                    placeholder="Destination (e.g., UCLA or Culver City)",
+                ),
+                html.Div(
+                    [
+                        html.H6(
+                            "Mode",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dcc.Dropdown(
+                            id=f"{self.page_type}-commute-mode",
+                            options=COMMUTE_MODE_OPTIONS,
+                            value=COMMUTE_DEFAULT_MODE,
+                            clearable=False,
+                            searchable=False,
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        html.H6(
+                            "Max Minutes",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dcc.Slider(
+                            id=f"{self.page_type}-commute-minutes",
+                            min=COMMUTE_MIN_MINUTES,
+                            max=COMMUTE_MAX_MINUTES,
+                            step=COMMUTE_STEP_MINUTES,
+                            value=default_minutes,
+                            updatemode="mouseup",
+                            marks=slider_marks,
+                            tooltip={
+                                "placement": "bottom",
+                                "always_visible": True,
+                            },
+                        ),
+                    ]
+                ),
+                html.Div(
+                    COMMUTE_HELP_TEXT,
+                    style={
+                        "marginTop": "10px",
+                        "fontSize": "0.85rem",
+                        "color": "#9aa0a6",
+                    },
+                ),
+                html.Div(
+                    id=f"{self.page_type}-commute-status",
+                    style={
+                        "marginTop": "8px",
+                        "fontSize": "0.85rem",
+                        "color": "#9aa0a6",
+                    },
+                ),
+            ],
+            style={"marginBottom": "10px"},
+        )
+
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
@@ -561,6 +651,7 @@ class LeaseComponents(BaseClass):
         self.key_deposit_components      = self.create_key_deposit_components()
         self.laundry_checklist           = self.create_laundry_checklist()
         self.listed_date_components      = self.create_listed_date_components()
+        self.commute_filter_components   = self.create_commute_filter_components()
         self.location_filter_components  = self.create_location_filter_components()
         self.map                         = self.create_map()
         self.map_card                    = self.create_map_card()
@@ -1284,6 +1375,19 @@ class LeaseComponents(BaseClass):
                 detectRetina=False,
             ),
             dl.GeoJSON(
+                id=f"{self.page_type}-commute-geojson",
+                data={"type": "FeatureCollection", "features": []},
+                cluster=False,
+                bubblingMouseEvents=False,
+                zoomToBoundsOnClick=False,
+                style={
+                    "color": "#f4a261",
+                    "weight": 2,
+                    "fillColor": "#f4a261",
+                    "fillOpacity": 0.08,
+                },
+            ),
+            dl.GeoJSON(
                 id='lease_geojson',
                 data=None,
                 cluster=True,
@@ -1322,6 +1426,7 @@ class LeaseComponents(BaseClass):
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute", item_id="commute"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -1351,6 +1456,7 @@ class LeaseComponents(BaseClass):
             active_item=[
                 "listed_date",
                 "location",
+                "commute",
                 "subtypes",
                 "monthly_rent",
                 "bedrooms",
@@ -1488,6 +1594,7 @@ class BuyComponents(BaseClass):
         # Now build the UI components
         self.bathrooms_slider         = self.create_bathrooms_slider()
         self.bedrooms_slider          = self.create_bedrooms_slider()
+        self.commute_filter_components = self.create_commute_filter_components()
         self.hoa_fee_components       = self.create_hoa_fee_components()
         self.hoa_fee_frequency_checklist = self.create_hoa_fee_frequency_checklist()
         self.list_price_slider        = self.create_list_price_slider()
@@ -1924,6 +2031,19 @@ class BuyComponents(BaseClass):
                 detectRetina=False,
             ),
             dl.GeoJSON(
+                id=f"{self.page_type}-commute-geojson",
+                data={"type": "FeatureCollection", "features": []},
+                cluster=False,
+                bubblingMouseEvents=False,
+                zoomToBoundsOnClick=False,
+                style={
+                    "color": "#f4a261",
+                    "weight": 2,
+                    "fillColor": "#f4a261",
+                    "fillOpacity": 0.08,
+                },
+            ),
+            dl.GeoJSON(
                 id='buy_geojson',
                 data=None,
                 cluster=True,
@@ -1962,6 +2082,7 @@ class BuyComponents(BaseClass):
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute", item_id="commute"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -1979,6 +2100,7 @@ class BuyComponents(BaseClass):
             active_item=[
                 "listed_date",
                 "location",
+                "commute",
                 "subtypes",
                 "list_price",
                 "bedrooms",

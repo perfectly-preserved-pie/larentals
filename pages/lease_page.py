@@ -1,5 +1,6 @@
 from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
+from functions.commute_utils import build_commute_boundary_result
 from dash.dependencies import ALL, Input, Output, State
 from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
@@ -246,6 +247,45 @@ def update_lease_zip_boundary(
 
   return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
+
+@callback(
+  Output("lease-commute-geojson", "data"),
+  Output("lease-commute-status", "children"),
+  Input("lease-commute-input", "value"),
+  Input("lease-commute-mode", "value"),
+  Input("lease-commute-minutes", "value"),
+)
+def update_lease_commute_boundary(
+  destination: str | None,
+  mode: str | None,
+  minutes: int | float | None,
+) -> tuple[dict, str]:
+  """
+  Update the approximate commute boundary overlay for the lease page.
+
+  Args:
+    destination: User-entered destination text.
+    mode: Selected commute mode.
+    minutes: Selected maximum commute duration.
+
+  Returns:
+    A tuple of (GeoJSON FeatureCollection, status message string).
+  """
+  sanitized_destination = bleach.clean(
+    destination or "",
+    tags=[],
+    attributes={},
+    strip=True,
+  ).strip()
+  geocoded = geocode_place_cached(sanitized_destination) if sanitized_destination else None
+  result = build_commute_boundary_result(
+    destination=sanitized_destination,
+    geocoded=geocoded,
+    mode=mode,
+    minutes=minutes,
+  )
+  return result["geojson"], result["status"]
+
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='loadingMapSpinner'),
   Output("lease-map-spinner", "style"),
@@ -296,6 +336,7 @@ clientside_callback(
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
     Input('lease-zip-boundary-store', 'data'),
+    Input('lease-commute-geojson', 'data'),
     Input('lease-geojson-store', "data"),
   ],
 )
