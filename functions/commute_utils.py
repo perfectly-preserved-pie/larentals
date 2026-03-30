@@ -23,10 +23,17 @@ COMMUTE_MAX_MINUTES = 90
 COMMUTE_STEP_MINUTES = 5
 
 COMMUTE_MODE_LABELS: dict[str, str] = {
-    "drive": "Drive",
+    "drive": "Drive (typical)",
     "transit": "Transit",
     "bike": "Bike",
     "walk": "Walk",
+}
+
+COMMUTE_MODE_STATUS_LABELS: dict[str, str] = {
+    "drive": "drive (typical)",
+    "transit": "transit",
+    "bike": "bike",
+    "walk": "walk",
 }
 
 COMMUTE_MODE_OPTIONS = [
@@ -211,6 +218,20 @@ def normalize_commute_mode(mode: str | None) -> str:
     if normalized in COMMUTE_MODE_LABELS:
         return normalized
     return COMMUTE_DEFAULT_MODE
+
+
+def commute_mode_status_label(mode: str | None) -> str:
+    """
+    Return the user-facing wording used in commute status lines.
+
+    Args:
+        mode: Raw mode string from the browser.
+
+    Returns:
+        A short display label for status messages.
+    """
+    normalized = normalize_commute_mode(mode)
+    return COMMUTE_MODE_STATUS_LABELS[normalized]
 
 
 def normalize_commute_minutes(minutes: int | float | None) -> int:
@@ -656,7 +677,7 @@ def build_commute_boundary_result(
     """
     normalized_mode = normalize_commute_mode(mode)
     normalized_minutes = normalize_commute_minutes(minutes)
-    mode_label = COMMUTE_MODE_LABELS[normalized_mode].lower()
+    mode_label = COMMUTE_MODE_LABELS[normalized_mode]
 
     if not destination:
         return {
@@ -705,7 +726,7 @@ def build_commute_boundary_result(
     return {
         "geojson": geojson,
         "status": (
-            f"{mode_label.title()} area loaded for "
+            f"{mode_label} area loaded for "
             f"{display_name or 'the destination'}."
         ),
         "request": build_commute_request_data(
@@ -868,6 +889,7 @@ def verify_exact_commute_matches(
     display_name = commute_request.get("display_name")
     mode = normalize_commute_mode(commute_request.get("mode"))
     mode_label = COMMUTE_MODE_LABELS[mode]
+    mode_status_label = commute_mode_status_label(mode)
     minutes = normalize_commute_minutes(commute_request.get("minutes"))
     destination_lat = commute_request.get("center_lat")
     destination_lon = commute_request.get("center_lon")
@@ -978,7 +1000,7 @@ def verify_exact_commute_matches(
 
     status = (
         f"Showing {matched_candidates} listings within "
-        f"{minutes} minutes by {mode_label.lower()}."
+        f"{minutes} minutes by {mode_status_label}."
     )
     if failed_candidates:
         status = f"{status} Some listings could not be verified."
