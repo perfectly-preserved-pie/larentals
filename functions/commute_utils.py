@@ -40,27 +40,89 @@ COMMUTE_VALHALLA_COSTING: dict[str, str] = {
     "walk": "pedestrian",
 }
 
-COMMUTE_HELP_TEXT = (
-    "Travel-time filtering uses the public Valhalla demo API: a coarse area "
-    "first, then exact route-time checks for the remaining listings. This "
-    "service has fair-use limits and may occasionally be unavailable. Drive "
-    "times reflect Valhalla's routing model and can still differ from real "
-    "LA traffic."
-)
-
 VALHALLA_BASE_URL = os.getenv(
     "VALHALLA_BASE_URL",
     "https://valhalla1.openstreetmap.de",
 ).rstrip("/")
 
+def _env_flag(name: str, default: bool) -> bool:
+    """
+    Parse a boolean-like environment variable.
+
+    Args:
+        name: Environment variable name.
+        default: Fallback value when the variable is unset.
+
+    Returns:
+        A normalized boolean flag.
+    """
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    return str(raw_value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _default_valhalla_service_label(base_url: str) -> str:
+    """
+    Choose a user-facing Valhalla service label from the configured base URL.
+
+    Args:
+        base_url: The configured Valhalla base URL.
+
+    Returns:
+        A human-readable service label for status and helper text.
+    """
+    lowered = str(base_url).strip().lower()
+    if "openstreetmap.de" in lowered:
+        return "Public Valhalla demo API"
+    if "localhost" in lowered or "127.0.0.1" in lowered or "://valhalla:" in lowered:
+        return "Self-hosted Valhalla"
+    return "Valhalla"
+
+
+VALHALLA_IS_PUBLIC_DEMO = _env_flag(
+    "VALHALLA_IS_PUBLIC_DEMO",
+    "openstreetmap.de" in VALHALLA_BASE_URL.lower(),
+)
+VALHALLA_SERVICE_LABEL = os.getenv(
+    "VALHALLA_SERVICE_LABEL",
+    _default_valhalla_service_label(VALHALLA_BASE_URL),
+)
 VALHALLA_TIMEOUT_SECONDS = float(os.getenv("VALHALLA_TIMEOUT_SECONDS", "12"))
 VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES = max(
     1,
-    int(os.getenv("VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES", "60")),
+    int(
+        os.getenv(
+            "VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES",
+            "60" if VALHALLA_IS_PUBLIC_DEMO else "400",
+        )
+    ),
 )
 VALHALLA_EXACT_COMMUTE_MAX_WORKERS = max(
     1,
-    int(os.getenv("VALHALLA_EXACT_COMMUTE_MAX_WORKERS", "4")),
+    int(
+        os.getenv(
+            "VALHALLA_EXACT_COMMUTE_MAX_WORKERS",
+            "4" if VALHALLA_IS_PUBLIC_DEMO else "8",
+        )
+    ),
+)
+
+COMMUTE_HELP_TEXT = (
+    (
+        f"Travel-time filtering uses {VALHALLA_SERVICE_LABEL}: a coarse area "
+        "first, then exact route-time checks for the remaining listings. This "
+        "service has fair-use limits and may occasionally be unavailable. Drive "
+        "times reflect Valhalla's routing model and can still differ from real "
+        "LA traffic."
+    )
+    if VALHALLA_IS_PUBLIC_DEMO
+    else (
+        f"Travel-time filtering uses {VALHALLA_SERVICE_LABEL}: a coarse area "
+        "first, then exact route-time checks for the remaining listings. Drive "
+        "times still reflect Valhalla's routing model rather than guaranteed "
+        "live traffic."
+    )
 )
 
 VALHALLA_HTTP_HEADERS = {
@@ -505,7 +567,7 @@ def fetch_valhalla_isochrone(
     display_name: str,
 ) -> GeoJsonDict | None:
     """
-    Fetch a reverse isochrone polygon from the public Valhalla demo API.
+    Fetch a reverse isochrone polygon from the configured Valhalla service.
 
     Args:
         lat: Destination latitude.
@@ -530,14 +592,14 @@ def fetch_valhalla_isochrone(
         )
     except requests.RequestException as exc:
         logger.warning(
-            "Valhalla public isochrone request failed for "
+            "Valhalla isochrone request failed for "
             f"{display_name} ({lat}, {lon}, {normalized_minutes} min): {exc}"
         )
         return None
 
     if not response.ok:
         logger.warning(
-            "Valhalla public isochrone request failed for "
+            "Valhalla isochrone request failed for "
             f"{display_name} ({lat}, {lon}, {normalized_minutes} min): "
             f"HTTP {response.status_code} {response.reason}; "
             f"{_truncate_response_text(response.text)}"
@@ -548,17 +610,17 @@ def fetch_valhalla_isochrone(
         geojson = response.json()
     except ValueError as exc:
         logger.warning(
-            f"Valhalla public isochrone returned invalid JSON for {display_name}: {exc}"
+            f"Valhalla isochrone returned invalid JSON for {display_name}: {exc}"
         )
         return None
 
     if not isinstance(geojson, dict):
-        logger.warning(f"Valhalla public isochrone returned a non-dict payload for {display_name}.")
+        logger.warning(f"Valhalla isochrone returned a non-dict payload for {display_name}.")
         return None
 
     features = geojson.get("features")
     if not isinstance(features, list) or not features:
-        logger.warning(f"Valhalla public isochrone returned no features for {display_name}.")
+        logger.warning(f"Valhalla isochrone returned no features for {display_name}.")
         return None
 
     return decorate_valhalla_isochrone_geojson(
@@ -627,7 +689,7 @@ def build_commute_boundary_result(
         return {
             "geojson": empty_feature_collection(),
             "status": (
-                "Public Valhalla API unavailable; could not load a "
+                f"{VALHALLA_SERVICE_LABEL} unavailable; could not load a "
                 f"{mode_label} commute area for {display_name}."
             ),
             "request": build_commute_request_data(
@@ -643,7 +705,7 @@ def build_commute_boundary_result(
     return {
         "geojson": geojson,
         "status": (
-            "Public Valhalla API: coarse "
+            f"{VALHALLA_SERVICE_LABEL}: coarse "
             f"{mode_label} area loaded for {display_name}. Exact route checks "
             f"will keep only listings that can arrive within {normalized_minutes} minutes."
         ),
@@ -729,7 +791,7 @@ def fetch_valhalla_route_time_seconds(
         )
     except requests.RequestException as exc:
         logger.warning(
-            "Valhalla public route request failed for "
+            "Valhalla route request failed for "
             f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
             f"via {normalized_mode}: {exc}"
         )
@@ -737,7 +799,7 @@ def fetch_valhalla_route_time_seconds(
 
     if not response.ok:
         logger.warning(
-            "Valhalla public route request failed for "
+            "Valhalla route request failed for "
             f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
             f"via {normalized_mode}: HTTP {response.status_code} {response.reason}; "
             f"{_truncate_response_text(response.text)}"
@@ -748,7 +810,7 @@ def fetch_valhalla_route_time_seconds(
         payload_json = response.json()
     except ValueError as exc:
         logger.warning(
-            "Valhalla public route returned invalid JSON for "
+            "Valhalla route returned invalid JSON for "
             f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}): {exc}"
         )
         return None
@@ -843,7 +905,7 @@ def verify_exact_commute_matches(
         error = (
             "Exact route checks are limited to "
             f"{VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES} coarse-match listings at a "
-            f"time on the public Valhalla demo API. {len(candidates)} listings "
+            f"time with {VALHALLA_SERVICE_LABEL}. {len(candidates)} listings "
             "matched the coarse area, so narrow the other filters or lower the "
             "commute time."
         )
@@ -904,7 +966,7 @@ def verify_exact_commute_matches(
 
     if checked_candidates == 0:
         error = (
-            "Public Valhalla API could not verify any exact commute routes for "
+            f"{VALHALLA_SERVICE_LABEL} could not verify any exact commute routes for "
             f"{display_name or 'this destination'} right now. Try again later or "
             "narrow the other filters."
         )

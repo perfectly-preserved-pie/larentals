@@ -219,6 +219,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Local Valhalla data
+docker/valhalla/custom_files/
+docker/valhalla/gtfs_feeds/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
