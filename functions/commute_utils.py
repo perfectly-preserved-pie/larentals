@@ -108,22 +108,7 @@ VALHALLA_EXACT_COMMUTE_MAX_WORKERS = max(
     ),
 )
 
-COMMUTE_HELP_TEXT = (
-    (
-        f"Travel-time filtering uses {VALHALLA_SERVICE_LABEL}: a coarse area "
-        "first, then exact route-time checks for the remaining listings. This "
-        "service has fair-use limits and may occasionally be unavailable. Drive "
-        "times reflect Valhalla's routing model and can still differ from real "
-        "LA traffic."
-    )
-    if VALHALLA_IS_PUBLIC_DEMO
-    else (
-        f"Travel-time filtering uses {VALHALLA_SERVICE_LABEL}: a coarse area "
-        "first, then exact route-time checks for the remaining listings. Drive "
-        "times still reflect Valhalla's routing model rather than guaranteed "
-        "live traffic."
-    )
-)
+COMMUTE_HELP_TEXT = ""
 
 VALHALLA_HTTP_HEADERS = {
     "Accept": "application/json",
@@ -665,7 +650,7 @@ def build_commute_boundary_result(
     if geocoded is None:
         return {
             "geojson": empty_feature_collection(),
-            "status": f"Could not find a California location matching '{destination}'.",
+            "status": "Destination not found.",
             "request": build_commute_request_data(
                 destination=destination,
                 geocoded=None,
@@ -688,10 +673,7 @@ def build_commute_boundary_result(
     if geojson is None:
         return {
             "geojson": empty_feature_collection(),
-            "status": (
-                f"{VALHALLA_SERVICE_LABEL} unavailable; could not load a "
-                f"{mode_label} commute area for {display_name}."
-            ),
+            "status": "Commute area unavailable right now.",
             "request": build_commute_request_data(
                 destination=destination,
                 geocoded=geocoded,
@@ -705,9 +687,8 @@ def build_commute_boundary_result(
     return {
         "geojson": geojson,
         "status": (
-            f"{VALHALLA_SERVICE_LABEL}: coarse "
-            f"{mode_label} area loaded for {display_name}. Exact route checks "
-            f"will keep only listings that can arrive within {normalized_minutes} minutes."
+            f"{mode_label.title()} area loaded for "
+            f"{display_name or 'the destination'}."
         ),
         "request": build_commute_request_data(
             destination=destination,
@@ -902,18 +883,12 @@ def verify_exact_commute_matches(
     )
 
     if len(candidates) > VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES:
-        error = (
-            "Exact route checks are limited to "
-            f"{VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES} coarse-match listings at a "
-            f"time with {VALHALLA_SERVICE_LABEL}. {len(candidates)} listings "
-            "matched the coarse area, so narrow the other filters or lower the "
-            "commute time."
-        )
+        error = "Too many matches to verify exactly. Showing broad commute matches."
         base_result.update({"status": error, "error": error})
         return base_result
 
     if not candidates:
-        base_result["status"] = "Exact route check: no listings left after the coarse commute area."
+        base_result["status"] = "No listings match this commute."
         return base_result
 
     eligible_mls: list[str] = []
@@ -965,22 +940,16 @@ def verify_exact_commute_matches(
     )
 
     if checked_candidates == 0:
-        error = (
-            f"{VALHALLA_SERVICE_LABEL} could not verify any exact commute routes for "
-            f"{display_name or 'this destination'} right now. Try again later or "
-            "narrow the other filters."
-        )
+        error = "Exact commute check unavailable right now."
         base_result.update({"status": error, "error": error})
         return base_result
 
     status = (
-        "Exact route check: "
-        f"{matched_candidates} of {len(candidates)} listings can reach "
-        f"{display_name or 'the destination'} within {minutes} minutes by "
-        f"{mode_label.lower()}."
+        f"Showing {matched_candidates} listings within "
+        f"{minutes} minutes by {mode_label.lower()}."
     )
     if failed_candidates:
-        status = f"{status} {failed_candidates} route checks could not be verified."
+        status = f"{status} Some listings could not be verified."
 
     base_result["status"] = status
     return base_result
