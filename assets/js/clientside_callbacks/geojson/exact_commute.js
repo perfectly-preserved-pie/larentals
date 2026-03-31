@@ -29,21 +29,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             if (!currentSignature) {
                 return [
                     prefilteredGeojson,
-                    "Checking exact route times. Showing coarse commute-area matches for now.",
+                    "Checking route estimates. Showing the rough shortlist for now.",
                 ];
             }
 
             if (exactResult?.signature !== currentSignature) {
                 return [
                     prefilteredGeojson,
-                    "Checking exact route times. Showing coarse commute-area matches for now.",
+                    "Checking route estimates. Showing the rough shortlist for now.",
                 ];
             }
 
             if (exactResult?.error) {
                 return [
                     prefilteredGeojson,
-                    `${exactResult.error} Showing coarse commute-area matches only.`,
+                    `${exactResult.error} Verify finalists in your preferred maps app.`,
                 ];
             }
 

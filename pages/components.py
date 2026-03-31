@@ -397,7 +397,7 @@ class BaseClass:
         return html.Div(
             [
                 html.P(
-                    "Filter listings to a travel-time area around a destination.",
+                    "Use this as a rough commute shortlist, then verify finalists in your preferred maps app.",
                     style={"marginBottom": "10px"},
                 ),
                 dcc.Input(
@@ -1389,10 +1389,13 @@ class LeaseComponents(BaseClass):
                 bubblingMouseEvents=False,
                 zoomToBoundsOnClick=False,
                 style={
-                    "color": "#f4a261",
-                    "weight": 2,
-                    "fillColor": "#f4a261",
-                    "fillOpacity": 0.08,
+                    "color": "#8f2d56",
+                    "weight": 4,
+                    "opacity": 0.9,
+                    "lineCap": "round",
+                    "lineJoin": "round",
+                    "fillColor": "#f4a7b9",
+                    "fillOpacity": 0.16,
                 },
             ),
             dl.GeoJSON(
@@ -2065,10 +2068,13 @@ class BuyComponents(BaseClass):
                 bubblingMouseEvents=False,
                 zoomToBoundsOnClick=False,
                 style={
-                    "color": "#f4a261",
-                    "weight": 2,
-                    "fillColor": "#f4a261",
-                    "fillOpacity": 0.08,
+                    "color": "#8f2d56",
+                    "weight": 4,
+                    "opacity": 0.9,
+                    "lineCap": "round",
+                    "lineJoin": "round",
+                    "fillColor": "#f4a7b9",
+                    "fillOpacity": 0.16,
                 },
             ),
             dl.GeoJSON(

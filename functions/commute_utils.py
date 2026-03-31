@@ -133,7 +133,9 @@ VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS = max(
     float(os.getenv("VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS", "0.75")),
 )
 
-COMMUTE_HELP_TEXT = ""
+COMMUTE_HELP_TEXT = (
+    "Estimates can differ from real traffic, hills, route comfort, and service changes."
+)
 
 VALHALLA_HTTP_HEADERS = {
     "Accept": "application/json",
@@ -678,6 +680,7 @@ def build_commute_boundary_result(
     normalized_mode = normalize_commute_mode(mode)
     normalized_minutes = normalize_commute_minutes(minutes)
     mode_label = COMMUTE_MODE_LABELS[normalized_mode]
+    mode_status_label = commute_mode_status_label(normalized_mode)
 
     if not destination:
         return {
@@ -726,7 +729,7 @@ def build_commute_boundary_result(
     return {
         "geojson": geojson,
         "status": (
-            f"{mode_label} area loaded for "
+            f"Estimated {mode_status_label} area loaded for "
             f"{display_name or 'the destination'}."
         ),
         "request": build_commute_request_data(
@@ -932,7 +935,7 @@ def verify_exact_commute_matches(
     )
 
     if len(candidates) > VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES:
-        error = "Too many matches to verify exactly. Showing broad commute matches."
+        error = "Too many matches to verify right now. Showing the rough shortlist."
         base_result.update({"status": error, "error": error})
         return base_result
 
@@ -994,12 +997,12 @@ def verify_exact_commute_matches(
     )
 
     if checked_candidates == 0:
-        error = "Exact commute check unavailable right now."
+        error = "Route estimates unavailable right now."
         base_result.update({"status": error, "error": error})
         return base_result
 
     status = (
-        f"Showing {matched_candidates} listings within "
+        f"Showing {matched_candidates} listings estimated within "
         f"{minutes} minutes by {mode_status_label}."
     )
     if failed_candidates:
