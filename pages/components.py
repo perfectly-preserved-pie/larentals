@@ -463,9 +463,10 @@ class BaseClass:
                 html.Div(
                     COMMUTE_HELP_TEXT,
                     style={
-                        "marginTop": "10px",
+                        "marginTop": "18px",
                         "fontSize": "0.85rem",
                         "color": "#9aa0a6",
+                        "lineHeight": 1.45,
                     },
                 ),
                 html.Div(
