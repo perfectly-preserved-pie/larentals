@@ -267,6 +267,30 @@ def update_lease_zip_boundary(
   Input("lease-commute-input", "value"),
   Input("lease-commute-mode", "value"),
   Input("lease-commute-minutes", "value"),
+  running=[
+    (
+      Output("lease-commute-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+    ),
+  ],
+  prevent_initial_call=True,
 )
 def update_lease_commute_boundary(
   destination: str | None,
@@ -351,6 +375,30 @@ def update_lease_commute_target_marker(
   Output("lease-commute-exact-store", "data"),
   Input("lease-prefilter-geojson-store", "data"),
   Input("lease-commute-request-store", "data"),
+  running=[
+    (
+      Output("lease-commute-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+    ),
+  ],
+  prevent_initial_call=True,
 )
 def update_lease_exact_commute_matches(
   prefiltered_geojson: dict | None,
@@ -376,7 +424,6 @@ clientside_callback(
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
   Input("lease_geojson", "data"),
-  State("lease-map-spinner", "style"),
 )
 
 register_responsive_layers_control_callback("lease")

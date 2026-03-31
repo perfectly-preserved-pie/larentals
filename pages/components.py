@@ -1504,13 +1504,29 @@ class LeaseComponents(BaseClass):
                                 html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
                             ],
                             style={
-                                "position": "relative",
+                                "position": "absolute",
                                 "inset": "0",
                                 "display": "flex",
                                 "alignItems": "center",
                                 "justifyContent": "center",
                                 "backgroundColor": "rgba(0, 0, 0, 0.25)",
                                 "zIndex": "10000",
+                            },
+                        ),
+                        html.Div(
+                            id=f"{self.page_type}-commute-spinner",
+                            children=[
+                                dbc.Spinner(size="lg", color="warning"),
+                                html.P("Loading commute...", style={"marginTop": "10px", "marginLeft": "5px", "color": "white"})
+                            ],
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "none",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10001",
                             },
                         ),
                         # Map itself
@@ -2158,6 +2174,22 @@ class BuyComponents(BaseClass):
                                 "justifyContent": "center",
                                 "backgroundColor": "rgba(0, 0, 0, 0.25)",
                                 "zIndex": "10000",
+                            },
+                        ),
+                        html.Div(
+                            id=f"{self.page_type}-commute-spinner",
+                            children=[
+                                dbc.Spinner(size="lg", color="warning"),
+                                html.P("Loading commute...", style={"marginTop": "10px", "marginLeft": "5px", "color": "white"})
+                            ],
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "none",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10001",
                             },
                         ),
                         # Map itself

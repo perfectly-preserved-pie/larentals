@@ -127,7 +127,6 @@ clientside_callback(
   Output("buy-map-spinner", "style"),
   Input("buy-geojson-store", "data"),
   Input("buy_geojson", "data"),
-  State("buy-map-spinner", "style"),
 )
 
 register_responsive_layers_control_callback("buy")
@@ -295,6 +294,30 @@ def update_buy_zip_boundary(
   Input("buy-commute-input", "value"),
   Input("buy-commute-mode", "value"),
   Input("buy-commute-minutes", "value"),
+  running=[
+    (
+      Output("buy-commute-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+    ),
+  ],
+  prevent_initial_call=True,
 )
 def update_buy_commute_boundary(
   destination: str | None,
@@ -379,6 +402,30 @@ def update_buy_commute_target_marker(
   Output("buy-commute-exact-store", "data"),
   Input("buy-prefilter-geojson-store", "data"),
   Input("buy-commute-request-store", "data"),
+  running=[
+    (
+      Output("buy-commute-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10001",
+      },
+    ),
+  ],
+  prevent_initial_call=True,
 )
 def update_buy_exact_commute_matches(
   prefiltered_geojson: dict | None,
