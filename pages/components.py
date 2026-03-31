@@ -1459,7 +1459,6 @@ class LeaseComponents(BaseClass):
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
-                dbc.AccordionItem(self.commute_filter_components, title="Commute", item_id="commute"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -1478,6 +1477,7 @@ class LeaseComponents(BaseClass):
                 dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished"),
                 dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute (Estimated)", item_id="commute"),
                 dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms"),
@@ -1489,7 +1489,6 @@ class LeaseComponents(BaseClass):
             active_item=[
                 "listed_date",
                 "location",
-                "commute",
                 "subtypes",
                 "monthly_rent",
                 "bedrooms",
@@ -2138,7 +2137,6 @@ class BuyComponents(BaseClass):
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
-                dbc.AccordionItem(self.commute_filter_components, title="Commute", item_id="commute"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -2146,6 +2144,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute (Estimated)", item_id="commute"),
                 dbc.AccordionItem(self.lot_size_components, title="Lot Size", item_id="lot_size"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
@@ -2156,7 +2155,6 @@ class BuyComponents(BaseClass):
             active_item=[
                 "listed_date",
                 "location",
-                "commute",
                 "subtypes",
                 "list_price",
                 "bedrooms",
