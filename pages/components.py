@@ -5,6 +5,7 @@ from datetime import date
 from functools import lru_cache
 from functions.commute_utils import (
     COMMUTE_DEFAULT_MODE,
+    default_commute_departure_datetime,
     COMMUTE_HELP_TEXT,
     COMMUTE_MAX_MINUTES,
     COMMUTE_MIN_MINUTES,
@@ -389,6 +390,7 @@ class BaseClass:
             A container with destination, mode, duration, and status controls.
         """
         default_minutes = normalize_commute_minutes(30)
+        default_departure = default_commute_departure_datetime()
         slider_marks = {
             minutes: str(minutes)
             for minutes in (10, 20, 30, 45, 60, 90)
@@ -442,6 +444,30 @@ class BaseClass:
                 html.Div(
                     [
                         html.H6(
+                            "Departure Time",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dmc.DateTimePicker(
+                            id=f"{self.page_type}-commute-departure-datetime",
+                            value=default_departure,
+                            valueFormat="ddd MMM D, YYYY h:mm A",
+                            clearable=False,
+                            debounce=250,
+                            withSeconds=False,
+                            timePickerProps={
+                                "withDropdown": True,
+                                "format": "12h",
+                            },
+                            popoverProps={"withinPortal": False},
+                            persistence=True,
+                            persistence_type="local",
+                            w="100%",
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        html.H6(
                             "Max Minutes",
                             style={"marginTop": "12px", "marginBottom": "6px"},
                         ),
@@ -467,22 +493,6 @@ class BaseClass:
                         "fontSize": "0.85rem",
                         "color": "#9aa0a6",
                         "lineHeight": 1.45,
-                    },
-                ),
-                html.Div(
-                    id=f"{self.page_type}-commute-status",
-                    style={
-                        "marginTop": "8px",
-                        "fontSize": "0.85rem",
-                        "color": "#9aa0a6",
-                    },
-                ),
-                html.Div(
-                    id=f"{self.page_type}-commute-exact-status",
-                    style={
-                        "marginTop": "6px",
-                        "fontSize": "0.85rem",
-                        "color": "#9aa0a6",
                     },
                 ),
             ],

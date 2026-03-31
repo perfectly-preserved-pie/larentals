@@ -289,11 +289,11 @@ def update_buy_zip_boundary(
 
 @callback(
   Output("buy-commute-geojson", "data"),
-  Output("buy-commute-status", "children"),
   Output("buy-commute-request-store", "data"),
   Input("buy-commute-input", "value"),
   Input("buy-commute-mode", "value"),
   Input("buy-commute-minutes", "value"),
+  Input("buy-commute-departure-datetime", "value"),
   running=[
     (
       Output("buy-commute-spinner", "style", allow_duplicate=True),
@@ -323,7 +323,8 @@ def update_buy_commute_boundary(
   destination: str | None,
   mode: str | None,
   minutes: int | float | None,
-) -> tuple[dict, str, dict]:
+  departure_datetime: str | None,
+) -> tuple[dict, dict]:
   """
   Update the coarse commute boundary overlay and request metadata.
 
@@ -331,9 +332,10 @@ def update_buy_commute_boundary(
     destination: User-entered destination text.
     mode: Selected commute mode.
     minutes: Selected maximum commute duration.
+    departure_datetime: Selected local departure datetime.
 
   Returns:
-    A tuple of (GeoJSON FeatureCollection, coarse status string, request metadata).
+    A tuple of (GeoJSON FeatureCollection, request metadata).
   """
   sanitized_destination = bleach.clean(
     destination or "",
@@ -347,8 +349,9 @@ def update_buy_commute_boundary(
     geocoded=geocoded,
     mode=mode,
     minutes=minutes,
+    departure_datetime=departure_datetime,
   )
-  return result["geojson"], result["status"], result["request"]
+  return result["geojson"], result["request"]
 
 
 @callback(
@@ -487,7 +490,6 @@ clientside_callback(
     function_name='applyExactCommuteFilter'
   ),
   Output('buy_geojson', 'data'),
-  Output('buy-commute-exact-status', 'children'),
   Input('buy-prefilter-geojson-store', 'data'),
   Input('buy-commute-request-store', 'data'),
   Input('buy-commute-exact-store', 'data'),

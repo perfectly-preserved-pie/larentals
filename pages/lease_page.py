@@ -262,11 +262,11 @@ def update_lease_zip_boundary(
 
 @callback(
   Output("lease-commute-geojson", "data"),
-  Output("lease-commute-status", "children"),
   Output("lease-commute-request-store", "data"),
   Input("lease-commute-input", "value"),
   Input("lease-commute-mode", "value"),
   Input("lease-commute-minutes", "value"),
+  Input("lease-commute-departure-datetime", "value"),
   running=[
     (
       Output("lease-commute-spinner", "style", allow_duplicate=True),
@@ -296,7 +296,8 @@ def update_lease_commute_boundary(
   destination: str | None,
   mode: str | None,
   minutes: int | float | None,
-) -> tuple[dict, str, dict]:
+  departure_datetime: str | None,
+) -> tuple[dict, dict]:
   """
   Update the coarse commute boundary overlay and request metadata.
 
@@ -304,9 +305,10 @@ def update_lease_commute_boundary(
     destination: User-entered destination text.
     mode: Selected commute mode.
     minutes: Selected maximum commute duration.
+    departure_datetime: Selected local departure datetime.
 
   Returns:
-    A tuple of (GeoJSON FeatureCollection, coarse status string, request metadata).
+    A tuple of (GeoJSON FeatureCollection, request metadata).
   """
   sanitized_destination = bleach.clean(
     destination or "",
@@ -320,8 +322,9 @@ def update_lease_commute_boundary(
     geocoded=geocoded,
     mode=mode,
     minutes=minutes,
+    departure_datetime=departure_datetime,
   )
-  return result["geojson"], result["status"], result["request"]
+  return result["geojson"], result["request"]
 
 
 @callback(
@@ -479,7 +482,6 @@ clientside_callback(
     function_name='applyExactCommuteFilter'
   ),
   Output('lease_geojson', 'data'),
-  Output('lease-commute-exact-status', 'children'),
   Input('lease-prefilter-geojson-store', 'data'),
   Input('lease-commute-request-store', 'data'),
   Input('lease-commute-exact-store', 'data'),

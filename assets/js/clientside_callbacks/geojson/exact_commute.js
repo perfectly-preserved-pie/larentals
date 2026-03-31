@@ -6,19 +6,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Object} prefilteredGeojson Current FeatureCollection after clientside filters.
          * @param {Object} commuteRequest Normalized commute request metadata from the server.
          * @param {Object} exactResult Exact route-check result metadata for the current candidate set.
-         * @returns {[Object, string]} Final map GeoJSON and exact-status text.
+         * @returns {Object} Final map GeoJSON after exact commute verification.
          */
         applyExactCommuteFilter: function(prefilteredGeojson, commuteRequest, exactResult) {
             if (!prefilteredGeojson || !Array.isArray(prefilteredGeojson.features)) {
-                return [window.dash_clientside.no_update, ""];
+                return window.dash_clientside.no_update;
             }
 
             if (!commuteRequest?.requested) {
-                return [prefilteredGeojson, ""];
+                return prefilteredGeojson;
             }
 
             if (!commuteRequest?.active) {
-                return [emptyFeatureCollection(), ""];
+                return emptyFeatureCollection();
             }
 
             const currentSignature = buildCommuteCandidateSignature(
@@ -27,33 +27,21 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             );
 
             if (!currentSignature) {
-                return [
-                    prefilteredGeojson,
-                    "Checking route estimates. Showing the rough shortlist for now.",
-                ];
+                return prefilteredGeojson;
             }
 
             if (exactResult?.signature !== currentSignature) {
-                return [
-                    prefilteredGeojson,
-                    "Checking route estimates. Showing the rough shortlist for now.",
-                ];
+                return prefilteredGeojson;
             }
 
             if (exactResult?.error) {
-                return [
-                    prefilteredGeojson,
-                    `${exactResult.error} Verify finalists in your preferred maps app.`,
-                ];
+                return prefilteredGeojson;
             }
 
-            return [
-                filterFeatureCollectionByListingIds(
-                    prefilteredGeojson,
-                    exactResult?.eligible_mls,
-                ),
-                exactResult?.status || "",
-            ];
+            return filterFeatureCollectionByListingIds(
+                prefilteredGeojson,
+                exactResult?.eligible_mls,
+            );
         }
     })
 });
