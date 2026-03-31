@@ -396,15 +396,33 @@ class BaseClass:
 
         return html.Div(
             [
-                html.P(
-                    "Use this as a rough commute shortlist, then verify finalists in your preferred maps app.",
-                    style={"marginBottom": "10px"},
+                html.Div(
+                    [
+                        html.Div(
+                            "Filter listings by commute time to a destination of your choice.",
+                            style={
+                                "fontSize": "0.98rem",
+                                #"fontWeight": 700,
+                                "color": "#243447",
+                                "marginBottom": "4px",
+                            },
+                        ),
+                        html.Div(
+                            "e.g., your workplace or favorite cafe.",
+                            style={
+                                "fontSize": "0.85rem",
+                                "color": "#6b7280",
+                                "lineHeight": 1.4,
+                                "marginBottom": "10px",
+                            },
+                        ),
+                    ]
                 ),
                 dcc.Input(
                     id=f"{self.page_type}-commute-input",
                     type="text",
                     debounce=True,
-                    placeholder="Destination (e.g., UCLA or 2738 Hyperion Ave)",
+                    placeholder="Destination (e.g., UCLA or 8565 Melrose Ave)",
                 ),
                 html.Div(
                     [
