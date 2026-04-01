@@ -512,7 +512,7 @@ class BaseClass:
                             id=f"{self.page_type}-commute-display-mode",
                             options=[
                                 {"label": "Verified only", "value": "verified_only"},
-                                {"label": "Include estimated matches", "value": "include_rough"},
+                                {"label": "Show all matches", "value": "include_rough"},
                             ],
                             value="verified_only",
                             persistence=True,
@@ -522,6 +522,31 @@ class BaseClass:
                                 "marginBottom": "4px",
                             },
                             inputStyle={"marginRight": "6px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Estimated",
+                                    id=f"{self.page_type}-commute-estimated-info-target",
+                                    style={
+                                        "fontWeight": 600,
+                                        "textDecoration": "underline dotted",
+                                        "cursor": "help",
+                                    },
+                                ),
+                                html.Span(" listings haven't been individually route-checked yet."),
+                            ],
+                            style={
+                                "marginTop": "8px",
+                                "fontSize": "0.78rem",
+                                "color": "#6b7280",
+                                "lineHeight": 1.45,
+                            },
+                        ),
+                        dbc.Tooltip(
+                            "Estimated listings are inside the broader commute area, but each one has not been checked one-by-one yet.",
+                            target=f"{self.page_type}-commute-estimated-info-target",
+                            placement="top",
                         ),
                     ],
                     id=f"{self.page_type}-commute-display-mode-container",

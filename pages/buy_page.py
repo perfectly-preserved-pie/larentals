@@ -491,7 +491,7 @@ def update_buy_commute_status(
   }
   radio_options = [
     {"label": "Verified only", "value": "verified_only"},
-    {"label": "Include estimated matches", "value": "include_rough"},
+    {"label": "Show all matches", "value": "include_rough"},
   ]
   if not isinstance(commute_request, dict):
     return "", toggle_style, radio_options
@@ -537,14 +537,14 @@ def update_buy_commute_status(
       radio_options = [
         {"label": f"Verified only ({matched_candidates})", "value": "verified_only"},
         {
-          "label": f"Include estimated matches ({matched_candidates + rough_candidates})",
+          "label": f"Show all matches ({matched_candidates + rough_candidates})",
           "value": "include_rough",
         },
       ]
       mode_text = (
         "Showing verified listings only."
         if display_mode != "include_rough"
-        else "Showing verified and estimated listings."
+        else "Showing all matches."
       )
 
   if error_text:
