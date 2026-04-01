@@ -72,7 +72,7 @@ def test_verify_exact_commute_matches_partially_verifies_drive_candidates(monkey
     assert result["excluded_candidates"] == 1
     assert result["rough_candidates"] == 1
     assert result["partial"] is True
-    assert "rough matches remain" in result["status"]
+    assert result["status"] == "Showing 1 matches for this commute. More homes may still fit."
 
 
 def test_verify_exact_commute_matches_falls_back_to_rough_when_exact_checks_fail(monkeypatch) -> None:
@@ -97,7 +97,7 @@ def test_verify_exact_commute_matches_falls_back_to_rough_when_exact_checks_fail
         commute_request=_build_drive_request(),
     )
 
-    assert result["error"] == "Exact commute estimates unavailable right now. Showing rough matches only."
+    assert result["error"] == "Couldn't verify commute times right now."
     assert result["checked_candidates"] == 0
     assert result["failed_candidates"] == 2
     assert result["rough_mls"] == ["MLS-1", "MLS-2", "MLS-3"]
