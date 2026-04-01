@@ -147,34 +147,6 @@ VALHALLA_HTTP_HEADERS = {
     "User-Agent": "WhereToLive.LA/1.0",
 }
 
-MAPBOX_ACCESS_TOKEN = str(os.getenv("MAPBOX_ACCESS_TOKEN", "")).strip()
-MAPBOX_DRIVE_EXACT_ENABLED = bool(MAPBOX_ACCESS_TOKEN) and _env_flag(
-    "MAPBOX_DRIVE_EXACT_ENABLED",
-    True,
-)
-MAPBOX_MATRIX_BASE_URL = os.getenv(
-    "MAPBOX_MATRIX_BASE_URL",
-    "https://api.mapbox.com",
-).rstrip("/")
-MAPBOX_MATRIX_TIMEOUT_SECONDS = float(os.getenv("MAPBOX_MATRIX_TIMEOUT_SECONDS", "12"))
-MAPBOX_MATRIX_MAX_WORKERS = max(
-    1,
-    int(os.getenv("MAPBOX_MATRIX_MAX_WORKERS", "4")),
-)
-MAPBOX_MATRIX_COORDINATE_LIMIT = min(
-    10,
-    max(2, int(os.getenv("MAPBOX_MATRIX_COORDINATE_LIMIT", "10"))),
-)
-MAPBOX_DRIVE_EXACT_MAX_CANDIDATES = max(
-    1,
-    int(os.getenv("MAPBOX_DRIVE_EXACT_MAX_CANDIDATES", "80")),
-)
-MAPBOX_MATRIX_RETRY_WITHOUT_DEPART_AT = _env_flag(
-    "MAPBOX_MATRIX_RETRY_WITHOUT_DEPART_AT",
-    True,
-)
-MAPBOX_SERVICE_LABEL = "Mapbox traffic"
-
 
 class CommuteRequestData(TypedDict):
     """Normalized commute request metadata stored in Dash."""
@@ -731,9 +703,6 @@ def _exact_commute_provider_label(mode: str | None) -> str:
     Returns:
         A human-readable provider label.
     """
-    normalized_mode = normalize_commute_mode(mode)
-    if normalized_mode == "drive" and MAPBOX_DRIVE_EXACT_ENABLED:
-        return MAPBOX_SERVICE_LABEL
     return VALHALLA_SERVICE_LABEL
 
 
@@ -747,209 +716,8 @@ def _exact_commute_candidate_limit(mode: str | None) -> int:
     Returns:
         Candidate limit for exact route checks.
     """
-    normalized_mode = normalize_commute_mode(mode)
-    if normalized_mode == "drive" and MAPBOX_DRIVE_EXACT_ENABLED:
-        return MAPBOX_DRIVE_EXACT_MAX_CANDIDATES
+    del mode
     return VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES
-
-
-def _mapbox_depart_at_value(value: str | None) -> str | None:
-    """
-    Build a Mapbox-compatible `depart_at` value when the selected time is usable.
-
-    Args:
-        value: Raw or normalized local departure datetime string.
-
-    Returns:
-        A normalized local datetime string, or `None` when the selected time is
-        in the past and should fall back to present-time traffic.
-    """
-    normalized = normalize_commute_departure_datetime(value)
-    try:
-        parsed = datetime.fromisoformat(normalized)
-    except ValueError:
-        return None
-
-    if parsed < datetime.now():
-        return None
-    return normalized
-
-
-def _fetch_mapbox_drive_batch_durations(
-    batch: list[CommuteListingCandidate],
-    destination_lat: float,
-    destination_lon: float,
-    departure_datetime: str | None,
-) -> RouteDurationLookup:
-    """
-    Fetch many-to-one traffic-aware durations for a batch of listings.
-
-    Args:
-        batch: Origin listings to verify.
-        destination_lat: Destination latitude.
-        destination_lon: Destination longitude.
-        departure_datetime: Selected local departure datetime.
-
-    Returns:
-        A mapping from MLS id to duration seconds, or `None` when unavailable.
-    """
-    if not batch:
-        return {}
-
-    coordinates = [
-        f"{candidate['lon']:.6f},{candidate['lat']:.6f}"
-        for candidate in batch
-    ]
-    destination_index = len(batch)
-    coordinates.append(f"{destination_lon:.6f},{destination_lat:.6f}")
-    sources = ";".join(str(index) for index in range(len(batch)))
-    params: dict[str, str] = {
-        "access_token": MAPBOX_ACCESS_TOKEN,
-        "annotations": "duration",
-        "sources": sources,
-        "destinations": str(destination_index),
-    }
-    depart_at = _mapbox_depart_at_value(departure_datetime)
-    if depart_at:
-        params["depart_at"] = depart_at
-
-    url = (
-        f"{MAPBOX_MATRIX_BASE_URL}/directions-matrix/v1/mapbox/driving-traffic/"
-        f"{';'.join(coordinates)}"
-    )
-
-    try:
-        response = requests.get(
-            url,
-            params=params,
-            headers=VALHALLA_HTTP_HEADERS,
-            timeout=MAPBOX_MATRIX_TIMEOUT_SECONDS,
-        )
-    except requests.RequestException as exc:
-        logger.warning(f"Mapbox Matrix request failed for {len(batch)} drive candidates: {exc}")
-        return {candidate["mls_number"]: None for candidate in batch}
-
-    if (
-        not response.ok
-        and "depart_at" in params
-        and MAPBOX_MATRIX_RETRY_WITHOUT_DEPART_AT
-    ):
-        retry_params = dict(params)
-        retry_params.pop("depart_at", None)
-        try:
-            response = requests.get(
-                url,
-                params=retry_params,
-                headers=VALHALLA_HTTP_HEADERS,
-                timeout=MAPBOX_MATRIX_TIMEOUT_SECONDS,
-            )
-        except requests.RequestException as exc:
-            logger.warning(
-                "Mapbox Matrix retry without depart_at failed for "
-                f"{len(batch)} drive candidates: {exc}"
-            )
-            return {candidate["mls_number"]: None for candidate in batch}
-
-    if not response.ok:
-        logger.warning(
-            "Mapbox Matrix request failed for "
-            f"{len(batch)} drive candidates: HTTP {response.status_code} "
-            f"{response.reason}; {_truncate_response_text(response.text)}"
-        )
-        return {candidate["mls_number"]: None for candidate in batch}
-
-    try:
-        payload_json = response.json()
-    except ValueError as exc:
-        logger.warning(f"Mapbox Matrix returned invalid JSON: {exc}")
-        return {candidate["mls_number"]: None for candidate in batch}
-
-    if not isinstance(payload_json, dict):
-        return {candidate["mls_number"]: None for candidate in batch}
-
-    durations = payload_json.get("durations")
-    if not isinstance(durations, list):
-        logger.warning(
-            "Mapbox Matrix returned no duration matrix: "
-            f"{_truncate_response_text(response.text)}"
-        )
-        return {candidate["mls_number"]: None for candidate in batch}
-
-    results: RouteDurationLookup = {}
-    for index, candidate in enumerate(batch):
-        row = durations[index] if index < len(durations) else None
-        value = row[0] if isinstance(row, list) and row else None
-        results[candidate["mls_number"]] = (
-            float(value) if isinstance(value, (int, float)) else None
-        )
-
-    return results
-
-
-def fetch_mapbox_drive_route_times_seconds(
-    candidates: list[CommuteListingCandidate],
-    destination_lat: float,
-    destination_lon: float,
-    departure_datetime: str | None,
-) -> RouteDurationLookup:
-    """
-    Fetch traffic-aware Mapbox durations for prioritized drive candidates.
-
-    Args:
-        candidates: Origin listings to verify.
-        destination_lat: Destination latitude.
-        destination_lon: Destination longitude.
-        departure_datetime: Selected local departure datetime.
-
-    Returns:
-        A mapping from MLS id to duration seconds, or `None` when unavailable.
-    """
-    if not candidates:
-        return {}
-
-    batch_size = max(1, MAPBOX_MATRIX_COORDINATE_LIMIT - 1)
-    batches = [
-        candidates[start:start + batch_size]
-        for start in range(0, len(candidates), batch_size)
-    ]
-
-    if len(batches) == 1:
-        return _fetch_mapbox_drive_batch_durations(
-            batches[0],
-            destination_lat,
-            destination_lon,
-            departure_datetime,
-        )
-
-    results: RouteDurationLookup = {}
-    max_workers = min(MAPBOX_MATRIX_MAX_WORKERS, len(batches))
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_batch = {
-            executor.submit(
-                _fetch_mapbox_drive_batch_durations,
-                batch,
-                destination_lat,
-                destination_lon,
-                departure_datetime,
-            ): batch
-            for batch in batches
-        }
-
-        for future in as_completed(future_to_batch):
-            batch = future_to_batch[future]
-            try:
-                batch_results = future.result()
-            except Exception as exc:
-                logger.warning(
-                    f"Mapbox Matrix batch verification crashed for {len(batch)} listings: {exc}"
-                )
-                batch_results = {
-                    candidate["mls_number"]: None
-                    for candidate in batch
-                }
-            results.update(batch_results)
-
-    return results
 
 
 def build_valhalla_isochrone_request(
@@ -1503,21 +1271,13 @@ def verify_exact_commute_matches(
     attempted_candidates = len(attempt_candidates)
 
     provider = _exact_commute_provider_label(mode)
-    if provider == MAPBOX_SERVICE_LABEL:
-        duration_lookup = fetch_mapbox_drive_route_times_seconds(
-            attempt_candidates,
-            float(destination_lat),
-            float(destination_lon),
-            departure_datetime,
-        )
-    else:
-        duration_lookup = fetch_valhalla_route_times_seconds(
-            attempt_candidates,
-            float(destination_lat),
-            float(destination_lon),
-            mode,
-            departure_datetime,
-        )
+    duration_lookup = fetch_valhalla_route_times_seconds(
+        attempt_candidates,
+        float(destination_lat),
+        float(destination_lon),
+        mode,
+        departure_datetime,
+    )
 
     eligible_mls: list[str] = []
     excluded_mls: list[str] = []

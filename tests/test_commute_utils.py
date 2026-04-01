@@ -29,13 +29,13 @@ def _build_drive_request() -> dict:
 
 
 def test_verify_exact_commute_matches_partially_verifies_drive_candidates(monkeypatch) -> None:
-    monkeypatch.setattr(commute_utils, "MAPBOX_DRIVE_EXACT_ENABLED", True)
-    monkeypatch.setattr(commute_utils, "MAPBOX_DRIVE_EXACT_MAX_CANDIDATES", 2)
+    monkeypatch.setattr(commute_utils, "VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES", 2)
 
-    def fake_fetch(candidates, destination_lat, destination_lon, departure_datetime):
+    def fake_fetch(candidates, destination_lat, destination_lon, mode, departure_datetime):
         assert len(candidates) == 2
         assert destination_lat == 34.0689
         assert destination_lon == -118.4452
+        assert mode == "drive"
         assert departure_datetime == "2026-04-01T08:00"
         return {
             "MLS-1": 20 * 60,
@@ -44,7 +44,7 @@ def test_verify_exact_commute_matches_partially_verifies_drive_candidates(monkey
 
     monkeypatch.setattr(
         commute_utils,
-        "fetch_mapbox_drive_route_times_seconds",
+        "fetch_valhalla_route_times_seconds",
         fake_fetch,
     )
 
@@ -62,7 +62,7 @@ def test_verify_exact_commute_matches_partially_verifies_drive_candidates(monkey
         commute_request=_build_drive_request(),
     )
 
-    assert result["provider"] == commute_utils.MAPBOX_SERVICE_LABEL
+    assert result["provider"] == commute_utils.VALHALLA_SERVICE_LABEL
     assert result["eligible_mls"] == ["MLS-1"]
     assert result["excluded_mls"] == ["MLS-2"]
     assert result["rough_mls"] == ["MLS-3"]
@@ -76,11 +76,10 @@ def test_verify_exact_commute_matches_partially_verifies_drive_candidates(monkey
 
 
 def test_verify_exact_commute_matches_falls_back_to_rough_when_exact_checks_fail(monkeypatch) -> None:
-    monkeypatch.setattr(commute_utils, "MAPBOX_DRIVE_EXACT_ENABLED", True)
-    monkeypatch.setattr(commute_utils, "MAPBOX_DRIVE_EXACT_MAX_CANDIDATES", 2)
+    monkeypatch.setattr(commute_utils, "VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES", 2)
     monkeypatch.setattr(
         commute_utils,
-        "fetch_mapbox_drive_route_times_seconds",
+        "fetch_valhalla_route_times_seconds",
         lambda *args, **kwargs: {"MLS-1": None, "MLS-2": None},
     )
 
