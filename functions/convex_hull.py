@@ -5,6 +5,7 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     if (!context.currentPolygon) {
         context.currentPolygon = null;
     }
+    window.larentals = window.larentals || {};
 
     // Access all the leaves of the cluster
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
@@ -57,25 +58,31 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const markerOpacity = getMarkerOpacity(clusterSize);
     const innerSize = markerSize * 0.75; // Inner circle is 75% of outer circle
 
-    // Collect coordinates for the cluster's children
-    let features = [];
-    for (let i = 0; i < leaves.length; ++i) {
-        const coords = leaves[i].geometry.coordinates;
-        const lng = coords[0];
-        const lat = coords[1];
-        features.push(turf.point([lng, lat]));
-    }
+    const buildPolygonLayer = function(clusterFeature) {
+        const clusterId = clusterFeature?.properties?.cluster_id;
+        if (clusterId === undefined || clusterId === null) {
+            return null;
+        }
 
-    // Create a Turf.js feature collection
-    const fc = turf.featureCollection(features);
+        const clusterLeaves = index.getLeaves(clusterId, Infinity);
+        const hullFeatures = [];
+        for (let i = 0; i < clusterLeaves.length; ++i) {
+            const coords = clusterLeaves[i]?.geometry?.coordinates;
+            if (!Array.isArray(coords) || coords.length < 2) continue;
+            hullFeatures.push(turf.point([coords[0], coords[1]]));
+        }
 
-    // Compute the convex hull
-    const convexHull = turf.convex(fc);
+        if (hullFeatures.length < 3) {
+            return null;
+        }
 
-    // If the convex hull exists, create it as a polygon
-    let polygonLayer = null;
-    if (convexHull) {
-        polygonLayer = L.geoJSON(convexHull, {
+        const fc = turf.featureCollection(hullFeatures);
+        const convexHull = turf.convex(fc);
+        if (!convexHull) {
+            return null;
+        }
+
+        return L.geoJSON(convexHull, {
             style: {
                 color: color,
                 weight: 2,
@@ -83,7 +90,7 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
                 fillColor: color
             }
         });
-    }
+    };
 
     // Create a custom marker with size and opacity varying by density
     const clusterMarker = L.marker(latlng, {
@@ -105,6 +112,7 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
             iconSize: L.point(markerSize, markerSize)
         })
     });
+    clusterMarker.feature = feature;
 
     // Don't show a popup when a cluster is clicked
     clusterMarker.on('click', function(e) {
@@ -119,9 +127,12 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         if (context.currentPolygon) {
             context.map.removeLayer(context.currentPolygon);
         }
+        const polygonLayer = buildPolygonLayer(clusterMarker.feature || feature);
         if (polygonLayer) {
             polygonLayer.addTo(context.map);
             context.currentPolygon = polygonLayer;
+            window.larentals.currentConvexHull = polygonLayer;
+            window.larentals.currentConvexHullMap = context.map;
         }
     });
 
@@ -131,6 +142,17 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
             context.map.removeLayer(context.currentPolygon);
             context.currentPolygon = null;
         }
+        window.larentals.currentConvexHull = null;
+        window.larentals.currentConvexHullMap = null;
+    });
+
+    clusterMarker.on('remove', function() {
+        if (context.currentPolygon) {
+            context.map.removeLayer(context.currentPolygon);
+            context.currentPolygon = null;
+        }
+        window.larentals.currentConvexHull = null;
+        window.larentals.currentConvexHullMap = null;
     });
 
     return clusterMarker;

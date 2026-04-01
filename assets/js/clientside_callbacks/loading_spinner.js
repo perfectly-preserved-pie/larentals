@@ -25,6 +25,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
       const hasFeatures = geojsonData != null && geojsonData.features != null;
       base.display = hasFeatures ? "none" : "flex";
       return base;
-    }
+    },
+
   })
 });

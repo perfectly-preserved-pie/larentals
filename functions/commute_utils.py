@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, time as dt_time, timedelta
 from functools import lru_cache
+from math import asin, cos, radians, sin, sqrt
 from typing import Any, Iterable, TypeAlias, TypedDict
 import os
+import time
 
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
@@ -20,12 +23,21 @@ COMMUTE_DEFAULT_MODE = "drive"
 COMMUTE_MIN_MINUTES = 5
 COMMUTE_MAX_MINUTES = 90
 COMMUTE_STEP_MINUTES = 5
+COMMUTE_DEFAULT_DEPARTURE_HOUR = 8
+COMMUTE_DEFAULT_DEPARTURE_MINUTE = 0
 
 COMMUTE_MODE_LABELS: dict[str, str] = {
-    "drive": "Drive",
+    "drive": "Drive (typical)",
     "transit": "Transit",
     "bike": "Bike",
     "walk": "Walk",
+}
+
+COMMUTE_MODE_STATUS_LABELS: dict[str, str] = {
+    "drive": "drive (typical)",
+    "transit": "transit",
+    "bike": "bike",
+    "walk": "walk",
 }
 
 COMMUTE_MODE_OPTIONS = [
@@ -94,7 +106,7 @@ VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES = max(
     int(
         os.getenv(
             "VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES",
-            "60" if VALHALLA_IS_PUBLIC_DEMO else "400",
+            "60" if VALHALLA_IS_PUBLIC_DEMO else "2000",
         )
     ),
 )
@@ -103,12 +115,31 @@ VALHALLA_EXACT_COMMUTE_MAX_WORKERS = max(
     int(
         os.getenv(
             "VALHALLA_EXACT_COMMUTE_MAX_WORKERS",
-            "4" if VALHALLA_IS_PUBLIC_DEMO else "8",
+            "4" if VALHALLA_IS_PUBLIC_DEMO else "16",
         )
     ),
 )
+VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS = max(
+    1,
+    int(
+        os.getenv(
+            "VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS",
+            "1" if VALHALLA_IS_PUBLIC_DEMO else "4",
+        )
+    ),
+)
+VALHALLA_ROUTE_MAX_RETRIES = max(
+    0,
+    int(os.getenv("VALHALLA_ROUTE_MAX_RETRIES", "1")),
+)
+VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS = max(
+    0.0,
+    float(os.getenv("VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS", "0.75")),
+)
 
-COMMUTE_HELP_TEXT = ""
+COMMUTE_HELP_TEXT = (
+    "Commute times are estimates, not guarantees. Actual trips can be much longer or shorter depending on traffic, lights, hills, parking, and transit service."
+)
 
 VALHALLA_HTTP_HEADERS = {
     "Accept": "application/json",
@@ -128,8 +159,11 @@ class CommuteRequestData(TypedDict):
     mode: str
     mode_label: str
     minutes: int
+    departure_datetime: str
+    departure_label: str
     center_lat: float | None
     center_lon: float | None
+    status: str
     error: str | None
 
 
@@ -149,14 +183,21 @@ class CommuteExactMatchResult(TypedDict):
     signature: str | None
     commute_signature: str | None
     eligible_mls: list[str]
+    excluded_mls: list[str]
+    rough_mls: list[str]
     total_candidates: int
+    attempted_candidates: int
     checked_candidates: int
     matched_candidates: int
+    excluded_candidates: int
+    rough_candidates: int
     failed_candidates: int
     mode: str | None
     mode_label: str | None
     minutes: int | None
     display_name: str | None
+    provider: str | None
+    partial: bool
     status: str
     error: str | None
 
@@ -167,6 +208,9 @@ class CommuteListingCandidate(TypedDict):
     mls_number: str
     lat: float
     lon: float
+
+
+RouteDurationLookup: TypeAlias = dict[str, float | None]
 
 
 def empty_feature_collection() -> GeoJsonDict:
@@ -193,6 +237,20 @@ def normalize_commute_mode(mode: str | None) -> str:
     if normalized in COMMUTE_MODE_LABELS:
         return normalized
     return COMMUTE_DEFAULT_MODE
+
+
+def commute_mode_status_label(mode: str | None) -> str:
+    """
+    Return the user-facing wording used in commute status lines.
+
+    Args:
+        mode: Raw mode string from the browser.
+
+    Returns:
+        A short display label for status messages.
+    """
+    normalized = normalize_commute_mode(mode)
+    return COMMUTE_MODE_STATUS_LABELS[normalized]
 
 
 def normalize_commute_minutes(minutes: int | float | None) -> int:
@@ -228,6 +286,88 @@ def valhalla_costing_for_mode(mode: str | None) -> str:
     return COMMUTE_VALHALLA_COSTING[normalize_commute_mode(mode)]
 
 
+def default_commute_departure_datetime() -> str:
+    """
+    Build the default local departure datetime used by the commute UI.
+
+    Returns:
+        An ISO-like local datetime string for the next weekday at 08:00.
+    """
+    now = datetime.now()
+    candidate_date = now.date()
+    if now.weekday() >= 5:
+        candidate_date = candidate_date + timedelta(days=7 - now.weekday())
+    candidate = datetime.combine(
+        candidate_date,
+        dt_time(hour=COMMUTE_DEFAULT_DEPARTURE_HOUR, minute=COMMUTE_DEFAULT_DEPARTURE_MINUTE),
+    )
+    if candidate <= now:
+        candidate_date = candidate_date + timedelta(days=1)
+        while candidate_date.weekday() >= 5:
+            candidate_date = candidate_date + timedelta(days=1)
+        candidate = datetime.combine(
+            candidate_date,
+            dt_time(hour=COMMUTE_DEFAULT_DEPARTURE_HOUR, minute=COMMUTE_DEFAULT_DEPARTURE_MINUTE),
+        )
+    return candidate.strftime("%Y-%m-%dT%H:%M")
+
+
+def normalize_commute_departure_datetime(value: str | None) -> str:
+    """
+    Normalize a user-selected local departure datetime for Valhalla.
+
+    Args:
+        value: Raw datetime string from the UI.
+
+    Returns:
+        A local datetime string formatted as ``YYYY-MM-DDTHH:MM``.
+    """
+    if isinstance(value, str):
+        raw_value = value.strip()
+        if raw_value:
+            cleaned_value = raw_value[:-1] if raw_value.endswith("Z") else raw_value
+            try:
+                parsed = datetime.fromisoformat(cleaned_value)
+            except ValueError:
+                pass
+            else:
+                return parsed.replace(tzinfo=None).strftime("%Y-%m-%dT%H:%M")
+    return default_commute_departure_datetime()
+
+
+def format_commute_departure_label(value: str | None) -> str:
+    """
+    Format a normalized departure datetime for user-facing status text.
+
+    Args:
+        value: Raw or normalized datetime string.
+
+    Returns:
+        A compact human-readable local datetime label.
+    """
+    normalized = normalize_commute_departure_datetime(value)
+    parsed = datetime.fromisoformat(normalized)
+    month_day = parsed.strftime("%a %b %d").replace(" 0", " ")
+    time_label = parsed.strftime("%I:%M %p").lstrip("0")
+    return f"{month_day} at {time_label}"
+
+
+def build_valhalla_date_time(value: str | None) -> GeoJsonDict:
+    """
+    Build a Valhalla ``date_time`` object from the selected departure.
+
+    Args:
+        value: Raw or normalized local departure datetime string.
+
+    Returns:
+        A Valhalla ``date_time`` payload using a specified departure time.
+    """
+    return {
+        "type": 1,
+        "value": normalize_commute_departure_datetime(value),
+    }
+
+
 def empty_commute_request_data() -> CommuteRequestData:
     """
     Build an empty commute request payload for Dash stores.
@@ -245,8 +385,11 @@ def empty_commute_request_data() -> CommuteRequestData:
         "mode": COMMUTE_DEFAULT_MODE,
         "mode_label": COMMUTE_MODE_LABELS[COMMUTE_DEFAULT_MODE],
         "minutes": normalize_commute_minutes(30),
+        "departure_datetime": default_commute_departure_datetime(),
+        "departure_label": format_commute_departure_label(None),
         "center_lat": None,
         "center_lon": None,
+        "status": "",
         "error": None,
     }
 
@@ -264,14 +407,21 @@ def empty_commute_exact_result() -> CommuteExactMatchResult:
         "signature": None,
         "commute_signature": None,
         "eligible_mls": [],
+        "excluded_mls": [],
+        "rough_mls": [],
         "total_candidates": 0,
+        "attempted_candidates": 0,
         "checked_candidates": 0,
         "matched_candidates": 0,
+        "excluded_candidates": 0,
+        "rough_candidates": 0,
         "failed_candidates": 0,
         "mode": None,
         "mode_label": None,
         "minutes": None,
         "display_name": None,
+        "provider": None,
+        "partial": False,
         "status": "",
         "error": None,
     }
@@ -282,6 +432,7 @@ def build_commute_signature(
     lon: float,
     mode: str | None,
     minutes: int | float | None,
+    departure_datetime: str | None,
 ) -> str:
     """
     Build a stable signature for a destination/mode/time commute request.
@@ -291,13 +442,18 @@ def build_commute_signature(
         lon: Destination longitude.
         mode: Selected commute mode.
         minutes: Selected max minutes.
+        departure_datetime: Selected departure datetime.
 
     Returns:
         A stable string signature for caching and store comparisons.
     """
     normalized_mode = normalize_commute_mode(mode)
     normalized_minutes = normalize_commute_minutes(minutes)
-    return f"{normalized_mode}:{normalized_minutes}:{lat:.6f}:{lon:.6f}"
+    normalized_departure = normalize_commute_departure_datetime(departure_datetime)
+    return (
+        f"{normalized_mode}:{normalized_minutes}:{normalized_departure}:"
+        f"{lat:.6f}:{lon:.6f}"
+    )
 
 
 def build_candidate_signature(
@@ -364,6 +520,67 @@ def _normalize_point_coordinates(coords: object) -> tuple[float, float] | None:
     return float(second), float(first)
 
 
+def _haversine_distance_miles(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+) -> float:
+    """
+    Return the great-circle distance between two points in miles.
+
+    Args:
+        lat1: First latitude.
+        lon1: First longitude.
+        lat2: Second latitude.
+        lon2: Second longitude.
+
+    Returns:
+        Great-circle distance in miles.
+    """
+    radius_miles = 3958.7613
+    delta_lat = radians(lat2 - lat1)
+    delta_lon = radians(lon2 - lon1)
+    lat1_rad = radians(lat1)
+    lat2_rad = radians(lat2)
+
+    a = (
+        sin(delta_lat / 2) ** 2
+        + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
+    )
+    return 2 * radius_miles * asin(sqrt(a))
+
+
+def _prioritize_candidates_by_distance(
+    candidates: list[CommuteListingCandidate],
+    destination_lat: float,
+    destination_lon: float,
+) -> list[CommuteListingCandidate]:
+    """
+    Rank candidates by straight-line distance to the destination.
+
+    Args:
+        candidates: Candidate listings extracted from the current shortlist.
+        destination_lat: Destination latitude.
+        destination_lon: Destination longitude.
+
+    Returns:
+        A new list ordered nearest-first, preserving original order for ties.
+    """
+    return sorted(
+        candidates,
+        key=lambda item: (
+            _haversine_distance_miles(
+                item["lat"],
+                item["lon"],
+                destination_lat,
+                destination_lon,
+            ),
+            item["mls_number"],
+        ),
+    )
+
+
 def _extract_candidate_listings(prefiltered_geojson: GeoJsonDict | None) -> list[CommuteListingCandidate]:
     """
     Extract route-checkable listing points from a FeatureCollection.
@@ -414,7 +631,9 @@ def build_commute_request_data(
     geocoded: PlaceGeocodeResult | None,
     mode: str | None,
     minutes: int | float | None,
+    departure_datetime: str | None,
     active: bool,
+    status: str,
     error: str | None,
 ) -> CommuteRequestData:
     """
@@ -425,6 +644,7 @@ def build_commute_request_data(
         geocoded: Geocoded destination payload when available.
         mode: Selected commute mode.
         minutes: Selected maximum commute duration.
+        departure_datetime: Selected local departure datetime.
         active: Whether a coarse commute polygon was successfully loaded.
         error: Optional error code or message for the current request.
 
@@ -433,6 +653,7 @@ def build_commute_request_data(
     """
     normalized_mode = normalize_commute_mode(mode)
     normalized_minutes = normalize_commute_minutes(minutes)
+    normalized_departure = normalize_commute_departure_datetime(departure_datetime)
     display_name = (
         geocoded.get("display_name")
         if geocoded and geocoded.get("display_name")
@@ -441,7 +662,13 @@ def build_commute_request_data(
     lat = geocoded.get("lat") if geocoded else None
     lon = geocoded.get("lon") if geocoded else None
     signature = (
-        build_commute_signature(lat, lon, normalized_mode, normalized_minutes)
+        build_commute_signature(
+            lat,
+            lon,
+            normalized_mode,
+            normalized_minutes,
+            normalized_departure,
+        )
         if lat is not None and lon is not None
         else None
     )
@@ -456,10 +683,40 @@ def build_commute_request_data(
         "mode": normalized_mode,
         "mode_label": COMMUTE_MODE_LABELS[normalized_mode],
         "minutes": normalized_minutes,
+        "departure_datetime": normalized_departure,
+        "departure_label": format_commute_departure_label(normalized_departure),
         "center_lat": lat,
         "center_lon": lon,
+        "status": status,
         "error": error,
     }
+
+
+def _exact_commute_provider_label(mode: str | None) -> str:
+    """
+    Choose the exact-route provider label for the selected mode.
+
+    Args:
+        mode: Selected commute mode.
+
+    Returns:
+        A human-readable provider label.
+    """
+    return VALHALLA_SERVICE_LABEL
+
+
+def _exact_commute_candidate_limit(mode: str | None) -> int:
+    """
+    Return the maximum number of candidates to exact-check for the current mode.
+
+    Args:
+        mode: Selected commute mode.
+
+    Returns:
+        Candidate limit for exact route checks.
+    """
+    del mode
+    return VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES
 
 
 def build_valhalla_isochrone_request(
@@ -467,6 +724,7 @@ def build_valhalla_isochrone_request(
     lon: float,
     mode: str | None,
     minutes: int | float | None,
+    departure_datetime: str | None,
 ) -> GeoJsonDict:
     """
     Build a Valhalla isochrone request payload.
@@ -476,6 +734,7 @@ def build_valhalla_isochrone_request(
         lon: Destination longitude.
         mode: Selected commute mode.
         minutes: Selected max duration.
+        departure_datetime: Selected local departure datetime.
 
     Returns:
         A JSON-serializable Valhalla isochrone request payload.
@@ -490,7 +749,7 @@ def build_valhalla_isochrone_request(
         "denoise": 0.0,
         "reverse": True,
         "show_locations": False,
-        "date_time": {"type": 0},
+        "date_time": build_valhalla_date_time(departure_datetime),
     }
 
 
@@ -549,6 +808,7 @@ def fetch_valhalla_isochrone(
     lon: float,
     mode: str | None,
     minutes: int | float | None,
+    departure_datetime: str | None,
     display_name: str,
 ) -> GeoJsonDict | None:
     """
@@ -559,6 +819,7 @@ def fetch_valhalla_isochrone(
         lon: Destination longitude.
         mode: Selected commute mode.
         minutes: Selected max duration.
+        departure_datetime: Selected local departure datetime.
         display_name: Human-readable label used for logs and feature metadata.
 
     Returns:
@@ -566,7 +827,14 @@ def fetch_valhalla_isochrone(
     """
     normalized_mode = normalize_commute_mode(mode)
     normalized_minutes = normalize_commute_minutes(minutes)
-    payload = build_valhalla_isochrone_request(lat, lon, normalized_mode, normalized_minutes)
+    normalized_departure = normalize_commute_departure_datetime(departure_datetime)
+    payload = build_valhalla_isochrone_request(
+        lat,
+        lon,
+        normalized_mode,
+        normalized_minutes,
+        normalized_departure,
+    )
 
     try:
         response = requests.post(
@@ -623,6 +891,7 @@ def build_commute_boundary_result(
     geocoded: PlaceGeocodeResult | None,
     mode: str | None,
     minutes: int | float | None,
+    departure_datetime: str | None,
 ) -> CommuteBoundaryResult:
     """
     Build the commute boundary overlay payload and request metadata.
@@ -632,13 +901,17 @@ def build_commute_boundary_result(
         geocoded: Geocoded destination when available.
         mode: Selected commute mode.
         minutes: Selected max commute duration.
+        departure_datetime: Selected local departure datetime.
 
     Returns:
         A dict containing overlay GeoJSON, status text, and normalized request metadata.
     """
     normalized_mode = normalize_commute_mode(mode)
     normalized_minutes = normalize_commute_minutes(minutes)
-    mode_label = COMMUTE_MODE_LABELS[normalized_mode].lower()
+    normalized_departure = normalize_commute_departure_datetime(departure_datetime)
+    mode_label = COMMUTE_MODE_LABELS[normalized_mode]
+    mode_status_label = commute_mode_status_label(normalized_mode)
+    departure_label = format_commute_departure_label(normalized_departure)
 
     if not destination:
         return {
@@ -656,7 +929,9 @@ def build_commute_boundary_result(
                 geocoded=None,
                 mode=normalized_mode,
                 minutes=normalized_minutes,
+                departure_datetime=normalized_departure,
                 active=False,
+                status="Destination not found.",
                 error="place_not_found",
             ),
         }
@@ -667,6 +942,7 @@ def build_commute_boundary_result(
         geocoded["lon"],
         normalized_mode,
         normalized_minutes,
+        normalized_departure,
         display_name,
     )
 
@@ -679,23 +955,28 @@ def build_commute_boundary_result(
                 geocoded=geocoded,
                 mode=normalized_mode,
                 minutes=normalized_minutes,
+                departure_datetime=normalized_departure,
                 active=False,
+                status="Commute area unavailable right now.",
                 error="isochrone_unavailable",
             ),
         }
 
+    status = (
+        f"Estimated {mode_status_label} area loaded for "
+        f"{display_name or 'the destination'} departing {departure_label}."
+    )
     return {
         "geojson": geojson,
-        "status": (
-            f"{mode_label.title()} area loaded for "
-            f"{display_name or 'the destination'}."
-        ),
+        "status": status,
         "request": build_commute_request_data(
             destination=destination,
             geocoded=geocoded,
             mode=normalized_mode,
             minutes=normalized_minutes,
+            departure_datetime=normalized_departure,
             active=True,
+            status=status,
             error=None,
         ),
     }
@@ -707,6 +988,7 @@ def build_valhalla_route_request(
     destination_lat: float,
     destination_lon: float,
     mode: str | None,
+    departure_datetime: str | None,
 ) -> GeoJsonDict:
     """
     Build a Valhalla route request payload for an origin/destination pair.
@@ -717,6 +999,7 @@ def build_valhalla_route_request(
         destination_lat: Destination latitude.
         destination_lon: Destination longitude.
         mode: Selected commute mode.
+        departure_datetime: Selected local departure datetime.
 
     Returns:
         A JSON-serializable Valhalla route request payload.
@@ -729,7 +1012,7 @@ def build_valhalla_route_request(
         ],
         "costing": COMMUTE_VALHALLA_COSTING[normalized_mode],
         "units": "miles",
-        "date_time": {"type": 0},
+        "date_time": build_valhalla_date_time(departure_datetime),
     }
 
 
@@ -740,6 +1023,7 @@ def fetch_valhalla_route_time_seconds(
     destination_lat: float,
     destination_lon: float,
     mode: str | None,
+    departure_datetime: str | None,
 ) -> float | None:
     """
     Fetch an exact Valhalla route duration between a listing and a destination.
@@ -750,6 +1034,7 @@ def fetch_valhalla_route_time_seconds(
         destination_lat: Destination latitude.
         destination_lon: Destination longitude.
         mode: Selected commute mode.
+        departure_datetime: Selected local departure datetime.
 
     Returns:
         The route duration in seconds when available, otherwise `None`.
@@ -761,24 +1046,34 @@ def fetch_valhalla_route_time_seconds(
         destination_lat,
         destination_lon,
         normalized_mode,
+        departure_datetime,
     )
 
-    try:
-        response = requests.post(
-            f"{VALHALLA_BASE_URL}/route",
-            json=payload,
-            headers=VALHALLA_HTTP_HEADERS,
-            timeout=VALHALLA_TIMEOUT_SECONDS,
-        )
-    except requests.RequestException as exc:
-        logger.warning(
-            "Valhalla route request failed for "
-            f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
-            f"via {normalized_mode}: {exc}"
-        )
-        return None
+    max_attempts = VALHALLA_ROUTE_MAX_RETRIES + 1
+    response: requests.Response | None = None
+    for attempt in range(max_attempts):
+        try:
+            response = requests.post(
+                f"{VALHALLA_BASE_URL}/route",
+                json=payload,
+                headers=VALHALLA_HTTP_HEADERS,
+                timeout=VALHALLA_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            logger.warning(
+                "Valhalla route request failed for "
+                f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
+                f"via {normalized_mode}: {exc}"
+            )
+            return None
 
-    if not response.ok:
+        if response.ok:
+            break
+
+        if response.status_code == 429 and attempt + 1 < max_attempts:
+            time.sleep(VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS * (attempt + 1))
+            continue
+
         logger.warning(
             "Valhalla route request failed for "
             f"({origin_lat}, {origin_lon}) -> ({destination_lat}, {destination_lon}) "
@@ -814,6 +1109,79 @@ def fetch_valhalla_route_time_seconds(
     return None
 
 
+def fetch_valhalla_route_times_seconds(
+    candidates: list[CommuteListingCandidate],
+    destination_lat: float,
+    destination_lon: float,
+    mode: str | None,
+    departure_datetime: str | None,
+) -> RouteDurationLookup:
+    """
+    Fetch exact Valhalla durations for a prioritized listing subset.
+
+    Args:
+        candidates: Origin listings to verify.
+        destination_lat: Destination latitude.
+        destination_lon: Destination longitude.
+        mode: Selected commute mode.
+        departure_datetime: Selected local departure datetime.
+
+    Returns:
+        A mapping from MLS id to duration seconds, or `None` when unavailable.
+    """
+    if not candidates:
+        return {}
+
+    normalized_mode = normalize_commute_mode(mode)
+    worker_limit = (
+        VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS
+        if normalized_mode == "transit"
+        else VALHALLA_EXACT_COMMUTE_MAX_WORKERS
+    )
+    max_workers = min(worker_limit, len(candidates))
+
+    if max_workers == 1:
+        return {
+            candidate["mls_number"]: fetch_valhalla_route_time_seconds(
+                candidate["lat"],
+                candidate["lon"],
+                destination_lat,
+                destination_lon,
+                normalized_mode,
+                departure_datetime,
+            )
+            for candidate in candidates
+        }
+
+    results: RouteDurationLookup = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_candidate = {
+            executor.submit(
+                fetch_valhalla_route_time_seconds,
+                candidate["lat"],
+                candidate["lon"],
+                destination_lat,
+                destination_lon,
+                normalized_mode,
+                departure_datetime,
+            ): candidate
+            for candidate in candidates
+        }
+
+        for future in as_completed(future_to_candidate):
+            candidate = future_to_candidate[future]
+            try:
+                results[candidate["mls_number"]] = future.result()
+            except Exception as exc:
+                logger.warning(
+                    "Exact Valhalla route verification crashed for "
+                    f"MLS {candidate['mls_number']}: {exc}"
+                )
+                results[candidate["mls_number"]] = None
+
+    return results
+
+
 def verify_exact_commute_matches(
     *,
     prefiltered_geojson: GeoJsonDict | None,
@@ -841,9 +1209,14 @@ def verify_exact_commute_matches(
     display_name = commute_request.get("display_name")
     mode = normalize_commute_mode(commute_request.get("mode"))
     mode_label = COMMUTE_MODE_LABELS[mode]
+    mode_status_label = commute_mode_status_label(mode)
     minutes = normalize_commute_minutes(commute_request.get("minutes"))
     destination_lat = commute_request.get("center_lat")
     destination_lon = commute_request.get("center_lon")
+    departure_datetime = normalize_commute_departure_datetime(
+        commute_request.get("departure_datetime")
+    )
+    departure_label = format_commute_departure_label(departure_datetime)
 
     base_result.update(
         {
@@ -854,6 +1227,7 @@ def verify_exact_commute_matches(
             "mode_label": mode_label,
             "minutes": minutes,
             "display_name": str(display_name) if display_name else None,
+            "provider": _exact_commute_provider_label(mode),
         }
     )
 
@@ -882,74 +1256,84 @@ def verify_exact_commute_matches(
         }
     )
 
-    if len(candidates) > VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES:
-        error = "Too many matches to verify exactly. Showing broad commute matches."
-        base_result.update({"status": error, "error": error})
-        return base_result
-
     if not candidates:
         base_result["status"] = "No listings match this commute."
         return base_result
 
+    prioritized_candidates = _prioritize_candidates_by_distance(
+        candidates,
+        float(destination_lat),
+        float(destination_lon),
+    )
+    exact_limit = _exact_commute_candidate_limit(mode)
+    attempt_candidates = prioritized_candidates[:exact_limit]
+    attempted_candidates = len(attempt_candidates)
+
+    provider = _exact_commute_provider_label(mode)
+    duration_lookup = fetch_valhalla_route_times_seconds(
+        attempt_candidates,
+        float(destination_lat),
+        float(destination_lon),
+        mode,
+        departure_datetime,
+    )
+
     eligible_mls: list[str] = []
+    excluded_mls: list[str] = []
     checked_candidates = 0
     failed_candidates = 0
+    for candidate in attempt_candidates:
+        time_seconds = duration_lookup.get(candidate["mls_number"])
+        if time_seconds is None:
+            failed_candidates += 1
+            continue
 
-    max_workers = min(VALHALLA_EXACT_COMMUTE_MAX_WORKERS, len(candidates))
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_candidate = {
-            executor.submit(
-                fetch_valhalla_route_time_seconds,
-                candidate["lat"],
-                candidate["lon"],
-                float(destination_lat),
-                float(destination_lon),
-                mode,
-            ): candidate
-            for candidate in candidates
-        }
-
-        for future in as_completed(future_to_candidate):
-            candidate = future_to_candidate[future]
-            try:
-                time_seconds = future.result()
-            except Exception as exc:
-                logger.warning(
-                    "Exact Valhalla route verification crashed for "
-                    f"MLS {candidate['mls_number']}: {exc}"
-                )
-                failed_candidates += 1
-                continue
-
-            if time_seconds is None:
-                failed_candidates += 1
-                continue
-
-            checked_candidates += 1
-            if time_seconds <= minutes * 60:
-                eligible_mls.append(candidate["mls_number"])
+        checked_candidates += 1
+        if time_seconds <= minutes * 60:
+            eligible_mls.append(candidate["mls_number"])
+        else:
+            excluded_mls.append(candidate["mls_number"])
 
     matched_candidates = len(eligible_mls)
+    excluded_candidates = len(excluded_mls)
+    verified_ids = set(eligible_mls) | set(excluded_mls)
+    rough_mls = [
+        candidate["mls_number"]
+        for candidate in candidates
+        if candidate["mls_number"] not in verified_ids
+    ]
+    rough_candidates = len(rough_mls)
+    partial = rough_candidates > 0
     base_result.update(
         {
             "eligible_mls": sorted(set(eligible_mls)),
+            "excluded_mls": sorted(set(excluded_mls)),
+            "rough_mls": rough_mls,
+            "attempted_candidates": attempted_candidates,
             "checked_candidates": checked_candidates,
             "matched_candidates": matched_candidates,
+            "excluded_candidates": excluded_candidates,
+            "rough_candidates": rough_candidates,
             "failed_candidates": failed_candidates,
+            "partial": partial,
         }
     )
 
     if checked_candidates == 0:
-        error = "Exact commute check unavailable right now."
+        error = "Couldn't verify commute times right now."
         base_result.update({"status": error, "error": error})
         return base_result
 
-    status = (
-        f"Showing {matched_candidates} listings within "
-        f"{minutes} minutes by {mode_label.lower()}."
-    )
+    if matched_candidates:
+        status = f"Showing {matched_candidates} matches for this commute."
+    else:
+        status = "No verified matches yet."
+
+    if partial:
+        status = f"{status} More homes may still fit."
+
     if failed_candidates:
-        status = f"{status} Some listings could not be verified."
+        status = f"{status} Some times couldn't be checked."
 
     base_result["status"] = status
     return base_result

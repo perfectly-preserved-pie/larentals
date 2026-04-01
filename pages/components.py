@@ -5,6 +5,7 @@ from datetime import date
 from functools import lru_cache
 from functions.commute_utils import (
     COMMUTE_DEFAULT_MODE,
+    default_commute_departure_datetime,
     COMMUTE_HELP_TEXT,
     COMMUTE_MAX_MINUTES,
     COMMUTE_MIN_MINUTES,
@@ -389,6 +390,7 @@ class BaseClass:
             A container with destination, mode, duration, and status controls.
         """
         default_minutes = normalize_commute_minutes(30)
+        default_departure = default_commute_departure_datetime()
         slider_marks = {
             minutes: str(minutes)
             for minutes in (10, 20, 30, 45, 60, 90)
@@ -396,15 +398,33 @@ class BaseClass:
 
         return html.Div(
             [
-                html.P(
-                    "Filter listings to a travel-time area around a destination.",
-                    style={"marginBottom": "10px"},
+                html.Div(
+                    [
+                        html.Div(
+                            "Filter listings by commute time to a destination of your choice.",
+                            style={
+                                "fontSize": "0.98rem",
+                                #"fontWeight": 700,
+                                "color": "#243447",
+                                "marginBottom": "4px",
+                            },
+                        ),
+                        html.Div(
+                            "e.g., your workplace or favorite cafe.",
+                            style={
+                                "fontSize": "0.85rem",
+                                "color": "#6b7280",
+                                "lineHeight": 1.4,
+                                "marginBottom": "10px",
+                            },
+                        ),
+                    ]
                 ),
                 dcc.Input(
                     id=f"{self.page_type}-commute-input",
                     type="text",
                     debounce=True,
-                    placeholder="Destination (e.g., UCLA or 2738 Hyperion Ave)",
+                    placeholder="Destination (e.g., UCLA or 8565 Melrose Ave)",
                 ),
                 html.Div(
                     [
@@ -418,6 +438,30 @@ class BaseClass:
                             value=COMMUTE_DEFAULT_MODE,
                             clearable=False,
                             searchable=False,
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        html.H6(
+                            "Departure Time",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dmc.DateTimePicker(
+                            id=f"{self.page_type}-commute-departure-datetime",
+                            value=default_departure,
+                            valueFormat="ddd MMM D, YYYY h:mm A",
+                            clearable=False,
+                            debounce=250,
+                            withSeconds=False,
+                            timePickerProps={
+                                "withDropdown": True,
+                                "format": "12h",
+                            },
+                            popoverProps={"withinPortal": False},
+                            persistence=True,
+                            persistence_type="local",
+                            w="100%",
                         ),
                     ]
                 ),
@@ -443,27 +487,85 @@ class BaseClass:
                     ]
                 ),
                 html.Div(
-                    COMMUTE_HELP_TEXT,
-                    style={
-                        "marginTop": "10px",
-                        "fontSize": "0.85rem",
-                        "color": "#9aa0a6",
-                    },
-                ),
-                html.Div(
                     id=f"{self.page_type}-commute-status",
                     style={
-                        "marginTop": "8px",
-                        "fontSize": "0.85rem",
-                        "color": "#9aa0a6",
+                        "marginTop": "14px",
+                        "fontSize": "0.86rem",
+                        "color": "#4b5563",
+                        "lineHeight": 1.45,
+                        "whiteSpace": "pre-line",
                     },
                 ),
                 html.Div(
-                    id=f"{self.page_type}-commute-exact-status",
+                    [
+                        html.Div(
+                            "Show",
+                            style={
+                                "fontSize": "0.78rem",
+                                "fontWeight": 600,
+                                "letterSpacing": "0.01em",
+                                "color": "#4b5563",
+                                "marginBottom": "6px",
+                            },
+                        ),
+                        dcc.RadioItems(
+                            id=f"{self.page_type}-commute-display-mode",
+                            options=[
+                                {"label": "Verified only", "value": "verified_only"},
+                                {"label": "Show all matches", "value": "include_rough"},
+                            ],
+                            value="verified_only",
+                            persistence=True,
+                            persistence_type="local",
+                            labelStyle={
+                                "display": "block",
+                                "marginBottom": "4px",
+                            },
+                            inputStyle={"marginRight": "6px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Estimated",
+                                    id=f"{self.page_type}-commute-estimated-info-target",
+                                    style={
+                                        "fontWeight": 600,
+                                        "textDecoration": "underline dotted",
+                                        "cursor": "help",
+                                    },
+                                ),
+                                html.Span(" listings haven't been individually route-checked yet."),
+                            ],
+                            style={
+                                "marginTop": "8px",
+                                "fontSize": "0.78rem",
+                                "color": "#6b7280",
+                                "lineHeight": 1.45,
+                            },
+                        ),
+                        dbc.Tooltip(
+                            "Estimated listings are inside the broader commute area, but each one has not been checked one-by-one yet.",
+                            target=f"{self.page_type}-commute-estimated-info-target",
+                            placement="top",
+                        ),
+                    ],
+                    id=f"{self.page_type}-commute-display-mode-container",
                     style={
-                        "marginTop": "6px",
+                        "display": "none",
+                        "marginTop": "12px",
+                        "padding": "10px 12px",
+                        "border": "1px solid #d7dde6",
+                        "borderRadius": "10px",
+                        "backgroundColor": "#f8fafc",
+                    },
+                ),
+                html.Div(
+                    COMMUTE_HELP_TEXT,
+                    style={
+                        "marginTop": "18px",
                         "fontSize": "0.85rem",
                         "color": "#9aa0a6",
+                        "lineHeight": 1.45,
                     },
                 ),
             ],
@@ -1389,10 +1491,13 @@ class LeaseComponents(BaseClass):
                 bubblingMouseEvents=False,
                 zoomToBoundsOnClick=False,
                 style={
-                    "color": "#f4a261",
-                    "weight": 2,
-                    "fillColor": "#f4a261",
-                    "fillOpacity": 0.08,
+                    "color": "#8f2d56",
+                    "weight": 4,
+                    "opacity": 0.9,
+                    "lineCap": "round",
+                    "lineJoin": "round",
+                    "fillColor": "#f4a7b9",
+                    "fillOpacity": 0.16,
                 },
             ),
             dl.GeoJSON(
@@ -1438,7 +1543,6 @@ class LeaseComponents(BaseClass):
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
-                dbc.AccordionItem(self.commute_filter_components, title="Commute", item_id="commute"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.rental_price_slider, title="Monthly Rent", item_id="monthly_rent"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -1457,6 +1561,7 @@ class LeaseComponents(BaseClass):
                 dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished"),
                 dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute (EXPERIMENTAL)", item_id="commute"),
                 dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms"),
@@ -1468,7 +1573,6 @@ class LeaseComponents(BaseClass):
             active_item=[
                 "listed_date",
                 "location",
-                "commute",
                 "subtypes",
                 "monthly_rent",
                 "bedrooms",
@@ -1504,13 +1608,29 @@ class LeaseComponents(BaseClass):
                                 html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
                             ],
                             style={
-                                "position": "relative",
+                                "position": "absolute",
                                 "inset": "0",
                                 "display": "flex",
                                 "alignItems": "center",
                                 "justifyContent": "center",
                                 "backgroundColor": "rgba(0, 0, 0, 0.25)",
                                 "zIndex": "10000",
+                            },
+                        ),
+                        html.Div(
+                            id=f"{self.page_type}-commute-spinner",
+                            children=[
+                                dbc.Spinner(size="lg", color="warning"),
+                                html.P("Loading commute...", style={"marginTop": "10px", "marginLeft": "5px", "color": "white"})
+                            ],
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "none",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10001",
                             },
                         ),
                         # Map itself
@@ -2049,10 +2169,13 @@ class BuyComponents(BaseClass):
                 bubblingMouseEvents=False,
                 zoomToBoundsOnClick=False,
                 style={
-                    "color": "#f4a261",
-                    "weight": 2,
-                    "fillColor": "#f4a261",
-                    "fillOpacity": 0.08,
+                    "color": "#8f2d56",
+                    "weight": 4,
+                    "opacity": 0.9,
+                    "lineCap": "round",
+                    "lineJoin": "round",
+                    "fillColor": "#f4a7b9",
+                    "fillOpacity": 0.16,
                 },
             ),
             dl.GeoJSON(
@@ -2098,7 +2221,6 @@ class BuyComponents(BaseClass):
             [
                 dbc.AccordionItem(self.listed_date_components, title="Listed Date", item_id="listed_date"),
                 dbc.AccordionItem(self.location_filter_components, title="Location", item_id="location"),
-                dbc.AccordionItem(self.commute_filter_components, title="Commute", item_id="commute"),
                 dbc.AccordionItem(self.subtype_checklist, title="Subtypes", item_id="subtypes"),
                 dbc.AccordionItem(self.list_price_slider, title="List Price", item_id="list_price"),
                 dbc.AccordionItem(self.bedrooms_slider, title="Bedrooms", item_id="bedrooms"),
@@ -2106,6 +2228,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute (EXPERIMENTAL)", item_id="commute"),
                 dbc.AccordionItem(self.lot_size_components, title="Lot Size", item_id="lot_size"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
@@ -2116,7 +2239,6 @@ class BuyComponents(BaseClass):
             active_item=[
                 "listed_date",
                 "location",
-                "commute",
                 "subtypes",
                 "list_price",
                 "bedrooms",
@@ -2158,6 +2280,22 @@ class BuyComponents(BaseClass):
                                 "justifyContent": "center",
                                 "backgroundColor": "rgba(0, 0, 0, 0.25)",
                                 "zIndex": "10000",
+                            },
+                        ),
+                        html.Div(
+                            id=f"{self.page_type}-commute-spinner",
+                            children=[
+                                dbc.Spinner(size="lg", color="warning"),
+                                html.P("Loading commute...", style={"marginTop": "10px", "marginLeft": "5px", "color": "white"})
+                            ],
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "none",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10001",
                             },
                         ),
                         # Map itself

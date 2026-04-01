@@ -80,6 +80,24 @@ folders:
 uv run download-gtfs-feeds all
 ```
 
+The repo also includes a starter
+[`docker/valhalla/custom_files/valhalla.json`](docker/valhalla/custom_files/valhalla.json)
+that narrows Valhalla's service limits to this app's route + isochrone +
+multimodal commute workload.
+
+### Partial Exact Commute Verification
+
+When the rough commute shortlist is large, the app now exact-checks the nearest
+subset of listings first instead of skipping exact verification entirely.
+
+Helpful tuning env vars:
+
+- `VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES=60` to cap how many nearest listings are exact-verified
+- `VALHALLA_EXACT_COMMUTE_MAX_WORKERS=4` to control concurrent route checks
+
+The map shows verified commute matches by default and can optionally include
+additional rough matches when the shortlist is larger than the exact-check cap.
+
 ### Non-Docker
 
 Run the Dash app directly:
