@@ -292,6 +292,35 @@
     }
 
     /**
+     * Render a small commute verification pill when commute metadata is present.
+     *
+     * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
+     * @returns {string} HTML string for the commute status block.
+     */
+    function renderCommuteStatusBlock(popupData) {
+        const label = normalizeNullableString(popupData.commute_status_text);
+        if (!label) return "";
+
+        const matchState = normalizeNullableString(popupData.commute_match_state) || "";
+        let background = "#eef2ff";
+        let color = "#334155";
+
+        if (matchState === "verified_match") {
+            background = "#e8f5e9";
+            color = "#1b5e20";
+        } else if (matchState === "rough_match") {
+            background = "#fff8e1";
+            color = "#8a5a00";
+        }
+
+        return `
+            <div style="margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: ${background}; color: ${color}; font-size: 12px; font-weight: 600;">
+                ${escapeHtml(label)}
+            </div>
+        `;
+    }
+
+    /**
      * Build the lease-page popup body for a single listing.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
@@ -313,11 +342,13 @@
         const subtype = (popupData?.subtype ?? "Unknown").toString();
         const mlsNumberDisplay = stripTrailingPointZero(popupData.mls_number);
         const reportLink = renderReportLink(normalizeListingId(popupData.mls_number));
+        const commuteStatusBlock = renderCommuteStatusBlock(popupData);
 
         return `
             <div>
                 ${imageRow}
                 ${listingUrlBlock}
+                ${commuteStatusBlock}
                 <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listed Date</span>
@@ -425,6 +456,7 @@
         const subtype = (popupData?.subtype ?? "Unknown").toString();
         const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
         const reportLink = renderReportLink(normalizeListingId(popupData.mls_number));
+        const commuteStatusBlock = renderCommuteStatusBlock(popupData);
 
         let parkingContent = "";
         if (!isSfr) {
@@ -440,6 +472,7 @@
             <div>
                 ${imageRow}
                 ${listingUrlBlock}
+                ${commuteStatusBlock}
                 <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listed Date</span>
@@ -512,12 +545,14 @@
         const listingId = normalizeListingId(summaryData.mls_number) || "Unknown";
         const subtype = escapeHtml(summaryData.subtype || "Listing");
         const price = escapeHtml(formatCurrency(summaryData.list_price));
+        const commuteStatusBlock = renderCommuteStatusBlock(summaryData);
 
         return `
             <div style="min-width: 220px; padding: 6px 2px;">
                 <div style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">${subtype}</div>
                 <div style="font-size: 13px; color: #555; margin-bottom: 4px;">MLS ${escapeHtml(listingId)}</div>
                 <div style="font-size: 13px; color: #111; margin-bottom: 10px;">${price}</div>
+                ${commuteStatusBlock}
                 <div style="font-size: 13px; color: #666;">Loading listing details...</div>
             </div>
         `;
@@ -531,9 +566,11 @@
      */
     function renderPopupErrorContent(summaryData) {
         const listingId = normalizeListingId(summaryData.mls_number) || "Unknown";
+        const commuteStatusBlock = renderCommuteStatusBlock(summaryData);
         return `
             <div style="min-width: 220px; padding: 6px 2px;">
                 <div style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Listing ${escapeHtml(listingId)}</div>
+                ${commuteStatusBlock}
                 <div style="font-size: 13px; color: #666;">Could not load listing details right now.</div>
                 ${renderReportLink(listingId)}
             </div>

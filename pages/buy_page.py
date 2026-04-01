@@ -1,7 +1,8 @@
 from .components import BuyComponents
-from dash import dcc, callback, clientside_callback, ClientsideFunction
+from dash import dcc, html, callback, clientside_callback, ClientsideFunction
 import dash_leaflet as dl
 from functions.commute_utils import (
+  build_candidate_signature,
   build_commute_boundary_result,
   empty_commute_exact_result,
   empty_commute_request_data,
@@ -449,6 +450,127 @@ def update_buy_exact_commute_matches(
     commute_request=commute_request,
   )
 
+
+@callback(
+  Output("buy-commute-status", "children"),
+  Output("buy-commute-display-mode-container", "style"),
+  Input("buy-commute-request-store", "data"),
+  Input("buy-commute-exact-store", "data"),
+  Input("buy-prefilter-geojson-store", "data"),
+  Input("buy-commute-display-mode", "value"),
+)
+def update_buy_commute_status(
+  commute_request: dict | None,
+  exact_result: dict | None,
+  prefiltered_geojson: dict | None,
+  display_mode: str | None,
+) -> tuple[object, dict]:
+  """
+  Render the current commute summary and show the display-mode toggle when useful.
+
+  Args:
+    commute_request: Normalized request metadata from the coarse boundary step.
+    exact_result: Exact verification metadata for the current shortlist.
+    prefiltered_geojson: Current coarse shortlist after clientside filters.
+    display_mode: Selected map display mode for partial verification results.
+
+  Returns:
+    A tuple of (status children, display-mode container style).
+  """
+  toggle_style = {
+    "display": "none",
+    "marginTop": "12px",
+    "padding": "10px 12px",
+    "border": "1px solid #d7dde6",
+    "borderRadius": "10px",
+    "backgroundColor": "#f8fafc",
+  }
+  if not isinstance(commute_request, dict):
+    return "", toggle_style
+
+  request_status = str(commute_request.get("status") or "").strip()
+  if not commute_request.get("requested"):
+    return request_status, toggle_style
+
+  children: list[object] = []
+  summary_text = request_status or "Loading commute estimate..."
+  counts_text = ""
+  mode_text = ""
+  show_toggle = False
+  features = prefiltered_geojson.get("features") if isinstance(prefiltered_geojson, dict) else None
+  current_signature = build_candidate_signature(
+    commute_request.get("signature"),
+    (
+      (
+        feature.get("properties", {}).get("mls_number")
+        for feature in features
+        if isinstance(feature, dict)
+        and isinstance(feature.get("properties"), dict)
+      )
+      if isinstance(features, list)
+      else ()
+    ),
+  )
+
+  if (
+    isinstance(exact_result, dict)
+    and exact_result.get("commute_signature") == commute_request.get("signature")
+    and exact_result.get("signature") == current_signature
+  ):
+    summary_text = str(exact_result.get("status") or summary_text).strip() or summary_text
+    total_candidates = int(exact_result.get("total_candidates") or 0)
+    attempted_candidates = int(exact_result.get("attempted_candidates") or 0)
+    matched_candidates = int(exact_result.get("matched_candidates") or 0)
+    excluded_candidates = int(exact_result.get("excluded_candidates") or 0)
+    rough_candidates = int(exact_result.get("rough_candidates") or 0)
+    failed_candidates = int(exact_result.get("failed_candidates") or 0)
+
+    count_parts: list[str] = []
+    if attempted_candidates or total_candidates:
+      count_parts.append(f"Checked {attempted_candidates} of {total_candidates}")
+    if matched_candidates or attempted_candidates:
+      count_parts.append(f"Verified {matched_candidates}")
+    if excluded_candidates:
+      count_parts.append(f"Over {excluded_candidates}")
+    if rough_candidates:
+      count_parts.append(f"Rough {rough_candidates}")
+    if failed_candidates:
+      count_parts.append(f"Unavailable {failed_candidates}")
+    counts_text = " | ".join(count_parts)
+
+    show_toggle = (
+      rough_candidates > 0
+      and int(exact_result.get("checked_candidates") or 0) > 0
+      and not exact_result.get("error")
+    )
+    if show_toggle:
+      mode_text = (
+        "Map is showing verified listings only."
+        if display_mode != "include_rough"
+        else "Map is showing verified listings plus rough matches."
+      )
+
+  children.append(html.Div(summary_text))
+  if counts_text:
+    children.append(
+      html.Div(
+        counts_text,
+        style={"marginTop": "6px", "fontSize": "0.8rem", "color": "#6b7280"},
+      )
+    )
+  if mode_text:
+    children.append(
+      html.Div(
+        mode_text,
+        style={"marginTop": "6px", "fontSize": "0.8rem", "color": "#6b7280"},
+      )
+    )
+
+  if show_toggle:
+    toggle_style["display"] = "block"
+
+  return children, toggle_style
+
 # Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(
@@ -493,6 +615,7 @@ clientside_callback(
   Input('buy-prefilter-geojson-store', 'data'),
   Input('buy-commute-request-store', 'data'),
   Input('buy-commute-exact-store', 'data'),
+  Input('buy-commute-display-mode', 'value'),
 )
 
 clientside_callback(

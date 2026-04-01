@@ -487,6 +487,54 @@ class BaseClass:
                     ]
                 ),
                 html.Div(
+                    id=f"{self.page_type}-commute-status",
+                    style={
+                        "marginTop": "14px",
+                        "fontSize": "0.86rem",
+                        "color": "#4b5563",
+                        "lineHeight": 1.45,
+                        "whiteSpace": "pre-line",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            "Show",
+                            style={
+                                "fontSize": "0.78rem",
+                                "fontWeight": 600,
+                                "letterSpacing": "0.01em",
+                                "color": "#4b5563",
+                                "marginBottom": "6px",
+                            },
+                        ),
+                        dcc.RadioItems(
+                            id=f"{self.page_type}-commute-display-mode",
+                            options=[
+                                {"label": "Verified only", "value": "verified_only"},
+                                {"label": "Include rough matches", "value": "include_rough"},
+                            ],
+                            value="verified_only",
+                            persistence=True,
+                            persistence_type="local",
+                            labelStyle={
+                                "display": "block",
+                                "marginBottom": "4px",
+                            },
+                            inputStyle={"marginRight": "6px"},
+                        ),
+                    ],
+                    id=f"{self.page_type}-commute-display-mode-container",
+                    style={
+                        "display": "none",
+                        "marginTop": "12px",
+                        "padding": "10px 12px",
+                        "border": "1px solid #d7dde6",
+                        "borderRadius": "10px",
+                        "backgroundColor": "#f8fafc",
+                    },
+                ),
+                html.Div(
                     COMMUTE_HELP_TEXT,
                     style={
                         "marginTop": "18px",

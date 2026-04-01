@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, time as dt_time, timedelta
 from functools import lru_cache
+from math import asin, cos, radians, sin, sqrt
 from typing import Any, Iterable, TypeAlias, TypedDict
 import os
 import time
@@ -146,6 +147,34 @@ VALHALLA_HTTP_HEADERS = {
     "User-Agent": "WhereToLive.LA/1.0",
 }
 
+MAPBOX_ACCESS_TOKEN = str(os.getenv("MAPBOX_ACCESS_TOKEN", "")).strip()
+MAPBOX_DRIVE_EXACT_ENABLED = bool(MAPBOX_ACCESS_TOKEN) and _env_flag(
+    "MAPBOX_DRIVE_EXACT_ENABLED",
+    True,
+)
+MAPBOX_MATRIX_BASE_URL = os.getenv(
+    "MAPBOX_MATRIX_BASE_URL",
+    "https://api.mapbox.com",
+).rstrip("/")
+MAPBOX_MATRIX_TIMEOUT_SECONDS = float(os.getenv("MAPBOX_MATRIX_TIMEOUT_SECONDS", "12"))
+MAPBOX_MATRIX_MAX_WORKERS = max(
+    1,
+    int(os.getenv("MAPBOX_MATRIX_MAX_WORKERS", "4")),
+)
+MAPBOX_MATRIX_COORDINATE_LIMIT = min(
+    10,
+    max(2, int(os.getenv("MAPBOX_MATRIX_COORDINATE_LIMIT", "10"))),
+)
+MAPBOX_DRIVE_EXACT_MAX_CANDIDATES = max(
+    1,
+    int(os.getenv("MAPBOX_DRIVE_EXACT_MAX_CANDIDATES", "80")),
+)
+MAPBOX_MATRIX_RETRY_WITHOUT_DEPART_AT = _env_flag(
+    "MAPBOX_MATRIX_RETRY_WITHOUT_DEPART_AT",
+    True,
+)
+MAPBOX_SERVICE_LABEL = "Mapbox traffic"
+
 
 class CommuteRequestData(TypedDict):
     """Normalized commute request metadata stored in Dash."""
@@ -163,6 +192,7 @@ class CommuteRequestData(TypedDict):
     departure_label: str
     center_lat: float | None
     center_lon: float | None
+    status: str
     error: str | None
 
 
@@ -182,14 +212,21 @@ class CommuteExactMatchResult(TypedDict):
     signature: str | None
     commute_signature: str | None
     eligible_mls: list[str]
+    excluded_mls: list[str]
+    rough_mls: list[str]
     total_candidates: int
+    attempted_candidates: int
     checked_candidates: int
     matched_candidates: int
+    excluded_candidates: int
+    rough_candidates: int
     failed_candidates: int
     mode: str | None
     mode_label: str | None
     minutes: int | None
     display_name: str | None
+    provider: str | None
+    partial: bool
     status: str
     error: str | None
 
@@ -200,6 +237,9 @@ class CommuteListingCandidate(TypedDict):
     mls_number: str
     lat: float
     lon: float
+
+
+RouteDurationLookup: TypeAlias = dict[str, float | None]
 
 
 def empty_feature_collection() -> GeoJsonDict:
@@ -378,6 +418,7 @@ def empty_commute_request_data() -> CommuteRequestData:
         "departure_label": format_commute_departure_label(None),
         "center_lat": None,
         "center_lon": None,
+        "status": "",
         "error": None,
     }
 
@@ -395,14 +436,21 @@ def empty_commute_exact_result() -> CommuteExactMatchResult:
         "signature": None,
         "commute_signature": None,
         "eligible_mls": [],
+        "excluded_mls": [],
+        "rough_mls": [],
         "total_candidates": 0,
+        "attempted_candidates": 0,
         "checked_candidates": 0,
         "matched_candidates": 0,
+        "excluded_candidates": 0,
+        "rough_candidates": 0,
         "failed_candidates": 0,
         "mode": None,
         "mode_label": None,
         "minutes": None,
         "display_name": None,
+        "provider": None,
+        "partial": False,
         "status": "",
         "error": None,
     }
@@ -501,6 +549,67 @@ def _normalize_point_coordinates(coords: object) -> tuple[float, float] | None:
     return float(second), float(first)
 
 
+def _haversine_distance_miles(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+) -> float:
+    """
+    Return the great-circle distance between two points in miles.
+
+    Args:
+        lat1: First latitude.
+        lon1: First longitude.
+        lat2: Second latitude.
+        lon2: Second longitude.
+
+    Returns:
+        Great-circle distance in miles.
+    """
+    radius_miles = 3958.7613
+    delta_lat = radians(lat2 - lat1)
+    delta_lon = radians(lon2 - lon1)
+    lat1_rad = radians(lat1)
+    lat2_rad = radians(lat2)
+
+    a = (
+        sin(delta_lat / 2) ** 2
+        + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
+    )
+    return 2 * radius_miles * asin(sqrt(a))
+
+
+def _prioritize_candidates_by_distance(
+    candidates: list[CommuteListingCandidate],
+    destination_lat: float,
+    destination_lon: float,
+) -> list[CommuteListingCandidate]:
+    """
+    Rank candidates by straight-line distance to the destination.
+
+    Args:
+        candidates: Candidate listings extracted from the current shortlist.
+        destination_lat: Destination latitude.
+        destination_lon: Destination longitude.
+
+    Returns:
+        A new list ordered nearest-first, preserving original order for ties.
+    """
+    return sorted(
+        candidates,
+        key=lambda item: (
+            _haversine_distance_miles(
+                item["lat"],
+                item["lon"],
+                destination_lat,
+                destination_lon,
+            ),
+            item["mls_number"],
+        ),
+    )
+
+
 def _extract_candidate_listings(prefiltered_geojson: GeoJsonDict | None) -> list[CommuteListingCandidate]:
     """
     Extract route-checkable listing points from a FeatureCollection.
@@ -553,6 +662,7 @@ def build_commute_request_data(
     minutes: int | float | None,
     departure_datetime: str | None,
     active: bool,
+    status: str,
     error: str | None,
 ) -> CommuteRequestData:
     """
@@ -606,8 +716,240 @@ def build_commute_request_data(
         "departure_label": format_commute_departure_label(normalized_departure),
         "center_lat": lat,
         "center_lon": lon,
+        "status": status,
         "error": error,
     }
+
+
+def _exact_commute_provider_label(mode: str | None) -> str:
+    """
+    Choose the exact-route provider label for the selected mode.
+
+    Args:
+        mode: Selected commute mode.
+
+    Returns:
+        A human-readable provider label.
+    """
+    normalized_mode = normalize_commute_mode(mode)
+    if normalized_mode == "drive" and MAPBOX_DRIVE_EXACT_ENABLED:
+        return MAPBOX_SERVICE_LABEL
+    return VALHALLA_SERVICE_LABEL
+
+
+def _exact_commute_candidate_limit(mode: str | None) -> int:
+    """
+    Return the maximum number of candidates to exact-check for the current mode.
+
+    Args:
+        mode: Selected commute mode.
+
+    Returns:
+        Candidate limit for exact route checks.
+    """
+    normalized_mode = normalize_commute_mode(mode)
+    if normalized_mode == "drive" and MAPBOX_DRIVE_EXACT_ENABLED:
+        return MAPBOX_DRIVE_EXACT_MAX_CANDIDATES
+    return VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES
+
+
+def _mapbox_depart_at_value(value: str | None) -> str | None:
+    """
+    Build a Mapbox-compatible `depart_at` value when the selected time is usable.
+
+    Args:
+        value: Raw or normalized local departure datetime string.
+
+    Returns:
+        A normalized local datetime string, or `None` when the selected time is
+        in the past and should fall back to present-time traffic.
+    """
+    normalized = normalize_commute_departure_datetime(value)
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+    if parsed < datetime.now():
+        return None
+    return normalized
+
+
+def _fetch_mapbox_drive_batch_durations(
+    batch: list[CommuteListingCandidate],
+    destination_lat: float,
+    destination_lon: float,
+    departure_datetime: str | None,
+) -> RouteDurationLookup:
+    """
+    Fetch many-to-one traffic-aware durations for a batch of listings.
+
+    Args:
+        batch: Origin listings to verify.
+        destination_lat: Destination latitude.
+        destination_lon: Destination longitude.
+        departure_datetime: Selected local departure datetime.
+
+    Returns:
+        A mapping from MLS id to duration seconds, or `None` when unavailable.
+    """
+    if not batch:
+        return {}
+
+    coordinates = [
+        f"{candidate['lon']:.6f},{candidate['lat']:.6f}"
+        for candidate in batch
+    ]
+    destination_index = len(batch)
+    coordinates.append(f"{destination_lon:.6f},{destination_lat:.6f}")
+    sources = ";".join(str(index) for index in range(len(batch)))
+    params: dict[str, str] = {
+        "access_token": MAPBOX_ACCESS_TOKEN,
+        "annotations": "duration",
+        "sources": sources,
+        "destinations": str(destination_index),
+    }
+    depart_at = _mapbox_depart_at_value(departure_datetime)
+    if depart_at:
+        params["depart_at"] = depart_at
+
+    url = (
+        f"{MAPBOX_MATRIX_BASE_URL}/directions-matrix/v1/mapbox/driving-traffic/"
+        f"{';'.join(coordinates)}"
+    )
+
+    try:
+        response = requests.get(
+            url,
+            params=params,
+            headers=VALHALLA_HTTP_HEADERS,
+            timeout=MAPBOX_MATRIX_TIMEOUT_SECONDS,
+        )
+    except requests.RequestException as exc:
+        logger.warning(f"Mapbox Matrix request failed for {len(batch)} drive candidates: {exc}")
+        return {candidate["mls_number"]: None for candidate in batch}
+
+    if (
+        not response.ok
+        and "depart_at" in params
+        and MAPBOX_MATRIX_RETRY_WITHOUT_DEPART_AT
+    ):
+        retry_params = dict(params)
+        retry_params.pop("depart_at", None)
+        try:
+            response = requests.get(
+                url,
+                params=retry_params,
+                headers=VALHALLA_HTTP_HEADERS,
+                timeout=MAPBOX_MATRIX_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            logger.warning(
+                "Mapbox Matrix retry without depart_at failed for "
+                f"{len(batch)} drive candidates: {exc}"
+            )
+            return {candidate["mls_number"]: None for candidate in batch}
+
+    if not response.ok:
+        logger.warning(
+            "Mapbox Matrix request failed for "
+            f"{len(batch)} drive candidates: HTTP {response.status_code} "
+            f"{response.reason}; {_truncate_response_text(response.text)}"
+        )
+        return {candidate["mls_number"]: None for candidate in batch}
+
+    try:
+        payload_json = response.json()
+    except ValueError as exc:
+        logger.warning(f"Mapbox Matrix returned invalid JSON: {exc}")
+        return {candidate["mls_number"]: None for candidate in batch}
+
+    if not isinstance(payload_json, dict):
+        return {candidate["mls_number"]: None for candidate in batch}
+
+    durations = payload_json.get("durations")
+    if not isinstance(durations, list):
+        logger.warning(
+            "Mapbox Matrix returned no duration matrix: "
+            f"{_truncate_response_text(response.text)}"
+        )
+        return {candidate["mls_number"]: None for candidate in batch}
+
+    results: RouteDurationLookup = {}
+    for index, candidate in enumerate(batch):
+        row = durations[index] if index < len(durations) else None
+        value = row[0] if isinstance(row, list) and row else None
+        results[candidate["mls_number"]] = (
+            float(value) if isinstance(value, (int, float)) else None
+        )
+
+    return results
+
+
+def fetch_mapbox_drive_route_times_seconds(
+    candidates: list[CommuteListingCandidate],
+    destination_lat: float,
+    destination_lon: float,
+    departure_datetime: str | None,
+) -> RouteDurationLookup:
+    """
+    Fetch traffic-aware Mapbox durations for prioritized drive candidates.
+
+    Args:
+        candidates: Origin listings to verify.
+        destination_lat: Destination latitude.
+        destination_lon: Destination longitude.
+        departure_datetime: Selected local departure datetime.
+
+    Returns:
+        A mapping from MLS id to duration seconds, or `None` when unavailable.
+    """
+    if not candidates:
+        return {}
+
+    batch_size = max(1, MAPBOX_MATRIX_COORDINATE_LIMIT - 1)
+    batches = [
+        candidates[start:start + batch_size]
+        for start in range(0, len(candidates), batch_size)
+    ]
+
+    if len(batches) == 1:
+        return _fetch_mapbox_drive_batch_durations(
+            batches[0],
+            destination_lat,
+            destination_lon,
+            departure_datetime,
+        )
+
+    results: RouteDurationLookup = {}
+    max_workers = min(MAPBOX_MATRIX_MAX_WORKERS, len(batches))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_batch = {
+            executor.submit(
+                _fetch_mapbox_drive_batch_durations,
+                batch,
+                destination_lat,
+                destination_lon,
+                departure_datetime,
+            ): batch
+            for batch in batches
+        }
+
+        for future in as_completed(future_to_batch):
+            batch = future_to_batch[future]
+            try:
+                batch_results = future.result()
+            except Exception as exc:
+                logger.warning(
+                    f"Mapbox Matrix batch verification crashed for {len(batch)} listings: {exc}"
+                )
+                batch_results = {
+                    candidate["mls_number"]: None
+                    for candidate in batch
+                }
+            results.update(batch_results)
+
+    return results
 
 
 def build_valhalla_isochrone_request(
@@ -822,6 +1164,7 @@ def build_commute_boundary_result(
                 minutes=normalized_minutes,
                 departure_datetime=normalized_departure,
                 active=False,
+                status="Destination not found.",
                 error="place_not_found",
             ),
         }
@@ -847,16 +1190,18 @@ def build_commute_boundary_result(
                 minutes=normalized_minutes,
                 departure_datetime=normalized_departure,
                 active=False,
+                status="Commute area unavailable right now.",
                 error="isochrone_unavailable",
             ),
         }
 
+    status = (
+        f"Estimated {mode_status_label} area loaded for "
+        f"{display_name or 'the destination'} departing {departure_label}."
+    )
     return {
         "geojson": geojson,
-        "status": (
-            f"Estimated {mode_status_label} area loaded for "
-            f"{display_name or 'the destination'} departing {departure_label}."
-        ),
+        "status": status,
         "request": build_commute_request_data(
             destination=destination,
             geocoded=geocoded,
@@ -864,6 +1209,7 @@ def build_commute_boundary_result(
             minutes=normalized_minutes,
             departure_datetime=normalized_departure,
             active=True,
+            status=status,
             error=None,
         ),
     }
@@ -996,6 +1342,79 @@ def fetch_valhalla_route_time_seconds(
     return None
 
 
+def fetch_valhalla_route_times_seconds(
+    candidates: list[CommuteListingCandidate],
+    destination_lat: float,
+    destination_lon: float,
+    mode: str | None,
+    departure_datetime: str | None,
+) -> RouteDurationLookup:
+    """
+    Fetch exact Valhalla durations for a prioritized listing subset.
+
+    Args:
+        candidates: Origin listings to verify.
+        destination_lat: Destination latitude.
+        destination_lon: Destination longitude.
+        mode: Selected commute mode.
+        departure_datetime: Selected local departure datetime.
+
+    Returns:
+        A mapping from MLS id to duration seconds, or `None` when unavailable.
+    """
+    if not candidates:
+        return {}
+
+    normalized_mode = normalize_commute_mode(mode)
+    worker_limit = (
+        VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS
+        if normalized_mode == "transit"
+        else VALHALLA_EXACT_COMMUTE_MAX_WORKERS
+    )
+    max_workers = min(worker_limit, len(candidates))
+
+    if max_workers == 1:
+        return {
+            candidate["mls_number"]: fetch_valhalla_route_time_seconds(
+                candidate["lat"],
+                candidate["lon"],
+                destination_lat,
+                destination_lon,
+                normalized_mode,
+                departure_datetime,
+            )
+            for candidate in candidates
+        }
+
+    results: RouteDurationLookup = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_candidate = {
+            executor.submit(
+                fetch_valhalla_route_time_seconds,
+                candidate["lat"],
+                candidate["lon"],
+                destination_lat,
+                destination_lon,
+                normalized_mode,
+                departure_datetime,
+            ): candidate
+            for candidate in candidates
+        }
+
+        for future in as_completed(future_to_candidate):
+            candidate = future_to_candidate[future]
+            try:
+                results[candidate["mls_number"]] = future.result()
+            except Exception as exc:
+                logger.warning(
+                    "Exact Valhalla route verification crashed for "
+                    f"MLS {candidate['mls_number']}: {exc}"
+                )
+                results[candidate["mls_number"]] = None
+
+    return results
+
+
 def verify_exact_commute_matches(
     *,
     prefiltered_geojson: GeoJsonDict | None,
@@ -1041,6 +1460,7 @@ def verify_exact_commute_matches(
             "mode_label": mode_label,
             "minutes": minutes,
             "display_name": str(display_name) if display_name else None,
+            "provider": _exact_commute_provider_label(mode),
         }
     )
 
@@ -1069,78 +1489,103 @@ def verify_exact_commute_matches(
         }
     )
 
-    if len(candidates) > VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES:
-        error = "Too many matches to verify right now. Showing the rough shortlist."
-        base_result.update({"status": error, "error": error})
-        return base_result
-
     if not candidates:
         base_result["status"] = "No listings match this commute."
         return base_result
 
+    prioritized_candidates = _prioritize_candidates_by_distance(
+        candidates,
+        float(destination_lat),
+        float(destination_lon),
+    )
+    exact_limit = _exact_commute_candidate_limit(mode)
+    attempt_candidates = prioritized_candidates[:exact_limit]
+    attempted_candidates = len(attempt_candidates)
+
+    provider = _exact_commute_provider_label(mode)
+    if provider == MAPBOX_SERVICE_LABEL:
+        duration_lookup = fetch_mapbox_drive_route_times_seconds(
+            attempt_candidates,
+            float(destination_lat),
+            float(destination_lon),
+            departure_datetime,
+        )
+    else:
+        duration_lookup = fetch_valhalla_route_times_seconds(
+            attempt_candidates,
+            float(destination_lat),
+            float(destination_lon),
+            mode,
+            departure_datetime,
+        )
+
     eligible_mls: list[str] = []
+    excluded_mls: list[str] = []
     checked_candidates = 0
     failed_candidates = 0
+    for candidate in attempt_candidates:
+        time_seconds = duration_lookup.get(candidate["mls_number"])
+        if time_seconds is None:
+            failed_candidates += 1
+            continue
 
-    worker_limit = (
-        VALHALLA_EXACT_COMMUTE_TRANSIT_MAX_WORKERS
-        if mode == "transit"
-        else VALHALLA_EXACT_COMMUTE_MAX_WORKERS
-    )
-    max_workers = min(worker_limit, len(candidates))
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_candidate = {
-            executor.submit(
-                fetch_valhalla_route_time_seconds,
-                candidate["lat"],
-                candidate["lon"],
-                float(destination_lat),
-                float(destination_lon),
-                mode,
-                departure_datetime,
-            ): candidate
-            for candidate in candidates
-        }
-
-        for future in as_completed(future_to_candidate):
-            candidate = future_to_candidate[future]
-            try:
-                time_seconds = future.result()
-            except Exception as exc:
-                logger.warning(
-                    "Exact Valhalla route verification crashed for "
-                    f"MLS {candidate['mls_number']}: {exc}"
-                )
-                failed_candidates += 1
-                continue
-
-            if time_seconds is None:
-                failed_candidates += 1
-                continue
-
-            checked_candidates += 1
-            if time_seconds <= minutes * 60:
-                eligible_mls.append(candidate["mls_number"])
+        checked_candidates += 1
+        if time_seconds <= minutes * 60:
+            eligible_mls.append(candidate["mls_number"])
+        else:
+            excluded_mls.append(candidate["mls_number"])
 
     matched_candidates = len(eligible_mls)
+    excluded_candidates = len(excluded_mls)
+    verified_ids = set(eligible_mls) | set(excluded_mls)
+    rough_mls = [
+        candidate["mls_number"]
+        for candidate in candidates
+        if candidate["mls_number"] not in verified_ids
+    ]
+    rough_candidates = len(rough_mls)
+    partial = rough_candidates > 0
     base_result.update(
         {
             "eligible_mls": sorted(set(eligible_mls)),
+            "excluded_mls": sorted(set(excluded_mls)),
+            "rough_mls": rough_mls,
+            "attempted_candidates": attempted_candidates,
             "checked_candidates": checked_candidates,
             "matched_candidates": matched_candidates,
+            "excluded_candidates": excluded_candidates,
+            "rough_candidates": rough_candidates,
             "failed_candidates": failed_candidates,
+            "partial": partial,
         }
     )
 
     if checked_candidates == 0:
-        error = "Route estimates unavailable right now."
+        error = "Exact commute estimates unavailable right now. Showing rough matches only."
         base_result.update({"status": error, "error": error})
         return base_result
 
-    status = (
-        f"Showing {matched_candidates} listings estimated within "
-        f"{minutes} minutes by {mode_status_label} departing {departure_label}."
-    )
+    destination_label = str(display_name) if display_name else "the destination"
+    if matched_candidates:
+        status = (
+            f"Verified {matched_candidates} listings within {minutes} minutes by "
+            f"{mode_status_label} to {destination_label} departing {departure_label}."
+        )
+    else:
+        status = (
+            f"No verified listings were found within {minutes} minutes by "
+            f"{mode_status_label} to {destination_label} departing {departure_label}."
+        )
+
+    if partial:
+        status = (
+            f"{status} Checked the closest {attempted_candidates} of "
+            f"{len(candidates)} candidate listings using {provider}. "
+            f"{rough_candidates} rough matches remain."
+        )
+    elif attempted_candidates:
+        status = f"{status} Checked {attempted_candidates} listings using {provider}."
+
     if failed_candidates:
         status = f"{status} Some listings could not be verified."
 

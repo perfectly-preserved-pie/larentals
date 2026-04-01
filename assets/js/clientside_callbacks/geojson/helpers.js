@@ -32,6 +32,14 @@ function normalizeListingId(value) {
     return String(value).trim().replace(/\.0$/, "");
 }
 
+function normalizeListingIdSet(values) {
+    return new Set(
+        Array.isArray(values)
+            ? values.map((value) => normalizeListingId(value)).filter((value) => value.length > 0)
+            : []
+    );
+}
+
 function buildCommuteCandidateSignature(commuteSignature, featureCollection) {
     if (!commuteSignature || !Array.isArray(featureCollection?.features)) {
         return null;
@@ -50,11 +58,7 @@ function filterFeatureCollectionByListingIds(featureCollection, eligibleListingI
         return emptyFeatureCollection();
     }
 
-    const eligibleSet = new Set(
-        Array.isArray(eligibleListingIds)
-            ? eligibleListingIds.map((value) => normalizeListingId(value)).filter((value) => value.length > 0)
-            : []
-    );
+    const eligibleSet = normalizeListingIdSet(eligibleListingIds);
 
     return {
         type: "FeatureCollection",
@@ -62,6 +66,26 @@ function filterFeatureCollectionByListingIds(featureCollection, eligibleListingI
             normalizeListingId(feature?.properties?.mls_number)
         )),
     };
+}
+
+function cloneFeatureWithCommuteState(feature, matchState, statusText) {
+    const properties = feature && typeof feature.properties === "object" && feature.properties !== null
+        ? feature.properties
+        : {};
+
+    return Object.assign({}, feature, {
+        properties: Object.assign({}, properties, {
+            commute_match_state: matchState || null,
+            commute_status_text: statusText || null,
+        }),
+    });
+}
+
+function commuteStateSortRank(matchState) {
+    if (matchState === "verified_match") return 0;
+    if (matchState === "rough_match") return 1;
+    if (matchState === "verified_excluded") return 2;
+    return 3;
 }
 
 function featureWithinAnyPolygon(feature, polygonFeatures) {

@@ -80,6 +80,22 @@ folders:
 uv run download-gtfs-feeds all
 ```
 
+### Optional Mapbox Drive Verification
+
+Drive-mode commute filtering can optionally use Mapbox Matrix for the exact
+verification stage while still using Valhalla for the rough commute polygon.
+Set `MAPBOX_ACCESS_TOKEN` in `.env` or the environment to enable it.
+
+Helpful tuning env vars:
+
+- `MAPBOX_DRIVE_EXACT_ENABLED=true` to force the integration on or off when a token is present
+- `MAPBOX_DRIVE_EXACT_MAX_CANDIDATES=80` to cap how many nearest drive candidates are traffic-verified
+- `MAPBOX_MATRIX_MAX_WORKERS=4` to control concurrent batch requests
+
+When the rough shortlist is larger than the exact-check cap, the app verifies
+the nearest drive candidates first, shows verified results on the map by
+default, and lets the user opt into additional rough matches.
+
 ### Non-Docker
 
 Run the Dash app directly:
