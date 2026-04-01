@@ -114,6 +114,29 @@ def layout(**_: object) -> dbc.Container:
 @callback(
   Output("lease-geojson-store", "data"),
   Input("lease-boot", "n_intervals"),
+  running=[
+    (
+      Output("lease-map-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10000",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10000",
+      },
+    ),
+  ],
   prevent_initial_call=True,
 )
 def load_lease_geojson(_: int) -> dict:
@@ -588,6 +611,49 @@ clientside_callback(
 register_responsive_layers_control_callback("lease")
 
 # Clientside callback to filter the full data in memory, then update the map
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showMapSpinner'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  [ # Keep this aligned with the non-commute filters that feed the shortlist callback.
+    Input('rental_price_slider', 'value'),
+    Input('bedrooms_slider', 'value'),
+    Input('bathrooms_slider', 'value'),
+    Input('pets_radio', 'value'),
+    Input('sqft_slider', 'value'),
+    Input('sqft_missing_switch', 'checked'),
+    Input('ppsqft_slider', 'value'),
+    Input('ppsqft_missing_switch', 'checked'),
+    Input('garage_spaces_slider', 'value'),
+    Input('garage_missing_switch', 'checked'),
+    Input('yrbuilt_slider', 'value'),
+    Input('yrbuilt_missing_switch', 'checked'),
+    Input('terms_checklist', 'value'),
+    Input('terms_missing_switch', 'checked'),
+    Input('furnished_checklist', 'value'),
+    Input('security_deposit_slider', 'value'),
+    Input('security_deposit_missing_switch', 'checked'),
+    Input('pet_deposit_slider', 'value'),
+    Input('pet_deposit_missing_switch', 'checked'),
+    Input('key_deposit_slider', 'value'),
+    Input('key_deposit_missing_switch', 'checked'),
+    Input('other_deposit_slider', 'value'),
+    Input('other_deposit_missing_switch', 'checked'),
+    Input('laundry_checklist', 'value'),
+    Input('subtype_checklist', 'value'),
+    Input('listed_date_datepicker_lease', 'start_date'),
+    Input('listed_date_datepicker_lease', 'end_date'),
+    Input('listed_date_missing_switch', 'checked'),
+    Input('isp_download_speed_slider', 'value'),
+    Input('isp_upload_speed_slider', 'value'),
+    Input('isp_speed_missing_switch', 'checked'),
+    Input('lease-zip-boundary-store', 'data'),
+  ],
+  prevent_initial_call=True,
+)
+
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',

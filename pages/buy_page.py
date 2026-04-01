@@ -143,6 +143,29 @@ register_responsive_layers_control_callback("buy")
 @callback(
   Output("buy-geojson-store", "data"),
   Input("buy-boot", "n_intervals"),
+  running=[
+    (
+      Output("buy-map-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10000",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10000",
+      },
+    ),
+  ],
   prevent_initial_call=True,
 )
 def load_buy_geojson(_: int) -> dict:
@@ -606,6 +629,39 @@ def update_buy_commute_status(
   return children, toggle_style, radio_options
 
 # Clientside callback to filter the full data in memory, then update the map
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showMapSpinner'
+  ),
+  Output("buy-map-spinner", "style", allow_duplicate=True),
+  [
+    Input('list_price_slider', 'value'),
+    Input('bedrooms_slider', 'value'),
+    Input('bathrooms_slider', 'value'),
+    Input('sqft_slider', 'value'),
+    Input('sqft_missing_switch', 'checked'),
+    Input('ppsqft_slider', 'value'),
+    Input('ppsqft_missing_switch', 'checked'),
+    Input('lot_size_slider', 'value'),
+    Input('lot_size_missing_switch', 'checked'),
+    Input('yrbuilt_slider', 'value'),
+    Input('yrbuilt_missing_switch', 'checked'),
+    Input('subtype_checklist', 'value'),
+    Input('listed_date_datepicker_buy', 'start_date'),
+    Input('listed_date_datepicker_buy', 'end_date'),
+    Input('listed_date_missing_switch', 'checked'),
+    Input('hoa_fee_slider', 'value'),
+    Input('hoa_fee_missing_switch', 'checked'),
+    Input('hoa_fee_frequency_checklist', 'value'),
+    Input('isp_download_speed_slider', 'value'),
+    Input('isp_upload_speed_slider', 'value'),
+    Input('isp_speed_missing_switch', 'checked'),
+    Input('buy-zip-boundary-store', 'data'),
+  ],
+  prevent_initial_call=True,
+)
+
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',

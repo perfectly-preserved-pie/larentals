@@ -1,6 +1,17 @@
 // Shared map-loading overlay logic for both initial data load and filter-driven refreshes.
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
   clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
+    showMapSpinner: function() {
+      return {
+        position: "absolute",
+        inset: "0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.25)",
+        zIndex: "10000",
+      };
+    },
     loadingMapSpinner: function(geojsonData, layerData, layerLoadingState) {
       const base = {
         position: "absolute",
