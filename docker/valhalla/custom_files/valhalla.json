@@ -1,0 +1,39 @@
+{
+  "service_limits": {
+    "auto": {
+      "max_locations": 2,
+      "max_distance": 300000.0
+    },
+    "bicycle": {
+      "max_locations": 2,
+      "max_distance": 200000.0
+    },
+    "pedestrian": {
+      "max_locations": 2,
+      "max_distance": 100000.0
+    },
+    "multimodal": {
+      "max_locations": 2,
+      "max_distance": 200000.0
+    },
+    "transit": {
+      "max_locations": 2,
+      "max_distance": 200000.0
+    },
+    "isochrone": {
+      "max_locations": 1,
+      "max_contours": 1,
+      "max_time_contour": 90
+    },
+    "max_alternates": 1,
+    "max_timedep_distance": 300000,
+    "status": {
+      "allow_verbose": false
+    }
+  },
+  "thor": {
+    "logging": {
+      "long_request": 5.0
+    }
+  }
+}

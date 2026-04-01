@@ -3,6 +3,16 @@ from dash_extensions.javascript import Namespace
 from dash_iconify import DashIconify
 from datetime import date
 from functools import lru_cache
+from functions.commute_utils import (
+    COMMUTE_DEFAULT_MODE,
+    default_commute_departure_datetime,
+    COMMUTE_HELP_TEXT,
+    COMMUTE_MAX_MINUTES,
+    COMMUTE_MIN_MINUTES,
+    COMMUTE_MODE_OPTIONS,
+    COMMUTE_STEP_MINUTES,
+    normalize_commute_minutes,
+)
 from functions.convex_hull import generate_convex_hulls
 from functions.layers import LayersClass
 from functions.sql_helpers import get_latest_date_processed
@@ -372,6 +382,196 @@ class BaseClass:
             style={"marginBottom": "10px"},
         )
 
+    def create_commute_filter_components(self) -> html.Div:
+        """
+        Create the commute-time filter controls shown in the sidebar.
+
+        Returns:
+            A container with destination, mode, duration, and status controls.
+        """
+        default_minutes = normalize_commute_minutes(30)
+        default_departure = default_commute_departure_datetime()
+        slider_marks = {
+            minutes: str(minutes)
+            for minutes in (10, 20, 30, 45, 60, 90)
+        }
+
+        return html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            "Filter listings by commute time to a destination of your choice.",
+                            style={
+                                "fontSize": "0.98rem",
+                                #"fontWeight": 700,
+                                "color": "#243447",
+                                "marginBottom": "4px",
+                            },
+                        ),
+                        html.Div(
+                            "e.g., your workplace or favorite cafe.",
+                            style={
+                                "fontSize": "0.85rem",
+                                "color": "#6b7280",
+                                "lineHeight": 1.4,
+                                "marginBottom": "10px",
+                            },
+                        ),
+                    ]
+                ),
+                dcc.Input(
+                    id=f"{self.page_type}-commute-input",
+                    type="text",
+                    debounce=True,
+                    placeholder="Destination (e.g., UCLA or 8565 Melrose Ave)",
+                ),
+                html.Div(
+                    [
+                        html.H6(
+                            "Mode",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dcc.Dropdown(
+                            id=f"{self.page_type}-commute-mode",
+                            options=COMMUTE_MODE_OPTIONS,
+                            value=COMMUTE_DEFAULT_MODE,
+                            clearable=False,
+                            searchable=False,
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        html.H6(
+                            "Departure Time",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dmc.DateTimePicker(
+                            id=f"{self.page_type}-commute-departure-datetime",
+                            value=default_departure,
+                            valueFormat="ddd MMM D, YYYY h:mm A",
+                            clearable=False,
+                            debounce=250,
+                            withSeconds=False,
+                            timePickerProps={
+                                "withDropdown": True,
+                                "format": "12h",
+                            },
+                            popoverProps={"withinPortal": False},
+                            persistence=True,
+                            persistence_type="local",
+                            w="100%",
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        html.H6(
+                            "Max Minutes",
+                            style={"marginTop": "12px", "marginBottom": "6px"},
+                        ),
+                        dcc.Slider(
+                            id=f"{self.page_type}-commute-minutes",
+                            min=COMMUTE_MIN_MINUTES,
+                            max=COMMUTE_MAX_MINUTES,
+                            step=COMMUTE_STEP_MINUTES,
+                            value=default_minutes,
+                            updatemode="mouseup",
+                            marks=slider_marks,
+                            tooltip={
+                                "placement": "bottom",
+                                "always_visible": True,
+                            },
+                        ),
+                    ]
+                ),
+                html.Div(
+                    id=f"{self.page_type}-commute-status",
+                    style={
+                        "marginTop": "14px",
+                        "fontSize": "0.86rem",
+                        "color": "#4b5563",
+                        "lineHeight": 1.45,
+                        "whiteSpace": "pre-line",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            "Show",
+                            style={
+                                "fontSize": "0.78rem",
+                                "fontWeight": 600,
+                                "letterSpacing": "0.01em",
+                                "color": "#4b5563",
+                                "marginBottom": "6px",
+                            },
+                        ),
+                        dcc.RadioItems(
+                            id=f"{self.page_type}-commute-display-mode",
+                            options=[
+                                {"label": "Verified only", "value": "verified_only"},
+                                {"label": "Show all matches", "value": "include_rough"},
+                            ],
+                            value="verified_only",
+                            persistence=True,
+                            persistence_type="local",
+                            labelStyle={
+                                "display": "block",
+                                "marginBottom": "4px",
+                            },
+                            inputStyle={"marginRight": "6px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Estimated",
+                                    id=f"{self.page_type}-commute-estimated-info-target",
+                                    style={
+                                        "fontWeight": 600,
+                                        "textDecoration": "underline dotted",
+                                        "cursor": "help",
+                                    },
+                                ),
+                                html.Span(" listings haven't been individually route-checked yet."),
+                            ],
+                            style={
+                                "marginTop": "8px",
+                                "fontSize": "0.78rem",
+                                "color": "#6b7280",
+                                "lineHeight": 1.45,
+                            },
+                        ),
+                        dbc.Tooltip(
+                            "Estimated listings are inside the broader commute area, but each one has not been checked one-by-one yet.",
+                            target=f"{self.page_type}-commute-estimated-info-target",
+                            placement="top",
+                        ),
+                    ],
+                    id=f"{self.page_type}-commute-display-mode-container",
+                    style={
+                        "display": "none",
+                        "marginTop": "12px",
+                        "padding": "10px 12px",
+                        "border": "1px solid #d7dde6",
+                        "borderRadius": "10px",
+                        "backgroundColor": "#f8fafc",
+                    },
+                ),
+                html.Div(
+                    COMMUTE_HELP_TEXT,
+                    style={
+                        "marginTop": "18px",
+                        "fontSize": "0.85rem",
+                        "color": "#9aa0a6",
+                        "lineHeight": 1.45,
+                    },
+                ),
+            ],
+            style={"marginBottom": "10px"},
+        )
+
     def create_title_card(self, title, subtitle):
         title_card_children = [
             dbc.Row(
@@ -561,6 +761,7 @@ class LeaseComponents(BaseClass):
         self.key_deposit_components      = self.create_key_deposit_components()
         self.laundry_checklist           = self.create_laundry_checklist()
         self.listed_date_components      = self.create_listed_date_components()
+        self.commute_filter_components   = self.create_commute_filter_components()
         self.location_filter_components  = self.create_location_filter_components()
         self.map                         = self.create_map()
         self.map_card                    = self.create_map_card()
@@ -1284,6 +1485,22 @@ class LeaseComponents(BaseClass):
                 detectRetina=False,
             ),
             dl.GeoJSON(
+                id=f"{self.page_type}-commute-geojson",
+                data={"type": "FeatureCollection", "features": []},
+                cluster=False,
+                bubblingMouseEvents=False,
+                zoomToBoundsOnClick=False,
+                style={
+                    "color": "#8f2d56",
+                    "weight": 4,
+                    "opacity": 0.9,
+                    "lineCap": "round",
+                    "lineJoin": "round",
+                    "fillColor": "#f4a7b9",
+                    "fillOpacity": 0.16,
+                },
+            ),
+            dl.GeoJSON(
                 id='lease_geojson',
                 data=None,
                 cluster=True,
@@ -1294,6 +1511,10 @@ class LeaseComponents(BaseClass):
                     'radius': 160,
                     'minZoom': 3,
                 },
+            ),
+            dl.LayerGroup(
+                id=f"{self.page_type}-commute-target-layer",
+                children=[],
             ),
             dl.FullScreenControl(),
         ]
@@ -1340,6 +1561,7 @@ class LeaseComponents(BaseClass):
                 dbc.AccordionItem(self.furnished_checklist, title="Furnished", item_id="furnished"),
                 dbc.AccordionItem(self.garage_spaces_components, title="Parking Spaces", item_id="parking_spaces"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute (EXPERIMENTAL)", item_id="commute"),
                 dbc.AccordionItem(self.laundry_checklist, title="Laundry", item_id="laundry"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.rental_terms_checklist, title="Rental Terms", item_id="rental_terms"),
@@ -1386,13 +1608,29 @@ class LeaseComponents(BaseClass):
                                 html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
                             ],
                             style={
-                                "position": "relative",
+                                "position": "absolute",
                                 "inset": "0",
                                 "display": "flex",
                                 "alignItems": "center",
                                 "justifyContent": "center",
                                 "backgroundColor": "rgba(0, 0, 0, 0.25)",
                                 "zIndex": "10000",
+                            },
+                        ),
+                        html.Div(
+                            id=f"{self.page_type}-commute-spinner",
+                            children=[
+                                dbc.Spinner(size="lg", color="warning"),
+                                html.P("Loading commute...", style={"marginTop": "10px", "marginLeft": "5px", "color": "white"})
+                            ],
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "none",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10001",
                             },
                         ),
                         # Map itself
@@ -1488,6 +1726,7 @@ class BuyComponents(BaseClass):
         # Now build the UI components
         self.bathrooms_slider         = self.create_bathrooms_slider()
         self.bedrooms_slider          = self.create_bedrooms_slider()
+        self.commute_filter_components = self.create_commute_filter_components()
         self.hoa_fee_components       = self.create_hoa_fee_components()
         self.hoa_fee_frequency_checklist = self.create_hoa_fee_frequency_checklist()
         self.list_price_slider        = self.create_list_price_slider()
@@ -1924,6 +2163,22 @@ class BuyComponents(BaseClass):
                 detectRetina=False,
             ),
             dl.GeoJSON(
+                id=f"{self.page_type}-commute-geojson",
+                data={"type": "FeatureCollection", "features": []},
+                cluster=False,
+                bubblingMouseEvents=False,
+                zoomToBoundsOnClick=False,
+                style={
+                    "color": "#8f2d56",
+                    "weight": 4,
+                    "opacity": 0.9,
+                    "lineCap": "round",
+                    "lineJoin": "round",
+                    "fillColor": "#f4a7b9",
+                    "fillOpacity": 0.16,
+                },
+            ),
+            dl.GeoJSON(
                 id='buy_geojson',
                 data=None,
                 cluster=True,
@@ -1934,6 +2189,10 @@ class BuyComponents(BaseClass):
                     'radius': 160,
                     'minZoom': 3,
                 },
+            ),
+            dl.LayerGroup(
+                id=f"{self.page_type}-commute-target-layer",
+                children=[],
             ),
             dl.FullScreenControl(),
         ]
@@ -1969,6 +2228,7 @@ class BuyComponents(BaseClass):
                 dbc.AccordionItem(self.hoa_fee_components, title="HOA Fees", item_id="hoa_fees"),
                 dbc.AccordionItem(self.hoa_fee_frequency_checklist, title="HOA Fee Frequency", item_id="hoa_fee_frequency"),
                 dbc.AccordionItem(self.isp_speed_components, title="Internet Service Provider (ISP) Speed", item_id="isp_speed"),
+                dbc.AccordionItem(self.commute_filter_components, title="Commute (EXPERIMENTAL)", item_id="commute"),
                 dbc.AccordionItem(self.lot_size_components, title="Lot Size", item_id="lot_size"),
                 dbc.AccordionItem(self.ppsqft_components, title="Price Per Sqft", item_id="ppsqft"),
                 dbc.AccordionItem(self.sqft_components, title="Square Footage", item_id="square_footage"),
@@ -2020,6 +2280,22 @@ class BuyComponents(BaseClass):
                                 "justifyContent": "center",
                                 "backgroundColor": "rgba(0, 0, 0, 0.25)",
                                 "zIndex": "10000",
+                            },
+                        ),
+                        html.Div(
+                            id=f"{self.page_type}-commute-spinner",
+                            children=[
+                                dbc.Spinner(size="lg", color="warning"),
+                                html.P("Loading commute...", style={"marginTop": "10px", "marginLeft": "5px", "color": "white"})
+                            ],
+                            style={
+                                "position": "absolute",
+                                "inset": "0",
+                                "display": "none",
+                                "alignItems": "center",
+                                "justifyContent": "center",
+                                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                                "zIndex": "10001",
                             },
                         ),
                         # Map itself

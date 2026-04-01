@@ -25,6 +25,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Array<number>} downloadSpeedRange - [minDownload, maxDownload] for filtering by `best_dn`.
          * @param {Array<number>} uploadSpeedRange - [minUpload, maxUpload] for filtering by `best_up`.
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
+         * @param {Object} commuteBoundaryData - Optional commute polygon payload.
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
         */
@@ -51,6 +52,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             uploadSpeedRange,
             speedIncludeMissing,
             zipBoundaryData,
+            commuteBoundaryData,
             fullGeojson
         ) {
             // Guard against missing or malformed GeoJSON
@@ -96,7 +98,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 ? zipBoundaryData.features
                 : (zipBoundaryData?.feature ? [zipBoundaryData.feature] : []);
             const shouldFilterByZip = zipFeatures.length > 0 || zipCodes.length > 0;
-            const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
+            const commuteFeatures = Array.isArray(commuteBoundaryData?.features)
+                ? commuteBoundaryData.features
+                : (commuteBoundaryData?.feature ? [commuteBoundaryData.feature] : []);
+            const shouldFilterByCommute = commuteFeatures.length > 0;
 
             // Debug: Log raw data
             //console.log('Raw data:', fullGeojson);
@@ -202,20 +207,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 13) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
-                    if (!zipFeatures.length || !turfAvailable || !feature.geometry) {
-                        zipFilter = false;
-                    } else {
-                        const coords = normalizeCoordinatePair(feature.geometry.coordinates);
-                        if (!coords) {
-                            zipFilter = false;
-                        } else {
-                            const point = turf.point(coords);
-                            zipFilter = zipFeatures.some((zipFeature) => (
-                                zipFeature && zipFeature.geometry &&
-                                turf.booleanPointInPolygon(point, zipFeature)
-                            ));
-                        }
-                    }
+                    zipFilter = featureWithinAnyPolygon(feature, zipFeatures);
+                }
+
+                // 14) Approximate commute area filter
+                let commuteFilter = true;
+                if (shouldFilterByCommute) {
+                    commuteFilter = featureWithinAnyPolygon(feature, commuteFeatures);
                 }
 
                 // Combine all filters
@@ -233,7 +231,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     hoaFeeFreqFilter &&
                     downloadSpeedFilter &&
                     uploadSpeedFilter &&
-                    zipFilter;
+                    zipFilter &&
+                    commuteFilter;
 
                 if (!includeFeature && exclusionCollector) {
                     const failedReasons = [];
@@ -252,6 +251,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!downloadSpeedFilter) failedReasons.push("Download speed");
                     if (!uploadSpeedFilter) failedReasons.push("Upload speed");
                     if (!zipFilter) failedReasons.push("ZIP boundary");
+                    if (!commuteFilter) failedReasons.push("Commute area");
 
                     exclusionCollector.capture(mls_number, failedReasons, props);
                 }

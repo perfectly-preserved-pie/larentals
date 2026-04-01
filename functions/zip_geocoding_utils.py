@@ -25,12 +25,57 @@ PlaceCache: TypeAlias = dict[str, PlaceGeocodeResult]
 
 _DEFAULT_PLACE_CACHE_PATH = Path("/mnt/cache/location/place_geocode_cache.json")
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+_PLACE_CACHE_VERSION = "v2"
 _CALIFORNIA_BOUNDS = {
     "south": 32.4,
     "north": 42.1,
     "west": -124.6,
     "east": -114.0,
 }
+
+
+def _query_looks_like_street_address(query: str) -> bool:
+    """
+    Heuristically detect whether the user entered a street-style address.
+
+    Args:
+        query: Raw or normalized user-entered place text.
+
+    Returns:
+        `True` when the query looks like a street address with a number and
+        street suffix, otherwise `False`.
+    """
+    lowered = str(query or "").strip().lower()
+    if not lowered or not any(char.isdigit() for char in lowered):
+        return False
+
+    street_tokens = {
+        "st",
+        "street",
+        "ave",
+        "avenue",
+        "blvd",
+        "boulevard",
+        "rd",
+        "road",
+        "dr",
+        "drive",
+        "ln",
+        "lane",
+        "way",
+        "ct",
+        "court",
+        "pl",
+        "place",
+        "ter",
+        "terrace",
+        "pkwy",
+        "parkway",
+        "hwy",
+        "highway",
+    }
+    tokens = {token.strip(",.#") for token in lowered.split()}
+    return not street_tokens.isdisjoint(tokens)
 
 def _normalize_place_query(query: str) -> str:
     """
@@ -106,6 +151,47 @@ def _result_is_california_match(result: dict[str, Any]) -> bool:
         return False
 
     return _coordinates_look_like_california(lat, lon)
+
+
+def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, float, int]:
+    """
+    Rank California Nominatim candidates for the current place query.
+
+    Args:
+        result: Raw Nominatim response object for a single candidate.
+        query: User-entered place query used to guide address-vs-POI ranking.
+
+    Returns:
+        A tuple where smaller values indicate a better candidate.
+    """
+    score = 0.0
+    address = result.get("address")
+    address_dict = address if isinstance(address, dict) else {}
+    addresstype = str(result.get("addresstype", "")).strip().lower()
+    category = str(result.get("class", "")).strip().lower()
+    result_type = str(result.get("type", "")).strip().lower()
+    display_name = str(result.get("display_name", "")).strip()
+
+    if _query_looks_like_street_address(query):
+        if address_dict.get("house_number"):
+            score -= 50.0
+        if addresstype in {"house", "building", "residential", "place"}:
+            score -= 20.0
+        if result_type in {"house", "residential", "apartments", "building"}:
+            score -= 10.0
+        if category in {"building", "place", "highway"}:
+            score -= 5.0
+        if category in {"shop", "amenity", "tourism", "leisure"}:
+            score += 30.0
+        if result.get("name"):
+            score += 5.0
+
+    try:
+        importance = float(result.get("importance", 0.0))
+    except (TypeError, ValueError):
+        importance = 0.0
+
+    return (score, -importance, len(display_name))
 
 def _load_place_cache(cache_path: Path) -> PlaceCache:
     """
@@ -189,7 +275,7 @@ def geocode_place_cached(
 
     cache_file = cache_path or _DEFAULT_PLACE_CACHE_PATH
     cache = _load_place_cache(cache_file)
-    cache_key = normalized.lower()
+    cache_key = f"{_PLACE_CACHE_VERSION}:{normalized.lower()}"
     if cache_key in cache:
         cached_result = cache[cache_key]
         if _result_is_california_match(cached_result):
@@ -227,13 +313,18 @@ def geocode_place_cached(
 
     logger.debug(f"Nominatim response for '{query}': {payload}")
 
-    selected_result = next((result for result in payload if _result_is_california_match(result)), None)
-    if not selected_result:
+    california_results = [result for result in payload if _result_is_california_match(result)]
+    if not california_results:
         candidate_labels = [result.get("display_name", "<unknown>") for result in payload[:3]]
         logger.warning(
             f"Rejecting Nominatim results for '{query}': no California match found in candidates {candidate_labels}"
         )
         return None
+
+    selected_result = min(
+        california_results,
+        key=lambda result: _candidate_sort_key(result, sanitized_query or normalized),
+    )
 
     try:
         lat = float(selected_result.get("lat"))

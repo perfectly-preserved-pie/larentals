@@ -35,6 +35,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
          * @param {boolean} speedIncludeMissing - Whether to include listings with missing ISP speeds
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload
+         * @param {Object} commuteBoundaryData - Optional commute polygon payload
          * @param {Object} fullGeojson - GeoJSON data with .features array
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
@@ -71,6 +72,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             uploadSpeedRange,
             speedIncludeMissing,
             zipBoundaryData,
+            commuteBoundaryData,
             fullGeojson
         ) {
             if (!fullGeojson || !fullGeojson.features) {
@@ -112,7 +114,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 ? zipBoundaryData.features
                 : (zipBoundaryData?.feature ? [zipBoundaryData.feature] : []);
             const shouldFilterByZip = zipFeatures.length > 0 || zipCodes.length > 0;
-            const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
+            const commuteFeatures = Array.isArray(commuteBoundaryData?.features)
+                ? commuteBoundaryData.features
+                : (commuteBoundaryData?.feature ? [commuteBoundaryData.feature] : []);
+            const shouldFilterByCommute = commuteFeatures.length > 0;
 
             // Convert "include missing" flags to booleans
             const sqftIncludeMissingBool            = Boolean(sqftIncludeMissing);
@@ -351,20 +356,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 17) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
-                    if (!zipFeatures.length || !turfAvailable || !feature.geometry) {
-                        zipFilter = false;
-                    } else {
-                        const coords = normalizeCoordinatePair(feature.geometry.coordinates);
-                        if (!coords) {
-                            zipFilter = false;
-                        } else {
-                            const point = turf.point(coords);
-                            zipFilter = zipFeatures.some((zipFeature) => (
-                                zipFeature && zipFeature.geometry &&
-                                turf.booleanPointInPolygon(point, zipFeature)
-                            ));
-                        }
-                    }
+                    zipFilter = featureWithinAnyPolygon(feature, zipFeatures);
+                }
+
+                // 18) Approximate commute area filter
+                let commuteFilter = true;
+                if (shouldFilterByCommute) {
+                    commuteFilter = featureWithinAnyPolygon(feature, commuteFeatures);
                 }
 
                 // Combine all filters
@@ -388,7 +386,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     dateFilter &&
                     downloadSpeedFilter &&
                     uploadSpeedFilter &&
-                    zipFilter;
+                    zipFilter &&
+                    commuteFilter;
 
                 if (!includeFeature && exclusionCollector) {
                     const failedReasons = [];
@@ -413,6 +412,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!downloadSpeedFilter) failedReasons.push("Download speed");
                     if (!uploadSpeedFilter) failedReasons.push("Upload speed");
                     if (!zipFilter) failedReasons.push("ZIP boundary");
+                    if (!commuteFilter) failedReasons.push("Commute area");
 
                     exclusionCollector.capture(mls_number, failedReasons, feature.properties);
                 }
