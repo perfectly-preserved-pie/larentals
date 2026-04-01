@@ -10,6 +10,7 @@ from functions.commute_utils import (
   verify_exact_commute_matches,
 )
 from dash.dependencies import ALL, Input, Output, State
+from dash.exceptions import PreventUpdate
 from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
@@ -66,6 +67,7 @@ def layout(**_: object) -> dbc.Container:
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
   prefilter_geojson_store = dcc.Store(id="lease-prefilter-geojson-store", storage_type="memory", data=None)
+  commute_refresh_store = dcc.Store(id="lease-commute-refresh-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="lease-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
   commute_boundary_store = dcc.Store(id="lease-commute-boundary-store", storage_type="memory", data=empty_feature_collection())
   commute_request_store = dcc.Store(id="lease-commute-request-store", storage_type="memory", data=empty_commute_request_data())
@@ -79,6 +81,7 @@ def layout(**_: object) -> dbc.Container:
       collapse_store,
       geojson_store,
       prefilter_geojson_store,
+      commute_refresh_store,
       zip_boundary_store,
       commute_boundary_store,
       commute_request_store,
@@ -273,7 +276,7 @@ def update_lease_zip_boundary(
   Input("lease-commute-departure-datetime", "value"),
   running=[
     (
-      Output("lease-commute-spinner", "style", allow_duplicate=True),
+      Output("lease-map-spinner", "style", allow_duplicate=True),
       {
         "position": "absolute",
         "inset": "0",
@@ -281,7 +284,7 @@ def update_lease_zip_boundary(
         "alignItems": "center",
         "justifyContent": "center",
         "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
+        "zIndex": "10000",
       },
       {
         "position": "absolute",
@@ -290,7 +293,7 @@ def update_lease_zip_boundary(
         "alignItems": "center",
         "justifyContent": "center",
         "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
+        "zIndex": "10000",
       },
     ),
   ],
@@ -304,6 +307,9 @@ def update_lease_commute_boundary(
 ) -> tuple[dict, dict]:
   """
   Update the coarse commute boundary overlay and request metadata.
+
+  This callback uses the shared map loading overlay because commute changes
+  ultimately refresh the listings shown on the map.
 
   Args:
     destination: User-entered destination text.
@@ -379,12 +385,36 @@ def update_lease_commute_target_marker(
 
 
 @callback(
-  Output("lease-commute-exact-store", "data"),
-  Input("lease-prefilter-geojson-store", "data"),
+  Output("lease-commute-exact-store", "data", allow_duplicate=True),
   Input("lease-commute-request-store", "data"),
+  prevent_initial_call=True,
+)
+def reset_lease_exact_commute_matches(
+  commute_request: dict | None,
+) -> dict:
+  """
+  Clear exact commute results when the commute filter is inactive.
+
+  Args:
+    commute_request: Normalized commute request metadata from the coarse boundary callback.
+
+  Returns:
+    An empty exact-match payload when no active commute request exists.
+  """
+  if isinstance(commute_request, dict) and commute_request.get("requested") and commute_request.get("active"):
+    raise PreventUpdate
+
+  return empty_commute_exact_result()
+
+
+@callback(
+  Output("lease-commute-exact-store", "data"),
+  Input("lease-commute-refresh-store", "data"),
+  State("lease-prefilter-geojson-store", "data"),
+  State("lease-commute-request-store", "data"),
   running=[
     (
-      Output("lease-commute-spinner", "style", allow_duplicate=True),
+      Output("lease-map-spinner", "style", allow_duplicate=True),
       {
         "position": "absolute",
         "inset": "0",
@@ -392,7 +422,7 @@ def update_lease_commute_target_marker(
         "alignItems": "center",
         "justifyContent": "center",
         "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
+        "zIndex": "10000",
       },
       {
         "position": "absolute",
@@ -401,26 +431,33 @@ def update_lease_commute_target_marker(
         "alignItems": "center",
         "justifyContent": "center",
         "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
+        "zIndex": "10000",
       },
     ),
   ],
   prevent_initial_call=True,
 )
 def update_lease_exact_commute_matches(
+  refresh_request: dict | None,
   prefiltered_geojson: dict | None,
   commute_request: dict | None,
 ) -> dict:
   """
   Verify coarse commute matches against exact Valhalla route durations.
 
+  This callback also uses the shared map loading overlay so the UI shows a
+  single listings-refresh state instead of a separate commute-only spinner.
+
   Args:
+    refresh_request: Refresh signal emitted only for active commute checks.
     prefiltered_geojson: Current clientside-filtered lease FeatureCollection.
     commute_request: Normalized commute request metadata from the coarse boundary callback.
 
   Returns:
     Exact route-check results for the current candidate set.
   """
+  if not isinstance(refresh_request, dict):
+    raise PreventUpdate
   return verify_exact_commute_matches(
     prefiltered_geojson=prefiltered_geojson,
     commute_request=commute_request,
@@ -545,6 +582,7 @@ clientside_callback(
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
   Input("lease_geojson", "data"),
+  Input("lease_geojson", "loading_state"),
 )
 
 register_responsive_layers_control_callback("lease")
@@ -592,6 +630,16 @@ clientside_callback(
     Input('lease-commute-boundary-store', 'data'),
     Input('lease-geojson-store', "data"),
   ],
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='requestExactCommuteRefresh'
+  ),
+  Output('lease-commute-refresh-store', 'data'),
+  Input('lease-prefilter-geojson-store', 'data'),
+  Input('lease-commute-request-store', 'data'),
 )
 
 clientside_callback(

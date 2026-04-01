@@ -1,5 +1,23 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
+        requestExactCommuteRefresh: function(prefilteredGeojson, commuteRequest) {
+            if (!Array.isArray(prefilteredGeojson?.features)) {
+                return window.dash_clientside.no_update;
+            }
+
+            if (!commuteRequest?.requested || !commuteRequest?.active || !commuteRequest?.signature) {
+                return window.dash_clientside.no_update;
+            }
+
+            return {
+                commute_signature: commuteRequest.signature,
+                candidate_signature: buildCommuteCandidateSignature(
+                    commuteRequest.signature,
+                    prefilteredGeojson,
+                ),
+                refreshed_at: Date.now(),
+            };
+        },
         buildVerifiedBoundaryFromFeatures: function(featureCollection) {
             const features = Array.isArray(featureCollection?.features)
                 ? featureCollection.features
