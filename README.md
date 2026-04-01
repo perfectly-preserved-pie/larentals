@@ -80,6 +80,11 @@ folders:
 uv run download-gtfs-feeds all
 ```
 
+The repo also includes a starter
+[`docker/valhalla/custom_files/valhalla.json`](docker/valhalla/custom_files/valhalla.json)
+that narrows Valhalla's service limits to this app's route + isochrone +
+multimodal commute workload.
+
 ### Partial Exact Commute Verification
 
 When the rough commute shortlist is large, the app now exact-checks the nearest

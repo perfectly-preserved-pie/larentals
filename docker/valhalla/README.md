@@ -9,7 +9,8 @@ focused on the region this app cares about.
 
 ## Start the service
 
-1. Create the host directories if you want them to exist before Docker binds them:
+1. The repo now includes empty `custom_files/` and `gtfs_feeds/` folders, so you
+   can start the container immediately. If you want to recreate them yourself:
 
    ```bash
    mkdir -p docker/valhalla/custom_files docker/valhalla/gtfs_feeds
@@ -53,13 +54,22 @@ focused on the region this app cares about.
 
    Each agency directory should contain the unzipped GTFS `.txt` files.
 
-4. Start Valhalla:
+4. This repo also checks in a starter `docker/valhalla/custom_files/valhalla.json`
+   tuned for this app's workload:
+   - `/route` requests are always just listing -> destination
+   - `/isochrone` requests always use one destination and one contour
+   - transit uses `multimodal`, not matrix
+
+   The Docker image will fill in any missing config keys on boot when
+   `VALHALLA_UPDATE_EXISTING_CONFIG=True`.
+
+5. Start Valhalla:
 
    ```bash
    docker compose -f docker-compose.valhalla.yml up -d
    ```
 
-5. Watch the initial tile build:
+6. Watch the initial tile build:
 
    ```bash
    docker compose -f docker-compose.valhalla.yml logs -f valhalla
@@ -68,6 +78,9 @@ focused on the region this app cares about.
 The first boot can take a while because the container downloads/builds graph
 tiles, admins, and time zones. Transit builds also depend on the GTFS feeds
 present in `docker/valhalla/gtfs_feeds/`.
+
+`VALHALLA_USE_DEFAULT_SPEEDS_CONFIG=True` is enabled in the Compose file so
+Valhalla can use its default speed enhancement config when OSM tagging is thin.
 
 The `api.metro.net` endpoints are useful for Metro realtime data, but Valhalla
 needs static GTFS bundles for transit graph builds, so the script above pulls

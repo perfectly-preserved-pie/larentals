@@ -12,6 +12,8 @@ services:
       build_transit: "${VALHALLA_BUILD_TRANSIT:-True}"
       build_tar: "${VALHALLA_BUILD_TAR:-True}"
       use_tiles_ignore_pbf: "${VALHALLA_USE_TILES_IGNORE_PBF:-True}"
+      use_default_speeds_config: "${VALHALLA_USE_DEFAULT_SPEEDS_CONFIG:-True}"
+      update_existing_config: "${VALHALLA_UPDATE_EXISTING_CONFIG:-True}"
       force_rebuild: "${VALHALLA_FORCE_REBUILD:-False}"
       build_elevation: "${VALHALLA_BUILD_ELEVATION:-False}"
       server_threads: "${VALHALLA_SERVER_THREADS:-8}"
