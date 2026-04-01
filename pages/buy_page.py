@@ -518,25 +518,18 @@ def update_buy_commute_status(
     and exact_result.get("signature") == current_signature
   ):
     summary_text = str(exact_result.get("status") or summary_text).strip() or summary_text
-    total_candidates = int(exact_result.get("total_candidates") or 0)
-    attempted_candidates = int(exact_result.get("attempted_candidates") or 0)
     matched_candidates = int(exact_result.get("matched_candidates") or 0)
-    excluded_candidates = int(exact_result.get("excluded_candidates") or 0)
     rough_candidates = int(exact_result.get("rough_candidates") or 0)
     failed_candidates = int(exact_result.get("failed_candidates") or 0)
 
     count_parts: list[str] = []
-    if attempted_candidates or total_candidates:
-      count_parts.append(f"Checked {attempted_candidates} of {total_candidates}")
-    if matched_candidates or attempted_candidates:
+    if matched_candidates or exact_result.get("checked_candidates"):
       count_parts.append(f"Verified {matched_candidates}")
-    if excluded_candidates:
-      count_parts.append(f"Over {excluded_candidates}")
     if rough_candidates:
-      count_parts.append(f"Rough {rough_candidates}")
+      count_parts.append(f"Estimated {rough_candidates}")
     if failed_candidates:
       count_parts.append(f"Unavailable {failed_candidates}")
-    counts_text = " | ".join(count_parts)
+    counts_text = " • ".join(count_parts)
 
     show_toggle = (
       rough_candidates > 0
@@ -545,9 +538,9 @@ def update_buy_commute_status(
     )
     if show_toggle:
       mode_text = (
-        "Map is showing verified listings only."
+        "Showing verified listings only."
         if display_mode != "include_rough"
-        else "Map is showing verified listings plus rough matches."
+        else "Showing verified and estimated listings."
       )
 
   children.append(html.Div(summary_text))

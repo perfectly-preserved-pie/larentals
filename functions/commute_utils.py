@@ -1321,33 +1321,20 @@ def verify_exact_commute_matches(
     )
 
     if checked_candidates == 0:
-        error = "Exact commute estimates unavailable right now. Showing rough matches only."
+        error = "Couldn't verify commute times right now."
         base_result.update({"status": error, "error": error})
         return base_result
 
-    destination_label = str(display_name) if display_name else "the destination"
     if matched_candidates:
-        status = (
-            f"Verified {matched_candidates} listings within {minutes} minutes by "
-            f"{mode_status_label} to {destination_label} departing {departure_label}."
-        )
+        status = f"Showing {matched_candidates} matches for this commute."
     else:
-        status = (
-            f"No verified listings were found within {minutes} minutes by "
-            f"{mode_status_label} to {destination_label} departing {departure_label}."
-        )
+        status = "No verified matches yet."
 
     if partial:
-        status = (
-            f"{status} Checked the closest {attempted_candidates} of "
-            f"{len(candidates)} candidate listings using {provider}. "
-            f"{rough_candidates} rough matches remain."
-        )
-    elif attempted_candidates:
-        status = f"{status} Checked {attempted_candidates} listings using {provider}."
+        status = f"{status} More homes may still fit."
 
     if failed_candidates:
-        status = f"{status} Some listings could not be verified."
+        status = f"{status} Some times couldn't be checked."
 
     base_result["status"] = status
     return base_result

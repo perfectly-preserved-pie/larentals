@@ -512,7 +512,7 @@ class BaseClass:
                             id=f"{self.page_type}-commute-display-mode",
                             options=[
                                 {"label": "Verified only", "value": "verified_only"},
-                                {"label": "Include rough matches", "value": "include_rough"},
+                                {"label": "Include estimated matches", "value": "include_rough"},
                             ],
                             value="verified_only",
                             persistence=True,

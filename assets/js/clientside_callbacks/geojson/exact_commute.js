@@ -42,7 +42,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         cloneFeatureWithCommuteState(
                             feature,
                             "rough_match",
-                            "Rough commute match only",
+                            "Estimated commute match",
                         )
                     )),
                 };
@@ -65,7 +65,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                         : "rough_match";
                     const statusText = matchState === "verified_match"
                         ? "Verified commute match"
-                        : "Rough commute match only";
+                        : "Estimated commute match";
                     return cloneFeatureWithCommuteState(feature, matchState, statusText);
                 })
                 .sort((a, b) => (
