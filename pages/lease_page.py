@@ -6,6 +6,7 @@ from functions.commute_utils import (
   build_commute_boundary_result,
   empty_commute_exact_result,
   empty_commute_request_data,
+  empty_feature_collection,
   verify_exact_commute_matches,
 )
 from dash.dependencies import ALL, Input, Output, State
@@ -66,6 +67,7 @@ def layout(**_: object) -> dbc.Container:
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
   prefilter_geojson_store = dcc.Store(id="lease-prefilter-geojson-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="lease-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
+  commute_boundary_store = dcc.Store(id="lease-commute-boundary-store", storage_type="memory", data=empty_feature_collection())
   commute_request_store = dcc.Store(id="lease-commute-request-store", storage_type="memory", data=empty_commute_request_data())
   commute_exact_store = dcc.Store(id="lease-commute-exact-store", storage_type="memory", data=empty_commute_exact_result())
   kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
@@ -78,6 +80,7 @@ def layout(**_: object) -> dbc.Container:
       geojson_store,
       prefilter_geojson_store,
       zip_boundary_store,
+      commute_boundary_store,
       commute_request_store,
       commute_exact_store,
       kickstart,
@@ -262,7 +265,7 @@ def update_lease_zip_boundary(
 
 
 @callback(
-  Output("lease-commute-geojson", "data"),
+  Output("lease-commute-boundary-store", "data"),
   Output("lease-commute-request-store", "data"),
   Input("lease-commute-input", "value"),
   Input("lease-commute-mode", "value"),
@@ -427,6 +430,7 @@ def update_lease_exact_commute_matches(
 @callback(
   Output("lease-commute-status", "children"),
   Output("lease-commute-display-mode-container", "style"),
+  Output("lease-commute-display-mode", "options"),
   Input("lease-commute-request-store", "data"),
   Input("lease-commute-exact-store", "data"),
   Input("lease-prefilter-geojson-store", "data"),
@@ -437,7 +441,7 @@ def update_lease_commute_status(
   exact_result: dict | None,
   prefiltered_geojson: dict | None,
   display_mode: str | None,
-) -> tuple[object, dict]:
+ ) -> tuple[object, dict, list[dict[str, str]]]:
   """
   Render the current commute summary and show the display-mode toggle when useful.
 
@@ -448,7 +452,7 @@ def update_lease_commute_status(
     display_mode: Selected map display mode for partial verification results.
 
   Returns:
-    A tuple of (status children, display-mode container style).
+    A tuple of (status children, display-mode container style, radio options).
   """
   toggle_style = {
     "display": "none",
@@ -458,18 +462,21 @@ def update_lease_commute_status(
     "borderRadius": "10px",
     "backgroundColor": "#f8fafc",
   }
+  radio_options = [
+    {"label": "Verified only", "value": "verified_only"},
+    {"label": "Include estimated matches", "value": "include_rough"},
+  ]
   if not isinstance(commute_request, dict):
-    return "", toggle_style
+    return "", toggle_style, radio_options
 
   request_status = str(commute_request.get("status") or "").strip()
   if not commute_request.get("requested"):
-    return request_status, toggle_style
+    return request_status, toggle_style, radio_options
 
   children: list[object] = []
-  summary_text = request_status or "Loading commute estimate..."
-  counts_text = ""
   mode_text = ""
   show_toggle = False
+  error_text = ""
   features = prefiltered_geojson.get("features") if isinstance(prefiltered_geojson, dict) else None
   current_signature = build_candidate_signature(
     commute_request.get("signature"),
@@ -490,19 +497,9 @@ def update_lease_commute_status(
     and exact_result.get("commute_signature") == commute_request.get("signature")
     and exact_result.get("signature") == current_signature
   ):
-    summary_text = str(exact_result.get("status") or summary_text).strip() or summary_text
     matched_candidates = int(exact_result.get("matched_candidates") or 0)
     rough_candidates = int(exact_result.get("rough_candidates") or 0)
-    failed_candidates = int(exact_result.get("failed_candidates") or 0)
-
-    count_parts: list[str] = []
-    if matched_candidates or exact_result.get("checked_candidates"):
-      count_parts.append(f"Verified {matched_candidates}")
-    if rough_candidates:
-      count_parts.append(f"Estimated {rough_candidates}")
-    if failed_candidates:
-      count_parts.append(f"Unavailable {failed_candidates}")
-    counts_text = " • ".join(count_parts)
+    error_text = str(exact_result.get("error") or "").strip()
 
     show_toggle = (
       rough_candidates > 0
@@ -510,17 +507,23 @@ def update_lease_commute_status(
       and not exact_result.get("error")
     )
     if show_toggle:
+      radio_options = [
+        {"label": f"Verified only ({matched_candidates})", "value": "verified_only"},
+        {
+          "label": f"Include estimated matches ({matched_candidates + rough_candidates})",
+          "value": "include_rough",
+        },
+      ]
       mode_text = (
         "Showing verified listings only."
         if display_mode != "include_rough"
         else "Showing verified and estimated listings."
       )
 
-  children.append(html.Div(summary_text))
-  if counts_text:
+  if error_text:
     children.append(
       html.Div(
-        counts_text,
+        error_text,
         style={"marginTop": "6px", "fontSize": "0.8rem", "color": "#6b7280"},
       )
     )
@@ -535,7 +538,7 @@ def update_lease_commute_status(
   if show_toggle:
     toggle_style["display"] = "block"
 
-  return children, toggle_style
+  return children, toggle_style, radio_options
 
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='loadingMapSpinner'),
@@ -586,7 +589,7 @@ clientside_callback(
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
     Input('lease-zip-boundary-store', 'data'),
-    Input('lease-commute-geojson', 'data'),
+    Input('lease-commute-boundary-store', 'data'),
     Input('lease-geojson-store', "data"),
   ],
 )
@@ -598,6 +601,19 @@ clientside_callback(
   ),
   Output('lease_geojson', 'data'),
   Input('lease-prefilter-geojson-store', 'data'),
+  Input('lease-commute-request-store', 'data'),
+  Input('lease-commute-exact-store', 'data'),
+  Input('lease-commute-display-mode', 'value'),
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='deriveDisplayedCommuteBoundary'
+  ),
+  Output('lease-commute-geojson', 'data'),
+  Input('lease-commute-boundary-store', 'data'),
+  Input('lease_geojson', 'data'),
   Input('lease-commute-request-store', 'data'),
   Input('lease-commute-exact-store', 'data'),
   Input('lease-commute-display-mode', 'value'),
