@@ -6,8 +6,6 @@ on:
     paths-ignore:
       - '.gitignore'
       - '.github/**'
-  pull_request:
-    branches: [ "master" ]
 
 permissions:
   contents: read

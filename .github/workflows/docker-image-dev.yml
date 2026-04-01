@@ -8,9 +8,6 @@ on:
       - 'dataframe.pickle'
       - '.gitignore'
       - '.github/**'
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "dev" ]
   schedule:
     - cron: '35 10 * * 5'
 
