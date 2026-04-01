@@ -138,8 +138,7 @@ VALHALLA_ROUTE_RETRY_BACKOFF_SECONDS = max(
 )
 
 COMMUTE_HELP_TEXT = (
-    "Estimates depend on the selected departure time and can still differ from "
-    "real traffic, hills, route comfort, and service changes."
+    "Commute times are estimates, not guarantees. Actual trips can be much longer or shorter depending on traffic, lights, hills, parking, and transit service."
 )
 
 VALHALLA_HTTP_HEADERS = {
