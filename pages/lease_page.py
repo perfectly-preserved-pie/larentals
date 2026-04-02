@@ -4,7 +4,6 @@ from .components import LeaseComponents
 from dash import dcc, html, clientside_callback, ClientsideFunction, callback
 import dash_leaflet as dl
 from functions.commute_utils import (
-  build_candidate_signature,
   build_commute_boundary_result,
   empty_commute_exact_result,
   empty_commute_request_data,
@@ -439,7 +438,6 @@ def reset_lease_exact_commute_matches(
 @callback(
   Output("lease-commute-exact-store", "data"),
   Input("lease-commute-refresh-store", "data"),
-  State("lease-prefilter-geojson-store", "data"),
   State("lease-commute-request-store", "data"),
   running=[
     (
@@ -468,7 +466,6 @@ def reset_lease_exact_commute_matches(
 )
 def update_lease_exact_commute_matches(
   refresh_request: dict | None,
-  prefiltered_geojson: dict | None,
   commute_request: dict | None,
 ) -> dict:
   """
@@ -479,7 +476,6 @@ def update_lease_exact_commute_matches(
 
   Args:
     refresh_request: Refresh signal emitted only for active commute checks.
-    prefiltered_geojson: Current clientside-filtered lease FeatureCollection.
     commute_request: Normalized commute request metadata from the coarse boundary callback.
 
   Returns:
@@ -488,7 +484,7 @@ def update_lease_exact_commute_matches(
   if not isinstance(refresh_request, dict):
     raise PreventUpdate
   return verify_exact_commute_matches(
-    prefiltered_geojson=prefiltered_geojson,
+    refresh_request=refresh_request,
     commute_request=commute_request,
   )
 
@@ -499,13 +495,13 @@ def update_lease_exact_commute_matches(
   Output("lease-commute-display-mode", "options"),
   Input("lease-commute-request-store", "data"),
   Input("lease-commute-exact-store", "data"),
-  Input("lease-prefilter-geojson-store", "data"),
+  Input("lease-commute-refresh-store", "data"),
   Input("lease-commute-display-mode", "value"),
 )
 def update_lease_commute_status(
   commute_request: dict | None,
   exact_result: dict | None,
-  prefiltered_geojson: dict | None,
+  refresh_request: dict | None,
   display_mode: str | None,
  ) -> tuple[object, dict, list[dict[str, str]]]:
   """
@@ -514,7 +510,7 @@ def update_lease_commute_status(
   Args:
     commute_request: Normalized request metadata from the coarse boundary step.
     exact_result: Exact verification metadata for the current shortlist.
-    prefiltered_geojson: Current coarse shortlist after clientside filters.
+    refresh_request: Compact browser payload for the current coarse shortlist.
     display_mode: Selected map display mode for partial verification results.
 
   Returns:
@@ -543,19 +539,10 @@ def update_lease_commute_status(
   mode_text = ""
   show_toggle = False
   error_text = ""
-  features = prefiltered_geojson.get("features") if isinstance(prefiltered_geojson, dict) else None
-  current_signature = build_candidate_signature(
-    commute_request.get("signature"),
-    (
-      (
-        feature.get("properties", {}).get("mls_number")
-        for feature in features
-        if isinstance(feature, dict)
-        and isinstance(feature.get("properties"), dict)
-      )
-      if isinstance(features, list)
-      else ()
-    ),
+  current_signature = (
+    refresh_request.get("candidate_signature")
+    if isinstance(refresh_request, dict)
+    else None
   )
 
   if (

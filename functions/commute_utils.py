@@ -210,6 +210,16 @@ class CommuteListingCandidate(TypedDict):
     lon: float
 
 
+class CommuteRefreshRequest(TypedDict, total=False):
+    """Compact exact-commute refresh payload emitted by the browser."""
+
+    commute_signature: str | None
+    candidate_signature: str | None
+    total_candidates: int
+    candidates: list[CommuteListingCandidate]
+    refreshed_at: int
+
+
 RouteDurationLookup: TypeAlias = dict[str, float | None]
 
 
@@ -581,17 +591,49 @@ def _prioritize_candidates_by_distance(
     )
 
 
-def _extract_candidate_listings(prefiltered_geojson: GeoJsonDict | None) -> list[CommuteListingCandidate]:
+def _extract_candidate_listings(candidate_source: object) -> list[CommuteListingCandidate]:
     """
-    Extract route-checkable listing points from a FeatureCollection.
+    Extract route-checkable listing points from a compact payload or FeatureCollection.
 
     Args:
-        prefiltered_geojson: Current coarse-filtered GeoJSON payload.
+        candidate_source: Either the compact browser refresh payload or a
+            FeatureCollection containing listing point features.
 
     Returns:
         A list of candidate listings with MLS ids and point coordinates.
     """
-    features = prefiltered_geojson.get("features") if isinstance(prefiltered_geojson, dict) else None
+    raw_candidates = (
+        candidate_source.get("candidates")
+        if isinstance(candidate_source, dict)
+        else None
+    )
+    if isinstance(raw_candidates, list):
+        candidates: list[CommuteListingCandidate] = []
+        for candidate in raw_candidates:
+            if not isinstance(candidate, dict):
+                continue
+
+            mls_number = normalize_mls_number(candidate.get("mls_number"))
+            lat = candidate.get("lat")
+            lon = candidate.get("lon")
+            if (
+                not mls_number
+                or not isinstance(lat, (int, float))
+                or not isinstance(lon, (int, float))
+            ):
+                continue
+
+            candidates.append(
+                {
+                    "mls_number": mls_number,
+                    "lat": float(lat),
+                    "lon": float(lon),
+                }
+            )
+
+        return candidates
+
+    features = candidate_source.get("features") if isinstance(candidate_source, dict) else None
     if not isinstance(features, list):
         return []
 
@@ -1184,15 +1226,15 @@ def fetch_valhalla_route_times_seconds(
 
 def verify_exact_commute_matches(
     *,
-    prefiltered_geojson: GeoJsonDict | None,
+    refresh_request: CommuteRefreshRequest | dict[str, Any] | None,
     commute_request: dict[str, Any] | None,
 ) -> CommuteExactMatchResult:
     """
     Route-check each coarse commute match against the exact Valhalla duration.
 
     Args:
-        prefiltered_geojson: Current listing FeatureCollection after all clientside
-            filters, including the coarse commute polygon prefilter.
+        refresh_request: Compact browser payload containing the current shortlist
+            of route-checkable listing ids and coordinates.
         commute_request: Normalized request metadata from `build_commute_boundary_result`.
 
     Returns:
@@ -1242,11 +1284,28 @@ def verify_exact_commute_matches(
     ):
         return base_result
 
-    candidates = _extract_candidate_listings(prefiltered_geojson)
-    candidate_signature = build_candidate_signature(
-        commute_signature,
-        (candidate["mls_number"] for candidate in candidates),
+    refresh_commute_signature = (
+        refresh_request.get("commute_signature")
+        if isinstance(refresh_request, dict)
+        else None
     )
+    if (
+        isinstance(refresh_commute_signature, str)
+        and refresh_commute_signature != commute_signature
+    ):
+        return base_result
+
+    candidates = _extract_candidate_listings(refresh_request)
+    candidate_signature = (
+        refresh_request.get("candidate_signature")
+        if isinstance(refresh_request, dict)
+        else None
+    )
+    if not isinstance(candidate_signature, str):
+        candidate_signature = build_candidate_signature(
+            commute_signature,
+            (candidate["mls_number"] for candidate in candidates),
+        )
 
     base_result.update(
         {

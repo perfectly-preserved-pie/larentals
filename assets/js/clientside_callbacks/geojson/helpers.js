@@ -40,17 +40,43 @@ function normalizeListingIdSet(values) {
     );
 }
 
-function buildCommuteCandidateSignature(commuteSignature, featureCollection) {
+function buildCommuteCandidatePayload(commuteSignature, featureCollection) {
     if (!commuteSignature || !Array.isArray(featureCollection?.features)) {
         return null;
     }
 
-    const normalizedIds = featureCollection.features
-        .map((feature) => normalizeListingId(feature?.properties?.mls_number))
-        .filter((value) => value.length > 0)
-        .sort();
+    const candidates = [];
+    const normalizedIds = [];
 
-    return `${commuteSignature}|${normalizedIds.join(",")}`;
+    featureCollection.features.forEach((feature) => {
+        const listingId = normalizeListingId(feature?.properties?.mls_number);
+        const coords = normalizeCoordinatePair(feature?.geometry?.coordinates);
+        if (!listingId || !coords) {
+            return;
+        }
+
+        const [lon, lat] = coords;
+        normalizedIds.push(listingId);
+        candidates.push({
+            mls_number: listingId,
+            lat,
+            lon,
+        });
+    });
+
+    normalizedIds.sort();
+    return {
+        candidate_signature: `${commuteSignature}|${normalizedIds.join(",")}`,
+        total_candidates: candidates.length,
+        candidates,
+    };
+}
+
+function buildCommuteCandidateSignature(commuteSignature, featureCollection) {
+    return buildCommuteCandidatePayload(
+        commuteSignature,
+        featureCollection,
+    )?.candidate_signature || null;
 }
 
 function filterFeatureCollectionByListingIds(featureCollection, eligibleListingIds) {
