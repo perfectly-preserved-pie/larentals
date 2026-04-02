@@ -605,19 +605,18 @@ clientside_callback(
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
   Input("lease_geojson", "data"),
-  Input("lease_geojson", "loading_state"),
+  State("lease-map-spinner", "style"),
 )
 
 register_responsive_layers_control_callback("lease")
 
-# Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',
     function_name='showMapSpinner'
   ),
   Output("lease-map-spinner", "style", allow_duplicate=True),
-  [ # Keep this aligned with the non-commute filters that feed the shortlist callback.
+  [
     Input('rental_price_slider', 'value'),
     Input('bedrooms_slider', 'value'),
     Input('bathrooms_slider', 'value'),
@@ -649,8 +648,44 @@ clientside_callback(
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
-    Input('lease-zip-boundary-store', 'data'),
   ],
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showMapSpinner'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  [
+    Input('lease-location-input', 'value'),
+    Input('lease-nearby-zip-switch', 'checked'),
+  ],
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showLazyLayerSpinnerOnToggle'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='syncLazyLayerSpinner'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  Input({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+  State(LayersClass.layers_control_id("lease"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
   prevent_initial_call=True,
 )
 

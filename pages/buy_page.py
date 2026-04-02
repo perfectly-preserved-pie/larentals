@@ -134,7 +134,7 @@ clientside_callback(
   Output("buy-map-spinner", "style"),
   Input("buy-geojson-store", "data"),
   Input("buy_geojson", "data"),
-  Input("buy_geojson", "loading_state"),
+  State("buy-map-spinner", "style"),
 )
 
 register_responsive_layers_control_callback("buy")
@@ -628,7 +628,6 @@ def update_buy_commute_status(
 
   return children, toggle_style, radio_options
 
-# Clientside callback to filter the full data in memory, then update the map
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',
@@ -657,8 +656,44 @@ clientside_callback(
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
-    Input('buy-zip-boundary-store', 'data'),
   ],
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showMapSpinner'
+  ),
+  Output("buy-map-spinner", "style", allow_duplicate=True),
+  [
+    Input('buy-location-input', 'value'),
+    Input('buy-nearby-zip-switch', 'checked'),
+  ],
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showLazyLayerSpinnerOnToggle'
+  ),
+  Output("buy-map-spinner", "style", allow_duplicate=True),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "id"),
+  State({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "data"),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='syncLazyLayerSpinner'
+  ),
+  Output("buy-map-spinner", "style", allow_duplicate=True),
+  Input({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "data"),
+  State(LayersClass.layers_control_id("buy"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "id"),
   prevent_initial_call=True,
 )
 
