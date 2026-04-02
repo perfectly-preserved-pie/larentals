@@ -1605,7 +1605,7 @@ class LeaseComponents(BaseClass):
                             id=f"{self.page_type}-map-spinner",
                             children=[
                                 dbc.Spinner(size="lg"),
-                                html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
+                                html.P("Loading map...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
                             ],
                             style={
                                 "position": "absolute",
@@ -2254,7 +2254,7 @@ class BuyComponents(BaseClass):
                             id=f"{self.page_type}-map-spinner",
                             children=[
                                 dbc.Spinner(size="lg"),
-                                html.P("Loading properties...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
+                                html.P("Loading map...", style={"marginTop": "10px", "marginLeft": "5px" ,"color": "white"})
                             ],
                             style={
                                 "position": "absolute",
