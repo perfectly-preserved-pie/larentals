@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from .components import LeaseComponents
 from dash import dcc, html, clientside_callback, ClientsideFunction, callback
 import dash_leaflet as dl
@@ -41,16 +43,20 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# Create instances of the components classes and log how long it takes to create them
-start_time = time.time()
-duration = time.time() - start_time
-logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
-
 # Load the ZIP polygons once at module load time
 ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
 
 # Load the HUD ZIP-to-city crosswalk once at module load time
 ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
+
+
+@lru_cache(maxsize=1)
+def get_lease_components() -> LeaseComponents:
+  start_time = time.perf_counter()
+  components = LeaseComponents()
+  duration = time.perf_counter() - start_time
+  logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
+  return components
 
 def layout(**_: object) -> dbc.Container:
   """
@@ -62,7 +68,7 @@ def layout(**_: object) -> dbc.Container:
   Returns:
     The lease page layout container.
   """
-  lease_components = LeaseComponents()
+  lease_components = get_lease_components()
 
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
