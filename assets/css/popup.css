@@ -82,6 +82,29 @@
   margin-top: 4px;
 }
 
+.additional-layer-popup__media {
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f2f4f6;
+}
+
+.additional-layer-popup__media-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #d9dee3;
+}
+
+.additional-layer-popup__media-caption {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  color: #555;
+  background: rgba(255, 255, 255, 0.92);
+}
+
 .additional-layer-popup__status {
   font-weight: 700;
 }
@@ -115,6 +138,7 @@
 }
 
 .breakfast-burrito-div-icon,
+.school-div-icon,
 .supermarket-div-icon {
   background: transparent;
   border: none;
@@ -150,6 +174,38 @@
 
 .supermarket-marker__symbol {
   color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.school-marker__chip {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.school-marker__chip--elementary {
+  background: #2d8f5b;
+}
+
+.school-marker__chip--middle {
+  background: #d17c00;
+}
+
+.school-marker__chip--high {
+  background: #b23a48;
+}
+
+.school-marker__chip--other {
+  background: #5c677d;
+}
+
+.school-marker__symbol {
   font-size: 12px;
   line-height: 1;
 }

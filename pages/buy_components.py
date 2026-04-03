@@ -1,4 +1,4 @@
-from dash import html
+from dash import dcc, html
 import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
@@ -12,6 +12,7 @@ from .component_factories import (
     build_map,
     build_page_parts,
     build_range_filter,
+    build_school_layer_filter_panel,
     build_subtype_filter,
     build_year_built_filter,
 )
@@ -26,6 +27,7 @@ class BuyComponents(BaseClass):
         "breakfast_burritos",
         "farmers_markets",
         "supermarkets_grocery",
+        "schools",
         "oil_well",
     )
 
@@ -45,6 +47,8 @@ class BuyComponents(BaseClass):
         "garage_spaces",
         "hoa_fee",
         "hoa_fee_frequency",
+        "school_district_name",
+        "nearest_high_school_mi",
         "full_street_address",
         "listed_date",
         "listing_url",
@@ -66,6 +70,8 @@ class BuyComponents(BaseClass):
         "garage_spaces",
         "hoa_fee",
         "hoa_fee_frequency",
+        "school_district_name",
+        "nearest_high_school_mi",
         "listed_date",
     )
 
@@ -132,11 +138,21 @@ class BuyComponents(BaseClass):
         Returns:
             The assembled ``PageParts`` bundle.
         """
-        return build_page_parts(
+        parts = build_page_parts(
             config=self.CONFIG,
             last_updated=self.last_updated,
             filter_items=self._build_filter_sections(),
             map_component=self._build_map_component(),
+        )
+        return PageParts(
+            title_card=parts.title_card,
+            user_options_card=html.Div(
+                [
+                    parts.user_options_card,
+                    build_school_layer_filter_panel(self.page_type),
+                ]
+            ),
+            map_card=parts.map_card,
         )
 
     def _build_map_component(self) -> object:

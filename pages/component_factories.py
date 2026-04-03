@@ -21,6 +21,11 @@ from functions.commute_utils import (
     normalize_commute_minutes,
 )
 from functions.convex_hull import generate_convex_hulls
+from functions.layers import (
+    DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
+    SCHOOL_LAYER_GRADE_BAND_OPTIONS,
+    SCHOOL_LAYER_LEVEL_OPTIONS,
+)
 
 
 def build_range_filter(
@@ -681,6 +686,169 @@ def build_filter_card(
             accordion,
         ],
         body=True,
+    )
+
+
+def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
+    """
+    Build the conditional, map-only filter panel for the schools overlay.
+
+    Args:
+        page_type: Page key such as ``buy`` or ``lease``.
+
+    Returns:
+        A collapsed card that is shown only when the Schools overlay is enabled.
+    """
+    prefix = f"{page_type}-school-layer"
+
+    search_children = html.Div(
+        [
+            html.Div(
+                "These controls filter school points only. They do not filter listings.",
+                className="small text-muted mb-3",
+            ),
+            html.Div(
+                [
+                    html.Label("Search school or district", className="form-label"),
+                    dcc.Input(
+                        id=f"{prefix}-search-input",
+                        type="text",
+                        debounce=True,
+                        placeholder="Try LAUSD, Beverly Hills High, magnet, etc.",
+                        style={"width": "100%"},
+                    ),
+                ],
+                style={"marginBottom": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("School level", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-level-dropdown",
+                        multi=True,
+                        options=[
+                            {"label": value, "value": value}
+                            for value in SCHOOL_LAYER_LEVEL_OPTIONS
+                        ],
+                        placeholder="Any school level",
+                    ),
+                ],
+                style={"marginBottom": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Grade bands", className="form-label"),
+                    dcc.Checklist(
+                        id=f"{prefix}-grade-band-checklist",
+                        options=[
+                            {"label": value, "value": value}
+                            for value in SCHOOL_LAYER_GRADE_BAND_OPTIONS
+                        ],
+                        value=[],
+                        inline=True,
+                        labelStyle={"marginRight": "12px"},
+                    ),
+                ]
+            ),
+        ]
+    )
+
+    program_children = html.Div(
+        [
+            html.Div(
+                [
+                    html.Label("Enrollment", className="form-label"),
+                    dcc.RangeSlider(
+                        id=f"{prefix}-enrollment-slider",
+                        min=0,
+                        max=DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
+                        value=[0, DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX],
+                        marks={
+                            0: "0",
+                            3000: "3k",
+                            6000: "6k",
+                            9000: "9k",
+                            DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX: "12k",
+                        },
+                        updatemode="mouseup",
+                        tooltip={
+                            "placement": "bottom",
+                            "always_visible": True,
+                            "transform": "formatWholeNumber",
+                        },
+                    ),
+                ],
+                style={"marginBottom": "18px"},
+            ),
+            dmc.Switch(
+                id=f"{prefix}-charter-switch",
+                label="Only charter schools",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "10px"},
+            ),
+            dmc.Switch(
+                id=f"{prefix}-magnet-switch",
+                label="Only magnet schools",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "10px"},
+            ),
+            dmc.Switch(
+                id=f"{prefix}-virtual-switch",
+                label="Only virtual schools",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "10px"},
+            ),
+            dmc.Switch(
+                id=f"{prefix}-title-i-switch",
+                label="Only Title I schools",
+                checked=False,
+                size="sm",
+                color="teal",
+            ),
+        ]
+    )
+
+    return dbc.Collapse(
+        dbc.Card(
+            [
+                html.H6("School Layer Filters", className="mb-1"),
+                html.P(
+                    "Turn on the Schools overlay in the map control to browse and refine nearby campuses.",
+                    className="card-text small text-muted mb-3",
+                ),
+                dbc.Accordion(
+                    [
+                        dbc.AccordionItem(
+                            search_children,
+                            title="Search & Type",
+                            item_id=f"{prefix}-search-type",
+                        ),
+                        dbc.AccordionItem(
+                            program_children,
+                            title="Programs & Enrollment",
+                            item_id=f"{prefix}-programs",
+                        ),
+                    ],
+                    always_open=True,
+                    active_item=[
+                        f"{prefix}-search-type",
+                        f"{prefix}-programs",
+                    ],
+                    flush=True,
+                    className="options-accordion",
+                ),
+            ],
+            body=True,
+            className="mt-3",
+        ),
+        id=f"{prefix}-controls-collapse",
+        is_open=False,
     )
 
 

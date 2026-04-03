@@ -112,6 +112,49 @@ def _require_safe_identifier(name: str, *, field_name: str) -> str:
     return name
 
 
+def _sqlite_table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    """
+    Return whether a SQLite table or view exists.
+
+    Args:
+        conn: Open SQLite connection.
+        table_name: Candidate table/view name.
+
+    Returns:
+        ``True`` when the table or view exists, else ``False``.
+    """
+    safe_table = _require_safe_identifier(table_name, field_name="table_name")
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM sqlite_master
+        WHERE type IN ('table', 'view') AND name = ?
+        LIMIT 1
+        """,
+        (safe_table,),
+    ).fetchone()
+    return row is not None
+
+
+def _sqlite_table_columns(
+    conn: sqlite3.Connection,
+    table_name: str,
+) -> set[str]:
+    """
+    Return the column names declared on a SQLite table or view.
+
+    Args:
+        conn: Open SQLite connection.
+        table_name: Table/view name to inspect.
+
+    Returns:
+        A set of declared column names.
+    """
+    safe_table = _require_safe_identifier(table_name, field_name="table_name")
+    rows = conn.execute(f"PRAGMA table_info({safe_table})").fetchall()
+    return {str(row[1]) for row in rows}
+
+
 @lru_cache(maxsize=8)
 def _build_cached_geojson_payload(
     table_name: str,
@@ -173,24 +216,40 @@ class BaseClass:
         """
         safe_table = _require_safe_identifier(table_name, field_name="table_name")
 
-        if select_columns is None:
-            sql = f"SELECT * FROM {safe_table}"
-        else:
-            if not select_columns:
-                raise ValueError("select_columns cannot be empty when provided")
-
-            safe_cols = [
-                _require_safe_identifier(col, field_name="select_columns")
-                for col in select_columns
-            ]
-            sql = f"SELECT {', '.join(safe_cols)} FROM {safe_table}"
-
         with closing(sqlite3.connect(DB_PATH)) as conn:
+            base_table_columns = _sqlite_table_columns(conn, safe_table)
+
+            if select_columns is None:
+                sql = f"SELECT * FROM {safe_table}"
+                requested_cols: list[str] | None = None
+            else:
+                if not select_columns:
+                    raise ValueError("select_columns cannot be empty when provided")
+
+                requested_cols = [
+                    _require_safe_identifier(col, field_name="select_columns")
+                    for col in select_columns
+                ]
+                query_cols = [col for col in requested_cols if col in base_table_columns]
+
+                # Keep the join key available internally even when callers only
+                # request enrichment columns populated by later merge steps.
+                if "mls_number" in base_table_columns and "mls_number" not in query_cols:
+                    query_cols.insert(0, "mls_number")
+
+                if not query_cols:
+                    raise ValueError(
+                        f"No selectable base-table columns found for {safe_table}: {requested_cols!r}"
+                    )
+
+                sql = f"SELECT {', '.join(query_cols)} FROM {safe_table}"
+
             self.df = pd.read_sql_query(sql, conn)
             self._attach_isp_speeds(conn, table_name=safe_table)
+            self._attach_listing_enrichment(conn, table_name=safe_table)
             if select_columns is not None:
-                keep_cols = [col for col in select_columns if col in self.df.columns]
-                for col in ("best_dn", "best_up"):
+                keep_cols = [col for col in requested_cols or [] if col in self.df.columns]
+                for col in ("mls_number", "best_dn", "best_up"):
                     if col in self.df.columns and col not in keep_cols:
                         keep_cols.append(col)
                 self.df = self.df[keep_cols]
@@ -222,6 +281,9 @@ class BaseClass:
             "security_deposit",
             "best_dn",
             "best_up",
+            "nearest_elem_school_mi",
+            "nearest_mid_school_mi",
+            "nearest_high_school_mi",
         ]
         for col in numeric_cols:
             if col in self.df.columns:
@@ -384,6 +446,70 @@ class BaseClass:
             return
 
         self.df = self.df.merge(speed_df, on="mls_number", how="left")
+
+    def _attach_listing_enrichment(
+        self,
+        conn: sqlite3.Connection,
+        table_name: str,
+    ) -> None:
+        """
+        Join listing-level enrichment fields onto the current dataframe.
+
+        Enrichment tables follow the convention ``<listing_table>_enrichment`` and
+        must expose an ``mls_number`` join key. This keeps derived spatial/context
+        fields out of the raw source tables while still letting page configs opt in
+        to enrichment columns as needed.
+
+        Args:
+            conn: Open SQLite connection.
+            table_name: Listing table currently being loaded.
+        """
+        if table_name not in {"lease", "buy"}:
+            return
+
+        enrichment_table = _require_safe_identifier(
+            f"{table_name}_enrichment",
+            field_name="enrichment_table",
+        )
+        if not _sqlite_table_exists(conn, enrichment_table):
+            return
+
+        enrichment_columns = _sqlite_table_columns(conn, enrichment_table)
+        if "mls_number" not in enrichment_columns:
+            logger.warning(
+                "Skipping %s because it does not define an mls_number join key.",
+                enrichment_table,
+            )
+            return
+
+        selectable_columns = [
+            "mls_number",
+            *sorted(
+                col
+                for col in enrichment_columns
+                if col != "mls_number" and col not in self.df.columns
+            ),
+        ]
+        if len(selectable_columns) == 1:
+            return
+
+        try:
+            enrichment_df = pd.read_sql_query(
+                f"SELECT {', '.join(selectable_columns)} FROM {enrichment_table}",
+                conn,
+            )
+        except sqlite3.Error as exc:
+            logger.warning(
+                "Failed to load listing enrichments from %s: %s",
+                enrichment_table,
+                exc,
+            )
+            return
+
+        if enrichment_df.empty:
+            return
+
+        self.df = self.df.merge(enrichment_df, on="mls_number", how="left")
 
     def _safe_speed_max(self, column: str) -> float:
         """

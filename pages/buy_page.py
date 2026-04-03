@@ -200,6 +200,66 @@ def load_buy_optional_layers(
     selected_overlays=selected_overlays,
     layer_ids=layer_ids,
     current_data=current_data,
+    excluded_layer_keys=("schools",),
+  )
+
+
+@callback(
+  Output("buy-school-layer-controls-collapse", "is_open"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+)
+def toggle_buy_school_layer_controls(selected_overlays: list[str] | None) -> bool:
+  """
+  Show the map-only school filter panel when the Schools overlay is enabled.
+  """
+  return LayersClass.overlay_is_selected(selected_overlays, "schools")
+
+
+@callback(
+  Output(
+    LayersClass.lazy_layer_geojson_id("buy", "schools"),
+    "data",
+    allow_duplicate=True,
+  ),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+  Input("buy-school-layer-search-input", "value"),
+  Input("buy-school-layer-level-dropdown", "value"),
+  Input("buy-school-layer-grade-band-checklist", "value"),
+  Input("buy-school-layer-enrollment-slider", "value"),
+  Input("buy-school-layer-charter-switch", "checked"),
+  Input("buy-school-layer-magnet-switch", "checked"),
+  Input("buy-school-layer-virtual-switch", "checked"),
+  Input("buy-school-layer-title-i-switch", "checked"),
+  prevent_initial_call=True,
+)
+def update_buy_school_layer(
+  selected_overlays: list[str] | None,
+  search_text: str | None,
+  school_levels: list[str] | None,
+  grade_bands: list[str] | None,
+  enrollment_range: list[float] | None,
+  charter_only: bool | None,
+  magnet_only: bool | None,
+  virtual_only: bool | None,
+  title_i_only: bool | None,
+) -> dict | object:
+  """
+  Filter the school overlay from the cached raw GeoJSON payload.
+  """
+  if not LayersClass.overlay_is_selected(selected_overlays, "schools"):
+    return dash.no_update
+
+  raw_geojson = LayersClass.load_layer_data("schools")
+  return LayersClass.filter_school_layer_geojson(
+    raw_geojson,
+    search_text=search_text,
+    school_levels=school_levels,
+    grade_bands=grade_bands,
+    enrollment_range=enrollment_range,
+    charter_only=bool(charter_only),
+    magnet_only=bool(magnet_only),
+    virtual_only=bool(virtual_only),
+    title_i_only=bool(title_i_only),
   )
 
 @callback(

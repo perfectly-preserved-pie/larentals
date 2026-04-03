@@ -18,7 +18,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
-        * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
+         * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
          * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
          * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
          * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).

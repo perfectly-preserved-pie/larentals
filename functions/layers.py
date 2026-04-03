@@ -7,13 +7,33 @@ from functions.parking_tickets import build_parking_tickets_heat_geojson
 from loguru import logger
 from typing import Any, Callable, ClassVar, Optional, Sequence, TypedDict, TypeAlias
 import dash_leaflet as dl
+import geopandas as gpd
 import json
+from pathlib import Path
+import pandas as pd
+import re
 import time
 import uuid
+from urllib.parse import urlencode
 
 load_dotenv()
 
 GeoJsonDict: TypeAlias = dict[str, Any]
+
+DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = Path("assets/datasets/schools_socal.geojson")
+DEFAULT_SCHOOL_LAYER_GPKG_PATH = Path("assets/datasets/california_public_schools_2024_25.gpkg")
+DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
+SCHOOL_LAYER_GRADE_BAND_OPTIONS: tuple[str, ...] = ("Elementary", "Middle", "High")
+SCHOOL_LAYER_LEVEL_OPTIONS: tuple[str, ...] = (
+    "Adult Education",
+    "Elementary",
+    "High",
+    "Middle",
+    "Not reported",
+    "Other",
+    "Preschool",
+    "Secondary",
+)
 
 class LazyLayerGeoJsonId(TypedDict):
     """
@@ -58,6 +78,430 @@ class LayerConfig:
     supercluster_options: Optional[dict[str, Any]] = None
     valid_bounds: Optional[tuple[float, float, float, float]] = None
     cache_ttl_seconds: int | None = None
+
+
+def _normalize_school_text(value: object) -> str | None:
+    """
+    Return a trimmed text value, or ``None`` when the source is blank.
+    """
+    if value is None:
+        return None
+
+    normalized = str(value).strip()
+    if not normalized or normalized.lower() in {"none", "null", "nan"}:
+        return None
+    return normalized
+
+
+def _normalize_school_flag(value: object) -> int | None:
+    """
+    Normalize common `Y`/`N` flag values into integers for GeoJSON properties.
+    """
+    normalized = _normalize_school_text(value)
+    if normalized is None:
+        return None
+
+    upper = normalized.upper()
+    if upper in {"Y", "YES", "TRUE", "1"}:
+        return 1
+    if upper in {"N", "NO", "FALSE", "0"}:
+        return 0
+    return None
+
+
+def _school_flag_label(value: object) -> str:
+    """
+    Return a popup-friendly label for a normalized school flag.
+    """
+    normalized = _normalize_school_flag(value)
+    if normalized == 1:
+        return "Yes"
+    if normalized == 0:
+        return "No"
+    return "Unknown"
+
+
+def _parse_school_grade_token(value: object) -> int | None:
+    """
+    Convert a grade token like `TK`, `K`, `06`, or `12` into a sortable integer.
+    """
+    normalized = _normalize_school_text(value)
+    if normalized is None:
+        return None
+
+    token = normalized.upper()
+    if token in {"P", "PK", "PS", "PREK"}:
+        return -1
+    if token in {"TK", "K", "KG"}:
+        return 0
+    if token.isdigit():
+        return int(token)
+    return None
+
+
+def _format_school_grade_value(value: int | None) -> str | None:
+    """
+    Convert a numeric grade token back into a display label.
+    """
+    if value is None:
+        return None
+    if value == -1:
+        return "PK"
+    if value == 0:
+        return "K"
+    return str(int(value))
+
+
+def _build_school_grade_bands(low_grade: object, high_grade: object) -> list[str]:
+    """
+    Return the canonical grade-band labels touched by a school.
+    """
+    low = _parse_school_grade_token(low_grade)
+    high = _parse_school_grade_token(high_grade)
+    if low is None or high is None:
+        return []
+
+    lower, upper = min(low, high), max(low, high)
+    bands: list[str] = []
+    if lower <= 5 and upper >= 0:
+        bands.append("Elementary")
+    if lower <= 8 and upper >= 6:
+        bands.append("Middle")
+    if lower <= 12 and upper >= 9:
+        bands.append("High")
+    return bands
+
+
+def _build_school_grade_span_display(low_grade: object, high_grade: object) -> str | None:
+    """
+    Build a compact popup display value like `K-5` or `6-12`.
+    """
+    low = _parse_school_grade_token(low_grade)
+    high = _parse_school_grade_token(high_grade)
+    if low is None or high is None:
+        return None
+
+    low_label = _format_school_grade_value(min(low, high))
+    high_label = _format_school_grade_value(max(low, high))
+    if low_label is None or high_label is None:
+        return None
+    if low_label == high_label:
+        return low_label
+    return f"{low_label}-{high_label}"
+
+
+def _normalize_school_url(value: object) -> str | None:
+    """
+    Normalize a school website into a browser-usable URL when possible.
+    """
+    normalized = _normalize_school_text(value)
+    if normalized is None:
+        return None
+    if re.match(r"^[a-z][a-z0-9+.-]*://", normalized, flags=re.IGNORECASE):
+        return normalized
+    return f"https://{normalized.lstrip('/')}"
+
+
+def build_school_preview_url(longitude: float | None, latitude: float | None) -> str | None:
+    """
+    Build a public ArcGIS World Imagery preview around a school point.
+    """
+    if longitude is None or latitude is None:
+        return None
+
+    pad = 0.0018
+    params = urlencode(
+        {
+            "bbox": f"{longitude - pad:.6f},{latitude - pad:.6f},{longitude + pad:.6f},{latitude + pad:.6f}",
+            "bboxSR": 4326,
+            "imageSR": 4326,
+            "size": "640,360",
+            "format": "jpg",
+            "transparent": "false",
+            "f": "image",
+        }
+    )
+    return (
+        "https://services.arcgisonline.com/ArcGIS/rest/services/"
+        f"World_Imagery/MapServer/export?{params}"
+    )
+
+
+def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDict:
+    """
+    Normalize a public-schools GeoDataFrame into the final map-layer GeoJSON payload.
+    """
+    if schools.empty:
+        return {"type": "FeatureCollection", "features": []}
+    if schools.crs is None:
+        raise ValueError("School layer GeoDataFrame must declare a CRS.")
+
+    working = schools.to_crs("EPSG:4326").copy()
+
+    expected_columns = [
+        "SchoolName",
+        "DistrictName",
+        "SchoolType",
+        "SchoolLevel",
+        "GradeLow",
+        "GradeHigh",
+        "Charter",
+        "FundingType",
+        "Virtual",
+        "Magnet",
+        "TitleIStatus",
+        "Status",
+        "Street",
+        "City",
+        "Zip",
+        "State",
+        "Locale",
+        "Website",
+        "EnrollTotal",
+        "ELpct",
+        "FRPMpct",
+        "SEDpct",
+        "SWDpct",
+    ]
+    for column_name in expected_columns:
+        if column_name not in working.columns:
+            working[column_name] = None
+
+    if "Status" in working.columns:
+        active_mask = (
+            working["Status"]
+            .astype("string")
+            .str.strip()
+            .str.casefold()
+            .eq("active")
+        )
+        working = working[active_mask.fillna(False)].copy()
+
+    working = working[working.geometry.notna()].copy()
+    if working.empty:
+        return {"type": "FeatureCollection", "features": []}
+
+    working["school_name"] = working["SchoolName"].map(_normalize_school_text)
+    working = working[working["school_name"].notna()].copy()
+    working["district_name"] = working["DistrictName"].map(_normalize_school_text)
+    working["school_type"] = working["SchoolType"].map(_normalize_school_text)
+    working["school_level"] = working["SchoolLevel"].map(_normalize_school_text)
+    working["grade_span_display"] = working.apply(
+        lambda row: _build_school_grade_span_display(row.get("GradeLow"), row.get("GradeHigh")),
+        axis=1,
+    )
+    working["grade_bands"] = working.apply(
+        lambda row: _build_school_grade_bands(row.get("GradeLow"), row.get("GradeHigh")),
+        axis=1,
+    )
+    working["charter_flag"] = working["Charter"].map(_normalize_school_flag)
+    working["magnet_flag"] = working["Magnet"].map(_normalize_school_flag)
+    working["virtual_flag"] = working["Virtual"].map(_normalize_school_flag)
+    working["title_i_flag"] = working["TitleIStatus"].map(_normalize_school_flag)
+    working["charter_label"] = working["Charter"].map(_school_flag_label)
+    working["magnet_label"] = working["Magnet"].map(_school_flag_label)
+    working["virtual_label"] = working["Virtual"].map(_school_flag_label)
+    working["title_i_label"] = working["TitleIStatus"].map(_school_flag_label)
+    working["funding_type"] = working["FundingType"].map(_normalize_school_text)
+    working["locale"] = working["Locale"].map(_normalize_school_text)
+    working["website_url"] = working["Website"].map(_normalize_school_url)
+    working["street"] = working["Street"].map(_normalize_school_text)
+    working["city"] = working["City"].map(_normalize_school_text)
+    working["zip_code"] = working["Zip"].map(_normalize_school_text)
+    working["state"] = working["State"].map(_normalize_school_text)
+    working["full_address"] = working.apply(
+        lambda row: ", ".join(
+            part
+            for part in (
+                row.get("street"),
+                row.get("city"),
+                row.get("state"),
+                row.get("zip_code"),
+            )
+            if part
+        ),
+        axis=1,
+    )
+    working["enrollment_total"] = pd.to_numeric(working["EnrollTotal"], errors="coerce").round()
+    working["el_pct"] = pd.to_numeric(working["ELpct"], errors="coerce")
+    working["frpm_pct"] = pd.to_numeric(working["FRPMpct"], errors="coerce")
+    working["sed_pct"] = pd.to_numeric(working["SEDpct"], errors="coerce")
+    working["swd_pct"] = pd.to_numeric(working["SWDpct"], errors="coerce")
+    working["latitude"] = working.geometry.y.round(6)
+    working["longitude"] = working.geometry.x.round(6)
+    working["school_preview_url"] = working.apply(
+        lambda row: build_school_preview_url(
+            float(row["longitude"]) if pd.notna(row["longitude"]) else None,
+            float(row["latitude"]) if pd.notna(row["latitude"]) else None,
+        ),
+        axis=1,
+    )
+    working["search_text"] = working.apply(
+        lambda row: " ".join(
+            part.lower()
+            for part in (
+                row.get("school_name"),
+                row.get("district_name"),
+                row.get("city"),
+                row.get("full_address"),
+            )
+            if part
+        ),
+        axis=1,
+    )
+
+    keep_columns = [
+        "school_name",
+        "district_name",
+        "school_type",
+        "school_level",
+        "grade_span_display",
+        "grade_bands",
+        "charter_flag",
+        "magnet_flag",
+        "virtual_flag",
+        "title_i_flag",
+        "charter_label",
+        "magnet_label",
+        "virtual_label",
+        "title_i_label",
+        "funding_type",
+        "locale",
+        "website_url",
+        "full_address",
+        "city",
+        "zip_code",
+        "enrollment_total",
+        "el_pct",
+        "frpm_pct",
+        "sed_pct",
+        "swd_pct",
+        "latitude",
+        "longitude",
+        "school_preview_url",
+        "search_text",
+        "geometry",
+    ]
+    return json.loads(working[keep_columns].to_json(drop_id=True))
+
+
+def load_school_layer_geojson_artifact(
+    path: str | Path = DEFAULT_SCHOOL_LAYER_GEOJSON_PATH,
+) -> GeoJsonDict:
+    """
+    Load the baked school-layer GeoJSON artifact from disk.
+    """
+    artifact_path = Path(path)
+    if not artifact_path.exists():
+        logger.warning(
+            "School layer artifact is missing at {}. Run the school-layer builder first.",
+            artifact_path,
+        )
+        return {"type": "FeatureCollection", "features": []}
+
+    with artifact_path.open("r", encoding="utf-8") as file_obj:
+        payload = json.load(file_obj)
+
+    features = payload.get("features")
+    if not isinstance(features, list):
+        logger.warning("School layer artifact at {} is not a valid FeatureCollection.", artifact_path)
+        return {"type": "FeatureCollection", "features": []}
+
+    return payload
+
+
+def filter_school_layer_geojson(
+    geojson_data: GeoJsonDict | None,
+    *,
+    search_text: str | None = None,
+    school_levels: Sequence[str] | None = None,
+    grade_bands: Sequence[str] | None = None,
+    enrollment_range: Sequence[float] | None = None,
+    charter_only: bool = False,
+    magnet_only: bool = False,
+    virtual_only: bool = False,
+    title_i_only: bool = False,
+) -> GeoJsonDict:
+    """
+    Filter the cached school layer payload for the map-only school controls.
+    """
+    if not geojson_data:
+        return {"type": "FeatureCollection", "features": []}
+
+    normalized_search = (_normalize_school_text(search_text) or "").casefold()
+    selected_levels = {
+        value.strip().casefold()
+        for value in (school_levels or [])
+        if isinstance(value, str) and value.strip()
+    }
+    selected_bands = {
+        value.strip().casefold()
+        for value in (grade_bands or [])
+        if isinstance(value, str) and value.strip()
+    }
+    range_values = list(enrollment_range or [])
+    has_enrollment_filter = len(range_values) >= 2
+    min_enrollment = float(range_values[0]) if has_enrollment_filter else 0.0
+    max_enrollment = float(range_values[1]) if has_enrollment_filter else float(DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX)
+    full_enrollment_range = (
+        min_enrollment <= 0
+        and max_enrollment >= DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX
+    )
+
+    filtered_features: list[GeoJsonDict] = []
+    for feature in geojson_data.get("features", []):
+        properties = feature.get("properties") or {}
+        if normalized_search:
+            haystack = str(properties.get("search_text") or "").casefold()
+            if normalized_search not in haystack:
+                continue
+
+        if selected_levels:
+            level_value = str(properties.get("school_level") or "").strip().casefold()
+            if level_value not in selected_levels:
+                continue
+
+        if selected_bands:
+            feature_bands = {
+                str(value).strip().casefold()
+                for value in (properties.get("grade_bands") or [])
+                if value
+            }
+            if feature_bands.isdisjoint(selected_bands):
+                continue
+
+        enrollment_value = properties.get("enrollment_total")
+        try:
+            enrollment_number = (
+                float(enrollment_value)
+                if enrollment_value not in (None, "", "Unknown")
+                else None
+            )
+        except (TypeError, ValueError):
+            enrollment_number = None
+
+        if has_enrollment_filter:
+            if enrollment_number is None:
+                if not full_enrollment_range:
+                    continue
+            elif not (min_enrollment <= enrollment_number <= max_enrollment):
+                continue
+
+        if charter_only and _normalize_school_flag(properties.get("charter_flag")) != 1:
+            continue
+        if magnet_only and _normalize_school_flag(properties.get("magnet_flag")) != 1:
+            continue
+        if virtual_only and _normalize_school_flag(properties.get("virtual_flag")) != 1:
+            continue
+        if title_i_only and _normalize_school_flag(properties.get("title_i_flag")) != 1:
+            continue
+
+        filtered_features.append(feature)
+
+    return {
+        **geojson_data,
+        "features": filtered_features,
+    }
 
 # Create a base class for the additional layers
 # The additional layers are used in both the Lease and Sale pages, so we can use inheritance to avoid code duplication
@@ -118,6 +562,15 @@ class LayersClass:
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
             valid_bounds=(-125.0, -113.0, 32.0, 35.5),
         ),
+        'schools': LayerConfig(
+            name='Schools',
+            dataset='schools',
+            loader=load_school_layer_geojson_artifact,
+            point_to_layer='drawSchoolIcon',
+            bubbling_mouse_events=False,
+            supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
+            cache_ttl_seconds=21600,
+        ),
         'parking_tickets_density': LayerConfig(
             name='Parking Tickets Heatmap (2025)',
             dataset='parking_tickets_density',
@@ -130,6 +583,7 @@ class LayersClass:
         ),
     }
     geojson_cache: ClassVar[dict[str, tuple[float, GeoJsonDict]]] = {}
+    filter_school_layer_geojson = staticmethod(filter_school_layer_geojson)
 
     @classmethod
     def get_layer_config(cls, layer_key: str) -> LayerConfig:
@@ -389,6 +843,8 @@ class LayersClass:
         selected_overlays: Optional[Sequence[str]],
         layer_ids: Optional[Sequence[LazyLayerGeoJsonId]],
         current_data: Optional[Sequence[GeoJsonDict | None]],
+        *,
+        excluded_layer_keys: Sequence[str] = (),
     ) -> list[Any]:
         """
         Resolve which lazy overlay payloads should be loaded for a callback update.
@@ -415,9 +871,14 @@ class LayersClass:
             existing_payloads.extend([None] * (len(layer_ids) - len(existing_payloads)))
 
         resolved_payloads: list[Any] = []
+        excluded_keys = set(excluded_layer_keys)
         for layer_id, existing_payload in zip(layer_ids, existing_payloads):
             layer_key = layer_id["layer"]
             spec = cls.get_layer_config(layer_key)
+
+            if layer_key in excluded_keys:
+                resolved_payloads.append(no_update)
+                continue
 
             if spec.name not in selected_overlay_names:
                 resolved_payloads.append(no_update)
@@ -432,6 +893,18 @@ class LayersClass:
             )
 
         return resolved_payloads
+
+    @classmethod
+    def overlay_is_selected(
+        cls,
+        selected_overlays: Optional[Sequence[str]],
+        layer_key: str,
+    ) -> bool:
+        """
+        Return whether a named overlay is currently enabled in the map control.
+        """
+        spec = cls.get_layer_config(layer_key)
+        return spec.name in set(selected_overlays or [])
 
     @classmethod
     def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
