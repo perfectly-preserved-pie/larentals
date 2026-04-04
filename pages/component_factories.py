@@ -837,11 +837,11 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                         tooltip={
                             "placement": "bottom",
                             "always_visible": True,
-                            "transform": "formatWholeNumber",
+                            "transform": "formatStudentCount",
                         },
                     ),
                 ],
-                style={"marginBottom": "18px"},
+                className="school-layer-enrollment-control",
             ),
             dmc.Switch(
                 id=f"{prefix}-charter-switch",

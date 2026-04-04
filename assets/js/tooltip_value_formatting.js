@@ -90,3 +90,21 @@ window.dccFunctions.formatWholeNumber = function(value) {
   }
   return Math.round(value).toLocaleString('en-US');
 }
+
+/**
+ * Formats a whole-number student count with locale separators and a unit label.
+ *
+ * @param {number} value - Enrollment count.
+ * @returns {string} Localized student-count string.
+ */
+window.dccFunctions = window.dccFunctions || {};
+window.dccFunctions.formatStudentCount = function(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    console.error('formatStudentCount expects a finite number as the input:', value);
+    return value;
+  }
+
+  const rounded = Math.round(value);
+  const unit = rounded === 1 ? 'student' : 'students';
+  return `${rounded.toLocaleString('en-US')} ${unit}`;
+}
