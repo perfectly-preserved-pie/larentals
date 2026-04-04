@@ -792,7 +792,7 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                             {"label": value, "value": value}
                             for value in SCHOOL_LAYER_GRADE_BAND_OPTIONS
                         ],
-                        value=[],
+                        value=list(SCHOOL_LAYER_GRADE_BAND_OPTIONS),
                         inline=True,
                         labelStyle={"marginRight": "12px"},
                     ),

@@ -436,6 +436,13 @@ def filter_school_layer_geojson(
         for value in (grade_bands or [])
         if isinstance(value, str) and value.strip()
     }
+    all_grade_bands = {
+        value.strip().casefold()
+        for value in SCHOOL_LAYER_GRADE_BAND_OPTIONS
+    }
+    if selected_bands == all_grade_bands:
+        selected_bands = set()
+
     range_values = list(enrollment_range or [])
     has_enrollment_filter = len(range_values) >= 2
     min_enrollment = float(range_values[0]) if has_enrollment_filter else 0.0
