@@ -42,7 +42,7 @@
         if (!Number.isFinite(numberValue)) {
             return "N/A";
         }
-        return Math.round(numberValue).toLocaleString("en-US");
+        return Math.round(numberValue).toLocaleString("en-US") + " students";
     }
 
     /**
