@@ -112,7 +112,8 @@
      * @returns {{ label: string, value: string }[]} Popup rows for the feature.
      */
     function buildSchoolRows(properties) {
-        return [
+        const hasGrades = Boolean(getTrimmedString(properties.grade_span_display));
+        const rows = [
             {
                 label: "District",
                 value: formatTextValue(properties.district_name),
@@ -120,14 +121,6 @@
             {
                 label: "Address",
                 value: formatTextValue(properties.full_address),
-            },
-            {
-                label: "School Type",
-                value: formatTextValue(properties.school_type),
-            },
-            {
-                label: "School Level",
-                value: formatTextValue(properties.school_level),
             },
             {
                 label: "Grades",
@@ -166,6 +159,28 @@
                 value: buildExternalLink(properties.website_url, "Visit school website"),
             },
         ];
+
+        const classificationRows = [
+            {
+                label: hasGrades ? "Type (dataset)" : "School Type",
+                value: hasGrades
+                    ? `<span class="additional-layer-popup__secondary-value">${formatTextValue(properties.school_type)}</span>`
+                    : formatTextValue(properties.school_type),
+            },
+            {
+                label: hasGrades ? "Level (dataset)" : "School Level",
+                value: hasGrades
+                    ? `<span class="additional-layer-popup__secondary-value">${formatTextValue(properties.school_level)}</span>`
+                    : formatTextValue(properties.school_level),
+            },
+        ];
+
+        if (hasGrades) {
+            rows.push.apply(rows, classificationRows);
+            return rows;
+        }
+
+        return rows.slice(0, 2).concat(classificationRows, rows.slice(2));
     }
 
     /**

@@ -58,6 +58,10 @@
   word-break: break-word;
 }
 
+.additional-layer-popup__secondary-value {
+  color: #6b7280;
+}
+
 .additional-layer-popup__empty {
   padding: 8px 0;
   color: #666;
