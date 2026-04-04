@@ -208,3 +208,55 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
     )
 
     assert len(filtered["features"]) == 1
+
+
+def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> None:
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Franklin High",
+                    "district_name": "Los Angeles Unified",
+                    "school_level": "High",
+                    "grade_bands": ["High"],
+                    "search_text": "franklin high los angeles unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.2, 34.1]},
+            },
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Maple Elementary",
+                    "district_name": "Burbank Unified",
+                    "school_level": "Elementary",
+                    "grade_bands": ["Elementary"],
+                    "search_text": "maple elementary burbank unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.3, 34.2]},
+            },
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Adult Transition Center",
+                    "district_name": "Pasadena Unified",
+                    "school_level": "Adult Education",
+                    "grade_bands": [],
+                    "search_text": "adult transition center pasadena unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.1, 34.15]},
+            },
+        ],
+    }
+
+    filtered = filter_school_layer_geojson(
+        geojson,
+        grade_bands=["Elementary", "Middle", "High"],
+    )
+
+    assert [feature["properties"]["school_name"] for feature in filtered["features"]] == [
+        "Franklin High",
+        "Maple Elementary",
+        "Adult Transition Center",
+    ]

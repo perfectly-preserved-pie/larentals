@@ -33,6 +33,123 @@
     }
 
     /**
+     * Build a subtle convex hull around school-cluster leaves.
+     *
+     * @param {{ properties?: Record<string, unknown> }} clusterFeature Cluster feature from Supercluster.
+     * @param {any} index Cluster index passed by Dash Leaflet.
+     * @returns {L.GeoJSON|null} Convex hull layer or `null`.
+     */
+    function buildSchoolClusterHull(clusterFeature, index) {
+        const clusterId = clusterFeature && clusterFeature.properties && clusterFeature.properties.cluster_id;
+        if (clusterId === null || clusterId === undefined || !index || typeof index.getLeaves !== "function") {
+            return null;
+        }
+
+        const clusterLeaves = index.getLeaves(clusterId, Infinity) || [];
+        if (clusterLeaves.length < 3 || typeof turf === "undefined") {
+            return null;
+        }
+
+        const hullPoints = clusterLeaves
+            .map(function(leaf) {
+                const coords = leaf && leaf.geometry && leaf.geometry.coordinates;
+                if (!Array.isArray(coords) || coords.length < 2) {
+                    return null;
+                }
+                return turf.point([coords[0], coords[1]]);
+            })
+            .filter(Boolean);
+
+        if (hullPoints.length < 3) {
+            return null;
+        }
+
+        const hull = turf.convex(turf.featureCollection(hullPoints));
+        if (!hull) {
+            return null;
+        }
+
+        return L.geoJSON(hull, {
+            interactive: false,
+            style: {
+                color: "#1d6f8d",
+                weight: 2,
+                opacity: 0.9,
+                dashArray: "6 4",
+                fillColor: "#2d8f5b",
+                fillOpacity: 0.08,
+            },
+        });
+    }
+
+    /**
+     * Render school clusters with a distinct pill-shaped icon and hover hull.
+     *
+     * @param {{ properties?: Record<string, unknown> }} feature Cluster feature.
+     * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
+     * @param {any} index Supercluster index.
+     * @param {Record<string, unknown>} context Dash Leaflet runtime context.
+     * @returns {L.Marker} Cluster marker configured for school points.
+     */
+    function drawSchoolCluster(feature, latlng, index, context) {
+        if (!context.currentPolygon) {
+            context.currentPolygon = null;
+        }
+
+        const countLabel = String(
+            feature && feature.properties && (
+                feature.properties.point_count_abbreviated ||
+                feature.properties.point_count ||
+                ""
+            )
+        );
+        const clusterMarker = L.marker(latlng, {
+            icon: L.divIcon({
+                className: "school-cluster-div-icon",
+                html: `
+                    <div class="school-cluster-marker" aria-hidden="true">
+                        <span class="school-cluster-marker__icon">🏫</span>
+                        <span class="school-cluster-marker__count">${countLabel}</span>
+                    </div>
+                `,
+                iconSize: [72, 36],
+                iconAnchor: [36, 18],
+            }),
+        });
+        clusterMarker.feature = feature;
+
+        function showHull() {
+            if (context.currentPolygon) {
+                context.map.removeLayer(context.currentPolygon);
+            }
+
+            const hullLayer = buildSchoolClusterHull(feature, index);
+            if (hullLayer) {
+                hullLayer.addTo(context.map);
+                context.currentPolygon = hullLayer;
+            }
+        }
+
+        function hideHull() {
+            if (context.currentPolygon) {
+                context.map.removeLayer(context.currentPolygon);
+                context.currentPolygon = null;
+            }
+        }
+
+        clusterMarker.on("mouseover", showHull);
+        clusterMarker.on("focus", showHull);
+        clusterMarker.on("mouseout", hideHull);
+        clusterMarker.on("blur", hideHull);
+
+        clusterMarker.on("remove", function() {
+            hideHull();
+        });
+
+        return clusterMarker;
+    }
+
+    /**
      * Create the school marker and bind popup content.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the school.
@@ -65,4 +182,5 @@
     }
 
     registerLayerRenderer("drawSchoolIcon", drawSchoolIcon);
+    registerLayerRenderer("drawSchoolCluster", drawSchoolCluster);
 })();

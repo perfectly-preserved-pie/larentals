@@ -139,6 +139,7 @@
 
 .breakfast-burrito-div-icon,
 .school-div-icon,
+.school-cluster-div-icon,
 .supermarket-div-icon {
   background: transparent;
   border: none;
@@ -208,6 +209,32 @@
 .school-marker__symbol {
   font-size: 12px;
   line-height: 1;
+}
+
+.school-cluster-marker {
+  display: inline-flex;
+  min-width: 60px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d6f8d, #2d8f5b);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.24);
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.school-cluster-marker__icon {
+  font-size: 12px;
+}
+
+.school-cluster-marker__count {
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
 }
 
 .school-layer-map-prompt {

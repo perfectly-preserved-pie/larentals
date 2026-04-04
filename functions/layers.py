@@ -56,6 +56,8 @@ class LayerConfig:
         filepath: Optional on-disk path to the GeoJSON source file.
         loader: Optional callable used to build or fetch GeoJSON data dynamically.
         point_to_layer: JavaScript namespace function used to render point features.
+        cluster_to_layer: Optional JavaScript namespace function used to render
+            clustered point features when superclustering is enabled.
         cluster: Whether the layer should use Dash Leaflet marker clustering.
         zoom_to_bounds_on_click: Whether clicking a feature/cluster should fit its bounds.
         bubbling_mouse_events: Whether layer mouse events should bubble to the map.
@@ -67,6 +69,7 @@ class LayerConfig:
     name: str
     dataset: str
     point_to_layer: str
+    cluster_to_layer: str | None = None
     filepath: str | None = None
     loader: Callable[[], GeoJsonDict] | None = None
     cluster: bool = True
@@ -571,6 +574,7 @@ class LayersClass:
             dataset='schools',
             loader=load_school_layer_geojson_artifact,
             point_to_layer='drawSchoolIcon',
+            cluster_to_layer='drawSchoolCluster',
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
             cache_ttl_seconds=21600,
@@ -740,6 +744,8 @@ class LayersClass:
             bubblingMouseEvents=spec.bubbling_mouse_events,
             pointToLayer=ns(spec.point_to_layer),
         )
+        if spec.cluster_to_layer is not None:
+            geojson_kwargs["clusterToLayer"] = ns(spec.cluster_to_layer)
         if spec.supercluster_options is not None:
             geojson_kwargs["superClusterOptions"] = dict(spec.supercluster_options)
 
@@ -839,6 +845,7 @@ class LayersClass:
             id=cls.layers_control_id(page_key),
             collapsed=True,
             position='topleft',
+            sortLayers=True,
         )
 
     @classmethod
