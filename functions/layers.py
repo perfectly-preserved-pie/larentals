@@ -24,6 +24,24 @@ DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = Path("assets/datasets/schools_socal.geojson"
 DEFAULT_SCHOOL_LAYER_GPKG_PATH = Path("assets/datasets/california_public_schools_2024_25.gpkg")
 DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
 SCHOOL_LAYER_GRADE_BAND_OPTIONS: tuple[str, ...] = ("Elementary", "Middle", "High")
+SCHOOL_LAYER_FUNDING_TYPE_OPTIONS: tuple[str, ...] = (
+    "Directly funded",
+    "Locally funded",
+)
+SCHOOL_LAYER_ASSIST_STATUS_OPTIONS: tuple[str, ...] = (
+    "No Status",
+    "ATSI",
+    "TSI",
+    "CSI Grad",
+    "CSI Low Perform",
+)
+SCHOOL_LAYER_ASSIST_STATUS_LABELS: dict[str, str] = {
+    "No Status": "No additional state support designation",
+    "ATSI": "Targeted support for some student groups",
+    "TSI": "Targeted school improvement support",
+    "CSI Grad": "Comprehensive support for graduation rates",
+    "CSI Low Perform": "Comprehensive support for low performance",
+}
 SCHOOL_LAYER_LEVEL_OPTIONS: tuple[str, ...] = (
     "Adult Education",
     "Not reported",
@@ -202,6 +220,22 @@ def _normalize_school_url(value: object) -> str | None:
     return f"https://{normalized.lstrip('/')}"
 
 
+def _normalize_school_date(value: object) -> str | None:
+    """
+    Normalize source dates into a compact YYYY-MM-DD display string.
+    """
+    if value is None or pd.isna(value):
+        return None
+
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d")
+
+    normalized = _normalize_school_text(value)
+    if normalized is None:
+        return None
+    return normalized.split("T")[0]
+
+
 def build_school_preview_url(longitude: float | None, latitude: float | None) -> str | None:
     """
     Build a public ArcGIS World Imagery preview around a school point.
@@ -249,7 +283,10 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
         "FundingType",
         "Magnet",
         "TitleIStatus",
+        "DASS",
+        "AssistStatusESSA",
         "Status",
+        "OpenDate",
         "Street",
         "City",
         "Zip",
@@ -300,6 +337,9 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
     working["magnet_label"] = working["Magnet"].map(_school_flag_label)
     working["title_i_label"] = working["TitleIStatus"].map(_school_flag_label)
     working["funding_type"] = working["FundingType"].map(_normalize_school_text)
+    working["assist_status_essa"] = working["AssistStatusESSA"].map(_normalize_school_text)
+    working["dass_flag"] = working["DASS"].map(_school_flag_label)
+    working["open_date"] = working["OpenDate"].map(_normalize_school_date)
     working["locale"] = working["Locale"].map(_normalize_school_text)
     working["website_url"] = working["Website"].map(_normalize_school_url)
     working["street"] = working["Street"].map(_normalize_school_text)
@@ -361,6 +401,9 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
         "magnet_label",
         "title_i_label",
         "funding_type",
+        "assist_status_essa",
+        "dass_flag",
+        "open_date",
         "locale",
         "website_url",
         "full_address",
@@ -411,6 +454,9 @@ def filter_school_layer_geojson(
     search_text: str | None = None,
     school_levels: Sequence[str] | None = None,
     grade_bands: Sequence[str] | None = None,
+    funding_types: Sequence[str] | None = None,
+    assist_statuses: Sequence[str] | None = None,
+    dass_values: Sequence[str] | None = None,
     enrollment_range: Sequence[float] | None = None,
     charter_only: bool = False,
     magnet_only: bool = False,
@@ -439,6 +485,21 @@ def filter_school_layer_geojson(
     }
     if selected_bands == all_grade_bands:
         selected_bands = set()
+    selected_funding_types = {
+        value.strip().casefold()
+        for value in (funding_types or [])
+        if isinstance(value, str) and value.strip()
+    }
+    selected_assist_statuses = {
+        value.strip().casefold()
+        for value in (assist_statuses or [])
+        if isinstance(value, str) and value.strip()
+    }
+    selected_dass_values = {
+        value.strip().casefold()
+        for value in (dass_values or [])
+        if isinstance(value, str) and value.strip()
+    }
 
     range_values = list(enrollment_range or [])
     has_enrollment_filter = len(range_values) >= 2
@@ -469,6 +530,21 @@ def filter_school_layer_geojson(
                 if value
             }
             if feature_bands.isdisjoint(selected_bands):
+                continue
+
+        if selected_funding_types:
+            funding_type_value = str(properties.get("funding_type") or "").strip().casefold()
+            if funding_type_value not in selected_funding_types:
+                continue
+
+        if selected_assist_statuses:
+            assist_status_value = str(properties.get("assist_status_essa") or "").strip().casefold()
+            if assist_status_value not in selected_assist_statuses:
+                continue
+
+        if selected_dass_values:
+            dass_value = str(properties.get("dass_flag") or "").strip().casefold()
+            if dass_value not in selected_dass_values:
                 continue
 
         enrollment_value = properties.get("enrollment_total")

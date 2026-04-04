@@ -46,6 +46,29 @@
     }
 
     /**
+     * Format the ESSA/state support designation into human-readable text.
+     *
+     * @param {unknown} value Raw support designation.
+     * @returns {string} Friendly label or `N/A`.
+     */
+    function formatAssistStatus(value) {
+        const normalized = getTrimmedString(value);
+        if (!normalized) {
+            return "N/A";
+        }
+
+        const labels = {
+            "No Status": "No additional state support designation",
+            "ATSI": "Targeted support for some student groups",
+            "TSI": "Targeted school improvement support",
+            "CSI Grad": "Comprehensive support for graduation rates",
+            "CSI Low Perform": "Comprehensive support for low performance",
+        };
+
+        return escapeHtml(labels[normalized] || normalized);
+    }
+
+    /**
      * Build the student-support summary row.
      *
      * @param {Record<string, unknown>} properties School feature properties.
@@ -69,6 +92,39 @@
         });
 
         return fragments.length ? fragments.join(" | ") : "N/A";
+    }
+
+    /**
+     * Build a friendlier support-profile summary from the student-support metrics.
+     *
+     * @param {Record<string, unknown>} properties School feature properties.
+     * @returns {string} Profile label or `N/A`.
+     */
+    function buildSupportProfile(properties) {
+        const thresholds = [
+            Number(properties.frpm_pct) >= 60,
+            Number(properties.sed_pct) >= 60,
+            Number(properties.el_pct) >= 20,
+            Number(properties.swd_pct) >= 15,
+        ];
+        const highNeedSignals = thresholds.filter(Boolean).length;
+
+        if (highNeedSignals >= 2) {
+            return "Higher-needs student population";
+        }
+        if (highNeedSignals === 1) {
+            return "Targeted support concentration";
+        }
+
+        const hasAnyMetric = [
+            properties.frpm_pct,
+            properties.sed_pct,
+            properties.el_pct,
+            properties.swd_pct,
+        ].some(function(value) {
+            return Number.isFinite(Number(value));
+        });
+        return hasAnyMetric ? "General student support profile" : "N/A";
     }
 
     /**
@@ -131,6 +187,10 @@
                 value: formatEnrollment(properties.enrollment_total),
             },
             {
+                label: "Funding Type",
+                value: formatTextValue(properties.funding_type),
+            },
+            {
                 label: "Charter",
                 value: formatTextValue(properties.charter_label),
             },
@@ -143,11 +203,27 @@
                 value: formatTextValue(properties.title_i_label),
             },
             {
+                label: "State Support Status",
+                value: formatAssistStatus(properties.assist_status_essa),
+            },
+            {
+                label: "Alternative Accountability Campus",
+                value: formatTextValue(properties.dass_flag),
+            },
+            {
+                label: "Opened",
+                value: formatTextValue(properties.open_date),
+            },
+            {
                 label: "Locale",
                 value: formatTextValue(properties.locale),
             },
             {
-                label: "Student Support",
+                label: "Support Profile",
+                value: buildSupportProfile(properties),
+            },
+            {
+                label: "Support Metrics",
                 value: buildSchoolSupportSummary(properties),
             },
             {
