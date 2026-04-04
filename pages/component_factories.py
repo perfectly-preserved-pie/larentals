@@ -785,21 +785,6 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
             ),
             html.Div(
                 [
-                    html.Label("Special school types", className="form-label"),
-                    dcc.Dropdown(
-                        id=f"{prefix}-level-dropdown",
-                        multi=True,
-                        options=[
-                            {"label": value, "value": value}
-                            for value in SCHOOL_LAYER_LEVEL_OPTIONS
-                        ],
-                        placeholder="Preschool, secondary, adult ed, etc.",
-                    ),
-                ],
-                style={"marginBottom": "14px"},
-            ),
-            html.Div(
-                [
                     html.Label("Grade bands", className="form-label"),
                     dcc.Checklist(
                         id=f"{prefix}-grade-band-checklist",
@@ -812,6 +797,21 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                         labelStyle={"marginRight": "12px"},
                     ),
                 ]
+            ),
+            html.Div(
+                [
+                    html.Label("Special school types", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-level-dropdown",
+                        multi=True,
+                        options=[
+                            {"label": value, "value": value}
+                            for value in SCHOOL_LAYER_LEVEL_OPTIONS
+                        ],
+                        placeholder="Preschool, secondary, adult ed, etc.",
+                    ),
+                ],
+                style={"marginTop": "14px", "marginBottom": "14px"},
             ),
         ]
     )
