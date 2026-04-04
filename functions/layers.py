@@ -26,9 +26,6 @@ DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
 SCHOOL_LAYER_GRADE_BAND_OPTIONS: tuple[str, ...] = ("Elementary", "Middle", "High")
 SCHOOL_LAYER_LEVEL_OPTIONS: tuple[str, ...] = (
     "Adult Education",
-    "Elementary",
-    "High",
-    "Middle",
     "Not reported",
     "Other",
     "Preschool",

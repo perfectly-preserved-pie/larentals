@@ -785,7 +785,7 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
             ),
             html.Div(
                 [
-                    html.Label("School level", className="form-label"),
+                    html.Label("Special school types", className="form-label"),
                     dcc.Dropdown(
                         id=f"{prefix}-level-dropdown",
                         multi=True,
@@ -793,7 +793,7 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                             {"label": value, "value": value}
                             for value in SCHOOL_LAYER_LEVEL_OPTIONS
                         ],
-                        placeholder="Any school level",
+                        placeholder="Preschool, secondary, adult ed, etc.",
                     ),
                 ],
                 style={"marginBottom": "14px"},
