@@ -767,10 +767,6 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     search_children = html.Div(
         [
             html.Div(
-                "These controls filter school points only. They do not filter listings.",
-                className="small text-muted mb-3",
-            ),
-            html.Div(
                 [
                     html.Label("Search school or district", className="form-label"),
                     dcc.Input(
@@ -880,9 +876,9 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     return dbc.Collapse(
         dbc.Card(
             [
-                html.H6("School Layer Filters", className="mb-1"),
+                html.H6("School Filters", className="mb-1"),
                 html.P(
-                    "Turn on the Schools overlay in the map control to browse and refine nearby campuses.",
+                    "These controls filter school points only. They do not filter listings.",
                     className="card-text small text-muted mb-3",
                 ),
                 dbc.Accordion(
