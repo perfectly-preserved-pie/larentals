@@ -210,8 +210,115 @@
   line-height: 1;
 }
 
+.school-layer-map-prompt {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1200;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.school-layer-map-prompt--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.school-layer-map-prompt__card {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 420px;
+  padding: 12px 14px;
+  border: 1px solid rgba(27, 94, 69, 0.32);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.school-layer-map-prompt__content {
+  margin-bottom: 10px;
+}
+
+.school-layer-map-prompt__title {
+  font-weight: 700;
+  color: #174e3b;
+}
+
+.school-layer-map-prompt__copy {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: #4b5563;
+}
+
+.school-layer-map-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.school-layer-map-prompt__button {
+  min-width: 120px;
+}
+
+.school-layer-map-prompt__dismiss {
+  padding-left: 0;
+  color: #536274;
+  text-decoration: none;
+}
+
+.school-layer-panel-card {
+  border: 1px solid rgba(27, 94, 69, 0.16);
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.06);
+  scroll-margin-top: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.school-layer-panel-card--active {
+  border-color: rgba(27, 94, 69, 0.45);
+  box-shadow: 0 0 0 3px rgba(48, 146, 111, 0.12), 0 12px 28px rgba(16, 24, 40, 0.1);
+}
+
+.school-layer-panel-card--spotlight {
+  animation: school-layer-panel-pulse 1.8s ease;
+}
+
+@keyframes school-layer-panel-pulse {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(48, 146, 111, 0.28), 0 12px 28px rgba(16, 24, 40, 0.08);
+  }
+
+  35% {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 8px rgba(48, 146, 111, 0), 0 18px 30px rgba(16, 24, 40, 0.14);
+  }
+
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(48, 146, 111, 0), 0 6px 20px rgba(16, 24, 40, 0.06);
+  }
+}
+
 /* Desktop (lg ≥ 992px): retain previous fixed heights/scroll */
 @media (min-width: 992px) {
+  .school-layer-map-prompt {
+    left: 18px;
+    right: auto;
+    width: min(360px, calc(100% - 36px));
+  }
+
+  .school-layer-map-prompt__card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
   .options-col {
     height: 100vh;
     overflow-y: auto;

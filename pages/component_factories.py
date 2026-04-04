@@ -598,6 +598,7 @@ def build_map_card(
     *,
     page_type: str,
     map_component: Any,
+    overlay_children: Sequence[Any] | None = None,
     body_class_name: str | None = None,
     card_class_name: str | None = None,
 ) -> dbc.Card:
@@ -607,40 +608,45 @@ def build_map_card(
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
         map_component: Prebuilt map component to render.
+        overlay_children: Optional floating UI layered above the map.
         body_class_name: Optional body class string.
         card_class_name: Optional card class string.
 
     Returns:
         A Bootstrap card containing the map and loading overlay.
     """
-    body = dbc.CardBody(
+    body_children: list[Any] = [
         html.Div(
-            [
-                html.Div(
-                    id=f"{page_type}-map-spinner",
-                    children=[
-                        dbc.Spinner(size="lg"),
-                        html.P(
-                            "Loading map...",
-                            style={
-                                "marginTop": "10px",
-                                "marginLeft": "5px",
-                                "color": "white",
-                            },
-                        ),
-                    ],
+            id=f"{page_type}-map-spinner",
+            children=[
+                dbc.Spinner(size="lg"),
+                html.P(
+                    "Loading map...",
                     style={
-                        "position": "absolute",
-                        "inset": "0",
-                        "display": "flex",
-                        "alignItems": "center",
-                        "justifyContent": "center",
-                        "backgroundColor": "rgba(0, 0, 0, 0.25)",
-                        "zIndex": "10000",
+                        "marginTop": "10px",
+                        "marginLeft": "5px",
+                        "color": "white",
                     },
                 ),
-                html.Div(map_component, style={"position": "relative", "zIndex": "0"}),
             ],
+            style={
+                "position": "absolute",
+                "inset": "0",
+                "display": "flex",
+                "alignItems": "center",
+                "justifyContent": "center",
+                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                "zIndex": "10000",
+            },
+        ),
+        html.Div(map_component, style={"position": "relative", "zIndex": "0"}),
+    ]
+    if overlay_children:
+        body_children.extend(overlay_children)
+
+    body = dbc.CardBody(
+        html.Div(
+            body_children,
             style={"position": "relative"},
         ),
         className=body_class_name,
@@ -686,6 +692,63 @@ def build_filter_card(
             accordion,
         ],
         body=True,
+    )
+
+
+def build_school_layer_map_prompt(page_type: str) -> html.Div:
+    """
+    Build the floating map prompt that points users to school-layer controls.
+
+    Args:
+        page_type: Page key such as ``buy`` or ``lease``.
+
+    Returns:
+        An absolutely positioned prompt container layered above the map.
+    """
+    prefix = f"{page_type}-school-layer"
+
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            "School filters are ready",
+                            className="school-layer-map-prompt__title",
+                        ),
+                        html.Div(
+                            "These controls refine school points only, not home listings.",
+                            className="school-layer-map-prompt__copy",
+                        ),
+                    ],
+                    className="school-layer-map-prompt__content",
+                ),
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Show filters",
+                            id=f"{prefix}-show-filters-button",
+                            color="success",
+                            size="sm",
+                            className="school-layer-map-prompt__button",
+                        ),
+                        dbc.Button(
+                            "Dismiss",
+                            id=f"{prefix}-dismiss-prompt-button",
+                            color="link",
+                            size="sm",
+                            className="school-layer-map-prompt__dismiss",
+                        ),
+                    ],
+                    className="school-layer-map-prompt__actions",
+                ),
+            ],
+            className="school-layer-map-prompt__card",
+        ),
+        id=f"{prefix}-map-prompt",
+        className="school-layer-map-prompt",
+        role="status",
+        **{"aria-live": "polite"},
     )
 
 
@@ -844,8 +907,9 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                     className="options-accordion",
                 ),
             ],
+            id=f"{prefix}-controls-card",
             body=True,
-            className="mt-3",
+            className="mt-3 school-layer-panel-card",
         ),
         id=f"{prefix}-controls-collapse",
         is_open=False,
@@ -1017,6 +1081,7 @@ def build_page_parts(
     last_updated: str | None,
     filter_items: Sequence[FilterSection],
     map_component: Any,
+    map_overlay_children: Sequence[Any] | None = None,
 ) -> PageParts:
     """
     Assemble the top-level cards consumed by a page layout.
@@ -1026,6 +1091,7 @@ def build_page_parts(
         last_updated: Optional display date for the dataset refresh.
         filter_items: Accordion sections for the sidebar.
         map_component: Prebuilt map component for the page.
+        map_overlay_children: Optional floating components rendered over the map.
 
     Returns:
         A ``PageParts`` bundle with title, filter, and map cards.
@@ -1044,6 +1110,7 @@ def build_page_parts(
         map_card=build_map_card(
             page_type=config.page_type,
             map_component=map_component,
+            overlay_children=map_overlay_children,
             body_class_name=config.map_body_class_name,
             card_class_name=config.map_card_class_name,
         ),

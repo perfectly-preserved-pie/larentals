@@ -13,6 +13,7 @@ from .component_factories import (
     build_page_parts,
     build_range_filter,
     build_school_layer_filter_panel,
+    build_school_layer_map_prompt,
     build_subtype_filter,
     build_year_built_filter,
 )
@@ -143,6 +144,7 @@ class BuyComponents(BaseClass):
             last_updated=self.last_updated,
             filter_items=self._build_filter_sections(),
             map_component=self._build_map_component(),
+            map_overlay_children=[build_school_layer_map_prompt(self.page_type)],
         )
         return PageParts(
             title_card=parts.title_card,
