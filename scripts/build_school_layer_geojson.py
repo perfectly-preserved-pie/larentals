@@ -30,7 +30,6 @@ DEFAULT_SCHOOL_COLUMNS: tuple[str, ...] = (
     "GradeHigh",
     "Charter",
     "FundingType",
-    "Virtual",
     "Magnet",
     "TitleIStatus",
     "Status",

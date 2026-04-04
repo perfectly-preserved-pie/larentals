@@ -856,14 +856,6 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                 style={"marginBottom": "10px"},
             ),
             dmc.Switch(
-                id=f"{prefix}-virtual-switch",
-                label="Only virtual schools",
-                checked=False,
-                size="sm",
-                color="teal",
-                style={"marginBottom": "10px"},
-            ),
-            dmc.Switch(
                 id=f"{prefix}-title-i-switch",
                 label="Only Title I schools",
                 checked=False,

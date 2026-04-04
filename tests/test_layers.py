@@ -33,7 +33,6 @@ def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normaliz
             "GradeHigh": ["12", "12"],
             "Charter": ["N", "Y"],
             "FundingType": ["District", "District"],
-            "Virtual": ["N", "N"],
             "Magnet": ["Y", "N"],
             "TitleIStatus": ["Y", "N"],
             "Status": ["Active", "Closed"],
@@ -120,7 +119,6 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "enrollment_total": 1800,
                     "charter_flag": 0,
                     "magnet_flag": 1,
-                    "virtual_flag": 0,
                     "title_i_flag": 1,
                     "search_text": "franklin high los angeles unified",
                 },
@@ -136,7 +134,6 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "enrollment_total": 450,
                     "charter_flag": 1,
                     "magnet_flag": 0,
-                    "virtual_flag": 0,
                     "title_i_flag": 0,
                     "search_text": "maple elementary burbank unified",
                 },
@@ -145,16 +142,15 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
             {
                 "type": "Feature",
                 "properties": {
-                    "school_name": "Virtual Academy",
+                    "school_name": "Pasadena Secondary Academy",
                     "district_name": "Pasadena Unified",
                     "school_level": "Secondary",
                     "grade_bands": ["Middle", "High"],
                     "enrollment_total": None,
                     "charter_flag": 0,
                     "magnet_flag": 0,
-                    "virtual_flag": 1,
                     "title_i_flag": 1,
-                    "search_text": "virtual academy pasadena unified",
+                    "search_text": "pasadena secondary academy pasadena unified",
                 },
                 "geometry": {"type": "Point", "coordinates": [-118.1, 34.15]},
             },
@@ -169,7 +165,6 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
         enrollment_range=[0, 3000],
         charter_only=False,
         magnet_only=True,
-        virtual_only=False,
         title_i_only=True,
     )
 
@@ -185,16 +180,15 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
             {
                 "type": "Feature",
                 "properties": {
-                    "school_name": "Virtual Academy",
+                    "school_name": "Pasadena Secondary Academy",
                     "district_name": "Pasadena Unified",
                     "school_level": "Secondary",
                     "grade_bands": ["Middle", "High"],
                     "enrollment_total": None,
                     "charter_flag": 0,
                     "magnet_flag": 0,
-                    "virtual_flag": 1,
                     "title_i_flag": 1,
-                    "search_text": "virtual academy pasadena unified",
+                    "search_text": "pasadena secondary academy pasadena unified",
                 },
                 "geometry": {"type": "Point", "coordinates": [-118.1, 34.15]},
             }
@@ -204,7 +198,7 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
     filtered = filter_school_layer_geojson(
         geojson,
         enrollment_range=[0, 12000],
-        virtual_only=True,
+        title_i_only=True,
     )
 
     assert len(filtered["features"]) == 1

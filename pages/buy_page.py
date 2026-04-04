@@ -316,7 +316,6 @@ def update_buy_school_layer_controls_card_class(
   Input("buy-school-layer-enrollment-slider", "value"),
   Input("buy-school-layer-charter-switch", "checked"),
   Input("buy-school-layer-magnet-switch", "checked"),
-  Input("buy-school-layer-virtual-switch", "checked"),
   Input("buy-school-layer-title-i-switch", "checked"),
   prevent_initial_call=True,
 )
@@ -328,7 +327,6 @@ def update_buy_school_layer(
   enrollment_range: list[float] | None,
   charter_only: bool | None,
   magnet_only: bool | None,
-  virtual_only: bool | None,
   title_i_only: bool | None,
 ) -> dict | object:
   """
@@ -346,7 +344,6 @@ def update_buy_school_layer(
     enrollment_range=enrollment_range,
     charter_only=bool(charter_only),
     magnet_only=bool(magnet_only),
-    virtual_only=bool(virtual_only),
     title_i_only=bool(title_i_only),
   )
 

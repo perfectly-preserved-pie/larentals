@@ -247,7 +247,6 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
         "GradeHigh",
         "Charter",
         "FundingType",
-        "Virtual",
         "Magnet",
         "TitleIStatus",
         "Status",
@@ -296,11 +295,9 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
     )
     working["charter_flag"] = working["Charter"].map(_normalize_school_flag)
     working["magnet_flag"] = working["Magnet"].map(_normalize_school_flag)
-    working["virtual_flag"] = working["Virtual"].map(_normalize_school_flag)
     working["title_i_flag"] = working["TitleIStatus"].map(_normalize_school_flag)
     working["charter_label"] = working["Charter"].map(_school_flag_label)
     working["magnet_label"] = working["Magnet"].map(_school_flag_label)
-    working["virtual_label"] = working["Virtual"].map(_school_flag_label)
     working["title_i_label"] = working["TitleIStatus"].map(_school_flag_label)
     working["funding_type"] = working["FundingType"].map(_normalize_school_text)
     working["locale"] = working["Locale"].map(_normalize_school_text)
@@ -359,11 +356,9 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
         "grade_bands",
         "charter_flag",
         "magnet_flag",
-        "virtual_flag",
         "title_i_flag",
         "charter_label",
         "magnet_label",
-        "virtual_label",
         "title_i_label",
         "funding_type",
         "locale",
@@ -419,7 +414,6 @@ def filter_school_layer_geojson(
     enrollment_range: Sequence[float] | None = None,
     charter_only: bool = False,
     magnet_only: bool = False,
-    virtual_only: bool = False,
     title_i_only: bool = False,
 ) -> GeoJsonDict:
     """
@@ -497,8 +491,6 @@ def filter_school_layer_geojson(
         if charter_only and _normalize_school_flag(properties.get("charter_flag")) != 1:
             continue
         if magnet_only and _normalize_school_flag(properties.get("magnet_flag")) != 1:
-            continue
-        if virtual_only and _normalize_school_flag(properties.get("virtual_flag")) != 1:
             continue
         if title_i_only and _normalize_school_flag(properties.get("title_i_flag")) != 1:
             continue

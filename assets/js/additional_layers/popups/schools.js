@@ -139,10 +139,6 @@
                 value: formatTextValue(properties.magnet_label),
             },
             {
-                label: "Virtual",
-                value: formatTextValue(properties.virtual_label),
-            },
-            {
                 label: "Title I",
                 value: formatTextValue(properties.title_i_label),
             },
