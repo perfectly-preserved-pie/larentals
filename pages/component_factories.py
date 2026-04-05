@@ -861,7 +861,7 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                         multi=True,
                         options=[
                             {"label": value, "value": value}
-                            for value in SCHOOL_LAYER_LEVEL_OPTIONS
+                            for value in sorted(SCHOOL_LAYER_LEVEL_OPTIONS)
                         ],
                         placeholder="Preschool, secondary, adult ed, etc.",
                     ),
