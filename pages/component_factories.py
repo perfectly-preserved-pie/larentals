@@ -829,8 +829,11 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                         id=f"{prefix}-grade-band-checklist",
                         multi=True,
                         options=[
-                            {"label": value, "value": value}
-                            for value in SCHOOL_LAYER_GRADE_BAND_OPTIONS
+                            {"label": f"{value} School", "value": value}
+                            for value in sorted(
+                                SCHOOL_LAYER_GRADE_BAND_OPTIONS,
+                                key=lambda value: f"{value} School",
+                            )
                         ],
                         value=[],
                         placeholder="Any grade band",
