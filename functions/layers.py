@@ -115,6 +115,17 @@ def _normalize_school_flag(value: object) -> int | None:
     """
     Normalize common `Y`/`N` flag values into integers for GeoJSON properties.
     """
+    if value is None or pd.isna(value):
+        return None
+
+    if isinstance(value, bool):
+        return 1 if value else 0
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if value == 1:
+            return 1
+        if value == 0:
+            return 0
+
     normalized = _normalize_school_text(value)
     if normalized is None:
         return None

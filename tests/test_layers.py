@@ -288,6 +288,38 @@ def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened()
     ]
 
 
+def test_filter_school_layer_geojson_accepts_numeric_flag_values() -> None:
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Hamilton Magnet",
+                    "district_name": "Los Angeles Unified",
+                    "school_level": "High",
+                    "grade_bands": ["High"],
+                    "magnet_flag": 1.0,
+                    "title_i_flag": 1.0,
+                    "charter_flag": 0.0,
+                    "search_text": "hamilton magnet los angeles unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.4, 34.04]},
+            }
+        ],
+    }
+
+    filtered = filter_school_layer_geojson(
+        geojson,
+        magnet_only=True,
+        title_i_only=True,
+    )
+
+    assert [feature["properties"]["school_name"] for feature in filtered["features"]] == [
+        "Hamilton Magnet"
+    ]
+
+
 def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range() -> None:
     geojson = {
         "type": "FeatureCollection",
