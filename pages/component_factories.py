@@ -825,17 +825,33 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
             html.Div(
                 [
                     html.Label("Grade bands", className="form-label"),
-                    dcc.Checklist(
+                    dcc.Dropdown(
                         id=f"{prefix}-grade-band-checklist",
+                        multi=True,
                         options=[
                             {"label": value, "value": value}
                             for value in SCHOOL_LAYER_GRADE_BAND_OPTIONS
                         ],
-                        value=list(SCHOOL_LAYER_GRADE_BAND_OPTIONS),
-                        inline=True,
-                        labelStyle={"marginRight": "12px"},
+                        value=[],
+                        placeholder="Any grade band",
                     ),
                 ]
+            ),
+            html.Div(
+                [
+                    html.Label("Early grades", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-early-grades-checklist",
+                        multi=True,
+                        options=[
+                            {"label": "Transitional Kindergarten (TK)", "value": "TK"},
+                            {"label": "Kindergarten", "value": "Kindergarten"},
+                        ],
+                        value=[],
+                        placeholder="Any early grade offering",
+                    ),
+                ],
+                style={"marginTop": "14px"},
             ),
             html.Div(
                 [
@@ -896,6 +912,14 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
 
     program_children = html.Div(
         [
+            dmc.Switch(
+                id=f"{prefix}-recently-opened-switch",
+                label="Only campuses opened since 2018",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "14px"},
+            ),
             html.Div(
                 [
                     build_inline_help_label(

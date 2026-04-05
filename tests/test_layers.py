@@ -31,6 +31,8 @@ def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normaliz
             "SchoolLevel": ["High", "High"],
             "GradeLow": ["09", "09"],
             "GradeHigh": ["12", "12"],
+            "GradeTK": [0, 0],
+            "GradeKG": [0, 0],
             "Charter": ["N", "Y"],
             "FundingType": ["District", "District"],
             "Magnet": ["Y", "N"],
@@ -67,6 +69,9 @@ def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normaliz
     assert properties["assist_status_essa"] == "ATSI"
     assert properties["dass_flag"] == "No"
     assert properties["open_date"] == "2006-08-28"
+    assert properties["offers_tk_flag"] is False
+    assert properties["offers_kindergarten_flag"] is False
+    assert properties["recently_opened_flag"] is False
     assert properties["website_url"] == "https://franklinhs.example.edu"
 
 
@@ -79,6 +84,8 @@ def test_build_school_layer_geojson_from_gdf_reprojects_coordinates_to_wgs84() -
             "SchoolLevel": ["High"],
             "GradeLow": ["09"],
             "GradeHigh": ["12"],
+            "GradeTK": [0],
+            "GradeKG": [0],
             "Charter": ["N"],
             "FundingType": ["District"],
             "Magnet": ["N"],
@@ -124,8 +131,11 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "district_name": "Los Angeles Unified",
                     "school_level": "High",
                     "grade_bands": ["High"],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": False,
                     "funding_type": "Directly funded",
                     "assist_status_essa": "ATSI",
+                    "recently_opened_flag": False,
                     "enrollment_total": 1800,
                     "charter_flag": 0,
                     "magnet_flag": 1,
@@ -141,8 +151,11 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "district_name": "Burbank Unified",
                     "school_level": "Elementary",
                     "grade_bands": ["Elementary"],
+                    "offers_tk_flag": True,
+                    "offers_kindergarten_flag": True,
                     "funding_type": "Locally funded",
                     "assist_status_essa": "No Status",
+                    "recently_opened_flag": True,
                     "enrollment_total": 450,
                     "charter_flag": 1,
                     "magnet_flag": 0,
@@ -158,8 +171,11 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "district_name": "Pasadena Unified",
                     "school_level": "Secondary",
                     "grade_bands": ["Middle", "High"],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": False,
                     "funding_type": "Directly funded",
                     "assist_status_essa": "TSI",
+                    "recently_opened_flag": True,
                     "enrollment_total": None,
                     "charter_flag": 0,
                     "magnet_flag": 0,
@@ -176,6 +192,7 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
         search_text="unified",
         school_levels=["High", "Secondary"],
         grade_bands=["High"],
+        early_grades=[],
         funding_types=["Directly funded"],
         assist_statuses=["ATSI", "TSI"],
         enrollment_range=[0, 3000],
@@ -186,6 +203,88 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
 
     assert [feature["properties"]["school_name"] for feature in filtered["features"]] == [
         "Franklin High"
+    ]
+
+
+def test_build_school_layer_geojson_from_gdf_derives_early_grades_and_recent_open_flag() -> None:
+    schools = gpd.GeoDataFrame(
+        {
+            "SchoolName": ["Sunrise Academy"],
+            "DistrictName": ["Glendale Unified"],
+            "SchoolType": ["Elementary"],
+            "SchoolLevel": ["Elementary"],
+            "GradeLow": ["TK"],
+            "GradeHigh": ["05"],
+            "GradeTK": [120],
+            "GradeKG": [118],
+            "Charter": ["N"],
+            "FundingType": ["District"],
+            "Magnet": ["N"],
+            "TitleIStatus": ["Y"],
+            "AssistStatusESSA": ["No Status"],
+            "DASS": ["N"],
+            "Status": ["Active"],
+            "OpenDate": ["2021-08-16T00:00:00.0Z"],
+        },
+        geometry=gpd.points_from_xy([-118.25], [34.14]),
+        crs="EPSG:4326",
+    )
+
+    geojson = build_school_layer_geojson_from_gdf(schools)
+
+    properties = geojson["features"][0]["properties"]
+    assert properties["offers_tk_flag"] is True
+    assert properties["offers_kindergarten_flag"] is True
+    assert properties["recently_opened_flag"] is True
+
+
+def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened() -> None:
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Sunrise Academy",
+                    "district_name": "Glendale Unified",
+                    "school_level": "Elementary",
+                    "grade_bands": ["Elementary"],
+                    "offers_tk_flag": True,
+                    "offers_kindergarten_flag": True,
+                    "funding_type": "District",
+                    "assist_status_essa": "No Status",
+                    "recently_opened_flag": True,
+                    "search_text": "sunrise academy glendale unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.25, 34.14]},
+            },
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Legacy Elementary",
+                    "district_name": "Glendale Unified",
+                    "school_level": "Elementary",
+                    "grade_bands": ["Elementary"],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": True,
+                    "funding_type": "District",
+                    "assist_status_essa": "No Status",
+                    "recently_opened_flag": False,
+                    "search_text": "legacy elementary glendale unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.26, 34.13]},
+            },
+        ],
+    }
+
+    filtered = filter_school_layer_geojson(
+        geojson,
+        early_grades=["TK"],
+        recently_opened_only=True,
+    )
+
+    assert [feature["properties"]["school_name"] for feature in filtered["features"]] == [
+        "Sunrise Academy"
     ]
 
 
@@ -200,8 +299,11 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
                     "district_name": "Pasadena Unified",
                     "school_level": "Secondary",
                     "grade_bands": ["Middle", "High"],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": False,
                     "funding_type": "Directly funded",
                     "assist_status_essa": "TSI",
+                    "recently_opened_flag": False,
                     "enrollment_total": None,
                     "charter_flag": 0,
                     "magnet_flag": 0,
@@ -233,8 +335,11 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
                     "district_name": "Los Angeles Unified",
                     "school_level": "High",
                     "grade_bands": ["High"],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": False,
                     "funding_type": "Directly funded",
                     "assist_status_essa": "No Status",
+                    "recently_opened_flag": False,
                     "search_text": "franklin high los angeles unified",
                 },
                 "geometry": {"type": "Point", "coordinates": [-118.2, 34.1]},
@@ -246,8 +351,11 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
                     "district_name": "Burbank Unified",
                     "school_level": "Elementary",
                     "grade_bands": ["Elementary"],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": True,
                     "funding_type": "Locally funded",
                     "assist_status_essa": "ATSI",
+                    "recently_opened_flag": False,
                     "search_text": "maple elementary burbank unified",
                 },
                 "geometry": {"type": "Point", "coordinates": [-118.3, 34.2]},
@@ -259,8 +367,11 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
                     "district_name": "Pasadena Unified",
                     "school_level": "Adult Education",
                     "grade_bands": [],
+                    "offers_tk_flag": False,
+                    "offers_kindergarten_flag": False,
                     "funding_type": "Directly funded",
                     "assist_status_essa": "No Status",
+                    "recently_opened_flag": False,
                     "search_text": "adult transition center pasadena unified",
                 },
                 "geometry": {"type": "Point", "coordinates": [-118.1, 34.15]},

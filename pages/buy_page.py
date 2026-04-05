@@ -313,6 +313,7 @@ def update_buy_school_layer_controls_card_class(
   Input("buy-school-layer-search-input", "value"),
   Input("buy-school-layer-level-dropdown", "value"),
   Input("buy-school-layer-grade-band-checklist", "value"),
+  Input("buy-school-layer-early-grades-checklist", "value"),
   Input("buy-school-layer-funding-type-dropdown", "value"),
   Input("buy-school-layer-assist-status-dropdown", "value"),
   Input("buy-school-layer-dass-dropdown", "value"),
@@ -320,6 +321,7 @@ def update_buy_school_layer_controls_card_class(
   Input("buy-school-layer-charter-switch", "checked"),
   Input("buy-school-layer-magnet-switch", "checked"),
   Input("buy-school-layer-title-i-switch", "checked"),
+  Input("buy-school-layer-recently-opened-switch", "checked"),
   prevent_initial_call=True,
 )
 def update_buy_school_layer(
@@ -327,6 +329,7 @@ def update_buy_school_layer(
   search_text: str | None,
   school_levels: list[str] | None,
   grade_bands: list[str] | None,
+  early_grades: list[str] | None,
   funding_types: list[str] | None,
   assist_statuses: list[str] | None,
   dass_values: list[str] | None,
@@ -334,6 +337,7 @@ def update_buy_school_layer(
   charter_only: bool | None,
   magnet_only: bool | None,
   title_i_only: bool | None,
+  recently_opened_only: bool | None,
 ) -> dict | object:
   """
   Filter the school overlay from the cached raw GeoJSON payload.
@@ -347,6 +351,7 @@ def update_buy_school_layer(
     search_text=search_text,
     school_levels=school_levels,
     grade_bands=grade_bands,
+    early_grades=early_grades,
     funding_types=funding_types,
     assist_statuses=assist_statuses,
     dass_values=dass_values,
@@ -354,6 +359,7 @@ def update_buy_school_layer(
     charter_only=bool(charter_only),
     magnet_only=bool(magnet_only),
     title_i_only=bool(title_i_only),
+    recently_opened_only=bool(recently_opened_only),
   )
 
 @callback(

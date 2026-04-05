@@ -95,6 +95,43 @@
     }
 
     /**
+     * Build a concise early-grades summary from derived TK / kindergarten flags.
+     *
+     * @param {Record<string, unknown>} properties School feature properties.
+     * @returns {string} Joined label or `N/A`.
+     */
+    function buildEarlyGradesSummary(properties) {
+        const grades = [];
+        if (properties.offers_tk_flag) {
+            grades.push("Transitional Kindergarten (TK)");
+        }
+        if (properties.offers_kindergarten_flag) {
+            grades.push("Kindergarten");
+        }
+
+        return grades.length ? grades.join(" | ") : "N/A";
+    }
+
+    /**
+     * Build a friendlier campus-age summary from the derived recent-open flag.
+     *
+     * @param {Record<string, unknown>} properties School feature properties.
+     * @returns {string} Summary label or `N/A`.
+     */
+    function buildCampusAgeSummary(properties) {
+        const openDate = getTrimmedString(properties.open_date);
+        if (!openDate) {
+            return "N/A";
+        }
+
+        if (properties.recently_opened_flag) {
+            return `Opened since 2018 (${escapeHtml(openDate)})`;
+        }
+
+        return `Opened ${escapeHtml(openDate)}`;
+    }
+
+    /**
      * Build a friendlier support-profile summary from the student-support metrics.
      *
      * @param {Record<string, unknown>} properties School feature properties.
@@ -183,6 +220,10 @@
                 value: formatTextValue(properties.grade_span_display),
             },
             {
+                label: "Early Grades",
+                value: buildEarlyGradesSummary(properties),
+            },
+            {
                 label: "Enrollment",
                 value: formatEnrollment(properties.enrollment_total),
             },
@@ -211,8 +252,8 @@
                 value: formatTextValue(properties.dass_flag),
             },
             {
-                label: "Opened",
-                value: formatTextValue(properties.open_date),
+                label: "Campus Age",
+                value: buildCampusAgeSummary(properties),
             },
             {
                 label: "Locale",

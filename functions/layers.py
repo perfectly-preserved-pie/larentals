@@ -236,6 +236,41 @@ def _normalize_school_date(value: object) -> str | None:
     return normalized.split("T")[0]
 
 
+def _school_grade_offered(value: object) -> bool:
+    """
+    Determine whether a grade-specific source field indicates the grade is offered.
+    """
+    if value is None or pd.isna(value):
+        return False
+
+    normalized = _normalize_school_text(value)
+    if normalized is None:
+        return False
+
+    if normalized.casefold() in {"y", "yes", "true"}:
+        return True
+
+    numeric_value = pd.to_numeric([normalized], errors="coerce")[0]
+    if pd.notna(numeric_value):
+        return float(numeric_value) > 0
+
+    return False
+
+
+def _school_is_recently_opened(value: object) -> bool:
+    """
+    Flag schools with a source open date on or after 2018-01-01.
+    """
+    if value is None or pd.isna(value):
+        return False
+
+    parsed = pd.to_datetime(value, errors="coerce", utc=True)
+    if pd.isna(parsed):
+        return False
+
+    return bool(parsed >= pd.Timestamp("2018-01-01", tz="UTC"))
+
+
 def build_school_preview_url(longitude: float | None, latitude: float | None) -> str | None:
     """
     Build a public ArcGIS World Imagery preview around a school point.
@@ -279,6 +314,8 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
         "SchoolLevel",
         "GradeLow",
         "GradeHigh",
+        "GradeTK",
+        "GradeKG",
         "Charter",
         "FundingType",
         "Magnet",
@@ -336,10 +373,13 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
     working["charter_label"] = working["Charter"].map(_school_flag_label)
     working["magnet_label"] = working["Magnet"].map(_school_flag_label)
     working["title_i_label"] = working["TitleIStatus"].map(_school_flag_label)
+    working["offers_tk_flag"] = working["GradeTK"].map(_school_grade_offered)
+    working["offers_kindergarten_flag"] = working["GradeKG"].map(_school_grade_offered)
     working["funding_type"] = working["FundingType"].map(_normalize_school_text)
     working["assist_status_essa"] = working["AssistStatusESSA"].map(_normalize_school_text)
     working["dass_flag"] = working["DASS"].map(_school_flag_label)
     working["open_date"] = working["OpenDate"].map(_normalize_school_date)
+    working["recently_opened_flag"] = working["OpenDate"].map(_school_is_recently_opened)
     working["locale"] = working["Locale"].map(_normalize_school_text)
     working["website_url"] = working["Website"].map(_normalize_school_url)
     working["street"] = working["Street"].map(_normalize_school_text)
@@ -400,10 +440,13 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
         "charter_label",
         "magnet_label",
         "title_i_label",
+        "offers_tk_flag",
+        "offers_kindergarten_flag",
         "funding_type",
         "assist_status_essa",
         "dass_flag",
         "open_date",
+        "recently_opened_flag",
         "locale",
         "website_url",
         "full_address",
@@ -454,6 +497,7 @@ def filter_school_layer_geojson(
     search_text: str | None = None,
     school_levels: Sequence[str] | None = None,
     grade_bands: Sequence[str] | None = None,
+    early_grades: Sequence[str] | None = None,
     funding_types: Sequence[str] | None = None,
     assist_statuses: Sequence[str] | None = None,
     dass_values: Sequence[str] | None = None,
@@ -461,6 +505,7 @@ def filter_school_layer_geojson(
     charter_only: bool = False,
     magnet_only: bool = False,
     title_i_only: bool = False,
+    recently_opened_only: bool = False,
 ) -> GeoJsonDict:
     """
     Filter the cached school layer payload for the map-only school controls.
@@ -485,6 +530,11 @@ def filter_school_layer_geojson(
     }
     if selected_bands == all_grade_bands:
         selected_bands = set()
+    selected_early_grades = {
+        value.strip().casefold()
+        for value in (early_grades or [])
+        if isinstance(value, str) and value.strip()
+    }
     selected_funding_types = {
         value.strip().casefold()
         for value in (funding_types or [])
@@ -532,6 +582,18 @@ def filter_school_layer_geojson(
             if feature_bands.isdisjoint(selected_bands):
                 continue
 
+        if selected_early_grades:
+            matches_early_grade = False
+            if "tk" in selected_early_grades and bool(properties.get("offers_tk_flag")):
+                matches_early_grade = True
+            if (
+                "kindergarten" in selected_early_grades
+                and bool(properties.get("offers_kindergarten_flag"))
+            ):
+                matches_early_grade = True
+            if not matches_early_grade:
+                continue
+
         if selected_funding_types:
             funding_type_value = str(properties.get("funding_type") or "").strip().casefold()
             if funding_type_value not in selected_funding_types:
@@ -569,6 +631,8 @@ def filter_school_layer_geojson(
         if magnet_only and _normalize_school_flag(properties.get("magnet_flag")) != 1:
             continue
         if title_i_only and _normalize_school_flag(properties.get("title_i_flag")) != 1:
+            continue
+        if recently_opened_only and not bool(properties.get("recently_opened_flag")):
             continue
 
         filtered_features.append(feature)
