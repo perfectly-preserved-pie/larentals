@@ -152,12 +152,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
 
                 // 8) Subtype Filter
-                let subtypeFilter = false;
+                let subtypeFilter = true;
+                const normalizedSubtypeSelection = Array.isArray(subtypeSelection)
+                    ? subtypeSelection
+                    : [];
                 const propertySubtype = (props.subtype || '').toUpperCase();
-                if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
-                    subtypeFilter = true;
-                } else {
-                    subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
+                if (normalizedSubtypeSelection.length > 0) {
+                    if (propertySubtype === '' && normalizedSubtypeSelection.includes('Unknown')) {
+                        subtypeFilter = true;
+                    } else {
+                        subtypeFilter = normalizedSubtypeSelection.some(
+                            sel => sel.toUpperCase() === propertySubtype
+                        );
+                    }
                 }
 
                 // 9) Listed Date Filter

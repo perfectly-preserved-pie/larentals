@@ -1001,7 +1001,7 @@ def build_subtype_filter(
                         placeholder=placeholder,
                         searchable=True,
                         style=dropdown_style,
-                        value=[item["value"] for item in data],
+                        value=[],
                     ),
                 ],
                 id=dynamic_id,
