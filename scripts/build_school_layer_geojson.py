@@ -34,8 +34,6 @@ DEFAULT_SCHOOL_COLUMNS: tuple[str, ...] = (
     "FundingType",
     "Magnet",
     "TitleIStatus",
-    "DASS",
-    "AssistStatusESSA",
     "Status",
     "OpenDate",
     "Street",

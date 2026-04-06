@@ -22,8 +22,6 @@ from functions.commute_utils import (
 )
 from functions.convex_hull import generate_convex_hulls
 from functions.layers import (
-    SCHOOL_LAYER_ASSIST_STATUS_OPTIONS,
-    SCHOOL_LAYER_ASSIST_STATUS_LABELS,
     DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
     SCHOOL_LAYER_FUNDING_TYPE_OPTIONS,
     SCHOOL_LAYER_GRADE_BAND_OPTIONS,
@@ -698,46 +696,6 @@ def build_filter_card(
     )
 
 
-def build_inline_help_label(
-    *,
-    label: str,
-    target_id: str,
-    tooltip_text: str,
-) -> html.Div:
-    """
-    Build a form label with a subtle inline help affordance and tooltip.
-
-    Args:
-        label: Primary label text shown beside the control.
-        target_id: Stable id used by the tooltip target span.
-        tooltip_text: Help copy shown on hover/tap.
-
-    Returns:
-        A label row followed by a Bootstrap tooltip.
-    """
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Span(label, className="form-label school-filter-help-label__text"),
-                    html.Span(
-                        "What's this?",
-                        id=target_id,
-                        className="school-filter-help-label__trigger",
-                        tabIndex=0,
-                    ),
-                ],
-                className="school-filter-help-label",
-            ),
-            dbc.Tooltip(
-                tooltip_text,
-                target=target_id,
-                placement="top",
-            ),
-        ]
-    )
-
-
 def build_school_layer_map_prompt(page_type: str) -> html.Div:
     """
     Build the floating map prompt that points users to school-layer controls.
@@ -883,30 +841,6 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                 ],
                 style={"marginBottom": "14px"},
             ),
-            html.Div(
-                [
-                    build_inline_help_label(
-                        label="State support status",
-                        target_id=f"{prefix}-assist-status-help-target",
-                        tooltip_text=(
-                            "Shows whether the school has a California/federal support "
-                            "designation under the state accountability system."
-                        ),
-                    ),
-                    dcc.Dropdown(
-                        id=f"{prefix}-assist-status-dropdown",
-                        multi=True,
-                        options=[
-                            {
-                                "label": SCHOOL_LAYER_ASSIST_STATUS_LABELS.get(value, value),
-                                "value": value,
-                            }
-                            for value in SCHOOL_LAYER_ASSIST_STATUS_OPTIONS
-                        ],
-                        placeholder="Any state support designation",
-                    ),
-                ]
-            ),
         ]
     )
 
@@ -918,29 +852,6 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                 checked=False,
                 size="sm",
                 color="teal",
-                style={"marginBottom": "14px"},
-            ),
-            html.Div(
-                [
-                    build_inline_help_label(
-                        label="Alternative accountability campus",
-                        target_id=f"{prefix}-dass-help-target",
-                        tooltip_text=(
-                            "Indicates a specialized or alternative campus category "
-                            "used in California's school accountability system."
-                        ),
-                    ),
-                    dcc.Dropdown(
-                        id=f"{prefix}-dass-dropdown",
-                        multi=True,
-                        options=[
-                            {"label": "Specialized/alternative campus", "value": "Yes"},
-                            {"label": "Standard accountability campus", "value": "No"},
-                            {"label": "Not reported", "value": "Unknown"},
-                        ],
-                        placeholder="Any campus type",
-                    ),
-                ],
                 style={"marginBottom": "14px"},
             ),
             html.Div(

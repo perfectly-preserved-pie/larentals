@@ -46,29 +46,6 @@
     }
 
     /**
-     * Format the ESSA/state support designation into human-readable text.
-     *
-     * @param {unknown} value Raw support designation.
-     * @returns {string} Friendly label or `N/A`.
-     */
-    function formatAssistStatus(value) {
-        const normalized = getTrimmedString(value);
-        if (!normalized) {
-            return "N/A";
-        }
-
-        const labels = {
-            "No Status": "No additional state support designation",
-            "ATSI": "Targeted support for some student groups",
-            "TSI": "Targeted school improvement support",
-            "CSI Grad": "Comprehensive support for graduation rates",
-            "CSI Low Perform": "Comprehensive support for low performance",
-        };
-
-        return escapeHtml(labels[normalized] || normalized);
-    }
-
-    /**
      * Build the student-support summary row.
      *
      * @param {Record<string, unknown>} properties School feature properties.
@@ -242,14 +219,6 @@
             {
                 label: "Title I",
                 value: formatTextValue(properties.title_i_label),
-            },
-            {
-                label: "State Support Status",
-                value: formatAssistStatus(properties.assist_status_essa),
-            },
-            {
-                label: "Alternative Accountability Campus",
-                value: formatTextValue(properties.dass_flag),
             },
             {
                 label: "Campus Age",
