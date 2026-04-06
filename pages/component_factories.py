@@ -22,6 +22,7 @@ from functions.commute_utils import (
 )
 from functions.convex_hull import generate_convex_hulls
 from functions.layers import (
+    SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS,
     DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
     SCHOOL_LAYER_FUNDING_TYPE_OPTIONS,
     SCHOOL_LAYER_GRADE_BAND_OPTIONS,
@@ -807,6 +808,22 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                         ],
                         value=[],
                         placeholder="Any early grade offering",
+                    ),
+                ],
+                style={"marginTop": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Grade span", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-campus-configuration-dropdown",
+                        multi=True,
+                        options=[
+                            {"label": value, "value": value}
+                            for value in SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS
+                        ],
+                        value=[],
+                        placeholder="Any grade span",
                     ),
                 ],
                 style={"marginTop": "14px"},

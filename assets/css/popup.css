@@ -62,6 +62,25 @@
   color: #6b7280;
 }
 
+.additional-layer-popup__chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.additional-layer-popup__chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #e8f2ff;
+  border: 1px solid #bfd7f6;
+  color: #1f3d5a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 .additional-layer-popup__empty {
   padding: 8px 0;
   color: #666;

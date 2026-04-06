@@ -124,6 +124,7 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "school_name": "Franklin High",
                     "district_name": "Los Angeles Unified",
                     "school_level": "High",
+                    "grade_span_display": "9-12",
                     "grade_bands": ["High"],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": False,
@@ -143,6 +144,7 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "school_name": "Maple Elementary",
                     "district_name": "Burbank Unified",
                     "school_level": "Elementary",
+                    "grade_span_display": "K-5",
                     "grade_bands": ["Elementary"],
                     "offers_tk_flag": True,
                     "offers_kindergarten_flag": True,
@@ -162,6 +164,7 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
                     "school_name": "Pasadena Secondary Academy",
                     "district_name": "Pasadena Unified",
                     "school_level": "Secondary",
+                    "grade_span_display": "6-12",
                     "grade_bands": ["Middle", "High"],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": False,
@@ -183,6 +186,7 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
         search_text="unified",
         school_levels=["High", "Secondary"],
         grade_bands=["High"],
+        campus_configurations=["9-12", "6-12"],
         early_grades=[],
         funding_types=["Directly funded"],
         enrollment_range=[0, 3000],
@@ -236,6 +240,7 @@ def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened()
                     "school_name": "Sunrise Academy",
                     "district_name": "Glendale Unified",
                     "school_level": "Elementary",
+                    "grade_span_display": "TK-5",
                     "grade_bands": ["Elementary"],
                     "offers_tk_flag": True,
                     "offers_kindergarten_flag": True,
@@ -251,6 +256,7 @@ def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened()
                     "school_name": "Legacy Elementary",
                     "district_name": "Glendale Unified",
                     "school_level": "Elementary",
+                    "grade_span_display": "K-5",
                     "grade_bands": ["Elementary"],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": True,
@@ -284,6 +290,7 @@ def test_filter_school_layer_geojson_accepts_numeric_flag_values() -> None:
                     "school_name": "Hamilton Magnet",
                     "district_name": "Los Angeles Unified",
                     "school_level": "High",
+                    "grade_span_display": "9-12",
                     "grade_bands": ["High"],
                     "magnet_flag": 1.0,
                     "title_i_flag": 1.0,
@@ -316,6 +323,7 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
                     "school_name": "Pasadena Secondary Academy",
                     "district_name": "Pasadena Unified",
                     "school_level": "Secondary",
+                    "grade_span_display": "6-12",
                     "grade_bands": ["Middle", "High"],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": False,
@@ -351,6 +359,7 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
                     "school_name": "Franklin High",
                     "district_name": "Los Angeles Unified",
                     "school_level": "High",
+                    "grade_span_display": "9-12",
                     "grade_bands": ["High"],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": False,
@@ -366,6 +375,7 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
                     "school_name": "Maple Elementary",
                     "district_name": "Burbank Unified",
                     "school_level": "Elementary",
+                    "grade_span_display": "K-5",
                     "grade_bands": ["Elementary"],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": True,
@@ -381,6 +391,7 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
                     "school_name": "Adult Transition Center",
                     "district_name": "Pasadena Unified",
                     "school_level": "Adult Education",
+                    "grade_span_display": None,
                     "grade_bands": [],
                     "offers_tk_flag": False,
                     "offers_kindergarten_flag": False,
@@ -402,4 +413,45 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
         "Franklin High",
         "Maple Elementary",
         "Adult Transition Center",
+    ]
+
+
+def test_filter_school_layer_geojson_respects_campus_configuration() -> None:
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Maple Elementary",
+                    "district_name": "Burbank Unified",
+                    "school_level": "Elementary",
+                    "grade_span_display": "K-5",
+                    "grade_bands": ["Elementary"],
+                    "search_text": "maple elementary burbank unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.3, 34.2]},
+            },
+            {
+                "type": "Feature",
+                "properties": {
+                    "school_name": "Pasadena Secondary Academy",
+                    "district_name": "Pasadena Unified",
+                    "school_level": "Secondary",
+                    "grade_span_display": "6-12",
+                    "grade_bands": ["Middle", "High"],
+                    "search_text": "pasadena secondary academy pasadena unified",
+                },
+                "geometry": {"type": "Point", "coordinates": [-118.1, 34.15]},
+            },
+        ],
+    }
+
+    filtered = filter_school_layer_geojson(
+        geojson,
+        campus_configurations=["6-12"],
+    )
+
+    assert [feature["properties"]["school_name"] for feature in filtered["features"]] == [
+        "Pasadena Secondary Academy"
     ]

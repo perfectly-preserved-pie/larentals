@@ -109,6 +109,43 @@
     }
 
     /**
+     * Build chip-style campus descriptors from the grade span and grade bands.
+     *
+     * @param {Record<string, unknown>} properties School feature properties.
+     * @returns {string} HTML chip list or `N/A`.
+     */
+    function buildCampusTypeMarkup(properties) {
+        const labels = [];
+        const gradeSpan = getTrimmedString(properties.grade_span_display);
+        if (gradeSpan) {
+            labels.push(gradeSpan);
+        }
+
+        const gradeBands = Array.isArray(properties.grade_bands)
+            ? properties.grade_bands
+            : [];
+        gradeBands.forEach(function(value) {
+            const trimmed = getTrimmedString(value);
+            if (trimmed) {
+                labels.push(`${trimmed} School`);
+            }
+        });
+
+        const uniqueLabels = Array.from(new Set(labels));
+        if (!uniqueLabels.length) {
+            return "N/A";
+        }
+
+        return `
+            <div class="additional-layer-popup__chip-list">
+                ${uniqueLabels.map(function(label) {
+                    return `<span class="additional-layer-popup__chip">${escapeHtml(label)}</span>`;
+                }).join("")}
+            </div>
+        `;
+    }
+
+    /**
      * Build a friendlier support-profile summary from the student-support metrics.
      *
      * @param {Record<string, unknown>} properties School feature properties.
@@ -194,7 +231,7 @@
             },
             {
                 label: "Grades",
-                value: formatTextValue(properties.grade_span_display),
+                value: buildCampusTypeMarkup(properties),
             },
             {
                 label: "Early Grades",

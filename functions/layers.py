@@ -23,6 +23,23 @@ GeoJsonDict: TypeAlias = dict[str, Any]
 DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = Path("assets/datasets/schools_socal.geojson")
 DEFAULT_SCHOOL_LAYER_GPKG_PATH = Path("assets/datasets/california_public_schools_2024_25.gpkg")
 DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
+SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS: tuple[str, ...] = (
+    "PK-5",
+    "PK-6",
+    "PK-8",
+    "K-2",
+    "K-5",
+    "K-6",
+    "K-8",
+    "6-8",
+    "7-8",
+    "9-12",
+    "10-12",
+    "6-12",
+    "7-12",
+    "K-12",
+    "PK-12",
+)
 SCHOOL_LAYER_GRADE_BAND_OPTIONS: tuple[str, ...] = ("Elementary", "Middle", "High")
 SCHOOL_LAYER_FUNDING_TYPE_OPTIONS: tuple[str, ...] = (
     "Directly funded",
@@ -488,6 +505,7 @@ def filter_school_layer_geojson(
     search_text: str | None = None,
     school_levels: Sequence[str] | None = None,
     grade_bands: Sequence[str] | None = None,
+    campus_configurations: Sequence[str] | None = None,
     early_grades: Sequence[str] | None = None,
     funding_types: Sequence[str] | None = None,
     enrollment_range: Sequence[float] | None = None,
@@ -511,6 +529,11 @@ def filter_school_layer_geojson(
     selected_bands = {
         value.strip().casefold()
         for value in (grade_bands or [])
+        if isinstance(value, str) and value.strip()
+    }
+    selected_campus_configurations = {
+        value.strip().casefold()
+        for value in (campus_configurations or [])
         if isinstance(value, str) and value.strip()
     }
     all_grade_bands = {
@@ -559,6 +582,13 @@ def filter_school_layer_geojson(
                 if value
             }
             if feature_bands.isdisjoint(selected_bands):
+                continue
+
+        if selected_campus_configurations:
+            campus_configuration_value = str(
+                properties.get("grade_span_display") or ""
+            ).strip().casefold()
+            if campus_configuration_value not in selected_campus_configurations:
                 continue
 
         if selected_early_grades:
