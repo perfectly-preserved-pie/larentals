@@ -21,6 +21,13 @@ from functions.commute_utils import (
     normalize_commute_minutes,
 )
 from functions.convex_hull import generate_convex_hulls
+from functions.layers import (
+    SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS,
+    DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
+    SCHOOL_LAYER_FUNDING_TYPE_OPTIONS,
+    SCHOOL_LAYER_GRADE_BAND_OPTIONS,
+    SCHOOL_LAYER_LEVEL_OPTIONS,
+)
 
 
 def build_range_filter(
@@ -593,6 +600,7 @@ def build_map_card(
     *,
     page_type: str,
     map_component: Any,
+    overlay_children: Sequence[Any] | None = None,
     body_class_name: str | None = None,
     card_class_name: str | None = None,
 ) -> dbc.Card:
@@ -602,40 +610,45 @@ def build_map_card(
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
         map_component: Prebuilt map component to render.
+        overlay_children: Optional floating UI layered above the map.
         body_class_name: Optional body class string.
         card_class_name: Optional card class string.
 
     Returns:
         A Bootstrap card containing the map and loading overlay.
     """
-    body = dbc.CardBody(
+    body_children: list[Any] = [
         html.Div(
-            [
-                html.Div(
-                    id=f"{page_type}-map-spinner",
-                    children=[
-                        dbc.Spinner(size="lg"),
-                        html.P(
-                            "Loading map...",
-                            style={
-                                "marginTop": "10px",
-                                "marginLeft": "5px",
-                                "color": "white",
-                            },
-                        ),
-                    ],
+            id=f"{page_type}-map-spinner",
+            children=[
+                dbc.Spinner(size="lg"),
+                html.P(
+                    "Loading map...",
                     style={
-                        "position": "absolute",
-                        "inset": "0",
-                        "display": "flex",
-                        "alignItems": "center",
-                        "justifyContent": "center",
-                        "backgroundColor": "rgba(0, 0, 0, 0.25)",
-                        "zIndex": "10000",
+                        "marginTop": "10px",
+                        "marginLeft": "5px",
+                        "color": "white",
                     },
                 ),
-                html.Div(map_component, style={"position": "relative", "zIndex": "0"}),
             ],
+            style={
+                "position": "absolute",
+                "inset": "0",
+                "display": "flex",
+                "alignItems": "center",
+                "justifyContent": "center",
+                "backgroundColor": "rgba(0, 0, 0, 0.25)",
+                "zIndex": "10000",
+            },
+        ),
+        html.Div(map_component, style={"position": "relative", "zIndex": "0"}),
+    ]
+    if overlay_children:
+        body_children.extend(overlay_children)
+
+    body = dbc.CardBody(
+        html.Div(
+            body_children,
             style={"position": "relative"},
         ),
         className=body_class_name,
@@ -684,6 +697,270 @@ def build_filter_card(
     )
 
 
+def build_school_layer_map_prompt(page_type: str) -> html.Div:
+    """
+    Build the floating map prompt that points users to school-layer controls.
+
+    Args:
+        page_type: Page key such as ``buy`` or ``lease``.
+
+    Returns:
+        An absolutely positioned prompt container layered above the map.
+    """
+    prefix = f"{page_type}-school-layer"
+
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            "School filters are ready",
+                            className="school-layer-map-prompt__title",
+                        ),
+                        html.Div(
+                            "These controls refine school points only, not home listings.",
+                            className="school-layer-map-prompt__copy",
+                        ),
+                    ],
+                    className="school-layer-map-prompt__content",
+                ),
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Show filters",
+                            id=f"{prefix}-show-filters-button",
+                            color="success",
+                            size="sm",
+                            className="school-layer-map-prompt__button",
+                        ),
+                        dbc.Button(
+                            "Dismiss",
+                            id=f"{prefix}-dismiss-prompt-button",
+                            color="link",
+                            size="sm",
+                            className="school-layer-map-prompt__dismiss",
+                        ),
+                    ],
+                    className="school-layer-map-prompt__actions",
+                ),
+            ],
+            className="school-layer-map-prompt__card",
+        ),
+        id=f"{prefix}-map-prompt",
+        className="school-layer-map-prompt",
+        role="status",
+        **{"aria-live": "polite"},
+    )
+
+
+def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
+    """
+    Build the conditional, map-only filter panel for the schools overlay.
+
+    Args:
+        page_type: Page key such as ``buy`` or ``lease``.
+
+    Returns:
+        A collapsed card that is shown only when the Schools overlay is enabled.
+    """
+    prefix = f"{page_type}-school-layer"
+
+    search_children = html.Div(
+        [
+            html.Div(
+                [
+                    html.Label("Search school or district", className="form-label"),
+                    dcc.Input(
+                        id=f"{prefix}-search-input",
+                        type="text",
+                        debounce=True,
+                        placeholder="Try LAUSD, Beverly Hills High, magnet, etc.",
+                        style={"width": "100%"},
+                    ),
+                ],
+                style={"marginBottom": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Grade bands", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-grade-band-checklist",
+                        multi=True,
+                        options=[
+                            {"label": f"{value} School", "value": value}
+                            for value in SCHOOL_LAYER_GRADE_BAND_OPTIONS
+                        ],
+                        value=[],
+                        placeholder="Any grade band",
+                    ),
+                ]
+            ),
+            html.Div(
+                [
+                    html.Label("Early grades", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-early-grades-checklist",
+                        multi=True,
+                        options=[
+                            {"label": "Transitional Kindergarten (TK)", "value": "TK"},
+                            {"label": "Kindergarten", "value": "Kindergarten"},
+                        ],
+                        value=[],
+                        placeholder="Any early grade offering",
+                    ),
+                ],
+                style={"marginTop": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Grade span", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-campus-configuration-dropdown",
+                        multi=True,
+                        options=[
+                            {"label": value, "value": value}
+                            for value in SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS
+                        ],
+                        value=[],
+                        placeholder="Any grade span",
+                    ),
+                ],
+                style={"marginTop": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Special school types", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-level-dropdown",
+                        multi=True,
+                        options=[
+                            {"label": value, "value": value}
+                            for value in sorted(SCHOOL_LAYER_LEVEL_OPTIONS)
+                        ],
+                        placeholder="Preschool, secondary, adult ed, etc.",
+                    ),
+                ],
+                style={"marginTop": "14px", "marginBottom": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Funding type", className="form-label"),
+                    dcc.Dropdown(
+                        id=f"{prefix}-funding-type-dropdown",
+                        multi=True,
+                        options=[
+                            {"label": value, "value": value}
+                            for value in SCHOOL_LAYER_FUNDING_TYPE_OPTIONS
+                        ],
+                        placeholder="Any funding type",
+                    ),
+                ],
+                style={"marginBottom": "14px"},
+            ),
+        ]
+    )
+
+    program_children = html.Div(
+        [
+            dmc.Switch(
+                id=f"{prefix}-recently-opened-switch",
+                label="Only campuses opened since 2018",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "14px"},
+            ),
+            html.Div(
+                [
+                    html.Label("Enrollment", className="form-label"),
+                    dcc.RangeSlider(
+                        id=f"{prefix}-enrollment-slider",
+                        min=0,
+                        max=DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
+                        value=[0, DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX],
+                        marks={
+                            0: "0",
+                            3000: "3k",
+                            6000: "6k",
+                            9000: "9k",
+                            DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX: "12k",
+                        },
+                        updatemode="mouseup",
+                        tooltip={
+                            "placement": "bottom",
+                            "always_visible": True,
+                            "transform": "formatStudentCount",
+                        },
+                    ),
+                ],
+                className="school-layer-enrollment-control",
+            ),
+            dmc.Switch(
+                id=f"{prefix}-charter-switch",
+                label="Only charter schools",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "10px"},
+            ),
+            dmc.Switch(
+                id=f"{prefix}-magnet-switch",
+                label="Only magnet schools",
+                checked=False,
+                size="sm",
+                color="teal",
+                style={"marginBottom": "10px"},
+            ),
+            dmc.Switch(
+                id=f"{prefix}-title-i-switch",
+                label="Only Title I schools",
+                checked=False,
+                size="sm",
+                color="teal",
+            ),
+        ]
+    )
+
+    return dbc.Collapse(
+        dbc.Card(
+            [
+                html.H6("School Filters", className="mb-1"),
+                html.P(
+                    "These controls filter school points only. They do not filter listings.",
+                    className="card-text small text-muted mb-3",
+                ),
+                dbc.Accordion(
+                    [
+                        dbc.AccordionItem(
+                            search_children,
+                            title="Search & Type",
+                            item_id=f"{prefix}-search-type",
+                        ),
+                        dbc.AccordionItem(
+                            program_children,
+                            title="Programs & Enrollment",
+                            item_id=f"{prefix}-programs",
+                        ),
+                    ],
+                    always_open=True,
+                    active_item=[
+                        f"{prefix}-search-type",
+                        f"{prefix}-programs",
+                    ],
+                    flush=True,
+                    className="options-accordion",
+                ),
+            ],
+            id=f"{prefix}-controls-card",
+            body=True,
+            className="mt-3 school-layer-panel-card",
+        ),
+        id=f"{prefix}-controls-collapse",
+        is_open=False,
+    )
+
+
 def build_subtype_filter(
     *,
     values: Sequence[str],
@@ -724,7 +1001,7 @@ def build_subtype_filter(
                         placeholder=placeholder,
                         searchable=True,
                         style=dropdown_style,
-                        value=[item["value"] for item in data],
+                        value=[],
                     ),
                 ],
                 id=dynamic_id,
@@ -849,6 +1126,7 @@ def build_page_parts(
     last_updated: str | None,
     filter_items: Sequence[FilterSection],
     map_component: Any,
+    map_overlay_children: Sequence[Any] | None = None,
 ) -> PageParts:
     """
     Assemble the top-level cards consumed by a page layout.
@@ -858,6 +1136,7 @@ def build_page_parts(
         last_updated: Optional display date for the dataset refresh.
         filter_items: Accordion sections for the sidebar.
         map_component: Prebuilt map component for the page.
+        map_overlay_children: Optional floating components rendered over the map.
 
     Returns:
         A ``PageParts`` bundle with title, filter, and map cards.
@@ -876,6 +1155,7 @@ def build_page_parts(
         map_card=build_map_card(
             page_type=config.page_type,
             map_component=map_component,
+            overlay_children=map_overlay_children,
             body_class_name=config.map_body_class_name,
             card_class_name=config.map_card_class_name,
         ),

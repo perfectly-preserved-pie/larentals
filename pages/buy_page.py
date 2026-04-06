@@ -78,6 +78,16 @@ def layout(**_: object) -> dbc.Container:
   commute_boundary_store = dcc.Store(id="buy-commute-boundary-store", storage_type="memory", data=empty_feature_collection())
   commute_request_store = dcc.Store(id="buy-commute-request-store", storage_type="memory", data=empty_commute_request_data())
   commute_exact_store = dcc.Store(id="buy-commute-exact-store", storage_type="memory", data=empty_commute_exact_result())
+  school_layer_prompt_state_store = dcc.Store(
+    id="buy-school-layer-prompt-state",
+    storage_type="memory",
+    data={"dismissed": False, "schools_active": False},
+  )
+  school_layer_focus_store = dcc.Store(
+    id="buy-school-layer-focus-store",
+    storage_type="memory",
+    data=None,
+  )
   kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
@@ -91,6 +101,8 @@ def layout(**_: object) -> dbc.Container:
       commute_boundary_store,
       commute_request_store,
       commute_exact_store,
+      school_layer_prompt_state_store,
+      school_layer_focus_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -111,8 +123,8 @@ def layout(**_: object) -> dbc.Container:
         className="g-0",
         style={"minHeight": "100vh"}
       ),
-      # Create a hidden Store to store the selected subtype value
-      dcc.Store(id='selected_subtype', data='Single Family Residence')
+      # Keep the subtype selection available for any future callbacks that need it.
+      dcc.Store(id='selected_subtype', data=[])
     ],
     fluid=True,
     className="dbc p-0",
@@ -200,6 +212,151 @@ def load_buy_optional_layers(
     selected_overlays=selected_overlays,
     layer_ids=layer_ids,
     current_data=current_data,
+    excluded_layer_keys=("schools",),
+  )
+
+
+@callback(
+  Output("buy-school-layer-controls-collapse", "is_open"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+)
+def toggle_buy_school_layer_controls(selected_overlays: list[str] | None) -> bool:
+  """
+  Show the map-only school filter panel when the Schools overlay is enabled.
+  """
+  return LayersClass.overlay_is_selected(selected_overlays, "schools")
+
+
+@callback(
+  Output("buy-school-layer-prompt-state", "data"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+  Input("buy-school-layer-show-filters-button", "n_clicks"),
+  Input("buy-school-layer-dismiss-prompt-button", "n_clicks"),
+  State("buy-school-layer-prompt-state", "data"),
+  prevent_initial_call=True,
+)
+def update_buy_school_layer_prompt_state(
+  selected_overlays: list[str] | None,
+  _show_clicks: int | None,
+  _dismiss_clicks: int | None,
+  prompt_state: dict | None,
+) -> dict[str, bool]:
+  """
+  Keep the school-layer prompt visible until the user dismisses it.
+  """
+  state = prompt_state or {"dismissed": False, "schools_active": False}
+  schools_active = LayersClass.overlay_is_selected(selected_overlays, "schools")
+  was_active = bool(state.get("schools_active"))
+  triggered_id = dash.ctx.triggered_id
+
+  if triggered_id == LayersClass.layers_control_id("buy"):
+    if schools_active and not was_active:
+      return {"dismissed": False, "schools_active": True}
+    if not schools_active:
+      return {"dismissed": False, "schools_active": False}
+    return {
+      "dismissed": bool(state.get("dismissed")),
+      "schools_active": True,
+    }
+
+  if not schools_active:
+    return {"dismissed": False, "schools_active": False}
+
+  return {"dismissed": True, "schools_active": True}
+
+
+@callback(
+  Output("buy-school-layer-map-prompt", "className"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+  Input("buy-school-layer-prompt-state", "data"),
+)
+def update_buy_school_layer_prompt_class(
+  selected_overlays: list[str] | None,
+  prompt_state: dict | None,
+) -> str:
+  """
+  Reveal the map prompt only while the school overlay is active and undisposed.
+  """
+  base_class_name = "school-layer-map-prompt"
+  prompt_dismissed = bool((prompt_state or {}).get("dismissed"))
+  if (
+    LayersClass.overlay_is_selected(selected_overlays, "schools")
+    and not prompt_dismissed
+  ):
+    return f"{base_class_name} school-layer-map-prompt--visible"
+  return base_class_name
+
+
+@callback(
+  Output("buy-school-layer-controls-card", "className"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+)
+def update_buy_school_layer_controls_card_class(
+  selected_overlays: list[str] | None,
+) -> str:
+  """
+  Add an accent state so the school control card reads as newly available.
+  """
+  base_class_name = "mt-3 school-layer-panel-card"
+  if LayersClass.overlay_is_selected(selected_overlays, "schools"):
+    return f"{base_class_name} school-layer-panel-card--active"
+  return base_class_name
+
+
+@callback(
+  Output(
+    LayersClass.lazy_layer_geojson_id("buy", "schools"),
+    "data",
+    allow_duplicate=True,
+  ),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+  Input("buy-school-layer-search-input", "value"),
+  Input("buy-school-layer-level-dropdown", "value"),
+  Input("buy-school-layer-grade-band-checklist", "value"),
+  Input("buy-school-layer-campus-configuration-dropdown", "value"),
+  Input("buy-school-layer-early-grades-checklist", "value"),
+  Input("buy-school-layer-funding-type-dropdown", "value"),
+  Input("buy-school-layer-enrollment-slider", "value"),
+  Input("buy-school-layer-charter-switch", "checked"),
+  Input("buy-school-layer-magnet-switch", "checked"),
+  Input("buy-school-layer-title-i-switch", "checked"),
+  Input("buy-school-layer-recently-opened-switch", "checked"),
+  prevent_initial_call=True,
+)
+def update_buy_school_layer(
+  selected_overlays: list[str] | None,
+  search_text: str | None,
+  school_levels: list[str] | None,
+  grade_bands: list[str] | None,
+  campus_configurations: list[str] | None,
+  early_grades: list[str] | None,
+  funding_types: list[str] | None,
+  enrollment_range: list[float] | None,
+  charter_only: bool | None,
+  magnet_only: bool | None,
+  title_i_only: bool | None,
+  recently_opened_only: bool | None,
+) -> dict | object:
+  """
+  Filter the school overlay from the cached raw GeoJSON payload.
+  """
+  if not LayersClass.overlay_is_selected(selected_overlays, "schools"):
+    return dash.no_update
+
+  raw_geojson = LayersClass.load_layer_data("schools")
+  return LayersClass.filter_school_layer_geojson(
+    raw_geojson,
+    search_text=search_text,
+    school_levels=school_levels,
+    grade_bands=grade_bands,
+    campus_configurations=campus_configurations,
+    early_grades=early_grades,
+    funding_types=funding_types,
+    enrollment_range=enrollment_range,
+    charter_only=bool(charter_only),
+    magnet_only=bool(magnet_only),
+    title_i_only=bool(title_i_only),
+    recently_opened_only=bool(recently_opened_only),
   )
 
 @callback(
@@ -620,6 +777,17 @@ def update_buy_commute_status(
     toggle_style["display"] = "block"
 
   return children, toggle_style, radio_options
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='focusSchoolLayerControls'
+  ),
+  Output('buy-school-layer-focus-store', 'data'),
+  Input('buy-school-layer-show-filters-button', 'n_clicks'),
+  State('buy-school-layer-controls-card', 'id'),
+  prevent_initial_call=True,
+)
 
 clientside_callback(
   ClientsideFunction(

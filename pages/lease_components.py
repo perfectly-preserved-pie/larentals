@@ -1,5 +1,6 @@
 from dash import dcc, html
 import dash_mantine_components as dmc
+import numpy as np
 import pandas as pd
 
 from .component_base import (
@@ -16,6 +17,8 @@ from .component_factories import (
     build_map,
     build_page_parts,
     build_range_filter,
+    build_school_layer_filter_panel,
+    build_school_layer_map_prompt,
     build_subtype_filter,
     build_year_built_filter,
 )
@@ -30,6 +33,7 @@ class LeaseComponents(BaseClass):
         "breakfast_burritos",
         "farmers_markets",
         "supermarkets_grocery",
+        "schools",
         "oil_well",
     )
 
@@ -62,6 +66,8 @@ class LeaseComponents(BaseClass):
         "mls_photo",
         "lot_size",
         "senior_community",
+        "school_district_name",
+        "nearest_high_school_mi",
     )
 
     LEASE_MAP_COLUMNS: tuple[str, ...] = (
@@ -85,6 +91,8 @@ class LeaseComponents(BaseClass):
         "key_deposit",
         "other_deposit",
         "listed_date",
+        "school_district_name",
+        "nearest_high_school_mi",
     )
 
     CONFIG = PageConfig(
@@ -156,11 +164,22 @@ class LeaseComponents(BaseClass):
         Returns:
             The assembled ``PageParts`` bundle.
         """
-        return build_page_parts(
+        parts = build_page_parts(
             config=self.CONFIG,
             last_updated=self.last_updated,
             filter_items=self._build_filter_sections(),
             map_component=self._build_map_component(),
+            map_overlay_children=[build_school_layer_map_prompt(self.page_type)],
+        )
+        return PageParts(
+            title_card=parts.title_card,
+            user_options_card=html.Div(
+                [
+                    parts.user_options_card,
+                    build_school_layer_filter_panel(self.page_type),
+                ]
+            ),
+            map_card=parts.map_card,
         )
 
     def _build_map_component(self) -> object:

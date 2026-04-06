@@ -127,6 +127,35 @@
     }
 
     /**
+     * Format a 0/1-like flag as Yes / No / Unknown.
+     *
+     * @param {unknown} value Raw boolean-like value.
+     * @returns {string} Human-readable flag label.
+     */
+    function formatYesNoUnknown(value) {
+        if (value === null || value === undefined || value === "") return "Unknown";
+
+        const normalized = String(value).trim().toLowerCase();
+        if (["1", "true", "yes", "y"].includes(normalized)) return "Yes";
+        if (["0", "false", "no", "n"].includes(normalized)) return "No";
+        return "Unknown";
+    }
+
+    /**
+     * Format a miles distance for popup display.
+     *
+     * @param {unknown} value Raw miles value.
+     * @returns {string} Formatted miles or `Unknown`.
+     */
+    function formatMiles(value) {
+        if (value === null || value === undefined || value === "") return "Unknown";
+
+        const n = Number(value);
+        if (!Number.isFinite(n)) return "Unknown";
+        return `${n.toFixed(2)} mi`;
+    }
+
+    /**
      * Convert a street address string into title case for popup display.
      *
      * @param {string} value Address string to normalize.
@@ -518,6 +547,14 @@
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Year Built</span>
                         <span class="value">${popupData.year_built || "Unknown"}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                        <span class="label" style="font-weight: bold;">School District</span>
+                        <span class="value">${popupData.school_district_name || "Unknown"}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                        <span class="label" style="font-weight: bold;">Nearest High School</span>
+                        <span class="value">${formatMiles(popupData.nearest_high_school_mi)}</span>
                     </div>
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Physical Sub Type</span>

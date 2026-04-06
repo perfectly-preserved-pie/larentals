@@ -18,7 +18,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
-        * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
+         * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
          * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
          * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
          * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
@@ -152,12 +152,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
 
                 // 8) Subtype Filter
-                let subtypeFilter = false;
+                let subtypeFilter = true;
+                const normalizedSubtypeSelection = Array.isArray(subtypeSelection)
+                    ? subtypeSelection
+                    : [];
                 const propertySubtype = (props.subtype || '').toUpperCase();
-                if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
-                    subtypeFilter = true;
-                } else {
-                    subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
+                if (normalizedSubtypeSelection.length > 0) {
+                    if (propertySubtype === '' && normalizedSubtypeSelection.includes('Unknown')) {
+                        subtypeFilter = true;
+                    } else {
+                        subtypeFilter = normalizedSubtypeSelection.some(
+                            sel => sel.toUpperCase() === propertySubtype
+                        );
+                    }
                 }
 
                 // 9) Listed Date Filter

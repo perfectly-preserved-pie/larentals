@@ -6,6 +6,18 @@ This file dictates where to get the various additional datasets in this folder.
 
 https://data.lacounty.gov/datasets/lacounty::farmers-markets/about
 
+## Schools
+
+https://lab.data.ca.gov/dataset/california-public-schools-2024-25
+
+Preferred local artifacts:
+
+- `california_public_schools_2024_25.gpkg`
+- `schools_socal.geojson`
+- Build both with `uv run build-school-layer-geojson`
+- Source of truth is the official California Open Data GeoPackage download
+- Final GeoJSON is clipped to Southern California and reduced to the fields used by the map layer and popup
+
 ## Breakfast Burritos
 
 https://labreakfastburrito.com/

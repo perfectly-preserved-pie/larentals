@@ -58,6 +58,65 @@
   word-break: break-word;
 }
 
+.additional-layer-popup__secondary-value {
+  color: #6b7280;
+}
+
+.additional-layer-popup__chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.additional-layer-popup__chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #e8f2ff;
+  border: 1px solid #bfd7f6;
+  color: #1f3d5a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.additional-layer-popup__chip--support {
+  background: #eef7ec;
+  border-color: #c6e1c0;
+  color: #204a2b;
+}
+
+.additional-layer-popup__metric-list {
+  display: grid;
+  gap: 8px;
+}
+
+.additional-layer-popup__metric-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #d8dde3;
+}
+
+.additional-layer-popup__metric-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.additional-layer-popup__metric-label {
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.additional-layer-popup__metric-value {
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
 .additional-layer-popup__empty {
   padding: 8px 0;
   color: #666;
@@ -80,6 +139,29 @@
 
 .additional-layer-popup__attribution-links {
   margin-top: 4px;
+}
+
+.additional-layer-popup__media {
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f2f4f6;
+}
+
+.additional-layer-popup__media-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #d9dee3;
+}
+
+.additional-layer-popup__media-caption {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  color: #555;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .additional-layer-popup__status {
@@ -115,6 +197,8 @@
 }
 
 .breakfast-burrito-div-icon,
+.school-div-icon,
+.school-cluster-div-icon,
 .supermarket-div-icon {
   background: transparent;
   border: none;
@@ -154,8 +238,177 @@
   line-height: 1;
 }
 
+.school-marker__chip {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.school-marker__chip--elementary {
+  background: #2d8f5b;
+}
+
+.school-marker__chip--middle {
+  background: #d17c00;
+}
+
+.school-marker__chip--high {
+  background: #b23a48;
+}
+
+.school-marker__chip--other {
+  background: #5c677d;
+}
+
+.school-marker__symbol {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.school-cluster-marker {
+  display: inline-flex;
+  min-width: 60px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d6f8d, #2d8f5b);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.24);
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.school-cluster-marker__icon {
+  font-size: 12px;
+}
+
+.school-cluster-marker__count {
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+}
+
+.school-layer-map-prompt {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1200;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.school-layer-map-prompt--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.school-layer-map-prompt__card {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 420px;
+  padding: 12px 14px;
+  border: 1px solid rgba(27, 94, 69, 0.32);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.school-layer-map-prompt__content {
+  margin-bottom: 10px;
+}
+
+.school-layer-map-prompt__title {
+  font-weight: 700;
+  color: #174e3b;
+}
+
+.school-layer-map-prompt__copy {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: #4b5563;
+}
+
+.school-layer-map-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.school-layer-map-prompt__button {
+  min-width: 120px;
+}
+
+.school-layer-map-prompt__dismiss {
+  padding-left: 0;
+  color: #536274;
+  text-decoration: none;
+}
+
+.school-layer-panel-card {
+  border: 1px solid rgba(27, 94, 69, 0.16);
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.06);
+  scroll-margin-top: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.school-layer-enrollment-control {
+  margin-bottom: 60px;
+}
+
+.school-layer-panel-card--active {
+  border-color: rgba(27, 94, 69, 0.45);
+  box-shadow: 0 0 0 3px rgba(48, 146, 111, 0.12), 0 12px 28px rgba(16, 24, 40, 0.1);
+}
+
+.school-layer-panel-card--spotlight {
+  animation: school-layer-panel-pulse 1.8s ease;
+}
+
+@keyframes school-layer-panel-pulse {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(48, 146, 111, 0.28), 0 12px 28px rgba(16, 24, 40, 0.08);
+  }
+
+  35% {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 8px rgba(48, 146, 111, 0), 0 18px 30px rgba(16, 24, 40, 0.14);
+  }
+
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(48, 146, 111, 0), 0 6px 20px rgba(16, 24, 40, 0.06);
+  }
+}
+
 /* Desktop (lg ≥ 992px): retain previous fixed heights/scroll */
 @media (min-width: 992px) {
+  .school-layer-map-prompt {
+    left: 18px;
+    right: auto;
+    width: min(360px, calc(100% - 36px));
+  }
+
+  .school-layer-map-prompt__card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
   .options-col {
     height: 100vh;
     overflow-y: auto;
