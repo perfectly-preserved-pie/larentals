@@ -81,6 +81,42 @@
   line-height: 1.2;
 }
 
+.additional-layer-popup__chip--support {
+  background: #eef7ec;
+  border-color: #c6e1c0;
+  color: #204a2b;
+}
+
+.additional-layer-popup__metric-list {
+  display: grid;
+  gap: 8px;
+}
+
+.additional-layer-popup__metric-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #d8dde3;
+}
+
+.additional-layer-popup__metric-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.additional-layer-popup__metric-label {
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.additional-layer-popup__metric-value {
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
 .additional-layer-popup__empty {
   padding: 8px 0;
   color: #666;

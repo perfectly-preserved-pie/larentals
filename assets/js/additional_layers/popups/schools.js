@@ -45,31 +45,12 @@
         return Math.round(numberValue).toLocaleString("en-US") + " students";
     }
 
-    /**
-     * Build the student-support summary row.
-     *
-     * @param {Record<string, unknown>} properties School feature properties.
-     * @returns {string} Joined support metrics or `N/A`.
-     */
-    function buildSchoolSupportSummary(properties) {
-        const fragments = [];
-        const metrics = [
-            ["EL", properties.el_pct],
-            ["FRPM", properties.frpm_pct],
-            ["SED", properties.sed_pct],
-            ["SWD", properties.swd_pct],
-        ];
-
-        metrics.forEach(function(metric) {
-            const label = metric[0];
-            const value = formatPct(metric[1]);
-            if (value !== "N/A") {
-                fragments.push(`${escapeHtml(label)} ${escapeHtml(value)}`);
-            }
-        });
-
-        return fragments.length ? fragments.join(" | ") : "N/A";
-    }
+    const SUPPORT_METRIC_LABELS = [
+        ["Multilingual learners", "el_pct"],
+        ["Meal-program eligible", "frpm_pct"],
+        ["Socioeconomically disadvantaged", "sed_pct"],
+        ["Students with disabilities", "swd_pct"],
+    ];
 
     /**
      * Build a concise early-grades summary from derived TK / kindergarten flags.
@@ -179,6 +160,59 @@
     }
 
     /**
+     * Build translated support metrics for popup display.
+     *
+     * @param {Record<string, unknown>} properties School feature properties.
+     * @returns {string} HTML markup or `N/A`.
+     */
+    function buildSupportMetricMarkup(properties) {
+        const items = SUPPORT_METRIC_LABELS
+            .map(function(metric) {
+                const label = metric[0];
+                const key = metric[1];
+                const value = formatPct(properties[key]);
+                if (value === "N/A") {
+                    return "";
+                }
+
+                return `
+                    <div class="additional-layer-popup__metric-item">
+                        <span class="additional-layer-popup__metric-label">${escapeHtml(label)}</span>
+                        <span class="additional-layer-popup__metric-value">${escapeHtml(value)}</span>
+                    </div>
+                `;
+            })
+            .filter(Boolean);
+
+        if (!items.length) {
+            return "N/A";
+        }
+
+        return `<div class="additional-layer-popup__metric-list">${items.join("")}</div>`;
+    }
+
+    /**
+     * Build a chip for the high-level support summary.
+     *
+     * @param {Record<string, unknown>} properties School feature properties.
+     * @returns {string} HTML chip markup or `N/A`.
+     */
+    function buildSupportProfileMarkup(properties) {
+        const profile = buildSupportProfile(properties);
+        if (profile === "N/A") {
+            return "N/A";
+        }
+
+        return `
+            <div class="additional-layer-popup__chip-list">
+                <span class="additional-layer-popup__chip additional-layer-popup__chip--support">
+                    ${escapeHtml(profile)}
+                </span>
+            </div>
+        `;
+    }
+
+    /**
      * Build the preview banner shown above the popup rows.
      *
      * @param {Record<string, unknown>} properties School feature properties.
@@ -266,12 +300,12 @@
                 value: formatTextValue(properties.locale),
             },
             {
-                label: "Support Profile",
-                value: buildSupportProfile(properties),
+                label: "Student Support Snapshot",
+                value: buildSupportProfileMarkup(properties),
             },
             {
-                label: "Support Metrics",
-                value: buildSchoolSupportSummary(properties),
+                label: "Student Support Mix",
+                value: buildSupportMetricMarkup(properties),
             },
             {
                 label: "Website",
