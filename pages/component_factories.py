@@ -754,6 +754,79 @@ def build_school_layer_map_prompt(page_type: str) -> html.Div:
     )
 
 
+def build_hand_gesture_controls(page_type: str) -> html.Div:
+    """
+    Build the floating hand-gesture control card shown above the map.
+
+    Args:
+        page_type: Page key such as ``buy`` or ``lease``.
+
+    Returns:
+        An absolutely positioned control card layered above the map.
+    """
+    prefix = f"{page_type}-hand-gestures"
+
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            "Hand controls",
+                            className="hand-gesture-panel__title",
+                        ),
+                        html.Div(
+                            "Left hand pans, right hand zooms. Camera access stays in your browser.",
+                            className="hand-gesture-panel__copy",
+                        ),
+                    ],
+                    className="hand-gesture-panel__content",
+                ),
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Enable",
+                            id=f"{prefix}-toggle-button",
+                            color="dark",
+                            size="sm",
+                            className="hand-gesture-panel__toggle",
+                            **{"data-role": "toggle"},
+                        ),
+                        dbc.Button(
+                            "Hide preview",
+                            id=f"{prefix}-preview-button",
+                            color="link",
+                            size="sm",
+                            className="hand-gesture-panel__preview-toggle",
+                            **{"data-role": "preview-toggle"},
+                        ),
+                    ],
+                    className="hand-gesture-panel__actions",
+                ),
+                html.Div(
+                    [
+                        html.Span("Idle", className="hand-gesture-panel__status-badge", **{"data-role": "mode"}),
+                        html.Span(
+                            "Enable to start webcam-based pan and zoom.",
+                            className="hand-gesture-panel__status-text",
+                            **{"data-role": "status"},
+                        ),
+                    ],
+                    className="hand-gesture-panel__status",
+                ),
+                html.Div(
+                    "Tip: keep your hand inside the preview box and hold the gesture for a beat before moving.",
+                    className="hand-gesture-panel__hint",
+                ),
+            ],
+            className="hand-gesture-panel__card",
+        ),
+        id=f"{prefix}-panel",
+        className="hand-gesture-panel",
+        **{"data-page-type": page_type},
+    )
+
+
 def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     """
     Build the conditional, map-only filter panel for the schools overlay.

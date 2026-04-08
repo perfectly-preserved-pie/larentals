@@ -11,6 +11,7 @@ from .component_base import (
 )
 from .component_factories import (
     build_commute_filter_components,
+    build_hand_gesture_controls,
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
@@ -169,7 +170,10 @@ class LeaseComponents(BaseClass):
             last_updated=self.last_updated,
             filter_items=self._build_filter_sections(),
             map_component=self._build_map_component(),
-            map_overlay_children=[build_school_layer_map_prompt(self.page_type)],
+            map_overlay_children=[
+                build_school_layer_map_prompt(self.page_type),
+                build_hand_gesture_controls(self.page_type),
+            ],
         )
         return PageParts(
             title_card=parts.title_card,
