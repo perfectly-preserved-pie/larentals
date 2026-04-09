@@ -683,7 +683,7 @@ class LayersClass:
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
         ),
         'breakfast_burritos': LayerConfig(
-            name='Breakfast Burritos (via LABreakfastBurrito)',
+            name='Breakfast Burritos',
             dataset='breakfast_burritos',
             filepath='assets/datasets/breakfast_burritos.geojson',
             point_to_layer='drawBreakfastBurritoIcon',

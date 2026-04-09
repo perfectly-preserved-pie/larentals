@@ -3,7 +3,7 @@ const LAZY_LAYER_NAMES = {
   oil_well: "Oil & Gas Wells",
   crime: "Crime",
   farmers_markets: "Farmers Markets",
-  breakfast_burritos: "Breakfast Burritos (via LABreakfastBurrito)",
+  breakfast_burritos: "Breakfast Burritos",
   supermarkets_grocery: "Supermarkets & Grocery Stores",
   parking_tickets_density: "Parking Tickets Heatmap (2025)",
 };
