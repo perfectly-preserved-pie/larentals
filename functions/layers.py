@@ -664,6 +664,7 @@ class LayersClass:
             dataset='oil_well',
             filepath='assets/datasets/oil_wells.geojson',
             point_to_layer='drawOilIcon',
+            cluster_to_layer='drawOilCluster',
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
             valid_bounds=(-125.0, -113.0, 32.0, 35.5),
         ),

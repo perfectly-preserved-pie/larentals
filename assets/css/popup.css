@@ -197,6 +197,7 @@
 }
 
 .breakfast-burrito-div-icon,
+.oil-cluster-div-icon,
 .school-div-icon,
 .school-cluster-div-icon,
 .supermarket-div-icon {
@@ -292,6 +293,35 @@
 }
 
 .school-cluster-marker__count {
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+}
+
+.oil-cluster-marker {
+  display: inline-flex;
+  min-width: 64px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #5f3b22, #b87428);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.24);
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.oil-cluster-marker__icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.oil-cluster-marker__count {
   font-size: 0.86rem;
   letter-spacing: 0.01em;
 }
