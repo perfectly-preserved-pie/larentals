@@ -545,6 +545,10 @@ def build_map(
         A configured Leaflet map.
     """
     ns = Namespace("dash_props", "module")
+    map_event_handlers = {
+        "load": ns("register_map_for_gesture_controls"),
+        "layeradd": ns("register_map_for_gesture_controls"),
+    }
     map_children = [
         dl.TileLayer(detectRetina=False),
         dl.GeoJSON(
@@ -592,7 +596,83 @@ def build_map(
         center={"lat": center_lat, "lng": center_lng},
         preferCanvas=True,
         closePopupOnClick=True,
+        eventHandlers=map_event_handlers,
         style=map_style,
+    )
+
+
+def build_map_gesture_control() -> html.Div:
+    """
+    Build the webcam gesture-control panel for the shared map.
+
+    Returns:
+        A map overlay that is docked into the Leaflet controls stack.
+    """
+    return html.Div(
+        [
+            html.Button(
+                [
+                    html.I(className="bi bi-camera-video", **{"aria-hidden": "true"}),
+                    html.Span("Hand/gesture control", className="map-gesture-panel-toggle__label"),
+                ],
+                type="button",
+                className="map-gesture-panel-toggle",
+                title="Open hand gesture map control",
+                **{
+                    "aria-controls": "map-gesture-panel",
+                    "aria-expanded": "false",
+                    "aria-label": "Open hand gesture map control",
+                    "data-map-gesture-panel": "toggle",
+                },
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div("Hand/gesture control", className="map-gesture-panel__title"),
+                            html.Div(
+                                "Control the map with your webcam. Video stays on your device.",
+                                className="map-gesture-panel__copy",
+                            ),
+                        ],
+                        className="map-gesture-panel__intro",
+                    ),
+                    html.Button(
+                        [
+                            html.I(className="bi bi-camera-video", **{"aria-hidden": "true"}),
+                            html.Span("Start camera", className="map-gesture-action-label"),
+                        ],
+                        type="button",
+                        className="map-gesture-action-button",
+                        title="Start hand gesture map control",
+                        **{
+                            "aria-label": "Start hand gesture map control",
+                            "aria-pressed": "false",
+                            "data-map-gesture-control": "toggle",
+                        },
+                    ),
+                    html.Ul(
+                        [
+                            html.Li("Left fist or pinch: pan the map"),
+                            html.Li("Right fist or pinch: zoom in or out"),
+                            html.Li("Both hands: rotate the map"),
+                            html.Li("Hands together for 1 second: reset view"),
+                        ],
+                        className="map-gesture-panel__list",
+                    ),
+                    html.Div(
+                        className="map-gesture-control-status",
+                        role="status",
+                        **{"aria-live": "polite"},
+                    ),
+                ],
+                id="map-gesture-panel",
+                className="map-gesture-panel",
+                hidden=True,
+                **{"aria-hidden": "true"},
+            ),
+        ],
+        className="map-gesture-control",
     )
 
 
