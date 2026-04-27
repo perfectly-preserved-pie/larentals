@@ -10,16 +10,6 @@ import dash_mantine_components as dmc
 import numpy as np
 
 from .component_models import DashId, FilterSection, PageConfig, PageParts
-from functions.commute_utils import (
-    COMMUTE_DEFAULT_MODE,
-    COMMUTE_HELP_TEXT,
-    COMMUTE_MAX_MINUTES,
-    COMMUTE_MIN_MINUTES,
-    COMMUTE_MODE_OPTIONS,
-    COMMUTE_STEP_MINUTES,
-    default_commute_departure_datetime,
-    normalize_commute_minutes,
-)
 from functions.convex_hull import generate_convex_hulls
 from functions.layers import (
     SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS,
@@ -213,192 +203,6 @@ def build_location_filter_components(page_type: str) -> html.Div:
     )
 
 
-def build_commute_filter_components(page_type: str) -> html.Div:
-    """
-    Create the commute-time filter controls shown in the sidebar.
-
-    Args:
-        page_type: Current page key such as ``lease`` or ``buy``.
-
-    Returns:
-        A container with destination, mode, duration, and status controls.
-    """
-    default_minutes = normalize_commute_minutes(30)
-    default_departure = default_commute_departure_datetime()
-    slider_marks = {minutes: str(minutes) for minutes in (10, 20, 30, 45, 60, 90)}
-
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(
-                        "Filter listings by commute time to a destination of your choice.",
-                        style={
-                            "fontSize": "0.98rem",
-                            "color": "#243447",
-                            "marginBottom": "4px",
-                        },
-                    ),
-                    html.Div(
-                        "e.g., your workplace or favorite cafe.",
-                        style={
-                            "fontSize": "0.85rem",
-                            "color": "#6b7280",
-                            "lineHeight": 1.4,
-                            "marginBottom": "10px",
-                        },
-                    ),
-                ]
-            ),
-            dcc.Input(
-                id=f"{page_type}-commute-input",
-                type="text",
-                debounce=True,
-                placeholder="Destination (e.g., UCLA or 8565 Melrose Ave)",
-            ),
-            html.Div(
-                [
-                    html.H6("Mode", style={"marginTop": "12px", "marginBottom": "6px"}),
-                    dcc.Dropdown(
-                        id=f"{page_type}-commute-mode",
-                        options=COMMUTE_MODE_OPTIONS,
-                        value=COMMUTE_DEFAULT_MODE,
-                        clearable=False,
-                        searchable=False,
-                    ),
-                ]
-            ),
-            html.Div(
-                [
-                    html.H6(
-                        "Departure Time",
-                        style={"marginTop": "12px", "marginBottom": "6px"},
-                    ),
-                    dmc.DateTimePicker(
-                        id=f"{page_type}-commute-departure-datetime",
-                        value=default_departure,
-                        valueFormat="ddd MMM D, YYYY h:mm A",
-                        clearable=False,
-                        debounce=250,
-                        withSeconds=False,
-                        timePickerProps={
-                            "withDropdown": True,
-                            "format": "12h",
-                        },
-                        popoverProps={"withinPortal": False},
-                        persistence=True,
-                        persistence_type="local",
-                        w="100%",
-                    ),
-                ]
-            ),
-            html.Div(
-                [
-                    html.H6(
-                        "Max Minutes",
-                        style={"marginTop": "12px", "marginBottom": "6px"},
-                    ),
-                    dcc.Slider(
-                        id=f"{page_type}-commute-minutes",
-                        min=COMMUTE_MIN_MINUTES,
-                        max=COMMUTE_MAX_MINUTES,
-                        step=COMMUTE_STEP_MINUTES,
-                        value=default_minutes,
-                        updatemode="mouseup",
-                        marks=slider_marks,
-                        tooltip={
-                            "placement": "bottom",
-                            "always_visible": True,
-                        },
-                    ),
-                ]
-            ),
-            html.Div(
-                id=f"{page_type}-commute-status",
-                style={
-                    "marginTop": "14px",
-                    "fontSize": "0.86rem",
-                    "color": "#4b5563",
-                    "lineHeight": 1.45,
-                    "whiteSpace": "pre-line",
-                },
-            ),
-            html.Div(
-                [
-                    html.Div(
-                        "Show",
-                        style={
-                            "fontSize": "0.78rem",
-                            "fontWeight": 600,
-                            "letterSpacing": "0.01em",
-                            "color": "#4b5563",
-                            "marginBottom": "6px",
-                        },
-                    ),
-                    dcc.RadioItems(
-                        id=f"{page_type}-commute-display-mode",
-                        options=[
-                            {"label": "Verified only", "value": "verified_only"},
-                            {"label": "Show all matches", "value": "include_rough"},
-                        ],
-                        value="verified_only",
-                        persistence=True,
-                        persistence_type="local",
-                        labelStyle={"display": "block", "marginBottom": "4px"},
-                        inputStyle={"marginRight": "6px"},
-                    ),
-                    html.Div(
-                        [
-                            html.Span(
-                                "Estimated",
-                                id=f"{page_type}-commute-estimated-info-target",
-                                style={
-                                    "fontWeight": 600,
-                                    "textDecoration": "underline dotted",
-                                    "cursor": "help",
-                                },
-                            ),
-                            html.Span(
-                                " listings haven't been individually route-checked yet."
-                            ),
-                        ],
-                        style={
-                            "marginTop": "8px",
-                            "fontSize": "0.78rem",
-                            "color": "#6b7280",
-                            "lineHeight": 1.45,
-                        },
-                    ),
-                    dbc.Tooltip(
-                        "Estimated listings are inside the broader commute area, but each one has not been checked one-by-one yet.",
-                        target=f"{page_type}-commute-estimated-info-target",
-                        placement="top",
-                    ),
-                ],
-                id=f"{page_type}-commute-display-mode-container",
-                style={
-                    "display": "none",
-                    "marginTop": "12px",
-                    "padding": "10px 12px",
-                    "border": "1px solid #d7dde6",
-                    "borderRadius": "10px",
-                    "backgroundColor": "#f8fafc",
-                },
-            ),
-            html.Div(
-                COMMUTE_HELP_TEXT,
-                style={
-                    "marginTop": "18px",
-                    "fontSize": "0.85rem",
-                    "color": "#9aa0a6",
-                    "lineHeight": 1.45,
-                },
-            ),
-        ],
-        style={"marginBottom": "10px"},
-    )
-
-
 def build_title_card(
     *,
     title: str,
@@ -552,22 +356,6 @@ def build_map(
     map_children = [
         dl.TileLayer(detectRetina=False),
         dl.GeoJSON(
-            id=f"{page_type}-commute-geojson",
-            data={"type": "FeatureCollection", "features": []},
-            cluster=False,
-            bubblingMouseEvents=False,
-            zoomToBoundsOnClick=False,
-            style={
-                "color": "#8f2d56",
-                "weight": 4,
-                "opacity": 0.9,
-                "lineCap": "round",
-                "lineJoin": "round",
-                "fillColor": "#f4a7b9",
-                "fillOpacity": 0.16,
-            },
-        ),
-        dl.GeoJSON(
             id=geojson_id,
             data=None,
             cluster=True,
@@ -578,10 +366,6 @@ def build_map(
                 "radius": 160,
                 "minZoom": 3,
             },
-        ),
-        dl.LayerGroup(
-            id=f"{page_type}-commute-target-layer",
-            children=[],
         ),
         dl.FullScreenControl(),
     ]

@@ -4,10 +4,6 @@ function safeNumber(value) {
     return isNaN(num) ? null : num;
 }
 
-function emptyFeatureCollection() {
-    return { type: "FeatureCollection", features: [] };
-}
-
 function normalizeCoordinatePair(coords) {
     if (!Array.isArray(coords) || coords.length < 2) return null;
     const [a, b] = coords;
@@ -25,93 +21,6 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     const num = Number(value);
     if (isNaN(num)) return Boolean(includeMissing);
     return num >= minValue && num <= maxValue;
-}
-
-function normalizeListingId(value) {
-    if (value === null || value === undefined) return "";
-    return String(value).trim().replace(/\.0$/, "");
-}
-
-function normalizeListingIdSet(values) {
-    return new Set(
-        Array.isArray(values)
-            ? values.map((value) => normalizeListingId(value)).filter((value) => value.length > 0)
-            : []
-    );
-}
-
-function buildCommuteCandidatePayload(commuteSignature, featureCollection) {
-    if (!commuteSignature || !Array.isArray(featureCollection?.features)) {
-        return null;
-    }
-
-    const candidates = [];
-    const normalizedIds = [];
-
-    featureCollection.features.forEach((feature) => {
-        const listingId = normalizeListingId(feature?.properties?.mls_number);
-        const coords = normalizeCoordinatePair(feature?.geometry?.coordinates);
-        if (!listingId || !coords) {
-            return;
-        }
-
-        const [lon, lat] = coords;
-        normalizedIds.push(listingId);
-        candidates.push({
-            mls_number: listingId,
-            lat,
-            lon,
-        });
-    });
-
-    normalizedIds.sort();
-    return {
-        candidate_signature: `${commuteSignature}|${normalizedIds.join(",")}`,
-        total_candidates: candidates.length,
-        candidates,
-    };
-}
-
-function buildCommuteCandidateSignature(commuteSignature, featureCollection) {
-    return buildCommuteCandidatePayload(
-        commuteSignature,
-        featureCollection,
-    )?.candidate_signature || null;
-}
-
-function filterFeatureCollectionByListingIds(featureCollection, eligibleListingIds) {
-    if (!Array.isArray(featureCollection?.features)) {
-        return emptyFeatureCollection();
-    }
-
-    const eligibleSet = normalizeListingIdSet(eligibleListingIds);
-
-    return {
-        type: "FeatureCollection",
-        features: featureCollection.features.filter((feature) => eligibleSet.has(
-            normalizeListingId(feature?.properties?.mls_number)
-        )),
-    };
-}
-
-function cloneFeatureWithCommuteState(feature, matchState, statusText) {
-    const properties = feature && typeof feature.properties === "object" && feature.properties !== null
-        ? feature.properties
-        : {};
-
-    return Object.assign({}, feature, {
-        properties: Object.assign({}, properties, {
-            commute_match_state: matchState || null,
-            commute_status_text: statusText || null,
-        }),
-    });
-}
-
-function commuteStateSortRank(matchState) {
-    if (matchState === "verified_match") return 0;
-    if (matchState === "rough_match") return 1;
-    if (matchState === "verified_excluded") return 2;
-    return 3;
 }
 
 function featureWithinAnyPolygon(feature, polygonFeatures) {

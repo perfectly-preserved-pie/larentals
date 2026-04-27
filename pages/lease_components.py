@@ -10,7 +10,6 @@ from .component_base import (
     categorize_laundry_features,
 )
 from .component_factories import (
-    build_commute_filter_components,
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
@@ -269,11 +268,6 @@ class LeaseComponents(BaseClass):
                     max_upload=self._safe_speed_max("best_up"),
                 ),
                 "isp_speed",
-            ),
-            (
-                "Commute (EXPERIMENTAL)",
-                build_commute_filter_components(self.page_type),
-                "commute",
             ),
             ("Laundry", self.create_laundry_checklist(), "laundry"),
             ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),

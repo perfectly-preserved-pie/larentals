@@ -62,42 +62,6 @@ Run the app container:
 docker run --rm -p 8080:8080 larentals
 ```
 
-### Self-Hosted Valhalla
-
-The commute filter can use a self-hosted Valhalla instance instead of the
-public demo service. This repo includes a sidecar Compose file for that setup:
-
-```bash
-docker compose -f docker-compose.valhalla.yml up -d
-```
-
-Setup details, GTFS folder layout, and the app env vars for switching to the
-local service live in [docker/valhalla/README.md](docker/valhalla/README.md).
-There is also a helper to pull common LA-area GTFS feeds into the expected
-folders:
-
-```bash
-uv run download-gtfs-feeds all
-```
-
-The repo also includes a starter
-[`docker/valhalla/custom_files/valhalla.json`](docker/valhalla/custom_files/valhalla.json)
-that narrows Valhalla's service limits to this app's route + isochrone +
-multimodal commute workload.
-
-### Partial Exact Commute Verification
-
-When the rough commute shortlist is large, the app now exact-checks the nearest
-subset of listings first instead of skipping exact verification entirely.
-
-Helpful tuning env vars:
-
-- `VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES=60` to cap how many nearest listings are exact-verified
-- `VALHALLA_EXACT_COMMUTE_MAX_WORKERS=4` to control concurrent route checks
-
-The map shows verified commute matches by default and can optionally include
-additional rough matches when the shortlist is larger than the exact-check cap.
-
 ### Non-Docker
 
 Run the Dash app directly:

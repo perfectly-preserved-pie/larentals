@@ -51,7 +51,6 @@ build-school-layer-geojson = "scripts.build_school_layer_geojson:main"
 enrich-schools = "scripts.enrich_schools:main"
 build-parking-tickets-heatmap = "scripts.build_parking_tickets_heatmap:main"
 build-supermarkets-geojson = "scripts.build_supermarkets_geojson:main"
-download-gtfs-feeds = "scripts.download_gtfs_feeds:main"
 init-listing-enrichment-tables = "scripts.init_listing_enrichment_tables:main"
 normalize-lease-terms = "scripts.normalize_lease_terms:main"
 run-broadband-merge = "scripts.run_broadband_merge:main"
@@ -64,4 +63,4 @@ build-backend = "setuptools.build_meta"
 py-modules = ["app"]
 
 [tool.setuptools.packages.find]
-include = ["api", "functions", "pipelines", "scripts"]
+include = ["api", "functions", "pages", "pipelines", "scripts"]

@@ -5,7 +5,6 @@ import pandas as pd
 
 from .component_base import BaseClass, _build_cached_geojson_payload, _db_cache_token
 from .component_factories import (
-    build_commute_filter_components,
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
@@ -205,11 +204,6 @@ class BuyComponents(BaseClass):
                     max_upload=self._safe_speed_max("best_up"),
                 ),
                 "isp_speed",
-            ),
-            (
-                "Commute (EXPERIMENTAL)",
-                build_commute_filter_components(self.page_type),
-                "commute",
             ),
             ("Lot Size", self.create_lot_size_components(), "lot_size"),
             ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
