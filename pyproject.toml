@@ -57,7 +57,7 @@ normalize-lease-terms = "scripts.normalize_lease_terms:main"
 run-broadband-merge = "scripts.run_broadband_merge:main"
 
 [build-system]
-requires = ["setuptools>=80"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
