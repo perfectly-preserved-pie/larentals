@@ -7,6 +7,10 @@
   position: relative;
 }
 
+.map-gesture-control[hidden] {
+  display: none;
+}
+
 .map-gesture-panel-toggle {
   align-items: center;
   background: #ffffff;
@@ -136,8 +140,7 @@
 }
 
 @media (max-width: 767.98px) {
-  .map-gesture-panel-toggle {
-    min-height: 32px;
-    padding: 6px 9px;
+  .map-gesture-control {
+    display: none;
   }
 }

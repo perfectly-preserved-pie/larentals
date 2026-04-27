@@ -11,6 +11,7 @@
     let isActive = false;
     let isStarting = false;
     let statusTimer = null;
+    const mobileViewportQuery = window.matchMedia("(max-width: 767.98px)");
 
     function ensurePluginStylesheet() {
         if (document.querySelector("link[data-map-gesture-controls-style='true']")) {
@@ -98,6 +99,10 @@
         return container && container.isConnected ? leafletMap : null;
     }
 
+    function isMobileViewport() {
+        return Boolean(mobileViewportQuery.matches);
+    }
+
     function dockGestureControl(targetMap) {
         if (!isUsableMap(targetMap)) {
             return;
@@ -117,6 +122,22 @@
         if (window.L && window.L.DomEvent) {
             window.L.DomEvent.disableClickPropagation(gestureControl);
             window.L.DomEvent.disableScrollPropagation(gestureControl);
+        }
+    }
+
+    function updateMobileAvailability() {
+        const isMobile = isMobileViewport();
+
+        document.querySelectorAll(".map-gesture-control").forEach((control) => {
+            control.hidden = isMobile;
+            control.setAttribute("aria-hidden", isMobile ? "true" : "false");
+        });
+
+        if (isMobile) {
+            setPanelOpen(false);
+            if (isActive || isStarting || controller) {
+                stopGestureControl();
+            }
         }
     }
 
@@ -261,6 +282,11 @@
     }
 
     async function startGestureControl(targetMap) {
+        if (isMobileViewport()) {
+            setPanelOpen(false);
+            return;
+        }
+
         if (!isUsableMap(targetMap)) {
             showStatus("Map is still loading.", 2500);
             return;
@@ -347,6 +373,7 @@
 
         leafletMap = nextMap;
         dockGestureControl(nextMap);
+        updateMobileAvailability();
         updateButtons();
     }
 
@@ -371,6 +398,8 @@
     document.addEventListener("click", togglePanel);
     document.addEventListener("click", closePanelFromOutsideClick);
     document.addEventListener("keydown", closePanelFromEscape);
+    mobileViewportQuery.addEventListener("change", updateMobileAvailability);
     window.addEventListener("pagehide", () => stopGestureControl());
+    updateMobileAvailability();
     updateButtons();
 })();
