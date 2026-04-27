@@ -157,7 +157,7 @@
 
             const labelEl = button.querySelector(".map-gesture-panel-toggle__label");
             if (labelEl) {
-                labelEl.textContent = isActive ? "Hand control on" : "Hand control";
+                labelEl.textContent = isActive ? "Hand/gesture control on" : "Hand/gesture control";
             }
         });
     }
@@ -191,6 +191,7 @@
 
         document.querySelectorAll(".map-gesture-panel").forEach((panel) => {
             panel.classList.toggle("is-open", isOpen);
+            panel.hidden = !isOpen;
             panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
         });
     }

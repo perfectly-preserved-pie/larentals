@@ -36,6 +36,10 @@
   color: #0f766e;
 }
 
+.map-gesture-panel[hidden] {
+  display: none;
+}
+
 .map-gesture-panel {
   background: #ffffff;
   border: 2px solid rgba(0, 0, 0, 0.2);
@@ -45,22 +49,10 @@
   font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   left: 0;
   margin-top: 6px;
-  opacity: 0;
   padding: 12px;
-  pointer-events: none;
   position: absolute;
   top: 100%;
-  transform: translateY(-4px);
-  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s ease;
-  visibility: hidden;
   width: min(280px, calc(100vw - 40px));
-}
-
-.map-gesture-panel.is-open {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-  visibility: visible;
 }
 
 .map-gesture-panel__intro {

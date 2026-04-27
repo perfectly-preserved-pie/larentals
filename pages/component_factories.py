@@ -613,7 +613,7 @@ def build_map_gesture_control() -> html.Div:
             html.Button(
                 [
                     html.I(className="bi bi-camera-video", **{"aria-hidden": "true"}),
-                    html.Span("Hand control", className="map-gesture-panel-toggle__label"),
+                    html.Span("Hand/gesture control", className="map-gesture-panel-toggle__label"),
                 ],
                 type="button",
                 className="map-gesture-panel-toggle",
@@ -629,7 +629,7 @@ def build_map_gesture_control() -> html.Div:
                 [
                     html.Div(
                         [
-                            html.Div("Hand control", className="map-gesture-panel__title"),
+                            html.Div("Hand/gesture control", className="map-gesture-panel__title"),
                             html.Div(
                                 "Control the map with your webcam. Video stays on your device.",
                                 className="map-gesture-panel__copy",
@@ -668,6 +668,7 @@ def build_map_gesture_control() -> html.Div:
                 ],
                 id="map-gesture-panel",
                 className="map-gesture-panel",
+                hidden=True,
                 **{"aria-hidden": "true"},
             ),
         ],
