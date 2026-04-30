@@ -142,6 +142,50 @@
     }
 
     /**
+     * Normalize CAL FIRE FHSZ display values in listing popups.
+     *
+     * @param {unknown} value Raw fire hazard severity value.
+     * @returns {string} Display label.
+     */
+    function normalizeFireHazardSeverity(value) {
+        const normalized = normalizeNullableString(value);
+        if (!normalized) return "Unknown";
+
+        const lowered = normalized.toLowerCase();
+        if (lowered.includes("outside")) return "Outside mapped zone";
+        if (lowered.includes("very") && lowered.includes("high")) return "Very High";
+        if (lowered === "high" || lowered.endsWith(" high")) return "High";
+        if (lowered === "moderate" || lowered.endsWith(" moderate")) return "Moderate";
+        return "Unknown";
+    }
+
+    /**
+     * Render the CAL FIRE FHSZ popup value with compact source context.
+     *
+     * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
+     * @returns {string} HTML string for the fire hazard value cell.
+     */
+    function renderFireHazardValue(popupData) {
+        const severity = normalizeFireHazardSeverity(popupData.fire_hazard_severity);
+        const classSuffix = severity.toLowerCase().replace(/\s+/g, "-");
+        const area = normalizeNullableString(popupData.fire_hazard_responsibility_area);
+        const phase = normalizeNullableString(popupData.fire_hazard_rollout_phase);
+        const effectiveDate = normalizeNullableString(popupData.fire_hazard_effective_date);
+        const details = [area, phase, effectiveDate]
+            .filter(Boolean)
+            .join(" · ");
+
+        return `
+            <span class="fire-hazard-zone-chip fire-hazard-zone-chip--${escapeHtml(classSuffix)}">
+                ${escapeHtml(severity)}
+            </span>
+            <span style="display:block; margin-top:4px; color:#6b7280; font-size:0.78rem; line-height:1.25;">
+                CAL FIRE FHSZ${details ? ` · ${escapeHtml(details)}` : ""}
+            </span>
+        `;
+    }
+
+    /**
      * Format a miles distance for popup display.
      *
      * @param {unknown} value Raw miles value.
@@ -364,6 +408,10 @@
                         <span class="label" style="font-weight: bold;">Rental Price</span>
                         <span class="value">${formatCurrency(popupData.list_price)}</span>
                     </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
+                        <span class="label" style="font-weight: bold;">Fire Hazard Severity</span>
+                        <span class="value" style="text-align: right;">${renderFireHazardValue(popupData)}</span>
+                    </div>
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Security Deposit</span>
                         <span class="value">${formatCurrency(popupData.security_deposit)}</span>
@@ -485,6 +533,10 @@
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">List Price</span>
                         <span class="value">${formatCurrency(popupData.list_price)}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
+                        <span class="label" style="font-weight: bold;">Fire Hazard Severity</span>
+                        <span class="value" style="text-align: right;">${renderFireHazardValue(popupData)}</span>
                     </div>
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">HOA Fee</span>

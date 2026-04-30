@@ -1,3 +1,27 @@
+function normalizeLeaseFireHazardValue(value) {
+    if (value === null || value === undefined) {
+        return "Unknown";
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized || normalized === "null" || normalized === "none" || normalized === "nan") {
+        return "Unknown";
+    }
+    if (normalized.includes("outside")) {
+        return "Outside mapped zone";
+    }
+    if (normalized.includes("very") && normalized.includes("high")) {
+        return "Very High";
+    }
+    if (normalized === "high" || normalized.endsWith(" high")) {
+        return "High";
+    }
+    if (normalized === "moderate" || normalized.endsWith(" moderate")) {
+        return "Moderate";
+    }
+    return "Unknown";
+}
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
@@ -15,6 +39,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {boolean} parkingSpacesIncludeMissing - Whether to include listings with null/undefined parking
          * @param {[number, number]} yearBuiltRange - [minYear, maxYear]
          * @param {boolean} yearBuiltIncludeMissing - Whether to include listings with null/undefined year_built
+         * @param {string[]} fireHazardSelection - Selected CAL FIRE FHSZ labels
          * @param {string[]} rentalTerms - Array of user-selected rental terms
          * @param {boolean} termsIncludeMissing - Include listings with null/undefined terms?
          * @param {string[]} furnishedChoices - Array of furnished options
@@ -51,6 +76,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             parkingSpacesIncludeMissing,
             yearBuiltRange,
             yearBuiltIncludeMissing,
+            fireHazardSelection,
             rentalTerms,
             termsIncludeMissing,
             furnishedChoices,
@@ -216,7 +242,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                       (yearBuilt >= minYear && yearBuilt <= maxYear);
                 }
 
-                // 6) termsFilter
+                // 6) fireHazardFilter
+                const normalizedFireHazardSelection = Array.isArray(fireHazardSelection)
+                    ? fireHazardSelection
+                    : [];
+                const fireHazardValue = normalizeLeaseFireHazardValue(
+                    feature.properties.fire_hazard_severity
+                );
+                const fireHazardFilter = normalizedFireHazardSelection.length > 0
+                    ? normalizedFireHazardSelection.includes(fireHazardValue)
+                    : false;
+
+                // 7) termsFilter
                 let termsFilter = true;
                 if (!rentalTerms || rentalTerms.length === 0) {
                     termsFilter = termsIncludeMissingBool ? isTermsMissing : false;
@@ -239,7 +276,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     }
                 }
 
-                // 7) furnishedFilter
+                // 8) furnishedFilter
                 let furnishedFilter = true;
                 if (!furnishedChoices || furnishedChoices.length === 0) {
                     furnishedFilter = false;
@@ -253,7 +290,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     furnishedFilter = chosenFurnished.includes(furnished) || unknownFilter;
                 }
 
-                // 8) securityDepositFilter
+                // 9) securityDepositFilter
                 let securityDepositFilter = true;
                 if (securityDepositIncludeMissingBool) {
                     securityDepositFilter = (securityDeposit === null || securityDeposit === undefined) ||
@@ -263,7 +300,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                             (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
                 }
 
-                // 9) petDepositFilter
+                // 10) petDepositFilter
                 let petDepositFilter = true;
                 if (petDepositIncludeMissingBool) {
                     petDepositFilter = (petDeposit === null || petDeposit === undefined) ||
@@ -273,7 +310,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                        (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
                 }
 
-                // 10) keyDepositFilter
+                // 11) keyDepositFilter
                 let keyDepositFilter = true;
                 if (keyDepositIncludeMissingBool) {
                     keyDepositFilter = (keyDeposit === null || keyDeposit === undefined) ||
@@ -283,7 +320,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                        (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
                 }
 
-                // 11) otherDepositFilter
+                // 12) otherDepositFilter
                 let otherDepositFilter = true;
                 if (otherDepositIncludeMissingBool) {
                     otherDepositFilter = (otherDeposit === null || otherDeposit === undefined) ||
@@ -293,7 +330,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                          (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
                 }
 
-                // 12) laundryFilter
+                // 13) laundryFilter
                 let laundryFilter = true;
                 if (!laundryChoices || laundryChoices.length === 0) {
                     laundryFilter = false;
@@ -311,18 +348,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     laundryFilter = chosenLaundry.includes(laundryCategory) || unknownLaundryOk;
                 }
 
-                // 13) subtypeFilter
+                // 14) subtypeFilter
                 let subtypeFilter = true;
                 if (subtypeSelection && subtypeSelection.length > 0) {
                     subtypeFilter = subtypeSelection.includes(subtype);
                 }
 
-                // 14) priceFilter, bedroomsFilter, bathroomsFilter
+                // 15) priceFilter, bedroomsFilter, bathroomsFilter
                 const priceFilter = (price >= minPrice && price <= maxPrice);
                 const bedroomsFilter = (bedrooms >= minBedrooms && bedrooms <= maxBedrooms);
                 const bathroomsFilter = (bathrooms >= minBathrooms && bathrooms <= maxBathrooms);
 
-                // 15) dateFilter
+                // 16) dateFilter
                 let dateFilter = true;
                 const listingDate = date ? new Date(date) : null;
                 if (dateIncludeMissingBool) {
@@ -333,7 +370,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                                  (listingDate >= filterMinDate && listingDate <= filterMaxDate);
                 }
 
-                // 16) ISP speed filters
+                // 17) ISP speed filters
                 const downloadSpeedFilter = speedRangeFilter(
                     downloadSpeed,
                     minDownloadSpeed,
@@ -347,7 +384,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     speedIncludeMissingBool,
                 );
 
-                // 17) ZIP boundary filter (Census ZCTA)
+                // 18) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
                     zipFilter = featureWithinAnyPolygon(feature, zipFeatures);
@@ -363,6 +400,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     ppsqftFilter &&
                     parkingFilter &&
                     yearBuiltFilter &&
+                    fireHazardFilter &&
                     termsFilter &&
                     furnishedFilter &&
                     securityDepositFilter &&
@@ -387,6 +425,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!ppsqftFilter) failedReasons.push("Price per sqft");
                     if (!parkingFilter) failedReasons.push("Parking");
                     if (!yearBuiltFilter) failedReasons.push("Year built");
+                    if (!fireHazardFilter) failedReasons.push("Fire hazard");
                     if (!termsFilter) failedReasons.push("Lease terms");
                     if (!furnishedFilter) failedReasons.push("Furnished");
                     if (!securityDepositFilter) failedReasons.push("Security deposit");

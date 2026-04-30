@@ -5,6 +5,7 @@ import pandas as pd
 
 from .component_base import BaseClass, _build_cached_geojson_payload, _db_cache_token
 from .component_factories import (
+    build_fire_hazard_layer_legend,
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
@@ -29,6 +30,7 @@ class BuyComponents(BaseClass):
         "farmers_markets",
         "supermarkets_grocery",
         "schools",
+        "fire_hazard_zones",
         "oil_well",
     )
 
@@ -50,6 +52,10 @@ class BuyComponents(BaseClass):
         "hoa_fee_frequency",
         "school_district_name",
         "nearest_high_school_mi",
+        "fire_hazard_severity",
+        "fire_hazard_responsibility_area",
+        "fire_hazard_rollout_phase",
+        "fire_hazard_effective_date",
         "full_street_address",
         "listed_date",
         "listing_url",
@@ -73,6 +79,10 @@ class BuyComponents(BaseClass):
         "hoa_fee_frequency",
         "school_district_name",
         "nearest_high_school_mi",
+        "fire_hazard_severity",
+        "fire_hazard_responsibility_area",
+        "fire_hazard_rollout_phase",
+        "fire_hazard_effective_date",
         "listed_date",
     )
 
@@ -93,6 +103,7 @@ class BuyComponents(BaseClass):
         active_filter_items=(
             "listed_date",
             "location",
+            "fire_hazard",
             "subtypes",
             "list_price",
             "bedrooms",
@@ -147,6 +158,7 @@ class BuyComponents(BaseClass):
             map_overlay_children=[
                 build_map_gesture_control(),
                 build_school_layer_map_prompt(self.page_type),
+                build_fire_hazard_layer_legend(self.page_type),
             ],
         )
         return PageParts(
@@ -187,6 +199,11 @@ class BuyComponents(BaseClass):
         return [
             ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("Location", build_location_filter_components(self.page_type), "location"),
+            (
+                "Fire Hazard Severity",
+                self.create_fire_hazard_components(),
+                "fire_hazard",
+            ),
             ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("List Price", self._build_list_price_filter(), "list_price"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
@@ -410,6 +427,56 @@ class BuyComponents(BaseClass):
             ),
             id=self.dynamic_output_id("hoa_fee_frequency"),
             className="d-flex flex-wrap gap-2",
+        )
+
+    def create_fire_hazard_components(self) -> html.Div:
+        """
+        Build the CAL FIRE FHSZ filter section.
+
+        Returns:
+            A fire-hazard filter ``Div``.
+        """
+        values = [
+            "Outside mapped zone",
+            "Moderate",
+            "High",
+            "Very High",
+            "Unknown",
+        ]
+        return html.Div(
+            [
+                html.Div(
+                    "CAL FIRE zones describe long-term fire hazard for an area, not expected damage to a specific home.",
+                    className="small text-muted mb-2",
+                ),
+                dmc.ChipGroup(
+                    id="fire_hazard_severity_checklist",
+                    multiple=True,
+                    value=list(values),
+                    children=[
+                        dmc.Chip(children=value, value=value, radius="sm")
+                        for value in values
+                    ],
+                ),
+                html.Details(
+                    [
+                        html.Summary("What does this mean?"),
+                        html.P(
+                            (
+                                "Fire Hazard Severity Zone maps evaluate hazard, not risk. "
+                                "They are similar to flood zone maps: they describe area-level "
+                                "conditions and likelihood over a 30- to 50-year period, without "
+                                "accounting for mitigation such as home hardening, recent wildfire, "
+                                "or fuel-reduction work."
+                            ),
+                            className="small text-muted mt-2 mb-0",
+                        ),
+                    ],
+                    className="small mt-2",
+                ),
+            ],
+            id=self.dynamic_output_id("fire_hazard"),
+            className="d-flex flex-column gap-2",
         )
 
     def create_listed_date_components(self) -> html.Div:

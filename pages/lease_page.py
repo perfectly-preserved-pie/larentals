@@ -240,6 +240,20 @@ def update_lease_school_layer_prompt_class(
 
 
 @callback(
+  Output("lease-fire-hazard-zone-legend", "className"),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+)
+def update_lease_fire_hazard_legend_class(selected_overlays: list[str] | None) -> str:
+  """
+  Reveal the CAL FIRE FHSZ legend only while the overlay is active.
+  """
+  base_class_name = "fire-hazard-zone-legend"
+  if LayersClass.overlay_is_selected(selected_overlays, "fire_hazard_zones"):
+    return f"{base_class_name} fire-hazard-zone-legend--visible"
+  return base_class_name
+
+
+@callback(
   Output("lease-school-layer-controls-card", "className"),
   Input(LayersClass.layers_control_id("lease"), "overlays"),
 )
@@ -473,6 +487,7 @@ clientside_callback(
     Input('garage_missing_switch', 'checked'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_switch', 'checked'),
+    Input('fire_hazard_severity_checklist', 'value'),
     Input('terms_checklist', 'value'),
     Input('terms_missing_switch', 'checked'),
     Input('furnished_checklist', 'value'),
@@ -552,6 +567,7 @@ clientside_callback(
     Input('garage_missing_switch', 'checked'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_switch', 'checked'),
+    Input('fire_hazard_severity_checklist', 'value'),
     Input('terms_checklist', 'value'),
     Input('terms_missing_switch', 'checked'),
     Input('furnished_checklist', 'value'),

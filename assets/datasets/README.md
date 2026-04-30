@@ -18,6 +18,18 @@ Preferred local artifacts:
 - Source of truth is the official California Open Data GeoPackage download
 - Final GeoJSON is clipped to Southern California and reduced to the fields used by the map layer and popup
 
+## Fire Hazard Severity Zones
+
+https://osfm.fire.ca.gov/what-we-do/community-wildfire-preparedness-and-mitigation/fire-hazard-severity-zones
+
+Preferred local derived artifact:
+
+- `cal_fire_fhsz_southern_california.geojson`
+- Built from CAL FIRE / OSFM public ArcGIS services for SRA FHSZ effective `2024-04-01` and 2025 LRA rollout phases
+- Refresh listing enrichment and the optional overlay with `uv run enrich-fire-hazard`
+- Stores categorical FHSZ polygons only: `Moderate`, `High`, and `Very High`
+- Use the app label `Fire Hazard Severity`; explain that CAL FIRE zones describe long-term area-level hazard, not expected damage to a specific home
+
 ## Breakfast Burritos
 
 https://labreakfastburrito.com/

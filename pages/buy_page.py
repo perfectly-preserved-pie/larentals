@@ -269,6 +269,20 @@ def update_buy_school_layer_prompt_class(
 
 
 @callback(
+  Output("buy-fire-hazard-zone-legend", "className"),
+  Input(LayersClass.layers_control_id("buy"), "overlays"),
+)
+def update_buy_fire_hazard_legend_class(selected_overlays: list[str] | None) -> str:
+  """
+  Reveal the CAL FIRE FHSZ legend only while the overlay is active.
+  """
+  base_class_name = "fire-hazard-zone-legend"
+  if LayersClass.overlay_is_selected(selected_overlays, "fire_hazard_zones"):
+    return f"{base_class_name} fire-hazard-zone-legend--visible"
+  return base_class_name
+
+
+@callback(
   Output("buy-school-layer-controls-card", "className"),
   Input(LayersClass.layers_control_id("buy"), "overlays"),
 )
@@ -490,6 +504,7 @@ clientside_callback(
     Input('lot_size_missing_switch', 'checked'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_switch', 'checked'),
+    Input('fire_hazard_severity_checklist', 'value'),
     Input('subtype_checklist', 'value'),
     Input('listed_date_datepicker_buy', 'start_date'),
     Input('listed_date_datepicker_buy', 'end_date'),
@@ -559,6 +574,7 @@ clientside_callback(
     Input('lot_size_missing_switch', 'checked'),
     Input('yrbuilt_slider', 'value'),
     Input('yrbuilt_missing_switch', 'checked'),
+    Input('fire_hazard_severity_checklist', 'value'),
     Input('subtype_checklist', 'value'),
     Input('listed_date_datepicker_buy', 'start_date'),
     Input('listed_date_datepicker_buy', 'end_date'),

@@ -618,6 +618,54 @@ def build_school_layer_map_prompt(page_type: str) -> html.Div:
     )
 
 
+def build_fire_hazard_layer_legend(page_type: str) -> html.Div:
+    """
+    Build the floating legend for the CAL FIRE FHSZ optional overlay.
+
+    Args:
+        page_type: Page key such as ``buy`` or ``lease``.
+
+    Returns:
+        An absolutely positioned legend hidden until the overlay is enabled.
+    """
+    items = [
+        ("Moderate", "fire-hazard-zone-legend__swatch--moderate"),
+        ("High", "fire-hazard-zone-legend__swatch--high"),
+        ("Very High", "fire-hazard-zone-legend__swatch--very-high"),
+    ]
+    return html.Div(
+        [
+            html.Div("CAL FIRE FHSZ", className="fire-hazard-zone-legend__title"),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Span(
+                                className=(
+                                    "fire-hazard-zone-legend__swatch "
+                                    f"{swatch_class}"
+                                )
+                            ),
+                            html.Span(label),
+                        ],
+                        className="fire-hazard-zone-legend__item",
+                    )
+                    for label, swatch_class in items
+                ],
+                className="fire-hazard-zone-legend__items",
+            ),
+            html.Div(
+                "Area-level fire hazard zone, not a home-specific risk score.",
+                className="fire-hazard-zone-legend__note",
+            ),
+        ],
+        id=f"{page_type}-fire-hazard-zone-legend",
+        className="fire-hazard-zone-legend",
+        role="status",
+        **{"aria-live": "polite"},
+    )
+
+
 def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     """
     Build the conditional, map-only filter panel for the schools overlay.

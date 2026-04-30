@@ -1,3 +1,27 @@
+function normalizeFireHazardValue(value) {
+    if (value === null || value === undefined) {
+        return "Unknown";
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized || normalized === "null" || normalized === "none" || normalized === "nan") {
+        return "Unknown";
+    }
+    if (normalized.includes("outside")) {
+        return "Outside mapped zone";
+    }
+    if (normalized.includes("very") && normalized.includes("high")) {
+        return "Very High";
+    }
+    if (normalized === "high" || normalized.endsWith(" high")) {
+        return "High";
+    }
+    if (normalized === "moderate" || normalized.endsWith(" moderate")) {
+        return "Moderate";
+    }
+    return "Unknown";
+}
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
@@ -15,6 +39,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {boolean} lotSizeIncludeMissing - Whether to include properties with missing `lot_size`.
         * @param {Array<number>} yearBuiltRange - [minYearBuilt, maxYearBuilt] for filtering by `year_built`.
         * @param {boolean} yearBuiltIncludeMissing - Whether to include properties with missing `year_built`.
+        * @param {Array<string>} fireHazardSelection - Selected CAL FIRE FHSZ labels.
         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
@@ -40,6 +65,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             lotSizeIncludeMissing,
             yearBuiltRange,
             yearBuiltIncludeMissing,
+            fireHazardSelection,
             subtypeSelection,
             dateStart,
             dateEnd,
@@ -145,7 +171,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     yrBuiltFilter = true;
                 }
 
-                // 8) Subtype Filter
+                // 8) Fire Hazard Severity Filter
+                const normalizedFireHazardSelection = Array.isArray(fireHazardSelection)
+                    ? fireHazardSelection
+                    : [];
+                const fireHazardValue = normalizeFireHazardValue(props.fire_hazard_severity);
+                const fireHazardFilter = normalizedFireHazardSelection.length > 0
+                    ? normalizedFireHazardSelection.includes(fireHazardValue)
+                    : false;
+
+                // 9) Subtype Filter
                 let subtypeFilter = true;
                 const normalizedSubtypeSelection = Array.isArray(subtypeSelection)
                     ? subtypeSelection
@@ -161,7 +196,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     }
                 }
 
-                // 9) Listed Date Filter
+                // 10) Listed Date Filter
                 let dateFilter = false;
                 const listedDateStr = props.listed_date || '';
                 if (!listedDateStr) {
@@ -179,19 +214,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     }
                 }
 
-                // 10) HOA Fee Filter
+                // 11) HOA Fee Filter
                 const hoaVal = parseFloat(props.hoa_fee);
                 let hoaFilter = !isNaN(hoaVal) && (hoaVal >= minHOA && hoaVal <= maxHOA);
                 if (hoaFeeIncludeMissingBool && (props.hoa_fee == null || isNaN(hoaVal))) {
                     hoaFilter = true;
                 }
 
-                // 11) HOA Fee Frequency Filter
+                // 12) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
                 const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
 
-                // 12) ISP Speed Filters
+                // 13) ISP Speed Filters
                 const downloadSpeedFilter = speedRangeFilter(
                     props.best_dn,
                     minDownloadSpeed,
@@ -205,7 +240,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     speedIncludeMissingBool,
                 );
 
-                // 13) ZIP boundary filter (Census ZCTA)
+                // 14) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
                     zipFilter = featureWithinAnyPolygon(feature, zipFeatures);
@@ -220,6 +255,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     ppsqftFilter &&
                     lotSizeFilter &&
                     yrBuiltFilter &&
+                    fireHazardFilter &&
                     subtypeFilter &&
                     dateFilter &&
                     hoaFilter &&
@@ -238,6 +274,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!ppsqftFilter) failedReasons.push("Price per sqft");
                     if (!lotSizeFilter) failedReasons.push("Lot size");
                     if (!yrBuiltFilter) failedReasons.push("Year built");
+                    if (!fireHazardFilter) failedReasons.push("Fire hazard");
                     if (!subtypeFilter) failedReasons.push("Subtype");
                     if (!dateFilter) failedReasons.push("Listed date");
                     if (!hoaFilter) failedReasons.push("HOA fee");

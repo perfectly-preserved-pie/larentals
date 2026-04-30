@@ -51,6 +51,13 @@ COMMON_ENRICHMENT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("nearest_mid_school_mi", "REAL"),
     ("nearest_high_school_name", "TEXT"),
     ("nearest_high_school_mi", "REAL"),
+    ("fire_hazard_severity", "TEXT"),
+    ("fire_hazard_responsibility_area", "TEXT"),
+    ("fire_hazard_rollout_phase", "TEXT"),
+    ("fire_hazard_effective_date", "TEXT"),
+    ("fire_hazard_source", "TEXT"),
+    ("fire_hazard_source_version", "TEXT"),
+    ("fire_hazard_enriched_at", "TEXT"),
     ("zoning_code", "TEXT"),
     ("permits_500ft_12mo", "INTEGER"),
     ("major_permits_0_5mi_12mo", "INTEGER"),
@@ -90,6 +97,7 @@ COMMON_ENRICHMENT_COLUMNS: tuple[tuple[str, str], ...] = (
 
 INDEX_COLUMNS: tuple[str, ...] = (
     "school_district_name",
+    "fire_hazard_severity",
     "has_open_housing_or_code_case",
 )
 

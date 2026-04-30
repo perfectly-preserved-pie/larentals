@@ -22,6 +22,9 @@ GeoJsonDict: TypeAlias = dict[str, Any]
 
 DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = Path("assets/datasets/schools_socal.geojson")
 DEFAULT_SCHOOL_LAYER_GPKG_PATH = Path("assets/datasets/california_public_schools_2024_25.gpkg")
+DEFAULT_FIRE_HAZARD_LAYER_GEOJSON_PATH = Path(
+    "assets/datasets/cal_fire_fhsz_southern_california.geojson"
+)
 DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
 SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS: tuple[str, ...] = (
     "PK-5",
@@ -79,6 +82,9 @@ class LayerConfig:
         point_to_layer: JavaScript namespace function used to render point features.
         cluster_to_layer: Optional JavaScript namespace function used to render
             clustered point features when superclustering is enabled.
+        style: Optional JavaScript namespace function used to style polygon features.
+        on_each_feature: Optional JavaScript namespace function used to bind feature
+            behavior such as polygon popups.
         cluster: Whether the layer should use Dash Leaflet marker clustering.
         zoom_to_bounds_on_click: Whether clicking a feature/cluster should fit its bounds.
         bubbling_mouse_events: Whether layer mouse events should bubble to the map.
@@ -89,8 +95,10 @@ class LayerConfig:
     """
     name: str
     dataset: str
-    point_to_layer: str
+    point_to_layer: str | None = None
     cluster_to_layer: str | None = None
+    style: str | None = None
+    on_each_feature: str | None = None
     filepath: str | None = None
     loader: Callable[[], GeoJsonDict] | None = None
     cluster: bool = True
@@ -499,6 +507,34 @@ def load_school_layer_geojson_artifact(
     return payload
 
 
+def load_fire_hazard_layer_geojson_artifact(
+    path: str | Path = DEFAULT_FIRE_HAZARD_LAYER_GEOJSON_PATH,
+) -> GeoJsonDict:
+    """
+    Load the baked CAL FIRE FHSZ overlay GeoJSON artifact from disk.
+    """
+    artifact_path = Path(path)
+    if not artifact_path.exists():
+        logger.warning(
+            "Fire hazard layer artifact is missing at {}. Run enrich-fire-hazard first.",
+            artifact_path,
+        )
+        return {"type": "FeatureCollection", "features": []}
+
+    with artifact_path.open("r", encoding="utf-8") as file_obj:
+        payload = json.load(file_obj)
+
+    features = payload.get("features")
+    if not isinstance(features, list):
+        logger.warning(
+            "Fire hazard layer artifact at {} is not a valid FeatureCollection.",
+            artifact_path,
+        )
+        return {"type": "FeatureCollection", "features": []}
+
+    return payload
+
+
 def filter_school_layer_geojson(
     geojson_data: GeoJsonDict | None,
     *,
@@ -721,6 +757,17 @@ class LayersClass:
             bubbling_mouse_events=False,
             cache_ttl_seconds=3600,
         ),
+        'fire_hazard_zones': LayerConfig(
+            name='Fire Hazard Severity Zones',
+            dataset='fire_hazard_zones',
+            loader=load_fire_hazard_layer_geojson_artifact,
+            style='styleFireHazardZone',
+            on_each_feature='bindFireHazardZonePopup',
+            cluster=False,
+            zoom_to_bounds_on_click=False,
+            bubbling_mouse_events=False,
+            cache_ttl_seconds=21600,
+        ),
     }
     geojson_cache: ClassVar[dict[str, tuple[float, GeoJsonDict]]] = {}
     filter_school_layer_geojson = staticmethod(filter_school_layer_geojson)
@@ -874,10 +921,15 @@ class LayersClass:
             cluster=spec.cluster,
             zoomToBoundsOnClick=spec.zoom_to_bounds_on_click,
             bubblingMouseEvents=spec.bubbling_mouse_events,
-            pointToLayer=ns(spec.point_to_layer),
         )
+        if spec.point_to_layer is not None:
+            geojson_kwargs["pointToLayer"] = ns(spec.point_to_layer)
         if spec.cluster_to_layer is not None:
             geojson_kwargs["clusterToLayer"] = ns(spec.cluster_to_layer)
+        if spec.style is not None:
+            geojson_kwargs["style"] = ns(spec.style)
+        if spec.on_each_feature is not None:
+            geojson_kwargs["onEachFeature"] = ns(spec.on_each_feature)
         if spec.supercluster_options is not None:
             geojson_kwargs["superClusterOptions"] = dict(spec.supercluster_options)
 

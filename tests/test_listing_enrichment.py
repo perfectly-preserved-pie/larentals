@@ -26,6 +26,11 @@ from scripts.enrich_schools import (
     parse_args as parse_school_args,
     resolve_local_dataset_path,
 )
+from scripts.enrich_fire_hazard import (
+    OUTSIDE_MAPPED_ZONE_LABEL,
+    compute_fire_hazard_join,
+    normalize_fire_hazard_severity,
+)
 
 def test_extract_grade_span_and_band_classification() -> None:
     assert extract_grade_span("K-5") == (0, 5)
@@ -33,6 +38,43 @@ def test_extract_grade_span_and_band_classification() -> None:
     assert extract_grade_span("PK-5") == (-1, 5)
     assert grade_span_bands((0, 8)) == {"elem", "mid"}
     assert grade_span_bands((9, 12)) == {"high"}
+
+
+def test_normalize_fire_hazard_severity_labels() -> None:
+    assert normalize_fire_hazard_severity("Very High") == "Very High"
+    assert normalize_fire_hazard_severity("SRA High") == "High"
+    assert normalize_fire_hazard_severity("Moderate") == "Moderate"
+    assert normalize_fire_hazard_severity("Non-Wildland") is None
+
+
+def test_compute_fire_hazard_join_prefers_highest_intersecting_severity() -> None:
+    listings = gpd.GeoDataFrame(
+        {"mls_number": ["MLS-1", "MLS-2"]},
+        geometry=gpd.points_from_xy([-118.25, -118.10], [34.05, 34.05]),
+        crs="EPSG:4326",
+    )
+    fire_zones = gpd.GeoDataFrame(
+        {
+            "fire_hazard_severity": ["Moderate", "Very High"],
+            "fire_hazard_responsibility_area": ["SRA", "LRA"],
+            "fire_hazard_rollout_phase": [None, "Phase 2"],
+            "fire_hazard_effective_date": ["2024-04-01", "2025-02-24"],
+            "fire_hazard_source": ["CAL FIRE", "CAL FIRE"],
+        },
+        geometry=gpd.GeoSeries.from_wkt(
+            [
+                "POLYGON((-118.30 34.00, -118.20 34.00, -118.20 34.10, -118.30 34.10, -118.30 34.00))",
+                "POLYGON((-118.30 34.00, -118.20 34.00, -118.20 34.10, -118.30 34.10, -118.30 34.00))",
+            ],
+            crs="EPSG:4326",
+        ),
+        crs="EPSG:4326",
+    )
+
+    result = compute_fire_hazard_join(listings, fire_zones)
+
+    assert result.set_index("mls_number").loc["MLS-1", "fire_hazard_severity"] == "Very High"
+    assert result.set_index("mls_number").loc["MLS-2", "fire_hazard_severity"] == OUTSIDE_MAPPED_ZONE_LABEL
 
 
 def test_school_parse_args_use_official_defaults() -> None:
@@ -158,6 +200,7 @@ def test_rebuild_enrichment_table_drops_legacy_columns_and_rows() -> None:
         assert created_indexes >= 1
         assert "school_district_name" in columns
         assert "nearest_high_school_mi" in columns
+        assert "fire_hazard_severity" in columns
         assert "fema_sfha_flag" not in columns
         assert remaining_rows == 0
 
