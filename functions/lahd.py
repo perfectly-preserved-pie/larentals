@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, TypeAlias, TypedDict
+import concurrent.futures
 import gzip
 import math
 import re
@@ -430,8 +431,13 @@ def fetch_lahd_property_record_details(
     limit = max(1, min(int(row_limit), LAHD_RECORD_DETAIL_LIMIT))
     fetch_limit = limit + 1
 
-    raw_cases = _fetch_property_investigation_records(normalized_apn, fetch_limit)
-    raw_violations = _fetch_property_violation_records(normalized_apn, fetch_limit)
+    # Fetch investigation and violation records concurrently since they have separate endpoints and can be slow to respond
+    # We fetch one more than the requested limit to check whether there are more records than we return
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        cases_future = executor.submit(_fetch_property_investigation_records, normalized_apn, fetch_limit)
+        violations_future = executor.submit(_fetch_property_violation_records, normalized_apn, fetch_limit)
+        raw_cases = cases_future.result()
+        raw_violations = violations_future.result()
 
     cases_truncated = len(raw_cases) > limit
     violations_truncated = len(raw_violations) > limit
