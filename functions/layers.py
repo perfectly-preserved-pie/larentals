@@ -3,6 +3,7 @@ from dash import ClientsideFunction, clientside_callback, no_update
 from dash.dependencies import Input, Output, State
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
+from functions.lahd import build_lahd_property_heat_geojson
 from functions.parking_tickets import build_parking_tickets_heat_geojson
 from loguru import logger
 from typing import Any, Callable, ClassVar, Optional, Sequence, TypedDict, TypeAlias
@@ -716,6 +717,16 @@ class LayersClass:
             dataset='parking_tickets_density',
             loader=build_parking_tickets_heat_geojson,
             point_to_layer='drawParkingHeatLayer',
+            cluster=False,
+            zoom_to_bounds_on_click=False,
+            bubbling_mouse_events=False,
+            cache_ttl_seconds=3600,
+        ),
+        'lahd_property_heatmap': LayerConfig(
+            name='Housing Department Cases & Code Violations Heatmap',
+            dataset='lahd_property_heatmap',
+            loader=build_lahd_property_heat_geojson,
+            point_to_layer='drawLahdPropertyHeatLayer',
             cluster=False,
             zoom_to_bounds_on_click=False,
             bubbling_mouse_events=False,

@@ -25,6 +25,7 @@ class BuyComponents(BaseClass):
 
     OPTIONAL_LAYER_KEYS: tuple[str, ...] = (
         "parking_tickets_density",
+        "lahd_property_heatmap",
         "breakfast_burritos",
         "farmers_markets",
         "supermarkets_grocery",

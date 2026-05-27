@@ -3,6 +3,11 @@ from api import register_api_routes
 from dash_extensions import EventListener
 from flask_compress import Compress
 from functions.devtools import register_filter_exclusion_devtool
+from functions.lahd_records_ui import (
+  create_lahd_records_drawer,
+  create_lahd_records_listener,
+  register_lahd_records_drawer_callback,
+)
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
@@ -107,7 +112,9 @@ app.layout = dmc.MantineProvider(
   dmc.Container([
     create_initial_viewport_sync(),
     create_viewport_listener(),
+    create_lahd_records_listener(),
     dcc.Store(id="theme-switch-store", storage_type="local"),
+    create_lahd_records_drawer(),
     dbc.Row( # Second row: the rest
       [
         dash.page_container
@@ -130,6 +137,7 @@ clientside_callback(
   Input("color-scheme-switch", "checked"),
 )
 register_api_routes(server, db_path="assets/datasets/larentals.db")
+register_lahd_records_drawer_callback(app)
 
 def main() -> None:
   app.run(debug=True)

@@ -2,6 +2,7 @@ import sqlite3
 from typing import Any
 
 from flask import Blueprint, Response, abort, jsonify
+from functions.lahd import lookup_lahd_property_for_listing
 
 LEASE_LISTING_DETAIL_SQL = """
   SELECT
@@ -23,6 +24,8 @@ LEASE_LISTING_DETAIL_SQL = """
     key_deposit,
     other_deposit,
     full_street_address,
+    latitude,
+    longitude,
     listed_date,
     listing_url,
     mls_photo,
@@ -47,6 +50,8 @@ BUY_LISTING_DETAIL_SQL = """
     hoa_fee,
     hoa_fee_frequency,
     full_street_address,
+    latitude,
+    longitude,
     listed_date,
     listing_url,
     mls_photo
@@ -91,6 +96,12 @@ def register_listing_routes(server: Any, db_path: str = "assets/datasets/larenta
         payload = build_listing_detail_payload(row)
         if payload is None:
             abort(404, f"Lease listing not found: {listing_id}")
+
+        payload["lahd_property_summary"] = lookup_lahd_property_for_listing(
+            address=payload.get("full_street_address"),
+            latitude=payload.get("latitude"),
+            longitude=payload.get("longitude"),
+        )
         return jsonify(payload)
 
     @bp.get("/api/buy/listing-details/<listing_id>")
@@ -102,6 +113,12 @@ def register_listing_routes(server: Any, db_path: str = "assets/datasets/larenta
         payload = build_listing_detail_payload(row)
         if payload is None:
             abort(404, f"Buy listing not found: {listing_id}")
+
+        payload["lahd_property_summary"] = lookup_lahd_property_for_listing(
+            address=payload.get("full_street_address"),
+            latitude=payload.get("latitude"),
+            longitude=payload.get("longitude"),
+        )
         return jsonify(payload)
 
     server.register_blueprint(bp)
