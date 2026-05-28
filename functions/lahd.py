@@ -222,14 +222,14 @@ def load_local_lahd_property_heat_geojson() -> GeoJsonDict | None:
         with gzip.open(artifact_path, "rb") as artifact_file:
             payload = orjson.loads(artifact_file.read())
     except OSError as exc:
-        logger.warning("Failed reading LAHD property heatmap artifact from {}: {}", artifact_path, exc)
+        logger.warning(f"Failed reading LAHD property heatmap artifact from {artifact_path}: {exc}")
         return None
     except orjson.JSONDecodeError as exc:
-        logger.warning("Failed decoding LAHD property heatmap artifact at {}: {}", artifact_path, exc)
+        logger.warning(f"Failed decoding LAHD property heatmap artifact at {artifact_path}: {exc}")
         return None
 
     if not _is_valid_heat_geojson(payload):
-        logger.warning("LAHD property heatmap artifact at {} is not a valid FeatureCollection.", artifact_path)
+        logger.warning(f"LAHD property heatmap artifact at {artifact_path} is not a valid FeatureCollection.")
         return None
 
     metadata = payload.get("metadata")
@@ -237,7 +237,7 @@ def load_local_lahd_property_heat_geojson() -> GeoJsonDict | None:
         metadata["data_source"] = "local_artifact"
         metadata.setdefault("artifact_version", LAHD_ARTIFACT_VERSION)
 
-    logger.info("Loaded LAHD property heatmap artifact from {}.", artifact_path)
+    logger.info(f"Loaded LAHD property heatmap artifact from {artifact_path}.")
     return payload
 
 
@@ -256,7 +256,7 @@ def write_local_lahd_property_heat_geojson(
     with gzip.open(artifact_path, "wb") as artifact_file:
         artifact_file.write(orjson.dumps(payload))
 
-    logger.info("Wrote LAHD property heatmap artifact to {}.", artifact_path)
+    logger.info(f"Wrote LAHD property heatmap artifact to {artifact_path}.")
     return artifact_path
 
 
@@ -282,7 +282,7 @@ def write_local_lahd_property_lookup(
     with gzip.open(artifact_path, "wb") as artifact_file:
         artifact_file.write(orjson.dumps(payload))
 
-    logger.info("Wrote LAHD property lookup artifact to {}.", artifact_path)
+    logger.info(f"Wrote LAHD property lookup artifact to {artifact_path}.")
     return artifact_path
 
 
@@ -724,12 +724,12 @@ def _load_la_city_boundary(boundary_path: str, boundary_mtime_ns: int):
     try:
         payload = orjson.loads(path.read_bytes())
     except (OSError, orjson.JSONDecodeError) as exc:
-        logger.warning("Failed loading City of Los Angeles boundary from {}: {}", path, exc)
+        logger.warning(f"Failed loading City of Los Angeles boundary from {path}: {exc}")
         return None
 
     features = payload.get("features") if isinstance(payload, dict) else None
     if not isinstance(features, list) or not features:
-        logger.warning("City of Los Angeles boundary at {} is missing GeoJSON features.", path)
+        logger.warning(f"City of Los Angeles boundary at {path} is missing GeoJSON features.")
         return None
 
     geometries = []
@@ -741,7 +741,7 @@ def _load_la_city_boundary(boundary_path: str, boundary_mtime_ns: int):
             geometries.append(shape(geometry))
 
     if not geometries:
-        logger.warning("City of Los Angeles boundary at {} has no usable geometries.", path)
+        logger.warning(f"City of Los Angeles boundary at {path} has no usable geometries.")
         return None
 
     boundary = geometries[0]
@@ -800,7 +800,7 @@ def _load_geocode_cache(cache_path: Path) -> dict[str, JsonDict]:
     try:
         payload = orjson.loads(cache_path.read_bytes())
     except (OSError, orjson.JSONDecodeError) as exc:
-        logger.warning("Failed reading LAHD geocode cache at {}: {}", cache_path, exc)
+        logger.warning(f"Failed reading LAHD geocode cache at {cache_path}: {exc}")
         return {}
     return payload if isinstance(payload, dict) else {}
 
@@ -884,7 +884,7 @@ def _query_parcel_centroid_chunk(
                 **_query_parcel_centroid_chunk(session, apns[:midpoint]),
                 **_query_parcel_centroid_chunk(session, apns[midpoint:]),
             }
-        logger.warning("LAHub parcel query failed for APN {}: {}", apns[0], payload.get("error"))
+        logger.warning(f"LAHub parcel query failed for APN {apns[0]}: {payload.get('error')}")
         return {}
 
     features = payload.get("features") if isinstance(payload, dict) else None
@@ -924,7 +924,7 @@ def _fetch_parcel_centroids(apns: list[str]) -> dict[str, tuple[float, float]]:
         chunk = unique_apns[start : start + LAHD_PARCEL_BATCH_SIZE]
         centroids.update(_query_parcel_centroid_chunk(session, chunk))
 
-    logger.info("Resolved {} of {} LAHD APNs through LAHub parcels.", len(centroids), len(unique_apns))
+    logger.info(f"Resolved {len(centroids)} of {len(unique_apns)} LAHD APNs through LAHub parcels.")
     return centroids
 
 
@@ -1144,7 +1144,7 @@ def _load_lahd_listing_lookup(
         with gzip.open(path, "rb") as artifact_file:
             payload = orjson.loads(artifact_file.read())
     except (OSError, orjson.JSONDecodeError) as exc:
-        logger.warning("Failed loading LAHD listing lookup from {}: {}", path, exc)
+        logger.warning(f"Failed loading LAHD listing lookup from {path}: {exc}")
         return {"records": [], "address_index": {}}
 
     marker_points = payload.get("records") if isinstance(payload, dict) else None
@@ -1398,11 +1398,7 @@ def _build_live_lahd_property_lookup(
         lookup_records,
         aggregate_limit=aggregate_limit,
     )
-    logger.info(
-        "Built LAHD property lookup with {} records in {:.2f}s.",
-        len(lookup_records),
-        time.time() - started_at,
-    )
+    logger.info(f"Built LAHD property lookup with {len(lookup_records)} records in {time.time() - started_at:.2f}s.")
     return payload
 
 
@@ -1444,10 +1440,8 @@ def _build_live_lahd_property_heat_geojson(
     }
 
     logger.info(
-        "Built LAHD property heatmap with {} heat points and {} marker points in {:.2f}s.",
-        len(heat_records),
-        len(marker_records),
-        time.time() - started_at,
+        f"Built LAHD property heatmap with {len(heat_records)} heat points "
+        f"and {len(marker_records)} marker points in {time.time() - started_at:.2f}s."
     )
     return {
         "type": "FeatureCollection",
@@ -1465,9 +1459,8 @@ def build_lahd_property_heat_geojson() -> GeoJsonDict:
         return local_payload
 
     logger.warning(
-        "LAHD property heatmap artifact is missing at {}. "
-        "Generate it offline with `uv run build-lahd-property-heatmap`.",
-        LAHD_LOCAL_ARTIFACT_PATH,
+        f"LAHD property heatmap artifact is missing at {LAHD_LOCAL_ARTIFACT_PATH}. "
+        "Generate it offline with `uv run build-lahd-property-heatmap`."
     )
     return {"type": "FeatureCollection", "features": []}
 

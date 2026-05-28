@@ -483,10 +483,7 @@ def load_school_layer_geojson_artifact(
     """
     artifact_path = Path(path)
     if not artifact_path.exists():
-        logger.warning(
-            "School layer artifact is missing at {}. Run the school-layer builder first.",
-            artifact_path,
-        )
+        logger.warning(f"School layer artifact is missing at {artifact_path}. Run the school-layer builder first.")
         return {"type": "FeatureCollection", "features": []}
 
     with artifact_path.open("r", encoding="utf-8") as file_obj:
@@ -494,7 +491,7 @@ def load_school_layer_geojson_artifact(
 
     features = payload.get("features")
     if not isinstance(features, list):
-        logger.warning("School layer artifact at {} is not a valid FeatureCollection.", artifact_path)
+        logger.warning(f"School layer artifact at {artifact_path} is not a valid FeatureCollection.")
         return {"type": "FeatureCollection", "features": []}
 
     return payload

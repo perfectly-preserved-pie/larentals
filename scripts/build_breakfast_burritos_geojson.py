@@ -213,7 +213,7 @@ def parse_table_row(
     picture_url = extract_link_target(cells[10].find("a"))
     coordinates = extract_coordinates(values[9], maps_url)
     if coordinates is None:
-        logger.warning("Skipping {} because no usable coordinates were found.", restaurant_name)
+        logger.warning(f"Skipping {restaurant_name} because no usable coordinates were found.")
         return None
 
     rating_value = parse_numeric(values[0])
@@ -288,7 +288,7 @@ def build_review_url_map(rankings_html: str) -> dict[str, str]:
 
         review_url_map[normalize_name_key(link_text)] = href
 
-    logger.info("Resolved {} direct LABreakfastBurrito review URLs.", len(review_url_map))
+    logger.info(f"Resolved {len(review_url_map)} direct LABreakfastBurrito review URLs.")
     return review_url_map
 
 
@@ -322,7 +322,7 @@ def build_feature_collection(
         if feature is not None:
             features.append(feature)
 
-    logger.info("Built breakfast burrito feature collection with {} features.", len(features))
+    logger.info(f"Built breakfast burrito feature collection with {len(features)} features.")
     return {
         "type": "FeatureCollection",
         "features": features,
@@ -401,7 +401,7 @@ def main() -> None:
         review_url_map=review_url_map,
     )
     write_geojson(feature_collection, args.output)
-    logger.info("Wrote breakfast burrito dataset to {}", args.output)
+    logger.info(f"Wrote breakfast burrito dataset to {args.output}")
 
 
 if __name__ == "__main__":

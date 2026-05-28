@@ -85,7 +85,7 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
         try:
             details = fetch_lahd_property_record_details(str(apn))
         except Exception as exc:  # pragma: no cover - exercised manually against live data
-            logger.exception("Failed fetching Housing Department records for APN {}.", apn)
+            logger.exception(f"Failed fetching Housing Department records for APN {apn}.")
             title = _build_drawer_title(apn, address)
             return True, title, _build_error_content(apn, exc)
 
