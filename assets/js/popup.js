@@ -156,6 +156,97 @@
     }
 
     /**
+     * Format a numeric value as a localized integer.
+     *
+     * @param {unknown} value Raw numeric value.
+     * @returns {string} Localized integer string.
+     */
+    function formatWholeNumber(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return "0";
+        return Math.round(n).toLocaleString("en-US");
+    }
+
+    /**
+     * Render the Dash drawer trigger for a matched Housing Department property.
+     *
+     * @param {Record<string, unknown>} summary Housing Department property summary.
+     * @returns {string} HTML drawer trigger or empty string.
+     */
+    function renderLahdRecordsTrigger(summary) {
+        const apn = normalizeNullableString(summary?.apn);
+        if (!apn) return "";
+
+        const address = normalizeNullableString(summary?.address) || "";
+
+        return `
+            <button
+                type="button"
+                class="lahd-records-trigger"
+                data-lahd-records-trigger="true"
+                data-lahd-apn="${escapeHtml(apn)}"
+                data-lahd-address="${escapeHtml(address)}"
+                data-lahd-source="listing-popup"
+            >
+                view records
+            </button>
+        `;
+    }
+
+    /**
+     * Build the compact Housing Department summary shown in listing popups.
+     *
+     * @param {unknown} summary Raw `lahd_property_summary` payload.
+     * @returns {string} Human-readable housing issue summary.
+     */
+    function formatLahdIssueSummary(summary) {
+        if (!summary || typeof summary !== "object") {
+            return "Not available";
+        }
+
+        if (summary.data_available === false) {
+            return "Not available";
+        }
+
+        if (!summary.matched) {
+            return "No matching housing cases found";
+        }
+
+        const documented = formatWholeNumber(summary.documented_issue_count);
+        const unresolved = formatWholeNumber(summary.unresolved_issue_count);
+        const latestCaseDate = normalizeNullableString(summary.latest_case_date);
+        const latestCaseLabel = latestCaseDate
+            ? `; latest ${escapeHtml(latestCaseDate.split("T")[0])}`
+            : "";
+        const recordsTrigger = renderLahdRecordsTrigger(summary);
+        const recordsTriggerLabel = recordsTrigger ? `<br>${recordsTrigger}` : "";
+
+        return `${documented} documented / ${unresolved} unresolved est.${latestCaseLabel}${recordsTriggerLabel}`;
+    }
+
+    /**
+     * Render the Housing Department issue row for listing popups.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} HTML row.
+     */
+    function renderLahdIssueRow(popupData) {
+        const summary = popupData.lahd_property_summary;
+        if (summary && typeof summary === "object" && summary.jurisdiction_in_scope === false) {
+            return "";
+        }
+
+        return `
+            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
+                <span class="label" style="font-weight: bold;">Housing Dept. Issues</span>
+                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
+                    ${formatLahdIssueSummary(summary)}
+                </span>
+            </div>
+        `;
+    }
+
+    /**
      * Convert a street address string into title case for popup display.
      *
      * @param {string} value Address string to normalize.
@@ -352,6 +443,7 @@
                         <span class="label" style="font-weight: bold;">Listed Date</span>
                         <span class="value">${formatDate(popupData.listed_date)}</span>
                     </div>
+                    ${renderLahdIssueRow(popupData)}
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
                         <span class="value">${mlsNumberDisplay}</span>
@@ -474,6 +566,7 @@
                         <span class="label" style="font-weight: bold;">Listed Date</span>
                         <span class="value">${formatDate(popupData.listed_date)}</span>
                     </div>
+                    ${renderLahdIssueRow(popupData)}
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
                         <span class="value">${mlsNumberDisplay}</span>

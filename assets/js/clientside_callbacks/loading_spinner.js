@@ -6,6 +6,7 @@ const LAZY_LAYER_NAMES = {
   breakfast_burritos: "Breakfast Burritos",
   supermarkets_grocery: "Supermarkets & Grocery Stores",
   parking_tickets_density: "Parking Tickets Heatmap (2025)",
+  lahd_property_heatmap: "Housing Department Cases & Code Violations Heatmap",
 };
 
 function hiddenMapSpinner() {
