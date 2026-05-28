@@ -500,7 +500,7 @@ def _lahd_detail_unavailable_message(exc: Exception) -> str:
     """
     if isinstance(exc, requests.HTTPError) and exc.response is not None and exc.response.status_code == 403:
         return (
-            "The City data API currently requires logged-in access for row-level Housing Department records. "
+            "The City data API is currently unavailable due to access restrictions. "
             "Showing the latest local aggregate snapshot instead."
         )
     return (
