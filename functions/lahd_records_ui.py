@@ -101,11 +101,24 @@ def build_lahd_records_drawer_content(details: dict[str, Any]) -> Any:
     violations = _as_list(details.get("violations"))
     summary = details.get("summary") if isinstance(details.get("summary"), dict) else {}
     truncated = details.get("truncated") if isinstance(details.get("truncated"), dict) else {}
+    detail_status = details.get("detail_status") if isinstance(details.get("detail_status"), dict) else {}
     sources = details.get("sources") if isinstance(details.get("sources"), dict) else {}
+    live_records_available = detail_status.get("live_records_available") is not False
+    empty_case_message = (
+        "Row-level Housing Department case records are unavailable right now."
+        if not live_records_available
+        else "No Housing Department investigation/enforcement cases found for this APN."
+    )
+    empty_violation_message = (
+        "Row-level Housing Department code-violation records are unavailable right now."
+        if not live_records_available
+        else "No Housing Department code-violation records found for this APN."
+    )
 
     return html.Div(
         [
             _build_summary(summary),
+            _build_detail_status_notice(detail_status),
             _build_truncation_notice(truncated),
             dmc.Tabs(
                 [
@@ -121,7 +134,7 @@ def build_lahd_records_drawer_content(details: dict[str, Any]) -> Any:
                             "lahd-cases-grid",
                             cases,
                             CASE_COLUMN_DEFS,
-                            "No Housing Department investigation/enforcement cases found for this APN.",
+                            empty_case_message,
                         ),
                         value="cases",
                         pt="sm",
@@ -131,7 +144,7 @@ def build_lahd_records_drawer_content(details: dict[str, Any]) -> Any:
                             "lahd-violations-grid",
                             violations,
                             VIOLATION_COLUMN_DEFS,
-                            "No Housing Department code-violation records found for this APN.",
+                            empty_violation_message,
                         ),
                         value="violations",
                         pt="sm",
@@ -298,6 +311,24 @@ def _build_truncation_notice(truncated: dict[str, Any]) -> Any:
         f"Showing the first {row_limit} {' and '.join(parts)} records from Housing Department data.",
         className="lahd-records-notice",
     )
+
+
+def _build_detail_status_notice(detail_status: dict[str, Any]) -> Any:
+    """
+    Render a small notice when the drawer is showing aggregate snapshot data.
+    """
+    if detail_status.get("live_records_available") is not False:
+        return None
+
+    message = str(detail_status.get("message") or "").strip()
+    if not message:
+        message = "Showing the latest local aggregate snapshot."
+
+    snapshot_generated_at = str(detail_status.get("snapshot_generated_at") or "").strip()
+    if snapshot_generated_at:
+        message = f"{message} Snapshot generated {snapshot_generated_at}."
+
+    return html.Div(message, className="lahd-records-notice")
 
 
 def _build_grid(

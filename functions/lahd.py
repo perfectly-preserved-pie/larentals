@@ -7,6 +7,7 @@ from typing import Any, TypeAlias, TypedDict
 import concurrent.futures
 import gzip
 import math
+import os
 import re
 import time
 
@@ -50,6 +51,7 @@ HeatPointTuple: TypeAlias = list[float]
 MarkerPointTuple: TypeAlias = list[float | int | str | None]
 
 LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS = 65.0
+LAHD_LOOKUP_SPATIAL_CELL_DEGREES = 0.001
 _LA_CITY_LISTING_CITY_LABELS = {
     "ARLETA",
     "CANOGA PARK",
@@ -294,16 +296,38 @@ def _request_socrata_rows(url: str, params: dict[str, object]) -> list[JsonDict]
         url,
         params=params,
         timeout=LAHD_REQUEST_TIMEOUT_SECONDS,
-        headers={
-            "User-Agent": "WhereToLive.LA/1.0",
-            "Accept": "application/json",
-        },
+        headers=_build_socrata_headers(),
     )
     response.raise_for_status()
     payload = response.json()
     if not isinstance(payload, list):
         raise ValueError(f"Unexpected Socrata payload from {url}; expected a row list.")
     return payload
+
+
+def _get_socrata_app_token() -> str | None:
+    """
+    Return the configured Socrata app token from `.env` or the environment.
+    """
+    token = os.getenv("SOCRATA_APP_TOKEN")
+    if not token:
+        return None
+    token = token.strip()
+    return token or None
+
+
+def _build_socrata_headers() -> dict[str, str]:
+    """
+    Build headers for city Socrata requests, including an optional app token.
+    """
+    headers = {
+        "User-Agent": "WhereToLive.LA/1.0",
+        "Accept": "application/json",
+    }
+    app_token = _get_socrata_app_token()
+    if app_token:
+        headers["X-App-Token"] = app_token
+    return headers
 
 
 def _fetch_investigation_rows(limit: int, *, offset: int = 0) -> list[JsonDict]:
@@ -450,6 +474,77 @@ def _summarize_lahd_property_records(cases: list[JsonDict], violations: list[Jso
     }
 
 
+def _summarize_lahd_lookup_record(record: JsonDict) -> JsonDict:
+    """
+    Build drawer summary counts from the local aggregate LAHD lookup snapshot.
+    """
+    address = str(record.get("address") or "").strip()
+    return {
+        "case_count": _parse_int(record.get("investigation_case_count")),
+        "open_case_count": _parse_int(record.get("open_case_count")),
+        "violation_row_count": _parse_int(record.get("violation_row_count")),
+        "violations_cited": _parse_int(record.get("violations_cited")),
+        "violations_cleared": _parse_int(record.get("violations_cleared")),
+        "unresolved_violation_count": _parse_int(record.get("unresolved_violation_count")),
+        "documented_issue_count": _parse_int(record.get("documented_issue_count")),
+        "unresolved_issue_count": _parse_int(record.get("unresolved_issue_count")),
+        "first_case_date": str(record.get("first_case_date") or "") or None,
+        "latest_case_date": str(record.get("latest_case_date") or "") or None,
+        "addresses": [address] if address else [],
+    }
+
+
+def _lahd_detail_unavailable_message(exc: Exception) -> str:
+    """
+    Return a user-facing explanation for live LAHD detail fetch failures.
+    """
+    if isinstance(exc, requests.HTTPError) and exc.response is not None and exc.response.status_code == 403:
+        return (
+            "The City data API currently requires logged-in access for row-level Housing Department records. "
+            "Showing the latest local aggregate snapshot instead."
+        )
+    return (
+        "Row-level Housing Department records are unavailable from the City data API right now. "
+        "Showing the latest local aggregate snapshot instead."
+    )
+
+
+def _build_lahd_detail_fallback_from_lookup(apn: str, exc: Exception) -> JsonDict | None:
+    """
+    Return aggregate-only LAHD details from the local lookup snapshot when live rows fail.
+    """
+    record = lookup_lahd_property_record_by_apn(apn)
+    if record is None:
+        return None
+
+    lookup_metadata = get_lahd_property_lookup_metadata()
+    detail_status = {
+        "live_records_available": False,
+        "message": _lahd_detail_unavailable_message(exc),
+    }
+    generated_at = lookup_metadata.get("generated_at")
+    if generated_at:
+        detail_status["snapshot_generated_at"] = generated_at
+
+    return {
+        "apn": apn,
+        "cases": [],
+        "violations": [],
+        "summary": _summarize_lahd_lookup_record(record),
+        "truncated": {
+            "cases": False,
+            "violations": False,
+            "row_limit": LAHD_RECORD_DETAIL_LIMIT,
+        },
+        "detail_status": detail_status,
+        "sources": {
+            "investigation_source_url": LAHD_INVESTIGATION_SOURCE_URL,
+            "violation_source_url": LAHD_VIOLATION_SOURCE_URL,
+        },
+        "fetched_at": _generated_timestamp(),
+    }
+
+
 @lru_cache(maxsize=512)
 def fetch_lahd_property_record_details(
     apn: str,
@@ -473,8 +568,15 @@ def fetch_lahd_property_record_details(
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         cases_future = executor.submit(_fetch_property_investigation_records, normalized_apn, fetch_limit)
         violations_future = executor.submit(_fetch_property_violation_records, normalized_apn, fetch_limit)
-        raw_cases = cases_future.result()
-        raw_violations = violations_future.result()
+        try:
+            raw_cases = cases_future.result()
+            raw_violations = violations_future.result()
+        except requests.RequestException as exc:
+            fallback = _build_lahd_detail_fallback_from_lookup(normalized_apn, exc)
+            if fallback is not None:
+                logger.warning(f"Falling back to local LAHD aggregate snapshot for APN {normalized_apn}: {exc}")
+                return fallback
+            raise
 
     cases_truncated = len(raw_cases) > limit
     violations_truncated = len(raw_violations) > limit
@@ -490,6 +592,9 @@ def fetch_lahd_property_record_details(
             "cases": cases_truncated,
             "violations": violations_truncated,
             "row_limit": limit,
+        },
+        "detail_status": {
+            "live_records_available": True,
         },
         "sources": {
             "investigation_source_url": LAHD_INVESTIGATION_SOURCE_URL,
@@ -1046,8 +1151,12 @@ def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
             "open_case_count": _parse_int(point[6]),
             "violations_cited": _parse_int(point[7]),
             "unresolved_violation_count": _parse_int(point[8]),
+            "violation_row_count": _parse_int(point[9]),
+            "closed_case_count": _parse_int(point[10]),
+            "violations_cleared": _parse_int(point[11]),
             "address": str(point[12] or "").strip(),
             "apn": str(point[13] or "").strip() or None,
+            "first_case_date": str(point[14] or "").strip() or None,
             "latest_case_date": str(point[15] or "").strip() or None,
         }
     except (TypeError, ValueError):
@@ -1058,6 +1167,42 @@ def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
     if not record["address"]:
         return None
     return record
+
+
+def _lahd_spatial_bucket(lat: float, lon: float) -> tuple[int, int]:
+    """
+    Return the lookup-grid bucket for a latitude/longitude pair.
+    """
+    return (
+        math.floor(lat / LAHD_LOOKUP_SPATIAL_CELL_DEGREES),
+        math.floor(lon / LAHD_LOOKUP_SPATIAL_CELL_DEGREES),
+    )
+
+
+def _lahd_spatial_neighbor_span() -> int:
+    """
+    Return the number of adjacent coordinate buckets to inspect for nearby matches.
+    """
+    conservative_degrees = LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS / 60_000
+    return max(1, math.ceil(conservative_degrees / LAHD_LOOKUP_SPATIAL_CELL_DEGREES))
+
+
+def _candidate_lahd_records_near(
+    spatial_index: dict[tuple[int, int], list[JsonDict]],
+    *,
+    latitude: float,
+    longitude: float,
+) -> list[JsonDict]:
+    """
+    Return lookup records in nearby coordinate buckets for distance matching.
+    """
+    bucket_lat, bucket_lon = _lahd_spatial_bucket(latitude, longitude)
+    span = _lahd_spatial_neighbor_span()
+    candidates: list[JsonDict] = []
+    for lat_offset in range(-span, span + 1):
+        for lon_offset in range(-span, span + 1):
+            candidates.extend(spatial_index.get((bucket_lat + lat_offset, bucket_lon + lon_offset), []))
+    return candidates
 
 
 def _empty_lahd_listing_lookup_result(
@@ -1138,14 +1283,14 @@ def _load_lahd_listing_lookup(
 
     path = Path(artifact_path)
     if not path.exists():
-        return {"records": [], "address_index": {}}
+        return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
 
     try:
         with gzip.open(path, "rb") as artifact_file:
             payload = orjson.loads(artifact_file.read())
     except (OSError, orjson.JSONDecodeError) as exc:
         logger.warning(f"Failed loading LAHD listing lookup from {path}: {exc}")
-        return {"records": [], "address_index": {}}
+        return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
 
     marker_points = payload.get("records") if isinstance(payload, dict) else None
     if not isinstance(marker_points, list):
@@ -1156,7 +1301,7 @@ def _load_lahd_listing_lookup(
         properties = features[0].get("properties") if isinstance(features[0], dict) else None
         marker_points = properties.get("marker_points") if isinstance(properties, dict) else None
         if not isinstance(marker_points, list):
-            return {"records": [], "address_index": {}}
+            return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
 
     records = [
         record
@@ -1164,6 +1309,8 @@ def _load_lahd_listing_lookup(
         if record is not None
     ]
     address_index: dict[str, JsonDict] = {}
+    apn_index: dict[str, JsonDict] = {}
+    spatial_index: dict[tuple[int, int], list[JsonDict]] = {}
     for record in records:
         address_key = _normalize_property_address_for_lookup(record.get("address"))
         if not address_key:
@@ -1172,7 +1319,63 @@ def _load_lahd_listing_lookup(
         if existing is None or _parse_int(record.get("problem_score")) > _parse_int(existing.get("problem_score")):
             address_index[address_key] = record
 
-    return {"records": records, "address_index": address_index}
+        apn = _normalize_apn(record.get("apn"))
+        if apn:
+            existing_by_apn = apn_index.get(apn)
+            if existing_by_apn is None or _parse_int(record.get("problem_score")) > _parse_int(
+                existing_by_apn.get("problem_score")
+            ):
+                apn_index[apn] = record
+
+        spatial_index.setdefault(_lahd_spatial_bucket(float(record["lat"]), float(record["lon"])), []).append(record)
+
+    metadata = payload.get("metadata") if isinstance(payload, dict) and isinstance(payload.get("metadata"), dict) else {}
+    return {
+        "records": records,
+        "address_index": address_index,
+        "apn_index": apn_index,
+        "spatial_index": spatial_index,
+        "metadata": metadata,
+    }
+
+
+def _load_lahd_lookup_artifact(artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH) -> dict[str, Any]:
+    """
+    Load the cached LAHD lookup artifact with indexes.
+    """
+    try:
+        artifact_mtime_ns = artifact_path.stat().st_mtime_ns
+    except OSError:
+        return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
+
+    return _load_lahd_listing_lookup(str(artifact_path), artifact_mtime_ns)
+
+
+def lookup_lahd_property_record_by_apn(
+    apn: object,
+    artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH,
+) -> JsonDict | None:
+    """
+    Return a local aggregate LAHD lookup record by APN.
+    """
+    normalized_apn = _normalize_apn(apn)
+    if not normalized_apn:
+        return None
+
+    lookup = _load_lahd_lookup_artifact(artifact_path)
+    apn_index: dict[str, JsonDict] = lookup.get("apn_index") or {}
+    return apn_index.get(normalized_apn)
+
+
+def get_lahd_property_lookup_metadata(
+    artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH,
+) -> JsonDict:
+    """
+    Return metadata for the local LAHD aggregate lookup snapshot.
+    """
+    lookup = _load_lahd_lookup_artifact(artifact_path)
+    metadata = lookup.get("metadata")
+    return metadata if isinstance(metadata, dict) else {}
 
 
 def lookup_lahd_property_for_listing(
@@ -1196,6 +1399,7 @@ def lookup_lahd_property_for_listing(
     lookup = _load_lahd_listing_lookup(str(artifact_path), artifact_mtime_ns)
     records: list[JsonDict] = lookup.get("records") or []
     address_index: dict[str, JsonDict] = lookup.get("address_index") or {}
+    spatial_index: dict[tuple[int, int], list[JsonDict]] = lookup.get("spatial_index") or {}
     if not records:
         return _empty_lahd_listing_lookup_result(data_available=False)
 
@@ -1215,9 +1419,13 @@ def lookup_lahd_property_for_listing(
     if not math.isfinite(lat) or not math.isfinite(lon) or not _coordinates_in_bounds(lat, lon):
         return _empty_lahd_listing_lookup_result(data_available=True)
 
+    candidate_records = _candidate_lahd_records_near(spatial_index, latitude=lat, longitude=lon) if spatial_index else records
+    if not candidate_records:
+        return _empty_lahd_listing_lookup_result(data_available=True)
+
     nearest_record: JsonDict | None = None
     nearest_distance = math.inf
-    for record in records:
+    for record in candidate_records:
         distance = _distance_meters(lat, lon, float(record["lat"]), float(record["lon"]))
         if distance < nearest_distance:
             nearest_distance = distance
