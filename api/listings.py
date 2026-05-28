@@ -2,7 +2,11 @@ import sqlite3
 from typing import Any
 
 from flask import Blueprint, Response, abort, jsonify
-from functions.lahd import lookup_lahd_property_for_listing
+from functions.lahd import (
+    is_listing_in_los_angeles_city,
+    lookup_lahd_property_for_listing,
+    out_of_scope_lahd_listing_lookup_result,
+)
 
 LEASE_LISTING_DETAIL_SQL = """
   SELECT
@@ -24,6 +28,7 @@ LEASE_LISTING_DETAIL_SQL = """
     key_deposit,
     other_deposit,
     full_street_address,
+    city,
     latitude,
     longitude,
     listed_date,
@@ -50,6 +55,7 @@ BUY_LISTING_DETAIL_SQL = """
     hoa_fee,
     hoa_fee_frequency,
     full_street_address,
+    city,
     latitude,
     longitude,
     listed_date,
@@ -97,11 +103,7 @@ def register_listing_routes(server: Any, db_path: str = "assets/datasets/larenta
         if payload is None:
             abort(404, f"Lease listing not found: {listing_id}")
 
-        payload["lahd_property_summary"] = lookup_lahd_property_for_listing(
-            address=payload.get("full_street_address"),
-            latitude=payload.get("latitude"),
-            longitude=payload.get("longitude"),
-        )
+        payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
         return jsonify(payload)
 
     @bp.get("/api/buy/listing-details/<listing_id>")
@@ -114,11 +116,26 @@ def register_listing_routes(server: Any, db_path: str = "assets/datasets/larenta
         if payload is None:
             abort(404, f"Buy listing not found: {listing_id}")
 
-        payload["lahd_property_summary"] = lookup_lahd_property_for_listing(
-            address=payload.get("full_street_address"),
-            latitude=payload.get("latitude"),
-            longitude=payload.get("longitude"),
-        )
+        payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
         return jsonify(payload)
 
     server.register_blueprint(bp)
+
+
+def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    """
+    Return a Housing Department summary only for listings in LA City scope.
+    """
+    in_scope = is_listing_in_los_angeles_city(
+        city=payload.get("city"),
+        latitude=payload.get("latitude"),
+        longitude=payload.get("longitude"),
+    )
+    if in_scope is False:
+        return out_of_scope_lahd_listing_lookup_result()
+
+    return lookup_lahd_property_for_listing(
+        address=payload.get("full_street_address"),
+        latitude=payload.get("latitude"),
+        longitude=payload.get("longitude"),
+    )

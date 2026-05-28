@@ -231,11 +231,16 @@
      * @returns {string} HTML row.
      */
     function renderLahdIssueRow(popupData) {
+        const summary = popupData.lahd_property_summary;
+        if (summary && typeof summary === "object" && summary.jurisdiction_in_scope === false) {
+            return "";
+        }
+
         return `
             <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
                 <span class="label" style="font-weight: bold;">Housing Dept. Issues</span>
                 <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
-                    ${formatLahdIssueSummary(popupData.lahd_property_summary)}
+                    ${formatLahdIssueSummary(summary)}
                 </span>
             </div>
         `;

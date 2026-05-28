@@ -13,7 +13,7 @@ import time
 from loguru import logger
 import orjson
 import requests
-from shapely.geometry import shape
+from shapely.geometry import Point, shape
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -25,6 +25,7 @@ LAHD_PARCEL_QUERY_URL = "https://maps.lacity.org/lahub/rest/services/Landbase_In
 LAHD_LOCAL_ARTIFACT_PATH = PROJECT_ROOT / "assets" / "datasets" / "lahd_property_heatmap.json.gz"
 LAHD_LOCAL_LOOKUP_ARTIFACT_PATH = PROJECT_ROOT / "assets" / "datasets" / "lahd_property_lookup.json.gz"
 LAHD_GEOCODE_CACHE_PATH = PROJECT_ROOT / "assets" / "datasets" / "lahd_property_geocode_cache.json"
+LA_CITY_BOUNDARY_PATH = PROJECT_ROOT / "assets" / "datasets" / "la_city_boundary.geojson"
 LAHD_REQUEST_TIMEOUT_SECONDS = 180
 LAHD_ARTIFACT_VERSION = 1
 LAHD_DEFAULT_AGGREGATE_LIMIT = 25000
@@ -49,6 +50,41 @@ HeatPointTuple: TypeAlias = list[float]
 MarkerPointTuple: TypeAlias = list[float | int | str | None]
 
 LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS = 65.0
+_LA_CITY_LISTING_CITY_LABELS = {
+    "ARLETA",
+    "CANOGA PARK",
+    "CHATSWORTH",
+    "ENCINO",
+    "GRANADA HILLS",
+    "HARBOR CITY",
+    "HOLLYWOOD",
+    "LOS ANGELES",
+    "NORTH HOLLYWOOD",
+    "NORTHRIDGE",
+    "PACIFIC PALISADES",
+    "PACOIMA",
+    "PANORAMA CITY",
+    "PLAYA DEL REY",
+    "RESEDA",
+    "SAN PEDRO",
+    "SHERMAN OAKS",
+    "STUDIO CITY",
+    "SUN VALLEY",
+    "SUNLAND",
+    "SYLMAR",
+    "TARZANA",
+    "TUJUNGA",
+    "VALLEY GLEN",
+    "VALLEY VILLAGE",
+    "VAN NUYS",
+    "VENICE",
+    "WEST HILLS",
+    "WESTCHESTER",
+    "WESTWOOD",
+    "WILMINGTON",
+    "WINNETKA",
+    "WOODLAND HILLS",
+}
 _STREET_SUFFIX_NORMALIZATION = {
     "ALY": "ALY",
     "AVE": "AVE",
@@ -153,6 +189,7 @@ class LahdListingLookupResult(TypedDict):
     violations_cited: int
     unresolved_violation_count: int
     latest_case_date: str | None
+    jurisdiction_in_scope: bool | None
 
 
 def _generated_timestamp() -> str:
@@ -658,6 +695,102 @@ def _coordinates_in_bounds(lat: float, lon: float) -> bool:
     )
 
 
+def _coerce_float(value: object) -> float | None:
+    """
+    Convert a numeric-like value to a finite float.
+    """
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result if math.isfinite(result) else None
+
+
+def _normalize_city_label(value: object) -> str:
+    """
+    Normalize an MLS city/community label for jurisdiction fallback checks.
+    """
+    return re.sub(r"\s+", " ", str(value or "").strip().upper())
+
+
+@lru_cache(maxsize=2)
+def _load_la_city_boundary(boundary_path: str, boundary_mtime_ns: int):
+    """
+    Load the official City of Los Angeles boundary geometry.
+    """
+    del boundary_mtime_ns
+
+    path = Path(boundary_path)
+    try:
+        payload = orjson.loads(path.read_bytes())
+    except (OSError, orjson.JSONDecodeError) as exc:
+        logger.warning("Failed loading City of Los Angeles boundary from {}: {}", path, exc)
+        return None
+
+    features = payload.get("features") if isinstance(payload, dict) else None
+    if not isinstance(features, list) or not features:
+        logger.warning("City of Los Angeles boundary at {} is missing GeoJSON features.", path)
+        return None
+
+    geometries = []
+    for feature in features:
+        if not isinstance(feature, dict):
+            continue
+        geometry = feature.get("geometry")
+        if isinstance(geometry, dict):
+            geometries.append(shape(geometry))
+
+    if not geometries:
+        logger.warning("City of Los Angeles boundary at {} has no usable geometries.", path)
+        return None
+
+    boundary = geometries[0]
+    for geometry in geometries[1:]:
+        boundary = boundary.union(geometry)
+    return boundary
+
+
+def is_listing_in_los_angeles_city(
+    *,
+    city: object,
+    latitude: object,
+    longitude: object,
+    boundary_path: Path = LA_CITY_BOUNDARY_PATH,
+) -> bool | None:
+    """
+    Return whether a listing appears to be within City of Los Angeles limits.
+
+    `False` is returned only when coordinates place the listing outside the
+    official city boundary and the MLS city label is not a known Los Angeles
+    community label. `None` means jurisdiction could not be confidently
+    determined, so callers should avoid hiding data based on scope alone.
+    """
+    normalized_city = _normalize_city_label(city)
+    lat = _coerce_float(latitude)
+    lon = _coerce_float(longitude)
+
+    if lat is not None and lon is not None and not _coordinates_in_bounds(lat, lon):
+        return None if normalized_city in _LA_CITY_LISTING_CITY_LABELS else False
+
+    if lat is not None and lon is not None:
+        try:
+            boundary_mtime_ns = boundary_path.stat().st_mtime_ns
+        except OSError:
+            boundary_mtime_ns = 0
+
+        boundary = _load_la_city_boundary(str(boundary_path), boundary_mtime_ns) if boundary_mtime_ns else None
+        if boundary is not None:
+            if boundary.covers(Point(lon, lat)):
+                return True
+            if normalized_city in _LA_CITY_LISTING_CITY_LABELS:
+                return True
+            return False
+
+    if normalized_city == "LOS ANGELES":
+        return True
+    return None
+
+
 def _load_geocode_cache(cache_path: Path) -> dict[str, JsonDict]:
     """
     Load cached LAHD property coordinate results.
@@ -927,7 +1060,11 @@ def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
     return record
 
 
-def _empty_lahd_listing_lookup_result(*, data_available: bool) -> LahdListingLookupResult:
+def _empty_lahd_listing_lookup_result(
+    *,
+    data_available: bool,
+    jurisdiction_in_scope: bool | None = True,
+) -> LahdListingLookupResult:
     """
     Return the default no-match payload used by listing popups.
     """
@@ -946,7 +1083,15 @@ def _empty_lahd_listing_lookup_result(*, data_available: bool) -> LahdListingLoo
         "violations_cited": 0,
         "unresolved_violation_count": 0,
         "latest_case_date": None,
+        "jurisdiction_in_scope": jurisdiction_in_scope,
     }
+
+
+def out_of_scope_lahd_listing_lookup_result() -> LahdListingLookupResult:
+    """
+    Return a hidden-by-client payload for listings outside LAHD jurisdiction.
+    """
+    return _empty_lahd_listing_lookup_result(data_available=True, jurisdiction_in_scope=False)
 
 
 def _matched_lahd_listing_lookup_result(
@@ -977,6 +1122,7 @@ def _matched_lahd_listing_lookup_result(
         "violations_cited": _parse_int(record.get("violations_cited")),
         "unresolved_violation_count": _parse_int(record.get("unresolved_violation_count")),
         "latest_case_date": str(record.get("latest_case_date") or "") or None,
+        "jurisdiction_in_scope": True,
     }
 
 

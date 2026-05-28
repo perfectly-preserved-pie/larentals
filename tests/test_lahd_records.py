@@ -65,3 +65,30 @@ def test_fetch_lahd_property_record_details_normalizes_rows(monkeypatch) -> None
 def test_lahd_records_grids_do_not_repeat_property_address() -> None:
     assert "address" not in {column["field"] for column in lahd_records_ui.CASE_COLUMN_DEFS}
     assert "address" not in {column["field"] for column in lahd_records_ui.VIOLATION_COLUMN_DEFS}
+
+
+def test_lahd_scope_uses_official_la_city_boundary() -> None:
+    assert (
+        lahd.is_listing_in_los_angeles_city(
+            city="North Hollywood",
+            latitude=34.1706,
+            longitude=-118.3772,
+        )
+        is True
+    )
+    assert (
+        lahd.is_listing_in_los_angeles_city(
+            city="Santa Monica",
+            latitude=34.0195,
+            longitude=-118.4912,
+        )
+        is False
+    )
+    assert (
+        lahd.is_listing_in_los_angeles_city(
+            city="Diamond Bar",
+            latitude=33.9994022,
+            longitude=-117.5924017,
+        )
+        is False
+    )
