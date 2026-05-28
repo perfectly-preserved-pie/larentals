@@ -504,7 +504,7 @@ def _lahd_detail_unavailable_message(exc: Exception) -> str:
             "Showing the latest local aggregate snapshot instead."
         )
     return (
-        "Row-level Housing Department records are unavailable from the City data API right now. "
+        "Specific Housing Department records are unavailable from the City data API right now. "
         "Showing the latest local aggregate snapshot instead."
     )
 
