@@ -1378,6 +1378,29 @@ def get_lahd_property_lookup_metadata(
     return metadata if isinstance(metadata, dict) else {}
 
 
+def prewarm_lahd_listing_lookup_cache() -> None:
+    """
+    Load local LAHD lookup data during app startup instead of the first popup.
+    """
+    started_at = time.time()
+    try:
+        lookup = _load_lahd_lookup_artifact(LAHD_LOCAL_LOOKUP_ARTIFACT_PATH)
+        try:
+            boundary_mtime_ns = LA_CITY_BOUNDARY_PATH.stat().st_mtime_ns
+        except OSError:
+            boundary_mtime_ns = 0
+        if boundary_mtime_ns:
+            _load_la_city_boundary(str(LA_CITY_BOUNDARY_PATH), boundary_mtime_ns)
+    except Exception as exc:
+        logger.warning(f"Failed prewarming LAHD listing lookup cache: {exc}")
+        return
+
+    logger.info(
+        "Prewarmed LAHD listing lookup cache with "
+        f"{len(lookup.get('records') or []):,} records in {time.time() - started_at:.2f}s."
+    )
+
+
 def lookup_lahd_property_for_listing(
     *,
     address: object,

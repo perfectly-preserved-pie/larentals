@@ -8,6 +8,7 @@ from functions.lahd_records_ui import (
   create_lahd_records_listener,
   register_lahd_records_drawer_callback,
 )
+from functions.lahd import prewarm_lahd_listing_lookup_cache
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
@@ -108,6 +109,19 @@ def create_viewport_listener() -> EventListener:
     style={"display": "none"},
   )
 
+def prewarm_startup_caches() -> None:
+  """
+  Populate expensive local caches before the first browser/API request.
+  """
+  prewarm_lahd_listing_lookup_cache()
+
+  # Import after Dash is initialized because page modules call dash.register_page.
+  from pages.buy_page import get_buy_components
+  from pages.lease_page import get_lease_components
+
+  get_lease_components()
+  get_buy_components()
+
 app.layout = dmc.MantineProvider(
   dmc.Container([
     create_initial_viewport_sync(),
@@ -138,6 +152,7 @@ clientside_callback(
 )
 register_api_routes(server, db_path="assets/datasets/larentals.db")
 register_lahd_records_drawer_callback(app)
+prewarm_startup_caches()
 
 def main() -> None:
   app.run(debug=True)
