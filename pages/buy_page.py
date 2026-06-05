@@ -74,7 +74,7 @@ def layout(**_: object) -> dbc.Container:
     storage_type="memory",
     data=None,
   )
-  kickstart = dcc.Interval(id="buy-boot", interval=250, n_intervals=0, max_intervals=1)
+  kickstart = dcc.Interval(id="buy-boot", interval=50, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="buy", date_column="listed_date"))
 
   return dbc.Container(

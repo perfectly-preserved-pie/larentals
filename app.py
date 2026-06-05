@@ -13,6 +13,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import logging
+import time
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -113,14 +114,22 @@ def prewarm_startup_caches() -> None:
   """
   Populate expensive local caches before the first browser/API request.
   """
+  start_time = time.perf_counter()
   prewarm_lahd_listing_lookup_cache()
 
   # Import after Dash is initialized because page modules call dash.register_page.
+  from pages.buy_components import BuyComponents
   from pages.buy_page import get_buy_components
+  from pages.lease_components import LeaseComponents
   from pages.lease_page import get_lease_components
 
   get_lease_components()
   get_buy_components()
+  LeaseComponents.get_cached_geojson_payload()
+  BuyComponents.get_cached_geojson_payload()
+
+  duration = time.perf_counter() - start_time
+  logging.info(f"Prewarmed startup caches in {duration:.2f} seconds.")
 
 app.layout = dmc.MantineProvider(
   dmc.Container([
