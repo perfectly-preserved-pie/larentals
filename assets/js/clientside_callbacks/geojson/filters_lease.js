@@ -18,6 +18,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {string[]} rentalTerms - Array of user-selected rental terms
          * @param {boolean} termsIncludeMissing - Include listings with null/undefined terms?
          * @param {string[]} furnishedChoices - Array of furnished options
+         * @param {boolean} furnishedIncludeMissing - Include listings with unknown furnished status?
          * @param {[number, number]} securityDepositRange - [minSecurityDeposit, maxSecurityDeposit]
          * @param {boolean} securityDepositIncludeMissing - Include listings with null/undefined deposit?
          * @param {[number, number]} petDepositRange - [minPetDeposit, maxPetDeposit]
@@ -27,6 +28,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} otherDepositRange - [minOtherDeposit, maxOtherDeposit]
          * @param {boolean} otherDepositIncludeMissing - Include listings with null/undefined other deposit?
          * @param {string[]} laundryChoices - Array of selected laundry categories
+         * @param {boolean} laundryIncludeMissing - Include listings with unknown laundry category?
          * @param {string[]} subtypeSelection - List of selected property subtypes
          * @param {string|null} dateStart - Start date (YYYY-MM-DD) for listed_date range
          * @param {string|null} dateEnd - End date (YYYY-MM-DD) for listed_date range
@@ -54,6 +56,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             rentalTerms,
             termsIncludeMissing,
             furnishedChoices,
+            furnishedIncludeMissing,
             securityDepositRange,
             securityDepositIncludeMissing,
             petDepositRange,
@@ -63,6 +66,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             otherDepositRange,
             otherDepositIncludeMissing,
             laundryChoices,
+            laundryIncludeMissing,
             subtypeSelection,
             dateStart,
             dateEnd,
@@ -119,10 +123,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const parkingSpacesIncludeMissingBool   = Boolean(parkingSpacesIncludeMissing);
             const yearBuiltIncludeMissingBool       = Boolean(yearBuiltIncludeMissing);
             const termsIncludeMissingBool           = Boolean(termsIncludeMissing);
+            const furnishedIncludeMissingBool       = Boolean(furnishedIncludeMissing);
             const securityDepositIncludeMissingBool = Boolean(securityDepositIncludeMissing);
             const petDepositIncludeMissingBool      = Boolean(petDepositIncludeMissing);
             const keyDepositIncludeMissingBool      = Boolean(keyDepositIncludeMissing);
             const otherDepositIncludeMissingBool    = Boolean(otherDepositIncludeMissing);
+            const laundryIncludeMissingBool         = Boolean(laundryIncludeMissing);
             const dateIncludeMissingBool            = Boolean(dateIncludeMissing);
             const speedIncludeMissingBool           = Boolean(speedIncludeMissing);
 
@@ -218,38 +224,38 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 6) termsFilter
                 let termsFilter = true;
-                if (!rentalTerms || rentalTerms.length === 0) {
-                    termsFilter = termsIncludeMissingBool ? isTermsMissing : false;
+                const chosenTerms = Array.isArray(rentalTerms)
+                    ? rentalTerms.filter(t => t && String(t).trim().length > 0)
+                    : [];
+                if (chosenTerms.length === 0) {
+                    termsFilter = !isTermsMissing || termsIncludeMissingBool;
                 } else {
-                    // Normalize and remove empty values
-                    let chosenTerms = [...rentalTerms].filter(t => t && String(t).trim().length > 0);
-
                     // Include missing terms only if the listing is missing terms AND
                     // the "include missing" switch is on
                     const unknownFilter = isTermsMissing && termsIncludeMissingBool;
 
-                    if (chosenTerms.length > 0) {
-                        const pattern = chosenTerms.map(term =>
-                            term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                        ).join("|");
-                        const regex = new RegExp(pattern, "i");
-                        termsFilter = (termsValue !== null && termsValue !== "" && regex.test(termsValue)) || unknownFilter;
-                    } else {
-                        termsFilter = unknownFilter;
-                    }
+                    const pattern = chosenTerms.map(term =>
+                        term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    ).join("|");
+                    const regex = new RegExp(pattern, "i");
+                    termsFilter = (termsValue !== null && termsValue !== "" && regex.test(termsValue)) || unknownFilter;
                 }
 
                 // 7) furnishedFilter
                 let furnishedFilter = true;
-                if (!furnishedChoices || furnishedChoices.length === 0) {
-                    furnishedFilter = false;
+                const isFurnishedMissing = (
+                    furnished === null ||
+                    furnished === undefined ||
+                    furnished === "" ||
+                    furnished === "Unknown"
+                );
+                const chosenFurnished = Array.isArray(furnishedChoices)
+                    ? furnishedChoices.filter(value => value && value !== "Unknown")
+                    : [];
+                if (chosenFurnished.length === 0) {
+                    furnishedFilter = !isFurnishedMissing || furnishedIncludeMissingBool;
                 } else {
-                    let unknownFilter = false;
-                    let chosenFurnished = [...furnishedChoices];
-                    if (chosenFurnished.includes("Unknown")) {
-                        unknownFilter = (furnished === null || furnished === undefined || furnished === "" || furnished === "Unknown");
-                        chosenFurnished = chosenFurnished.filter(x => x !== "Unknown");
-                    }
+                    const unknownFilter = isFurnishedMissing && furnishedIncludeMissingBool;
                     furnishedFilter = chosenFurnished.includes(furnished) || unknownFilter;
                 }
 
@@ -295,19 +301,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 12) laundryFilter
                 let laundryFilter = true;
-                if (!laundryChoices || laundryChoices.length === 0) {
-                    laundryFilter = false;
+                const isLaundryMissing = (
+                    laundryCategory === null ||
+                    laundryCategory === undefined ||
+                    laundryCategory === "Unknown"
+                );
+                const chosenLaundry = Array.isArray(laundryChoices)
+                    ? laundryChoices.filter(value => value && value !== "Unknown")
+                    : [];
+                if (chosenLaundry.length === 0) {
+                    laundryFilter = !isLaundryMissing || laundryIncludeMissingBool;
                 } else {
-                    let unknownLaundryOk = false;
-                    let chosenLaundry = [...laundryChoices];
-                    if (chosenLaundry.includes("Unknown")) {
-                        unknownLaundryOk = (
-                            laundryCategory === null ||
-                            laundryCategory === undefined ||
-                            laundryCategory === "Unknown"
-                        );
-                        chosenLaundry = chosenLaundry.filter(x => x !== "Unknown");
-                    }
+                    const unknownLaundryOk = isLaundryMissing && laundryIncludeMissingBool;
                     laundryFilter = chosenLaundry.includes(laundryCategory) || unknownLaundryOk;
                 }
 

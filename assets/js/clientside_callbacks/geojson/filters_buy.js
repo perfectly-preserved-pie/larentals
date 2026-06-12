@@ -189,7 +189,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 11) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
-                const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
+                const selectedHoaFeeFrequencies = Array.isArray(hoaFeeFrequencyChecklist)
+                    ? hoaFeeFrequencyChecklist
+                    : [];
+                const hoaFeeFreqFilter = (
+                    selectedHoaFeeFrequencies.length === 0 ||
+                    selectedHoaFeeFrequencies.includes(hoaFreqVal)
+                );
 
                 // 12) ISP Speed Filters
                 const downloadSpeedFilter = speedRangeFilter(

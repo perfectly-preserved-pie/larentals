@@ -529,21 +529,29 @@ class LeaseComponents(BaseClass):
         terms = {key: term_abbreviations.get(key, key) for key in unique_terms}
 
         rental_terms_checklist = html.Div(
-            dmc.ChipGroup(
+            dcc.Dropdown(
                 id="terms_checklist",
-                multiple=True,
-                value=list(unique_terms),
-                children=[
-                    dmc.Chip(
-                        children=f"{terms[term]} ({term})",
-                        value=term,
-                        radius="sm",
-                    )
+                multi=True,
+                options=[
+                    {"label": f"{terms[term]} ({term})", "value": term}
                     for term in unique_terms
                 ],
+                value=[],
+                placeholder="Any rental term",
+                searchable=True,
+                clearable=True,
+                closeOnSelect=False,
+                maxHeight=360,
+                labels={
+                    "selected_count": "{num_selected} terms selected",
+                    "select_all": "Select all",
+                    "deselect_all": "Clear all",
+                    "search": "Search terms",
+                    "clear_selection": "Clear selected terms",
+                    "no_options_found": "No terms found",
+                },
             ),
             id=self.dynamic_output_id("rental_terms"),
-            className="d-flex flex-wrap gap-2",
         )
 
         return html.Div(
@@ -564,7 +572,7 @@ class LeaseComponents(BaseClass):
 
     def create_furnished_checklist(self) -> html.Div:
         """
-        Build the furnished-status chip selector.
+        Build the furnished-status filter.
 
         Returns:
             A furnished filter ``Div``.
@@ -575,52 +583,91 @@ class LeaseComponents(BaseClass):
             "Negotiable",
             "Partially",
             "Unfurnished",
-            "Unknown",
         ]
 
         return html.Div(
-            dmc.ChipGroup(
-                id="furnished_checklist",
-                multiple=True,
-                value=furnished_options,
-                children=[
-                    dmc.Chip(
-                        children=label,
-                        value=label,
-                        radius="sm",
-                    )
-                    for label in furnished_options
-                ],
-            ),
+            [
+                dcc.Dropdown(
+                    id="furnished_checklist",
+                    multi=True,
+                    options=[
+                        {"label": label, "value": label}
+                        for label in furnished_options
+                    ],
+                    value=[],
+                    placeholder="Any furnished status",
+                    searchable=True,
+                    clearable=True,
+                    closeOnSelect=False,
+                    maxHeight=300,
+                    labels={
+                        "selected_count": "{num_selected} furnished statuses selected",
+                        "select_all": "Select all",
+                        "deselect_all": "Clear all",
+                        "search": "Search furnished status",
+                        "clear_selection": "Clear selected furnished statuses",
+                        "no_options_found": "No furnished statuses found",
+                    },
+                ),
+                dmc.Switch(
+                    id="furnished_missing_switch",
+                    label="Include properties with an unknown furnished status",
+                    checked=True,
+                    size="sm",
+                    color="teal",
+                    style={"marginTop": "10px"},
+                ),
+            ],
             id="furnished_div",
-            className="d-flex flex-wrap gap-2",
         )
 
     def create_laundry_checklist(self) -> html.Div:
         """
-        Build the laundry-category chip selector.
+        Build the laundry-category filter.
 
         Returns:
             A laundry filter ``Div``.
         """
-        laundry_options = sorted(self.df["laundry"].fillna("Unknown").unique())
+        laundry_options = [
+            category
+            for category in sorted(self.df["laundry"].fillna("Unknown").unique())
+            if category != "Unknown"
+        ]
 
         return html.Div(
-            dmc.ChipGroup(
-                id="laundry_checklist",
-                multiple=True,
-                value=list(laundry_options),
-                children=[
-                    dmc.Chip(
-                        children=category,
-                        value=category,
-                        radius="sm",
-                    )
-                    for category in laundry_options
-                ],
-            ),
+            [
+                dcc.Dropdown(
+                    id="laundry_checklist",
+                    multi=True,
+                    options=[
+                        {"label": category, "value": category}
+                        for category in laundry_options
+                    ],
+                    value=[],
+                    placeholder="Any laundry setup",
+                    searchable=True,
+                    clearable=True,
+                    closeOnSelect=False,
+                    maxHeight=320,
+                    labels={
+                        "selected_count": "{num_selected} laundry types selected",
+                        "select_all": "Select all",
+                        "deselect_all": "Clear all",
+                        "search": "Search laundry",
+                        "clear_selection": "Clear selected laundry types",
+                        "no_options_found": "No laundry types found",
+                    },
+                ),
+                dmc.Switch(
+                    id="laundry_missing_switch",
+                    label="Include properties with unknown laundry information",
+                    checked=True,
+                    size="sm",
+                    color="teal",
+                    style={"marginTop": "10px"},
+                ),
+            ],
             id=self.dynamic_output_id("laundry"),
-            className="d-flex flex-wrap gap-2",
         )
 
     def create_listed_date_components(self) -> html.Div:

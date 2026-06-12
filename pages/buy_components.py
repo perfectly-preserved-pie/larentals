@@ -394,23 +394,32 @@ class BuyComponents(BaseClass):
 
     def create_hoa_fee_frequency_checklist(self) -> html.Div:
         """
-        Build the HOA-frequency chip selector.
+        Build the HOA-frequency filter.
 
         Returns:
             An HOA-frequency filter ``Div``.
         """
+        hoa_fee_frequency_options = ["N/A", "Monthly"]
+
         return html.Div(
-            dmc.ChipGroup(
+            dmc.CheckboxGroup(
                 id="hoa_fee_frequency_checklist",
-                multiple=True,
-                value=["N/A", "Monthly"],
-                children=[
-                    dmc.Chip(children="N/A", value="N/A", radius="sm"),
-                    dmc.Chip(children="Monthly", value="Monthly", radius="sm"),
-                ],
+                value=[],
+                children=dmc.Group(
+                    [
+                        dmc.Checkbox(
+                            label=label,
+                            value=label,
+                            size="sm",
+                            color="teal",
+                        )
+                        for label in hoa_fee_frequency_options
+                    ],
+                    gap="sm",
+                    mt=4,
+                ),
             ),
             id=self.dynamic_output_id("hoa_fee_frequency"),
-            className="d-flex flex-wrap gap-2",
         )
 
     def create_listed_date_components(self) -> html.Div:
