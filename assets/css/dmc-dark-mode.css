@@ -32,6 +32,14 @@
     --wttl-dark-accent: #4fc3b4;
     --wttl-dark-accent-strong: #69d8ca;
     --wttl-dark-accent-soft: rgba(79, 195, 180, 0.2);
+
+    --Dash-Stroke-Strong: var(--wttl-dark-border-strong);
+    --Dash-Stroke-Weak: var(--wttl-dark-border);
+    --Dash-Fill-Interactive-Strong: var(--wttl-dark-accent);
+    --Dash-Fill-Interactive-Weak: var(--wttl-dark-accent-soft);
+    --Dash-Fill-Inverse-Strong: var(--wttl-dark-panel);
+    --Dash-Text-Disabled: var(--wttl-dark-text-faint);
+    --Dash-Text-Weak: var(--wttl-dark-text-muted);
 }
 
 :root[data-mantine-color-scheme="dark"] .options-accordion {
@@ -80,17 +88,16 @@
     color: var(--wttl-dark-text);
 }
 
-:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"],
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]:not(.DateInput_input):not(.dash-datepicker-input),
 :root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput,
-:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput,
-:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input,
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input-wrapper,
 :root[data-mantine-color-scheme="dark"] .options-accordion .Select-control {
     background: var(--wttl-dark-input);
     border-color: var(--wttl-dark-border-strong);
     color: var(--wttl-dark-text);
 }
 
-:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"] {
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]:not(.DateInput_input):not(.dash-datepicker-input) {
     border: 1px solid var(--wttl-dark-border-strong);
     border-radius: 4px;
     min-height: 38px;
@@ -98,22 +105,121 @@
     width: 100%;
 }
 
-:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]::placeholder,
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]:not(.DateInput_input):not(.dash-datepicker-input)::placeholder,
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input::placeholder,
 :root[data-mantine-color-scheme="dark"] .options-accordion .Select-placeholder,
 :root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input::placeholder {
     color: var(--wttl-dark-text-faint);
 }
 
-:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]:focus,
-:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input:focus,
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]:not(.DateInput_input):not(.dash-datepicker-input):focus,
 :root[data-mantine-color-scheme="dark"] .options-accordion .Select.is-focused > .Select-control {
     border-color: var(--wttl-dark-accent);
     box-shadow: 0 0 0 0.18rem var(--wttl-dark-accent-soft);
     outline: 0;
 }
 
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker {
+    background: transparent;
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input-wrapper {
+    border: 1px solid var(--wttl-dark-border-strong);
+    border-radius: 4px;
+    min-height: 42px;
+    padding: 0 12px;
+    width: 100%;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input-wrapper:focus-within {
+    border-color: var(--wttl-dark-accent);
+    box-shadow: 0 0 0 0.18rem var(--wttl-dark-accent-soft);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input-wrapper:has(:focus-visible) {
+    outline: 0;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: var(--wttl-dark-text) !important;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    width: fit-content;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input:focus,
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-input:focus-visible {
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-range-arrow,
+:root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker-caret-icon {
+    color: var(--wttl-dark-text-muted);
+    fill: var(--wttl-dark-text-muted);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput {
+    align-items: center;
+    border: 1px solid var(--wttl-dark-border-strong);
+    border-radius: 4px;
+    display: flex;
+    min-height: 42px;
+    overflow: hidden;
+    width: 100%;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput:focus-within {
+    border-color: var(--wttl-dark-accent);
+    box-shadow: 0 0 0 0.18rem var(--wttl-dark-accent-soft);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput {
+    background: transparent;
+    flex: 0 0 132px;
+    width: 132px;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input,
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input__focused {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--wttl-dark-text);
+    font-size: 1rem;
+    font-weight: 400;
+    height: 40px;
+    line-height: 1.2;
+    min-height: 0;
+    padding: 8px 12px;
+    width: 100%;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input:focus {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    outline: 0;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput_arrow {
+    color: var(--wttl-dark-text-muted);
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
 :root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput_arrow_svg {
     fill: var(--wttl-dark-text-muted);
+    height: 18px;
+    width: 18px;
 }
 
 :root[data-mantine-color-scheme="dark"] .options-accordion .Select-menu-outer {
