@@ -1,5 +1,43 @@
 /* See https://www.dash-mantine-components.com/dash4-components#dark-mode-support
 */
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+    padding: 0;
+}
+
+body {
+    background: var(--mantine-color-body);
+    overflow-x: hidden;
+}
+
+#react-entry-point,
+#_dash-app-content {
+    min-height: 100vh;
+}
+
+.app-shell {
+    background: var(--mantine-color-body);
+    margin: 0;
+    max-width: none;
+    min-height: 100vh;
+    padding: 0;
+    width: 100%;
+}
+
+.theme-switch-control .mantine-Switch-body,
+.theme-switch-control .mantine-Switch-labelWrapper {
+    align-items: center;
+}
+
+.theme-switch-control .mantine-Switch-label {
+    color: var(--mantine-color-gray-6);
+    font-size: 0.95rem;
+    line-height: 1;
+    transform: translateY(1px);
+}
+
 .dmc {
     --Dash-Stroke-Strong: var(--mantine-color-default-border);
     --Dash-Stroke-Weak: var(--mantine-color-disabled);
@@ -11,13 +49,7 @@
     --Dash-Text-Weak: var(--mantine-color-dimmed);
 }
 
-:root[data-mantine-color-scheme="dark"] .dmc {
-    --Dash-Fill-Inverse-Strong: var(--mantine-color-dark-6);
-    --Dash-Fill-Weak: rgba(255, 255, 255, 0.06);
-    --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.08);
-    --Dash-Fill-Primary-Active: rgba(255, 255, 255, 0.12);
-    --Dash-Fill-Disabled: rgba(255, 255, 255, 0.15);
-
+:root[data-mantine-color-scheme="dark"] {
     --wttl-dark-bg: #191c1e;
     --wttl-dark-panel: #202427;
     --wttl-dark-section: #252a2d;
@@ -32,7 +64,24 @@
     --wttl-dark-accent: #4fc3b4;
     --wttl-dark-accent-strong: #69d8ca;
     --wttl-dark-accent-soft: rgba(79, 195, 180, 0.2);
+}
 
+:root[data-mantine-color-scheme="dark"] body,
+:root[data-mantine-color-scheme="dark"] .app-shell {
+    background: var(--wttl-dark-bg);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .theme-switch-control .mantine-Switch-label {
+    color: var(--wttl-dark-text-muted);
+}
+
+:root[data-mantine-color-scheme="dark"] .dmc {
+    --Dash-Fill-Inverse-Strong: var(--mantine-color-dark-6);
+    --Dash-Fill-Weak: rgba(255, 255, 255, 0.06);
+    --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.08);
+    --Dash-Fill-Primary-Active: rgba(255, 255, 255, 0.12);
+    --Dash-Fill-Disabled: rgba(255, 255, 255, 0.15);
     --Dash-Stroke-Strong: var(--wttl-dark-border-strong);
     --Dash-Stroke-Weak: var(--wttl-dark-border);
     --Dash-Fill-Interactive-Strong: var(--wttl-dark-accent);
@@ -373,6 +422,50 @@
 :root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle:focus-visible {
     box-shadow: 0 0 0 3px var(--wttl-dark-accent-soft);
     outline: none;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen a,
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen-button,
+:root[data-mantine-color-scheme="dark"] .fullscreen-icon {
+    background-color: var(--wttl-dark-panel);
+    background-image: none !important;
+    color: var(--wttl-dark-text);
+    position: relative;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen a::before,
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen-button::before,
+:root[data-mantine-color-scheme="dark"] .fullscreen-icon::before {
+    border: 2px solid var(--wttl-dark-text);
+    border-bottom-width: 0;
+    border-right-width: 0;
+    content: "";
+    height: 13px;
+    inset: 8px auto auto 8px;
+    position: absolute;
+    width: 13px;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen a::after,
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen-button::after,
+:root[data-mantine-color-scheme="dark"] .fullscreen-icon::after {
+    border: 2px solid var(--wttl-dark-text);
+    border-left-width: 0;
+    border-top-width: 0;
+    content: "";
+    height: 13px;
+    inset: auto 8px 8px auto;
+    position: absolute;
+    width: 13px;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen a:hover::before,
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen a:hover::after,
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen-button:hover::before,
+:root[data-mantine-color-scheme="dark"] .leaflet-control-fullscreen-button:hover::after,
+:root[data-mantine-color-scheme="dark"] .fullscreen-icon:hover::before,
+:root[data-mantine-color-scheme="dark"] .fullscreen-icon:hover::after {
+    border-color: var(--wttl-dark-accent-strong);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle {

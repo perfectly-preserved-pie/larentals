@@ -1,4 +1,4 @@
-from dash import Dash, clientside_callback, Input, Output, dcc, ClientsideFunction
+from dash import Dash, clientside_callback, ClientsideFunction, Input, Output, dcc
 from api import register_api_routes
 from dash_extensions import EventListener
 from flask_compress import Compress
@@ -30,6 +30,7 @@ external_scripts = [
 ]
 
 register_filter_exclusion_devtool()
+dmc.pre_render_color_scheme()
 
 # Create the app
 app = Dash(
@@ -136,6 +137,7 @@ app.layout = dmc.MantineProvider(
     create_initial_viewport_sync(),
     create_viewport_listener(),
     create_lahd_records_listener(),
+    dcc.Interval(id="theme-switch-initial-sync", interval=100, n_intervals=0, max_intervals=1),
     dcc.Store(id="theme-switch-store", storage_type="local"),
     create_lahd_records_drawer(),
     dbc.Row( # Second row: the rest
@@ -149,11 +151,16 @@ app.layout = dmc.MantineProvider(
   #html.Link(href='/assets/style.css', rel='stylesheet'),
   ],
   fluid = True,
-  className = "dmc",
+  className = "dmc app-shell",
+  style={"margin": 0, "maxWidth": "none", "minHeight": "100vh", "padding": 0},
   ),
-#forceColorScheme="dark",
 )
 
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='initializeThemeSwitch'),
+  Output("color-scheme-switch", "checked"),
+  Input("theme-switch-initial-sync", "n_intervals"),
+)
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='themeSwitch'),
   Output("theme-switch-store", "data"),

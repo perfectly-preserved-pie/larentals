@@ -7,7 +7,7 @@
 }
 
 
-:root[data-bs-theme="dark"] .dbc {
+:root[data-mantine-color-scheme="dark"] .dbc {
     --bs-body-bg: var(--wttl-dark-bg, #191c1e);
     --bs-body-color: var(--wttl-dark-text, #e7ecef);
     --bs-secondary-color: var(--wttl-dark-text-muted, rgba(231, 236, 239, 0.68));
@@ -29,33 +29,42 @@
     --Dash-Text-Weak: rgba(255, 255, 255, 0.3);
 }
 
-:root[data-bs-theme="dark"] .dbc .card {
+:root[data-mantine-color-scheme="dark"] .dbc .card {
+    --bs-card-bg: var(--wttl-dark-panel, #202427);
+    --bs-card-color: var(--wttl-dark-text, #e7ecef);
+    --bs-card-border-color: var(--wttl-dark-border, rgba(232, 238, 241, 0.14));
     background: var(--bs-card-bg);
     border-color: var(--bs-card-border-color);
     color: var(--bs-card-color);
 }
 
-:root[data-bs-theme="dark"] .dbc .card-text,
-:root[data-bs-theme="dark"] .dbc .text-muted {
+:root[data-mantine-color-scheme="dark"] .dbc .title-card .card-title,
+:root[data-mantine-color-scheme="dark"] .dbc .title-card p,
+:root[data-mantine-color-scheme="dark"] .dbc .title-card > .card-body > i {
+    color: var(--wttl-dark-text, #e7ecef);
+}
+
+:root[data-mantine-color-scheme="dark"] .dbc .card-text,
+:root[data-mantine-color-scheme="dark"] .dbc .text-muted {
     color: var(--wttl-dark-text-muted, rgba(231, 236, 239, 0.68)) !important;
 }
 
-:root[data-bs-theme="dark"] .dbc .form-control,
-:root[data-bs-theme="dark"] .dbc .form-select {
+:root[data-mantine-color-scheme="dark"] .dbc .form-control,
+:root[data-mantine-color-scheme="dark"] .dbc .form-select {
     background-color: var(--wttl-dark-input, #2b2f32);
     border-color: var(--wttl-dark-border-strong, rgba(232, 238, 241, 0.24));
     color: var(--wttl-dark-text, #e7ecef);
 }
 
-:root[data-bs-theme="dark"] .dbc .form-control:focus,
-:root[data-bs-theme="dark"] .dbc .form-select:focus {
+:root[data-mantine-color-scheme="dark"] .dbc .form-control:focus,
+:root[data-mantine-color-scheme="dark"] .dbc .form-select:focus {
     background-color: var(--wttl-dark-input, #2b2f32);
     border-color: var(--wttl-dark-accent, #4fc3b4);
     box-shadow: 0 0 0 0.18rem var(--wttl-dark-accent-soft, rgba(79, 195, 180, 0.2));
     color: var(--wttl-dark-text, #e7ecef);
 }
 
-:root[data-bs-theme="dark"] .dbc .btn-primary {
+:root[data-mantine-color-scheme="dark"] .dbc .btn-primary {
     --bs-btn-bg: var(--wttl-dark-accent, #4fc3b4);
     --bs-btn-border-color: var(--wttl-dark-accent, #4fc3b4);
     --bs-btn-hover-bg: #3db2a4;
