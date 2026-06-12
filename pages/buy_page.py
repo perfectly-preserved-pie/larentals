@@ -479,38 +479,6 @@ clientside_callback(
   ),
   Output("buy-map-spinner", "style", allow_duplicate=True),
   [
-    Input('list_price_slider', 'value'),
-    Input('bedrooms_slider', 'value'),
-    Input('bathrooms_slider', 'value'),
-    Input('sqft_slider', 'value'),
-    Input('sqft_missing_switch', 'checked'),
-    Input('ppsqft_slider', 'value'),
-    Input('ppsqft_missing_switch', 'checked'),
-    Input('lot_size_slider', 'value'),
-    Input('lot_size_missing_switch', 'checked'),
-    Input('yrbuilt_slider', 'value'),
-    Input('yrbuilt_missing_switch', 'checked'),
-    Input('subtype_checklist', 'value'),
-    Input('listed_date_datepicker_buy', 'start_date'),
-    Input('listed_date_datepicker_buy', 'end_date'),
-    Input('listed_date_missing_switch', 'checked'),
-    Input('hoa_fee_slider', 'value'),
-    Input('hoa_fee_missing_switch', 'checked'),
-    Input('hoa_fee_frequency_checklist', 'value'),
-    Input('isp_download_speed_slider', 'value'),
-    Input('isp_upload_speed_slider', 'value'),
-    Input('isp_speed_missing_switch', 'checked'),
-  ],
-  prevent_initial_call=True,
-)
-
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='showMapSpinner'
-  ),
-  Output("buy-map-spinner", "style", allow_duplicate=True),
-  [
     Input('buy-location-input', 'value'),
     Input('buy-nearby-zip-switch', 'checked'),
   ],
