@@ -17,4 +17,146 @@
     --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.08);
     --Dash-Fill-Primary-Active: rgba(255, 255, 255, 0.12);
     --Dash-Fill-Disabled: rgba(255, 255, 255, 0.15);
+
+    --wttl-dark-bg: #191c1e;
+    --wttl-dark-panel: #202427;
+    --wttl-dark-section: #252a2d;
+    --wttl-dark-section-active: #263331;
+    --wttl-dark-input: #2b2f32;
+    --wttl-dark-input-hover: #303538;
+    --wttl-dark-border: rgba(232, 238, 241, 0.14);
+    --wttl-dark-border-strong: rgba(232, 238, 241, 0.24);
+    --wttl-dark-text: #e7ecef;
+    --wttl-dark-text-muted: rgba(231, 236, 239, 0.68);
+    --wttl-dark-text-faint: rgba(231, 236, 239, 0.46);
+    --wttl-dark-accent: #4fc3b4;
+    --wttl-dark-accent-strong: #69d8ca;
+    --wttl-dark-accent-soft: rgba(79, 195, 180, 0.2);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion {
+    --bs-accordion-bg: var(--wttl-dark-panel);
+    --bs-accordion-color: var(--wttl-dark-text);
+    --bs-accordion-border-color: var(--wttl-dark-border);
+    --bs-accordion-btn-bg: var(--wttl-dark-section);
+    --bs-accordion-btn-color: var(--wttl-dark-text);
+    --bs-accordion-active-bg: var(--wttl-dark-section-active);
+    --bs-accordion-active-color: var(--wttl-dark-text);
+    --bs-accordion-btn-focus-border-color: var(--wttl-dark-accent);
+    --bs-accordion-btn-focus-box-shadow: 0 0 0 0.2rem var(--wttl-dark-accent-soft);
+    --bs-accordion-btn-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23b8c4c8' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    --bs-accordion-btn-active-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2369d8ca' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background: var(--wttl-dark-panel);
+    border: 1px solid var(--wttl-dark-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .accordion-item {
+    background: var(--wttl-dark-panel);
+    border-color: var(--wttl-dark-border);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .accordion-button {
+    background: var(--wttl-dark-section);
+    color: var(--wttl-dark-text);
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .accordion-button:not(.collapsed) {
+    background: var(--wttl-dark-section-active);
+    color: var(--wttl-dark-text);
+    box-shadow: inset 0 -1px 0 var(--wttl-dark-border-strong);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .accordion-button:hover {
+    background: var(--wttl-dark-input-hover);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .accordion-body {
+    background: var(--wttl-dark-panel);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"],
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput,
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput,
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input,
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select-control {
+    background: var(--wttl-dark-input);
+    border-color: var(--wttl-dark-border-strong);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"] {
+    border: 1px solid var(--wttl-dark-border-strong);
+    border-radius: 4px;
+    min-height: 38px;
+    padding: 6px 10px;
+    width: 100%;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]::placeholder,
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select-placeholder,
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input::placeholder {
+    color: var(--wttl-dark-text-faint);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="text"]:focus,
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateInput_input:focus,
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select.is-focused > .Select-control {
+    border-color: var(--wttl-dark-accent);
+    box-shadow: 0 0 0 0.18rem var(--wttl-dark-accent-soft);
+    outline: 0;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .DateRangePickerInput_arrow_svg {
+    fill: var(--wttl-dark-text-muted);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select-menu-outer {
+    background: var(--wttl-dark-input);
+    border-color: var(--wttl-dark-border-strong);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select-value-label,
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select-input > input,
+:root[data-mantine-color-scheme="dark"] .options-accordion .VirtualizedSelectOption {
+    color: var(--wttl-dark-text) !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .VirtualizedSelectFocusedOption {
+    background: var(--wttl-dark-section-active);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .Select--multi .Select-value {
+    background: rgba(79, 195, 180, 0.12);
+    border-color: rgba(79, 195, 180, 0.34);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="radio"],
+:root[data-mantine-color-scheme="dark"] .options-accordion input[type="checkbox"] {
+    accent-color: var(--wttl-dark-accent);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .rc-slider-rail {
+    background: rgba(231, 236, 239, 0.18);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .rc-slider-track {
+    background: var(--wttl-dark-accent);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .rc-slider-handle {
+    background: var(--wttl-dark-accent);
+    border-color: var(--wttl-dark-accent-strong);
+    box-shadow: 0 0 0 2px rgba(25, 28, 30, 0.9);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .rc-slider-handle:focus-visible {
+    box-shadow: 0 0 0 4px var(--wttl-dark-accent-soft);
 }
