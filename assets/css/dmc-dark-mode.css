@@ -266,3 +266,168 @@
 :root[data-mantine-color-scheme="dark"] .options-accordion .rc-slider-handle:focus-visible {
     box-shadow: 0 0 0 4px var(--wttl-dark-accent-soft);
 }
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers,
+:root[data-mantine-color-scheme="dark"] .leaflet-bar,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel {
+    background: rgba(32, 36, 39, 0.96);
+    border: 1px solid var(--wttl-dark-border-strong);
+    border-radius: 6px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel {
+    backdrop-filter: blur(8px);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-expanded {
+    padding: 10px 12px;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers label {
+    align-items: center;
+    color: var(--wttl-dark-text);
+    display: flex;
+    gap: 7px;
+    line-height: 1.25;
+    margin: 5px 0;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers label:hover {
+    color: var(--wttl-dark-accent-strong);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-list {
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-separator {
+    border-top-color: var(--wttl-dark-border);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-selector {
+    appearance: none;
+    background: var(--wttl-dark-input);
+    border: 1px solid var(--wttl-dark-border-strong);
+    border-radius: 3px;
+    box-shadow: none;
+    flex: 0 0 auto;
+    height: 14px;
+    margin: 0;
+    width: 14px;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-selector[type="radio"] {
+    border-radius: 50%;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-selector:checked {
+    background-color: var(--wttl-dark-accent);
+    border-color: var(--wttl-dark-accent);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-selector[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 14 14' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M3.1 7.2 5.8 9.8 10.9 4' fill='none' stroke='%2310211f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-selector[type="radio"]:checked {
+    box-shadow: inset 0 0 0 3px var(--wttl-dark-input);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-selector:focus-visible {
+    outline: 2px solid var(--wttl-dark-accent);
+    outline-offset: 2px;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-layers-toggle {
+    background-color: var(--wttl-dark-panel);
+    border-radius: 5px;
+    filter: invert(1) hue-rotate(160deg) saturate(0.6);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-bar a,
+:root[data-mantine-color-scheme="dark"] .leaflet-bar a:hover,
+:root[data-mantine-color-scheme="dark"] .leaflet-bar button,
+:root[data-mantine-color-scheme="dark"] .leaflet-bar button:hover {
+    background: var(--wttl-dark-panel);
+    border-bottom-color: var(--wttl-dark-border);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-bar a:hover,
+:root[data-mantine-color-scheme="dark"] .leaflet-bar button:hover,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle:hover,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle:focus-visible {
+    background: var(--wttl-dark-section-active);
+    color: var(--wttl-dark-accent-strong);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-bar a:focus-visible,
+:root[data-mantine-color-scheme="dark"] .leaflet-bar button:focus-visible,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle:focus-visible {
+    box-shadow: 0 0 0 3px var(--wttl-dark-accent-soft);
+    outline: none;
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle {
+    min-height: 34px;
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel-toggle.is-active {
+    color: var(--wttl-dark-accent-strong);
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel__copy,
+:root[data-mantine-color-scheme="dark"] .map-gesture-panel__list,
+:root[data-mantine-color-scheme="dark"] .map-gesture-control-status {
+    color: var(--wttl-dark-text-muted);
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-action-button {
+    background: var(--wttl-dark-accent);
+    color: #10211f;
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-action-button:hover,
+:root[data-mantine-color-scheme="dark"] .map-gesture-action-button:focus-visible {
+    background: var(--wttl-dark-accent-strong);
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-action-button:focus-visible {
+    box-shadow: 0 0 0 3px var(--wttl-dark-accent-soft);
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-action-button.is-active {
+    background: var(--wttl-dark-section);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .map-gesture-control-status {
+    background: var(--wttl-dark-section);
+    border: 1px solid var(--wttl-dark-border);
+}
+
+:root[data-mantine-color-scheme="dark"] .parking-tickets-legend,
+:root[data-mantine-color-scheme="dark"] .lahd-property-legend {
+    background: rgba(32, 36, 39, 0.96) !important;
+    border-color: var(--wttl-dark-border-strong) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28) !important;
+    color: var(--wttl-dark-text) !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .parking-tickets-legend__caption,
+:root[data-mantine-color-scheme="dark"] .parking-tickets-legend__hint,
+:root[data-mantine-color-scheme="dark"] .parking-tickets-legend__range,
+:root[data-mantine-color-scheme="dark"] .parking-tickets-legend__label,
+:root[data-mantine-color-scheme="dark"] .lahd-property-legend [style*="color: #556270"],
+:root[data-mantine-color-scheme="dark"] .lahd-property-legend [style*="color:#556270"],
+:root[data-mantine-color-scheme="dark"] .lahd-property-legend [style*="color: #1f2d3a"],
+:root[data-mantine-color-scheme="dark"] .lahd-property-legend [style*="color:#1f2d3a"] {
+    color: var(--wttl-dark-text-muted) !important;
+}
