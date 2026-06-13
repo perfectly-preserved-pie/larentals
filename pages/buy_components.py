@@ -87,9 +87,9 @@ class BuyComponents(BaseClass):
         subtitle="An interactive map of available residential properties for sale in Los Angeles County. Updated weekly.",
         map_style={
             "width": "100%",
-            "height": "90vh",
-            "margin": "auto",
-            "display": "inline-block",
+            "height": "100vh",
+            "margin": "0",
+            "display": "block",
         },
         active_filter_items=(
             "listed_date",
@@ -100,7 +100,8 @@ class BuyComponents(BaseClass):
             "bathrooms",
         ),
         accordion_class_name="options-accordion",
-        map_card_class_name="d-block d-md-block sticky-top",
+        map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
+        map_body_class_name="p-0 g-0 dbc",
     )
 
     @classmethod

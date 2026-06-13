@@ -120,8 +120,8 @@ class LeaseComponents(BaseClass):
             "pet_policy",
         ),
         accordion_class_name="options-accordion dmc",
-        map_card_class_name="d-block d-md-block sticky-top dbc",
-        map_body_class_name="p-2 g-0 dbc",
+        map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
+        map_body_class_name="p-0 g-0 dbc",
     )
 
     @classmethod

@@ -302,9 +302,8 @@ def build_title_card(
             ),
             html.Br(),
             dmc.Switch(
-                color="grey",
-                description="Toggle light/dark mode",
                 id="color-scheme-switch",
+                label="Toggle light/dark mode",
                 offLabel=DashIconify(
                     icon="radix-icons:sun",
                     width=15,
@@ -315,14 +314,19 @@ def build_title_card(
                     width=15,
                     color="var(--mantine-color-yellow-6)",
                 ),
+                className="theme-switch-control",
+                color="gray",
+                mt=5,
+                persisted_props=["checked"],
                 persistence=True,
+                persistence_type="local",
                 size="md",
-                style={"marginTop": "5px"},
+                **{"aria-label": "Toggle light/dark mode"},
             ),
         ]
     )
 
-    return dbc.Card(title_card_children, body=True)
+    return dbc.Card(title_card_children, body=True, className="title-card")
 
 
 def build_map(
@@ -515,7 +519,7 @@ def build_map_card(
             body_children,
             style={"position": "relative"},
         ),
-        className=body_class_name,
+        className=body_class_name or "p-0 g-0",
     )
 
     return dbc.Card(body, className=card_class_name)
