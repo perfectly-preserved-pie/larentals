@@ -1,5 +1,5 @@
 (function () {
-    const PACKAGE_VERSION = "0.2.0";
+    const PACKAGE_VERSION = "1.0.0";
     const MODULE_URL = `https://cdn.jsdelivr.net/npm/@map-gesture-controls/leaflet@${PACKAGE_VERSION}/+esm`;
     const STYLE_URL = `https://cdn.jsdelivr.net/npm/@map-gesture-controls/leaflet@${PACKAGE_VERSION}/dist/style.css`;
     const TOGGLE_SELECTOR = "[data-map-gesture-control='toggle']";
