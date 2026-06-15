@@ -2,6 +2,7 @@ from dash import Dash, clientside_callback, ClientsideFunction, Input, Output, d
 from api import register_api_routes
 from dash_extensions import EventListener
 from flask_compress import Compress
+from flask import Response
 from functions.devtools import register_filter_exclusion_devtool
 from functions.lahd_records_ui import (
   create_lahd_records_drawer,
@@ -9,6 +10,13 @@ from functions.lahd_records_ui import (
   register_lahd_records_drawer_callback,
 )
 from functions.lahd import prewarm_lahd_listing_lookup_cache
+from functions.seo import (
+  build_llms_txt,
+  build_robots_txt,
+  build_sitemap_xml,
+  build_structured_data_script,
+  get_public_page_paths,
+)
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
@@ -17,6 +25,8 @@ import time
 
 logging.getLogger().setLevel(logging.INFO)
 
+CANONICAL_BASE_URL = "https://wheretolive.la"
+STRUCTURED_DATA_SCRIPT = build_structured_data_script(CANONICAL_BASE_URL)
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
 external_stylesheets = [
@@ -66,6 +76,31 @@ Compress(app.server)
 # For Gunicorn
 server = app.server
 
+
+@server.route("/sitemap.xml")
+def sitemap_xml() -> Response:
+  page_paths = get_public_page_paths(dash.page_registry)
+  return Response(
+    build_sitemap_xml(CANONICAL_BASE_URL, page_paths),
+    mimetype="application/xml",
+  )
+
+
+@server.route("/robots.txt")
+def robots_txt() -> Response:
+  return Response(
+    build_robots_txt(CANONICAL_BASE_URL),
+    mimetype="text/plain",
+  )
+
+
+@server.route("/llms.txt")
+def llms_txt() -> Response:
+  return Response(
+    build_llms_txt(CANONICAL_BASE_URL),
+    mimetype="text/plain",
+  )
+
 # Plausible privacy-friendly analytics
 # https://dash.plotly.com/external-resources#usage (Option 1)
 # Probably won't get past adblockers and NoScript but whatever, good enough
@@ -75,6 +110,7 @@ app.index_string = """<!DOCTYPE html>
     <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.io/js/plausible.js" type="application/javascript"></script>
     {%metas%}
     <title>{%title%}</title>
+    """ + STRUCTURED_DATA_SCRIPT + """
     {%favicon%}
     {%css%}
   </head>
