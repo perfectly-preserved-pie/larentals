@@ -25,7 +25,8 @@ PlaceCache: TypeAlias = dict[str, PlaceGeocodeResult]
 
 _DEFAULT_PLACE_CACHE_PATH = Path("/mnt/cache/location/place_geocode_cache.json")
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-_PLACE_CACHE_VERSION = "v2"
+_PLACE_CACHE_VERSION = "v3"
+_DEFAULT_LOCATION_CONTEXT = "Los Angeles County, CA"
 _CALIFORNIA_BOUNDS = {
     "south": 32.4,
     "north": 42.1,
@@ -77,6 +78,30 @@ def _query_looks_like_street_address(query: str) -> bool:
     tokens = {token.strip(",.#") for token in lowered.split()}
     return not street_tokens.isdisjoint(tokens)
 
+
+def _query_has_location_context(query: str) -> bool:
+    """
+    Check whether a free-form query already includes a California/LA qualifier.
+
+    Args:
+        query: Raw or normalized user-entered place text.
+
+    Returns:
+        `True` when the query includes a state or Los Angeles qualifier.
+    """
+    lowered = str(query or "").strip().lower()
+    if not lowered:
+        return False
+    if "california" in lowered or "los angeles" in lowered or "la county" in lowered:
+        return True
+
+    tokens = {
+        token.strip(" ,.#")
+        for token in lowered.replace(",", " ").split()
+    }
+    return "ca" in tokens
+
+
 def _normalize_place_query(query: str) -> str:
     """
     Normalize a user-entered place query before sending it to Nominatim.
@@ -85,15 +110,14 @@ def _normalize_place_query(query: str) -> str:
         query: Raw place text entered by the user.
 
     Returns:
-        The cleaned query string, with `, CA` appended when no California
-        qualifier is already present.
+        The cleaned query string, with an LA County qualifier appended when no
+        California or Los Angeles qualifier is already present.
     """
     normalized = " ".join(str(query).strip().split())
     if not normalized:
         return ""
-    lowered = normalized.lower()
-    if "los angeles" not in lowered and "ca" not in lowered and "california" not in lowered:
-        normalized = f"{normalized}, CA"
+    if not _query_has_location_context(normalized):
+        normalized = f"{normalized}, {_DEFAULT_LOCATION_CONTEXT}"
     return normalized
 
 
@@ -153,7 +177,38 @@ def _result_is_california_match(result: dict[str, Any]) -> bool:
     return _coordinates_look_like_california(lat, lon)
 
 
-def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, float, int]:
+def _result_is_la_county_match(result: dict[str, Any]) -> bool:
+    """
+    Decide whether a Nominatim candidate clearly points to Los Angeles County.
+
+    Args:
+        result: Raw Nominatim response object for a single candidate.
+
+    Returns:
+        `True` when the candidate identifies Los Angeles County in address
+        metadata or display text; otherwise `False`.
+    """
+    if not isinstance(result, dict):
+        return False
+
+    address = result.get("address")
+    if isinstance(address, dict):
+        county = str(address.get("county", "")).strip().lower()
+        city = str(address.get("city", "")).strip().lower()
+        if county in {"los angeles", "los angeles county", "county of los angeles"}:
+            return True
+        if city == "los angeles":
+            return True
+
+    display_name = str(result.get("display_name", "")).strip().lower()
+    return (
+        display_name.startswith("los angeles county, california,")
+        or ", los angeles county, california," in display_name
+        or display_name.endswith(", los angeles county, california, united states")
+    )
+
+
+def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[int, float, float, int]:
     """
     Rank California Nominatim candidates for the current place query.
 
@@ -171,6 +226,7 @@ def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, floa
     category = str(result.get("class", "")).strip().lower()
     result_type = str(result.get("type", "")).strip().lower()
     display_name = str(result.get("display_name", "")).strip()
+    location_priority = 0 if _result_is_la_county_match(result) else 1
 
     if _query_looks_like_street_address(query):
         if address_dict.get("house_number"):
@@ -191,7 +247,7 @@ def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, floa
     except (TypeError, ValueError):
         importance = 0.0
 
-    return (score, -importance, len(display_name))
+    return (location_priority, score, -importance, len(display_name))
 
 def _load_place_cache(cache_path: Path) -> PlaceCache:
     """
