@@ -214,7 +214,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 13) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
-                    zipFilter = featureWithinAnyPolygon(feature, zipFeatures);
+                    zipFilter = (
+                        featureWithinAnyPolygon(feature, zipFeatures) ||
+                        featureMatchesAnyZip(feature, zipCodes)
+                    );
                 }
 
                 // Combine all filters

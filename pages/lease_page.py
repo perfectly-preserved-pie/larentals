@@ -7,6 +7,7 @@ from functions.layers import LayersClass, register_responsive_layers_control_cal
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
+  get_zip_codes_for_place,
   get_zip_features_for_place,
   intersect_bbox_with_zip_polygons,
   load_zip_place_crosswalk,
@@ -33,8 +34,8 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# Load the ZIP polygons once at module load time
-ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
+# Load the DB-scoped service-area ZIP/ZCTA polygons once at module load time
+ZIP_POLYGONS = load_zip_polygons("assets/datasets/socal_service_area_zip_codes.geojson")
 
 # Load the HUD ZIP-to-city crosswalk once at module load time
 ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
@@ -339,14 +340,16 @@ def update_lease_zip_boundary(
   sanitized_location = bleach.clean(location or "", tags=[], attributes={}, strip=True)
 
   # Try the crosswalk first
+  crosswalk_zips = get_zip_codes_for_place(sanitized_location, ZIP_PLACE_CROSSWALK)
   crosswalk_features = get_zip_features_for_place(sanitized_location, ZIP_PLACE_CROSSWALK, ZIP_POLYGONS)
 
   # Get the geocode bbox in case the "include nearby" switch is on
   geocoded = geocode_place_cached(sanitized_location)
 
-  if crosswalk_features:
+  if crosswalk_zips:
     # Start with crosswalk results
-    zip_features = list(crosswalk_features)  
+    zip_features = list(crosswalk_features)
+    zip_codes = set(crosswalk_zips)
 
     # Optionally expand with nearby ZIPs from the geocoded bbox
     if include_nearby and geocoded:
@@ -360,18 +363,14 @@ def update_lease_zip_boundary(
         if fzip and fzip not in existing_zips:
           zip_features.append(feature)
           existing_zips.add(fzip)
+          zip_codes.add(fzip)
 
     # Extract ZIP codes from the features
-    zip_codes = [
-      f.get("properties", {}).get("ZIPCODE")
-      for f in zip_features
-    ]
-    # Filter out any None values
-    zip_codes = [z for z in zip_codes if z]
+    zip_codes = sorted(z for z in zip_codes if z)
     logger.debug(f"Crosswalk matched '{sanitized_location}' → {zip_codes}")
 
     # Generate the label
-    label = ", ".join(sorted(zip_codes)[:5])
+    label = ", ".join(zip_codes[:5])
     if len(zip_codes) > 5:
       label = f"{label} +{len(zip_codes) - 5} more"
 

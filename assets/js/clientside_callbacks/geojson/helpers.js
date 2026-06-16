@@ -23,6 +23,23 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     return num >= minValue && num <= maxValue;
 }
 
+function normalizeZipCode(value) {
+    if (value === null || value === undefined) return "";
+    const match = String(value).trim().match(/\d{5}/);
+    return match ? match[0] : "";
+}
+
+function featureMatchesAnyZip(feature, zipCodes) {
+    if (!feature?.properties || !Array.isArray(zipCodes) || !zipCodes.length) {
+        return false;
+    }
+
+    const listingZip = normalizeZipCode(feature.properties.zip_code);
+    if (!listingZip) return false;
+
+    return zipCodes.some((zipCode) => normalizeZipCode(zipCode) === listingZip);
+}
+
 function featureWithinAnyPolygon(feature, polygonFeatures) {
     const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
     if (!turfAvailable || !feature?.geometry || !Array.isArray(polygonFeatures) || !polygonFeatures.length) {

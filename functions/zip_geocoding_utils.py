@@ -607,6 +607,30 @@ def load_zip_place_crosswalk(
 
     return dict(mapping)
 
+
+def get_zip_codes_for_place(
+    place_name: str,
+    zip_place_crosswalk: dict[str, set[str]],
+) -> set[str]:
+    """
+    Return ZIP codes belonging to a place using the HUD crosswalk.
+
+    Args:
+        place_name: User-entered place name (e.g. "Santa Monica").
+        zip_place_crosswalk: Mapping from uppercase city → set of ZIP strings.
+
+    Returns:
+        Set of matching ZIP code strings. Empty when the place is unknown.
+    """
+    normalized = place_name.strip().upper()
+    # Strip trailing state/country info like ", CA" or ", California"
+    for suffix in [", CA", ", CALIFORNIA", ", LOS ANGELES", " CA"]:
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)].strip()
+
+    return set(zip_place_crosswalk.get(normalized, set()))
+
+
 def get_zip_features_for_place(
     place_name: str,
     zip_place_crosswalk: dict[str, set[str]],
@@ -623,13 +647,7 @@ def get_zip_features_for_place(
     Returns:
         List of matching GeoJSON feature dicts.
     """
-    normalized = place_name.strip().upper()
-    # Strip trailing state/country info like ", CA" or ", California"
-    for suffix in [", CA", ", CALIFORNIA", ", LOS ANGELES", " CA"]:
-        if normalized.endswith(suffix):
-            normalized = normalized[: -len(suffix)].strip()
-
-    target_zips = zip_place_crosswalk.get(normalized)
+    target_zips = get_zip_codes_for_place(place_name, zip_place_crosswalk)
     if not target_zips:
         return []
 

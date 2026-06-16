@@ -38,6 +38,21 @@ def test_service_area_priority_includes_direct_la_neighboring_counties() -> None
     )
 
 
+def test_get_zip_codes_for_place_returns_crosswalk_zips_without_polygons() -> None:
+    crosswalk = {
+        "ANAHEIM": {"92805"},
+        "SAN CLEMENTE": {"92672", "92673", "92674"},
+    }
+
+    assert geocoding.get_zip_codes_for_place("Anaheim", crosswalk) == {"92805"}
+    assert geocoding.get_zip_codes_for_place("San Clemente, CA", crosswalk) == {
+        "92672",
+        "92673",
+        "92674",
+    }
+    assert geocoding.get_zip_features_for_place("Anaheim", crosswalk, []) == []
+
+
 def test_geocode_place_cached_prefers_la_county_for_ambiguous_california_place(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

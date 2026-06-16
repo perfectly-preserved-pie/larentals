@@ -48,6 +48,22 @@ Derived GeoJSON:
 - Filtered to NAICS `445100` and `445110`
 - Excludes gas-station-branded businesses based on name matching
 
+## Service Area ZIP/ZCTA Boundaries
+
+https://gis.data.chhs.ca.gov/datasets/4b1e19484fd64b438f072eff8bdf6c5a_11/about
+https://www.census.gov/programs-surveys/geography/guidance/geo-areas/zctas.html
+https://gis.data.ca.gov/datasets/ca-zip-code-boundaries/about
+
+Preferred local derived artifact:
+
+- `socal_service_area_zip_codes.geojson`
+- Built primarily from California Census ZIP Code Tabulation Areas
+- Backfills California ZIPs missing from Census ZCTAs with CA Zip Code Boundaries
+- Filtered to normalized ZIP codes currently present in `larentals.db` tables `buy` and `lease`
+- Keeps only the `ZIPCODE` property used by the location filter callbacks
+- Refresh locally with `uv run build-service-area-zip-geojson`
+- The source polygons are Census ZCTAs, which approximate USPS ZIP Code areas for mapping; the client-side ZIP-code fallback still handles listings whose ZIP is present in the DB but missing from ZCTA polygons
+
 ## Parking Tickets Heatmap Layer
 
 Inspired by the LA Controller's parking citation map:
