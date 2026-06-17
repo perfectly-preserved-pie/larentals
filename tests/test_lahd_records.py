@@ -3,6 +3,7 @@ import gzip
 import orjson
 import requests
 
+from api import listings
 from functions import lahd
 from functions import lahd_records_ui
 
@@ -114,6 +115,53 @@ def test_fetch_lahd_property_record_details_falls_back_to_snapshot(monkeypatch) 
     assert payload["summary"]["unresolved_issue_count"] == 35
     assert payload["detail_status"]["live_records_available"] is False
     assert "logged-in access" in payload["detail_status"]["message"]
+
+
+def test_live_lahd_dataset_status_reports_non_200(monkeypatch) -> None:
+    def fake_get(url, **kwargs):
+        response = requests.Response()
+        response.status_code = 403 if url == lahd.LAHD_INVESTIGATION_DATASET_URL else 200
+        return response
+
+    monkeypatch.setattr(lahd.requests, "get", fake_get)
+    lahd._get_lahd_live_dataset_status.cache_clear()
+
+    try:
+        status = lahd.get_lahd_live_dataset_status()
+    finally:
+        lahd._get_lahd_live_dataset_status.cache_clear()
+
+    assert status["available"] is False
+    assert status["status_codes"] == {
+        "investigation": 403,
+        "violation": 200,
+    }
+
+
+def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr(
+        listings,
+        "is_listing_in_los_angeles_city",
+        lambda *, city, latitude, longitude: True,
+    )
+    monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: False)
+
+    def fail_lookup(**_kwargs):
+        raise AssertionError("Local LAHD snapshot should not be used when live datasets are unavailable.")
+
+    monkeypatch.setattr(listings, "lookup_lahd_property_for_listing", fail_lookup)
+
+    summary = listings.build_lahd_listing_summary(
+        {
+            "city": "Los Angeles",
+            "latitude": 34.0522,
+            "longitude": -118.2437,
+            "full_street_address": "200 N Spring St",
+        }
+    )
+
+    assert summary["data_available"] is False
+    assert summary["jurisdiction_in_scope"] is True
 
 
 def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path) -> None:

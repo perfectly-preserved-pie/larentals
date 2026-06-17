@@ -4,8 +4,10 @@ from typing import Any
 from flask import Blueprint, Response, abort, jsonify
 from functions.lahd import (
     is_listing_in_los_angeles_city,
+    live_lahd_datasets_available,
     lookup_lahd_property_for_listing,
     out_of_scope_lahd_listing_lookup_result,
+    unavailable_lahd_listing_lookup_result,
 )
 
 LEASE_LISTING_DETAIL_SQL = """
@@ -133,6 +135,9 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
     )
     if in_scope is False:
         return out_of_scope_lahd_listing_lookup_result()
+
+    if not live_lahd_datasets_available():
+        return unavailable_lahd_listing_lookup_result()
 
     return lookup_lahd_property_for_listing(
         address=payload.get("full_street_address"),

@@ -44,6 +44,8 @@ LAHD_COORDINATE_BOUNDS = {
     "min_lon": -118.70,
     "max_lon": -118.10,
 }
+LAHD_AVAILABILITY_CHECK_TIMEOUT_SECONDS = 8
+LAHD_AVAILABILITY_CACHE_TTL_SECONDS = 900
 
 JsonDict: TypeAlias = dict[str, Any]
 GeoJsonDict: TypeAlias = dict[str, Any]
@@ -305,6 +307,68 @@ def _request_socrata_rows(url: str, params: dict[str, object]) -> list[JsonDict]
     return payload
 
 
+def _request_socrata_status_code(url: str) -> int | None:
+    """
+    Return the HTTP status for a cheap Socrata availability probe.
+    """
+    try:
+        response = requests.get(
+            url,
+            params={"$limit": 1},
+            timeout=LAHD_AVAILABILITY_CHECK_TIMEOUT_SECONDS,
+            headers=_build_socrata_headers(),
+        )
+    except requests.RequestException as exc:
+        logger.warning(f"LAHD Socrata availability probe failed for {url}: {exc}")
+        return None
+    return int(response.status_code)
+
+
+@lru_cache(maxsize=8)
+def _get_lahd_live_dataset_status(cache_bucket: int) -> JsonDict:
+    """
+    Probe both live LAHD Socrata datasets and cache the result briefly.
+    """
+    del cache_bucket
+    datasets = {
+        "investigation": LAHD_INVESTIGATION_DATASET_URL,
+        "violation": LAHD_VIOLATION_DATASET_URL,
+    }
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {
+            dataset_name: executor.submit(_request_socrata_status_code, url)
+            for dataset_name, url in datasets.items()
+        }
+        status_codes = {
+            dataset_name: future.result()
+            for dataset_name, future in futures.items()
+        }
+    available = all(status_code == 200 for status_code in status_codes.values())
+    if not available:
+        logger.warning(f"Live LAHD datasets are unavailable: {status_codes}")
+
+    return {
+        "available": available,
+        "status_codes": status_codes,
+        "checked_at": _generated_timestamp(),
+    }
+
+
+def get_lahd_live_dataset_status() -> JsonDict:
+    """
+    Return cached live LAHD dataset availability for popup UI gating.
+    """
+    cache_bucket = int(time.time() // LAHD_AVAILABILITY_CACHE_TTL_SECONDS)
+    return _get_lahd_live_dataset_status(cache_bucket)
+
+
+def live_lahd_datasets_available() -> bool:
+    """
+    Return whether the live LAHD Socrata datasets are currently reachable.
+    """
+    return bool(get_lahd_live_dataset_status().get("available"))
+
+
 def _get_socrata_app_token() -> str | None:
     """
     Return the configured Socrata app token from `.env` or the environment.
@@ -500,7 +564,7 @@ def _lahd_detail_unavailable_message(exc: Exception) -> str:
     """
     if isinstance(exc, requests.HTTPError) and exc.response is not None and exc.response.status_code == 403:
         return (
-            "The City data API is currently unavailable due to access restrictions. "
+            "The City data API is currently unavailable due to logged-in access restrictions. "
             "Showing the latest local aggregate snapshot instead."
         )
     return (
@@ -1237,6 +1301,13 @@ def out_of_scope_lahd_listing_lookup_result() -> LahdListingLookupResult:
     Return a hidden-by-client payload for listings outside LAHD jurisdiction.
     """
     return _empty_lahd_listing_lookup_result(data_available=True, jurisdiction_in_scope=False)
+
+
+def unavailable_lahd_listing_lookup_result() -> LahdListingLookupResult:
+    """
+    Return a hidden-by-client payload when live LAHD datasets are unavailable.
+    """
+    return _empty_lahd_listing_lookup_result(data_available=False)
 
 
 def _matched_lahd_listing_lookup_result(

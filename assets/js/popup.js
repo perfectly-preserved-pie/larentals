@@ -232,7 +232,11 @@
      */
     function renderLahdIssueRow(popupData) {
         const summary = popupData.lahd_property_summary;
-        if (summary && typeof summary === "object" && summary.jurisdiction_in_scope === false) {
+        if (!summary || typeof summary !== "object") {
+            return "";
+        }
+
+        if (summary.jurisdiction_in_scope === false || summary.data_available === false) {
             return "";
         }
 
