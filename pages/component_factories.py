@@ -288,7 +288,7 @@ def build_title_card(
             ),
             html.A(
                 "About This Project",
-                href="https://automateordie.dev/blog/2023/08/26/wheretolivela/",
+                href="https://automateordie.dev/wheretolivedotla/",
                 target="_blank",
             ),
             html.I(
