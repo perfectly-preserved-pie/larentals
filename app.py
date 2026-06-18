@@ -107,7 +107,7 @@ def llms_txt() -> Response:
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.io/js/plausible.js" type="application/javascript"></script>
+    <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.dev/js/plausible.js" type="application/javascript"></script>
     {%metas%}
     <title>{%title%}</title>
     """ + STRUCTURED_DATA_SCRIPT + """
