@@ -35,6 +35,10 @@ external_stylesheets = [
   dbc.icons.FONT_AWESOME
 ]
 external_scripts = [
+  {
+    "src": "https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js",
+    "async": "async",
+  },
   'https://cdn.jsdelivr.net/npm/@turf/turf@7.3.0/turf.min.js', # Turf.js for convex hulls
   'https://cdn.jsdelivr.net/npm/sweetalert2@11.26.24/dist/sweetalert2.all.min.js' # SweetAlert2 for popups
 ]
@@ -101,18 +105,9 @@ def llms_txt() -> Response:
     mimetype="text/plain",
   )
 
-# Plausible privacy-friendly analytics
-# https://dash.plotly.com/external-resources#usage (Option 1)
-# Probably won't get past adblockers and NoScript but whatever, good enough
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <!-- Privacy-friendly analytics by Plausible -->
-    <script async src="https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js"></script>
-    <script>
-      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-      plausible.init()
-    </script>
     {%metas%}
     <title>{%title%}</title>
     """ + STRUCTURED_DATA_SCRIPT + """
