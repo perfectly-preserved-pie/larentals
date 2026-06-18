@@ -107,7 +107,12 @@ def llms_txt() -> Response:
 app.index_string = """<!DOCTYPE html>
 <html>
   <head>
-    <script defer data-domain="wheretolive.la" src="https://plausible.automateordie.dev/js/plausible.js" type="application/javascript"></script>
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async src="https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js"></script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
+    </script>
     {%metas%}
     <title>{%title%}</title>
     """ + STRUCTURED_DATA_SCRIPT + """
