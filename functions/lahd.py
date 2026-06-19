@@ -45,7 +45,6 @@ LAHD_COORDINATE_BOUNDS = {
     "max_lon": -118.10,
 }
 LAHD_AVAILABILITY_CHECK_TIMEOUT_SECONDS = 8
-LAHD_AVAILABILITY_CACHE_TTL_SECONDS = 900
 
 JsonDict: TypeAlias = dict[str, Any]
 GeoJsonDict: TypeAlias = dict[str, Any]
@@ -324,12 +323,11 @@ def _request_socrata_status_code(url: str) -> int | None:
     return int(response.status_code)
 
 
-@lru_cache(maxsize=8)
-def _get_lahd_live_dataset_status(cache_bucket: int) -> JsonDict:
+@lru_cache(maxsize=1)
+def _get_lahd_live_dataset_status() -> JsonDict:
     """
-    Probe both live LAHD Socrata datasets and cache the result briefly.
+    Probe both live LAHD Socrata datasets once for this app process.
     """
-    del cache_bucket
     datasets = {
         "investigation": LAHD_INVESTIGATION_DATASET_URL,
         "violation": LAHD_VIOLATION_DATASET_URL,
@@ -358,8 +356,7 @@ def get_lahd_live_dataset_status() -> JsonDict:
     """
     Return cached live LAHD dataset availability for popup UI gating.
     """
-    cache_bucket = int(time.time() // LAHD_AVAILABILITY_CACHE_TTL_SECONDS)
-    return _get_lahd_live_dataset_status(cache_bucket)
+    return _get_lahd_live_dataset_status()
 
 
 def live_lahd_datasets_available() -> bool:
@@ -367,6 +364,13 @@ def live_lahd_datasets_available() -> bool:
     Return whether the live LAHD Socrata datasets are currently reachable.
     """
     return bool(get_lahd_live_dataset_status().get("available"))
+
+
+def prewarm_lahd_live_dataset_status_cache() -> None:
+    """
+    Resolve live LAHD dataset availability during startup.
+    """
+    get_lahd_live_dataset_status()
 
 
 def _get_socrata_app_token() -> str | None:

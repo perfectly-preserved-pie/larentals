@@ -9,7 +9,10 @@ from functions.lahd_records_ui import (
   create_lahd_records_listener,
   register_lahd_records_drawer_callback,
 )
-from functions.lahd import prewarm_lahd_listing_lookup_cache
+from functions.lahd import (
+  prewarm_lahd_listing_lookup_cache,
+  prewarm_lahd_live_dataset_status_cache,
+)
 from functions.seo import (
   build_llms_txt,
   build_robots_txt,
@@ -152,6 +155,7 @@ def prewarm_startup_caches() -> None:
   Populate expensive local caches before the first browser/API request.
   """
   start_time = time.perf_counter()
+  prewarm_lahd_live_dataset_status_cache()
   prewarm_lahd_listing_lookup_cache()
 
   # Import after Dash is initialized because page modules call dash.register_page.
