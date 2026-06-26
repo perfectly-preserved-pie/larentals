@@ -2,8 +2,20 @@ import unittest
 
 from dash import dcc, html
 
-from pages.component_factories import build_subtype_filter
+from pages.component_factories import build_subtype_filter, build_title_card
 from pages.components import BuyComponents, LeaseComponents
+
+
+def _collect_components(component):
+    if isinstance(component, (list, tuple)):
+        for child in component:
+            yield from _collect_components(child)
+        return
+
+    yield component
+    children = getattr(component, "children", None)
+    if children is not None:
+        yield from _collect_components(children)
 
 
 class ComponentsSmokeTest(unittest.TestCase):
@@ -36,6 +48,20 @@ class ComponentsSmokeTest(unittest.TestCase):
         dropdown = dropdown_wrapper.children[0]
         self.assertIsInstance(dropdown, dcc.Dropdown)
         self.assertEqual(dropdown.value, [])
+
+    def test_title_card_links_to_mcp_endpoint(self) -> None:
+        title_card = build_title_card(
+            title="WhereToLive.LA",
+            subtitle="Interactive housing map",
+            last_updated=None,
+        )
+
+        links = [
+            component
+            for component in _collect_components(title_card)
+            if isinstance(component, html.A)
+        ]
+        self.assertIn("/_mcp", [link.href for link in links])
 
 
 if __name__ == "__main__":

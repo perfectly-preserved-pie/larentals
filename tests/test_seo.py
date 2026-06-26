@@ -22,6 +22,7 @@ class SeoTest(unittest.TestCase):
 
   def test_build_sitemap_xml_contains_canonical_public_urls(self) -> None:
     sitemap = build_sitemap_xml("https://wheretolive.la", ["/", "/buy"])
+    sitemap_text = sitemap.decode("utf-8")
     root = ElementTree.fromstring(sitemap)
     namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
@@ -31,6 +32,7 @@ class SeoTest(unittest.TestCase):
     ]
 
     self.assertEqual(urls, ["https://wheretolive.la/", "https://wheretolive.la/buy"])
+    self.assertNotIn("_mcp", sitemap_text)
 
   def test_build_robots_txt_points_to_sitemap(self) -> None:
     robots_txt = build_robots_txt("https://wheretolive.la/")
@@ -45,7 +47,9 @@ class SeoTest(unittest.TestCase):
     self.assertIn("# WhereToLive.LA", llms_txt)
     self.assertIn("[Rental map](https://wheretolive.la/)", llms_txt)
     self.assertIn("[For-sale map](https://wheretolive.la/buy)", llms_txt)
+    self.assertIn("https://wheretolive.la/_mcp", llms_txt)
     self.assertIn("avoid inventing exact listing availability", llms_txt)
+    self.assertIn("machine interface, not a browser page", llms_txt)
 
   def test_build_structured_data_script_contains_web_app_schema(self) -> None:
     script = build_structured_data_script("https://wheretolive.la/")

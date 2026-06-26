@@ -291,6 +291,22 @@ def build_title_card(
                 href="https://automateordie.dev/wheretolivedotla/",
                 target="_blank",
             ),
+            DashIconify(
+                icon="lucide:bot",
+                width=16,
+                style={
+                    "marginRight": "5px",
+                    "marginLeft": "15px",
+                    "verticalAlign": "-2px",
+                },
+            ),
+            html.A(
+                "MCP",
+                href="/_mcp",
+                target="_blank",
+                title="MCP endpoint",
+                **{"aria-label": "MCP endpoint"},
+            ),
             html.I(
                 className="fa fa-envelope",
                 style={"marginRight": "5px", "marginLeft": "15px"},
