@@ -53,6 +53,7 @@ dmc.pre_render_color_scheme()
 app = Dash(
 	external_scripts = external_scripts,
   external_stylesheets = external_stylesheets,
+  enable_mcp=True,
   health_endpoint="health", # https://dash.plotly.com/app-monitoring
   # Add meta tags for mobile devices
   # https://community.plotly.com/t/reorder-website-for-mobile-view/33669/5?

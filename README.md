@@ -23,6 +23,8 @@ This is an interactive map based on /u/WilliamMcCarty's and /u/TannerBeyer's wee
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
+The Dash MCP endpoint is available at `https://wheretolive.la/_mcp` for MCP clients that support Streamable HTTP.
+
 You can click the toggle buttons next to the title to switch between For Rent and For Sale listings:
 
 ![image](https://github.com/user-attachments/assets/0d58d43a-0722-4bd2-9914-786b0f5e0dcf)
