@@ -13,6 +13,7 @@ from functions.lahd import (
   prewarm_lahd_listing_lookup_cache,
   prewarm_lahd_live_dataset_status_cache,
 )
+from functions.mcp_usage_logging import register_mcp_usage_logging
 from functions.seo import (
   build_llms_txt,
   build_robots_txt,
@@ -83,6 +84,7 @@ Compress(app.server)
 
 # For Gunicorn
 server = app.server
+register_mcp_usage_logging(server)
 
 
 @server.route("/sitemap.xml")
