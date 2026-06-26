@@ -256,6 +256,45 @@
     }
 
     /**
+     * Compute the same responsive popup sizing constraints used by listing popups.
+     *
+     * @param {L.Layer|L.Map|null|undefined} popupSource Layer or map used to infer map bounds.
+     * @param {L.PopupOptions=} popupOptions Optional Leaflet popup options to preserve.
+     * @returns {L.PopupOptions} Leaflet popup options with listing-equivalent sizing.
+     */
+    function buildResponsivePopupOptions(popupSource, popupOptions) {
+        const customOptions = popupOptions && typeof popupOptions === "object" ? popupOptions : {};
+        const isMobile =
+            (typeof L !== "undefined" && L.Browser && L.Browser.mobile) ||
+            window.innerWidth < 768;
+        const mapEl =
+            popupSource?._map?.getContainer?.() ??
+            popupSource?.getContainer?.() ??
+            null;
+        const rect = mapEl?.getBoundingClientRect?.() ?? null;
+
+        const availW = Math.floor(Math.min(window.innerWidth, rect?.width ?? window.innerWidth));
+        const availH = Math.floor(Math.min(window.innerHeight, rect?.height ?? window.innerHeight));
+
+        const padding = isMobile ? 24 : 48;
+        const listingMaxWidthCap = isMobile ? 225 : 350;
+        const listingMaxHeightCap = isMobile ? 405 : 650;
+        const className = [customOptions.className, "responsive-popup"]
+            .filter(Boolean)
+            .join(" ");
+
+        return Object.assign({}, customOptions, {
+            maxWidth: Math.max(200, Math.min(listingMaxWidthCap, availW - padding)),
+            maxHeight: Math.max(220, Math.min(listingMaxHeightCap, availH - padding)),
+            keepInView: false,
+            autoPanPadding: [10, 10],
+            closeButton: true,
+            className: className,
+            minWidth: 50,
+        });
+    }
+
+    /**
      * Resolve a popup builder lazily so folder load order does not break marker registration.
      *
      * @param {string} builderName Popup builder name.
@@ -337,7 +376,10 @@
 
         const buildPopupContent = getPopupBuilder(builderName);
         if (buildPopupContent) {
-            layer.bindPopup(buildPopupContent(feature.properties), popupOptions);
+            layer.bindPopup(
+                buildPopupContent(feature.properties),
+                buildResponsivePopupOptions(layer, popupOptions)
+            );
         }
     }
 
@@ -412,6 +454,7 @@
         }),
         runtime: Object.assign({}, window.additionalLayerPopups && window.additionalLayerPopups.runtime, {
             bindAdditionalLayerPopup: bindAdditionalLayerPopup,
+            buildResponsivePopupOptions: buildResponsivePopupOptions,
             createPopupMarker: createPopupMarker,
             ensureLeafletHeatLoaded: ensureLeafletHeatLoaded,
             getPopupBuilder: getPopupBuilder,

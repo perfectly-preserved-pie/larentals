@@ -3,11 +3,13 @@
 
     const popupApi = window.additionalLayerPopups;
     const popupRuntime = popupApi && popupApi.runtime;
+    const buildResponsivePopupOptions = popupRuntime && popupRuntime.buildResponsivePopupOptions;
     const ensureLeafletHeatLoaded = popupRuntime && popupRuntime.ensureLeafletHeatLoaded;
     const getPopupBuilder = popupRuntime && popupRuntime.getPopupBuilder;
     const registerLayerRenderer = popupRuntime && popupRuntime.registerLayerRenderer;
 
     if (
+        typeof buildResponsivePopupOptions !== "function" ||
         typeof ensureLeafletHeatLoaded !== "function" ||
         typeof getPopupBuilder !== "function" ||
         typeof registerLayerRenderer !== "function"
@@ -535,10 +537,10 @@
                 const markerLayerItem = L.circleMarker([point[0], point[1]], buildMarkerStyle(point[2]));
 
                 if (popupBuilder) {
-                    markerLayerItem.bindPopup(popupBuilder(markerProperties), {
-                        maxWidth: 420,
-                        minWidth: 280,
-                    });
+                    markerLayerItem.bindPopup(
+                        popupBuilder(markerProperties),
+                        buildResponsivePopupOptions(map)
+                    );
                 }
 
                 markerLayer.addLayer(markerLayerItem);

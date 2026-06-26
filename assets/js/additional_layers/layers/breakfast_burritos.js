@@ -47,11 +47,7 @@
             feature,
             latlng,
             breakfastBurritoIcon,
-            "buildBreakfastBurritoPopupContent",
-            {
-                maxWidth: 440,
-                minWidth: 320,
-            }
+            "buildBreakfastBurritoPopupContent"
         );
     }
 

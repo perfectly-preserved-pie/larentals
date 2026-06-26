@@ -173,11 +173,7 @@
             feature,
             latlng,
             schoolIcon,
-            "buildSchoolPopupContent",
-            {
-                maxWidth: 460,
-                minWidth: 340,
-            }
+            "buildSchoolPopupContent"
         );
     }
 

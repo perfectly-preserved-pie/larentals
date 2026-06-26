@@ -10,13 +10,14 @@
 
 /* Additional layer popups */
 .additional-layer-popup {
+  box-sizing: border-box;
   width: 360px;
-  max-width: 70vw;
+  max-width: 100%;
 }
 
 .additional-layer-popup--wide {
   width: 380px;
-  max-width: 72vw;
+  max-width: 100%;
 }
 
 .additional-layer-popup__header {
@@ -29,13 +30,11 @@
 }
 
 .additional-layer-popup__body {
-  max-height: 320px;
-  overflow-y: auto;
-  padding-right: 4px;
+  overflow-y: visible;
 }
 
 .additional-layer-popup__body--tall {
-  max-height: 340px;
+  max-height: none;
 }
 
 .additional-layer-popup__row {
@@ -194,6 +193,23 @@
 
 .additional-layer-popup a {
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 767.98px) {
+  .additional-layer-popup__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  .additional-layer-popup__metric-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .additional-layer-popup__metric-value {
+    white-space: normal;
+  }
 }
 
 .lahd-records-trigger {

@@ -28,11 +28,7 @@
             feature,
             latlng,
             marketIcon,
-            "buildFarmersMarketPopupContent",
-            {
-                maxWidth: 420,
-                minWidth: 320,
-            }
+            "buildFarmersMarketPopupContent"
         );
     }
 
