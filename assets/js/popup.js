@@ -407,7 +407,7 @@
         const payload = encodeURIComponent(JSON.stringify({ mls_number: listingId }));
         return `
             <div style="text-align: center; margin-top: 10px;">
-                <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${payload}"))' style="text-decoration: none; color: red;">
+                <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${payload}"))' style="text-decoration: none; color: #d55e00;">
                     <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
                     <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
                 </a>

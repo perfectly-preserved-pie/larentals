@@ -394,16 +394,16 @@
     function renderBucket(title, items) {
       if (!items.length) return "";
 
-      // Define colors based on bucket title
+      // Define colors based on bucket title.
       let bgColor, borderColor;
       if (title.includes("Best")) {
-        bgColor = "rgba(76, 175, 80, 0.15)"; // Green tint
-        borderColor = "#4CAF50";
+        bgColor = "rgba(0, 114, 178, 0.14)";
+        borderColor = "#0072B2";
       } else if (title.includes("Good")) {
-        bgColor = "rgba(255, 193, 7, 0.15)"; // Yellow/amber tint
+        bgColor = "rgba(255, 193, 7, 0.15)";
         borderColor = "#FFC107";
       } else {
-        bgColor = "rgba(158, 158, 158, 0.15)"; // Gray tint
+        bgColor = "rgba(158, 158, 158, 0.15)";
         borderColor = "#9E9E9E";
       }
 
@@ -499,7 +499,7 @@
         container.setAttribute("data-loaded", "true");
       })
       .catch(() => {
-        container.innerHTML = `<span style="color:#f00;">Failed to load ISP options.</span>`;
+        container.innerHTML = `<span style="color:#d55e00;">Failed to load ISP options.</span>`;
       });
   }
 

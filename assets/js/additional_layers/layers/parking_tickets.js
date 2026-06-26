@@ -16,6 +16,24 @@
         return;
     }
 
+    // Cividis is a blue-to-yellow sequential palette designed for color-vision deficiencies.
+    const PARKING_CIVIDIS_HEAT_GRADIENT = Object.freeze({
+        0.18: "#2f426d",
+        0.36: "#5e626e",
+        0.54: "#868379",
+        0.72: "#b4a76f",
+        0.88: "#dfca57",
+        1.0: "#fee838",
+    });
+    const PARKING_CIVIDIS_LEGEND_GRADIENT = "linear-gradient(90deg, #2f426d 0%, #5e626e 22%, #868379 46%, #b4a76f 68%, #dfca57 84%, #fee838 100%)";
+    const PARKING_MARKER_TIER_STYLES = Object.freeze({
+        occasional: { fill: "#00224e", stroke: "#0b1f3a" },
+        monthly: { fill: "#434e6c", stroke: "#193542" },
+        weekly: { fill: "#7d7c78", stroke: "#3c3935" },
+        severalPerWeek: { fill: "#bcae6c", stroke: "#594815" },
+        extreme: { fill: "#fee838", stroke: "#675a00" },
+    });
+
     /**
      * @typedef {{
      *   layer_role?: unknown,
@@ -237,14 +255,7 @@
             maxZoom: 16,
             minOpacity: 0.24,
             max: Number(properties.heat_max_intensity) || 1,
-            gradient: {
-                0.18: "#2748ff",
-                0.36: "#00b6ff",
-                0.54: "#19d889",
-                0.72: "#ffe34d",
-                0.88: "#ff9730",
-                1.0: "#ff2f1f",
-            },
+            gradient: PARKING_CIVIDIS_HEAT_GRADIENT,
         };
         const markerRenderer = L.canvas({ padding: 0.5 });
 
@@ -346,7 +357,9 @@
                     [
                         '<div class="parking-tickets-legend__section" style="margin-top: 10px;">',
                         '<div class="parking-tickets-legend__subtitle" style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 600;">Heat intensity</div>',
-                        '<div class="parking-tickets-legend__gradient" aria-hidden="true" style="height: 10px; border-radius: 999px; background: linear-gradient(90deg, #2748ff 0%, #00b6ff 22%, #19d889 46%, #ffe34d 68%, #ff9730 84%, #ff2f1f 100%);"></div>',
+                        '<div class="parking-tickets-legend__gradient" aria-hidden="true" style="height: 10px; border-radius: 999px; background: ',
+                        PARKING_CIVIDIS_LEGEND_GRADIENT,
+                        ';"></div>',
                         '<div class="parking-tickets-legend__range" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; color: #556270;">',
                         "<span>Lower</span>",
                         "<span>Higher</span>",
@@ -359,11 +372,11 @@
             if (showMarkers) {
                 /** @type {ParkingLegendMarkerEntry[]} */
                 const markerLegendEntries = [
-                    ['#3da1ff', 'Occasional', tier2 > 0 ? "< " + formatCitationCount(tier2) + "/year" : null],
-                    ['#2ecf7f', 'Monthly', tier2 > 0 && tier3 > 0 ? formatCitationCount(tier2) + "\u2013" + formatCitationCount(tier3 - 1) + "/year" : null],
-                    ['#ffd43b', 'Weekly', tier3 > 0 && tier4 > 0 ? formatCitationCount(tier3) + "\u2013" + formatCitationCount(tier4 - 1) + "/year" : null],
-                    ['#ff8f1f', 'Several per week', tier4 > 0 && tier5 > 0 ? formatCitationCount(tier4) + "\u2013" + formatCitationCount(tier5 - 1) + "/year" : null],
-                    ['#ff3123', 'Extreme Hotspot', tier5 > 0 ? formatCitationCount(tier5) + "+/year" : null],
+                    [PARKING_MARKER_TIER_STYLES.occasional.fill, 'Occasional', tier2 > 0 ? "< " + formatCitationCount(tier2) + "/year" : null],
+                    [PARKING_MARKER_TIER_STYLES.monthly.fill, 'Monthly', tier2 > 0 && tier3 > 0 ? formatCitationCount(tier2) + "\u2013" + formatCitationCount(tier3 - 1) + "/year" : null],
+                    [PARKING_MARKER_TIER_STYLES.weekly.fill, 'Weekly', tier3 > 0 && tier4 > 0 ? formatCitationCount(tier3) + "\u2013" + formatCitationCount(tier4 - 1) + "/year" : null],
+                    [PARKING_MARKER_TIER_STYLES.severalPerWeek.fill, 'Several per week', tier4 > 0 && tier5 > 0 ? formatCitationCount(tier4) + "\u2013" + formatCitationCount(tier5 - 1) + "/year" : null],
+                    [PARKING_MARKER_TIER_STYLES.extreme.fill, 'Extreme Hotspot', tier5 > 0 ? formatCitationCount(tier5) + "+/year" : null],
                 ];
 
                 legendSections.push(
@@ -402,7 +415,7 @@
                     ? '<div class="parking-tickets-legend__caption" style="margin-top: 2px; font-size: 0.72rem; color: #556270;">' + windowLabel + "</div>"
                     : "",
                 legendSections.join(""),
-                '<div class="parking-tickets-legend__hint" style="margin-top: 10px; font-size: 0.7rem; color: #556270;">Warmer colors mean more citations.</div>',
+                '<div class="parking-tickets-legend__hint" style="margin-top: 10px; font-size: 0.7rem; color: #556270;">Brighter colors mean more citations.</div>',
             ].join("");
         }
 
@@ -464,29 +477,24 @@
             const tier4 = markerFrequencyBreaks[2] || 0;
             const tier5 = markerFrequencyBreaks[3] || 0;
 
-            let fillColor = "#3da1ff";
-            let strokeColor = "#0f1b26";
+            let markerStyle = PARKING_MARKER_TIER_STYLES.occasional;
 
             if (citationCount >= tier5 && tier5 > 0) {
-                fillColor = "#ff3123";
-                strokeColor = "#4f0a06";
+                markerStyle = PARKING_MARKER_TIER_STYLES.extreme;
             } else if (citationCount >= tier4 && tier4 > 0) {
-                fillColor = "#ff8f1f";
-                strokeColor = "#5c2d00";
+                markerStyle = PARKING_MARKER_TIER_STYLES.severalPerWeek;
             } else if (citationCount >= tier3 && tier3 > 0) {
-                fillColor = "#ffd43b";
-                strokeColor = "#665200";
+                markerStyle = PARKING_MARKER_TIER_STYLES.weekly;
             } else if (citationCount >= tier2 && tier2 > 0) {
-                fillColor = "#2ecf7f";
-                strokeColor = "#0f4a2a";
+                markerStyle = PARKING_MARKER_TIER_STYLES.monthly;
             }
 
             return {
                 radius: 4 + (normalizedCount * 6),
-                color: strokeColor,
+                color: markerStyle.stroke,
                 weight: 2,
                 opacity: 0.95,
-                fillColor: fillColor,
+                fillColor: markerStyle.fill,
                 fillOpacity: 0.95,
                 pane: "parkingTicketsMarkerPane",
                 renderer: markerRenderer,

@@ -882,7 +882,7 @@ def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPo
 
     Leaflet.heat supports weighted points, but raw citation counts create a map
     where one or two giant hotspots dominate the whole color scale. A square-root
-    curve keeps dense corridors red while still allowing lower-volume streets to
+    curve keeps dense corridors prominent while still allowing lower-volume streets to
     glow visibly.
 
     Args:

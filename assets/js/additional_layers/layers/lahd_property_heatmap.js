@@ -16,6 +16,24 @@
         return;
     }
 
+    // Cividis is a blue-to-yellow sequential palette designed for color-vision deficiencies.
+    const LAHD_CIVIDIS_HEAT_GRADIENT = Object.freeze({
+        0.18: "#2f426d",
+        0.36: "#5e626e",
+        0.54: "#868379",
+        0.72: "#b4a76f",
+        0.88: "#dfca57",
+        1.0: "#fee838",
+    });
+    const LAHD_CIVIDIS_LEGEND_GRADIENT = "linear-gradient(90deg, #2f426d 0%, #5e626e 22%, #868379 46%, #b4a76f 68%, #dfca57 84%, #fee838 100%)";
+    const LAHD_MARKER_TIER_STYLES = Object.freeze({
+        lower: { fill: "#00224e", stroke: "#0b1f3a" },
+        elevated: { fill: "#434e6c", stroke: "#193542" },
+        high: { fill: "#7d7c78", stroke: "#3c3935" },
+        severe: { fill: "#bcae6c", stroke: "#594815" },
+        extreme: { fill: "#fee838", stroke: "#675a00" },
+    });
+
     /**
      * @typedef {[number, number, number]} LahdHeatPointTuple
      */
@@ -182,14 +200,7 @@
             maxZoom: 16,
             minOpacity: 0.22,
             max: Number(properties.heat_max_intensity) || 1,
-            gradient: {
-                0.18: "#1d4ed8",
-                0.36: "#0891b2",
-                0.54: "#22c55e",
-                0.72: "#facc15",
-                0.88: "#f97316",
-                1.0: "#dc2626",
-            },
+            gradient: LAHD_CIVIDIS_HEAT_GRADIENT,
         };
 
         /**
@@ -259,7 +270,9 @@
                     [
                         '<div style="margin-top: 10px;">',
                         '<div style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 600;">Problem density</div>',
-                        '<div aria-hidden="true" style="height: 10px; border-radius: 999px; background: linear-gradient(90deg, #1d4ed8 0%, #0891b2 22%, #22c55e 46%, #facc15 68%, #f97316 84%, #dc2626 100%);"></div>',
+                        '<div aria-hidden="true" style="height: 10px; border-radius: 999px; background: ',
+                        LAHD_CIVIDIS_LEGEND_GRADIENT,
+                        ';"></div>',
                         '<div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; color: #556270;">',
                         "<span>Lower</span>",
                         "<span>Higher</span>",
@@ -271,11 +284,11 @@
 
             if (showMarkers) {
                 const markerLegendEntries = [
-                    ["#38bdf8", "Lower", tier2 > 0 ? "< " + formatCount(tier2) : null],
-                    ["#22c55e", "Elevated", tier2 > 0 && tier3 > 0 ? formatCount(tier2) + "\u2013" + formatCount(tier3 - 1) : null],
-                    ["#facc15", "High", tier3 > 0 && tier4 > 0 ? formatCount(tier3) + "\u2013" + formatCount(tier4 - 1) : null],
-                    ["#f97316", "Severe", tier4 > 0 && tier5 > 0 ? formatCount(tier4) + "\u2013" + formatCount(tier5 - 1) : null],
-                    ["#dc2626", "Extreme", tier5 > 0 ? formatCount(tier5) + "+" : null],
+                    [LAHD_MARKER_TIER_STYLES.lower.fill, "Lower", tier2 > 0 ? "< " + formatCount(tier2) : null],
+                    [LAHD_MARKER_TIER_STYLES.elevated.fill, "Elevated", tier2 > 0 && tier3 > 0 ? formatCount(tier2) + "\u2013" + formatCount(tier3 - 1) : null],
+                    [LAHD_MARKER_TIER_STYLES.high.fill, "High", tier3 > 0 && tier4 > 0 ? formatCount(tier3) + "\u2013" + formatCount(tier4 - 1) : null],
+                    [LAHD_MARKER_TIER_STYLES.severe.fill, "Severe", tier4 > 0 && tier5 > 0 ? formatCount(tier4) + "\u2013" + formatCount(tier5 - 1) : null],
+                    [LAHD_MARKER_TIER_STYLES.extreme.fill, "Extreme", tier5 > 0 ? formatCount(tier5) + "+" : null],
                 ];
 
                 sections.push(
@@ -384,29 +397,24 @@
             const tier4 = markerScoreBreaks[2] || 0;
             const tier5 = markerScoreBreaks[3] || 0;
 
-            let fillColor = "#38bdf8";
-            let strokeColor = "#0f1b26";
+            let markerStyle = LAHD_MARKER_TIER_STYLES.lower;
 
             if (problemScore >= tier5 && tier5 > 0) {
-                fillColor = "#dc2626";
-                strokeColor = "#4f0a06";
+                markerStyle = LAHD_MARKER_TIER_STYLES.extreme;
             } else if (problemScore >= tier4 && tier4 > 0) {
-                fillColor = "#f97316";
-                strokeColor = "#5c2d00";
+                markerStyle = LAHD_MARKER_TIER_STYLES.severe;
             } else if (problemScore >= tier3 && tier3 > 0) {
-                fillColor = "#facc15";
-                strokeColor = "#665200";
+                markerStyle = LAHD_MARKER_TIER_STYLES.high;
             } else if (problemScore >= tier2 && tier2 > 0) {
-                fillColor = "#22c55e";
-                strokeColor = "#0f4a2a";
+                markerStyle = LAHD_MARKER_TIER_STYLES.elevated;
             }
 
             return {
                 radius: 4 + (normalizedScore * 7),
-                color: strokeColor,
+                color: markerStyle.stroke,
                 weight: 2,
                 opacity: 0.95,
-                fillColor: fillColor,
+                fillColor: markerStyle.fill,
                 fillOpacity: 0.95,
                 pane: "lahdPropertyMarkerPane",
                 renderer: markerRenderer,

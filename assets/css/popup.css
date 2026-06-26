@@ -169,7 +169,7 @@
 }
 
 .additional-layer-popup__status--active {
-  color: red;
+  color: #d55e00;
 }
 
 .additional-layer-popup__status--buried {
@@ -185,7 +185,7 @@
 }
 
 .additional-layer-popup__status--plugged {
-  color: green;
+  color: #0072b2;
 }
 
 .additional-layer-popup__status--unknown {
