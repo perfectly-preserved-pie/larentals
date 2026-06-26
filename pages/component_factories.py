@@ -276,47 +276,49 @@ def build_title_card(
 
     title_card_children.extend(
         [
-            html.I(className="bi bi-github", style={"marginRight": "5px"}),
-            html.A(
-                "GitHub",
-                href="https://github.com/perfectly-preserved-pie/larentals",
-                target="_blank",
+            html.Div(
+                [
+                    html.A(
+                        [
+                            html.I(className="bi bi-github"),
+                            html.Span("GitHub"),
+                        ],
+                        href="https://github.com/perfectly-preserved-pie/larentals",
+                        target="_blank",
+                        className="title-card-link",
+                    ),
+                    html.A(
+                        [
+                            html.I(className="fa-solid fa-blog"),
+                            html.Span("About This Project"),
+                        ],
+                        href="https://automateordie.dev/wheretolivedotla/",
+                        target="_blank",
+                        className="title-card-link",
+                    ),
+                    html.A(
+                        [
+                            DashIconify(icon="lucide:bot", width=16),
+                            html.Span("MCP"),
+                        ],
+                        href="/_mcp",
+                        target="_blank",
+                        title="MCP endpoint",
+                        className="title-card-link",
+                        **{"aria-label": "MCP endpoint"},
+                    ),
+                    html.A(
+                        [
+                            html.I(className="fa fa-envelope"),
+                            html.Span("hey@wheretolive.la"),
+                        ],
+                        href="mailto:hey@wheretolive.la",
+                        target="_blank",
+                        className="title-card-link",
+                    ),
+                ],
+                className="title-card-links",
             ),
-            html.I(
-                className="fa-solid fa-blog",
-                style={"marginRight": "5px", "marginLeft": "15px"},
-            ),
-            html.A(
-                "About This Project",
-                href="https://automateordie.dev/wheretolivedotla/",
-                target="_blank",
-            ),
-            DashIconify(
-                icon="lucide:bot",
-                width=16,
-                style={
-                    "marginRight": "5px",
-                    "marginLeft": "15px",
-                    "verticalAlign": "-2px",
-                },
-            ),
-            html.A(
-                "MCP",
-                href="/_mcp",
-                target="_blank",
-                title="MCP endpoint",
-                **{"aria-label": "MCP endpoint"},
-            ),
-            html.I(
-                className="fa fa-envelope",
-                style={"marginRight": "5px", "marginLeft": "15px"},
-            ),
-            html.A(
-                "hey@wheretolive.la",
-                href="mailto:hey@wheretolive.la",
-                target="_blank",
-            ),
-            html.Br(),
             dmc.Switch(
                 id="color-scheme-switch",
                 label="Toggle light/dark mode",

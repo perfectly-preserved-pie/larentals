@@ -6,6 +6,35 @@
     --Dash-Text-Strong: var(--bs-body-color);
 }
 
+.dbc .title-card-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.9rem;
+    margin-bottom: 0.35rem;
+}
+
+.dbc .title-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    line-height: 1.35;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.dbc .title-card-link:hover,
+.dbc .title-card-link:focus {
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+}
+
+.dbc .title-card-link svg,
+.dbc .title-card-link i {
+    color: var(--bs-body-color);
+    flex: 0 0 auto;
+}
+
 
 :root[data-mantine-color-scheme="dark"] .dbc {
     --bs-body-bg: var(--wttl-dark-bg, #191c1e);
