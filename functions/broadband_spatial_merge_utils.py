@@ -100,7 +100,10 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
             "Busconsm",
             "Service_Type",
         ]
-        provider_cols = [c for c in desired if c in providers.columns]
+        for col in desired:
+            if col not in providers.columns:
+                providers[col] = None
+        provider_cols = desired
     else:
         missing = [c for c in cfg.provider_cols if c not in providers.columns]
         if missing:
@@ -150,7 +153,27 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
 
     conn = sqlite3.connect(cfg.larentals_db_path)
     try:
-        out_df.to_sql(cfg.output_table, conn, if_exists="replace", index=False)
+        provider_sql_types = {
+            "listing_id": "TEXT",
+            "DBA": "TEXT",
+            "TechCode": "INTEGER",
+            "MaxAdDn": "REAL",
+            "MaxAdUp": "REAL",
+            "MaxDnTier": "INTEGER",
+            "MaxUpTier": "INTEGER",
+            "MinDnTier": "INTEGER",
+            "MinUpTier": "INTEGER",
+            "Contact": "TEXT",
+            "Busconsm": "TEXT",
+            "Service_Type": "TEXT",
+        }
+        out_df.to_sql(
+            cfg.output_table,
+            conn,
+            if_exists="replace",
+            index=False,
+            dtype={col: provider_sql_types[col] for col in out_df.columns if col in provider_sql_types},
+        )
         conn.execute(
             f"CREATE INDEX IF NOT EXISTS idx_{cfg.output_table}_listing_id "
             f"ON {cfg.output_table}(listing_id)"

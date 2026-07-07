@@ -8,6 +8,8 @@ SAMPLE_SIZE=30
 BASE_DIR=/home/ubuntu/larentals
 DB_PATH=$BASE_DIR/assets/datasets/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
+BROADBAND_GEOPACKAGE_PATH=/home/ubuntu/ca_broadband_geopackage.gpkg
+BROADBAND_GEOPACKAGE_LAYER=ca_broadband_availability_aggregate
 
 # Log directories
 SAMPLE_LOG_DIR=~/larentals/sample
@@ -18,7 +20,7 @@ chmod 777 "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" # fuck it lol
 # Update & install OS packages (script runs as root)
 apt-get update -y
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  python3 python3-pip git curl unzip
+  python3 python3-pip git curl unzip gdal-bin
 
 # Ensure HOME is set
 export HOME=/home/ubuntu
@@ -92,6 +94,17 @@ systemctl restart amazon-cloudwatch-agent
 # Wait for both pipelines to finish before proceeding
 wait
 echo "Both lease+buy pipelines complete"
+
+echo "----- FETCH CPUC BROADBAND GEOPACKAGE -----"
+uv run fetch-cpuc-broadband-geopackage \
+  --output "$BROADBAND_GEOPACKAGE_PATH" \
+  --layer "$BROADBAND_GEOPACKAGE_LAYER"
+
+echo "----- RUN BROADBAND MERGE -----"
+uv run run-broadband-merge \
+  --db-path "$DB_PATH" \
+  --geopackage-path "$BROADBAND_GEOPACKAGE_PATH" \
+  --geopackage-layer "$BROADBAND_GEOPACKAGE_LAYER"
 
 echo "----- UPLOAD DB -----"
 aws s3 cp "$DB_PATH" "$S3_URI"
