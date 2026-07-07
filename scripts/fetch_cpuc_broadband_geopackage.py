@@ -5,10 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 import tempfile
 import urllib.request
 import zipfile
+
+from loguru import logger
 
 
 DEFAULT_SOURCE_URL = (
@@ -229,17 +230,17 @@ def build_geopackage(config: BroadbandGeopackageConfig) -> None:
         extract_dir = work_dir / "extracted"
         extract_dir.mkdir()
 
-        print("Downloading CPUC broadband data...")
+        logger.info(f"Downloading CPUC broadband data from {config.source_url}")
         download_file(config.source_url, zip_path)
 
-        print("Extracting CPUC broadband data...")
+        logger.info(f"Extracting CPUC broadband data to {extract_dir}")
         extract_archive(zip_path, extract_dir)
 
         source_dataset = find_source_dataset(extract_dir)
-        print(f"Converting {source_dataset} to {config.output_path}...")
+        logger.info(f"Converting {source_dataset} to {config.output_path}")
         convert_to_geopackage(source_dataset, config.output_path, config.layer_name)
 
-    print(f"Wrote {config.output_path} with layer {config.layer_name}")
+    logger.success(f"Wrote {config.output_path} with layer {config.layer_name}")
 
 
 def main() -> None:
@@ -254,7 +255,7 @@ def main() -> None:
     try:
         build_geopackage(config)
     except Exception as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        logger.error(f"Failed to build CPUC broadband GeoPackage: {exc}")
         raise SystemExit(1) from exc
 
 
