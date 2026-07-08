@@ -12,7 +12,7 @@ from functions.broadband_spatial_merge_utils import (
 )
 
 DEFAULT_DB_PATH = "assets/datasets/larentals.db"
-DEFAULT_GEOPACKAGE_PATH = "/home/straying/ca_broadband_geopackage.gpkg"
+DEFAULT_GEOPACKAGE_PATH = "assets/datasets/ca_broadband_geopackage.gpkg"
 DEFAULT_GEOPACKAGE_LAYER = "ca_broadband_availability_aggregate"
 
 

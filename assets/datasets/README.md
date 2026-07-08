@@ -34,6 +34,17 @@ Derived GeoJSON:
 
 https://egis-lacounty.hub.arcgis.com/datasets/lacounty::oil-and-gas-wells/about
 
+## CPUC Broadband Availability
+
+https://www.cpuc.ca.gov/industries-and-topics/internet-and-phone/broadband-mapping-program/broadband-availability
+
+Preferred local artifact:
+
+- `ca_broadband_geopackage.gpkg`
+- Built from CPUC fixed consumer broadband deployment data with `uv run fetch-cpuc-broadband-geopackage`
+- The fetch command writes `ca_broadband_geopackage.gpkg.metadata.json` and reuses the existing GeoPackage when CPUC's ETag, Last-Modified, and Content-Length source validators have not changed
+- Force a rebuild with `uv run fetch-cpuc-broadband-geopackage --force`
+
 ## Supermarkets & Grocery Stores
 
 https://data.lacity.org/Administration-Finance/Listing-of-Active-Businesses/6rrh-rzua/about_data

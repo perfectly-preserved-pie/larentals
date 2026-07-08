@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 import shutil
@@ -17,8 +19,9 @@ DEFAULT_SOURCE_URL = (
     "documents/broadband-mapping/fgdb_shp_data-as-of-eoy-cibm2024/"
     "fixed_consumer_deployment_eoy2024.zip"
 )
-DEFAULT_OUTPUT_PATH = "/home/straying/ca_broadband_geopackage.gpkg"
+DEFAULT_OUTPUT_PATH = "assets/datasets/ca_broadband_geopackage.gpkg"
 DEFAULT_LAYER_NAME = "ca_broadband_availability_aggregate"
+USER_AGENT = "larentals-cpuc-broadband-fetch/1.0"
 
 
 @dataclass(frozen=True)
@@ -35,6 +38,11 @@ class BroadbandGeopackageConfig:
     source_url: str
     output_path: Path
     layer_name: str
+    force: bool = False
+
+    @property
+    def metadata_path(self) -> Path:
+        return self.output_path.with_suffix(f"{self.output_path.suffix}.metadata.json")
 
 
 def parse_args(argv: list[str] | None = None) -> BroadbandGeopackageConfig:
@@ -59,11 +67,17 @@ def parse_args(argv: list[str] | None = None) -> BroadbandGeopackageConfig:
     parser.add_argument("--source-url", default=DEFAULT_SOURCE_URL)
     parser.add_argument("--output", default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--layer", default=DEFAULT_LAYER_NAME)
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Rebuild the GeoPackage even when the source validators have not changed.",
+    )
     args = parser.parse_args(argv)
     return BroadbandGeopackageConfig(
         source_url=args.source_url,
         output_path=Path(args.output),
         layer_name=args.layer,
+        force=args.force,
     )
 
 
@@ -85,7 +99,79 @@ def require_command(command: str) -> None:
         raise RuntimeError(f"{command} is required; install gdal-bin")
 
 
-def download_file(url: str, destination: Path) -> None:
+def _interesting_headers(headers: object) -> dict[str, str]:
+    return {
+        header: value
+        for header in ("ETag", "Last-Modified", "Content-Length")
+        if (value := headers.get(header)) is not None
+    }
+
+
+def probe_source(url: str) -> dict[str, str]:
+    """
+    Fetch lightweight source validators without downloading the full archive.
+
+    CPUC's file is large and changes infrequently, so ETag/Last-Modified checks
+    let normal pipeline runs reuse the existing GeoPackage artifact.
+    """
+
+    request = urllib.request.Request(
+        url,
+        method="HEAD",
+        headers={"User-Agent": USER_AGENT},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return _interesting_headers(response.headers)
+
+
+def load_metadata(path: Path) -> dict[str, object] | None:
+    if not path.exists():
+        return None
+
+    try:
+        with path.open() as file:
+            payload = json.load(file)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(f"Could not read broadband metadata {path}: {exc}")
+        return None
+
+    return payload if isinstance(payload, dict) else None
+
+
+def source_matches_metadata(
+    config: BroadbandGeopackageConfig,
+    source_headers: dict[str, str],
+) -> bool:
+    metadata = load_metadata(config.metadata_path)
+    if not metadata or not config.output_path.exists():
+        return False
+
+    if metadata.get("source_url") != config.source_url:
+        return False
+
+    previous_headers = metadata.get("source_headers")
+    return isinstance(previous_headers, dict) and previous_headers == source_headers
+
+
+def write_metadata(
+    config: BroadbandGeopackageConfig,
+    source_headers: dict[str, str],
+    archive_sha256: str,
+) -> None:
+    metadata = {
+        "source_url": config.source_url,
+        "source_headers": source_headers,
+        "archive_sha256": archive_sha256,
+        "output_path": str(config.output_path),
+        "layer_name": config.layer_name,
+    }
+    config.metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    with config.metadata_path.open("w") as file:
+        json.dump(metadata, file, indent=2, sort_keys=True)
+        file.write("\n")
+
+
+def download_file(url: str, destination: Path) -> tuple[dict[str, str], str]:
     """
     Download the CPUC broadband archive to a local file.
 
@@ -103,13 +189,15 @@ def download_file(url: str, destination: Path) -> None:
         OSError: If the destination cannot be written.
     """
 
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": "larentals-cpuc-broadband-fetch/1.0"},
-    )
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    digest = hashlib.sha256()
     with urllib.request.urlopen(request, timeout=120) as response:
         with destination.open("wb") as file:
-            shutil.copyfileobj(response, file)
+            while chunk := response.read(1024 * 1024):
+                digest.update(chunk)
+                file.write(chunk)
+
+        return _interesting_headers(response.headers), digest.hexdigest()
 
 
 def extract_archive(zip_path: Path, extract_dir: Path) -> None:
@@ -222,6 +310,19 @@ def build_geopackage(config: BroadbandGeopackageConfig) -> None:
         subprocess.CalledProcessError: If GDAL cannot convert the dataset.
     """
 
+    source_headers: dict[str, str] = {}
+    if not config.force:
+        try:
+            source_headers = probe_source(config.source_url)
+        except Exception as exc:
+            logger.warning(f"Could not probe CPUC broadband source; rebuilding: {exc}")
+        else:
+            if source_headers and source_matches_metadata(config, source_headers):
+                logger.success(
+                    f"CPUC broadband source is unchanged; reusing {config.output_path}"
+                )
+                return
+
     require_command("ogr2ogr")
 
     with tempfile.TemporaryDirectory() as work_dir_str:
@@ -231,7 +332,8 @@ def build_geopackage(config: BroadbandGeopackageConfig) -> None:
         extract_dir.mkdir()
 
         logger.info(f"Downloading CPUC broadband data from {config.source_url}")
-        download_file(config.source_url, zip_path)
+        download_headers, archive_sha256 = download_file(config.source_url, zip_path)
+        source_headers = source_headers or download_headers
 
         logger.info(f"Extracting CPUC broadband data to {extract_dir}")
         extract_archive(zip_path, extract_dir)
@@ -239,6 +341,7 @@ def build_geopackage(config: BroadbandGeopackageConfig) -> None:
         source_dataset = find_source_dataset(extract_dir)
         logger.info(f"Converting {source_dataset} to {config.output_path}")
         convert_to_geopackage(source_dataset, config.output_path, config.layer_name)
+        write_metadata(config, source_headers, archive_sha256)
 
     logger.success(f"Wrote {config.output_path} with layer {config.layer_name}")
 

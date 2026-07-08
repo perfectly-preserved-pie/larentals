@@ -8,7 +8,7 @@ SAMPLE_SIZE=30
 BASE_DIR=/home/ubuntu/larentals
 DB_PATH=$BASE_DIR/assets/datasets/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
-BROADBAND_GEOPACKAGE_PATH=/home/ubuntu/ca_broadband_geopackage.gpkg
+BROADBAND_GEOPACKAGE_PATH=$BASE_DIR/assets/datasets/ca_broadband_geopackage.gpkg
 BROADBAND_GEOPACKAGE_LAYER=ca_broadband_availability_aggregate
 
 # Log directories
