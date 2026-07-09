@@ -1,13 +1,36 @@
+/**
+ * @typedef {[number, number]} CoordinatePair
+ *
+ * @typedef {Object} GeoJSONGeometry
+ * @property {string=} type
+ * @property {*=} coordinates
+ *
+ * @typedef {Object} GeoJSONFeature
+ * @property {GeoJSONGeometry|null=} geometry
+ * @property {Object.<string, *>|null=} properties
+ */
+
+/**
+ * Convert a value to a finite number when possible.
+ *
+ * @param {*} value - Candidate numeric value from Dash or GeoJSON properties.
+ * @returns {number|null} Parsed number, or null for blank/non-numeric input.
+ */
 function safeNumber(value) {
     if (value === null || value === undefined || value === "") return null;
     const num = Number(value);
     return isNaN(num) ? null : num;
 }
 
-function emptyFeatureCollection() {
-    return { type: "FeatureCollection", features: [] };
-}
-
+/**
+ * Normalize a coordinate pair to GeoJSON order: [longitude, latitude].
+ *
+ * Listing points may arrive as either [lat, lon] or [lon, lat]. This function
+ * uses valid latitude/longitude ranges to detect and correct obvious swaps.
+ *
+ * @param {*} coords - Candidate two-value coordinate array.
+ * @returns {CoordinatePair|null} GeoJSON-ordered coordinates, or null if invalid.
+ */
 function normalizeCoordinatePair(coords) {
     if (!Array.isArray(coords) || coords.length < 2) return null;
     const [a, b] = coords;
@@ -18,6 +41,15 @@ function normalizeCoordinatePair(coords) {
     return [a, b];
 }
 
+/**
+ * Test whether a speed value falls inside an inclusive numeric range.
+ *
+ * @param {*} value - Candidate speed value.
+ * @param {number} minValue - Inclusive lower bound.
+ * @param {number} maxValue - Inclusive upper bound.
+ * @param {boolean} includeMissing - Whether blank/non-numeric values should pass.
+ * @returns {boolean} True when the value passes the range/missing-value rule.
+ */
 function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     if (value === null || value === undefined || value === "") {
         return Boolean(includeMissing);
@@ -27,67 +59,46 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
     return num >= minValue && num <= maxValue;
 }
 
-function normalizeListingId(value) {
+/**
+ * Extract a five-digit ZIP code from common listing/crosswalk formats.
+ *
+ * @param {*} value - Raw ZIP value such as "92805", "92805.0", or "92805-1234".
+ * @returns {string} Five-digit ZIP code, or an empty string when unavailable.
+ */
+function normalizeZipCode(value) {
     if (value === null || value === undefined) return "";
-    return String(value).trim().replace(/\.0$/, "");
+    const match = String(value).trim().match(/\d{5}/);
+    return match ? match[0] : "";
 }
 
-function normalizeListingIdSet(values) {
-    return new Set(
-        Array.isArray(values)
-            ? values.map((value) => normalizeListingId(value)).filter((value) => value.length > 0)
-            : []
-    );
-}
-
-function buildCommuteCandidateSignature(commuteSignature, featureCollection) {
-    if (!commuteSignature || !Array.isArray(featureCollection?.features)) {
-        return null;
+/**
+ * Check whether a listing feature's ZIP code matches any selected ZIP code.
+ *
+ * This is the fallback for cases where a ZIP is valid for filtering but no
+ * polygon is available in the boundary dataset.
+ *
+ * @param {GeoJSONFeature|null|undefined} feature - Listing point feature.
+ * @param {Array<*>} zipCodes - ZIP codes selected by the server-side callback.
+ * @returns {boolean} True when the feature's normalized ZIP matches a selected ZIP.
+ */
+function featureMatchesAnyZip(feature, zipCodes) {
+    if (!feature?.properties || !Array.isArray(zipCodes) || !zipCodes.length) {
+        return false;
     }
 
-    const normalizedIds = featureCollection.features
-        .map((feature) => normalizeListingId(feature?.properties?.mls_number))
-        .filter((value) => value.length > 0)
-        .sort();
+    const listingZip = normalizeZipCode(feature.properties.zip_code);
+    if (!listingZip) return false;
 
-    return `${commuteSignature}|${normalizedIds.join(",")}`;
+    return zipCodes.some((zipCode) => normalizeZipCode(zipCode) === listingZip);
 }
 
-function filterFeatureCollectionByListingIds(featureCollection, eligibleListingIds) {
-    if (!Array.isArray(featureCollection?.features)) {
-        return emptyFeatureCollection();
-    }
-
-    const eligibleSet = normalizeListingIdSet(eligibleListingIds);
-
-    return {
-        type: "FeatureCollection",
-        features: featureCollection.features.filter((feature) => eligibleSet.has(
-            normalizeListingId(feature?.properties?.mls_number)
-        )),
-    };
-}
-
-function cloneFeatureWithCommuteState(feature, matchState, statusText) {
-    const properties = feature && typeof feature.properties === "object" && feature.properties !== null
-        ? feature.properties
-        : {};
-
-    return Object.assign({}, feature, {
-        properties: Object.assign({}, properties, {
-            commute_match_state: matchState || null,
-            commute_status_text: statusText || null,
-        }),
-    });
-}
-
-function commuteStateSortRank(matchState) {
-    if (matchState === "verified_match") return 0;
-    if (matchState === "rough_match") return 1;
-    if (matchState === "verified_excluded") return 2;
-    return 3;
-}
-
+/**
+ * Check whether a listing point is contained by any selected ZIP polygon.
+ *
+ * @param {GeoJSONFeature|null|undefined} feature - Listing point feature.
+ * @param {Array<GeoJSONFeature>} polygonFeatures - ZIP/ZCTA polygon features.
+ * @returns {boolean} True when Turf is available and the point is inside a polygon.
+ */
 function featureWithinAnyPolygon(feature, polygonFeatures) {
     const turfAvailable = typeof turf !== "undefined" && turf && typeof turf.booleanPointInPolygon === "function";
     if (!turfAvailable || !feature?.geometry || !Array.isArray(polygonFeatures) || !polygonFeatures.length) {

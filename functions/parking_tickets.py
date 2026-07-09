@@ -162,14 +162,14 @@ def load_local_parking_tickets_heat_geojson() -> GeoJsonDict | None:
         with gzip.open(artifact_path, "rb") as artifact_file:
             payload = orjson.loads(artifact_file.read())
     except OSError as exc:
-        logger.warning("Failed reading parking tickets artifact from {}: {}", artifact_path, exc)
+        logger.warning(f"Failed reading parking tickets artifact from {artifact_path}: {exc}")
         return None
     except orjson.JSONDecodeError as exc:
-        logger.warning("Failed decoding parking tickets artifact at {}: {}", artifact_path, exc)
+        logger.warning(f"Failed decoding parking tickets artifact at {artifact_path}: {exc}")
         return None
 
     if not _is_valid_parking_heat_geojson(payload):
-        logger.warning("Parking tickets artifact at {} is not a valid GeoJSON FeatureCollection.", artifact_path)
+        logger.warning(f"Parking tickets artifact at {artifact_path} is not a valid GeoJSON FeatureCollection.")
         return None
 
     metadata = payload.get("metadata")
@@ -177,7 +177,7 @@ def load_local_parking_tickets_heat_geojson() -> GeoJsonDict | None:
         metadata["data_source"] = "local_artifact"
         metadata.setdefault("artifact_version", PARKING_TICKETS_ARTIFACT_VERSION)
 
-    logger.info("Loaded parking tickets heatmap artifact from {}.", artifact_path)
+    logger.info(f"Loaded parking tickets heatmap artifact from {artifact_path}.")
     return payload
 
 
@@ -207,7 +207,7 @@ def write_local_parking_tickets_heat_geojson(
     with gzip.open(artifact_path, "wb") as artifact_file:
         artifact_file.write(orjson.dumps(payload))
 
-    logger.info("Wrote parking tickets heatmap artifact to {}.", artifact_path)
+    logger.info(f"Wrote parking tickets heatmap artifact to {artifact_path}.")
     return artifact_path
 
 
@@ -260,7 +260,7 @@ def _parse_socrata_date(value: str | None) -> date | None:
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
     except ValueError:
-        logger.warning("Failed parsing Socrata date value: {}", value)
+        logger.warning(f"Failed parsing Socrata date value: {value}")
         return None
 
 
@@ -882,7 +882,7 @@ def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPo
 
     Leaflet.heat supports weighted points, but raw citation counts create a map
     where one or two giant hotspots dominate the whole color scale. A square-root
-    curve keeps dense corridors red while still allowing lower-volume streets to
+    curve keeps dense corridors prominent while still allowing lower-volume streets to
     glow visibly.
 
     Args:
@@ -1065,9 +1065,8 @@ def _build_live_parking_tickets_heat_geojson() -> GeoJsonDict:
         }
 
         logger.info(
-            "Built parking tickets heatmap with {} weighted hotspots for calendar year {}.",
-            len(heat_points),
-            PARKING_TICKETS_DATASET_YEAR,
+            f"Built parking tickets heatmap with {len(heat_points)} weighted hotspots "
+            f"for calendar year {PARKING_TICKETS_DATASET_YEAR}."
         )
         return {
             "type": "FeatureCollection",
@@ -1084,9 +1083,9 @@ def _build_live_parking_tickets_heat_geojson() -> GeoJsonDict:
             "metadata": metadata,
         }
     except requests.RequestException as exc:
-        logger.warning("Failed fetching parking tickets heatmap data: {}", exc)
+        logger.warning(f"Failed fetching parking tickets heatmap data: {exc}")
     except Exception as exc:
-        logger.exception("Failed building parking tickets heatmap: {}", exc)
+        logger.exception(f"Failed building parking tickets heatmap: {exc}")
 
     return {"type": "FeatureCollection", "features": []}
 
@@ -1107,9 +1106,8 @@ def build_parking_tickets_heat_geojson() -> GeoJsonDict:
         return local_payload
 
     logger.warning(
-        "Parking tickets heatmap artifact is missing at {}. "
-        "Generate it offline with `uv run build-parking-tickets-heatmap`.",
-        PARKING_TICKETS_LOCAL_ARTIFACT_PATH,
+        f"Parking tickets heatmap artifact is missing at {PARKING_TICKETS_LOCAL_ARTIFACT_PATH}. "
+        "Generate it offline with `uv run build-parking-tickets-heatmap`."
     )
     return {"type": "FeatureCollection", "features": []}
 

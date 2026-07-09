@@ -1,6 +1,27 @@
 # QGIS workflow: downloading the CPUC broadband layer in QGIS and exporting to GeoPackage
 ---
 
+## Automated workflow
+
+The QGIS steps below are still useful for inspection, but the normal refresh path
+is now scripted:
+
+```bash
+uv run fetch-cpuc-broadband-geopackage \
+  --output assets/datasets/ca_broadband_geopackage.gpkg \
+  --layer ca_broadband_availability_aggregate
+
+uv run run-broadband-merge
+```
+
+The Python fetch command downloads CPUC's fixed consumer broadband deployment
+zip, extracts the GIS dataset, and converts it to the GeoPackage layer expected
+by the merge. It stores a sidecar metadata file next to the GeoPackage and skips
+the download/conversion on later runs when CPUC's source validators have not
+changed.
+
+---
+
 ## Open the GeoPackage
 
 1. Launch **QGIS**.

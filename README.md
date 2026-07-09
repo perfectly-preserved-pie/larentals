@@ -23,6 +23,8 @@ This is an interactive map based on /u/WilliamMcCarty's and /u/TannerBeyer's wee
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
+The Dash MCP endpoint is available at `https://wheretolive.la/_mcp` for MCP clients that support Streamable HTTP.
+
 You can click the toggle buttons next to the title to switch between For Rent and For Sale listings:
 
 ![image](https://github.com/user-attachments/assets/0d58d43a-0722-4bd2-9914-786b0f5e0dcf)
@@ -41,7 +43,7 @@ You can click the toggle buttons next to the title to switch between For Rent an
 *    [Pandas](https://pandas.pydata.org/) (handling and manipulating the rental property data for each address)
 
 ## A Deeper Dive
-[I made a post detailing my idea, progress, challenges, etc.](https://automateordie.io/blog/2023/08/26/wheretolivela/)
+[I made a post detailing my idea, progress, challenges, etc.](hhttps://automateordie.dev/wheretolivedotla/)
 
 ## How to Build and Run
 1. Clone the repo `git clone https://github.com/perfectly-preserved-pie/larentals.git`
@@ -61,42 +63,6 @@ Run the app container:
 ```bash
 docker run --rm -p 8080:8080 larentals
 ```
-
-### Self-Hosted Valhalla
-
-The commute filter can use a self-hosted Valhalla instance instead of the
-public demo service. This repo includes a sidecar Compose file for that setup:
-
-```bash
-docker compose -f docker-compose.valhalla.yml up -d
-```
-
-Setup details, GTFS folder layout, and the app env vars for switching to the
-local service live in [docker/valhalla/README.md](docker/valhalla/README.md).
-There is also a helper to pull common LA-area GTFS feeds into the expected
-folders:
-
-```bash
-uv run download-gtfs-feeds all
-```
-
-The repo also includes a starter
-[`docker/valhalla/custom_files/valhalla.json`](docker/valhalla/custom_files/valhalla.json)
-that narrows Valhalla's service limits to this app's route + isochrone +
-multimodal commute workload.
-
-### Partial Exact Commute Verification
-
-When the rough commute shortlist is large, the app now exact-checks the nearest
-subset of listings first instead of skipping exact verification entirely.
-
-Helpful tuning env vars:
-
-- `VALHALLA_EXACT_COMMUTE_MAX_CANDIDATES=60` to cap how many nearest listings are exact-verified
-- `VALHALLA_EXACT_COMMUTE_MAX_WORKERS=4` to control concurrent route checks
-
-The map shows verified commute matches by default and can optionally include
-additional rough matches when the shortlist is larger than the exact-check cap.
 
 ### Non-Docker
 

@@ -16,5 +16,3 @@ include/
 pipelines/
 scripts/
 .codex
-docker/valhalla/custom_files/
-docker/valhalla/gtfs_feeds/

@@ -35,11 +35,7 @@
             feature,
             latlng,
             supermarketIcon,
-            "buildSupermarketPopupContent",
-            {
-                maxWidth: 420,
-                minWidth: 320,
-            }
+            "buildSupermarketPopupContent"
         );
     }
 

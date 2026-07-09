@@ -347,8 +347,7 @@ def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
     }
     # Base URL for the main listing page
-    base_url = 'https://www.bhhscalifornia.com/for-sale/{}-t_q;/'
-    main_url = base_url.format(mls_number)  
+    main_url = f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/"
     try:
         # Fetch the main listing page
         main_response = requests.get(main_url, headers=headers, timeout=5)

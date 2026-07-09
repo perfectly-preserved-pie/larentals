@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import closing
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
@@ -34,7 +35,7 @@ def get_earliest_listed_date(
       AND TRIM(CAST({date_column} AS TEXT)) != ''
     """
 
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         row = conn.execute(sql).fetchone()
 
     if not row or row[0] is None:
@@ -82,7 +83,7 @@ def get_latest_date_processed(
       AND TRIM(CAST({date_column} AS TEXT)) != ''
     """
 
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         row = conn.execute(sql).fetchone()
 
     if not row or row[0] is None:

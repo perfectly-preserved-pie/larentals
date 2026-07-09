@@ -7,6 +7,7 @@ from typing import Any, Sequence, TypeAlias, TypedDict
 import bleach
 import json
 import pandas as pd
+import re
 import requests
 
 
@@ -25,7 +26,21 @@ PlaceCache: TypeAlias = dict[str, PlaceGeocodeResult]
 
 _DEFAULT_PLACE_CACHE_PATH = Path("/mnt/cache/location/place_geocode_cache.json")
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-_PLACE_CACHE_VERSION = "v2"
+_PLACE_CACHE_VERSION = "v4"
+_DEFAULT_LOCATION_CONTEXT = "CA"
+_SERVICE_AREA_COUNTY_PRIORITIES = {
+    "los angeles": 0,
+    "los angeles county": 0,
+    "county of los angeles": 0,
+    "orange county": 1,
+    "county of orange": 1,
+    "ventura county": 2,
+    "county of ventura": 2,
+    "san bernardino county": 3,
+    "county of san bernardino": 3,
+    "kern county": 4,
+    "county of kern": 4,
+}
 _CALIFORNIA_BOUNDS = {
     "south": 32.4,
     "north": 42.1,
@@ -77,6 +92,60 @@ def _query_looks_like_street_address(query: str) -> bool:
     tokens = {token.strip(",.#") for token in lowered.split()}
     return not street_tokens.isdisjoint(tokens)
 
+
+def _query_has_location_context(query: str) -> bool:
+    """
+    Check whether a free-form query already includes a California/LA qualifier.
+
+    Args:
+        query: Raw or normalized user-entered place text.
+
+    Returns:
+        `True` when the query includes a state or Los Angeles qualifier.
+    """
+    lowered = str(query or "").strip().lower()
+    if not lowered:
+        return False
+    if "california" in lowered or "los angeles" in lowered or "la county" in lowered:
+        return True
+
+    tokens = {
+        token.strip(" ,.#")
+        for token in lowered.replace(",", " ").split()
+    }
+    return "ca" in tokens
+
+
+def _normalize_comparison_text(value: str) -> str:
+    """
+    Normalize place names for lightweight candidate comparisons.
+
+    Args:
+        value: Raw query or Nominatim-provided place text.
+
+    Returns:
+        Lowercase alphanumeric words joined by single spaces.
+    """
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", str(value).lower()).split())
+
+
+def _query_place_name(query: str) -> str:
+    """
+    Extract the place-name portion of a free-form location query.
+
+    Args:
+        query: Raw or normalized user-entered place text.
+
+    Returns:
+        A comparison-ready place name with common location qualifiers removed.
+    """
+    name = str(query or "").strip()
+    if "," in name:
+        name = name.split(",", 1)[0]
+    name = re.sub(r"\b\d{5}(?:-\d{4})?\b", "", name)
+    return _normalize_comparison_text(name)
+
+
 def _normalize_place_query(query: str) -> str:
     """
     Normalize a user-entered place query before sending it to Nominatim.
@@ -91,9 +160,8 @@ def _normalize_place_query(query: str) -> str:
     normalized = " ".join(str(query).strip().split())
     if not normalized:
         return ""
-    lowered = normalized.lower()
-    if "los angeles" not in lowered and "ca" not in lowered and "california" not in lowered:
-        normalized = f"{normalized}, CA"
+    if not _query_has_location_context(normalized):
+        normalized = f"{normalized}, {_DEFAULT_LOCATION_CONTEXT}"
     return normalized
 
 
@@ -153,7 +221,81 @@ def _result_is_california_match(result: dict[str, Any]) -> bool:
     return _coordinates_look_like_california(lat, lon)
 
 
-def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, float, int]:
+def _service_area_priority(result: dict[str, Any]) -> int:
+    """
+    Rank candidates by this app's local service area.
+
+    Args:
+        result: Raw Nominatim response object for a single candidate.
+
+    Returns:
+        A lower number for LA County, then nearby Orange and Ventura counties;
+        non-service-area California results are ranked last.
+    """
+    if not isinstance(result, dict):
+        return len(_SERVICE_AREA_COUNTY_PRIORITIES)
+
+    address = result.get("address")
+    if isinstance(address, dict):
+        county = _normalize_comparison_text(str(address.get("county", "")))
+        city = str(address.get("city", "")).strip().lower()
+        if county in _SERVICE_AREA_COUNTY_PRIORITIES:
+            return _SERVICE_AREA_COUNTY_PRIORITIES[county]
+        if city == "los angeles":
+            return _SERVICE_AREA_COUNTY_PRIORITIES["los angeles county"]
+
+    display_name = _normalize_comparison_text(str(result.get("display_name", "")))
+    for county, priority in _SERVICE_AREA_COUNTY_PRIORITIES.items():
+        if county in display_name:
+            return priority
+
+    return len(_SERVICE_AREA_COUNTY_PRIORITIES)
+
+
+def _candidate_name_priority(result: dict[str, Any], query: str) -> int:
+    """
+    Rank how closely a candidate's place name matches the query name.
+
+    Args:
+        result: Raw Nominatim response object for a single candidate.
+        query: User-entered place query.
+
+    Returns:
+        `0` for exact name matches, `1` for partial matches, and `2` otherwise.
+    """
+    query_name = _query_place_name(query)
+    if not query_name:
+        return 2
+
+    candidate_names = [result.get("name")]
+    address = result.get("address")
+    if isinstance(address, dict):
+        candidate_names.extend(
+            address.get(key)
+            for key in (
+                "neighbourhood",
+                "quarter",
+                "suburb",
+                "city",
+                "town",
+                "village",
+                "county",
+            )
+        )
+
+    normalized_names = [
+        _normalize_comparison_text(str(name))
+        for name in candidate_names
+        if name
+    ]
+    if query_name in normalized_names:
+        return 0
+    if any(query_name in name or name in query_name for name in normalized_names):
+        return 1
+    return 2
+
+
+def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, float, float, float, int]:
     """
     Rank California Nominatim candidates for the current place query.
 
@@ -171,6 +313,8 @@ def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, floa
     category = str(result.get("class", "")).strip().lower()
     result_type = str(result.get("type", "")).strip().lower()
     display_name = str(result.get("display_name", "")).strip()
+    service_area_priority = _service_area_priority(result)
+    name_priority = _candidate_name_priority(result, query)
 
     if _query_looks_like_street_address(query):
         if address_dict.get("house_number"):
@@ -191,7 +335,10 @@ def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, floa
     except (TypeError, ValueError):
         importance = 0.0
 
-    return (score, -importance, len(display_name))
+    if _query_looks_like_street_address(query):
+        return (score, service_area_priority, name_priority, -importance, len(display_name))
+
+    return (name_priority, service_area_priority, score, -importance, len(display_name))
 
 def _load_place_cache(cache_path: Path) -> PlaceCache:
     """
@@ -460,6 +607,30 @@ def load_zip_place_crosswalk(
 
     return dict(mapping)
 
+
+def get_zip_codes_for_place(
+    place_name: str,
+    zip_place_crosswalk: dict[str, set[str]],
+) -> set[str]:
+    """
+    Return ZIP codes belonging to a place using the HUD crosswalk.
+
+    Args:
+        place_name: User-entered place name (e.g. "Santa Monica").
+        zip_place_crosswalk: Mapping from uppercase city → set of ZIP strings.
+
+    Returns:
+        Set of matching ZIP code strings. Empty when the place is unknown.
+    """
+    normalized = place_name.strip().upper()
+    # Strip trailing state/country info like ", CA" or ", California"
+    for suffix in [", CA", ", CALIFORNIA", ", LOS ANGELES", " CA"]:
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)].strip()
+
+    return set(zip_place_crosswalk.get(normalized, set()))
+
+
 def get_zip_features_for_place(
     place_name: str,
     zip_place_crosswalk: dict[str, set[str]],
@@ -476,13 +647,7 @@ def get_zip_features_for_place(
     Returns:
         List of matching GeoJSON feature dicts.
     """
-    normalized = place_name.strip().upper()
-    # Strip trailing state/country info like ", CA" or ", California"
-    for suffix in [", CA", ", CALIFORNIA", ", LOS ANGELES", " CA"]:
-        if normalized.endswith(suffix):
-            normalized = normalized[: -len(suffix)].strip()
-
-    target_zips = zip_place_crosswalk.get(normalized)
+    target_zips = get_zip_codes_for_place(place_name, zip_place_crosswalk)
     if not target_zips:
         return []
 

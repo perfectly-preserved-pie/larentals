@@ -60,3 +60,51 @@ window.dccFunctions.formatIspSpeed = function(value) {
   }
   return `${Math.round(value)} Mbps`;
 }
+
+/**
+ * Formats a numeric distance value as miles with one decimal place.
+ *
+ * @param {number} value - Distance in miles.
+ * @returns {string} The formatted distance label.
+ */
+window.dccFunctions = window.dccFunctions || {};
+window.dccFunctions.formatMiles = function(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    console.error('formatMiles expects a finite number as the input:', value);
+    return value;
+  }
+  return `${value.toFixed(1)} mi`;
+}
+
+/**
+ * Formats a whole-number count with locale separators.
+ *
+ * @param {number} value - Numeric count to format.
+ * @returns {string} Localized integer string.
+ */
+window.dccFunctions = window.dccFunctions || {};
+window.dccFunctions.formatWholeNumber = function(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    console.error('formatWholeNumber expects a finite number as the input:', value);
+    return value;
+  }
+  return Math.round(value).toLocaleString('en-US');
+}
+
+/**
+ * Formats a whole-number student count with locale separators and a unit label.
+ *
+ * @param {number} value - Enrollment count.
+ * @returns {string} Localized student-count string.
+ */
+window.dccFunctions = window.dccFunctions || {};
+window.dccFunctions.formatStudentCount = function(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    console.error('formatStudentCount expects a finite number as the input:', value);
+    return value;
+  }
+
+  const rounded = Math.round(value);
+  const unit = rounded === 1 ? 'student' : 'students';
+  return `${rounded.toLocaleString('en-US')} ${unit}`;
+}

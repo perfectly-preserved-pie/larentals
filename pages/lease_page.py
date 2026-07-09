@@ -1,19 +1,13 @@
+from functools import lru_cache
+
 from .components import LeaseComponents
-from dash import dcc, html, clientside_callback, ClientsideFunction, callback
-import dash_leaflet as dl
-from functions.commute_utils import (
-  build_candidate_signature,
-  build_commute_boundary_result,
-  empty_commute_exact_result,
-  empty_commute_request_data,
-  empty_feature_collection,
-  verify_exact_commute_matches,
-)
+from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import ALL, Input, Output, State
 from functions.layers import LayersClass, register_responsive_layers_control_callback
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
+  get_zip_codes_for_place,
   get_zip_features_for_place,
   intersect_bbox_with_zip_polygons,
   load_zip_place_crosswalk,
@@ -40,16 +34,20 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
-# Create instances of the components classes and log how long it takes to create them
-start_time = time.time()
-duration = time.time() - start_time
-logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
-
-# Load the ZIP polygons once at module load time
-ZIP_POLYGONS = load_zip_polygons("assets/datasets/la_county_zip_codes.geojson")
+# Load the DB-scoped service-area ZIP/ZCTA polygons once at module load time
+ZIP_POLYGONS = load_zip_polygons("assets/datasets/socal_service_area_zip_codes.geojson")
 
 # Load the HUD ZIP-to-city crosswalk once at module load time
 ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
+
+
+@lru_cache(maxsize=1)
+def get_lease_components() -> LeaseComponents:
+  start_time = time.perf_counter()
+  components = LeaseComponents()
+  duration = time.perf_counter() - start_time
+  logger.info(f"Created LeaseComponents in {duration:.2f} seconds.")
+  return components
 
 def layout(**_: object) -> dbc.Container:
   """
@@ -61,16 +59,22 @@ def layout(**_: object) -> dbc.Container:
   Returns:
     The lease page layout container.
   """
-  lease_components = LeaseComponents()
+  lease_components = get_lease_components()
 
   collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
-  prefilter_geojson_store = dcc.Store(id="lease-prefilter-geojson-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="lease-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
-  commute_boundary_store = dcc.Store(id="lease-commute-boundary-store", storage_type="memory", data=empty_feature_collection())
-  commute_request_store = dcc.Store(id="lease-commute-request-store", storage_type="memory", data=empty_commute_request_data())
-  commute_exact_store = dcc.Store(id="lease-commute-exact-store", storage_type="memory", data=empty_commute_exact_result())
-  kickstart = dcc.Interval(id="lease-boot", interval=250, n_intervals=0, max_intervals=1)
+  school_layer_prompt_state_store = dcc.Store(
+    id="lease-school-layer-prompt-state",
+    storage_type="memory",
+    data={"dismissed": False, "schools_active": False},
+  )
+  school_layer_focus_store = dcc.Store(
+    id="lease-school-layer-focus-store",
+    storage_type="memory",
+    data=None,
+  )
+  kickstart = dcc.Interval(id="lease-boot", interval=50, n_intervals=0, max_intervals=1)
   # Create a Store to hold the earliest listed date
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
 
@@ -78,11 +82,9 @@ def layout(**_: object) -> dbc.Container:
     [
       collapse_store,
       geojson_store,
-      prefilter_geojson_store,
       zip_boundary_store,
-      commute_boundary_store,
-      commute_request_store,
-      commute_exact_store,
+      school_layer_prompt_state_store,
+      school_layer_focus_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -111,6 +113,29 @@ def layout(**_: object) -> dbc.Container:
 @callback(
   Output("lease-geojson-store", "data"),
   Input("lease-boot", "n_intervals"),
+  running=[
+    (
+      Output("lease-map-spinner", "style", allow_duplicate=True),
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10000",
+      },
+      {
+        "position": "absolute",
+        "inset": "0",
+        "display": "none",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "backgroundColor": "rgba(0, 0, 0, 0.25)",
+        "zIndex": "10000",
+      },
+    ),
+  ],
   prevent_initial_call=True,
 )
 def load_lease_geojson(_: int) -> dict:
@@ -140,6 +165,151 @@ def load_lease_optional_layers(
     selected_overlays=selected_overlays,
     layer_ids=layer_ids,
     current_data=current_data,
+    excluded_layer_keys=("schools",),
+  )
+
+
+@callback(
+  Output("lease-school-layer-controls-collapse", "is_open"),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+)
+def toggle_lease_school_layer_controls(selected_overlays: list[str] | None) -> bool:
+  """
+  Show the map-only school filter panel when the Schools overlay is enabled.
+  """
+  return LayersClass.overlay_is_selected(selected_overlays, "schools")
+
+
+@callback(
+  Output("lease-school-layer-prompt-state", "data"),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+  Input("lease-school-layer-show-filters-button", "n_clicks"),
+  Input("lease-school-layer-dismiss-prompt-button", "n_clicks"),
+  State("lease-school-layer-prompt-state", "data"),
+  prevent_initial_call=True,
+)
+def update_lease_school_layer_prompt_state(
+  selected_overlays: list[str] | None,
+  _show_clicks: int | None,
+  _dismiss_clicks: int | None,
+  prompt_state: dict | None,
+) -> dict[str, bool]:
+  """
+  Keep the school-layer prompt visible until the user dismisses it.
+  """
+  state = prompt_state or {"dismissed": False, "schools_active": False}
+  schools_active = LayersClass.overlay_is_selected(selected_overlays, "schools")
+  was_active = bool(state.get("schools_active"))
+  triggered_id = dash.ctx.triggered_id
+
+  if triggered_id == LayersClass.layers_control_id("lease"):
+    if schools_active and not was_active:
+      return {"dismissed": False, "schools_active": True}
+    if not schools_active:
+      return {"dismissed": False, "schools_active": False}
+    return {
+      "dismissed": bool(state.get("dismissed")),
+      "schools_active": True,
+    }
+
+  if not schools_active:
+    return {"dismissed": False, "schools_active": False}
+
+  return {"dismissed": True, "schools_active": True}
+
+
+@callback(
+  Output("lease-school-layer-map-prompt", "className"),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+  Input("lease-school-layer-prompt-state", "data"),
+)
+def update_lease_school_layer_prompt_class(
+  selected_overlays: list[str] | None,
+  prompt_state: dict | None,
+) -> str:
+  """
+  Reveal the map prompt only while the school overlay is active and undisposed.
+  """
+  base_class_name = "school-layer-map-prompt"
+  prompt_dismissed = bool((prompt_state or {}).get("dismissed"))
+  if (
+    LayersClass.overlay_is_selected(selected_overlays, "schools")
+    and not prompt_dismissed
+  ):
+    return f"{base_class_name} school-layer-map-prompt--visible"
+  return base_class_name
+
+
+@callback(
+  Output("lease-school-layer-controls-card", "className"),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+)
+def update_lease_school_layer_controls_card_class(
+  selected_overlays: list[str] | None,
+) -> str:
+  """
+  Add an accent state so the school control card reads as newly available.
+  """
+  base_class_name = "mt-3 school-layer-panel-card"
+  if LayersClass.overlay_is_selected(selected_overlays, "schools"):
+    return f"{base_class_name} school-layer-panel-card--active"
+  return base_class_name
+
+
+@callback(
+  Output(
+    LayersClass.lazy_layer_geojson_id("lease", "schools"),
+    "data",
+    allow_duplicate=True,
+  ),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+  Input("lease-school-layer-search-input", "value"),
+  Input("lease-school-layer-level-dropdown", "value"),
+  Input("lease-school-layer-grade-band-checklist", "value"),
+  Input("lease-school-layer-campus-configuration-dropdown", "value"),
+  Input("lease-school-layer-early-grades-checklist", "value"),
+  Input("lease-school-layer-funding-type-dropdown", "value"),
+  Input("lease-school-layer-enrollment-slider", "value"),
+  Input("lease-school-layer-charter-switch", "checked"),
+  Input("lease-school-layer-magnet-switch", "checked"),
+  Input("lease-school-layer-title-i-switch", "checked"),
+  Input("lease-school-layer-recently-opened-switch", "checked"),
+  prevent_initial_call=True,
+)
+def update_lease_school_layer(
+  selected_overlays: list[str] | None,
+  search_text: str | None,
+  school_levels: list[str] | None,
+  grade_bands: list[str] | None,
+  campus_configurations: list[str] | None,
+  early_grades: list[str] | None,
+  funding_types: list[str] | None,
+  enrollment_range: list[float] | None,
+  charter_only: bool | None,
+  magnet_only: bool | None,
+  title_i_only: bool | None,
+  recently_opened_only: bool | None,
+) -> dict | object:
+  """
+  Filter the school overlay from the cached raw GeoJSON payload.
+  """
+  if not LayersClass.overlay_is_selected(selected_overlays, "schools"):
+    return dash.no_update
+
+  raw_geojson = LayersClass.load_layer_data("schools")
+  return LayersClass.filter_school_layer_geojson(
+    raw_geojson,
+    search_text=search_text,
+    school_levels=school_levels,
+    grade_bands=grade_bands,
+    campus_configurations=campus_configurations,
+    early_grades=early_grades,
+    funding_types=funding_types,
+    enrollment_range=enrollment_range,
+    charter_only=bool(charter_only),
+    magnet_only=bool(magnet_only),
+    title_i_only=bool(title_i_only),
+    recently_opened_only=bool(recently_opened_only),
   )
 
 
@@ -170,14 +340,16 @@ def update_lease_zip_boundary(
   sanitized_location = bleach.clean(location or "", tags=[], attributes={}, strip=True)
 
   # Try the crosswalk first
+  crosswalk_zips = get_zip_codes_for_place(sanitized_location, ZIP_PLACE_CROSSWALK)
   crosswalk_features = get_zip_features_for_place(sanitized_location, ZIP_PLACE_CROSSWALK, ZIP_POLYGONS)
 
   # Get the geocode bbox in case the "include nearby" switch is on
   geocoded = geocode_place_cached(sanitized_location)
 
-  if crosswalk_features:
+  if crosswalk_zips:
     # Start with crosswalk results
-    zip_features = list(crosswalk_features)  
+    zip_features = list(crosswalk_features)
+    zip_codes = set(crosswalk_zips)
 
     # Optionally expand with nearby ZIPs from the geocoded bbox
     if include_nearby and geocoded:
@@ -191,18 +363,14 @@ def update_lease_zip_boundary(
         if fzip and fzip not in existing_zips:
           zip_features.append(feature)
           existing_zips.add(fzip)
+          zip_codes.add(fzip)
 
     # Extract ZIP codes from the features
-    zip_codes = [
-      f.get("properties", {}).get("ZIPCODE")
-      for f in zip_features
-    ]
-    # Filter out any None values
-    zip_codes = [z for z in zip_codes if z]
+    zip_codes = sorted(z for z in zip_codes if z)
     logger.debug(f"Crosswalk matched '{sanitized_location}' → {zip_codes}")
 
     # Generate the label
-    label = ", ".join(sorted(zip_codes)[:5])
+    label = ", ".join(zip_codes[:5])
     if len(zip_codes) > 5:
       label = f"{label} +{len(zip_codes) - 5} more"
 
@@ -264,298 +432,70 @@ def update_lease_zip_boundary(
   return {"zip_codes": zip_codes, "features": zip_features, "error": None}, f"Filtering by ZIP codes: {label}."
 
 
-@callback(
-  Output("lease-commute-boundary-store", "data"),
-  Output("lease-commute-request-store", "data"),
-  Input("lease-commute-input", "value"),
-  Input("lease-commute-mode", "value"),
-  Input("lease-commute-minutes", "value"),
-  Input("lease-commute-departure-datetime", "value"),
-  running=[
-    (
-      Output("lease-commute-spinner", "style", allow_duplicate=True),
-      {
-        "position": "absolute",
-        "inset": "0",
-        "display": "flex",
-        "alignItems": "center",
-        "justifyContent": "center",
-        "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
-      },
-      {
-        "position": "absolute",
-        "inset": "0",
-        "display": "none",
-        "alignItems": "center",
-        "justifyContent": "center",
-        "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
-      },
-    ),
-  ],
-  prevent_initial_call=True,
-)
-def update_lease_commute_boundary(
-  destination: str | None,
-  mode: str | None,
-  minutes: int | float | None,
-  departure_datetime: str | None,
-) -> tuple[dict, dict]:
-  """
-  Update the coarse commute boundary overlay and request metadata.
-
-  Args:
-    destination: User-entered destination text.
-    mode: Selected commute mode.
-    minutes: Selected maximum commute duration.
-    departure_datetime: Selected local departure datetime.
-
-  Returns:
-    A tuple of (GeoJSON FeatureCollection, request metadata).
-  """
-  sanitized_destination = bleach.clean(
-    destination or "",
-    tags=[],
-    attributes={},
-    strip=True,
-  ).strip()
-  geocoded = geocode_place_cached(sanitized_destination) if sanitized_destination else None
-  result = build_commute_boundary_result(
-    destination=sanitized_destination,
-    geocoded=geocoded,
-    mode=mode,
-    minutes=minutes,
-    departure_datetime=departure_datetime,
-  )
-  return result["geojson"], result["request"]
-
-
-@callback(
-  Output("lease-commute-target-layer", "children"),
-  Input("lease-commute-request-store", "data"),
-)
-def update_lease_commute_target_marker(
-  commute_request: dict | None,
-) -> list[object]:
-  """
-  Render a destination marker for the current commute target.
-
-  Args:
-    commute_request: Normalized commute request metadata from the coarse boundary callback.
-
-  Returns:
-    A target halo + pin list when the destination has coordinates, otherwise an empty list.
-  """
-  if not isinstance(commute_request, dict):
-    return []
-
-  lat = commute_request.get("center_lat")
-  lon = commute_request.get("center_lon")
-  if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
-    return []
-
-  display_name = commute_request.get("display_name") or commute_request.get("destination") or "Commute target"
-  marker_position = [float(lat), float(lon)]
-  return [
-    dl.CircleMarker(
-      center=marker_position,
-      radius=10,
-      color="#f4a261",
-      weight=3,
-      fill=True,
-      fillColor="#f4a261",
-      fillOpacity=0.25,
-      children=[
-        dl.Tooltip(str(display_name), direction="top", offset=[0, -12]),
-      ],
-    ),
-    dl.Marker(
-      position=marker_position,
-      zIndexOffset=1000,
-      riseOnHover=True,
-    ),
-  ]
-
-
-@callback(
-  Output("lease-commute-exact-store", "data"),
-  Input("lease-prefilter-geojson-store", "data"),
-  Input("lease-commute-request-store", "data"),
-  running=[
-    (
-      Output("lease-commute-spinner", "style", allow_duplicate=True),
-      {
-        "position": "absolute",
-        "inset": "0",
-        "display": "flex",
-        "alignItems": "center",
-        "justifyContent": "center",
-        "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
-      },
-      {
-        "position": "absolute",
-        "inset": "0",
-        "display": "none",
-        "alignItems": "center",
-        "justifyContent": "center",
-        "backgroundColor": "rgba(0, 0, 0, 0.25)",
-        "zIndex": "10001",
-      },
-    ),
-  ],
-  prevent_initial_call=True,
-)
-def update_lease_exact_commute_matches(
-  prefiltered_geojson: dict | None,
-  commute_request: dict | None,
-) -> dict:
-  """
-  Verify coarse commute matches against exact Valhalla route durations.
-
-  Args:
-    prefiltered_geojson: Current clientside-filtered lease FeatureCollection.
-    commute_request: Normalized commute request metadata from the coarse boundary callback.
-
-  Returns:
-    Exact route-check results for the current candidate set.
-  """
-  return verify_exact_commute_matches(
-    prefiltered_geojson=prefiltered_geojson,
-    commute_request=commute_request,
-  )
-
-
-@callback(
-  Output("lease-commute-status", "children"),
-  Output("lease-commute-display-mode-container", "style"),
-  Output("lease-commute-display-mode", "options"),
-  Input("lease-commute-request-store", "data"),
-  Input("lease-commute-exact-store", "data"),
-  Input("lease-prefilter-geojson-store", "data"),
-  Input("lease-commute-display-mode", "value"),
-)
-def update_lease_commute_status(
-  commute_request: dict | None,
-  exact_result: dict | None,
-  prefiltered_geojson: dict | None,
-  display_mode: str | None,
- ) -> tuple[object, dict, list[dict[str, str]]]:
-  """
-  Render the current commute summary and show the display-mode toggle when useful.
-
-  Args:
-    commute_request: Normalized request metadata from the coarse boundary step.
-    exact_result: Exact verification metadata for the current shortlist.
-    prefiltered_geojson: Current coarse shortlist after clientside filters.
-    display_mode: Selected map display mode for partial verification results.
-
-  Returns:
-    A tuple of (status children, display-mode container style, radio options).
-  """
-  toggle_style = {
-    "display": "none",
-    "marginTop": "12px",
-    "padding": "10px 12px",
-    "border": "1px solid #d7dde6",
-    "borderRadius": "10px",
-    "backgroundColor": "#f8fafc",
-  }
-  radio_options = [
-    {"label": "Verified only", "value": "verified_only"},
-    {"label": "Show all matches", "value": "include_rough"},
-  ]
-  if not isinstance(commute_request, dict):
-    return "", toggle_style, radio_options
-
-  request_status = str(commute_request.get("status") or "").strip()
-  if not commute_request.get("requested"):
-    return request_status, toggle_style, radio_options
-
-  children: list[object] = []
-  mode_text = ""
-  show_toggle = False
-  error_text = ""
-  features = prefiltered_geojson.get("features") if isinstance(prefiltered_geojson, dict) else None
-  current_signature = build_candidate_signature(
-    commute_request.get("signature"),
-    (
-      (
-        feature.get("properties", {}).get("mls_number")
-        for feature in features
-        if isinstance(feature, dict)
-        and isinstance(feature.get("properties"), dict)
-      )
-      if isinstance(features, list)
-      else ()
-    ),
-  )
-
-  if (
-    isinstance(exact_result, dict)
-    and exact_result.get("commute_signature") == commute_request.get("signature")
-    and exact_result.get("signature") == current_signature
-  ):
-    matched_candidates = int(exact_result.get("matched_candidates") or 0)
-    rough_candidates = int(exact_result.get("rough_candidates") or 0)
-    error_text = str(exact_result.get("error") or "").strip()
-
-    show_toggle = (
-      rough_candidates > 0
-      and int(exact_result.get("checked_candidates") or 0) > 0
-      and not exact_result.get("error")
-    )
-    if show_toggle:
-      radio_options = [
-        {"label": f"Verified only ({matched_candidates})", "value": "verified_only"},
-        {
-          "label": f"Show all matches ({matched_candidates + rough_candidates})",
-          "value": "include_rough",
-        },
-      ]
-      mode_text = (
-        "Showing verified listings only."
-        if display_mode != "include_rough"
-        else "Showing all matches."
-      )
-
-  if error_text:
-    children.append(
-      html.Div(
-        error_text,
-        style={"marginTop": "6px", "fontSize": "0.8rem", "color": "#6b7280"},
-      )
-    )
-  if mode_text:
-    children.append(
-      html.Div(
-        mode_text,
-        style={"marginTop": "6px", "fontSize": "0.8rem", "color": "#6b7280"},
-      )
-    )
-
-  if show_toggle:
-    toggle_style["display"] = "block"
-
-  return children, toggle_style, radio_options
-
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='loadingMapSpinner'),
   Output("lease-map-spinner", "style"),
   Input("lease-geojson-store", "data"),
   Input("lease_geojson", "data"),
+  State("lease-map-spinner", "style"),
 )
 
 register_responsive_layers_control_callback("lease")
 
-# Clientside callback to filter the full data in memory, then update the map
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='focusSchoolLayerControls'
+  ),
+  Output('lease-school-layer-focus-store', 'data'),
+  Input('lease-school-layer-show-filters-button', 'n_clicks'),
+  State('lease-school-layer-controls-card', 'id'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showMapSpinner'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  [
+    Input('lease-location-input', 'value'),
+    Input('lease-nearby-zip-switch', 'checked'),
+  ],
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='showLazyLayerSpinnerOnToggle'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  Input(LayersClass.layers_control_id("lease"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(
+    namespace='clientside',
+    function_name='syncLazyLayerSpinner'
+  ),
+  Output("lease-map-spinner", "style", allow_duplicate=True),
+  Input({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+  State(LayersClass.layers_control_id("lease"), "overlays"),
+  State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
+  prevent_initial_call=True,
+)
+
 clientside_callback(
   ClientsideFunction(
     namespace='clientside',
     function_name='filterAndClusterLease'
   ),
-  Output('lease-prefilter-geojson-store', 'data'),
+  Output('lease_geojson', 'data'),
   [ # The order of these inputs must match the order of the arguments in the filterAndCluster function
     Input('rental_price_slider', 'value'),
     Input('bedrooms_slider', 'value'),
@@ -572,6 +512,7 @@ clientside_callback(
     Input('terms_checklist', 'value'),
     Input('terms_missing_switch', 'checked'),
     Input('furnished_checklist', 'value'),
+    Input('furnished_missing_switch', 'checked'),
     Input('security_deposit_slider', 'value'),
     Input('security_deposit_missing_switch', 'checked'),
     Input('pet_deposit_slider', 'value'),
@@ -581,6 +522,7 @@ clientside_callback(
     Input('other_deposit_slider', 'value'),
     Input('other_deposit_missing_switch', 'checked'),
     Input('laundry_checklist', 'value'),
+    Input('laundry_missing_switch', 'checked'),
     Input('subtype_checklist', 'value'),
     Input('listed_date_datepicker_lease', 'start_date'),
     Input('listed_date_datepicker_lease', 'end_date'),
@@ -589,34 +531,8 @@ clientside_callback(
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
     Input('lease-zip-boundary-store', 'data'),
-    Input('lease-commute-boundary-store', 'data'),
     Input('lease-geojson-store', "data"),
   ],
-)
-
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='applyExactCommuteFilter'
-  ),
-  Output('lease_geojson', 'data'),
-  Input('lease-prefilter-geojson-store', 'data'),
-  Input('lease-commute-request-store', 'data'),
-  Input('lease-commute-exact-store', 'data'),
-  Input('lease-commute-display-mode', 'value'),
-)
-
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='deriveDisplayedCommuteBoundary'
-  ),
-  Output('lease-commute-geojson', 'data'),
-  Input('lease-commute-boundary-store', 'data'),
-  Input('lease_geojson', 'data'),
-  Input('lease-commute-request-store', 'data'),
-  Input('lease-commute-exact-store', 'data'),
-  Input('lease-commute-display-mode', 'value'),
 )
 
 clientside_callback(

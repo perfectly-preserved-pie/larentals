@@ -6,6 +6,18 @@ This file dictates where to get the various additional datasets in this folder.
 
 https://data.lacounty.gov/datasets/lacounty::farmers-markets/about
 
+## Schools
+
+https://lab.data.ca.gov/dataset/california-public-schools-2024-25
+
+Preferred local artifacts:
+
+- `california_public_schools_2024_25.gpkg`
+- `schools_socal.geojson`
+- Build both with `uv run build-school-layer-geojson`
+- Source of truth is the official California Open Data GeoPackage download
+- Final GeoJSON is clipped to Southern California and reduced to the fields used by the map layer and popup
+
 ## Breakfast Burritos
 
 https://labreakfastburrito.com/
@@ -22,6 +34,17 @@ Derived GeoJSON:
 
 https://egis-lacounty.hub.arcgis.com/datasets/lacounty::oil-and-gas-wells/about
 
+## CPUC Broadband Availability
+
+https://www.cpuc.ca.gov/industries-and-topics/internet-and-phone/broadband-mapping-program/broadband-availability
+
+Preferred local artifact:
+
+- `ca_broadband_geopackage.gpkg`
+- Built from CPUC fixed consumer broadband deployment data with `uv run fetch-cpuc-broadband-geopackage`
+- The fetch command writes `ca_broadband_geopackage.gpkg.metadata.json` and reuses the existing GeoPackage when CPUC's ETag, Last-Modified, and Content-Length source validators have not changed
+- Force a rebuild with `uv run fetch-cpuc-broadband-geopackage --force`
+
 ## Supermarkets & Grocery Stores
 
 https://data.lacity.org/Administration-Finance/Listing-of-Active-Businesses/6rrh-rzua/about_data
@@ -35,6 +58,22 @@ Derived GeoJSON:
 - Santa Monica addresses are geocoded at build time with cached Nominatim lookups
 - Filtered to NAICS `445100` and `445110`
 - Excludes gas-station-branded businesses based on name matching
+
+## Service Area ZIP/ZCTA Boundaries
+
+https://gis.data.chhs.ca.gov/datasets/4b1e19484fd64b438f072eff8bdf6c5a_11/about
+https://www.census.gov/programs-surveys/geography/guidance/geo-areas/zctas.html
+https://gis.data.ca.gov/datasets/ca-zip-code-boundaries/about
+
+Preferred local derived artifact:
+
+- `socal_service_area_zip_codes.geojson`
+- Built primarily from California Census ZIP Code Tabulation Areas
+- Backfills California ZIPs missing from Census ZCTAs with CA Zip Code Boundaries
+- Filtered to normalized ZIP codes currently present in `larentals.db` tables `buy` and `lease`
+- Keeps only the `ZIPCODE` property used by the location filter callbacks
+- Refresh locally with `uv run build-service-area-zip-geojson`
+- The source polygons are Census ZCTAs, which approximate USPS ZIP Code areas for mapping; the client-side ZIP-code fallback still handles listings whose ZIP is present in the DB but missing from ZCTA polygons
 
 ## Parking Tickets Heatmap Layer
 

@@ -18,14 +18,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
-        * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
+         * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
          * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
          * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
          * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
          * @param {Array<number>} downloadSpeedRange - [minDownload, maxDownload] for filtering by `best_dn`.
          * @param {Array<number>} uploadSpeedRange - [minUpload, maxUpload] for filtering by `best_up`.
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
-         * @param {Object} commuteBoundaryData - Optional commute polygon payload.
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
         */
@@ -52,7 +51,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             uploadSpeedRange,
             speedIncludeMissing,
             zipBoundaryData,
-            commuteBoundaryData,
             fullGeojson
         ) {
             // Guard against missing or malformed GeoJSON
@@ -98,10 +96,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 ? zipBoundaryData.features
                 : (zipBoundaryData?.feature ? [zipBoundaryData.feature] : []);
             const shouldFilterByZip = zipFeatures.length > 0 || zipCodes.length > 0;
-            const commuteFeatures = Array.isArray(commuteBoundaryData?.features)
-                ? commuteBoundaryData.features
-                : (commuteBoundaryData?.feature ? [commuteBoundaryData.feature] : []);
-            const shouldFilterByCommute = commuteFeatures.length > 0;
 
             // Debug: Log raw data
             //console.log('Raw data:', fullGeojson);
@@ -152,12 +146,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
 
                 // 8) Subtype Filter
-                let subtypeFilter = false;
+                let subtypeFilter = true;
+                const normalizedSubtypeSelection = Array.isArray(subtypeSelection)
+                    ? subtypeSelection
+                    : [];
                 const propertySubtype = (props.subtype || '').toUpperCase();
-                if (propertySubtype === '' && subtypeSelection.includes('Unknown')) {
-                    subtypeFilter = true;
-                } else {
-                    subtypeFilter = subtypeSelection.some(sel => sel.toUpperCase() === propertySubtype);
+                if (normalizedSubtypeSelection.length > 0) {
+                    if (propertySubtype === '' && normalizedSubtypeSelection.includes('Unknown')) {
+                        subtypeFilter = true;
+                    } else {
+                        subtypeFilter = normalizedSubtypeSelection.some(
+                            sel => sel.toUpperCase() === propertySubtype
+                        );
+                    }
                 }
 
                 // 9) Listed Date Filter
@@ -188,7 +189,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 11) HOA Fee Frequency Filter
                 const rawVal = props.hoa_fee_frequency;
                 const hoaFreqVal = (!rawVal || rawVal === '<NA>') ? 'N/A' : rawVal;
-                const hoaFeeFreqFilter = hoaFeeFrequencyChecklist.includes(hoaFreqVal);
+                const selectedHoaFeeFrequencies = Array.isArray(hoaFeeFrequencyChecklist)
+                    ? hoaFeeFrequencyChecklist
+                    : [];
+                const hoaFeeFreqFilter = (
+                    selectedHoaFeeFrequencies.length === 0 ||
+                    selectedHoaFeeFrequencies.includes(hoaFreqVal)
+                );
 
                 // 12) ISP Speed Filters
                 const downloadSpeedFilter = speedRangeFilter(
@@ -207,13 +214,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 13) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
-                    zipFilter = featureWithinAnyPolygon(feature, zipFeatures);
-                }
-
-                // 14) Approximate commute area filter
-                let commuteFilter = true;
-                if (shouldFilterByCommute) {
-                    commuteFilter = featureWithinAnyPolygon(feature, commuteFeatures);
+                    zipFilter = (
+                        featureWithinAnyPolygon(feature, zipFeatures) ||
+                        featureMatchesAnyZip(feature, zipCodes)
+                    );
                 }
 
                 // Combine all filters
@@ -231,8 +235,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     hoaFeeFreqFilter &&
                     downloadSpeedFilter &&
                     uploadSpeedFilter &&
-                    zipFilter &&
-                    commuteFilter;
+                    zipFilter;
 
                 if (!includeFeature && exclusionCollector) {
                     const failedReasons = [];
@@ -251,7 +254,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!downloadSpeedFilter) failedReasons.push("Download speed");
                     if (!uploadSpeedFilter) failedReasons.push("Upload speed");
                     if (!zipFilter) failedReasons.push("ZIP boundary");
-                    if (!commuteFilter) failedReasons.push("Commute area");
 
                     exclusionCollector.capture(mls_number, failedReasons, props);
                 }
