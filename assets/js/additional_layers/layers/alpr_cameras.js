@@ -11,14 +11,257 @@
         return;
     }
 
+    const FOV_DISTANCE_METERS = 120;
+    const FOV_SPREAD_DEGREES = 50;
+    const FOV_ARC_STEPS = 10;
+    const EARTH_RADIUS_METERS = 6371000;
+
+    /**
+     * Normalize a direction value into a compass bearing.
+     *
+     * @param {unknown} value Direction value from feature properties.
+     * @returns {number|null} Bearing in degrees clockwise from north.
+     */
+    function normalizeBearing(value) {
+        const numberValue = Number(value);
+        if (!Number.isFinite(numberValue)) {
+            return null;
+        }
+        return ((numberValue % 360) + 360) % 360;
+    }
+
+    /**
+     * Resolve all usable bearings for a camera feature.
+     *
+     * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature.
+     * @returns {number[]} Unique bearings.
+     */
+    function getCameraBearings(feature) {
+        const properties = feature && feature.properties || {};
+        const bearings = [];
+        const seen = new Set();
+
+        /**
+         * Add one bearing to the output list after normalizing and deduping it.
+         *
+         * @param {unknown} value Raw direction value from feature properties.
+         * @returns {void}
+         */
+        const addBearing = function(value) {
+            const bearing = normalizeBearing(value);
+            if (bearing === null) {
+                return;
+            }
+            const key = bearing.toFixed(3);
+            if (!seen.has(key)) {
+                seen.add(key);
+                bearings.push(bearing);
+            }
+        };
+
+        if (Array.isArray(properties.directions) && properties.directions.length) {
+            properties.directions.forEach(addBearing);
+        } else {
+            addBearing(properties.direction);
+        }
+
+        return bearings;
+    }
+
+    /**
+     * Project a point by bearing and distance using a spherical-earth model.
+     *
+     * @param {L.LatLng} origin Camera location.
+     * @param {number} bearingDegrees Bearing in degrees clockwise from north.
+     * @param {number} distanceMeters Distance to project.
+     * @returns {[number, number]} Leaflet `[lat, lng]` coordinate.
+     */
+    function projectLatLng(origin, bearingDegrees, distanceMeters) {
+        const angularDistance = distanceMeters / EARTH_RADIUS_METERS;
+        const bearing = bearingDegrees * Math.PI / 180;
+        const lat1 = origin.lat * Math.PI / 180;
+        const lon1 = origin.lng * Math.PI / 180;
+
+        const lat2 = Math.asin(
+            Math.sin(lat1) * Math.cos(angularDistance) +
+            Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
+        );
+        const lon2 = lon1 + Math.atan2(
+            Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
+            Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+        );
+
+        return [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI];
+    }
+
+    /**
+     * Build an approximate field-of-view cone for a camera bearing.
+     *
+     * @param {L.LatLng} latlng Camera location.
+     * @param {number} bearing Bearing in degrees clockwise from north.
+     * @returns {L.Polygon} Non-interactive cone polygon.
+     */
+    function buildFovCone(latlng, bearing) {
+        const points = [[latlng.lat, latlng.lng]];
+        const start = bearing - FOV_SPREAD_DEGREES / 2;
+        for (let step = 0; step <= FOV_ARC_STEPS; step += 1) {
+            const angle = start + (FOV_SPREAD_DEGREES * step / FOV_ARC_STEPS);
+            points.push(projectLatLng(latlng, angle, FOV_DISTANCE_METERS));
+        }
+        points.push([latlng.lat, latlng.lng]);
+
+        return L.polygon(points, {
+            className: "alpr-camera-fov-cone",
+            color: "#f2c94c",
+            weight: 2,
+            opacity: 0.86,
+            fillColor: "#f2c94c",
+            fillOpacity: 0.2,
+            interactive: false,
+        });
+    }
+
+    /**
+     * Bind hover/click FOV behavior to a camera marker.
+     *
+     * @param {L.Marker} marker Marker returned for the camera point.
+     * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature.
+     * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
+     * @returns {void}
+     */
+    function bindFovPreview(marker, feature, latlng) {
+        const bearings = getCameraBearings(feature);
+        if (!bearings.length) {
+            return;
+        }
+
+        const origin = L.latLng(latlng);
+        let fovLayer = null;
+        let popupOpen = false;
+
+        /**
+         * Add the camera FOV cone layer to the map when possible.
+         *
+         * @returns {void}
+         */
+        function showFov() {
+            const map = marker._map;
+            if (!map || fovLayer) {
+                return;
+            }
+
+            fovLayer = L.layerGroup(bearings.map(function(bearing) {
+                return buildFovCone(origin, bearing);
+            }));
+            fovLayer.addTo(map);
+            fovLayer.eachLayer(function(layer) {
+                if (typeof layer.bringToBack === "function") {
+                    layer.bringToBack();
+                }
+            });
+        }
+
+        /**
+         * Remove the FOV cone unless the marker popup is still open.
+         *
+         * @returns {void}
+         */
+        function hideFov() {
+            if (popupOpen) {
+                return;
+            }
+            if (fovLayer && marker._map) {
+                marker._map.removeLayer(fovLayer);
+            }
+            fovLayer = null;
+        }
+
+        marker.on("mouseover", showFov);
+        marker.on("focus", showFov);
+        marker.on("click", showFov);
+        marker.on("popupopen", function() {
+            popupOpen = true;
+            showFov();
+        });
+        marker.on("mouseout", hideFov);
+        marker.on("blur", hideFov);
+        marker.on("popupclose", function() {
+            popupOpen = false;
+            hideFov();
+        });
+        marker.on("remove", function() {
+            popupOpen = false;
+            if (fovLayer && marker._map) {
+                marker._map.removeLayer(fovLayer);
+            }
+            fovLayer = null;
+        });
+    }
+
+    /**
+     * Build a subtle convex hull around ALPR cluster leaves.
+     *
+     * @param {{ properties?: Record<string, unknown> }} clusterFeature Cluster feature from Supercluster.
+     * @param {any} index Cluster index passed by Dash Leaflet.
+     * @returns {L.GeoJSON|null} Convex hull layer or `null`.
+     */
+    function buildAlprClusterHull(clusterFeature, index) {
+        const clusterId = clusterFeature && clusterFeature.properties && clusterFeature.properties.cluster_id;
+        if (clusterId === null || clusterId === undefined || !index || typeof index.getLeaves !== "function") {
+            return null;
+        }
+
+        const clusterLeaves = index.getLeaves(clusterId, Infinity) || [];
+        if (clusterLeaves.length < 3 || typeof turf === "undefined") {
+            return null;
+        }
+
+        const hullPoints = clusterLeaves
+            .map(function(leaf) {
+                const coords = leaf && leaf.geometry && leaf.geometry.coordinates;
+                if (!Array.isArray(coords) || coords.length < 2) {
+                    return null;
+                }
+                return turf.point([coords[0], coords[1]]);
+            })
+            .filter(Boolean);
+
+        if (hullPoints.length < 3) {
+            return null;
+        }
+
+        const hull = turf.convex(turf.featureCollection(hullPoints));
+        if (!hull) {
+            return null;
+        }
+
+        return L.geoJSON(hull, {
+            interactive: false,
+            style: {
+                color: "#115b60",
+                weight: 2,
+                opacity: 0.88,
+                dashArray: "6 4",
+                fillColor: "#f2c94c",
+                fillOpacity: 0.1,
+            },
+        });
+    }
+
     /**
      * Render clustered ALPR cameras with a compact count marker.
      *
      * @param {{ properties?: Record<string, unknown> }} feature Cluster feature.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
+     * @param {any} index Supercluster index passed by Dash Leaflet.
+     * @param {Record<string, unknown>} context Dash Leaflet runtime context.
      * @returns {L.Marker} Cluster marker configured for ALPR camera points.
      */
-    function drawAlprCameraCluster(feature, latlng) {
+    function drawAlprCameraCluster(feature, latlng, index, context) {
+        if (!context.currentPolygon) {
+            context.currentPolygon = null;
+        }
+
         const countLabel = String(
             feature && feature.properties && (
                 feature.properties.point_count_abbreviated ||
@@ -42,6 +285,44 @@
             }),
         });
         clusterMarker.feature = feature;
+
+        /**
+         * Add the cluster hull layer for the hovered/focused cluster.
+         *
+         * @returns {void}
+         */
+        function showHull() {
+            if (context.currentPolygon) {
+                context.map.removeLayer(context.currentPolygon);
+            }
+
+            const hullLayer = buildAlprClusterHull(feature, index);
+            if (hullLayer) {
+                hullLayer.addTo(context.map);
+                context.currentPolygon = hullLayer;
+            }
+        }
+
+        /**
+         * Remove the active cluster hull layer.
+         *
+         * @returns {void}
+         */
+        function hideHull() {
+            if (context.currentPolygon) {
+                context.map.removeLayer(context.currentPolygon);
+                context.currentPolygon = null;
+            }
+        }
+
+        clusterMarker.on("mouseover", showHull);
+        clusterMarker.on("focus", showHull);
+        clusterMarker.on("mouseout", hideHull);
+        clusterMarker.on("blur", hideHull);
+        clusterMarker.on("remove", function() {
+            hideHull();
+        });
+
         return clusterMarker;
     }
 
@@ -67,12 +348,14 @@
             popupAnchor: [0, -12],
         });
 
-        return createPopupMarker(
+        const marker = createPopupMarker(
             feature,
             latlng,
             cameraIcon,
             "buildAlprCameraPopupContent"
         );
+        bindFovPreview(marker, feature, latlng);
+        return marker;
     }
 
     registerLayerRenderer("drawAlprCameraCluster", drawAlprCameraCluster);

@@ -17,6 +17,14 @@ from functions.alpr_cameras import (
 def parse_args(argv: list[str] | None = None) -> AlprCameraDatasetConfig:
     """
     Parse command-line arguments for the local ALPR camera artifact builder.
+
+    Args:
+        argv: Optional argument list for tests or programmatic use. When omitted,
+            argparse reads from ``sys.argv``.
+
+    Returns:
+        A typed configuration for fetching the live ALPR camera endpoint into
+        the local SoCal artifact path.
     """
 
     parser = argparse.ArgumentParser(
@@ -45,6 +53,9 @@ def parse_args(argv: list[str] | None = None) -> AlprCameraDatasetConfig:
 def main() -> None:
     """
     CLI entry point for ``uv run fetch-alpr-cameras``.
+
+    Raises:
+        SystemExit: Exits with status ``1`` when the artifact refresh fails.
     """
 
     config = parse_args()
