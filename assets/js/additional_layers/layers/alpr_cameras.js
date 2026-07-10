@@ -11,7 +11,15 @@
         return;
     }
 
-    const FOV_DISTANCE_METERS = 150;
+    const FOV_DISTANCE_METERS_BY_ZOOM = [
+        { zoom: 0, distanceMeters: 700 },
+        { zoom: 12, distanceMeters: 700 },
+        { zoom: 13, distanceMeters: 520 },
+        { zoom: 14, distanceMeters: 320 },
+        { zoom: 15, distanceMeters: 220 },
+        { zoom: 16, distanceMeters: 150 },
+        { zoom: 24, distanceMeters: 150 },
+    ];
     const FOV_SPREAD_DEGREES = 50;
     const FOV_ARC_STEPS = 10;
     const EARTH_RADIUS_METERS = 6371000;
@@ -102,18 +110,47 @@
     }
 
     /**
+     * Interpolate the FOV distance for the current map zoom.
+     *
+     * The cone is intentionally exaggerated at lower zooms so direction remains
+     * visible at neighborhood scale, then shrinks to a local-scale indicator
+     * once individual streets and parcels are legible.
+     *
+     * @param {number} zoom Current Leaflet map zoom.
+     * @returns {number} FOV cone length in meters.
+     */
+    function getFovDistanceMeters(zoom) {
+        const normalizedZoom = Number.isFinite(zoom) ? zoom : 16;
+        for (let index = 1; index < FOV_DISTANCE_METERS_BY_ZOOM.length; index += 1) {
+            const previous = FOV_DISTANCE_METERS_BY_ZOOM[index - 1];
+            const next = FOV_DISTANCE_METERS_BY_ZOOM[index];
+            if (normalizedZoom <= next.zoom) {
+                const span = next.zoom - previous.zoom;
+                if (span <= 0) {
+                    return next.distanceMeters;
+                }
+                const progress = Math.max(0, Math.min(1, (normalizedZoom - previous.zoom) / span));
+                return previous.distanceMeters + (next.distanceMeters - previous.distanceMeters) * progress;
+            }
+        }
+
+        return FOV_DISTANCE_METERS_BY_ZOOM[FOV_DISTANCE_METERS_BY_ZOOM.length - 1].distanceMeters;
+    }
+
+    /**
      * Build approximate field-of-view layers for a camera bearing.
      *
      * @param {L.LatLng} latlng Camera location.
      * @param {number} bearing Bearing in degrees clockwise from north.
+     * @param {number} distanceMeters FOV cone length in meters.
      * @returns {L.Layer[]} Non-interactive cone polygon and center bearing line.
      */
-    function buildFovConeLayers(latlng, bearing) {
+    function buildFovConeLayers(latlng, bearing, distanceMeters) {
         const points = [[latlng.lat, latlng.lng]];
         const start = bearing - FOV_SPREAD_DEGREES / 2;
         for (let step = 0; step <= FOV_ARC_STEPS; step += 1) {
             const angle = start + (FOV_SPREAD_DEGREES * step / FOV_ARC_STEPS);
-            points.push(projectLatLng(latlng, angle, FOV_DISTANCE_METERS));
+            points.push(projectLatLng(latlng, angle, distanceMeters));
         }
         points.push([latlng.lat, latlng.lng]);
 
@@ -129,7 +166,7 @@
         const centerLine = L.polyline(
             [
                 [latlng.lat, latlng.lng],
-                projectLatLng(latlng, bearing, FOV_DISTANCE_METERS),
+                projectLatLng(latlng, bearing, distanceMeters),
             ],
             {
                 className: "alpr-camera-fov-bearing",
@@ -160,7 +197,21 @@
 
         const origin = L.latLng(latlng);
         let fovLayer = null;
+        let fovMap = null;
         let popupOpen = false;
+
+        /**
+         * Remove the FOV cone layer regardless of popup state.
+         *
+         * @returns {void}
+         */
+        function removeFovLayer() {
+            if (fovLayer && fovMap) {
+                fovMap.removeLayer(fovLayer);
+            }
+            fovLayer = null;
+            fovMap = null;
+        }
 
         /**
          * Add the camera FOV cone layer to the map when possible.
@@ -169,18 +220,21 @@
          */
         function showFov() {
             const map = marker._map;
-            if (!map || fovLayer) {
+            if (!map) {
                 return;
             }
 
+            removeFovLayer();
+            const distanceMeters = getFovDistanceMeters(map.getZoom());
             const fovLayers = [];
             bearings.forEach(function(bearing) {
-                buildFovConeLayers(origin, bearing).forEach(function(layer) {
+                buildFovConeLayers(origin, bearing, distanceMeters).forEach(function(layer) {
                     fovLayers.push(layer);
                 });
             });
             fovLayer = L.layerGroup(fovLayers);
             fovLayer.addTo(map);
+            fovMap = map;
             fovLayer.eachLayer(function(layer) {
                 if (typeof layer.bringToBack === "function") {
                     layer.bringToBack();
@@ -197,10 +251,18 @@
             if (popupOpen) {
                 return;
             }
-            if (fovLayer && marker._map) {
-                marker._map.removeLayer(fovLayer);
+            removeFovLayer();
+        }
+
+        /**
+         * Rebuild the FOV cone when the map zoom changes while it is visible.
+         *
+         * @returns {void}
+         */
+        function refreshFov() {
+            if (fovLayer) {
+                showFov();
             }
-            fovLayer = null;
         }
 
         marker.on("mouseover", showFov);
@@ -216,12 +278,17 @@
             popupOpen = false;
             hideFov();
         });
+        marker.on("add", function() {
+            if (marker._map) {
+                marker._map.on("zoomend", refreshFov);
+            }
+        });
         marker.on("remove", function() {
             popupOpen = false;
-            if (fovLayer && marker._map) {
-                marker._map.removeLayer(fovLayer);
+            if (marker._map) {
+                marker._map.off("zoomend", refreshFov);
             }
-            fovLayer = null;
+            removeFovLayer();
         });
     }
 
