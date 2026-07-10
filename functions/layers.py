@@ -3,6 +3,7 @@ from dash import ClientsideFunction, clientside_callback, no_update
 from dash.dependencies import Input, Output, State
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
+from functions.alpr_cameras import load_alpr_camera_geojson
 from functions.lahd import build_lahd_property_heat_geojson
 from functions.parking_tickets import build_parking_tickets_heat_geojson
 from loguru import logger
@@ -698,6 +699,16 @@ class LayersClass:
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
             valid_bounds=(-125.0, -113.0, 32.0, 35.5),
+        ),
+        'alpr_cameras': LayerConfig(
+            name='ALPR Cameras',
+            dataset='alpr_cameras',
+            loader=load_alpr_camera_geojson,
+            point_to_layer='drawAlprCameraIcon',
+            cluster_to_layer='drawAlprCameraCluster',
+            bubbling_mouse_events=False,
+            supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
+            cache_ttl_seconds=21600,
         ),
         'schools': LayerConfig(
             name='Schools',

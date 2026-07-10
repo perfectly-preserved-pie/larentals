@@ -59,6 +59,7 @@ init-listing-enrichment-tables = "scripts.init_listing_enrichment_tables:main"
 normalize-lease-terms = "scripts.normalize_lease_terms:main"
 run-broadband-merge = "scripts.run_broadband_merge:main"
 fetch-cpuc-broadband-geopackage = "scripts.fetch_cpuc_broadband_geopackage:main"
+fetch-alpr-cameras = "scripts.fetch_alpr_cameras:main"
 
 [build-system]
 requires = ["setuptools>=82.0.1"]

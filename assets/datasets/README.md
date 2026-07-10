@@ -45,6 +45,23 @@ Preferred local artifact:
 - The fetch command writes `ca_broadband_geopackage.gpkg.metadata.json` and reuses the existing GeoPackage when CPUC's ETag, Last-Modified, and Content-Length source validators have not changed
 - Force a rebuild with `uv run fetch-cpuc-broadband-geopackage --force`
 
+## ALPR Cameras
+
+https://maps.deflock.org/
+https://dontgetflocked.com/
+https://data.dontgetflocked.com/cameras.geojson.gz
+https://www.openstreetmap.org/copyright
+
+Preferred local artifact:
+
+- `alpr_cameras.geojson.gz`
+- Built from the live DeFlock/FlockHopper GeoJSON ALPR camera endpoint with `uv run fetch-alpr-cameras`
+- Source records are derived from OpenStreetMap/Overpass `man_made=surveillance` + `surveillance:type=ALPR` features
+- The local artifact is filtered to Southern California bounds used by the app map overlays
+- The layer includes all ALPR brands/operators in the source feed, not only Flock-branded cameras
+- The fetch command writes `alpr_cameras.geojson.gz.metadata.json` and reuses the existing artifact when source validators and bounds have not changed
+- Force a rebuild with `uv run fetch-alpr-cameras --force`
+
 ## Supermarkets & Grocery Stores
 
 https://data.lacity.org/Administration-Finance/Listing-of-Active-Businesses/6rrh-rzua/about_data

@@ -10,6 +10,7 @@ DB_PATH=$BASE_DIR/assets/datasets/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
 BROADBAND_GEOPACKAGE_PATH=$BASE_DIR/assets/datasets/ca_broadband_geopackage.gpkg
 BROADBAND_GEOPACKAGE_LAYER=ca_broadband_availability_aggregate
+ALPR_CAMERAS_PATH=$BASE_DIR/assets/datasets/alpr_cameras.geojson.gz
 
 # Log directories
 SAMPLE_LOG_DIR=~/larentals/sample
@@ -105,6 +106,10 @@ uv run run-broadband-merge \
   --db-path "$DB_PATH" \
   --geopackage-path "$BROADBAND_GEOPACKAGE_PATH" \
   --geopackage-layer "$BROADBAND_GEOPACKAGE_LAYER"
+
+echo "----- FETCH ALPR CAMERAS -----"
+uv run fetch-alpr-cameras \
+  --output "$ALPR_CAMERAS_PATH"
 
 echo "----- UPLOAD DB -----"
 aws s3 cp "$DB_PATH" "$S3_URI"

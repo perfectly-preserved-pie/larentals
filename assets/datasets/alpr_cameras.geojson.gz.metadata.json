@@ -1,0 +1,24 @@
+{
+  "artifact_version": 1,
+  "attribution": {
+    "DeFlock Maps": "https://maps.deflock.org/",
+    "FlockHopper": "https://dontgetflocked.com/",
+    "OpenStreetMap": "https://www.openstreetmap.org/copyright"
+  },
+  "bounds": {
+    "max_lat": 35.5,
+    "max_lon": -113.0,
+    "min_lat": 32.0,
+    "min_lon": -125.0
+  },
+  "feature_count": 9577,
+  "generated_at": "2026-07-10T01:39:16.841414+00:00",
+  "output_path": "/home/straying/larentals/assets/datasets/alpr_cameras.geojson.gz",
+  "source_feature_count": 113038,
+  "source_headers": {
+    "ETag": "W/\"218f3fdd55bce2f25d5901670e2f4b06\""
+  },
+  "source_sha256": "f1b92032e67f276849e64df85ceae940b82a4b38efe2525e376b0dfde5e3632c",
+  "source_url": "https://data.dontgetflocked.com/cameras.geojson.gz",
+  "title": "ALPR Cameras"
+}

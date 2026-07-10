@@ -29,6 +29,7 @@ class BuyComponents(BaseClass):
         "breakfast_burritos",
         "farmers_markets",
         "supermarkets_grocery",
+        "alpr_cameras",
         "schools",
         "oil_well",
     )
