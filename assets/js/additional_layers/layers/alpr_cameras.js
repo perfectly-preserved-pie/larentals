@@ -11,10 +11,12 @@
         return;
     }
 
-    const FOV_DISTANCE_METERS = 120;
+    const FOV_DISTANCE_METERS = 150;
     const FOV_SPREAD_DEGREES = 50;
     const FOV_ARC_STEPS = 10;
     const EARTH_RADIUS_METERS = 6371000;
+    const FOV_FILL_COLOR = "#ffb703";
+    const FOV_OUTLINE_COLOR = "#0b3f43";
 
     /**
      * Normalize a direction value into a compass bearing.
@@ -95,13 +97,13 @@
     }
 
     /**
-     * Build an approximate field-of-view cone for a camera bearing.
+     * Build approximate field-of-view layers for a camera bearing.
      *
      * @param {L.LatLng} latlng Camera location.
      * @param {number} bearing Bearing in degrees clockwise from north.
-     * @returns {L.Polygon} Non-interactive cone polygon.
+     * @returns {L.Layer[]} Non-interactive cone polygon and center bearing line.
      */
-    function buildFovCone(latlng, bearing) {
+    function buildFovConeLayers(latlng, bearing) {
         const points = [[latlng.lat, latlng.lng]];
         const start = bearing - FOV_SPREAD_DEGREES / 2;
         for (let step = 0; step <= FOV_ARC_STEPS; step += 1) {
@@ -110,15 +112,31 @@
         }
         points.push([latlng.lat, latlng.lng]);
 
-        return L.polygon(points, {
+        const polygon = L.polygon(points, {
             className: "alpr-camera-fov-cone",
-            color: "#f2c94c",
-            weight: 2,
-            opacity: 0.86,
-            fillColor: "#f2c94c",
-            fillOpacity: 0.2,
+            color: FOV_OUTLINE_COLOR,
+            weight: 3,
+            opacity: 0.95,
+            fillColor: FOV_FILL_COLOR,
+            fillOpacity: 0.42,
             interactive: false,
         });
+        const centerLine = L.polyline(
+            [
+                [latlng.lat, latlng.lng],
+                projectLatLng(latlng, bearing, FOV_DISTANCE_METERS),
+            ],
+            {
+                className: "alpr-camera-fov-bearing",
+                color: FOV_OUTLINE_COLOR,
+                weight: 3,
+                opacity: 0.9,
+                dashArray: "7 5",
+                interactive: false,
+            }
+        );
+
+        return [polygon, centerLine];
     }
 
     /**
@@ -150,9 +168,13 @@
                 return;
             }
 
-            fovLayer = L.layerGroup(bearings.map(function(bearing) {
-                return buildFovCone(origin, bearing);
-            }));
+            const fovLayers = [];
+            bearings.forEach(function(bearing) {
+                buildFovConeLayers(origin, bearing).forEach(function(layer) {
+                    fovLayers.push(layer);
+                });
+            });
+            fovLayer = L.layerGroup(fovLayers);
             fovLayer.addTo(map);
             fovLayer.eachLayer(function(layer) {
                 if (typeof layer.bringToBack === "function") {
