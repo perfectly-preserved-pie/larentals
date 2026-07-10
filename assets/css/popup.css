@@ -202,50 +202,46 @@
 }
 
 .alpr-camera-marker {
+  position: relative;
   display: grid;
   width: 24px;
   height: 24px;
   place-items: center;
   border-radius: 50%;
-  background: rgba(17, 91, 96, 0.18);
-  box-shadow: 0 2px 7px rgba(12, 28, 36, 0.28);
-}
-
-.alpr-camera-marker__body {
-  position: relative;
-  display: block;
-  width: 18px;
-  height: 13px;
   border: 2px solid #f7fcfd;
-  border-radius: 5px;
   background: #115b60;
+  color: #f7fcfd;
+  box-shadow:
+    0 0 0 3px rgba(255, 183, 3, 0.48),
+    0 2px 8px rgba(12, 28, 36, 0.35);
 }
 
-.alpr-camera-marker__body::before {
+.alpr-camera-marker::after {
   content: "";
   position: absolute;
-  top: -5px;
-  left: 3px;
+  right: -1px;
+  bottom: -1px;
   width: 8px;
-  height: 4px;
-  border-radius: 3px 3px 0 0;
-  background: #115b60;
-}
-
-.alpr-camera-marker__lens,
-.alpr-camera-cluster-marker__lens {
-  position: absolute;
-  display: block;
+  height: 8px;
   border-radius: 50%;
-  background: #f2c94c;
-  box-shadow: inset 0 0 0 2px rgba(15, 38, 48, 0.45);
+  border: 1px solid rgba(15, 38, 48, 0.5);
+  background: #ffb703;
 }
 
-.alpr-camera-marker__lens {
-  top: 3px;
-  left: 5px;
-  width: 6px;
-  height: 6px;
+.alpr-camera-marker__symbol {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  margin-left: 1px;
+  line-height: 1;
+}
+
+.alpr-camera-cctv-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
 .alpr-camera-cluster-marker {
@@ -266,32 +262,24 @@
 }
 
 .alpr-camera-cluster-marker__icon {
-  position: relative;
-  display: block;
-  width: 18px;
-  height: 13px;
-  flex: 0 0 18px;
-  border: 2px solid #f7fcfd;
-  border-radius: 5px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  flex: 0 0 22px;
+  border: 1px solid rgba(247, 252, 253, 0.85);
+  border-radius: 50%;
   background: #0b3f43;
+  color: #ffb703;
 }
 
-.alpr-camera-cluster-marker__icon::before {
-  content: "";
-  position: absolute;
-  top: -5px;
-  left: 3px;
-  width: 8px;
-  height: 4px;
-  border-radius: 3px 3px 0 0;
-  background: #0b3f43;
-}
-
-.alpr-camera-cluster-marker__lens {
-  top: 3px;
-  left: 5px;
-  width: 6px;
-  height: 6px;
+.alpr-camera-cluster-marker__symbol {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  margin-left: 1px;
+  line-height: 1;
 }
 
 .alpr-camera-cluster-marker__count {
