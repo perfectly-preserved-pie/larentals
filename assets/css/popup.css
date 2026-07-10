@@ -209,7 +209,7 @@
   place-items: center;
   border-radius: 50%;
   border: 2px solid #f7fcfd;
-  background: #115b60;
+  background: #20242a;
   color: #f7fcfd;
   box-shadow:
     0 0 0 3px rgba(255, 183, 3, 0.48),
@@ -224,7 +224,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  border: 1px solid rgba(15, 38, 48, 0.5);
+  border: 1px solid rgba(32, 36, 42, 0.58);
   background: #ffb703;
 }
 
@@ -253,7 +253,7 @@
   padding: 3px 9px 3px 5px;
   border: 2px solid rgba(247, 252, 253, 0.92);
   border-radius: 999px;
-  background: #115b60;
+  background: #20242a;
   color: #f7fcfd;
   box-shadow: 0 2px 9px rgba(12, 28, 36, 0.32);
   font-size: 0.78rem;
@@ -269,7 +269,7 @@
   flex: 0 0 22px;
   border: 1px solid rgba(247, 252, 253, 0.85);
   border-radius: 50%;
-  background: #0b3f43;
+  background: #111318;
   color: #ffb703;
 }
 
