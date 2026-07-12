@@ -22,6 +22,32 @@ load_dotenv()
 
 GeoJsonDict: TypeAlias = dict[str, Any]
 
+STREET_BASE_LAYER_NAME = "Street map"
+STREET_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+STREET_TILE_ATTRIBUTION = (
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+)
+
+LARIAC_AERIAL_BASE_LAYER_NAME = "LA County aerial (2023)"
+LARIAC_AERIAL_TILE_URL = (
+    "https://svc.pictometry.com/Image/BCC27E3E-766E-CE0B-7D11-AA4760AC43ED/"
+    "wmts/PICT-LARIAC7--KCrSFBeqgG/default/GoogleMapsCompatible/{z}/{x}/{y}.png"
+)
+LARIAC_AERIAL_ATTRIBUTION = (
+    '<a href="https://www.arcgis.com/home/item.html?'
+    'id=b301429f8bc1469bb2bbd5a6c3330abe">LA County LARIAC7</a>; EagleView'
+)
+
+LA_COUNTY_PARCEL_LAYER_NAME = "Parcel boundaries"
+LA_COUNTY_PARCEL_TILE_URL = (
+    "https://cache.gis.lacounty.gov/cache/rest/services/"
+    "LACounty_Cache/LACounty_Parcel/MapServer/tile/{z}/{y}/{x}"
+)
+LA_COUNTY_PARCEL_ATTRIBUTION = (
+    '<a href="https://www.arcgis.com/home/item.html?'
+    'id=5b277305f006459586a70165065d0fd6">LA County Office of the Assessor</a>'
+)
+
 DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = Path("assets/datasets/schools_socal.geojson")
 DEFAULT_SCHOOL_LAYER_GPKG_PATH = Path("assets/datasets/california_public_schools_2024_25.gpkg")
 DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
@@ -649,7 +675,7 @@ class LayersClass:
     This class centralizes:
     - static overlay configuration
     - per-process GeoJSON caching
-    - creation of `dl.GeoJSON` / `dl.Overlay` / `dl.LayersControl`
+    - creation of base layers, tile overlays, and GeoJSON overlays
     - lazy resolution of layer data when users enable overlays
     """
     DEFAULT_SUPERCLUSTER_OPTIONS: ClassVar[dict[str, int]] = {
@@ -743,6 +769,52 @@ class LayersClass:
     }
     geojson_cache: ClassVar[dict[str, tuple[float, GeoJsonDict]]] = {}
     filter_school_layer_geojson = staticmethod(filter_school_layer_geojson)
+
+    @staticmethod
+    def create_street_base_layer(*, checked: bool = True) -> dl.BaseLayer:
+        """Create the OpenStreetMap base layer used by both listing maps."""
+        return dl.BaseLayer(
+            dl.TileLayer(
+                url=STREET_TILE_URL,
+                attribution=STREET_TILE_ATTRIBUTION,
+                detectRetina=False,
+                maxNativeZoom=19,
+                maxZoom=21,
+            ),
+            name=STREET_BASE_LAYER_NAME,
+            checked=checked,
+        )
+
+    @staticmethod
+    def create_lariac_aerial_base_layer(*, checked: bool = False) -> dl.BaseLayer:
+        """Create LA County's public 2023 LARIAC7 orthophoto base layer."""
+        return dl.BaseLayer(
+            dl.TileLayer(
+                url=LARIAC_AERIAL_TILE_URL,
+                attribution=LARIAC_AERIAL_ATTRIBUTION,
+                detectRetina=False,
+                maxNativeZoom=21,
+                maxZoom=21,
+            ),
+            name=LARIAC_AERIAL_BASE_LAYER_NAME,
+            checked=checked,
+        )
+
+    @staticmethod
+    def create_parcel_tile_overlay(*, checked: bool = False) -> dl.Overlay:
+        """Create the cached LA County Assessor parcel-boundary overlay."""
+        return dl.Overlay(
+            dl.TileLayer(
+                url=LA_COUNTY_PARCEL_TILE_URL,
+                attribution=LA_COUNTY_PARCEL_ATTRIBUTION,
+                detectRetina=False,
+                maxNativeZoom=20,
+                maxZoom=21,
+                zIndex=500,
+            ),
+            name=LA_COUNTY_PARCEL_LAYER_NAME,
+            checked=checked,
+        )
 
     @classmethod
     def get_layer_config(cls, layer_key: str) -> LayerConfig:
@@ -976,7 +1048,7 @@ class LayersClass:
         checked_layer_keys: Sequence[str] = (),
     ) -> dl.LayersControl:
         """
-        Create a `dl.LayersControl` for a page's optional overlays.
+        Create a `dl.LayersControl` with shared base layers and optional overlays.
 
         Args:
             page_key: Page identifier owning the control.
@@ -984,15 +1056,21 @@ class LayersClass:
             checked_layer_keys: Subset of `layer_keys` that should start enabled.
 
         Returns:
-            A populated `dl.LayersControl` containing lazy overlays.
+            A populated control containing street/aerial base layers, the cached
+            parcel overlay, and the requested lazy GeoJSON overlays.
         """
         checked_keys = set(checked_layer_keys)
         overlays = [
             cls.create_lazy_overlay(page_key, layer_key, checked=layer_key in checked_keys)
             for layer_key in layer_keys
         ]
+        base_layers = [
+            cls.create_street_base_layer(checked=True),
+            cls.create_lariac_aerial_base_layer(checked=False),
+        ]
+        tile_overlays = [cls.create_parcel_tile_overlay(checked=False)]
         return dl.LayersControl(
-            overlays,
+            [*base_layers, *tile_overlays, *overlays],
             id=cls.layers_control_id(page_key),
             collapsed=True,
             position='topleft',

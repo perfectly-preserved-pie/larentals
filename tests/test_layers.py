@@ -1,14 +1,23 @@
 import geopandas as gpd
+import dash_leaflet as dl
 from urllib.parse import parse_qs, urlparse
 
 from functions.layers import (
     DEFAULT_SCHOOL_LAYER_GEOJSON_PATH,
     DEFAULT_SCHOOL_LAYER_GPKG_PATH,
+    LA_COUNTY_PARCEL_LAYER_NAME,
+    LA_COUNTY_PARCEL_TILE_URL,
+    LARIAC_AERIAL_BASE_LAYER_NAME,
+    LARIAC_AERIAL_TILE_URL,
+    STREET_BASE_LAYER_NAME,
+    STREET_TILE_URL,
+    LayersClass,
     build_school_layer_geojson_from_gdf,
     build_school_preview_url,
     filter_school_layer_geojson,
 )
 from functions.listing_enrichment_utils import DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_URL, DEFAULT_REGION_NAME
+from pages.component_factories import build_map
 from scripts.build_school_layer_geojson import parse_args as parse_school_layer_args
 
 
@@ -112,6 +121,50 @@ def test_build_school_preview_url_points_to_world_imagery_export() -> None:
     assert params["bboxSR"] == ["4326"]
     assert params["imageSR"] == ["4326"]
     assert params["f"] == ["image"]
+
+
+def test_layers_control_includes_shared_basemaps_and_parcel_tiles() -> None:
+    control = LayersClass.create_layers_control("lease", ["oil_well"])
+
+    street, aerial, parcels, oil_wells = control.children
+
+    assert isinstance(street, dl.BaseLayer)
+    assert street.name == STREET_BASE_LAYER_NAME
+    assert street.checked is True
+    assert street.children.url == STREET_TILE_URL
+    assert street.children.maxNativeZoom == 19
+
+    assert isinstance(aerial, dl.BaseLayer)
+    assert aerial.name == LARIAC_AERIAL_BASE_LAYER_NAME
+    assert aerial.checked is False
+    assert aerial.children.url == LARIAC_AERIAL_TILE_URL
+    assert aerial.children.maxNativeZoom == 21
+
+    assert isinstance(parcels, dl.Overlay)
+    assert parcels.name == LA_COUNTY_PARCEL_LAYER_NAME
+    assert parcels.checked is False
+    assert parcels.children.url == LA_COUNTY_PARCEL_TILE_URL
+    assert parcels.children.maxNativeZoom == 20
+    assert parcels.children.zIndex == 500
+
+    assert isinstance(oil_wells, dl.Overlay)
+    assert oil_wells.name == "Oil & Gas Wells"
+
+
+def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom() -> None:
+    control = LayersClass.create_layers_control("buy", [])
+    map_component = build_map(
+        page_type="buy",
+        geojson_id="buy_geojson",
+        center_lat=34.0522,
+        center_lng=-118.2437,
+        layers_control=control,
+        map_style={"height": "600px"},
+    )
+
+    assert map_component.maxZoom == 21
+    assert control in map_component.children
+    assert not any(isinstance(child, dl.TileLayer) for child in map_component.children)
 
 
 def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment() -> None:

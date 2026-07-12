@@ -376,7 +376,6 @@ def build_map(
         "layeradd": ns("register_map_for_gesture_controls"),
     }
     map_children = [
-        dl.TileLayer(detectRetina=False),
         dl.GeoJSON(
             id=geojson_id,
             data=None,
@@ -391,7 +390,9 @@ def build_map(
         ),
         dl.FullScreenControl(),
     ]
-    if layers_control is not None:
+    if layers_control is None:
+        map_children.insert(0, dl.TileLayer(detectRetina=False, maxZoom=21))
+    else:
         map_children.append(layers_control)
 
     return dl.Map(
@@ -399,6 +400,7 @@ def build_map(
         id="map",
         zoom=9,
         minZoom=9,
+        maxZoom=21,
         center={"lat": center_lat, "lng": center_lng},
         preferCanvas=True,
         closePopupOnClick=True,

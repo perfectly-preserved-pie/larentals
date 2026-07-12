@@ -23,6 +23,16 @@ This is an interactive map based on /u/WilliamMcCarty's and /u/TannerBeyer's wee
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
 
+### County map layers
+
+The map layer control includes two selectable basemaps and an optional parcel overlay:
+
+* **Street map** uses [OpenStreetMap](https://www.openstreetmap.org/copyright).
+* **LA County aerial (2023)** uses the public four-inch LARIAC7 orthophoto [WMTS item](https://www.arcgis.com/home/item.html?id=b301429f8bc1469bb2bbd5a6c3330abe), credited to LARIAC, EagleView, and Los Angeles County Enterprise GIS.
+* **Parcel boundaries** uses the cached [LA County Assessor parcel map service](https://www.arcgis.com/home/item.html?id=5b277305f006459586a70165065d0fd6).
+
+Tiles are requested by the user's browser directly from the upstream services; this project does not download, cache, or redistribute the imagery or countywide parcel tiles. Use of the County services remains subject to the [LA County Enterprise GIS terms](https://egis-lacounty.hub.arcgis.com/pages/terms-of-use) and each source item's license information.
+
 The Dash MCP endpoint is available at `https://wheretolive.la/_mcp` for MCP clients that support Streamable HTTP.
 
 You can click the toggle buttons next to the title to switch between For Rent and For Sale listings:
