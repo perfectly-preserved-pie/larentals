@@ -23,9 +23,10 @@ load_dotenv()
 GeoJsonDict: TypeAlias = dict[str, Any]
 
 STREET_BASE_LAYER_NAME = "Street map"
-STREET_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+STREET_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 STREET_TILE_ATTRIBUTION = (
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    ' &middot; <a href="https://www.openstreetmap.org/fixthemap">Report a map issue</a>'
 )
 
 LARIAC_AERIAL_BASE_LAYER_NAME = "LA County aerial (2023)"

@@ -27,7 +27,7 @@ Some additional capabilities are offered, such as a featured MLS photo for the p
 
 The map layer control includes two selectable basemaps and an optional parcel overlay:
 
-* **Street map** uses [OpenStreetMap](https://www.openstreetmap.org/copyright).
+* **Street map** uses the canonical [OpenStreetMap raster tile service](https://operations.osmfoundation.org/policies/tiles/) with visible license attribution and a [report-a-map-issue link](https://www.openstreetmap.org/fixthemap).
 * **LA County aerial (2023)** uses the public four-inch LARIAC7 orthophoto [WMTS item](https://www.arcgis.com/home/item.html?id=b301429f8bc1469bb2bbd5a6c3330abe), credited to LARIAC, EagleView, and Los Angeles County Enterprise GIS.
 * **Parcel boundaries** uses the cached [LA County Assessor parcel map service](https://www.arcgis.com/home/item.html?id=5b277305f006459586a70165065d0fd6).
 

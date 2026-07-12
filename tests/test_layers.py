@@ -131,7 +131,9 @@ def test_layers_control_includes_shared_basemaps_and_parcel_tiles() -> None:
     assert isinstance(street, dl.BaseLayer)
     assert street.name == STREET_BASE_LAYER_NAME
     assert street.checked is True
+    assert street.children.url == "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     assert street.children.url == STREET_TILE_URL
+    assert "openstreetmap.org/fixthemap" in street.children.attribution
     assert street.children.maxNativeZoom == 19
 
     assert isinstance(aerial, dl.BaseLayer)
