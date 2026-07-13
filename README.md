@@ -41,7 +41,31 @@ MAPBOX_ACCESS_TOKEN=pk.example
 
 The satellite option is omitted when the token is not configured. Public browser tokens are visible to users by design; URL restrictions and minimal token scopes provide the relevant protection. Mapbox logo and text attribution are displayed with the active satellite layer.
 
-The Dash MCP endpoint is available at `https://wheretolive.la/_mcp` for MCP clients that support Streamable HTTP.
+### MCP server
+
+Connect any Streamable HTTP MCP client to `https://wheretolive.la/_mcp` (no
+authentication required). The server exposes one read-only tool,
+`search_listings`, for both `lease` and `buy` listings.
+
+- **Claude:** Add the URL under **Customize → Connectors → Add custom
+  connector**, or run
+  `claude mcp add --transport http wheretolive https://wheretolive.la/_mcp`
+  in Claude Code.
+- **Hermes:** Add this to `~/.hermes/config.yaml`, then restart Hermes:
+
+  ```yaml
+  mcp_servers:
+    wheretolive:
+      url: "https://wheretolive.la/_mcp"
+  ```
+
+- **Other clients:** Select the Streamable HTTP/HTTP transport and use the same
+  endpoint URL.
+
+Then ask something like: *“Find lease listings in Pasadena under $2,500 with at
+least two bedrooms,”* or *“Find homes to buy in Long Beach under $800,000.”*
+Results include addresses and source URLs and are limited to 20 listings per
+page.
 
 You can click the toggle buttons next to the title to switch between For Rent and For Sale listings:
 

@@ -14,6 +14,7 @@ from functions.lahd import (
   prewarm_lahd_live_dataset_status_cache,
 )
 from functions.mcp_usage_logging import register_mcp_usage_logging
+from functions.mcp_listings import configure_listings_mcp
 from functions.seo import (
   build_llms_txt,
   build_robots_txt,
@@ -51,6 +52,7 @@ external_scripts = [
 
 register_filter_exclusion_devtool()
 dmc.pre_render_color_scheme()
+configure_listings_mcp()
 
 # Create the app
 app = Dash(
