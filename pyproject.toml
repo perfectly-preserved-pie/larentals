@@ -62,7 +62,7 @@ fetch-cpuc-broadband-geopackage = "scripts.fetch_cpuc_broadband_geopackage:main"
 fetch-alpr-cameras = "scripts.fetch_alpr_cameras:main"
 
 [build-system]
-requires = ["setuptools>=82.0.1"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
