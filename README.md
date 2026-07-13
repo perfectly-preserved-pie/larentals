@@ -1,10 +1,15 @@
 # [WhereToLive.LA](https://wheretolive.la)
+
+## Table of contents
+
+- [County map layers](#county-map-layers)
+- [MCP server](#mcp-server)
 - [What I'm Using](#what-im-using)
 - [A Deeper Dive](#a-deeper-dive)
 - [How to Build and Run](#how-to-build-and-run)
   - [Docker](#docker)
   - [Non-Docker](#non-docker)
- 
+
 [![CodeQL](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/codeql-analysis.yml)
 
 [![Build image and publish to DockerHub](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml/badge.svg)](https://github.com/perfectly-preserved-pie/larentals/actions/workflows/docker-image.yml)
@@ -22,6 +27,14 @@ This is an interactive map based on /u/WilliamMcCarty's and /u/TannerBeyer's wee
 * and more!
 
 Some additional capabilities are offered, such as a featured MLS photo for the property and a link to the associated MLS listing page (if available).
+
+You can click the toggle buttons next to the title to switch between For Rent and For Sale listings:
+
+![image](https://github.com/user-attachments/assets/0d58d43a-0722-4bd2-9914-786b0f5e0dcf)
+
+
+**⚠ This website is mobile-friendly but I highly recommend using an actual computer or tablet for the best experience**
+
 
 ### County map layers
 
@@ -44,38 +57,8 @@ The satellite option is omitted when the token is not configured. Public browser
 ### MCP server
 
 See the [MCP setup guide](https://wheretolive.la/mcp) for copyable Claude,
-Hermes, and generic client instructions. The public Streamable HTTP endpoint is
-`https://wheretolive.la/_mcp`; it requires no authentication and exposes one
-read-only `search_listings` tool for both `lease` and `buy` listings.
+Hermes, and generic client instructions.
 
-- **Claude:** Add the URL under **Customize → Connectors → Add custom
-  connector**, or run
-  `claude mcp add --transport http wheretolive https://wheretolive.la/_mcp`
-  in Claude Code.
-- **Hermes:** Add this to `~/.hermes/config.yaml`, then restart Hermes:
-
-  ```yaml
-  mcp_servers:
-    wheretolive:
-      url: "https://wheretolive.la/_mcp"
-  ```
-
-- **Other clients:** Select the Streamable HTTP/HTTP transport and use the same
-  endpoint URL.
-
-Then ask something like: *“Find lease listings in Pasadena under $2,500 with at
-least two bedrooms,”* or *“Find homes to buy in Long Beach under $800,000.”*
-Results include addresses and source URLs and are limited to 20 listings per
-page.
-
-You can click the toggle buttons next to the title to switch between For Rent and For Sale listings:
-
-![image](https://github.com/user-attachments/assets/0d58d43a-0722-4bd2-9914-786b0f5e0dcf)
-
-
-
-
-**⚠ This website is mobile-friendly but I highly recommend using an actual computer or tablet for the best experience**
 
 ## What I'm Using
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)
