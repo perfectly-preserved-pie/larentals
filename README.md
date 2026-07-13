@@ -43,9 +43,10 @@ The satellite option is omitted when the token is not configured. Public browser
 
 ### MCP server
 
-Connect any Streamable HTTP MCP client to `https://wheretolive.la/_mcp` (no
-authentication required). The server exposes one read-only tool,
-`search_listings`, for both `lease` and `buy` listings.
+See the [MCP setup guide](https://wheretolive.la/mcp) for copyable Claude,
+Hermes, and generic client instructions. The public Streamable HTTP endpoint is
+`https://wheretolive.la/_mcp`; it requires no authentication and exposes one
+read-only `search_listings` tool for both `lease` and `buy` listings.
 
 - **Claude:** Add the URL under **Customize → Connectors → Add custom
   connector**, or run

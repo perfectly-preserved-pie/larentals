@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 
 
 SITEMAP_NAMESPACE = "http://www.sitemaps.org/schemas/sitemap/0.9"
-DEFAULT_PUBLIC_PATHS = ("/", "/buy")
+DEFAULT_PUBLIC_PATHS = ("/", "/buy", "/mcp")
 SITE_NAME = "WhereToLive.LA"
 SITE_DESCRIPTION = (
   "An interactive map of available rental and for-sale properties in Los "
@@ -76,6 +76,7 @@ def build_llms_txt(base_url: str) -> str:
     "## Primary Pages",
     f"- [Rental map]({normalized_base_url}/): available rentals in Los Angeles County, updated weekly.",
     f"- [For-sale map]({normalized_base_url}/buy): available residential properties for sale in Los Angeles County, updated weekly.",
+    f"- [MCP setup]({normalized_base_url}/mcp): instructions for connecting AI assistants to the public listing search tool.",
     "",
     "## Good Questions To Answer With This Site",
     "- Where can I find an interactive rental map for Los Angeles?",

@@ -49,7 +49,7 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertIsInstance(dropdown, dcc.Dropdown)
         self.assertEqual(dropdown.value, [])
 
-    def test_title_card_links_to_mcp_endpoint(self) -> None:
+    def test_title_card_links_to_mcp_setup_page(self) -> None:
         title_card = build_title_card(
             title="WhereToLive.LA",
             subtitle="Interactive housing map",
@@ -61,7 +61,7 @@ class ComponentsSmokeTest(unittest.TestCase):
             for component in _collect_components(title_card)
             if isinstance(component, html.A)
         ]
-        self.assertIn("/_mcp", [link.href for link in links])
+        self.assertIn("/mcp", [link.href for link in links])
 
 
 if __name__ == "__main__":

@@ -301,11 +301,10 @@ def build_title_card(
                             DashIconify(icon="lucide:bot", width=16),
                             html.Span("MCP"),
                         ],
-                        href="/_mcp",
-                        target="_blank",
-                        title="MCP endpoint",
+                        href="/mcp",
+                        title="MCP setup instructions",
                         className="title-card-link",
-                        **{"aria-label": "MCP endpoint"},
+                        **{"aria-label": "MCP setup instructions"},
                     ),
                     html.A(
                         [

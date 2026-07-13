@@ -15,13 +15,14 @@ class SeoTest(unittest.TestCase):
     page_registry = {
       "pages.lease_page": {"path": "/"},
       "pages.buy_page": {"path": "/buy"},
+      "pages.mcp_page": {"path": "/mcp"},
       "pages.details_page": {"path": "/listing/<listing_id>"},
     }
 
-    self.assertEqual(get_public_page_paths(page_registry), ["/", "/buy"])
+    self.assertEqual(get_public_page_paths(page_registry), ["/", "/buy", "/mcp"])
 
   def test_build_sitemap_xml_contains_canonical_public_urls(self) -> None:
-    sitemap = build_sitemap_xml("https://wheretolive.la", ["/", "/buy"])
+    sitemap = build_sitemap_xml("https://wheretolive.la", ["/", "/buy", "/mcp"])
     sitemap_text = sitemap.decode("utf-8")
     root = ElementTree.fromstring(sitemap)
     namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
@@ -31,7 +32,14 @@ class SeoTest(unittest.TestCase):
       for loc in root.findall("sitemap:url/sitemap:loc", namespace)
     ]
 
-    self.assertEqual(urls, ["https://wheretolive.la/", "https://wheretolive.la/buy"])
+    self.assertEqual(
+      urls,
+      [
+        "https://wheretolive.la/",
+        "https://wheretolive.la/buy",
+        "https://wheretolive.la/mcp",
+      ],
+    )
     self.assertNotIn("_mcp", sitemap_text)
 
   def test_build_robots_txt_points_to_sitemap(self) -> None:
@@ -47,6 +55,7 @@ class SeoTest(unittest.TestCase):
     self.assertIn("# WhereToLive.LA", llms_txt)
     self.assertIn("[Rental map](https://wheretolive.la/)", llms_txt)
     self.assertIn("[For-sale map](https://wheretolive.la/buy)", llms_txt)
+    self.assertIn("[MCP setup](https://wheretolive.la/mcp)", llms_txt)
     self.assertIn("https://wheretolive.la/_mcp", llms_txt)
     self.assertIn("avoid inventing exact listing availability", llms_txt)
     self.assertIn("machine interface, not a browser page", llms_txt)
