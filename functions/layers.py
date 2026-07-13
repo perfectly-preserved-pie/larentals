@@ -11,12 +11,13 @@ from typing import Any, Callable, ClassVar, Optional, Sequence, TypedDict, TypeA
 import dash_leaflet as dl
 import geopandas as gpd
 import json
+import os
 from pathlib import Path
 import pandas as pd
 import re
 import time
 import uuid
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 load_dotenv()
 
@@ -29,14 +30,20 @@ STREET_TILE_ATTRIBUTION = (
     ' &middot; <a href="https://www.openstreetmap.org/fixthemap">Report a map issue</a>'
 )
 
-LARIAC_AERIAL_BASE_LAYER_NAME = "LA County aerial (2023)"
-LARIAC_AERIAL_TILE_URL = (
-    "https://svc.pictometry.com/Image/BCC27E3E-766E-CE0B-7D11-AA4760AC43ED/"
-    "wmts/PICT-LARIAC7--KCrSFBeqgG/default/GoogleMapsCompatible/{z}/{x}/{y}.png"
+MAPBOX_SATELLITE_BASE_LAYER_NAME = "Satellite imagery"
+MAPBOX_SATELLITE_TILE_URL_TEMPLATE = (
+    "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.jpg90?access_token={access_token}"
 )
-LARIAC_AERIAL_ATTRIBUTION = (
-    '<a href="https://www.arcgis.com/home/item.html?'
-    'id=b301429f8bc1469bb2bbd5a6c3330abe">LA County LARIAC7</a>; EagleView'
+MAPBOX_SATELLITE_ATTRIBUTION = (
+    '<a class="mapboxgl-ctrl-logo" href="https://www.mapbox.com/" '
+    'aria-label="Mapbox logo" target="_blank" rel="noopener"></a>'
+    '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">'
+    '&copy; Mapbox</a> '
+    '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">'
+    '&copy; OpenStreetMap</a> '
+    '<a href="https://www.maxar.com/" target="_blank" rel="noopener">&copy; Maxar</a> '
+    '<a href="https://apps.mapbox.com/feedback/" target="_blank" rel="noopener">'
+    'Improve this map</a>'
 )
 
 LA_COUNTY_PARCEL_LAYER_NAME = "Parcel boundaries"
@@ -81,6 +88,26 @@ SCHOOL_LAYER_LEVEL_OPTIONS: tuple[str, ...] = (
     "Preschool",
     "Secondary",
 )
+
+
+def get_mapbox_access_token() -> str | None:
+    """Return the configured public Mapbox token, if one is available."""
+    token = os.getenv("MAPBOX_ACCESS_TOKEN", "").strip()
+    return token or None
+
+
+def build_mapbox_satellite_tile_url(access_token: str) -> str:
+    """Build the browser-facing Mapbox Satellite Raster Tiles API template."""
+    normalized_token = str(access_token).strip()
+    if not normalized_token:
+        raise ValueError("Mapbox access token must not be blank.")
+    return MAPBOX_SATELLITE_TILE_URL_TEMPLATE.format(
+        z="{z}",
+        x="{x}",
+        y="{y}",
+        access_token=quote(normalized_token, safe=""),
+    )
+
 
 class LazyLayerGeoJsonId(TypedDict):
     """
@@ -787,17 +814,21 @@ class LayersClass:
         )
 
     @staticmethod
-    def create_lariac_aerial_base_layer(*, checked: bool = False) -> dl.BaseLayer:
-        """Create LA County's public 2023 LARIAC7 orthophoto base layer."""
+    def create_mapbox_satellite_base_layer(
+        access_token: str,
+        *,
+        checked: bool = False,
+    ) -> dl.BaseLayer:
+        """Create the token-authenticated Mapbox Satellite base layer."""
         return dl.BaseLayer(
             dl.TileLayer(
-                url=LARIAC_AERIAL_TILE_URL,
-                attribution=LARIAC_AERIAL_ATTRIBUTION,
+                url=build_mapbox_satellite_tile_url(access_token),
+                attribution=MAPBOX_SATELLITE_ATTRIBUTION,
                 detectRetina=False,
                 maxNativeZoom=21,
                 maxZoom=21,
             ),
-            name=LARIAC_AERIAL_BASE_LAYER_NAME,
+            name=MAPBOX_SATELLITE_BASE_LAYER_NAME,
             checked=checked,
         )
 
@@ -1057,18 +1088,23 @@ class LayersClass:
             checked_layer_keys: Subset of `layer_keys` that should start enabled.
 
         Returns:
-            A populated control containing street/aerial base layers, the cached
-            parcel overlay, and the requested lazy GeoJSON overlays.
+            A populated control containing the street base layer, an optional
+            token-authenticated satellite layer, the cached parcel overlay, and
+            the requested lazy GeoJSON overlays.
         """
         checked_keys = set(checked_layer_keys)
         overlays = [
             cls.create_lazy_overlay(page_key, layer_key, checked=layer_key in checked_keys)
             for layer_key in layer_keys
         ]
-        base_layers = [
-            cls.create_street_base_layer(checked=True),
-            cls.create_lariac_aerial_base_layer(checked=False),
-        ]
+        base_layers = [cls.create_street_base_layer(checked=True)]
+        if mapbox_access_token := get_mapbox_access_token():
+            base_layers.append(
+                cls.create_mapbox_satellite_base_layer(
+                    mapbox_access_token,
+                    checked=False,
+                )
+            )
         tile_overlays = [cls.create_parcel_tile_overlay(checked=False)]
         return dl.LayersControl(
             [*base_layers, *tile_overlays, *overlays],

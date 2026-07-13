@@ -36,7 +36,9 @@ VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 external_stylesheets = [
 	dbc.themes.BOOTSTRAP,
   dbc.icons.BOOTSTRAP,
-  dbc.icons.FONT_AWESOME
+  dbc.icons.FONT_AWESOME,
+  # Supplies Mapbox's required, unmodified logo styling when Satellite imagery is active.
+  "https://api.mapbox.com/mapbox-gl-js/v3.23.1/mapbox-gl.css",
 ]
 external_scripts = [
   {
