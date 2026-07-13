@@ -403,7 +403,7 @@ def build_mcp_docs_layout() -> html.Main:
                                     "perfectly-preserved-pie/larentals"
                                 ),
                                 target="_blank",
-                                rel="noopener noreferrer",
+                                rel="noopener",
                             ),
                         ]
                     ),
