@@ -1,5 +1,6 @@
 import geopandas as gpd
 import dash_leaflet as dl
+import pytest
 from urllib.parse import parse_qs, urlparse
 
 from functions.layers import (
@@ -7,11 +8,11 @@ from functions.layers import (
     DEFAULT_SCHOOL_LAYER_GPKG_PATH,
     LA_COUNTY_PARCEL_LAYER_NAME,
     LA_COUNTY_PARCEL_TILE_URL,
-    LARIAC_AERIAL_BASE_LAYER_NAME,
-    LARIAC_AERIAL_TILE_URL,
+    MAPBOX_SATELLITE_BASE_LAYER_NAME,
     STREET_BASE_LAYER_NAME,
     STREET_TILE_URL,
     LayersClass,
+    build_mapbox_satellite_tile_url,
     build_school_layer_geojson_from_gdf,
     build_school_preview_url,
     filter_school_layer_geojson,
@@ -123,10 +124,11 @@ def test_build_school_preview_url_points_to_world_imagery_export() -> None:
     assert params["f"] == ["image"]
 
 
-def test_layers_control_includes_shared_basemaps_and_parcel_tiles() -> None:
+def test_layers_control_omits_satellite_without_mapbox_token(monkeypatch) -> None:
+    monkeypatch.delenv("MAPBOX_ACCESS_TOKEN", raising=False)
     control = LayersClass.create_layers_control("lease", ["oil_well"])
 
-    street, aerial, parcels, oil_wells = control.children
+    street, parcels, oil_wells = control.children
 
     assert isinstance(street, dl.BaseLayer)
     assert street.name == STREET_BASE_LAYER_NAME
@@ -135,12 +137,6 @@ def test_layers_control_includes_shared_basemaps_and_parcel_tiles() -> None:
     assert street.children.url == STREET_TILE_URL
     assert "openstreetmap.org/fixthemap" in street.children.attribution
     assert street.children.maxNativeZoom == 19
-
-    assert isinstance(aerial, dl.BaseLayer)
-    assert aerial.name == LARIAC_AERIAL_BASE_LAYER_NAME
-    assert aerial.checked is False
-    assert aerial.children.url == LARIAC_AERIAL_TILE_URL
-    assert aerial.children.maxNativeZoom == 21
 
     assert isinstance(parcels, dl.Overlay)
     assert parcels.name == LA_COUNTY_PARCEL_LAYER_NAME
@@ -153,7 +149,36 @@ def test_layers_control_includes_shared_basemaps_and_parcel_tiles() -> None:
     assert oil_wells.name == "Oil & Gas Wells"
 
 
-def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom() -> None:
+def test_layers_control_includes_mapbox_satellite_when_configured(monkeypatch) -> None:
+    monkeypatch.setenv("MAPBOX_ACCESS_TOKEN", "pk.test-token")
+
+    control = LayersClass.create_layers_control("lease", [])
+    street, satellite, parcels = control.children
+
+    assert street.name == STREET_BASE_LAYER_NAME
+    assert isinstance(satellite, dl.BaseLayer)
+    assert satellite.name == MAPBOX_SATELLITE_BASE_LAYER_NAME
+    assert satellite.checked is False
+    assert satellite.children.url == (
+        "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.jpg90"
+        "?access_token=pk.test-token"
+    )
+    assert satellite.children.maxNativeZoom == 21
+    assert "mapboxgl-ctrl-logo" in satellite.children.attribution
+    assert "&copy; Mapbox" in satellite.children.attribution
+    assert "&copy; OpenStreetMap" in satellite.children.attribution
+    assert "&copy; Maxar" in satellite.children.attribution
+    assert "Improve this map" in satellite.children.attribution
+    assert parcels.name == LA_COUNTY_PARCEL_LAYER_NAME
+
+
+def test_build_mapbox_satellite_tile_url_rejects_blank_token() -> None:
+    with pytest.raises(ValueError, match="must not be blank"):
+        build_mapbox_satellite_tile_url("  ")
+
+
+def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom(monkeypatch) -> None:
+    monkeypatch.delenv("MAPBOX_ACCESS_TOKEN", raising=False)
     control = LayersClass.create_layers_control("buy", [])
     map_component = build_map(
         page_type="buy",
