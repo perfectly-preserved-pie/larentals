@@ -5,7 +5,7 @@ const LAZY_LAYER_NAMES = {
   farmers_markets: "Farmers Markets",
   breakfast_burritos: "Breakfast Burritos",
   supermarkets_grocery: "Supermarkets & Grocery Stores",
-  alpr_cameras: "ALPR Cameras",
+  alpr_cameras: "Flock & Other License Plate Reader Cameras",
   parking_tickets_density: "Parking Tickets Heatmap (2025)",
   lahd_property_heatmap: "Housing Department Cases & Code Violations Heatmap",
 };

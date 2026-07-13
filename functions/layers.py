@@ -46,7 +46,7 @@ MAPBOX_SATELLITE_ATTRIBUTION = (
     'Improve this map</a>'
 )
 
-LA_COUNTY_PARCEL_LAYER_NAME = "Parcel boundaries"
+LA_COUNTY_PARCEL_LAYER_NAME = "Property Lines (LA County Parcels)"
 LA_COUNTY_PARCEL_TILE_URL = (
     "https://cache.gis.lacounty.gov/cache/rest/services/"
     "LACounty_Cache/LACounty_Parcel/MapServer/tile/{z}/{y}/{x}"
@@ -755,7 +755,7 @@ class LayersClass:
             valid_bounds=(-125.0, -113.0, 32.0, 35.5),
         ),
         'alpr_cameras': LayerConfig(
-            name='ALPR Cameras',
+            name='Flock & Other License Plate Reader Cameras',
             dataset='alpr_cameras',
             loader=load_alpr_camera_geojson,
             point_to_layer='drawAlprCameraIcon',
