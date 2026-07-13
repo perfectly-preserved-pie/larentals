@@ -29,7 +29,7 @@ The map layer control supports two selectable basemaps and an optional parcel ov
 
 * **Street map** uses the canonical [OpenStreetMap raster tile service](https://operations.osmfoundation.org/policies/tiles/) with visible license attribution and a [report-a-map-issue link](https://www.openstreetmap.org/fixthemap).
 * **Satellite imagery** uses the [Mapbox Satellite Raster Tiles API](https://docs.mapbox.com/api/maps/raster-tiles/) when a public `MAPBOX_ACCESS_TOKEN` is configured.
-* **Parcel boundaries** uses the cached [LA County Assessor parcel map service](https://www.arcgis.com/home/item.html?id=5b277305f006459586a70165065d0fd6).
+* **Property Lines (LA County Parcels)** uses the cached [LA County Assessor parcel map service](https://www.arcgis.com/home/item.html?id=5b277305f006459586a70165065d0fd6).
 
 Tiles are requested by the user's browser directly from the upstream services; this project does not download, cache, or redistribute satellite imagery or countywide parcel tiles. Satellite use remains subject to the [Mapbox terms](https://www.mapbox.com/legal/tos/), while parcel use remains subject to the [LA County Enterprise GIS terms](https://egis-lacounty.hub.arcgis.com/pages/terms-of-use) and the source item's license information.
 
