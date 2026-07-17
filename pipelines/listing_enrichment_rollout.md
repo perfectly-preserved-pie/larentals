@@ -96,7 +96,7 @@ Expose next:
 - Add optional overlays for school points
 - Build school points as a local artifact pipeline:
   - download the official California Public Schools GeoPackage
-  - export a slim `assets/datasets/schools_socal.geojson` for the Dash map layer
+  - export a slim `data/derived/layers/schools_socal.geojson` for the Dash map layer
   - use the same local schools GeoPackage plus a local districts GeoJSON as the
     default `enrich-schools` inputs, auto-downloading the official artifacts
     when those defaults are missing

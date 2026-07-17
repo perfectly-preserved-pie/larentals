@@ -15,8 +15,9 @@ import sqlite3
 
 from functions.layers import LayersClass
 from functions.sql_helpers import get_latest_date_processed
+from functions.data_paths import LARENTALS_DB_PATH
 
-DB_PATH = "assets/datasets/larentals.db"
+DB_PATH = str(LARENTALS_DB_PATH)
 DEFAULT_SPEED_MAX = 1.0
 logger = logging.getLogger(__name__)
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")

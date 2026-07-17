@@ -87,11 +87,11 @@ def main():
     parser.add_argument('--buffer_distance', type=float, default=10, help='Buffer distance for the spatial join.')
     args = parser.parse_args()
 
-    # Hard-coded paths in the assets/datasets folder
-    palisades_geojson_path = 'assets/datasets/DINS_2025_Palisades_Public_View.geojson'
-    eaton_geojson_path = 'assets/datasets/DINS_2025_Eaton_Public_View.geojson'
-    lease_geojson_path = 'assets/datasets/lease.geojson'
-    buy_geojson_path = 'assets/datasets/buy.geojson'
+    # Historical pipeline artifacts stored beneath the private data directory.
+    palisades_geojson_path = 'data/derived/layers/DINS_2025_Palisades_Public_View.geojson'
+    eaton_geojson_path = 'data/derived/layers/DINS_2025_Eaton_Public_View.geojson'
+    lease_geojson_path = 'data/derived/layers/lease.geojson'
+    buy_geojson_path = 'data/derived/layers/buy.geojson'
 
     lease_gdf, buy_gdf = check_fire_damage(
         palisades_geojson_path, 

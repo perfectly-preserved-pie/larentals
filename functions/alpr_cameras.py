@@ -12,12 +12,12 @@ import urllib.request
 
 from loguru import logger
 import orjson
+from functions.data_paths import ALPR_CAMERAS_PATH
 
 GeoJsonDict: TypeAlias = dict[str, Any]
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ALPR_CAMERA_SOURCE_URL = "https://data.dontgetflocked.com/cameras.geojson.gz"
-DEFAULT_ALPR_CAMERA_OUTPUT_PATH = PROJECT_ROOT / "assets" / "datasets" / "alpr_cameras.geojson.gz"
+DEFAULT_ALPR_CAMERA_OUTPUT_PATH = ALPR_CAMERAS_PATH
 ALPR_CAMERA_ARTIFACT_VERSION = 1
 ALPR_CAMERA_USER_AGENT = "WhereToLive.LA alpr-camera-fetch/1.0"
 

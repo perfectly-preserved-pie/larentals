@@ -10,9 +10,9 @@
 **/__pycache__/
 *dataframe.py
 assets/dashExtensions_default.js
-assets/datasets/*.bak
-assets/datasets/DINS*
-assets/datasets/ca_broadband_geopackage.gpkg*
+data/**/*.bak
+data/derived/layers/DINS*
+data/sources/broadband/ca_broadband_geopackage.gpkg*
 include/
 pipelines/
 scripts/

@@ -4,12 +4,13 @@ from loguru import logger
 from typing import Sequence, Dict, Optional, Tuple
 import json
 import pandas as pd
+from functions.data_paths import LARENTALS_DB_PATH
 import re
 import requests
 import sqlite3
 import sys
 
-DB = "assets/datasets/larentals.db"
+DB = str(LARENTALS_DB_PATH)
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")

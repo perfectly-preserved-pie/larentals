@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+from functions.data_paths import LARENTALS_DB_PATH
 from typing import Optional
 import json
 import re
@@ -221,7 +222,7 @@ def backfill_lease_terms(db_path: str) -> None:
 
 
 def main() -> None:
-    db_path = Path(__file__).resolve().parent.parent / "assets/datasets/larentals.db"
+    db_path = LARENTALS_DB_PATH
     backfill_lease_terms(str(db_path))
 
 

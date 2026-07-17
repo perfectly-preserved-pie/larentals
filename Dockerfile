@@ -7,15 +7,15 @@ RUN uv sync --frozen
 
 COPY . /app
 
-# JS files and the datasets directory need to be writable by the non-root user in the runtime image, so we set permissions here in the builder stage
-RUN mkdir -p /app/assets/datasets \
+# JS files and runtime data need to be writable by the non-root user in the runtime image.
+RUN mkdir -p /app/data/runtime \
  && touch /app/assets/dashExtensions_default.js \
  && chown 65532:65532 /app/assets \
  && chown 65532:65532 /app/assets/dashExtensions_default.js \
- && chown -R 65532:65532 /app/assets/datasets \
+ && chown -R 65532:65532 /app/data \
  && chmod 755 /app/assets \
  && chmod 664 /app/assets/dashExtensions_default.js \
- && chmod 755 /app/assets/datasets
+ && chmod 755 /app/data /app/data/runtime
 
 FROM dhi.io/python:3.13 AS runtime
 WORKDIR /app

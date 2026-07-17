@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 from functions.alpr_cameras import load_alpr_camera_geojson
 from functions.lahd import build_lahd_property_heat_geojson
 from functions.parking_tickets import build_parking_tickets_heat_geojson
+from functions.data_paths import (
+    BREAKFAST_BURRITOS_PATH,
+    FARMERS_MARKETS_PATH,
+    OIL_WELLS_PATH,
+    SCHOOLS_SOCAL_PATH,
+    SUPERMARKETS_PATH,
+    CA_PUBLIC_SCHOOLS_GPKG_PATH,
+)
 from loguru import logger
 from typing import Any, Callable, ClassVar, Optional, Sequence, TypedDict, TypeAlias
 import dash_leaflet as dl
@@ -56,8 +64,8 @@ LA_COUNTY_PARCEL_ATTRIBUTION = (
     'id=5b277305f006459586a70165065d0fd6">LA County Office of the Assessor</a>'
 )
 
-DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = Path("assets/datasets/schools_socal.geojson")
-DEFAULT_SCHOOL_LAYER_GPKG_PATH = Path("assets/datasets/california_public_schools_2024_25.gpkg")
+DEFAULT_SCHOOL_LAYER_GEOJSON_PATH = SCHOOLS_SOCAL_PATH
+DEFAULT_SCHOOL_LAYER_GPKG_PATH = CA_PUBLIC_SCHOOLS_GPKG_PATH
 DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX = 12000
 SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS: tuple[str, ...] = (
     "PK-5",
@@ -715,7 +723,7 @@ class LayersClass:
         'oil_well': LayerConfig(
             name='Oil & Gas Wells',
             dataset='oil_well',
-            filepath='assets/datasets/oil_wells.geojson',
+            filepath=str(OIL_WELLS_PATH),
             point_to_layer='drawOilIcon',
             cluster_to_layer='drawOilCluster',
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
@@ -724,14 +732,14 @@ class LayersClass:
         'crime': LayerConfig(
             name='Crime',
             dataset='crime',
-            filepath='assets/datasets/crime.geojson',
+            filepath='data/derived/layers/crime.geojson',
             point_to_layer='drawCrimeIcon',
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
         ),
         'farmers_markets': LayerConfig(
             name='Farmers Markets',
             dataset='farmers_markets',
-            filepath='assets/datasets/farmers_markets.geojson',
+            filepath=str(FARMERS_MARKETS_PATH),
             point_to_layer='drawFarmersMarketIcon',
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
@@ -739,7 +747,7 @@ class LayersClass:
         'breakfast_burritos': LayerConfig(
             name='Breakfast Burritos',
             dataset='breakfast_burritos',
-            filepath='assets/datasets/breakfast_burritos.geojson',
+            filepath=str(BREAKFAST_BURRITOS_PATH),
             point_to_layer='drawBreakfastBurritoIcon',
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,
@@ -748,7 +756,7 @@ class LayersClass:
         'supermarkets_grocery': LayerConfig(
             name='Supermarkets & Grocery Stores',
             dataset='supermarkets_grocery',
-            filepath='assets/datasets/supermarkets_and_grocery_stores.geojson',
+            filepath=str(SUPERMARKETS_PATH),
             point_to_layer='drawSupermarketIcon',
             bubbling_mouse_events=False,
             supercluster_options=DEFAULT_SUPERCLUSTER_OPTIONS,

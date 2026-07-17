@@ -10,6 +10,7 @@ import orjson
 import re
 import requests
 import time
+from functions.data_paths import PARKING_TICKETS_HEATMAP_PATH
 
 load_dotenv(find_dotenv(), override=False)
 
@@ -28,10 +29,7 @@ PARKING_TICKETS_MARKER_MERGE_DISTANCE_METERS = 40.0
 PARKING_TICKETS_REQUEST_TIMEOUT_SECONDS = 45
 PARKING_TICKETS_ARTIFACT_VERSION = 4
 MAX_REASONABLE_FINE_AMOUNT = 2500.0
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PARKING_TICKETS_LOCAL_ARTIFACT_PATH = (
-    PROJECT_ROOT / "assets" / "datasets" / f"parking_tickets_heatmap_{PARKING_TICKETS_DATASET_YEAR}.json.gz"
-)
+PARKING_TICKETS_LOCAL_ARTIFACT_PATH = PARKING_TICKETS_HEATMAP_PATH
 LA_CITY_COORDINATE_BOUNDS = {
     "min_lat": 33.70,
     "max_lat": 34.35,
@@ -151,7 +149,7 @@ def load_local_parking_tickets_heat_geojson() -> GeoJsonDict | None:
     Load the precomputed local 2025 parking heatmap artifact when present.
 
     Returns:
-        Parsed GeoJSON payload from `assets/datasets/parking_tickets_heatmap_2025.json.gz`,
+        Parsed GeoJSON payload from the private parking-tickets artifact,
         or `None` when the artifact is missing or invalid.
     """
     artifact_path = PARKING_TICKETS_LOCAL_ARTIFACT_PATH
@@ -191,7 +189,7 @@ def write_local_parking_tickets_heat_geojson(
     Args:
         payload: GeoJSON `FeatureCollection` to save as a gzipped JSON artifact.
         output_path: Optional artifact destination. Defaults to the canonical
-            `assets/datasets/parking_tickets_heatmap_2025.json.gz` path.
+            configured parking-tickets artifact path.
 
     Returns:
         Absolute path to the saved artifact file.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import argparse
 from pathlib import Path
+from functions.data_paths import CA_BROADBAND_GEOPACKAGE_PATH, LARENTALS_DB_PATH
 import sys
 
 # Add parent directory to path so 'functions' module can be found
@@ -11,8 +12,8 @@ from functions.broadband_spatial_merge_utils import (
     write_provider_options_from_geopackage,
 )
 
-DEFAULT_DB_PATH = "assets/datasets/larentals.db"
-DEFAULT_GEOPACKAGE_PATH = "assets/datasets/ca_broadband_geopackage.gpkg"
+DEFAULT_DB_PATH = str(LARENTALS_DB_PATH)
+DEFAULT_GEOPACKAGE_PATH = str(CA_BROADBAND_GEOPACKAGE_PATH)
 DEFAULT_GEOPACKAGE_LAYER = "ca_broadband_availability_aggregate"
 
 

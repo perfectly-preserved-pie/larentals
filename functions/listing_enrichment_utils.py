@@ -15,8 +15,13 @@ import geopandas as gpd
 import pandas as pd
 import pyogrio
 from pyproj import Transformer
+from functions.data_paths import (
+    CA_PUBLIC_SCHOOLS_GPKG_PATH,
+    CA_SCHOOL_DISTRICTS_GEOJSON_PATH,
+    LARENTALS_DB_PATH,
+)
 
-DEFAULT_DB_PATH = Path("assets/datasets/larentals.db")
+DEFAULT_DB_PATH = LARENTALS_DB_PATH
 LISTING_TABLES: tuple[str, str] = ("buy", "lease")
 ListingTable = Literal["buy", "lease"]
 DEFAULT_REGION_NAME = "southern-california"
@@ -28,16 +33,12 @@ DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_URL = (
     "https://gis.data.ca.gov/api/download/v1/items/"
     "586424d4a1964277a2e0b73191da51bb/geoPackage?layers=0"
 )
-DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_PATH = Path(
-    "assets/datasets/california_public_schools_2024_25.gpkg"
-)
+DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_PATH = CA_PUBLIC_SCHOOLS_GPKG_PATH
 DEFAULT_CA_SCHOOL_DISTRICTS_GEOJSON_URL = (
     "https://gis.data.ca.gov/api/download/v1/items/"
     "b0e3b936426a47ce9d9a2e77e2bb86cc/geojson?layers=0"
 )
-DEFAULT_CA_SCHOOL_DISTRICTS_GEOJSON_PATH = Path(
-    "assets/datasets/california_school_district_areas_2024_25.geojson"
-)
+DEFAULT_CA_SCHOOL_DISTRICTS_GEOJSON_PATH = CA_SCHOOL_DISTRICTS_GEOJSON_PATH
 
 COMMON_ENRICHMENT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("mls_number", "TEXT PRIMARY KEY"),

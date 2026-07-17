@@ -9,9 +9,10 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 import requests
+from functions.data_paths import LARENTALS_DB_PATH, SOCAL_SERVICE_AREA_ZIP_CODES_PATH
 
-DEFAULT_DB_PATH = Path("assets/datasets/larentals.db")
-DEFAULT_OUTPUT_PATH = Path("assets/datasets/socal_service_area_zip_codes.geojson")
+DEFAULT_DB_PATH = LARENTALS_DB_PATH
+DEFAULT_OUTPUT_PATH = SOCAL_SERVICE_AREA_ZIP_CODES_PATH
 DEFAULT_TABLES = ("buy", "lease")
 DEFAULT_ZCTA_LAYER_URL = (
     "https://services5.arcgis.com/FlidZxdI0LGC9vAw/arcgis/rest/services/"

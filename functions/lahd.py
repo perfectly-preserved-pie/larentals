@@ -15,18 +15,22 @@ from loguru import logger
 import orjson
 import requests
 from shapely.geometry import Point, shape
+from functions.data_paths import (
+    LA_CITY_BOUNDARY_PATH,
+    LAHD_PROPERTY_GEOCODE_CACHE_PATH,
+    LAHD_PROPERTY_HEATMAP_PATH,
+    LAHD_PROPERTY_LOOKUP_PATH,
+)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LAHD_INVESTIGATION_DATASET_URL = "https://data.lacity.org/resource/eagk-wq48.json"
 LAHD_VIOLATION_DATASET_URL = "https://data.lacity.org/resource/cr8f-uc4j.json"
 LAHD_INVESTIGATION_SOURCE_URL = "https://data.lacity.org/d/eagk-wq48"
 LAHD_VIOLATION_SOURCE_URL = "https://data.lacity.org/d/cr8f-uc4j"
 LAHD_PARCEL_QUERY_URL = "https://maps.lacity.org/lahub/rest/services/Landbase_Information/MapServer/7/query"
-LAHD_LOCAL_ARTIFACT_PATH = PROJECT_ROOT / "assets" / "datasets" / "lahd_property_heatmap.json.gz"
-LAHD_LOCAL_LOOKUP_ARTIFACT_PATH = PROJECT_ROOT / "assets" / "datasets" / "lahd_property_lookup.json.gz"
-LAHD_GEOCODE_CACHE_PATH = PROJECT_ROOT / "assets" / "datasets" / "lahd_property_geocode_cache.json"
-LA_CITY_BOUNDARY_PATH = PROJECT_ROOT / "assets" / "datasets" / "la_city_boundary.geojson"
+LAHD_LOCAL_ARTIFACT_PATH = LAHD_PROPERTY_HEATMAP_PATH
+LAHD_LOCAL_LOOKUP_ARTIFACT_PATH = LAHD_PROPERTY_LOOKUP_PATH
+LAHD_GEOCODE_CACHE_PATH = LAHD_PROPERTY_GEOCODE_CACHE_PATH
 LAHD_REQUEST_TIMEOUT_SECONDS = 180
 LAHD_ARTIFACT_VERSION = 1
 LAHD_DEFAULT_AGGREGATE_LIMIT = 25000

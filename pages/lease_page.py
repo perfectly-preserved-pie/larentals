@@ -14,6 +14,7 @@ from functions.zip_geocoding_utils import (
   load_zip_polygons,
 )
 from functions.sql_helpers import get_earliest_listed_date
+from functions.data_paths import LARENTALS_DB_PATH, SOCAL_SERVICE_AREA_ZIP_CODES_PATH, ZIP_PLACE_CROSSWALK_PATH
 from loguru import logger
 import bleach
 import dash
@@ -35,10 +36,10 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 
 # Load the DB-scoped service-area ZIP/ZCTA polygons once at module load time
-ZIP_POLYGONS = load_zip_polygons("assets/datasets/socal_service_area_zip_codes.geojson")
+ZIP_POLYGONS = load_zip_polygons(str(SOCAL_SERVICE_AREA_ZIP_CODES_PATH))
 
 # Load the HUD ZIP-to-city crosswalk once at module load time
-ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk("assets/datasets/ZIP_COUNTY_092025.csv")
+ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk(str(ZIP_PLACE_CROSSWALK_PATH))
 
 
 @lru_cache(maxsize=1)
@@ -76,7 +77,7 @@ def layout(**_: object) -> dbc.Container:
   )
   kickstart = dcc.Interval(id="lease-boot", interval=50, n_intervals=0, max_intervals=1)
   # Create a Store to hold the earliest listed date
-  earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date("assets/datasets/larentals.db", table_name="lease", date_column="listed_date"))
+  earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date(str(LARENTALS_DB_PATH), table_name="lease", date_column="listed_date"))
 
   return dbc.Container(
     [

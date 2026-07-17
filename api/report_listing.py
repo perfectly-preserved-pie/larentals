@@ -3,6 +3,7 @@ from typing import Any
 
 import bleach
 from flask import Response, abort, jsonify, request
+from functions.data_paths import LARENTALS_DB_PATH
 from functions.listing_report_utils import (
     ensure_listing_reports_schema,
     infer_listing_type_from_page_path,
@@ -25,7 +26,7 @@ MAX_REPORT_TEXT_LENGTH = 2000
 
 def register_report_listing_routes(
     server: Any,
-    db_path: str = "assets/datasets/larentals.db",
+    db_path: str = str(LARENTALS_DB_PATH),
 ) -> None:
     """
     Register the user-facing listing report endpoint.

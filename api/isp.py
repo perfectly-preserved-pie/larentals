@@ -2,6 +2,7 @@ import sqlite3
 from typing import Any
 
 from flask import Blueprint, Response, jsonify
+from functions.data_paths import LARENTALS_DB_PATH
 
 LEASE_ISP_SQL = """
   SELECT
@@ -111,7 +112,7 @@ def build_provider_option_payload(rows: list[sqlite3.Row]) -> list[dict[str, Any
     return result
 
 
-def register_isp_routes(server: Any, db_path: str = "assets/datasets/larentals.db") -> None:
+def register_isp_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
     """
     Register HTTP routes for fetching ISP options on-demand.
 

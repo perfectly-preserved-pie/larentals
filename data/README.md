@@ -1,6 +1,27 @@
-# Datasets
+# Data artifacts
 
-This file dictates where to get the various additional datasets in this folder.
+Application data is intentionally outside `assets/`: Dash serves that directory
+to browsers, while the files here are private runtime inputs and pipeline outputs.
+
+```text
+data/
+├── runtime/     # Mutable application state (the SQLite listing database)
+├── sources/     # Downloaded or maintained upstream/reference inputs
+├── derived/     # Reproducible application-ready layers and lookups
+└── cache/       # Rebuildable geocoding caches
+```
+
+This file documents the upstream sources and builders for the artifacts below.
+
+## Artifact locations
+
+| Category | Location |
+| --- | --- |
+| Live listings database | `runtime/larentals.db` |
+| Upstream broadband, education, and geography inputs | `sources/<domain>/` |
+| Browser-independent map layers | `derived/layers/` |
+| Derived property lookup snapshots | `derived/lookups/` |
+| Rebuildable geocoding state | `cache/` |
 
 ## Farmers Markets
 

@@ -1,5 +1,6 @@
 from dash import Dash, clientside_callback, ClientsideFunction, Input, Output, dcc
 from api import register_api_routes
+from functions.data_paths import LARENTALS_DB_PATH
 from dash_extensions import EventListener
 from flask_compress import Compress
 from flask import Response
@@ -213,7 +214,7 @@ clientside_callback(
   Output("theme-switch-store", "data"),
   Input("color-scheme-switch", "checked"),
 )
-register_api_routes(server, db_path="assets/datasets/larentals.db")
+register_api_routes(server, db_path=str(LARENTALS_DB_PATH))
 register_lahd_records_drawer_callback(app)
 prewarm_startup_caches()
 

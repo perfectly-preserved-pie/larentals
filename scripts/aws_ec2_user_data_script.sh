@@ -6,11 +6,11 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 # Configuration variables
 SAMPLE_SIZE=30
 BASE_DIR=/home/ubuntu/larentals
-DB_PATH=$BASE_DIR/assets/datasets/larentals.db
+DB_PATH=$BASE_DIR/data/runtime/larentals.db
 S3_URI=s3://wheretolivedotla-geojsonstorage/larentals.db
-BROADBAND_GEOPACKAGE_PATH=$BASE_DIR/assets/datasets/ca_broadband_geopackage.gpkg
+BROADBAND_GEOPACKAGE_PATH=$BASE_DIR/data/sources/broadband/ca_broadband_geopackage.gpkg
 BROADBAND_GEOPACKAGE_LAYER=ca_broadband_availability_aggregate
-ALPR_CAMERAS_PATH=$BASE_DIR/assets/datasets/alpr_cameras.geojson.gz
+ALPR_CAMERAS_PATH=$BASE_DIR/data/derived/layers/alpr_cameras.geojson.gz
 
 # Log directories
 SAMPLE_LOG_DIR=~/larentals/sample

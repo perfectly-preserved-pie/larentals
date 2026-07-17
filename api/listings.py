@@ -2,6 +2,7 @@ import sqlite3
 from typing import Any
 
 from flask import Blueprint, Response, abort, jsonify
+from functions.data_paths import LARENTALS_DB_PATH
 from functions.lahd import (
     is_listing_in_los_angeles_city,
     live_lahd_datasets_available,
@@ -85,7 +86,7 @@ def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | No
     return {key: row[key] for key in row.keys()}
 
 
-def register_listing_routes(server: Any, db_path: str = "assets/datasets/larentals.db") -> None:
+def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
     """
     Register on-demand listing-detail routes used by lazy-loaded popups.
 

@@ -9,13 +9,14 @@ from contextlib import closing
 from datetime import date
 from math import ceil
 from pathlib import Path
+from functions.data_paths import LARENTALS_DB_PATH
 import sqlite3
 from typing import Any, Literal, TypeAlias, TypedDict
 
 from dash.mcp import configure_mcp_server, mcp_enabled
 
 
-DEFAULT_DB_PATH: Path = Path("assets/datasets/larentals.db")
+DEFAULT_DB_PATH: Path = LARENTALS_DB_PATH
 MAX_PAGE_SIZE: int = 20
 
 ListingType: TypeAlias = Literal["lease", "buy"]

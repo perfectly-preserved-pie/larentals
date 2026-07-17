@@ -9,12 +9,13 @@ from pathlib import Path
 from typing import Any
 
 import requests
+from functions.data_paths import SANTA_MONICA_SUPERMARKETS_GEOCODE_CACHE_PATH, SUPERMARKETS_PATH
 
 LOCATION_PATTERN = re.compile(r"\((-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\)")
 DEFAULT_VALID_BOUNDS = (-125.0, -113.0, 32.0, 35.5)
 DEFAULT_NAICS_CODES = ("445100", "445110")
-DEFAULT_OUTPUT_PATH = Path("assets/datasets/supermarkets_and_grocery_stores.geojson")
-DEFAULT_GEOCODE_CACHE_PATH = Path("assets/datasets/santa_monica_supermarkets_geocode_cache.json")
+DEFAULT_OUTPUT_PATH = SUPERMARKETS_PATH
+DEFAULT_GEOCODE_CACHE_PATH = SANTA_MONICA_SUPERMARKETS_GEOCODE_CACHE_PATH
 DEFAULT_SANTA_MONICA_RESOURCE_ID = "484fe63d-a388-43fa-9714-8601254afcf0"
 DEFAULT_SANTA_MONICA_API_URL = "https://data.santamonica.gov/api/3/action/datastore_search_sql"
 DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -46,7 +47,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--input",
-        default="assets/datasets/Listing_of_Active_Businesses_20260321.csv",
+        default="data/sources/points-of-interest/Listing_of_Active_Businesses_20260321.csv",
         help="Path to the source City of Los Angeles active-businesses CSV.",
     )
     parser.add_argument(

@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, unquote, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
+from functions.data_paths import BREAKFAST_BURRITOS_PATH
 
 SOURCE_NAME = "LABreakfastBurrito"
 SOURCE_URL = "https://labreakfastburrito.com/"
@@ -23,7 +24,7 @@ SHEET_HTML_URL = (
     "2PACX-1vRtLslbRsQydGCHn7TxcPZl1682DkrpdXXRgARONtraYuxUrzII6y3Y_pviMvxjDzeryCty8WXhiQwn/"
     "pubhtml/sheet?headers=false&gid=0"
 )
-DEFAULT_OUTPUT_PATH = Path("assets/datasets/breakfast_burritos.geojson")
+DEFAULT_OUTPUT_PATH = BREAKFAST_BURRITOS_PATH
 
 THREED_FOURD_RE = re.compile(r"!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)")
 AT_COORDS_RE = re.compile(r"@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)")

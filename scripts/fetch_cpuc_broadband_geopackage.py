@@ -5,6 +5,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from functions.data_paths import CA_BROADBAND_GEOPACKAGE_PATH
 import shutil
 import subprocess
 import tempfile
@@ -19,7 +20,7 @@ DEFAULT_SOURCE_URL = (
     "documents/broadband-mapping/fgdb_shp_data-as-of-eoy-cibm2024/"
     "fixed_consumer_deployment_eoy2024.zip"
 )
-DEFAULT_OUTPUT_PATH = "assets/datasets/ca_broadband_geopackage.gpkg"
+DEFAULT_OUTPUT_PATH = str(CA_BROADBAND_GEOPACKAGE_PATH)
 DEFAULT_LAYER_NAME = "ca_broadband_availability_aggregate"
 USER_AGENT = "larentals-cpuc-broadband-fetch/1.0"
 

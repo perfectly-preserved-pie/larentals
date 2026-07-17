@@ -13,7 +13,7 @@
   },
   "feature_count": 9577,
   "generated_at": "2026-07-10T01:39:16.841414+00:00",
-  "output_path": "/home/straying/larentals/assets/datasets/alpr_cameras.geojson.gz",
+  "output_path": "/home/straying/larentals/data/derived/layers/alpr_cameras.geojson.gz",
   "source_feature_count": 113038,
   "source_headers": {
     "ETag": "W/\"218f3fdd55bce2f25d5901670e2f4b06\""

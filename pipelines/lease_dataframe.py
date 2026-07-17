@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
+from functions.data_paths import LARENTALS_DB_PATH
 from functions.geocoding_utils import *
 from functions.listing_report_utils import (
   get_reported_inactive_mls_numbers,
@@ -77,7 +78,7 @@ def main() -> None:
   )
 
   # Database path and table name
-  DB_PATH = "assets/datasets/larentals.db"
+  DB_PATH = str(LARENTALS_DB_PATH)
   TABLE_NAME = "lease"
 
   try:
@@ -366,7 +367,7 @@ def main() -> None:
       logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
 
     # Reclaim space in ImageKit
-    #reclaim_imagekit_space(geojson_path="assets/datasets/lease.geojson", imagekit_instance=imagekit)
+    #reclaim_imagekit_space(geojson_path="data/derived/layers/lease.geojson", imagekit_instance=imagekit)
   except Exception as e:
     logger.exception(f"Error in lease pipeline: {e}")
     sys.exit(1)

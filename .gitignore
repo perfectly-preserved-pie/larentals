@@ -6,8 +6,8 @@ __pycache__/
 *.cpython
 *.pyc
 assets/dashExtensions_default.js
-assets/datasets/DINS*
-assets/datasets/ca_broadband_geopackage.gpkg*
+data/derived/layers/DINS*
+data/sources/broadband/ca_broadband_geopackage.gpkg*
 env
 include/
 

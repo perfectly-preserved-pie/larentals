@@ -8,7 +8,7 @@ is now scripted:
 
 ```bash
 uv run fetch-cpuc-broadband-geopackage \
-  --output assets/datasets/ca_broadband_geopackage.gpkg \
+  --output data/sources/broadband/ca_broadband_geopackage.gpkg \
   --layer ca_broadband_availability_aggregate
 
 uv run run-broadband-merge
@@ -84,7 +84,7 @@ That’s why buffering points by ~25–75m before intersecting often improves ma
 You can also just run this sqlite3 command against the GPKG to see which polygons intersect the listing point:
 
 ```bash
-sqlite3 assets/datasets/larentals.db "
+sqlite3 data/runtime/larentals.db "
 SELECT DBA, MaxAdDn, MaxAdUp, Service_Type
 FROM lease_provider_options
 WHERE listing_id = '25584589'
