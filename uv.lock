@@ -298,7 +298,7 @@ wheels = [
 
 [[package]]
 name = "dash-extensions"
-version = "2.0.5"
+version = "2.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dash" },
@@ -308,9 +308,9 @@ dependencies = [
     { name = "more-itertools" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/c2/feb284e47ba3a1f759d6c95003b83522c970690cf6baf3a21096c4f36263/dash_extensions-2.0.5.tar.gz", hash = "sha256:5ee9b444d5e4318637019fcd513857f9b4f488569963fa270f77ee07802e5405", size = 998632, upload-time = "2026-03-05T12:02:58.782Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/75/6ad77416195f3c93e4dbbb380e1d254c8a3927603781901e3826a157bab3/dash_extensions-2.0.6.tar.gz", hash = "sha256:84e0b2d60e48983fa275dc11df87b57b1930bfe0efe9ffafdc253199027c9fa8", size = 998460, upload-time = "2026-07-16T08:20:35.471Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/8b/cff245f82a869ca897545c2adbeacaddd6cc7851f7c9f9832337b4cdd976/dash_extensions-2.0.5-py3-none-any.whl", hash = "sha256:e672f693c799614c6ca802c2ca07f0c083042647983114d42b7c5fd1c7fa25e6", size = 1019240, upload-time = "2026-03-05T12:02:57.095Z" },
+    { url = "https://files.pythonhosted.org/packages/23/22/4b66512a5c4109e728a4aed324203a4d0583a16fe0c794856c1ab60460f1/dash_extensions-2.0.6-py3-none-any.whl", hash = "sha256:35a9ef516dd9431e472b68a76f4ae63a95223fcf9d319dfac79278157de85670", size = 1019130, upload-time = "2026-07-16T08:20:33.861Z" },
 ]
 
 [[package]]
@@ -1257,7 +1257,7 @@ requires-dist = [
     { name = "dash", specifier = "~=4.4.0" },
     { name = "dash-ag-grid", specifier = ">=35.2.0" },
     { name = "dash-bootstrap-components", specifier = "~=2.0.4" },
-    { name = "dash-extensions", specifier = "~=2.0.4" },
+    { name = "dash-extensions", specifier = "~=2.0.6" },
     { name = "dash-iconify", specifier = ">=0.1.2" },
     { name = "dash-leaflet", specifier = "~=1.1.3" },
     { name = "dash-mantine-components", specifier = "~=2.8.0" },
