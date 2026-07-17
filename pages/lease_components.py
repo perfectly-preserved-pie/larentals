@@ -303,8 +303,8 @@ class LeaseComponents(BaseClass):
                     value="any",
                     data=[
                         {"label": "Any", "value": "any"},
-                        {"label": "All covered", "value": "all"},
-                        {"label": "Some covered", "value": "some"},
+                        {"label": "All units covered", "value": "all"},
+                        {"label": "Some units covered", "value": "some"},
                         {"label": "Unknown", "value": "unknown"},
                     ],
                     orientation="vertical",
