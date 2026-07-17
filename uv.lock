@@ -274,14 +274,14 @@ wheels = [
 
 [[package]]
 name = "dash-ag-grid"
-version = "35.2.0"
+version = "35.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/4d/259d21112a087a23ecd2f7dd651412755bf0547835805c38f3c77c971052/dash_ag_grid-35.2.0.tar.gz", hash = "sha256:507f5dccf7235bf1b9af2c59d4cd0f12205db03c3489f605948f13c72bcece4f", size = 5794514, upload-time = "2026-04-03T10:46:26.05Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/77/966331b34607378bb404fda988528b4fcb26f43169aa0e1548e76f0363b2/dash_ag_grid-35.3.0.tar.gz", hash = "sha256:012f7e7d5bff4862d1377ccb545ae2c80577e7909e118a88f1c408ff03a2403e", size = 6009070, upload-time = "2026-07-15T17:04:48.657Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/71/7f97793a3449ee5218f0fb820c03c15be11a7c6d0c61c37d38779b753d4e/dash_ag_grid-35.2.0-py3-none-any.whl", hash = "sha256:b8b33780faa7322101b0559658da2a301a58a3329ff6a2c45f1490f0c3719df9", size = 5836952, upload-time = "2026-04-03T10:46:23.957Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/c8/c56a0278b1a6789f53c162313136ddba2fce175209bb958d7d43898f8355/dash_ag_grid-35.3.0-py3-none-any.whl", hash = "sha256:7cc0ca54fe8be4deab044d89975819f6e9ac66904c84310becbf68cdce74a4e9", size = 6051445, upload-time = "2026-07-15T17:04:46.364Z" },
 ]
 
 [[package]]
@@ -1255,7 +1255,7 @@ requires-dist = [
     { name = "boto3", specifier = "~=1.43.45" },
     { name = "brotli", specifier = "~=1.2.0" },
     { name = "dash", specifier = "~=4.4.0" },
-    { name = "dash-ag-grid", specifier = ">=35.2.0" },
+    { name = "dash-ag-grid", specifier = ">=35.3.0" },
     { name = "dash-bootstrap-components", specifier = "~=2.0.4" },
     { name = "dash-extensions", specifier = "~=2.0.4" },
     { name = "dash-iconify", specifier = ">=0.1.2" },
