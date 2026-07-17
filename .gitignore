@@ -8,6 +8,8 @@ __pycache__/
 assets/dashExtensions_default.js
 data/derived/layers/DINS*
 data/sources/broadband/ca_broadband_geopackage.gpkg*
+data/cache/
+data/**/*.bak
 env
 include/
 

@@ -11,8 +11,11 @@
 *dataframe.py
 assets/dashExtensions_default.js
 data/**/*.bak
+data/cache/
 data/derived/layers/DINS*
 data/sources/broadband/ca_broadband_geopackage.gpkg*
+data/sources/education/california_school_district_areas_2024_25.geojson
+data/sources/geography/la_county_zip_codes.geojson
 include/
 pipelines/
 scripts/
