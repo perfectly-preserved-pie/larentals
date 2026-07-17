@@ -12,6 +12,7 @@
 assets/dashExtensions_default.js
 assets/datasets/*.bak
 assets/datasets/DINS*
+assets/datasets/ca_broadband_geopackage.gpkg*
 include/
 pipelines/
 scripts/
