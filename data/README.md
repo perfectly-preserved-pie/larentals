@@ -27,6 +27,18 @@ This file documents the upstream sources and builders for the artifacts below.
 
 https://data.lacounty.gov/datasets/lacounty::farmers-markets/about
 
+## LA City Rent Stabilization Ordinance (RSO) lookup
+
+Preferred local artifact:
+
+- `rso_property_lookup.json.gz`
+- Built from LAHD's public RSO dashboard with `uv run build-rso-property-lookup`
+- Matches rental listings by normalized property address and provides the LAHD
+  RSO-unit count plus the Assessor unit-count range
+- A result is displayed as **all units covered** only when the published RSO
+  count covers the full range; otherwise the popup says to verify the listed
+  unit. The public inventory does not identify which individual units are RSO.
+
 ## Schools
 
 https://lab.data.ca.gov/dataset/california-public-schools-2024-25

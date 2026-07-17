@@ -10,6 +10,7 @@ from functions.lahd import (
     out_of_scope_lahd_listing_lookup_result,
     unavailable_lahd_listing_lookup_result,
 )
+from functions.rso import lookup_rso_property_for_listing
 
 LEASE_LISTING_DETAIL_SQL = """
   SELECT
@@ -107,6 +108,7 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
             abort(404, f"Lease listing not found: {listing_id}")
 
         payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
+        payload["rso_property_summary"] = build_rso_listing_summary(payload)
         return jsonify(payload)
 
     @bp.get("/api/buy/listing-details/<listing_id>")
@@ -145,3 +147,19 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
         latitude=payload.get("latitude"),
         longitude=payload.get("longitude"),
     )
+
+
+def build_rso_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    """
+    Return a conservative LA City RSO summary for a rental listing popup.
+    """
+    in_scope = is_listing_in_los_angeles_city(
+        city=payload.get("city"),
+        latitude=payload.get("latitude"),
+        longitude=payload.get("longitude"),
+    )
+    if in_scope is False:
+        return {"jurisdiction_in_scope": False, "data_available": True, "matched": False}
+
+    summary = lookup_rso_property_for_listing(payload.get("full_street_address"))
+    return {**summary, "jurisdiction_in_scope": True}

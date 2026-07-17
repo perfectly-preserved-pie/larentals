@@ -531,6 +531,7 @@ clientside_callback(
     Input('isp_download_speed_slider', 'value'),
     Input('isp_upload_speed_slider', 'value'),
     Input('isp_speed_missing_switch', 'checked'),
+    Input('rent_control_status', 'value'),
     Input('lease-zip-boundary-store', 'data'),
     Input('lease-geojson-store', "data"),
   ],

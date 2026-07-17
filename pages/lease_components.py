@@ -23,6 +23,7 @@ from .component_factories import (
     build_year_built_filter,
 )
 from .component_models import FilterSection, PageConfig, PageParts
+from functions.rso import add_rso_status_to_listing_geojson
 
 
 class LeaseComponents(BaseClass):
@@ -92,6 +93,7 @@ class LeaseComponents(BaseClass):
         "pet_deposit",
         "key_deposit",
         "other_deposit",
+        "full_street_address",
         "listed_date",
         "school_district_name",
         "nearest_high_school_mi",
@@ -133,13 +135,14 @@ class LeaseComponents(BaseClass):
         Returns:
             A GeoJSON feature collection for the lease map store.
         """
-        return _build_cached_geojson_payload(
+        payload = _build_cached_geojson_payload(
             table_name=cls.CONFIG.table_name,
             page_type=cls.CONFIG.page_type,
             select_columns=cls.CONFIG.map_columns,
             db_mtime_ns=_db_cache_token(),
             categorize_lease_laundry=True,
         )
+        return add_rso_status_to_listing_geojson(payload)
 
     def __init__(self) -> None:
         """
@@ -219,6 +222,7 @@ class LeaseComponents(BaseClass):
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
             ("Pet Policy", self.create_pets_radio_button(), "pet_policy"),
+            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             (
                 "Deposits",
                 [
@@ -277,6 +281,36 @@ class LeaseComponents(BaseClass):
             ("Square Footage", self._build_square_footage_filter(), "square_footage"),
             ("Year Built", self.create_year_built_components(), "year_built"),
         ]
+
+    def create_rent_control_filter(self) -> html.Div:
+        """
+        Build the mutually exclusive LA City rent-control status filter.
+
+        Returns:
+            A segmented control for the available coverage states.
+        """
+        return html.Div(
+            [
+                dmc.Text(
+                    "Based on LAHD's property inventory. “Some covered” means verify the listed unit.",
+                    size="sm",
+                    c="dimmed",
+                    mb="xs",
+                ),
+                dmc.SegmentedControl(
+                    id="rent_control_status",
+                    value="any",
+                    data=[
+                        {"label": "Any", "value": "any"},
+                        {"label": "All covered", "value": "all"},
+                        {"label": "Some covered", "value": "some"},
+                        {"label": "Unknown", "value": "unknown"},
+                    ],
+                    orientation="vertical",
+                    fullWidth=True,
+                ),
+            ]
+        )
 
     def _build_rental_price_filter(self) -> html.Div:
         """

@@ -36,6 +36,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} downloadSpeedRange - [minDownload, maxDownload]
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
          * @param {boolean} speedIncludeMissing - Whether to include listings with missing ISP speeds
+         * @param {string} rentControlStatus - Selected LA City rent-control status
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload
          * @param {Object} fullGeojson - GeoJSON data with .features array
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
@@ -74,6 +75,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             downloadSpeedRange,
             uploadSpeedRange,
             speedIncludeMissing,
+            rentControlStatus,
             zipBoundaryData,
             fullGeojson
         ) {
@@ -154,6 +156,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const downloadSpeed = feature.properties.best_dn;
                 const uploadSpeed = feature.properties.best_up;
                 const termsValueRaw = feature.properties.terms;
+                const rentControlStatusValue = feature.properties.rent_control_status || "unknown";
                 // Normalize terms: null/undefined stay null, non-null strings are trimmed.
                 const termsValue = (termsValueRaw === null || termsValueRaw === undefined)
                     ? null
@@ -352,7 +355,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     speedIncludeMissingBool,
                 );
 
-                // 17) ZIP boundary filter (Census ZCTA)
+                // 17) The LAHD inventory is property-level. `some` therefore
+                // means some units are covered, not necessarily this listing.
+                const rentControlFilter = (
+                    !rentControlStatus ||
+                    rentControlStatus === "any" ||
+                    rentControlStatusValue === rentControlStatus
+                );
+
+                // 18) ZIP boundary filter (Census ZCTA)
                 let zipFilter = true;
                 if (shouldFilterByZip) {
                     zipFilter = (
@@ -382,6 +393,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     dateFilter &&
                     downloadSpeedFilter &&
                     uploadSpeedFilter &&
+                    rentControlFilter &&
                     zipFilter;
 
                 if (!includeFeature && exclusionCollector) {
@@ -406,6 +418,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!dateFilter) failedReasons.push("Listed date");
                     if (!downloadSpeedFilter) failedReasons.push("Download speed");
                     if (!uploadSpeedFilter) failedReasons.push("Upload speed");
+                    if (!rentControlFilter) failedReasons.push("Rent control");
                     if (!zipFilter) failedReasons.push("ZIP boundary");
 
                     exclusionCollector.capture(mls_number, failedReasons, feature.properties);

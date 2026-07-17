@@ -251,6 +251,51 @@
     }
 
     /**
+     * Format LAHD's property-level RSO inventory result without claiming a
+     * listing unit is covered when the property has mixed coverage.
+     *
+     * @param {unknown} summary Raw `rso_property_summary` payload.
+     * @returns {string} Human-readable RSO status.
+     */
+    function formatRsoSummary(summary) {
+        if (!summary || typeof summary !== "object" || summary.data_available === false) {
+            return "Not available";
+        }
+        if (!summary.matched) {
+            return "Unknown";
+        }
+
+        const unitCount = formatWholeNumber(summary.rso_units);
+        const unitRange = normalizeNullableString(summary.unit_range);
+        const totalUnitsLabel = unitRange ? ` of ${escapeHtml(unitRange)}` : "";
+        if (summary.coverage === "all") {
+            return `All units covered (${unitCount}${totalUnitsLabel})`;
+        }
+        return `${unitCount} RSO units${totalUnitsLabel}; verify this unit`;
+    }
+
+    /**
+     * Render the LA City Rent Stabilization Ordinance row for rental popups.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} HTML row.
+     */
+    function renderRsoRow(popupData) {
+        const summary = popupData.rso_property_summary;
+        if (!summary || typeof summary !== "object" || summary.jurisdiction_in_scope === false) {
+            return "";
+        }
+        return `
+            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
+                <span class="label" style="font-weight: bold;">Rent Control Status</span>
+                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
+                    ${formatRsoSummary(summary)}
+                </span>
+            </div>
+        `;
+    }
+
+    /**
      * Convert a street address string into title case for popup display.
      *
      * @param {string} value Address string to normalize.
@@ -460,6 +505,7 @@
                         <span class="label" style="font-weight: bold;">Rental Price</span>
                         <span class="value">${formatCurrency(popupData.list_price)}</span>
                     </div>
+                    ${renderRsoRow(popupData)}
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Security Deposit</span>
                         <span class="value">${formatCurrency(popupData.security_deposit)}</span>
