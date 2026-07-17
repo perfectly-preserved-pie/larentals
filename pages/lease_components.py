@@ -118,6 +118,7 @@ class LeaseComponents(BaseClass):
             "location",
             "subtypes",
             "monthly_rent",
+            "rent_control",
             "bedrooms",
             "bathrooms",
             "pet_policy",
@@ -219,10 +220,10 @@ class LeaseComponents(BaseClass):
             ("Location", build_location_filter_components(self.page_type), "location"),
             ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("Monthly Rent", self._build_rental_price_filter(), "monthly_rent"),
+            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
             ("Pet Policy", self.create_pets_radio_button(), "pet_policy"),
-            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             (
                 "Deposits",
                 [
@@ -292,7 +293,7 @@ class LeaseComponents(BaseClass):
         return html.Div(
             [
                 dmc.Text(
-                    "Based on LAHD's property inventory. “Some covered” means verify the listed unit.",
+                    "Only applies to rentals in the City of Los Angeles.",
                     size="sm",
                     c="dimmed",
                     mb="xs",
