@@ -24,6 +24,16 @@
     /** @type {Map<string, Promise<Record<string, unknown>>>} */
     const listingDetailFetchCache = new Map();
 
+    document.addEventListener("click", function trackListingLinkClick(event) {
+        const target = event.target;
+        const link = target && typeof target.closest === "function"
+            ? target.closest(".plausible-listing-link")
+            : null;
+        if (link) {
+            window.larentals?.analytics?.trackListingLinkClicked();
+        }
+    });
+
     /**
      * Escape text for safe HTML interpolation.
      *
@@ -394,7 +404,7 @@
 
         return `
             <div style="text-align: center;">
-                <h5><a href="${listingUrl}" referrerPolicy="noreferrer" target="_blank">${address}</a></h5>
+                <h5><a href="${listingUrl}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank">${address}</a></h5>
             </div>
         `;
     }
@@ -413,7 +423,7 @@
         if (listingUrl) {
             return `
                 <div style="position: relative;">
-                    <a href="${listingUrl}" target="_blank" referrerPolicy="noreferrer">
+                    <a href="${listingUrl}" class="plausible-listing-link" target="_blank" referrerPolicy="noreferrer">
                         ${imageTag}
                     </a>
                 </div>
@@ -796,6 +806,8 @@
                 layer.on("popupopen", function handlePopupOpen() {
                     openRequestSeq += 1;
                     const requestSeq = openRequestSeq;
+
+                    window.larentals?.analytics?.trackListingOpened();
 
                     setPopupContent(layer, renderPopupLoadingContent(summaryData));
 

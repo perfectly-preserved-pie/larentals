@@ -548,6 +548,7 @@ def build_filter_card(
     *,
     items: Sequence[FilterSection],
     active_item: Sequence[str],
+    accordion_id: str | None = None,
     accordion_class_name: str = "options-accordion dmc",
 ) -> dbc.Card:
     """
@@ -556,6 +557,7 @@ def build_filter_card(
     Args:
         items: Accordion sections as ``(title, children, item_id)`` tuples.
         active_item: Section ids to expand by default.
+        accordion_id: Optional stable id used by clientside callbacks.
         accordion_class_name: CSS class name for the accordion.
 
     Returns:
@@ -569,6 +571,7 @@ def build_filter_card(
         flush=True,
         always_open=True,
         active_item=list(active_item),
+        id=accordion_id,
         className=accordion_class_name,
     )
 
@@ -1037,6 +1040,7 @@ def build_page_parts(
         user_options_card=build_filter_card(
             items=filter_items,
             active_item=config.active_filter_items,
+            accordion_id=f"{config.page_type}-options-accordion",
             accordion_class_name=config.accordion_class_name,
         ),
         map_card=build_map_card(

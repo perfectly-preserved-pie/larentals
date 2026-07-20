@@ -2,7 +2,11 @@ from functools import lru_cache
 
 from .components import BuyComponents
 from dash import dcc, callback, clientside_callback, ClientsideFunction
-from functions.layers import LayersClass, register_responsive_layers_control_callback
+from functions.layers import (
+  STREET_BASE_LAYER_NAME,
+  LayersClass,
+  register_responsive_layers_control_callback,
+)
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
@@ -76,6 +80,26 @@ def layout(**_: object) -> dbc.Container:
     storage_type="memory",
     data=None,
   )
+  analytics_section_store = dcc.Store(
+    id="buy-analytics-section-store",
+    storage_type="memory",
+    data={"active": list(components.CONFIG.active_filter_items)},
+  )
+  analytics_layer_store = dcc.Store(
+    id="buy-analytics-layer-store",
+    storage_type="memory",
+    data={"overlays": []},
+  )
+  analytics_basemap_store = dcc.Store(
+    id="buy-analytics-basemap-store",
+    storage_type="memory",
+    data={"baseLayer": STREET_BASE_LAYER_NAME},
+  )
+  analytics_school_filter_store = dcc.Store(
+    id="buy-analytics-school-filter-store",
+    storage_type="memory",
+    data={"sequence": 0},
+  )
   kickstart = dcc.Interval(id="buy-boot", interval=50, n_intervals=0, max_intervals=1)
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date(str(LARENTALS_DB_PATH), table_name="buy", date_column="listed_date"))
 
@@ -86,6 +110,10 @@ def layout(**_: object) -> dbc.Container:
       zip_boundary_store,
       school_layer_prompt_state_store,
       school_layer_focus_store,
+      analytics_section_store,
+      analytics_layer_store,
+      analytics_basemap_store,
+      analytics_school_filter_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -138,6 +166,50 @@ clientside_callback(
 )
 
 register_responsive_layers_control_callback("buy")
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),
+  Output('buy-analytics-section-store', 'data'),
+  Input('buy-options-accordion', 'active_item'),
+  State('buy-analytics-section-store', 'data'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackLayerToggled'),
+  Output('buy-analytics-layer-store', 'data'),
+  Input(LayersClass.layers_control_id("buy"), 'overlays'),
+  State('buy-analytics-layer-store', 'data'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackBasemapChanged'),
+  Output('buy-analytics-basemap-store', 'data'),
+  Input(LayersClass.layers_control_id("buy"), 'baseLayer'),
+  State('buy-analytics-basemap-store', 'data'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackSchoolFilterChanged'),
+  Output('buy-analytics-school-filter-store', 'data'),
+  [
+    Input('buy-school-layer-search-input', 'value'),
+    Input('buy-school-layer-level-dropdown', 'value'),
+    Input('buy-school-layer-grade-band-checklist', 'value'),
+    Input('buy-school-layer-campus-configuration-dropdown', 'value'),
+    Input('buy-school-layer-early-grades-checklist', 'value'),
+    Input('buy-school-layer-funding-type-dropdown', 'value'),
+    Input('buy-school-layer-enrollment-slider', 'value'),
+    Input('buy-school-layer-charter-switch', 'checked'),
+    Input('buy-school-layer-magnet-switch', 'checked'),
+    Input('buy-school-layer-title-i-switch', 'checked'),
+    Input('buy-school-layer-recently-opened-switch', 'checked'),
+  ],
+  State('buy-analytics-school-filter-store', 'data'),
+  prevent_initial_call=True,
+)
 
 # Server-side callbacks
 @callback(

@@ -16,7 +16,9 @@ function reportListing(listingProps) {
     }
     // Now listingProps should be an object. Retrieve the MLS number.
     const mlsNumber = listingProps.mls_number;
-    
+
+    window.larentals?.analytics?.trackReportListingOpened();
+
     Swal.fire({
         // See https://sweetalert2.github.io/#configuration
         title: 'Report Listing',
@@ -57,6 +59,9 @@ function reportListing(listingProps) {
                 })
             }).then(response => {
                 if (response.ok) {
+                    window.larentals?.analytics?.trackReportListingSubmitted(
+                        result.value.option
+                    );
                     Swal.fire('Thanks!', 'Your report has been submitted.', 'success');
                 } else {
                     Swal.fire('Error!', 'There was a problem reporting the listing.', 'error');

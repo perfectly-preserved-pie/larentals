@@ -53,6 +53,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             zipBoundaryData,
             fullGeojson
         ) {
+            window.larentals?.analytics?.trackBuyFilterChanges();
+
             // Guard against missing or malformed GeoJSON
             if (!fullGeojson || !Array.isArray(fullGeojson.features)) {
                 return { type: "FeatureCollection", features: [] };

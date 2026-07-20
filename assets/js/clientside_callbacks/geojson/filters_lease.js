@@ -79,6 +79,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             zipBoundaryData,
             fullGeojson
         ) {
+            window.larentals?.analytics?.trackLeaseFilterChanges();
+
             if (!fullGeojson || !fullGeojson.features) {
                 return window.dash_clientside.no_update;
             }

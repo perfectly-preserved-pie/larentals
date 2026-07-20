@@ -3,7 +3,11 @@ from functools import lru_cache
 from .components import LeaseComponents
 from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import ALL, Input, Output, State
-from functions.layers import LayersClass, register_responsive_layers_control_callback
+from functions.layers import (
+  STREET_BASE_LAYER_NAME,
+  LayersClass,
+  register_responsive_layers_control_callback,
+)
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
   get_zip_feature_for_point,
@@ -75,6 +79,26 @@ def layout(**_: object) -> dbc.Container:
     storage_type="memory",
     data=None,
   )
+  analytics_section_store = dcc.Store(
+    id="lease-analytics-section-store",
+    storage_type="memory",
+    data={"active": list(lease_components.CONFIG.active_filter_items)},
+  )
+  analytics_layer_store = dcc.Store(
+    id="lease-analytics-layer-store",
+    storage_type="memory",
+    data={"overlays": []},
+  )
+  analytics_basemap_store = dcc.Store(
+    id="lease-analytics-basemap-store",
+    storage_type="memory",
+    data={"baseLayer": STREET_BASE_LAYER_NAME},
+  )
+  analytics_school_filter_store = dcc.Store(
+    id="lease-analytics-school-filter-store",
+    storage_type="memory",
+    data={"sequence": 0},
+  )
   kickstart = dcc.Interval(id="lease-boot", interval=50, n_intervals=0, max_intervals=1)
   # Create a Store to hold the earliest listed date
   earliest_date_store = dcc.Store(id="earliest_date_store", data=get_earliest_listed_date(str(LARENTALS_DB_PATH), table_name="lease", date_column="listed_date"))
@@ -86,6 +110,10 @@ def layout(**_: object) -> dbc.Container:
       zip_boundary_store,
       school_layer_prompt_state_store,
       school_layer_focus_store,
+      analytics_section_store,
+      analytics_layer_store,
+      analytics_basemap_store,
+      analytics_school_filter_store,
       kickstart,
       earliest_date_store,
       dbc.Row(
@@ -442,6 +470,50 @@ clientside_callback(
 )
 
 register_responsive_layers_control_callback("lease")
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),
+  Output('lease-analytics-section-store', 'data'),
+  Input('lease-options-accordion', 'active_item'),
+  State('lease-analytics-section-store', 'data'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackLayerToggled'),
+  Output('lease-analytics-layer-store', 'data'),
+  Input(LayersClass.layers_control_id("lease"), 'overlays'),
+  State('lease-analytics-layer-store', 'data'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackBasemapChanged'),
+  Output('lease-analytics-basemap-store', 'data'),
+  Input(LayersClass.layers_control_id("lease"), 'baseLayer'),
+  State('lease-analytics-basemap-store', 'data'),
+  prevent_initial_call=True,
+)
+
+clientside_callback(
+  ClientsideFunction(namespace='clientside', function_name='trackSchoolFilterChanged'),
+  Output('lease-analytics-school-filter-store', 'data'),
+  [
+    Input('lease-school-layer-search-input', 'value'),
+    Input('lease-school-layer-level-dropdown', 'value'),
+    Input('lease-school-layer-grade-band-checklist', 'value'),
+    Input('lease-school-layer-campus-configuration-dropdown', 'value'),
+    Input('lease-school-layer-early-grades-checklist', 'value'),
+    Input('lease-school-layer-funding-type-dropdown', 'value'),
+    Input('lease-school-layer-enrollment-slider', 'value'),
+    Input('lease-school-layer-charter-switch', 'checked'),
+    Input('lease-school-layer-magnet-switch', 'checked'),
+    Input('lease-school-layer-title-i-switch', 'checked'),
+    Input('lease-school-layer-recently-opened-switch', 'checked'),
+  ],
+  State('lease-analytics-school-filter-store', 'data'),
+  prevent_initial_call=True,
+)
 
 clientside_callback(
   ClientsideFunction(
