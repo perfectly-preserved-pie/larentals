@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from loguru import logger
 from typing import Tuple, Optional
 import pandas as pd
@@ -7,9 +8,116 @@ import re
 import requests
 import sys
 import time
+import random
+import threading
+from urllib.parse import urlparse
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
+
+
+# Listing sites rate-limit aggressively.  Keep this state at module level so all
+# pipeline calls in a process share both a request cadence and a server-directed
+# cooldown.  These values can be adjusted by deployment configuration without
+# changing call sites.
+BHHS_REQUEST_INTERVAL_SECONDS = 5.0
+MAX_RETRY_ATTEMPTS = 5
+MAX_RETRY_DELAY_SECONDS = 120.0
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+_rate_limit_lock = threading.Lock()
+_next_request_at: dict[str, float] = {}
+_cooldown_until: dict[str, float] = {}
+
+
+def _retry_after_seconds(response: requests.Response) -> Optional[float]:
+    """Return a non-negative Retry-After value, if the server supplied one."""
+    value = response.headers.get("Retry-After")
+    if not value:
+        return None
+
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        try:
+            retry_at = parsedate_to_datetime(value)
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=timezone.utc)
+            return max(0.0, (retry_at - datetime.now(timezone.utc)).total_seconds())
+        except (TypeError, ValueError, IndexError, OverflowError):
+            logger.warning(f"Ignoring invalid Retry-After header: {value!r}")
+            return None
+
+
+def _wait_for_request_slot(host: str) -> None:
+    """Reserve the next request slot while honoring any shared cooldown."""
+    with _rate_limit_lock:
+        now = time.monotonic()
+        request_at = max(now, _next_request_at.get(host, now), _cooldown_until.get(host, now))
+        _next_request_at[host] = request_at + BHHS_REQUEST_INTERVAL_SECONDS
+
+    delay = request_at - now
+    if delay > 0:
+        logger.debug(f"Pacing request to {host}; waiting {delay:.1f}s.")
+        time.sleep(delay)
+
+
+def _set_cooldown(host: str, delay: float) -> None:
+    with _rate_limit_lock:
+        _cooldown_until[host] = max(
+            _cooldown_until.get(host, 0.0), time.monotonic() + delay
+        )
+
+
+def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> requests.Response:
+    """Perform a safe GET with host pacing and bounded retries.
+
+    A 429 honors ``Retry-After`` (seconds or an HTTP date).  Otherwise retries
+    use exponential backoff with jitter, avoiding synchronized retry bursts.
+    The final response is returned to preserve existing callers' ``raise_for_status``
+    behavior and error handling.
+    """
+    host = urlparse(url).netloc.lower()
+    response: Optional[requests.Response] = None
+
+    for attempt in range(MAX_RETRY_ATTEMPTS):
+        _wait_for_request_slot(host)
+        try:
+            response = requests.get(url, headers=headers, timeout=timeout)
+        except (requests.Timeout, requests.ConnectionError) as error:
+            if attempt == MAX_RETRY_ATTEMPTS - 1:
+                raise
+            delay = min(MAX_RETRY_DELAY_SECONDS, random.uniform(1.0, 2 ** (attempt + 1)))
+            logger.warning(
+                f"Request to {host} failed ({error}); retrying in {delay:.1f}s "
+                f"(attempt {attempt + 1}/{MAX_RETRY_ATTEMPTS})."
+            )
+            _set_cooldown(host, delay)
+            time.sleep(delay)
+            continue
+
+        if response.status_code not in RETRYABLE_STATUS_CODES or attempt == MAX_RETRY_ATTEMPTS - 1:
+            return response
+
+        retry_after = _retry_after_seconds(response)
+        # Retry-After is an explicit server instruction and must not be shortened.
+        # The cap applies only to client-selected exponential backoff.
+        delay = (
+            retry_after
+            if retry_after is not None
+            else min(MAX_RETRY_DELAY_SECONDS, random.uniform(1.0, 2 ** (attempt + 1)))
+        )
+        logger.warning(
+            f"HTTP {response.status_code} from {host}; retrying in {delay:.1f}s "
+            f"(attempt {attempt + 1}/{MAX_RETRY_ATTEMPTS})."
+        )
+        _set_cooldown(host, delay)
+        response.close()
+        time.sleep(delay)
+
+    # The loop always returns a response or raises, but keeps type checkers and
+    # future edits honest.
+    assert response is not None
+    return response
 
 def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     """
@@ -33,10 +141,8 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
         'Cache-Control': 'no-cache',
     }
     try:
-        response = requests.get(url, headers=headers, timeout=5)
+        response = get_with_backoff(url, headers=headers)
         response.raise_for_status()
-
-        time.sleep(5)
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -94,9 +200,8 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
     }
 
     try:
-        response = requests.get(api_url, headers=headers, timeout=5)
+        response = get_with_backoff(api_url, headers=headers)
         response.raise_for_status()
-        time.sleep(5)
         data = response.json()
         is_sold = data.get('IsSold', False)
         if is_sold:
@@ -144,9 +249,8 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         'Cache-Control': 'no-cache',
     }
     try:
-        response = requests.get(url, headers=headers, timeout=5)
+        response = get_with_backoff(url, headers=headers)
         response.raise_for_status()
-        time.sleep(5)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Initialize variables
@@ -278,12 +382,10 @@ def fetch_the_agency_data(
     logger.debug(f"Processing MLS {mls_number} ({row_index}/{total_rows})")
 
     try:
-        response = requests.get(url, headers=headers, timeout=5)
+        response = get_with_backoff(url, headers=headers)
         #logger.debug(f"Request URL: {url}")
         #logger.debug(f"Response Status Code: {response.status_code}")
         response.raise_for_status()
-
-        time.sleep(5)
 
         # Parse JSON response
         data = response.json()
@@ -350,9 +452,8 @@ def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     main_url = f"https://www.bhhscalifornia.com/for-sale/{mls_number}-t_q;/"
     try:
         # Fetch the main listing page
-        main_response = requests.get(main_url, headers=headers, timeout=5)
+        main_response = get_with_backoff(main_url, headers=headers)
         main_response.raise_for_status()
-        time.sleep(5)
         main_soup = BeautifulSoup(main_response.text, 'html.parser')     
         # Find the link to the details page
         link_tag = main_soup.find('a', attrs={'class': 'btn cab waves-effect waves-light btn-details show-listing-details'})
@@ -360,7 +461,7 @@ def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
             # Construct the URL to the details page
             details_url = 'https://www.bhhscalifornia.com' + link_tag['href']
             # Fetch the details page
-            details_response = requests.get(details_url, headers=headers)
+            details_response = get_with_backoff(details_url, headers=headers)
             details_response.raise_for_status()
             details_soup = BeautifulSoup(details_response.text, 'html.parser')
             # Look for the HOA fee within the details page
