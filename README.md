@@ -2,7 +2,6 @@
 
 ## Table of contents
 
-- [County map layers](#county-map-layers)
 - [MCP server](#mcp-server)
 - [What I'm Using](#what-im-using)
 - [A Deeper Dive](#a-deeper-dive)
@@ -34,25 +33,6 @@ You can click the toggle buttons next to the title to switch between For Rent an
 
 
 **⚠ This website is mobile-friendly but I highly recommend using an actual computer or tablet for the best experience**
-
-
-### County map layers
-
-The map layer control supports two selectable basemaps and an optional parcel overlay:
-
-* **Street map** uses the canonical [OpenStreetMap raster tile service](https://operations.osmfoundation.org/policies/tiles/) with visible license attribution and a [report-a-map-issue link](https://www.openstreetmap.org/fixthemap).
-* **Satellite imagery** uses the [Mapbox Satellite Raster Tiles API](https://docs.mapbox.com/api/maps/raster-tiles/) when a public `MAPBOX_ACCESS_TOKEN` is configured.
-* **Property Lines (LA County Parcels)** uses the cached [LA County Assessor parcel map service](https://www.arcgis.com/home/item.html?id=5b277305f006459586a70165065d0fd6).
-
-Tiles are requested by the user's browser directly from the upstream services; this project does not download, cache, or redistribute satellite imagery or countywide parcel tiles. Satellite use remains subject to the [Mapbox terms](https://www.mapbox.com/legal/tos/), while parcel use remains subject to the [LA County Enterprise GIS terms](https://egis-lacounty.hub.arcgis.com/pages/terms-of-use) and the source item's license information.
-
-To enable Satellite imagery, create a public Mapbox access token, restrict its allowed URLs to the production and development origins, and add it to `.env` or the deployment environment:
-
-```dotenv
-MAPBOX_ACCESS_TOKEN=pk.example
-```
-
-The satellite option is omitted when the token is not configured. Public browser tokens are visible to users by design; URL restrictions and minimal token scopes provide the relevant protection. Mapbox logo and text attribution are displayed with the active satellite layer.
 
 ### MCP server
 
