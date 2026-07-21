@@ -25,4 +25,4 @@ COPY --from=builder /app /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT ["gunicorn"]
-CMD ["--chdir", "/app", "-b", "0.0.0.0:8080", "--workers=10", "--preload", "app:server"]
+CMD ["--chdir", "/app", "-b", "0.0.0.0:8080", "--worker-class=gthread", "--workers=10", "--threads=8", "--timeout=60", "--keep-alive=5", "--preload", "app:server"]
