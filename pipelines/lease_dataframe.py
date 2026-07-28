@@ -365,6 +365,7 @@ def main() -> None:
         logger.success(f"[lease] Full run. Insert into '{target_table}' succeeded.")
     except Exception as e:
       logger.error(f"Error updating SQLite table '{TABLE_NAME}': {e}")
+      sys.exit(1)
 
     # Reclaim space in ImageKit
     #reclaim_imagekit_space(geojson_path="data/derived/layers/lease.geojson", imagekit_instance=imagekit)
