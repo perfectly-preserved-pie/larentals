@@ -20,13 +20,21 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 # pipeline calls in a process share both a request cadence and a server-directed
 # cooldown.  These values can be adjusted by deployment configuration without
 # changing call sites.
-BHHS_REQUEST_INTERVAL_SECONDS = 5.0
+REQUEST_INTERVAL_SECONDS = 5.0
 MAX_RETRY_ATTEMPTS = 5
 MAX_RETRY_DELAY_SECONDS = 120.0
+TRANSPORT_FAILURE_THRESHOLD = 3
+HOST_CIRCUIT_OPEN_SECONDS = 15 * 60.0
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 _rate_limit_lock = threading.Lock()
 _next_request_at: dict[str, float] = {}
 _cooldown_until: dict[str, float] = {}
+_transport_failures: dict[str, int] = {}
+_circuit_open_until: dict[str, float] = {}
+
+
+class HostCircuitOpen(requests.ConnectionError):
+    """Raised when requests to a repeatedly failing host are temporarily paused."""
 
 
 def _retry_after_seconds(response: requests.Response) -> Optional[float]:
@@ -53,7 +61,7 @@ def _wait_for_request_slot(host: str) -> None:
     with _rate_limit_lock:
         now = time.monotonic()
         request_at = max(now, _next_request_at.get(host, now), _cooldown_until.get(host, now))
-        _next_request_at[host] = request_at + BHHS_REQUEST_INTERVAL_SECONDS
+        _next_request_at[host] = request_at + REQUEST_INTERVAL_SECONDS
 
     delay = request_at - now
     if delay > 0:
@@ -68,6 +76,43 @@ def _set_cooldown(host: str, delay: float) -> None:
         )
 
 
+def _raise_if_circuit_open(host: str) -> None:
+    with _rate_limit_lock:
+        remaining = _circuit_open_until.get(host, 0.0) - time.monotonic()
+
+    if remaining > 0:
+        raise HostCircuitOpen(
+            f"Requests to {host} are paused for another {remaining:.0f}s "
+            "after repeated connection failures"
+        )
+
+
+def _record_transport_failure(host: str, error: requests.RequestException) -> None:
+    """Track transport failures and pause a host that is repeatedly unreachable."""
+    with _rate_limit_lock:
+        failures = _transport_failures.get(host, 0) + 1
+        _transport_failures[host] = failures
+        if failures < TRANSPORT_FAILURE_THRESHOLD:
+            return
+
+        _circuit_open_until[host] = time.monotonic() + HOST_CIRCUIT_OPEN_SECONDS
+
+    logger.warning(
+        f"Pausing requests to {host} for {HOST_CIRCUIT_OPEN_SECONDS:.0f}s after "
+        f"{failures} consecutive connection failures; callers should use a fallback. "
+        f"Last error: {error}"
+    )
+    raise HostCircuitOpen(
+        f"Requests to {host} paused after {failures} consecutive connection failures"
+    ) from error
+
+
+def _record_request_success(host: str) -> None:
+    with _rate_limit_lock:
+        _transport_failures.pop(host, None)
+        _circuit_open_until.pop(host, None)
+
+
 def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> requests.Response:
     """Perform a safe GET with host pacing and bounded retries.
 
@@ -80,10 +125,12 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
     response: Optional[requests.Response] = None
 
     for attempt in range(MAX_RETRY_ATTEMPTS):
+        _raise_if_circuit_open(host)
         _wait_for_request_slot(host)
         try:
             response = requests.get(url, headers=headers, timeout=timeout)
         except (requests.Timeout, requests.ConnectionError) as error:
+            _record_transport_failure(host, error)
             if attempt == MAX_RETRY_ATTEMPTS - 1:
                 raise
             delay = min(MAX_RETRY_DELAY_SECONDS, random.uniform(1.0, 2 ** (attempt + 1)))
@@ -95,6 +142,7 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
             time.sleep(delay)
             continue
 
+        _record_request_success(host)
         if response.status_code not in RETRYABLE_STATUS_CODES or attempt == MAX_RETRY_ATTEMPTS - 1:
             return response
 
@@ -154,6 +202,8 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
                 return True
         return False
 
+    except HostCircuitOpen:
+        logger.debug(f"Skipping BHHS expiration check for MLS {mls_number}; host circuit is open.")
     except requests.Timeout:
         logger.warning(f"Timeout occurred while checking if the listing for {mls_number} has expired.")
     except requests.HTTPError as e:
@@ -208,6 +258,13 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
             logger.info(f"Listing {mls_number} has been sold.")
         return is_sold
     
+    except HostCircuitOpen:
+        logger.debug(
+            f"Skipping Agency expiration check for MLS {mls_number}; "
+            "host circuit is open."
+        )
+        return False
+
     except requests.exceptions.HTTPError as http_err:
         code = http_err.response.status_code if http_err.response is not None else 'Unknown'
         if code == 404:
@@ -279,6 +336,8 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
 
         return listed_date, photo, link
 
+    except HostCircuitOpen:
+        logger.debug(f"Skipping BHHS scrape for MLS {mls_number}; host circuit is open.")
     except requests.HTTPError as e:
         logger.warning(f"HTTP error occurred while scraping BHHS page for {mls_number}: {e}")
     except Exception as e:
@@ -422,6 +481,8 @@ def fetch_the_agency_data(
         logger.info(f"Successfully fetched data for MLS {mls_number}")
         return list_date, detail_url, img_src
 
+    except HostCircuitOpen:
+        logger.debug(f"Skipping Agency lookup for MLS {mls_number}; host circuit is open.")
     except requests.HTTPError as e:
         logger.error(f"HTTP error occurred while fetching MLS {mls_number}: {e}")
         #if e.response is not None:
