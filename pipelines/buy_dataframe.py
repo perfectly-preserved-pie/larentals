@@ -7,8 +7,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
-from functions.data_paths import LARENTALS_DB_PATH
+from functions.data_paths import CHECKPOINT_DIR, LARENTALS_DB_PATH
 from functions.geocoding_utils import *
+from functions.listing_pipeline_checkpoint import (
+  ListingCheckpointStore,
+  file_fingerprint,
+)
 from functions.listing_report_utils import (
   get_reported_inactive_mls_numbers,
   normalize_mls_number,
@@ -43,6 +47,12 @@ def main() -> None:
   parser.add_argument("--use-nominatim", action="store_true",
     help="If set, use Nominatim instead of Google for geocoding"
   )
+  parser.add_argument("--checkpoint-path", type=str, default=None,
+    help="Local SQLite checkpoint path")
+  parser.add_argument("--checkpoint-s3-bucket", type=str, default=None,
+    help="Optional S3 bucket for write-through checkpoint durability")
+  parser.add_argument("--checkpoint-s3-key", type=str, default=None,
+    help="Optional S3 key for write-through checkpoint durability")
   args = parser.parse_args()
   SAMPLE_N = args.sample
   USE_NOMINATIM  = args.use_nominatim
@@ -83,6 +93,12 @@ def main() -> None:
   # Database path and table name
   DB_PATH = str(LARENTALS_DB_PATH)
   TABLE_NAME = "buy"
+  checkpoint_store = ListingCheckpointStore(
+    args.checkpoint_path or CHECKPOINT_DIR / f"{TABLE_NAME}.sqlite",
+    listing_type=TABLE_NAME,
+    s3_bucket=args.checkpoint_s3_bucket,
+    s3_key=args.checkpoint_s3_key,
+  )
 
   try:
     ### PANDAS DATAFRAME OPERATIONS
@@ -92,6 +108,7 @@ def main() -> None:
     if not excel_files:
       raise FileNotFoundError("Expected one .xlsx in pipelines/, found none")
     excel_path = os.path.join(script_dir, excel_files[0])
+    source_file_hash = file_fingerprint(excel_path)
     xlsx = pd.read_excel(excel_path, sheet_name=None)
 
     # Merge all sheets into a single DataFrame
@@ -179,9 +196,13 @@ def main() -> None:
     # Reindex the dataframe
     df.reset_index(drop=True, inplace=True)
 
-    # Fetch missing city names
-    for row in df.loc[(df['city'].isnull()) & (df['zip_code'].notnull())].itertuples():
-      df.at[row.Index, 'city'] = fetch_missing_city(f"{row.street_address} {str(row.city)} {str(row.zip_code)}", geolocator=g)
+    # Resolve missing city/ZIP values with the same durable Google checkpoint.
+    df = fill_missing_location_fields_with_checkpoint(
+      df,
+      geolocator=g,
+      checkpoint_store=checkpoint_store,
+      street_column="street_address",
+    )
 
     # Cast these columns as strings so we can concatenate them
     cols = ['street_number', 'street_address', 'city', 'mls_number']
@@ -190,9 +211,6 @@ def main() -> None:
 
     # Create a new column with the Street Number & Street Name
     df["short_address"] = df["street_address"].str.strip() + ',' + ' ' + df['city']
-
-    # Fetch missing zip codes
-    df = fetch_missing_zip_codes(df, geolocator=g)
 
     # Tag each row with the date it was processed
     for row in df.itertuples():
@@ -204,14 +222,39 @@ def main() -> None:
     # https://stackoverflow.com/a/11858532
     df["full_street_address"] = df["street_address"].str.strip() + ',' + ' ' + df['city'] + ' ' + df["zip_code"].map(str)
 
+    ### LOAD EXISTING DATA BEFORE PAID ENRICHMENT ###
+    df_old = pd.DataFrame()
+    if os.path.exists(DB_PATH):
+      conn = sqlite3.connect(DB_PATH)
+      try:
+        df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
+        if SAMPLE_N and not df_old.empty:
+          sample_mls = set(df["mls_number"].apply(normalize_mls_number))
+          old_mls = df_old["mls_number"].apply(normalize_mls_number)
+          df_old = df_old.loc[old_mls.isin(sample_mls)].copy()
+      except Exception as e:
+        logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
+        df_old = pd.DataFrame()
+      finally:
+        conn.close()
+
     # Iterate through the dataframe and get the listed date and photo for rows
-    df = update_dataframe_with_listing_data(df, imagekit_instance=imagekit)
+    df = update_dataframe_with_listing_data(
+      df,
+      imagekit_instance=imagekit,
+      listing_type=TABLE_NAME,
+      checkpoint_store=checkpoint_store,
+      source_file_hash=source_file_hash,
+    )
 
     # Iterate through the dataframe and fetch coordinates for rows
-    for row in df.itertuples():
-      coordinates = return_coordinates(address=row.full_street_address, row_index=row.Index, geolocator=g, total_rows=len(df), use_nominatim=USE_NOMINATIM)
-      df.at[row.Index, 'latitude'] = coordinates[0]
-      df.at[row.Index, 'longitude'] = coordinates[1]
+    df = update_dataframe_with_geocoding(
+      df,
+      geolocator=g,
+      checkpoint_store=checkpoint_store,
+      existing_df=df_old,
+      use_nominatim=USE_NOMINATIM,
+    )
 
     ### BATHROOMS PARSING
     # Split the Bedroom/Bathrooms column to extract total and detailed bathroom counts
@@ -279,34 +322,14 @@ def main() -> None:
     # Remove trailing '.0' from zip_code and full_street_address columns
     df = remove_trailing_zero(df)
 
-    ### MERGE WITH EXISTING DATA ###
-    df_old = pd.DataFrame()
-    if os.path.exists(DB_PATH):
-      conn = sqlite3.connect(DB_PATH)
-      try:
-        # if SAMPLE_N is set, sample historical rows too
-        if SAMPLE_N:
-          df_old = pd.read_sql_query(
-            f"SELECT * FROM {TABLE_NAME} ORDER BY RANDOM() LIMIT {SAMPLE_N}",
-            conn
-          )
-        else:
-          df_old = pd.read_sql_query(f"SELECT * FROM {TABLE_NAME}", conn)
-      except Exception as e:
-        logger.warning(f"No existing table {TABLE_NAME} or error reading it: {e}")
-        df_old = pd.DataFrame()
-      finally:
-        conn.close()
-
     if not df_old.empty:
       df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
-      df_combined = pd.concat([df, df_old], ignore_index=True, sort=False)
+      df_combined = merge_listing_dataframes(df, df_old)
       # Clean up outliers
       df_combined = drop_high_outliers(df=df_combined, cols=["lot_size"], iqr_multiplier=4.0, absolute_caps={"lot_size": 100000})
     else:
       df_combined = df.copy()
-    df_combined = df_combined.drop_duplicates(subset=["mls_number"], keep="last")
 
     df_combined = flatten_subtype_column(df_combined)
     df_combined['subtype'] = df_combined['subtype'].apply(normalize_subtype)
@@ -352,7 +375,12 @@ def main() -> None:
       + " " + df_combined.loc[valid_address_rows, "zip_code"].str.strip()
     )
 
-    df_combined = re_geocode_above_lat_threshold(df_combined, geolocator=g)
+    df_combined = re_geocode_above_lat_threshold(
+      df_combined,
+      geolocator=g,
+      checkpoint_store=checkpoint_store,
+      use_nominatim=USE_NOMINATIM,
+    )
     #df_combined = reduce_geojson_columns(df_combined)
     # Prepare final DataFrame
     df_combined.reset_index(drop=True, inplace=True)

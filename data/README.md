@@ -8,7 +8,8 @@ data/
 ├── runtime/     # Mutable application state (the SQLite listing database)
 ├── sources/     # Downloaded or maintained upstream/reference inputs
 ├── derived/     # Reproducible application-ready layers and lookups
-└── cache/       # Rebuildable geocoding caches
+├── cache/       # Rebuildable geocoding caches
+└── checkpoints/ # Temporary paid-work recovery state for listing pipelines
 ```
 
 This file documents the upstream sources and builders for the artifacts below.
@@ -22,6 +23,7 @@ This file documents the upstream sources and builders for the artifacts below.
 | Browser-independent map layers | `derived/layers/` |
 | Derived property lookup snapshots | `derived/lookups/` |
 | Rebuildable geocoding state | `cache/` |
+| Temporary listing-pipeline checkpoints | `checkpoints/` |
 
 ## Farmers Markets
 

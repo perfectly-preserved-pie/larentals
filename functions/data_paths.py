@@ -10,6 +10,7 @@ RUNTIME_DIR = DATA_DIR / "runtime"
 SOURCE_DIR = DATA_DIR / "sources"
 DERIVED_DIR = DATA_DIR / "derived"
 CACHE_DIR = DATA_DIR / "cache"
+CHECKPOINT_DIR = DATA_DIR / "checkpoints"
 
 LARENTALS_DB_PATH = RUNTIME_DIR / "larentals.db"
 

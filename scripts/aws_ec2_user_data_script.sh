@@ -27,11 +27,13 @@ BASE_DIR=/home/ubuntu/larentals
 S3_BUCKET=wheretolivedotla-geojsonstorage
 S3_KEY=larentals.db
 S3_URI=s3://$S3_BUCKET/$S3_KEY
+CHECKPOINT_S3_PREFIX=checkpoints/listing-pipelines
 BROADBAND_GEOPACKAGE_LAYER=ca_broadband_availability_aggregate
 
 # Log directories
 SAMPLE_LOG_DIR=$BASE_DIR/sample
 FULL_LOG_DIR=$BASE_DIR/full
+CHECKPOINT_DIR=$BASE_DIR/data/checkpoints
 
 # Update & install OS packages (script runs as root)
 apt-get update -y
@@ -49,7 +51,7 @@ else
   git -C "$BASE_DIR" pull --ff-only
 fi
 
-mkdir -p "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR"
+mkdir -p "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" "$CHECKPOINT_DIR"
 chmod 777 "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" # fuck it lol
 
 # Install AWS CLI
@@ -109,8 +111,14 @@ systemctl restart amazon-cloudwatch-agent
   uv run lease-dataframe \
     --sample 15 \
     --logfile "$SAMPLE_LOG_DIR/lease_sample.log" \
+    --checkpoint-path "$CHECKPOINT_DIR/lease.sqlite" \
+    --checkpoint-s3-bucket "$S3_BUCKET" \
+    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/lease.sqlite" \
   && uv run lease-dataframe \
-    --logfile "$FULL_LOG_DIR/lease_full.log"
+    --logfile "$FULL_LOG_DIR/lease_full.log" \
+    --checkpoint-path "$CHECKPOINT_DIR/lease.sqlite" \
+    --checkpoint-s3-bucket "$S3_BUCKET" \
+    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/lease.sqlite"
 ) &
 lease_pid=$!
 
@@ -118,8 +126,14 @@ lease_pid=$!
   uv run buy-dataframe \
     --sample 15 \
     --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
+    --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+    --checkpoint-s3-bucket "$S3_BUCKET" \
+    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite" \
   && uv run buy-dataframe \
-    --logfile "$FULL_LOG_DIR/buy_full.log"
+    --logfile "$FULL_LOG_DIR/buy_full.log" \
+    --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+    --checkpoint-s3-bucket "$S3_BUCKET" \
+    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite"
 ) &
 buy_pid=$!
 

@@ -18,7 +18,8 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 def imagekit_transform(
         bhhs_mls_photo_url: Optional[str], 
         mls: str, 
-        imagekit_instance: ImageKit
+        imagekit_instance: ImageKit,
+        folder: Optional[str] = None,
     ) -> Optional[str]:
     """
     Uploads and transforms an image using ImageKit.
@@ -31,7 +32,8 @@ def imagekit_transform(
     options = UploadFileRequestOptions(
         is_private_file=False,
         use_unique_file_name=False,
-        #folder = 'wheretolivedotla'
+        overwrite_file=True,
+        folder=folder,
     )
     
     # Check if a photo URL is available

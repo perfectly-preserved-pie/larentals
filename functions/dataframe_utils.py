@@ -1,7 +1,17 @@
 from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
 from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
+from functions.listing_pipeline_checkpoint import (
+    CheckpointPersistenceError,
+    ListingCheckpointStore,
+    SUCCESS_STATUSES,
+    TERMINAL_SCRAPE_STATUSES,
+    address_fingerprint,
+    listing_input_fingerprint,
+    photo_fingerprint,
+)
+from functions.listing_report_utils import normalize_mls_number
 from loguru import logger
-from typing import Sequence, Dict, Optional, Tuple
+from typing import Any, Sequence, Dict, Optional, Tuple
 import json
 import pandas as pd
 from functions.data_paths import LARENTALS_DB_PATH
@@ -53,7 +63,12 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     return df_clean
 
 def update_dataframe_with_listing_data(
-    df: pd.DataFrame, imagekit_instance
+    df: pd.DataFrame,
+    imagekit_instance,
+    *,
+    listing_type: str = "lease",
+    checkpoint_store: ListingCheckpointStore | None = None,
+    source_file_hash: str = "ad-hoc",
 ) -> pd.DataFrame:
     """
     Updates the DataFrame with listing date, MLS photo, and listing URL by scraping BHHS and using The Agency's API.
@@ -65,51 +80,271 @@ def update_dataframe_with_listing_data(
     Returns:
     pd.DataFrame: The updated DataFrame.
     """
-    for row in df.itertuples():
-        mls_number = row.mls_number
+    if listing_type not in {"buy", "lease"}:
+        raise ValueError(f"Unsupported listing type: {listing_type!r}")
+
+    def usable(value: Any) -> bool:
+        if value is None or value is pd.NA:
+            return False
         try:
-            webscrape = webscrape_bhhs(
-                url=f"https://www.bhhscalifornia.com/for-lease/{mls_number}-t_q;/",
-                row_index=row.Index,
-                mls_number=mls_number,
-                total_rows=len(df)
-            )
-        
-            if not all(webscrape):
-                #logger.warning(f"BHHS did not return complete data for MLS {mls_number}. Trying The Agency.")
-                agency_data = fetch_the_agency_data(
-                    mls_number,
-                    row_index=row.Index,
+            return not bool(pd.isna(value))
+        except (TypeError, ValueError):
+            return True
+
+    def first_usable(*values: Any) -> Any:
+        return next((value for value in values if usable(value)), None)
+
+    for row_index in df.index:
+        row = df.loc[row_index]
+        mls_number = normalize_mls_number(row["mls_number"])
+        input_hash = listing_input_fingerprint(
+            row,
+            source_file_hash=source_file_hash,
+        )
+        record = checkpoint_store.get(mls_number) if checkpoint_store else None
+
+        scrape_was_cached = bool(
+            record
+            and record.get("listing_input_hash") == input_hash
+            and record.get("scrape_status") in TERMINAL_SCRAPE_STATUSES
+        )
+
+        try:
+            if scrape_was_cached:
+                listed_date = record.get("listed_date")
+                listing_url = record.get("listing_url")
+                source_photo_url = record.get("source_photo_url")
+                scrape_status = "cached"
+                scrape_error = None
+            else:
+                listing_path = "for-sale" if listing_type == "buy" else "for-lease"
+                bhhs_data = webscrape_bhhs(
+                    url=f"https://www.bhhscalifornia.com/{listing_path}/{mls_number}-t_q;/",
+                    row_index=row_index,
+                    mls_number=mls_number,
                     total_rows=len(df),
                 )
+                agency_data = (None, None, None)
+                if not all(usable(value) for value in bhhs_data):
+                    agency_data = fetch_the_agency_data(
+                        mls_number,
+                        row_index=row_index,
+                        total_rows=len(df),
+                    )
 
-                if agency_data and any(agency_data):
-                    listed_date, listing_url, mls_photo = agency_data
-                    if listed_date:
-                        df.at[row.Index, 'listed_date'] = listed_date
-                    if listing_url:
-                        df.at[row.Index, 'listing_url'] = listing_url
-                    if mls_photo:
-                        df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                            mls_photo,
-                            mls_number,
-                            imagekit_instance=imagekit_instance
-                        )
-                    #else:
-                        #logger.warning(f"No photo URL found for MLS {mls_number} from The Agency.")
-                else:
-                    pass
-            else:
-                df.at[row.Index, 'listed_date'] = webscrape[0]
-                df.at[row.Index, 'mls_photo'] = imagekit_transform(
-                    webscrape[1],
-                    mls_number,
-                    imagekit_instance=imagekit_instance
+                # BHHS tuple: date, photo, URL. Agency tuple: date, URL, photo.
+                listed_date = first_usable(bhhs_data[0], agency_data[0])
+                source_photo_url = first_usable(bhhs_data[1], agency_data[2])
+                listing_url = first_usable(bhhs_data[2], agency_data[1])
+                scrape_status = (
+                    "success"
+                    if any(
+                        usable(value)
+                        for value in (listed_date, listing_url, source_photo_url)
+                    )
+                    else "not_found"
                 )
-                df.at[row.Index, 'listing_url'] = webscrape[2]
-        except Exception as e:
-            logger.error(f"Error processing MLS {mls_number} at index {row.Index}: {e}")
+                scrape_error = None
+
+            source_photo_hash = photo_fingerprint(source_photo_url)
+            reusable_image = bool(
+                source_photo_hash
+                and record
+                and record.get("image_source_hash") == source_photo_hash
+                and record.get("image_status") in SUCCESS_STATUSES
+                and usable(record.get("mls_photo"))
+            )
+
+            if reusable_image:
+                mls_photo = record.get("mls_photo")
+                image_status = "cached"
+                image_error = None
+            elif source_photo_hash:
+                mls_photo = imagekit_transform(
+                    source_photo_url,
+                    mls_number,
+                    imagekit_instance=imagekit_instance,
+                    folder=f"/listings/{listing_type}",
+                )
+                image_status = "success" if usable(mls_photo) else "failed"
+                image_error = None if usable(mls_photo) else "ImageKit upload failed"
+            else:
+                mls_photo = None
+                image_status = "not_found"
+                image_error = None
+
+            df.at[row_index, "listed_date"] = listed_date
+            df.at[row_index, "listing_url"] = listing_url
+            df.at[row_index, "source_photo_url"] = source_photo_url
+            df.at[row_index, "mls_photo"] = mls_photo
+            df.at[row_index, "listing_input_hash"] = input_hash
+            df.at[row_index, "scrape_status"] = scrape_status
+            df.at[row_index, "image_status"] = image_status
+            df.at[row_index, "image_source_hash"] = source_photo_hash
+
+            if checkpoint_store and (
+                not scrape_was_cached or not reusable_image
+            ):
+                checkpoint_store.checkpoint(
+                    mls_number,
+                    listing_input_hash=input_hash,
+                    scrape_status=(
+                        record.get("scrape_status")
+                        if scrape_was_cached and record
+                        else scrape_status
+                    ),
+                    scrape_error=scrape_error,
+                    listed_date=listed_date,
+                    listing_url=listing_url,
+                    source_photo_url=source_photo_url,
+                    image_status=(
+                        record.get("image_status")
+                        if reusable_image and record
+                        else image_status
+                    ),
+                    image_error=image_error,
+                    image_source_hash=source_photo_hash,
+                    mls_photo=mls_photo,
+                )
+        except CheckpointPersistenceError:
+            raise
+        except Exception as error:
+            logger.error(
+                f"Error processing MLS {mls_number} at index {row_index}: {error}"
+            )
+            df.at[row_index, "listing_input_hash"] = input_hash
+            df.at[row_index, "scrape_status"] = "failed"
+            df.at[row_index, "image_status"] = "failed"
+            if checkpoint_store:
+                checkpoint_store.checkpoint(
+                    mls_number,
+                    listing_input_hash=input_hash,
+                    scrape_status="failed",
+                    scrape_error=str(error),
+                    image_status="failed",
+                    image_error=str(error),
+                )
     return df
+
+
+def merge_listing_dataframes(
+    new_df: pd.DataFrame,
+    old_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Merge listing refreshes per column while preserving trusted old enrichment.
+
+    Source columns prefer non-null incoming values. Enrichment values only win
+    when their stage succeeded; otherwise legacy values fill the gaps. Changed
+    addresses invalidate legacy coordinates, and a changed upstream photo
+    invalidates the legacy ImageKit URL when its replacement failed.
+    """
+    if old_df.empty:
+        return new_df.drop_duplicates(subset=["mls_number"], keep="last").copy()
+    if new_df.empty:
+        return old_df.drop_duplicates(subset=["mls_number"], keep="last").copy()
+
+    new = new_df.copy()
+    old = old_df.copy()
+    new["_merge_mls"] = new["mls_number"].apply(normalize_mls_number)
+    old["_merge_mls"] = old["mls_number"].apply(normalize_mls_number)
+    new = new.drop_duplicates("_merge_mls", keep="last").set_index("_merge_mls")
+    old = old.drop_duplicates("_merge_mls", keep="last").set_index("_merge_mls")
+
+    enrichment_policies = {
+        "scrape_status": ("listed_date", "listing_url", "source_photo_url"),
+        "image_status": ("mls_photo",),
+        "geocode_status": ("latitude", "longitude"),
+    }
+    for status_column, protected_columns in enrichment_policies.items():
+        if status_column not in new.columns:
+            continue
+        failed_or_incomplete = (
+            new[status_column].notna()
+            & ~new[status_column].isin(SUCCESS_STATUSES)
+        )
+        for column in protected_columns:
+            if column in new.columns:
+                new.loc[failed_or_incomplete, column] = pd.NA
+
+    combined = new.combine_first(old)
+    overlap = new.index.intersection(old.index)
+
+    if len(overlap) > 0 and "geocode_status" in new.columns:
+        new_derived_address_hash = new.get(
+            "full_street_address",
+            pd.Series(index=new.index, dtype="object"),
+        ).apply(address_fingerprint)
+        new_address_hash = (
+            new["geocode_address_hash"].combine_first(new_derived_address_hash)
+            if "geocode_address_hash" in new.columns
+            else new_derived_address_hash
+        )
+        old_derived_address_hash = old.get(
+            "full_street_address",
+            pd.Series(index=old.index, dtype="object"),
+        ).apply(address_fingerprint)
+        old_address_hash = (
+            old["geocode_address_hash"].combine_first(old_derived_address_hash)
+            if "geocode_address_hash" in old.columns
+            else old_derived_address_hash
+        )
+        address_changed = (
+            new_address_hash.loc[overlap].notna()
+            & old_address_hash.loc[overlap].notna()
+            & (new_address_hash.loc[overlap] != old_address_hash.loc[overlap])
+        )
+        geocode_succeeded = new.loc[overlap, "geocode_status"].isin(
+            SUCCESS_STATUSES
+        )
+        old_latitude = pd.to_numeric(
+            old.get(
+                "latitude",
+                pd.Series(index=old.index, dtype="float64"),
+            ).loc[overlap],
+            errors="coerce",
+        )
+        old_longitude = pd.to_numeric(
+            old.get(
+                "longitude",
+                pd.Series(index=old.index, dtype="float64"),
+            ).loc[overlap],
+            errors="coerce",
+        )
+        old_coordinates_usable = (
+            old_latitude.between(-90, 35.393528, inclusive="both")
+            & old_longitude.between(-180, 180, inclusive="both")
+        )
+        invalidate_coordinates = (
+            address_changed | ~old_coordinates_usable
+        ) & ~geocode_succeeded
+        invalid_coordinate_indexes = invalidate_coordinates[
+            invalidate_coordinates
+        ].index
+        for column in ("latitude", "longitude"):
+            if column in combined.columns:
+                combined.loc[invalid_coordinate_indexes, column] = pd.NA
+
+    if (
+        len(overlap) > 0
+        and "image_status" in new.columns
+        and "image_source_hash" in new.columns
+        and "image_source_hash" in old.columns
+    ):
+        new_photo_hash = new.loc[overlap, "image_source_hash"]
+        old_photo_hash = old.loc[overlap, "image_source_hash"]
+        photo_changed = (
+            new_photo_hash.notna()
+            & old_photo_hash.notna()
+            & (new_photo_hash != old_photo_hash)
+        )
+        image_succeeded = new.loc[overlap, "image_status"].isin(SUCCESS_STATUSES)
+        invalidate_image = photo_changed & ~image_succeeded
+        invalid_image_indexes = invalidate_image[invalidate_image].index
+        if "mls_photo" in combined.columns:
+            combined.loc[invalid_image_indexes, "mls_photo"] = pd.NA
+
+    return combined.reset_index(drop=True)
 
 def categorize_laundry_features(feature) -> str:
     # If it's NaN, treat as unknown
