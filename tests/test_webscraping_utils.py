@@ -93,6 +93,19 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(monke
     assert request_count[0] == scraping.TRANSPORT_FAILURE_THRESHOLD
 
 
+def test_transport_failure_count_is_exposed_before_circuit_opens():
+    scraping._transport_failures.clear()
+    scraping._circuit_open_until.clear()
+    host = "search-service.idcrealestate.com"
+    error = requests.Timeout("read timed out")
+
+    failures = scraping._record_transport_failure(host, error)
+
+    assert failures == 1
+    assert scraping._transport_failures[host] == 1
+    assert host not in scraping._circuit_open_until
+
+
 def test_get_with_backoff_recovers_after_circuit_cooldown(monkeypatch):
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()

@@ -87,13 +87,13 @@ def _raise_if_circuit_open(host: str) -> None:
         )
 
 
-def _record_transport_failure(host: str, error: requests.RequestException) -> None:
-    """Track transport failures and pause a host that is repeatedly unreachable."""
+def _record_transport_failure(host: str, error: requests.RequestException) -> int:
+    """Track a transport failure, returning its consecutive host failure count."""
     with _rate_limit_lock:
         failures = _transport_failures.get(host, 0) + 1
         _transport_failures[host] = failures
         if failures < TRANSPORT_FAILURE_THRESHOLD:
-            return
+            return failures
 
         _circuit_open_until[host] = time.monotonic() + HOST_CIRCUIT_OPEN_SECONDS
 
@@ -130,13 +130,15 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
         try:
             response = requests.get(url, headers=headers, timeout=timeout)
         except (requests.Timeout, requests.ConnectionError) as error:
-            _record_transport_failure(host, error)
+            failures = _record_transport_failure(host, error)
             if attempt == MAX_RETRY_ATTEMPTS - 1:
                 raise
             delay = min(MAX_RETRY_DELAY_SECONDS, random.uniform(1.0, 2 ** (attempt + 1)))
             logger.warning(
                 f"Request to {host} failed ({error}); retrying in {delay:.1f}s "
-                f"(attempt {attempt + 1}/{MAX_RETRY_ATTEMPTS})."
+                f"(request attempt {attempt + 1}/{MAX_RETRY_ATTEMPTS}; "
+                f"consecutive transport failure "
+                f"{failures}/{TRANSPORT_FAILURE_THRESHOLD})."
             )
             _set_cooldown(host, delay)
             time.sleep(delay)
