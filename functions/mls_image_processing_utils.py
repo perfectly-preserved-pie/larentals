@@ -61,7 +61,7 @@ def imagekit_transform(
                     "width": "400"
                 }]
             })
-            logger.success(f"Transformed photo {transformed_image} generated for {mls}.")  # Log success only if transform succeeds
+            logger.debug(f"ImageKit transformation generated for MLS {mls}.")
         except Exception as e:
             logger.warning(f"Couldn't transform image because {e}.")
             return None  # Return early if transform fails

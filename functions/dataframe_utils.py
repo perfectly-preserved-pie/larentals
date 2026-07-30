@@ -19,11 +19,31 @@ import re
 import requests
 import sqlite3
 import sys
+import time
 
 DB = str(LARENTALS_DB_PATH)
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+
+
+def _format_duration(seconds: float) -> str:
+    """Format a duration for compact progress logs."""
+    seconds = max(0, round(seconds))
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m"
+    if minutes:
+        return f"{minutes}m {seconds:02d}s"
+    return f"{seconds}s"
+
+
+def _source_label(sources: set[str]) -> str:
+    """Return listing sources in their preferred lookup order."""
+    return "+".join(
+        source for source in ("BHHS", "The Agency") if source in sources
+    ) or "none"
 
 
 def _ensure_object_columns(
@@ -127,6 +147,13 @@ def update_dataframe_with_listing_data(
     if listing_type not in {"buy", "lease"}:
         raise ValueError(f"Unsupported listing type: {listing_type!r}")
 
+    total_rows = len(df)
+    started_at = time.monotonic()
+    logger.info(
+        f"Enriching {total_rows} {listing_type} listings "
+        "(BHHS primary; The Agency fills missing fields)."
+    )
+
     _ensure_object_columns(
         df,
         (
@@ -152,7 +179,7 @@ def update_dataframe_with_listing_data(
     def first_usable(*values: Any) -> Any:
         return next((value for value in values if usable(value)), None)
 
-    for row_index in df.index:
+    for position, row_index in enumerate(df.index, start=1):
         row = df.loc[row_index]
         mls_number = normalize_mls_number(row["mls_number"])
         input_hash = listing_input_fingerprint(
@@ -174,26 +201,42 @@ def update_dataframe_with_listing_data(
                 source_photo_url = record.get("source_photo_url")
                 scrape_status = "cached"
                 scrape_error = None
+                checked_sources = "checkpoint"
+                selected_sources: set[str] = set()
             else:
                 listing_path = "for-sale" if listing_type == "buy" else "for-lease"
                 bhhs_data = webscrape_bhhs(
                     url=f"https://www.bhhscalifornia.com/{listing_path}/{mls_number}-t_q;/",
-                    row_index=row_index,
+                    row_index=position - 1,
                     mls_number=mls_number,
-                    total_rows=len(df),
+                    total_rows=total_rows,
                 )
                 agency_data = (None, None, None)
-                if not all(usable(value) for value in bhhs_data):
+                agency_was_checked = not all(usable(value) for value in bhhs_data)
+                if agency_was_checked:
                     agency_data = fetch_the_agency_data(
                         mls_number,
-                        row_index=row_index,
-                        total_rows=len(df),
+                        row_index=position - 1,
+                        total_rows=total_rows,
                     )
 
                 # BHHS tuple: date, photo, URL. Agency tuple: date, URL, photo.
                 listed_date = first_usable(bhhs_data[0], agency_data[0])
                 source_photo_url = first_usable(bhhs_data[1], agency_data[2])
                 listing_url = first_usable(bhhs_data[2], agency_data[1])
+                selected_sources = set()
+                for bhhs_value, agency_value in (
+                    (bhhs_data[0], agency_data[0]),
+                    (bhhs_data[1], agency_data[2]),
+                    (bhhs_data[2], agency_data[1]),
+                ):
+                    if usable(bhhs_value):
+                        selected_sources.add("BHHS")
+                    elif usable(agency_value):
+                        selected_sources.add("The Agency")
+                checked_sources = (
+                    "BHHS→The Agency" if agency_was_checked else "BHHS"
+                )
                 scrape_status = (
                     "success"
                     if any(
@@ -264,11 +307,50 @@ def update_dataframe_with_listing_data(
                     image_source_hash=source_photo_hash,
                     mls_photo=mls_photo,
                 )
+
+            populated_fields = sum(
+                usable(value)
+                for value in (listed_date, listing_url, source_photo_url)
+            )
+            elapsed = time.monotonic() - started_at
+            remaining = (
+                elapsed / position * (total_rows - position)
+                if position and total_rows
+                else 0
+            )
+            source = (
+                "checkpoint"
+                if scrape_was_cached
+                else _source_label(selected_sources)
+            )
+            image_result = {
+                "success": "uploaded",
+                "cached": "cached",
+                "not_found": "no source photo",
+                "failed": "failed",
+            }.get(image_status, image_status)
+            logger.info(
+                f"[{listing_type} {position}/{total_rows} "
+                f"({position / total_rows:.1%})] MLS {mls_number}: "
+                f"listing={scrape_status} ({populated_fields}/3 fields), "
+                f"source={source}, checked={checked_sources}, "
+                f"image={image_result}; elapsed={_format_duration(elapsed)}, "
+                f"ETA={_format_duration(remaining)}."
+            )
         except CheckpointPersistenceError:
             raise
         except Exception as error:
+            elapsed = time.monotonic() - started_at
+            remaining = (
+                elapsed / position * (total_rows - position)
+                if position and total_rows
+                else 0
+            )
             logger.error(
-                f"Error processing MLS {mls_number} at index {row_index}: {error}"
+                f"[{listing_type} {position}/{total_rows} "
+                f"({position / total_rows:.1%})] MLS {mls_number}: failed: "
+                f"{error}; elapsed={_format_duration(elapsed)}, "
+                f"ETA={_format_duration(remaining)}."
             )
             df.at[row_index, "listing_input_hash"] = input_hash
             df.at[row_index, "scrape_status"] = "failed"
@@ -282,6 +364,10 @@ def update_dataframe_with_listing_data(
                     image_status="failed",
                     image_error=str(error),
                 )
+    logger.info(
+        f"Finished enriching {total_rows} {listing_type} listings in "
+        f"{_format_duration(time.monotonic() - started_at)}."
+    )
     return df
 
 

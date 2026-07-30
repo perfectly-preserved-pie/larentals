@@ -296,7 +296,10 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         - link (str): The detailed listing URL if found.
         Returns (None, None, None) if data is not found or an error occurs.
     """
-    logger.info(f"Scraping BHHS page for {mls_number} (row {row_index + 1} of {total_rows}).")
+    logger.debug(
+        f"Checking BHHS for MLS {mls_number} "
+        f"({row_index + 1}/{total_rows})."
+    )
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -334,7 +337,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
             listed_date = pd.Timestamp(listed_date_text)
 
         if listed_date is None and photo is None and link is None:
-            logger.info(f"No data found on BHHS page for {mls_number}.")
+            logger.debug(f"BHHS returned no usable data for MLS {mls_number}.")
 
         return listed_date, photo, link
 
@@ -480,7 +483,13 @@ def fetch_the_agency_data(
         else:
             logger.debug(f"No images found for MLS {mls_number}.")
         
-        logger.info(f"Successfully fetched data for MLS {mls_number}")
+        populated_fields = sum(
+            value is not None for value in (list_date, detail_url, img_src)
+        )
+        logger.debug(
+            f"The Agency returned {populated_fields}/3 fields for MLS "
+            f"{mls_number}."
+        )
         return list_date, detail_url, img_src
 
     except HostCircuitOpen:

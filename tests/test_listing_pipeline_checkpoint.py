@@ -217,6 +217,48 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
     assert second.loc[0, "mls_photo"] == first.loc[0, "mls_photo"]
 
 
+def test_listing_progress_log_identifies_type_fallback_source_and_eta(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    messages: list[str] = []
+
+    monkeypatch.setattr(
+        "functions.dataframe_utils.webscrape_bhhs",
+        lambda **kwargs: (None, None, None),
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.fetch_the_agency_data",
+        lambda *args, **kwargs: (
+            pd.Timestamp("2026-07-20").date(),
+            "https://www.theagencyre.com/listing/MLS-2",
+            "https://images.example.test/MLS-2.jpg",
+        ),
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.imagekit_transform",
+        lambda *args, **kwargs: "https://ik.example.test/listings/buy/MLS-2.jpg",
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.logger.info",
+        messages.append,
+    )
+
+    result = update_dataframe_with_listing_data(
+        pd.DataFrame([{"mls_number": "MLS-2"}]),
+        imagekit_instance=object(),
+        listing_type="buy",
+    )
+
+    assert result.loc[0, "scrape_status"] == "success"
+    assert any(
+        "[buy 1/1 (100.0%)] MLS MLS-2" in message
+        and "source=The Agency" in message
+        and "checked=BHHS→The Agency" in message
+        and "ETA=" in message
+        for message in messages
+    )
+
+
 def test_geocode_is_reused_for_the_same_address(
     tmp_path: Path,
 ) -> None:
