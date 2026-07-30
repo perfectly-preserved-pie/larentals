@@ -133,6 +133,10 @@ if (( pipeline_status != 0 )); then
 fi
 echo "Both lease+buy pipelines complete"
 
+echo "----- ENRICH SCHOOL DISTRICTS AND NEAREST SCHOOLS -----"
+uv run enrich-schools \
+  --db-path "$DB_PATH"
+
 echo "----- FETCH CPUC BROADBAND GEOPACKAGE -----"
 uv run fetch-cpuc-broadband-geopackage \
   --output "$BROADBAND_GEOPACKAGE_PATH" \
