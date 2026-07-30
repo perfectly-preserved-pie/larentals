@@ -257,7 +257,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
         data = response.json()
         is_sold = data.get('IsSold', False)
         if is_sold:
-            logger.info(f"Listing {mls_number} has been sold.")
+            logger.debug(f"The Agency reports MLS {mls_number} as sold.")
         return is_sold
     
     except HostCircuitOpen:
@@ -270,7 +270,10 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
     except requests.exceptions.HTTPError as http_err:
         code = http_err.response.status_code if http_err.response is not None else 'Unknown'
         if code == 404:
-            logger.info(f"Listing {mls_number} not found on The Agency (404).")
+            logger.debug(
+                f"The Agency sold-listing check returned 404 for MLS "
+                f"{mls_number}."
+            )
         else:
             logger.error(f"HTTP {code} error for MLS {mls_number}: {http_err}")
         return False

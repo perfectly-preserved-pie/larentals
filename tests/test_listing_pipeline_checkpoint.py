@@ -11,6 +11,7 @@ from functions.dataframe_utils import (
     merge_listing_dataframes,
     normalize_reported_inactive_flags,
     reconstruct_missing_address_components,
+    remove_inactive_listings,
     remove_trailing_zero,
     update_dataframe_with_listing_data,
 )
@@ -254,6 +255,48 @@ def test_listing_progress_log_identifies_type_fallback_source_and_eta(
         "[buy 1/1 (100.0%)] MLS MLS-2" in message
         and "source=The Agency" in message
         and "checked=BHHS→The Agency" in message
+        and "ETA=" in message
+        for message in messages
+    )
+
+
+def test_inactive_check_log_identifies_type_provider_result_and_eta(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    messages: list[str] = []
+    agency_checks: list[tuple[str, str]] = []
+
+    def fake_agency_check(url: str, mls: str) -> bool:
+        agency_checks.append((url, mls))
+        return False
+
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_theagency",
+        fake_agency_check,
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.logger.info",
+        messages.append,
+    )
+
+    source = pd.DataFrame(
+        [
+            {
+                "mls_number": "MLS-3",
+                "listing_url": "https://www.theagencyre.com/listing/MLS-3",
+            }
+        ]
+    )
+    result = remove_inactive_listings(source, table_name="lease")
+
+    assert len(result) == 1
+    assert agency_checks == [
+        ("https://www.theagencyre.com/listing/MLS-3", "MLS-3")
+    ]
+    assert any(
+        "[lease inactive-check 1/1 (100.0%)] MLS MLS-3" in message
+        and "result=kept" in message
+        and "checked=The Agency" in message
         and "ETA=" in message
         for message in messages
     )

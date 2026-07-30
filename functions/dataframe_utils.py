@@ -94,8 +94,14 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     Removes listings that have expired or been sold both in memory and in the SQLite table.
     """
     to_delete = []
+    total_rows = len(df)
+    started_at = time.monotonic()
+    logger.info(
+        f"Checking {total_rows} {table_name} listings for inactive status "
+        "(provider selected from listing URL)."
+    )
 
-    for row in df.itertuples():
+    for position, row in enumerate(df.itertuples(), start=1):
         raw = getattr(row, 'listing_url', '')
         # guard against NaN, floats, etc.
         if pd.isna(raw) or not isinstance(raw, str):
@@ -104,12 +110,34 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
             url = raw
         mls = getattr(row, 'mls_number', '')
 
-        if 'bhhscalifornia.com' in url and check_expired_listing_bhhs(url, mls):
+        provider = "none"
+        inactive = False
+        if 'bhhscalifornia.com' in url:
+            provider = "BHHS"
+            inactive = check_expired_listing_bhhs(url, mls)
+        elif 'theagencyre.com' in url:
+            provider = "The Agency"
+            inactive = check_expired_listing_theagency(url, mls)
+
+        if inactive:
             to_delete.append(mls)
             delete_single_mls_image(mls)
-        elif 'theagencyre.com' in url and check_expired_listing_theagency(url, mls):
-            to_delete.append(mls)
-            delete_single_mls_image(mls)
+
+        elapsed = time.monotonic() - started_at
+        remaining = elapsed / position * (total_rows - position)
+        result = (
+            "removed"
+            if inactive
+            else "kept"
+            if provider != "none"
+            else "skipped (no supported listing URL)"
+        )
+        logger.info(
+            f"[{table_name} inactive-check {position}/{total_rows} "
+            f"({position / total_rows:.1%})] MLS {mls}: result={result}, "
+            f"checked={provider}; elapsed={_format_duration(elapsed)}, "
+            f"ETA={_format_duration(remaining)}."
+        )
 
     if to_delete:
         conn = sqlite3.connect(DB)
@@ -123,7 +151,11 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
         conn.close()
 
     df_clean = df[~df['mls_number'].isin(to_delete)].reset_index(drop=True)
-    logger.info(f"Removed {len(to_delete)} inactive listings")
+    logger.info(
+        f"Finished checking {total_rows} {table_name} listings in "
+        f"{_format_duration(time.monotonic() - started_at)}; "
+        f"removed {len(to_delete)} inactive listings."
+    )
     return df_clean
 
 def update_dataframe_with_listing_data(
