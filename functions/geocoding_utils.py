@@ -196,6 +196,12 @@ def fill_missing_location_fields_with_checkpoint(
     Coordinates returned by the same request are carried forward so the normal
     coordinate stage does not issue a second geocode request for that listing.
     """
+    # CSV/Excel inputs commonly infer location columns containing numbers and
+    # missing values as float64. Geocoded city/ZIP values are text, so make the
+    # columns capable of holding them before assigning individual cells.
+    df[city_column] = df[city_column].astype("object")
+    df[zip_column] = df[zip_column].astype("object")
+
     for row_index in df.index:
         city_missing = not _has_text(df.at[row_index, city_column])
         zip_missing = not _has_text(df.at[row_index, zip_column])

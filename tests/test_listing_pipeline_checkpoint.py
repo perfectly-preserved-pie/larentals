@@ -250,6 +250,39 @@ def test_missing_location_fields_and_coordinates_share_one_lookup(
     assert second.loc[0, "geocode_status"] == "cached"
 
 
+def test_missing_location_fields_accept_text_in_float_inferred_columns() -> None:
+    geolocator = FakeGeolocator()
+    source = pd.DataFrame(
+        [
+            {
+                "mls_number": "MLS-1",
+                "street_address": "100 Main St",
+                "city": "Los Angeles",
+                "zip_code": 90001.0,
+            },
+            {
+                "mls_number": "MLS-2",
+                "street_address": "200 Main St",
+                "city": None,
+                "zip_code": None,
+            },
+        ]
+    )
+
+    result = fill_missing_location_fields_with_checkpoint(
+        source,
+        geolocator=geolocator,
+        checkpoint_store=None,
+        street_column="street_address",
+    )
+
+    assert geolocator.calls == 1
+    assert result.loc[0, "zip_code"] == 90001.0
+    assert result.loc[1, "city"] == "Los Angeles"
+    assert result.loc[1, "zip_code"] == "90002"
+    assert result.loc[1, "location_status"] == "success"
+
+
 def test_column_merge_preserves_old_enrichment_after_failed_refresh() -> None:
     address = "100 Main St, Los Angeles 90001"
     old_photo_hash = photo_fingerprint("https://images.example.test/old.jpg")
