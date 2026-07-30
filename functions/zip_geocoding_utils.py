@@ -595,13 +595,19 @@ def load_zip_place_crosswalk(
         Dict mapping e.g. "SANTA MONICA" → {"90401", "90402", "90403", ...}.
     """
     mapping: dict[str, set[str]] = defaultdict(set)
-    df = pd.read_csv(csv_path, dtype=str)
+    df = pd.read_csv(csv_path, dtype="str")
     for row in df.itertuples():
         # Skip rows that don't match the specified state (if given)
         if state and getattr(row, "USPS_ZIP_PREF_STATE", None) != state:
             continue
-        city = (getattr(row, "USPS_ZIP_PREF_CITY", "") or "").strip().upper()
-        zip_code = (getattr(row, "ZIP", "") or "").strip()
+        raw_city = getattr(row, "USPS_ZIP_PREF_CITY", None)
+        raw_zip_code = getattr(row, "ZIP", None)
+        city = "" if pd.isna(raw_city) else str(raw_city).strip().upper()
+        zip_code = (
+            ""
+            if pd.isna(raw_zip_code)
+            else str(raw_zip_code).strip()
+        )
         if city and zip_code:
             mapping[city].add(zip_code)
 

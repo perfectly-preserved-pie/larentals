@@ -25,6 +25,50 @@ DB = str(LARENTALS_DB_PATH)
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
+
+def _ensure_object_columns(
+    df: pd.DataFrame,
+    columns: Sequence[str],
+) -> None:
+    """
+    Prepare columns that will receive several kinds of Python values.
+
+    Pandas 3 rejects assignments that do not match a column's inferred dtype.
+    These enrichment columns can contain strings, timestamps, and missing
+    values, so they deliberately use the flexible object dtype.
+    """
+    for column in columns:
+        if column in df.columns:
+            df[column] = df[column].astype("object")
+        else:
+            df[column] = pd.Series(index=df.index, dtype="object")
+
+
+def normalize_reported_inactive_flags(series: pd.Series) -> pd.Series:
+    """
+    Convert stored inactive-listing flags into nullable pandas booleans.
+
+    SQLite and older pipeline runs may represent the same flag as an integer,
+    float, string, or boolean. Missing and unrecognized values are treated as
+    false.
+    """
+    truthy_values = {"1", "1.0", "true", "t", "yes", "y"}
+
+    def is_reported(value: object) -> bool:
+        try:
+            if bool(pd.isna(value)):
+                return False
+        except (TypeError, ValueError):
+            return False
+        return str(value).strip().lower() in truthy_values
+
+    return pd.Series(
+        (is_reported(value) for value in series),
+        index=series.index,
+        dtype="boolean",
+    )
+
+
 def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """
     Removes listings that have expired or been sold both in memory and in the SQLite table.
@@ -82,6 +126,20 @@ def update_dataframe_with_listing_data(
     """
     if listing_type not in {"buy", "lease"}:
         raise ValueError(f"Unsupported listing type: {listing_type!r}")
+
+    _ensure_object_columns(
+        df,
+        (
+            "listed_date",
+            "listing_url",
+            "source_photo_url",
+            "mls_photo",
+            "listing_input_hash",
+            "scrape_status",
+            "image_status",
+            "image_source_hash",
+        ),
+    )
 
     def usable(value: Any) -> bool:
         if value is None or value is pd.NA:
@@ -273,7 +331,7 @@ def merge_listing_dataframes(
     if len(overlap) > 0 and "geocode_status" in new.columns:
         new_derived_address_hash = new.get(
             "full_street_address",
-            pd.Series(index=new.index, dtype="object"),
+            pd.Series(index=new.index, dtype="str"),
         ).apply(address_fingerprint)
         new_address_hash = (
             new["geocode_address_hash"].combine_first(new_derived_address_hash)
@@ -282,7 +340,7 @@ def merge_listing_dataframes(
         )
         old_derived_address_hash = old.get(
             "full_street_address",
-            pd.Series(index=old.index, dtype="object"),
+            pd.Series(index=old.index, dtype="str"),
         ).apply(address_fingerprint)
         old_address_hash = (
             old["geocode_address_hash"].combine_first(old_derived_address_hash)
@@ -345,6 +403,49 @@ def merge_listing_dataframes(
             combined.loc[invalid_image_indexes, "mls_photo"] = pd.NA
 
     return combined.reset_index(drop=True)
+
+
+def reconstruct_missing_address_components(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Restore address components from ``full_street_address`` when possible.
+
+    Merging current listings with SQLite data can leave ZIP and street-number
+    columns with a numeric dtype. Cast the destination columns to object before
+    assigning extracted text so pandas does not reject valid string values.
+    """
+    result = df.copy()
+    required_columns = ("street_address", "city", "zip_code", "street_number")
+    for column in required_columns:
+        if column not in result.columns:
+            result[column] = pd.NA
+
+    missing_street = (
+        result["street_address"].isna()
+        & result["full_street_address"].notna()
+    )
+    if not missing_street.any():
+        return result
+
+    reconstructed = result.loc[
+        missing_street, "full_street_address"
+    ].astype("string").str.extract(
+        r"^(?P<street_address>.*?), (?P<city>.*?) (?P<zip_code>\d{5})$"
+    )
+    reconstructed["street_number"] = reconstructed[
+        "street_address"
+    ].str.extract(r"^(?P<street_number>\d+)")
+
+    for column in required_columns:
+        valid_indexes = reconstructed.index[reconstructed[column].notna()]
+        if valid_indexes.empty:
+            continue
+        result[column] = result[column].astype("object")
+        result.loc[valid_indexes, column] = reconstructed.loc[
+            valid_indexes, column
+        ].astype("object")
+
+    return result
+
 
 def categorize_laundry_features(feature) -> str:
     # If it's NaN, treat as unknown
@@ -661,10 +762,16 @@ def remove_trailing_zero(df: pd.DataFrame) -> pd.DataFrame:
     """
     for col in df.columns:
         if col not in ['hoa_fee', 'space_rent']:
-            if df[col].dtype == object:
+            if pd.api.types.is_object_dtype(df[col].dtype):
                 df[col] = df[col].apply(
                     lambda x: re.sub(r"\.0$", "", x) if isinstance(x, str) else x
                 )
+            elif pd.api.types.is_string_dtype(df[col].dtype):
+                df[col] = df[col].str.replace(r"\.0$", "", regex=True)
             elif pd.api.types.is_numeric_dtype(df[col]):
-                df[col] = df[col].astype(str).str.replace(r"\.0$", "", regex=True)
+                df[col] = (
+                    df[col]
+                    .astype("string")
+                    .str.replace(r"\.0$", "", regex=True)
+                )
     return df

@@ -332,13 +332,17 @@ def main() -> None:
 
     if "reported_as_inactive" not in df_combined.columns:
       df_combined["reported_as_inactive"] = False
-    else:
-      df_combined["reported_as_inactive"] = df_combined["reported_as_inactive"].fillna(False)
+    df_combined["reported_as_inactive"] = normalize_reported_inactive_flags(
+      df_combined["reported_as_inactive"]
+    )
     previously_flagged = set()
-    if not df_old.empty:
+    if not df_old.empty and "reported_as_inactive" in df_old.columns:
+      old_reported_flags = normalize_reported_inactive_flags(
+        df_old["reported_as_inactive"]
+      )
       previously_flagged.update(
         normalize_mls_number(value)
-        for value in df_old[df_old["reported_as_inactive"] == True]["mls_number"]
+        for value in df_old.loc[old_reported_flags, "mls_number"]
       )
     previously_flagged.update(reported_inactive_mls_numbers)
     if previously_flagged:

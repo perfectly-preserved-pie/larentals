@@ -273,7 +273,7 @@ def main() -> None:
     bathroom_details = df['bedrooms_bathrooms'].str.extract(bathroom_pattern)
 
     # Check if extraction was successful
-    if bathroom_details.isnull().values.any():
+    if bathroom_details.isnull().to_numpy().any():
       logger.warning("Some rows in 'bedrooms_bathrooms' do not match the expected format.")
 
     # Rename the extracted columns
@@ -336,25 +336,7 @@ def main() -> None:
     df_combined = remove_inactive_listings(df_combined, table_name="buy")
     df_combined.reset_index(drop=True, inplace=True)
     
-    # Attempt to reconstruct missing base address components from full_street_address
-    required_base_fields = ['street_address', 'city', 'zip_code', 'street_number']
-    for col in required_base_fields:
-      if col not in df_combined.columns:
-        df_combined[col] = None
-
-    mask_missing = df_combined['street_address'].isna() & df_combined['full_street_address'].notna()
-
-    # Extract street_number from start of street_address, city, zip from the full address
-    reconstructed = df_combined.loc[mask_missing, 'full_street_address'].str.extract(
-      r'^(?P<street_address>.*?), (?P<city>.*?) (?P<zip_code>\d{5})$'
-    )
-
-    # Attempt to extract street_number from reconstructed street_address
-    reconstructed["street_number"] = reconstructed["street_address"].str.extract(r'^(?P<street_number>\d+)')
-
-    # Apply reconstructed values back to df_combined
-    for col in ['street_address', 'city', 'zip_code', 'street_number']:
-      df_combined.loc[mask_missing & reconstructed[col].notna(), col] = reconstructed[col]
+    df_combined = reconstruct_missing_address_components(df_combined)
 
     # Clean up address fields
     df_combined['city']     = df_combined['city'].fillna('').astype(str)
@@ -396,13 +378,17 @@ def main() -> None:
 
     if "reported_as_inactive" not in df_combined.columns:
       df_combined["reported_as_inactive"] = False
-    else:
-      df_combined["reported_as_inactive"] = df_combined["reported_as_inactive"].fillna(False)
+    df_combined["reported_as_inactive"] = normalize_reported_inactive_flags(
+      df_combined["reported_as_inactive"]
+    )
     previously_flagged = set()
-    if not df_old.empty:
+    if not df_old.empty and "reported_as_inactive" in df_old.columns:
+      old_reported_flags = normalize_reported_inactive_flags(
+        df_old["reported_as_inactive"]
+      )
       previously_flagged.update(
         normalize_mls_number(value)
-        for value in df_old[df_old["reported_as_inactive"] == True]["mls_number"]
+        for value in df_old.loc[old_reported_flags, "mls_number"]
       )
     previously_flagged.update(reported_inactive_mls_numbers)
     if previously_flagged:

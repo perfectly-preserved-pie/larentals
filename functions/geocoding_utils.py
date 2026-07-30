@@ -15,6 +15,25 @@ import sys
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
+
+def _ensure_object_columns(
+    df: pd.DataFrame,
+    columns: tuple[str, ...],
+) -> None:
+    """
+    Prepare geocoding metadata columns to receive text values.
+
+    An entirely empty input column is often inferred as numeric. Converting it
+    to object first lets the pipeline safely store statuses, provider names,
+    address hashes, and missing values under pandas 3.
+    """
+    for column in columns:
+        if column in df.columns:
+            df[column] = df[column].astype("object")
+        else:
+            df[column] = pd.Series(index=df.index, dtype="object")
+
+
 def return_coordinates(
     address: str,
     row_index: int,
@@ -201,6 +220,13 @@ def fill_missing_location_fields_with_checkpoint(
     # columns capable of holding them before assigning individual cells.
     df[city_column] = df[city_column].astype("object")
     df[zip_column] = df[zip_column].astype("object")
+    _ensure_object_columns(df, ("location_status",))
+    for coordinate_column in ("_prefetched_latitude", "_prefetched_longitude"):
+        if coordinate_column in df.columns:
+            df[coordinate_column] = pd.to_numeric(
+                df[coordinate_column],
+                errors="coerce",
+            )
 
     for row_index in df.index:
         city_missing = not _has_text(df.at[row_index, city_column])
@@ -321,6 +347,19 @@ def update_dataframe_with_geocoding(
     A checkpoint hit avoids another paid lookup. Legacy coordinates are reused
     only when their normalized address still matches the incoming address.
     """
+    for coordinate_column in ("latitude", "longitude"):
+        if coordinate_column in df.columns:
+            df[coordinate_column] = pd.to_numeric(
+                df[coordinate_column],
+                errors="coerce",
+            )
+        else:
+            df[coordinate_column] = pd.Series(index=df.index, dtype="float64")
+    _ensure_object_columns(
+        df,
+        ("geocode_status", "geocode_provider", "geocode_address_hash"),
+    )
+
     existing_by_mls: dict[str, pd.Series] = {}
     if existing_df is not None and not existing_df.empty:
         existing = existing_df.copy()
@@ -471,6 +510,10 @@ def re_geocode_above_lat_threshold(
         checkpoint_store=checkpoint_store,
         use_nominatim=use_nominatim,
         max_valid_latitude=lat_threshold,
+    )
+    _ensure_object_columns(
+        df,
+        ("geocode_status", "geocode_provider", "geocode_address_hash"),
     )
     for column in (
         "latitude",

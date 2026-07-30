@@ -202,3 +202,24 @@ def test_upsert_listing_enrichment_rows_updates_existing_records() -> None:
             ).fetchone()
 
         assert row == ("District B", 1.25)
+
+
+def test_upsert_listing_enrichment_rows_skips_missing_mls_numbers() -> None:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        db_path = Path(temp_dir) / "enrichment.db"
+        source = pd.DataFrame(
+            [
+                {"mls_number": pd.NA, "school_district_name": "Missing"},
+                {"mls_number": "", "school_district_name": "Blank"},
+                {"mls_number": " MLS-1 ", "school_district_name": "District A"},
+            ]
+        )
+
+        assert upsert_listing_enrichment_rows(db_path, "buy", source) == 1
+
+        with sqlite3.connect(db_path) as conn:
+            rows = conn.execute(
+                "SELECT mls_number FROM buy_enrichment"
+            ).fetchall()
+
+        assert rows == [("MLS-1",)]

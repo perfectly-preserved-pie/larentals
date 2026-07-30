@@ -101,7 +101,9 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     list_files: list = list_files_response.list if hasattr(list_files_response, 'list') else []
 
     # Create a set of referenced mls numbers for faster searching
-    referenced_mls_numbers: Set[str] = set(gdf['mls_number'].astype(str))
+    referenced_mls_numbers: Set[str] = set(
+        gdf["mls_number"].dropna().astype("string")
+    )
 
     # Initialize a list for file IDs to delete
     file_ids_for_deletion: List[str] = [

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from functions import zip_geocoding_utils as geocoding
@@ -51,6 +52,35 @@ def test_get_zip_codes_for_place_returns_crosswalk_zips_without_polygons() -> No
         "92674",
     }
     assert geocoding.get_zip_features_for_place("Anaheim", crosswalk, []) == []
+
+
+def test_load_zip_place_crosswalk_skips_pandas_string_missing_values(
+    tmp_path: Path,
+) -> None:
+    csv_path = tmp_path / "crosswalk.csv"
+    pd.DataFrame(
+        [
+            {
+                "USPS_ZIP_PREF_STATE": "CA",
+                "USPS_ZIP_PREF_CITY": "Los Angeles",
+                "ZIP": "90001",
+            },
+            {
+                "USPS_ZIP_PREF_STATE": "CA",
+                "USPS_ZIP_PREF_CITY": None,
+                "ZIP": "90002",
+            },
+            {
+                "USPS_ZIP_PREF_STATE": "CA",
+                "USPS_ZIP_PREF_CITY": "Pasadena",
+                "ZIP": None,
+            },
+        ]
+    ).to_csv(csv_path, index=False)
+
+    result = geocoding.load_zip_place_crosswalk(csv_path)
+
+    assert result == {"LOS ANGELES": {"90001"}}
 
 
 def test_geocode_place_cached_prefers_la_county_for_ambiguous_california_place(

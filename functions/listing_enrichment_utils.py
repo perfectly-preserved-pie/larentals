@@ -779,8 +779,10 @@ def upsert_listing_enrichment_rows(
         field_name="enrichment_table",
     )
     rows_df = rows_df.drop_duplicates(subset=["mls_number"]).copy()
-    rows_df["mls_number"] = rows_df["mls_number"].astype(str).str.strip()
-    rows_df = rows_df[rows_df["mls_number"] != ""].copy()
+    rows_df["mls_number"] = rows_df["mls_number"].astype("string").str.strip()
+    rows_df = rows_df[
+        rows_df["mls_number"].notna() & rows_df["mls_number"].ne("")
+    ].copy()
     if rows_df.empty:
         return 0
 
