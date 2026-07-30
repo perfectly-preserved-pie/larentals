@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import NoReturn, Dict
+from typing import Dict
 import boto3
 import sys
 
@@ -36,7 +36,7 @@ def upload_file_to_s3(
     local_path: str,
     bucket: str,
     key: str
-) -> NoReturn:
+) -> None:
     """
     Upload a local file to the specified S3 bucket.
 

@@ -23,10 +23,9 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 # Configuration variables
 SAMPLE_SIZE=30
-BASE_DIR=/home/ubuntu/larentals
+BASE_DIR=/home/ec2-user/larentals
 S3_BUCKET=wheretolivedotla-geojsonstorage
 S3_KEY=larentals.db
-S3_URI=s3://$S3_BUCKET/$S3_KEY
 CHECKPOINT_S3_PREFIX=checkpoints/listing-pipelines
 BROADBAND_GEOPACKAGE_LAYER=ca_broadband_availability_aggregate
 
@@ -35,29 +34,29 @@ SAMPLE_LOG_DIR=$BASE_DIR/sample
 FULL_LOG_DIR=$BASE_DIR/full
 CHECKPOINT_DIR=$BASE_DIR/data/checkpoints
 
-# Update & install OS packages (script runs as root)
-apt-get update -y
-DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  python3 python3-pip git curl unzip gdal-bin
+# Install packages omitted from the AL2023 minimal AMI. GDAL is provided by
+# Supplementary Packages for Amazon Linux (SPAL) on current AL2023 releases.
+dnf install -y git python3.13 spal-release
+dnf install -y gdal310
+dnf clean all
 
 # Ensure HOME is set
-export HOME=/home/ubuntu
+export HOME=/home/ec2-user
 cd "$HOME"
 
 # Clone repo if missing
 if [ ! -d "$BASE_DIR" ]; then
-  git clone https://github.com/perfectly-preserved-pie/larentals.git larentals
+  git clone \
+    --depth=1 \
+    --single-branch \
+    https://github.com/perfectly-preserved-pie/larentals.git \
+    "$BASE_DIR"
 else
   git -C "$BASE_DIR" pull --ff-only
 fi
 
 mkdir -p "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" "$CHECKPOINT_DIR"
 chmod 777 "$SAMPLE_LOG_DIR" "$FULL_LOG_DIR" # fuck it lol
-
-# Install AWS CLI
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-./aws/install
 
 # Install uv (Astral)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -68,9 +67,9 @@ source "$HOME/.local/bin/env"
 # Create & activate virtualenv, install dependencies
 cd "$BASE_DIR"
 echo "Creating virtual environment in $BASE_DIR/.venv"
-uv venv
+uv venv --python /usr/bin/python3.13
 source .venv/bin/activate
-uv sync --project "$BASE_DIR/pyproject.toml"
+uv sync --frozen --project "$BASE_DIR/pyproject.toml"
 
 # Fix PYTHONPATH so `import functions` works
 echo "Setting PYTHONPATH to $BASE_DIR"
@@ -182,16 +181,26 @@ with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as connection:
 PY
 
 echo "----- UPLOAD DB -----"
-aws s3 cp "$DB_PATH" "$S3_URI" --only-show-errors
+uv run python - "$DB_PATH" "$S3_BUCKET" "$S3_KEY" <<'PY'
+import sys
+from pathlib import Path
 
-local_size=$(stat -c %s "$DB_PATH")
-remote_size=$(aws s3api head-object \
-  --bucket "$S3_BUCKET" \
-  --key "$S3_KEY" \
-  --query ContentLength \
-  --output text)
-if [ "$local_size" != "$remote_size" ]; then
-  echo "ERROR: uploaded database size mismatch (local=$local_size, remote=$remote_size)." >&2
-  exit 1
-fi
-echo "Verified $S3_URI ($remote_size bytes)."
+import boto3
+
+db_path = Path(sys.argv[1])
+bucket = sys.argv[2]
+key = sys.argv[3]
+local_size = db_path.stat().st_size
+
+s3 = boto3.client("s3")
+s3.upload_file(str(db_path), bucket, key)
+remote_size = int(s3.head_object(Bucket=bucket, Key=key)["ContentLength"])
+
+if local_size != remote_size:
+    raise SystemExit(
+        "Uploaded database size mismatch "
+        f"(local={local_size}, remote={remote_size})."
+    )
+
+print(f"Verified s3://{bucket}/{key} ({remote_size} bytes).")
+PY

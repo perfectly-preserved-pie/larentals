@@ -87,7 +87,7 @@ def require_command(command: str) -> None:
     Ensure an external command is available before starting slow work.
 
     The download is large enough that it is better to fail immediately if GDAL
-    is missing. On Ubuntu, ``ogr2ogr`` is provided by the ``gdal-bin`` package.
+    is missing. On AL2023, ``ogr2ogr`` is provided by the ``gdal310`` package.
 
     Args:
         command: Executable name to find on ``PATH``.
@@ -97,7 +97,10 @@ def require_command(command: str) -> None:
     """
 
     if shutil.which(command) is None:
-        raise RuntimeError(f"{command} is required; install gdal-bin")
+        raise RuntimeError(
+            f"{command} is required; install GDAL "
+            "(gdal310 on AL2023 or gdal-bin on Ubuntu)"
+        )
 
 
 def _interesting_headers(headers: object) -> dict[str, str]:
