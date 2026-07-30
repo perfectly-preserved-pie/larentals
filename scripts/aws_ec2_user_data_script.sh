@@ -88,24 +88,6 @@ ALPR_CAMERAS_PATH=$(uv run python -c \
 # Set timezone
 timedatectl set-timezone America/Los_Angeles
 
-# Install CloudWatch agent
-echo "Installing CloudWatch agent..."
-curl -sS -o /tmp/amazon-cloudwatch-agent.deb \
-     https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-dpkg -i /tmp/amazon-cloudwatch-agent.deb || apt-get install -fy
-
-# Apply CloudWatch config
-echo "Applying CloudWatch config..."
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
-  -a fetch-config \
-  -m ec2 \
-  -c file:$BASE_DIR/scripts/cloudwatch.json \
-  -s
-
-# Enable & restart CloudWatch agent
-systemctl enable amazon-cloudwatch-agent
-systemctl restart amazon-cloudwatch-agent
-
 # Sample both in parallel
 (
   uv run lease-dataframe \
