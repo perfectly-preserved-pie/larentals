@@ -83,61 +83,75 @@ BROADBAND_GEOPACKAGE_PATH=$(uv run python -c \
   "from functions.data_paths import CA_BROADBAND_GEOPACKAGE_PATH; print(CA_BROADBAND_GEOPACKAGE_PATH)")
 ALPR_CAMERAS_PATH=$(uv run python -c \
   "from functions.data_paths import ALPR_CAMERAS_PATH; print(ALPR_CAMERAS_PATH)")
+STAGING_DIR="$(dirname "$DB_PATH")/listing-staging"
+LEASE_STAGE_DB="$STAGING_DIR/lease.db"
+BUY_STAGE_DB="$STAGING_DIR/buy.db"
 
 # Set timezone
 timedatectl set-timezone America/Los_Angeles
 
-# Run the listing pipelines sequentially because both write to the same SQLite
-# database. SQLite permits concurrent readers but only one writer at a time.
+# Give each pipeline its own copy of the current database. They can then read,
+# enrich, and write concurrently without contending for SQLite's single writer.
+mkdir -p "$STAGING_DIR"
+rm -f "$LEASE_STAGE_DB" "$BUY_STAGE_DB"
+if [ -f "$DB_PATH" ]; then
+  cp "$DB_PATH" "$LEASE_STAGE_DB"
+  cp "$DB_PATH" "$BUY_STAGE_DB"
+fi
+
+# Run lease and buy concurrently against isolated staging databases.
 (
   uv run lease-dataframe \
     --sample 15 \
     --logfile "$SAMPLE_LOG_DIR/lease_sample.log" \
+    --db-path "$LEASE_STAGE_DB" \
     --checkpoint-path "$CHECKPOINT_DIR/lease.sqlite" \
     --checkpoint-s3-bucket "$S3_BUCKET" \
     --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/lease.sqlite" \
   && uv run lease-dataframe \
     --logfile "$FULL_LOG_DIR/lease_full.log" \
+    --db-path "$LEASE_STAGE_DB" \
     --checkpoint-path "$CHECKPOINT_DIR/lease.sqlite" \
     --checkpoint-s3-bucket "$S3_BUCKET" \
     --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/lease.sqlite"
 ) &
 lease_pid=$!
 
-# Wait for the lease pipeline before starting buy. Both pipelines write to the
-# same SQLite database, so running them concurrently can produce
-# "database is locked" during table replacement or inactive-listing cleanup.
+(
+  uv run buy-dataframe \
+    --sample 15 \
+    --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
+    --db-path "$BUY_STAGE_DB" \
+    --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+    --checkpoint-s3-bucket "$S3_BUCKET" \
+    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite" \
+  && uv run buy-dataframe \
+    --logfile "$FULL_LOG_DIR/buy_full.log" \
+    --db-path "$BUY_STAGE_DB" \
+    --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+    --checkpoint-s3-bucket "$S3_BUCKET" \
+    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite"
+) &
+buy_pid=$!
+
+# Publish only after both staged runs succeed. The publisher replaces the two
+# listing tables in one SQLite transaction, so readers never see a half-run.
 pipeline_status=0
 wait "$lease_pid" || {
   echo "ERROR: lease pipeline failed." >&2
   pipeline_status=1
 }
-
-if (( pipeline_status == 0 )); then
-  (
-    uv run buy-dataframe \
-      --sample 15 \
-      --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
-      --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
-      --checkpoint-s3-bucket "$S3_BUCKET" \
-      --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite" \
-    && uv run buy-dataframe \
-      --logfile "$FULL_LOG_DIR/buy_full.log" \
-      --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
-      --checkpoint-s3-bucket "$S3_BUCKET" \
-      --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite"
-  ) &
-  buy_pid=$!
-  wait "$buy_pid" || {
-    echo "ERROR: buy pipeline failed." >&2
-    pipeline_status=1
-  }
-else
-  echo "Skipping buy pipeline because lease pipeline failed." >&2
-fi
+wait "$buy_pid" || {
+  echo "ERROR: buy pipeline failed." >&2
+  pipeline_status=1
+}
 if (( pipeline_status != 0 )); then
   exit "$pipeline_status"
 fi
+uv run publish-listing-tables \
+  --db-path "$DB_PATH" \
+  --buy-stage-path "$BUY_STAGE_DB" \
+  --lease-stage-path "$LEASE_STAGE_DB"
 echo "Both lease+buy pipelines complete"
 
 echo "----- ENRICH SCHOOL DISTRICTS AND NEAREST SCHOOLS -----"

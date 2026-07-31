@@ -49,6 +49,8 @@ def main() -> None:
     help="Optional S3 bucket for write-through checkpoint durability")
   parser.add_argument("--checkpoint-s3-key", type=str, default=None,
     help="Optional S3 key for write-through checkpoint durability")
+  parser.add_argument("--db-path", type=str, default=str(LARENTALS_DB_PATH),
+    help="SQLite database path for this pipeline's reads and writes")
   args = parser.parse_args()
   SAMPLE_N = args.sample
   USE_NOMINATIM  = args.use_nominatim
@@ -88,7 +90,7 @@ def main() -> None:
   )
 
   # Database path and table name
-  DB_PATH = str(LARENTALS_DB_PATH)
+  DB_PATH = args.db_path
   TABLE_NAME = "lease"
   checkpoint_store = ListingCheckpointStore(
     args.checkpoint_path or CHECKPOINT_DIR / f"{TABLE_NAME}.sqlite",
