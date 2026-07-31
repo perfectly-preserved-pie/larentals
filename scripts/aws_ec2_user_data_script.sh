@@ -87,7 +87,8 @@ ALPR_CAMERAS_PATH=$(uv run python -c \
 # Set timezone
 timedatectl set-timezone America/Los_Angeles
 
-# Sample both in parallel
+# Run the listing pipelines sequentially because both write to the same SQLite
+# database. SQLite permits concurrent readers but only one writer at a time.
 (
   uv run lease-dataframe \
     --sample 15 \
@@ -103,31 +104,37 @@ timedatectl set-timezone America/Los_Angeles
 ) &
 lease_pid=$!
 
-(
-  uv run buy-dataframe \
-    --sample 15 \
-    --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
-    --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
-    --checkpoint-s3-bucket "$S3_BUCKET" \
-    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite" \
-  && uv run buy-dataframe \
-    --logfile "$FULL_LOG_DIR/buy_full.log" \
-    --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
-    --checkpoint-s3-bucket "$S3_BUCKET" \
-    --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite"
-) &
-buy_pid=$!
-
-# Wait for both pipelines to finish before proceeding
+# Wait for the lease pipeline before starting buy. Both pipelines write to the
+# same SQLite database, so running them concurrently can produce
+# "database is locked" during table replacement or inactive-listing cleanup.
 pipeline_status=0
 wait "$lease_pid" || {
   echo "ERROR: lease pipeline failed." >&2
   pipeline_status=1
 }
-wait "$buy_pid" || {
-  echo "ERROR: buy pipeline failed." >&2
-  pipeline_status=1
-}
+
+if (( pipeline_status == 0 )); then
+  (
+    uv run buy-dataframe \
+      --sample 15 \
+      --logfile "$SAMPLE_LOG_DIR/buy_sample.log" \
+      --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+      --checkpoint-s3-bucket "$S3_BUCKET" \
+      --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite" \
+    && uv run buy-dataframe \
+      --logfile "$FULL_LOG_DIR/buy_full.log" \
+      --checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+      --checkpoint-s3-bucket "$S3_BUCKET" \
+      --checkpoint-s3-key "$CHECKPOINT_S3_PREFIX/buy.sqlite"
+  ) &
+  buy_pid=$!
+  wait "$buy_pid" || {
+    echo "ERROR: buy pipeline failed." >&2
+    pipeline_status=1
+  }
+else
+  echo "Skipping buy pipeline because lease pipeline failed." >&2
+fi
 if (( pipeline_status != 0 )); then
   exit "$pipeline_status"
 fi

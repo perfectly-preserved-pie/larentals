@@ -14,14 +14,10 @@ from loguru import logger
 from typing import Any, Sequence, Dict, Optional, Tuple
 import json
 import pandas as pd
-from functions.data_paths import LARENTALS_DB_PATH
 import re
 import requests
-import sqlite3
 import sys
 import time
-
-DB = str(LARENTALS_DB_PATH)
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -91,7 +87,7 @@ def normalize_reported_inactive_flags(series: pd.Series) -> pd.Series:
 
 def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """
-    Removes listings that have expired or been sold both in memory and in the SQLite table.
+    Removes listings that have expired or been sold from the DataFrame.
     """
     to_delete = []
     total_rows = len(df)
@@ -138,17 +134,6 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
             f"checked={provider}; elapsed={_format_duration(elapsed)}, "
             f"ETA={_format_duration(remaining)}."
         )
-
-    if to_delete:
-        conn = sqlite3.connect(DB)
-        cur = conn.cursor()
-        for mls_number in to_delete:
-            cur.execute(
-                f"DELETE FROM {table_name} WHERE mls_number = ?",
-                (mls_number,)
-            )
-        conn.commit()
-        conn.close()
 
     df_clean = df[~df['mls_number'].isin(to_delete)].reset_index(drop=True)
     logger.info(
