@@ -26,6 +26,13 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
         if request.path != normalized_mcp_path:
             return response
 
+        # MCP clients poll the stream endpoint with GET requests. Successful
+        # polls carry no useful RPC metadata and can be extremely frequent,
+        # so keep them out of the normal application log. Failed polls remain
+        # visible for troubleshooting.
+        if request.method == "GET" and response.status_code < 400:
+            return response
+
         start_time = getattr(g, "mcp_usage_start_time", None)
         duration_ms = (
             (time.perf_counter() - start_time) * 1000

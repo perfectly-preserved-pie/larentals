@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from flask import Flask, Response
+from flask import Flask, Response, request
 
 from functions.mcp_usage_logging import register_mcp_usage_logging
 
@@ -13,7 +13,8 @@ class McpUsageLoggingTest(unittest.TestCase):
 
         @app.route("/_mcp", methods=["GET", "POST"])
         def mcp_endpoint() -> Response:
-            return Response("{}", mimetype="application/json")
+            status = 500 if request.args.get("failed") else 200
+            return Response("{}", status=status, mimetype="application/json")
 
         @app.route("/health")
         def health() -> str:
@@ -52,16 +53,20 @@ class McpUsageLoggingTest(unittest.TestCase):
         self.assertNotIn("arguments", log_output)
         self.assertNotIn("123 Private Street", log_output)
 
-    def test_logs_mcp_get_without_rpc_payload(self) -> None:
+    def test_suppresses_successful_mcp_get_poll(self) -> None:
         with patch("functions.mcp_usage_logging.logger.info") as log_info:
             response = self.client.get("/_mcp")
 
         self.assertEqual(response.status_code, 200)
+        log_info.assert_not_called()
+
+    def test_logs_failed_mcp_get_poll(self) -> None:
+        with patch("functions.mcp_usage_logging.logger.info") as log_info:
+            response = self.client.get("/_mcp?failed=1")
+
+        self.assertEqual(response.status_code, 500)
         log_info.assert_called_once()
-        log_output = log_info.call_args.args[0]
-        self.assertIn("MCP request method=GET", log_output)
-        self.assertIn("rpc_method=-", log_output)
-        self.assertIn("target=-", log_output)
+        self.assertIn("MCP request method=GET", log_info.call_args.args[0])
 
     def test_ignores_non_mcp_paths(self) -> None:
         with patch("functions.mcp_usage_logging.logger.info") as log_info:
