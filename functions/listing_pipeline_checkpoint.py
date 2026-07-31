@@ -55,6 +55,10 @@ CHECKPOINT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("geocode_address_hash", "TEXT"),
     ("latitude", "REAL"),
     ("longitude", "REAL"),
+    ("inactive_check_input_hash", "TEXT"),
+    ("inactive_check_status", "TEXT"),
+    ("inactive_check_provider", "TEXT"),
+    ("inactive_check_is_inactive", "INTEGER"),
     ("updated_at", "TEXT NOT NULL"),
 )
 
@@ -73,6 +77,10 @@ _INPUT_HASH_EXCLUDED_COLUMNS = {
     "image_error",
     "image_source_hash",
     "image_status",
+    "inactive_check_input_hash",
+    "inactive_check_is_inactive",
+    "inactive_check_provider",
+    "inactive_check_status",
     "latitude",
     "listed_date",
     "listing_input_hash",
@@ -209,6 +217,28 @@ def address_fingerprint(address: object) -> str | None:
 def photo_fingerprint(source_photo_url: object) -> str | None:
     """Identify the source photo so ImageKit is called only when it changes."""
     return stable_fingerprint(source_photo_url)
+
+
+def inactive_check_fingerprint(
+    listing_url: object,
+    *,
+    source_file_hash: str,
+) -> str:
+    """Identify a completed inactive-listing check for one source revision.
+
+    A new source file deliberately invalidates prior results, so a listing can
+    transition to inactive between weekly pipeline runs. Reusing the source
+    file fingerprint lets a restarted run (and the full run after its sample
+    run) skip checks already completed for that exact input.
+    """
+    url = _json_scalar(listing_url)
+    normalized_url = " ".join(url.strip().split()) if isinstance(url, str) else url
+    payload = {
+        "source_file_hash": source_file_hash,
+        "listing_url": normalized_url,
+    }
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return sha256(serialized.encode("utf-8")).hexdigest()
 
 
 class ListingCheckpointStore:

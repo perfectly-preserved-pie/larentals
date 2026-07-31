@@ -302,6 +302,75 @@ def test_inactive_check_log_identifies_type_provider_result_and_eta(
     )
 
 
+def test_inactive_checks_resume_from_checkpoint_until_source_changes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    checks: list[tuple[str, str]] = []
+    deleted_images: list[str] = []
+
+    def fake_agency_check(url: str, mls: str) -> bool:
+        checks.append((url, mls))
+        return mls == "MLS-INACTIVE"
+
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_theagency",
+        fake_agency_check,
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.delete_single_mls_image",
+        deleted_images.append,
+    )
+    store = ListingCheckpointStore(
+        tmp_path / "lease.sqlite",
+        listing_type="lease",
+    )
+    source = pd.DataFrame(
+        [
+            {
+                "mls_number": "MLS-ACTIVE",
+                "listing_url": "https://www.theagencyre.com/listing/active",
+            },
+            {
+                "mls_number": "MLS-INACTIVE",
+                "listing_url": "https://www.theagencyre.com/listing/inactive",
+            },
+        ]
+    )
+
+    first = remove_inactive_listings(
+        source.copy(),
+        table_name="lease",
+        checkpoint_store=store,
+        source_file_hash="report-1",
+    )
+    second = remove_inactive_listings(
+        source.copy(),
+        table_name="lease",
+        checkpoint_store=store,
+        source_file_hash="report-1",
+    )
+    third = remove_inactive_listings(
+        source.copy(),
+        table_name="lease",
+        checkpoint_store=store,
+        source_file_hash="report-2",
+    )
+
+    assert first["mls_number"].tolist() == ["MLS-ACTIVE"]
+    assert second["mls_number"].tolist() == ["MLS-ACTIVE"]
+    assert third["mls_number"].tolist() == ["MLS-ACTIVE"]
+    assert checks == [
+        ("https://www.theagencyre.com/listing/active", "MLS-ACTIVE"),
+        ("https://www.theagencyre.com/listing/inactive", "MLS-INACTIVE"),
+        ("https://www.theagencyre.com/listing/active", "MLS-ACTIVE"),
+        ("https://www.theagencyre.com/listing/inactive", "MLS-INACTIVE"),
+    ]
+    assert deleted_images == ["MLS-INACTIVE", "MLS-INACTIVE", "MLS-INACTIVE"]
+    assert store.get("MLS-ACTIVE")["inactive_check_status"] == "success"
+    assert store.get("MLS-INACTIVE")["inactive_check_is_inactive"] == 1
+
+
 def test_geocode_is_reused_for_the_same_address(
     tmp_path: Path,
 ) -> None:

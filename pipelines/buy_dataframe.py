@@ -335,7 +335,12 @@ def main() -> None:
 
     df_combined = flatten_subtype_column(df_combined)
     df_combined['subtype'] = df_combined['subtype'].apply(normalize_subtype)
-    df_combined = remove_inactive_listings(df_combined, table_name="buy")
+    df_combined = remove_inactive_listings(
+      df_combined,
+      table_name="buy",
+      checkpoint_store=checkpoint_store,
+      source_file_hash=source_file_hash,
+    )
     df_combined.reset_index(drop=True, inplace=True)
     
     df_combined = reconstruct_missing_address_components(df_combined)

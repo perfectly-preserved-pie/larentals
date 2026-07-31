@@ -6,6 +6,7 @@ from functions.listing_pipeline_checkpoint import (
     SUCCESS_STATUSES,
     TERMINAL_SCRAPE_STATUSES,
     address_fingerprint,
+    inactive_check_fingerprint,
     listing_input_fingerprint,
     photo_fingerprint,
 )
@@ -85,9 +86,20 @@ def normalize_reported_inactive_flags(series: pd.Series) -> pd.Series:
     )
 
 
-def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
+def remove_inactive_listings(
+    df: pd.DataFrame,
+    table_name: str,
+    *,
+    checkpoint_store: ListingCheckpointStore | None = None,
+    source_file_hash: str = "ad-hoc",
+) -> pd.DataFrame:
     """
-    Removes listings that have expired or been sold from the DataFrame.
+    Remove listings that have expired or been sold from the DataFrame.
+
+    Completed provider checks are checkpointed one listing at a time. A result
+    is reusable only while both the source-file revision and listing URL match,
+    which makes an interrupted run resumable without making future weekly
+    refreshes stale.
     """
     to_delete = []
     total_rows = len(df)
@@ -108,12 +120,46 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
 
         provider = "none"
         inactive = False
+        cached = False
         if 'bhhscalifornia.com' in url:
             provider = "BHHS"
-            inactive = check_expired_listing_bhhs(url, mls)
         elif 'theagencyre.com' in url:
             provider = "The Agency"
-            inactive = check_expired_listing_theagency(url, mls)
+
+        if provider != "none":
+            check_hash = inactive_check_fingerprint(
+                url,
+                source_file_hash=source_file_hash,
+            )
+            record = checkpoint_store.get(mls) if checkpoint_store else None
+            result = record.get("inactive_check_is_inactive") if record else None
+            cached = bool(
+                record
+                and record.get("inactive_check_input_hash") == check_hash
+                and record.get("inactive_check_status") == "success"
+                and result is not None
+            )
+            if cached:
+                inactive = bool(result)
+                provider = str(record.get("inactive_check_provider") or provider)
+            else:
+                check_result = (
+                    check_expired_listing_bhhs(url, mls)
+                    if provider == "BHHS"
+                    else check_expired_listing_theagency(url, mls)
+                )
+                # ``None`` means the provider could not be checked (for
+                # example, a timeout). Leave it uncached so a later run retries.
+                if check_result is not None:
+                    inactive = bool(check_result)
+                    if checkpoint_store:
+                        checkpoint_store.checkpoint(
+                            mls,
+                            inactive_check_input_hash=check_hash,
+                            inactive_check_status="success",
+                            inactive_check_provider=provider,
+                            inactive_check_is_inactive=inactive,
+                        )
 
         if inactive:
             to_delete.append(mls)
@@ -128,10 +174,11 @@ def remove_inactive_listings(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
             if provider != "none"
             else "skipped (no supported listing URL)"
         )
+        checked = "checkpoint" if cached else provider
         logger.info(
             f"[{table_name} inactive-check {position}/{total_rows} "
             f"({position / total_rows:.1%})] MLS {mls}: result={result}, "
-            f"checked={provider}; elapsed={_format_duration(elapsed)}, "
+            f"checked={checked}; elapsed={_format_duration(elapsed)}, "
             f"ETA={_format_duration(remaining)}."
         )
 

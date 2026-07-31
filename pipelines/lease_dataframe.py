@@ -292,7 +292,12 @@ def main() -> None:
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
       df_combined = merge_listing_dataframes(df, df_old)
       # Iterate through the dataframe and drop rows with expired listings
-      df_combined = remove_inactive_listings(df_combined, table_name="lease")
+      df_combined = remove_inactive_listings(
+        df_combined,
+        table_name="lease",
+        checkpoint_store=checkpoint_store,
+        source_file_hash=source_file_hash,
+      )
       # Categorize the laundry features
       df_combined['laundry_category'] = df_combined['laundry'].apply(categorize_laundry_features)
       # Reset the index

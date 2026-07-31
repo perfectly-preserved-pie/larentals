@@ -169,7 +169,7 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
     assert response is not None
     return response
 
-def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
+def check_expired_listing_bhhs(url: str, mls_number: str) -> bool | None:
     """
     Checks if a BHHS listing has expired by looking for a specific message on the page.
 
@@ -213,9 +213,11 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool:
     except Exception as e:
         logger.error(f"An unexpected error occurred for MLS {mls_number}: {e}")
 
-    return False
+    # Do not represent an unavailable provider as an active listing. Callers
+    # leave this result uncached and retry it on a later pipeline run.
+    return None
 
-def check_expired_listing_theagency(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool:
+def check_expired_listing_theagency(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool | None:
     """
     Checks if a listing has been sold based on the 'IsSold' key from The Agency API.
 
@@ -265,7 +267,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
             f"Skipping Agency expiration check for MLS {mls_number}; "
             "host circuit is open."
         )
-        return False
+        return None
 
     except requests.exceptions.HTTPError as http_err:
         code = http_err.response.status_code if http_err.response is not None else 'Unknown'
@@ -274,13 +276,17 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
                 f"The Agency sold-listing check returned 404 for MLS "
                 f"{mls_number}."
             )
-        else:
-            logger.error(f"HTTP {code} error for MLS {mls_number}: {http_err}")
-        return False
+            return False
+        logger.error(f"HTTP {code} error for MLS {mls_number}: {http_err}")
+        return None
     
     except requests.RequestException as req_err:
         logger.error(f"Network error checking MLS {mls_number}: {req_err}")
-        return False
+        return None
+
+    except Exception as error:
+        logger.error(f"Unexpected error checking MLS {mls_number}: {error}")
+        return None
 
 def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
     """
