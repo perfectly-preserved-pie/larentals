@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
@@ -8,11 +9,16 @@ from loguru import logger
 
 
 MAX_LOG_VALUE_LENGTH = 160
+MAX_LOG_ARGUMENTS_LENGTH = 1_000
 
 
 def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
     """
-    Register metadata-only request logging for the Dash MCP endpoint.
+    Register tool-usage logging for the Dash MCP endpoint.
+
+    MCP clients make several protocol and discovery requests for every session.
+    Those requests are intentionally ignored: a log record is emitted only when
+    a client invokes a tool.
     """
     normalized_mcp_path = _normalize_mcp_path(mcp_path)
 
@@ -26,11 +32,8 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
         if request.path != normalized_mcp_path:
             return response
 
-        # MCP clients poll the stream endpoint with GET requests. Successful
-        # polls carry no useful RPC metadata and can be extremely frequent,
-        # so keep them out of the normal application log. Failed polls remain
-        # visible for troubleshooting.
-        if request.method == "GET" and response.status_code < 400:
+        payload = _get_json_payload()
+        if _rpc_method_from_payload(payload) != "tools/call":
             return response
 
         start_time = getattr(g, "mcp_usage_start_time", None)
@@ -39,15 +42,14 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
             if isinstance(start_time, float)
             else 0.0
         )
-        payload = _get_json_payload()
-        rpc_method = _rpc_method_from_payload(payload) or "-"
-        target = _target_from_payload(payload) or "-"
-        user_agent = request.user_agent.string or "-"
+        tool_name = _target_from_payload(payload) or "-"
+        arguments = _arguments_from_payload(payload)
+        result_summary = _result_summary(response)
 
         logger.info(
-            f"MCP request method={request.method} rpc_method={rpc_method} "
-            f"target={target} status={response.status_code} "
-            f"duration_ms={duration_ms:.1f} user_agent={user_agent!r}"
+            f"MCP tool call tool={tool_name} arguments={arguments} "
+            f"status={response.status_code} duration_ms={duration_ms:.1f} "
+            f"result={result_summary} user_agent={(request.user_agent.string or '-')!r}"
         )
         return response
 
@@ -81,6 +83,56 @@ def _target_from_payload(payload: dict[str, Any] | None) -> str | None:
         if target:
             return target
     return None
+
+
+def _arguments_from_payload(payload: dict[str, Any] | None) -> str:
+    if not isinstance(payload, dict):
+        return "{}"
+
+    params = payload.get("params")
+    if not isinstance(params, dict):
+        return "{}"
+
+    arguments = params.get("arguments")
+    if not isinstance(arguments, dict):
+        return "{}"
+
+    serialized = json.dumps(arguments, ensure_ascii=True, sort_keys=True, default=str)
+    if len(serialized) > MAX_LOG_ARGUMENTS_LENGTH:
+        return f"{serialized[:MAX_LOG_ARGUMENTS_LENGTH]}..."
+    return serialized
+
+
+def _result_summary(response: Response) -> str:
+    """Return useful outcome metadata without logging a tool's full response."""
+    payload = response.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return "unparseable"
+
+    if isinstance(payload.get("error"), dict):
+        return "rpc_error"
+
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        return "missing"
+
+    if result.get("isError") is True:
+        return "tool_error"
+
+    structured_content = result.get("structuredContent")
+    if not isinstance(structured_content, dict):
+        return "success"
+
+    tool_result = structured_content.get("result")
+    if not isinstance(tool_result, dict):
+        return "success"
+
+    details: list[str] = []
+    for key in ("listing_type", "total_results", "page", "page_size"):
+        value = _clean_log_value(tool_result.get(key))
+        if value is not None:
+            details.append(f"{key}={value}")
+    return f"success({','.join(details)})" if details else "success"
 
 
 def _clean_log_value(value: Any) -> str | None:
