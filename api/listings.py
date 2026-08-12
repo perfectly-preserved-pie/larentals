@@ -99,6 +99,18 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
     @bp.get("/api/lease/listing-details/<listing_id>")
     def get_lease_listing_details(listing_id: str) -> Response:
+        """
+        Return lease listing details and related LAHD/RSO summaries.
+
+        Args:
+            listing_id: MLS identifier supplied in the route path.
+
+        Returns:
+            JSON response containing listing details and enrichment summaries.
+
+        Raises:
+            werkzeug.exceptions.HTTPException: If the listing does not exist.
+        """
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(LEASE_LISTING_DETAIL_SQL, (listing_id,)).fetchone()
@@ -113,6 +125,18 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
     @bp.get("/api/buy/listing-details/<listing_id>")
     def get_buy_listing_details(listing_id: str) -> Response:
+        """
+        Return buy listing details and the related LAHD summary.
+
+        Args:
+            listing_id: MLS identifier supplied in the route path.
+
+        Returns:
+            JSON response containing listing details and the LAHD summary.
+
+        Raises:
+            werkzeug.exceptions.HTTPException: If the listing does not exist.
+        """
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(BUY_LISTING_DETAIL_SQL, (listing_id,)).fetchone()

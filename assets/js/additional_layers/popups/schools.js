@@ -1,3 +1,6 @@
+/**
+ * Format school feature properties into a safe Leaflet popup fragment.
+ */
 (function() {
     "use strict";
 

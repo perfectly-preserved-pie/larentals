@@ -1,3 +1,6 @@
+/**
+ * Format supermarket feature properties into a safe popup fragment.
+ */
 (function() {
     "use strict";
 

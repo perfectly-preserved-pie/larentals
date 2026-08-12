@@ -1,3 +1,6 @@
+/**
+ * Format parking-ticket properties into a safe Leaflet popup fragment.
+ */
 (function() {
     "use strict";
 

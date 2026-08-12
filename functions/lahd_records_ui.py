@@ -65,6 +65,9 @@ def create_lahd_records_drawer() -> dmc.Drawer:
 
 def register_lahd_records_drawer_callback(app: Any) -> None:
     """
+    Register callbacks that load and display LAHD records in the drawer.
+    """
+    """
     Register the callback that fills the Housing Department records drawer from an APN event.
     """
 

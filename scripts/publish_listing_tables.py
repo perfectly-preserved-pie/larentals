@@ -76,6 +76,9 @@ def publish_listing_tables(
 
 
 def main() -> None:
+    """
+    Validate staged listing tables and publish them atomically to SQLite.
+    """
     parser = argparse.ArgumentParser(
         description="Atomically publish staged buy and lease listing tables."
     )

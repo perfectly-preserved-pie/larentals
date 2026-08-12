@@ -24,11 +24,17 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
 
     @server.before_request
     def start_mcp_usage_timer() -> None:
+        """
+        Record the start time for a tool-call request.
+        """
         if request.path == normalized_mcp_path:
             g.mcp_usage_start_time = time.perf_counter()
 
     @server.after_request
     def log_mcp_usage(response: Response) -> Response:
+        """
+        Emit a compact usage record after a tool-call response completes.
+        """
         if request.path != normalized_mcp_path:
             return response
 

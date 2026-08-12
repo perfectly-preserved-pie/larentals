@@ -10,6 +10,11 @@ const LAZY_LAYER_NAMES = {
   lahd_property_heatmap: "Housing Department Cases & Code Violations Heatmap",
 };
 
+/**
+ * Return the hidden style used after lazy-layer loading completes.
+ *
+ * @returns {Record<string, string>} CSS properties for a hidden overlay.
+ */
 function hiddenMapSpinner() {
   return {
     position: "absolute",
@@ -22,6 +27,14 @@ function hiddenMapSpinner() {
   };
 }
 
+/**
+ * Determine whether a selected lazy layer still lacks its payload.
+ *
+ * @param {string[]} selectedOverlays Visible overlay labels.
+ * @param {unknown[]} currentData Loaded payloads in layer order.
+ * @param {{layer?: string}[]} layerIds Lazy-layer descriptors.
+ * @returns {boolean} Whether a selected layer is still loading.
+ */
 function hasPendingLazyLayer(selectedOverlays, currentData, layerIds) {
   if (!Array.isArray(selectedOverlays) || !Array.isArray(layerIds)) {
     return false;
@@ -45,6 +58,11 @@ function hasPendingLazyLayer(selectedOverlays, currentData, layerIds) {
 
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
   clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
+    /**
+     * Return the visible style for the map loading overlay.
+     *
+     * @returns {Record<string, string>} CSS properties for a visible overlay.
+     */
     showMapSpinner: function() {
       return {
         position: "absolute",
@@ -56,6 +74,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         zIndex: "10000",
       };
     },
+    /**
+     * Show the spinner when a newly selected lazy layer has no payload.
+     *
+     * @param {string[]} selectedOverlays Visible overlay labels.
+     * @param {{layer?: string}[]} layerIds Lazy-layer descriptors.
+     * @param {unknown[]} currentData Loaded payloads in layer order.
+     * @returns {Record<string, string>|unknown} Spinner style or Dash sentinel.
+     */
     showLazyLayerSpinnerOnToggle: function(selectedOverlays, layerIds, currentData) {
       if (hasPendingLazyLayer(selectedOverlays, currentData, layerIds)) {
         return window.dash_clientside.clientside.showMapSpinner();
@@ -63,6 +89,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
       return window.dash_clientside.no_update;
     },
+    /**
+     * Reconcile spinner visibility with currently loaded lazy-layer data.
+     *
+     * @param {unknown[]} currentData Loaded payloads in layer order.
+     * @param {string[]} selectedOverlays Visible overlay labels.
+     * @param {{layer?: string}[]} layerIds Lazy-layer descriptors.
+     * @returns {Record<string, string>|unknown} Spinner style or Dash sentinel.
+     */
     syncLazyLayerSpinner: function(currentData, selectedOverlays, layerIds) {
       if (!Array.isArray(layerIds)) {
         return window.dash_clientside.no_update;
@@ -74,6 +108,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
       return hiddenMapSpinner();
     },
+    /**
+     * Show the base-map spinner until the initial GeoJSON has features.
+     *
+     * @param {{features?: unknown[]}|null} geojsonData Main map payload.
+     * @param {{features?: unknown[]}|null} layerData Active layer payload.
+     * @returns {Record<string, string>} CSS properties for the overlay.
+     */
     loadingMapSpinner: function(geojsonData, layerData) {
       const base = {
         position: "absolute",

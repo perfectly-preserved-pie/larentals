@@ -124,6 +124,15 @@ def register_isp_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> N
 
     @bp.get("/api/lease/isp-options/<listing_id>")
     def get_lease_isp_options(listing_id: str) -> Response:
+        """
+        Return normalized ISP options associated with a lease listing.
+
+        Args:
+            listing_id: MLS identifier supplied in the route path.
+
+        Returns:
+            JSON response containing provider options ordered by download speed.
+        """
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(LEASE_ISP_SQL, (listing_id,)).fetchall()
@@ -132,6 +141,15 @@ def register_isp_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> N
 
     @bp.get("/api/buy/isp-options/<listing_id>")
     def get_buy_isp_options(listing_id: str) -> Response:
+        """
+        Return normalized ISP options associated with a buy listing.
+
+        Args:
+            listing_id: MLS identifier supplied in the route path.
+
+        Returns:
+            JSON response containing provider options ordered by download speed.
+        """
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(BUY_ISP_SQL, (listing_id,)).fetchall()

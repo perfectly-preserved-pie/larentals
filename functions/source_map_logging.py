@@ -23,5 +23,8 @@ class DashComponentSourceMapErrorFilter(logging.Filter):
 
 
 def register_source_map_error_filter(server: Any) -> None:
+    """
+    Install a log filter that suppresses expected browser source-map errors.
+    """
     """Prevent optional Dash component source-map lookup failures from logging."""
     server.logger.addFilter(DashComponentSourceMapErrorFilter())

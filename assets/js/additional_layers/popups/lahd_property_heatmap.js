@@ -1,3 +1,6 @@
+/**
+ * Format LAHD heatmap feature properties into popup markup.
+ */
 (function() {
     "use strict";
 

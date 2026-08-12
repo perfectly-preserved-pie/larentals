@@ -1,3 +1,6 @@
+/**
+ * Track semantic product events for filters, listings, and map interactions.
+ */
 (function () {
     "use strict";
 

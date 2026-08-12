@@ -41,6 +41,19 @@ def register_report_listing_routes(
 
     @server.route("/report_listing", methods=["POST"])
     def report_listing() -> tuple[Response, int]:
+        """
+        Validate and persist a user-submitted listing report.
+
+        Returns:
+            A JSON response and HTTP status code confirming persistence.
+
+        Raises:
+            werkzeug.exceptions.HTTPException: If the payload or report fields
+                fail validation, or persistence fails.
+
+        Side Effects:
+            Sanitizes user text and writes one report row to SQLite.
+        """
         data = request.get_json(silent=True)
         if not isinstance(data, dict):
             abort(400, "Expected a JSON object body.")

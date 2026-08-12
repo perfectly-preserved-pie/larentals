@@ -55,6 +55,15 @@ ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk(str(ZIP_PLACE_CROSSWALK_PATH))
 
 @lru_cache(maxsize=1)
 def get_buy_components() -> BuyComponents:
+  """
+  Build and cache the buy-page component tree for the process lifetime.
+
+  Returns:
+    The initialized buy-page component collection.
+
+  Side Effects:
+    Loads listing data and constructs Dash components on the first call.
+  """
   start_time = time.perf_counter()
   components = BuyComponents()
   duration = time.perf_counter() - start_time

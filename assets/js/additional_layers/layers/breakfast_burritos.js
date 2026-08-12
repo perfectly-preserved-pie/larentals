@@ -1,3 +1,6 @@
+/**
+ * Create Leaflet markers for the breakfast-burrito dataset.
+ */
 (function() {
     "use strict";
 

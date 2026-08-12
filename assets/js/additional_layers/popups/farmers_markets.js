@@ -1,3 +1,6 @@
+/**
+ * Format farmers-market feature properties into popup markup.
+ */
 (function() {
     "use strict";
 

@@ -1,3 +1,6 @@
+/**
+ * Build the parking-ticket heatmap and its interactive legend controls.
+ */
 (function() {
     "use strict";
 

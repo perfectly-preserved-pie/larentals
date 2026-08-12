@@ -1,3 +1,9 @@
+/**
+ * Open the listing-report dialog and submit the selected report details.
+ *
+ * @param {Record<string, unknown>|string} listingProps Listing data or JSON.
+ * @returns {void}
+ */
 function reportListing(listingProps) {
     // If listingProps is a string and looks like JSON, try to parse it
     if (typeof listingProps === "string") {

@@ -1,3 +1,6 @@
+/**
+ * Synchronize the theme switch with the document color-scheme attribute.
+ */
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
   clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
     initializeThemeSwitch: function() {

@@ -1,3 +1,6 @@
+/**
+ * Format ALPR camera properties into popup markup.
+ */
 (function() {
     "use strict";
 

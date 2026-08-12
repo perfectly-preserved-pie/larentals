@@ -12,6 +12,15 @@ from functions.listing_enrichment_utils import (
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    Parse command-line options for initializing enrichment tables.
+
+    Returns:
+        Parsed command-line arguments.
+
+    Raises:
+        SystemExit: If an argument cannot be parsed.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Create or evolve buy_enrichment and lease_enrichment tables used for "
@@ -36,6 +45,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """
+    Create or upgrade the local listing-enrichment tables.
+
+    Side Effects:
+        Opens the configured SQLite database and changes its schema.
+    """
     args = parse_args()
     db_path = Path(args.db_path).expanduser()
     db_path.parent.mkdir(parents=True, exist_ok=True)

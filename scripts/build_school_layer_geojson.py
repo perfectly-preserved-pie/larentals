@@ -190,6 +190,9 @@ def build_school_layer(args: argparse.Namespace) -> tuple[Path, Path, int]:
 
 
 def main() -> None:
+    """
+    Build the school-layer GeoJSON artifact from the selected source.
+    """
     args = parse_args()
     source_path, output_path, feature_count = build_school_layer(args)
     print(

@@ -129,6 +129,15 @@ def probe_source(url: str) -> dict[str, str]:
 
 
 def load_metadata(path: Path) -> dict[str, object] | None:
+    """
+    Load cached source metadata, returning None for absent or invalid files.
+
+    Args:
+        path: Metadata JSON path to read.
+
+    Returns:
+        Parsed metadata mapping, or ``None`` when it is unavailable or invalid.
+    """
     if not path.exists():
         return None
 
@@ -146,6 +155,16 @@ def source_matches_metadata(
     config: BroadbandGeopackageConfig,
     source_headers: dict[str, str],
 ) -> bool:
+    """
+    Check whether cached output metadata still matches the remote source.
+
+    Args:
+        config: Source and output paths for the broadband artifact.
+        source_headers: Headers observed for the current remote source.
+
+    Returns:
+        ``True`` when cached output and source metadata are reusable.
+    """
     metadata = load_metadata(config.metadata_path)
     if not metadata or not config.output_path.exists():
         return False
@@ -162,6 +181,17 @@ def write_metadata(
     source_headers: dict[str, str],
     archive_sha256: str,
 ) -> None:
+    """
+    Persist source headers and archive identity beside the output artifact.
+
+    Args:
+        config: Source and output paths for the broadband artifact.
+        source_headers: Headers observed for the downloaded source.
+        archive_sha256: SHA-256 digest of the downloaded archive.
+
+    Side Effects:
+        Writes a JSON metadata file adjacent to the configured output.
+    """
     metadata = {
         "source_url": config.source_url,
         "source_headers": source_headers,

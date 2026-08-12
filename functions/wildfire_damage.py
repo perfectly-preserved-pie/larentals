@@ -82,7 +82,10 @@ def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, leas
 
     return lease_gdf, buy_gdf
 
-def main():
+def main() -> None:
+    """
+    Run the wildfire-damage analysis from the configured input datasets.
+    """
     parser = argparse.ArgumentParser(description='Check fire damage for lease and buy properties.')
     parser.add_argument('--buffer_distance', type=float, default=10, help='Buffer distance for the spatial join.')
     args = parser.parse_args()

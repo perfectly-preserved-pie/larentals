@@ -1,3 +1,6 @@
+/**
+ * Render the LAHD property heatmap and its associated map layer behavior.
+ */
 (function() {
     "use strict";
 

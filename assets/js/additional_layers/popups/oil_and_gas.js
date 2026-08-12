@@ -1,3 +1,6 @@
+/**
+ * Format oil-and-gas feature properties into popup markup.
+ */
 (function() {
     "use strict";
 

@@ -222,6 +222,9 @@ def backfill_lease_terms(db_path: str) -> None:
 
 
 def main() -> None:
+    """
+    Normalize lease terms in the local lease database.
+    """
     db_path = LARENTALS_DB_PATH
     backfill_lease_terms(str(db_path))
 

@@ -96,6 +96,9 @@ register_source_map_error_filter(server)
 
 @server.route("/sitemap.xml")
 def sitemap_xml() -> Response:
+  """
+  Render the canonical sitemap for all public Dash pages.
+  """
   page_paths = get_public_page_paths(dash.page_registry)
   return Response(
     build_sitemap_xml(CANONICAL_BASE_URL, page_paths),
@@ -105,6 +108,9 @@ def sitemap_xml() -> Response:
 
 @server.route("/robots.txt")
 def robots_txt() -> Response:
+  """
+  Render crawler directives with the canonical sitemap location.
+  """
   return Response(
     build_robots_txt(CANONICAL_BASE_URL),
     mimetype="text/plain",
@@ -113,6 +119,9 @@ def robots_txt() -> Response:
 
 @server.route("/llms.txt")
 def llms_txt() -> Response:
+  """
+  Render the machine-readable site description for language-model clients.
+  """
   return Response(
     build_llms_txt(CANONICAL_BASE_URL),
     mimetype="text/plain",
@@ -221,6 +230,12 @@ register_lahd_records_drawer_callback(app)
 prewarm_startup_caches()
 
 def main() -> None:
+  """
+  Start the Dash development server when invoked as a console script.
+
+  Side Effects:
+    Binds the configured local web server and blocks while serving requests.
+  """
   app.run(debug=True)
 
 

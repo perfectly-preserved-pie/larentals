@@ -597,7 +597,10 @@ def reconstruct_missing_address_components(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def categorize_laundry_features(feature) -> str:
+def categorize_laundry_features(feature: object) -> str:
+    """
+    Map raw laundry text or values to the application's laundry category.
+    """
     # If it's NaN, treat as unknown
     if pd.isna(feature):
         return 'Unknown'

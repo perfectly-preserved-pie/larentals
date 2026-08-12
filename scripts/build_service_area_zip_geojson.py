@@ -410,6 +410,9 @@ def write_geojson(payload: dict[str, Any], output_path: Path) -> None:
 
 
 def main() -> None:
+    """
+    Build the service-area ZIP GeoJSON artifact from configured sources.
+    """
     args = parse_args()
     payload, zip_codes, skipped_raw_values = build_service_area_geojson(args)
     output_path = Path(args.output).expanduser()

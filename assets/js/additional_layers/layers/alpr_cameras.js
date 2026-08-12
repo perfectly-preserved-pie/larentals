@@ -1,3 +1,6 @@
+/**
+ * Create camera markers and field-of-view previews for ALPR locations.
+ */
 (function() {
     "use strict";
 

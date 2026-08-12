@@ -33,6 +33,15 @@ import sqlite3
 import sys
 
 def main() -> None:
+  """
+  Build the normalized lease-listings dataframe and publish its artifacts.
+
+  Returns:
+    ``None`` after the pipeline completes.
+
+  Side Effects:
+    Reads source data, writes the normalized lease dataset, and logs progress.
+  """
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample", type=int, default=None,
     help="If set, run on a sample and exit before write")
