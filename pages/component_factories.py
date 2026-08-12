@@ -79,9 +79,17 @@ def build_range_filter(
     if marks is not None:
         slider_kwargs["marks"] = marks
 
-    body_children = [dcc.RangeSlider(**slider_kwargs)]
+    slider = dcc.RangeSlider(**slider_kwargs)
+    has_missing_switch = bool(
+        include_missing_switch_id and include_missing_switch_label
+    )
+    body_children = [
+        html.Div(slider, className="range-filter__slider-with-switch")
+        if has_missing_switch
+        else slider
+    ]
 
-    if include_missing_switch_id and include_missing_switch_label:
+    if has_missing_switch:
         body_children.append(
             dmc.Switch(
                 id=include_missing_switch_id,
@@ -96,7 +104,7 @@ def build_range_filter(
     return html.Div(
         [
             html.Div(list(header_children or [])),
-            html.Div(body_children, id=dynamic_id),
+            html.Div(body_children, id=dynamic_id, className="range-filter__controls"),
         ],
         style=container_style,
         id=component_id,
@@ -132,7 +140,7 @@ def build_isp_speed_components(max_download: float, max_upload: float) -> html.D
                         },
                     ),
                 ],
-                style={"marginBottom": "15px"},
+                className="isp-speed-filter__range",
             ),
             html.Div(
                 [
@@ -150,6 +158,7 @@ def build_isp_speed_components(max_download: float, max_upload: float) -> html.D
                         },
                     ),
                 ],
+                className="isp-speed-filter__range",
             ),
             dmc.Switch(
                 id="isp_speed_missing_switch",
@@ -161,6 +170,7 @@ def build_isp_speed_components(max_download: float, max_upload: float) -> html.D
             ),
         ],
         id="isp_speed_div",
+        className="isp-speed-filter",
     )
 
 

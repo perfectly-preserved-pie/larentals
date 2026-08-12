@@ -162,3 +162,79 @@ test("tablet uses a right drawer and desktop keeps a persistent sidebar", async 
 
   expect(errors).toEqual([]);
 });
+
+test("range slider tooltips stay clear of missing-value switches", async ({ page }) => {
+  await page.setViewportSize({ width: 440, height: 900 });
+  await page.goto(`${BASE_URL}/buy`, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "buy");
+  await page.locator("#buy-filter-open-button").click();
+  await page.getByRole("button", { name: "Lot Size", exact: true }).click();
+
+  const slider = page.locator("#lot_size_div_buy .range-filter__slider-with-switch");
+  const missingSwitch = page.locator("#lot_size_missing_switch");
+  await expect(slider).toBeVisible();
+  await expect(missingSwitch).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const tooltipBottom = Math.max(
+      ...Array.from(
+        document.querySelectorAll(
+          "#lot_size_div_buy .range-filter__slider-with-switch .rc-slider-tooltip",
+        ),
+        (tooltip) => tooltip.getBoundingClientRect().bottom,
+      ),
+    );
+    const switchTop = document
+      .getElementById("lot_size_missing_switch")
+      .closest(".mantine-Switch-root")
+      .getBoundingClientRect().top;
+    return { tooltipBottom, switchTop };
+  });
+
+  expect(geometry.switchTop).toBeGreaterThanOrEqual(geometry.tooltipBottom + 8);
+});
+
+test("ISP slider tooltips stay clear of the next control", async ({ page }) => {
+  await page.setViewportSize({ width: 440, height: 900 });
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "lease");
+  await page.locator("#lease-filter-open-button").click();
+  await page
+    .getByRole("button", { name: "Internet Service Provider (ISP) Speed", exact: true })
+    .click();
+
+  const ispFilter = page.locator("#isp_speed_div");
+  await expect(ispFilter).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const ranges = Array.from(
+      document.querySelectorAll("#isp_speed_div .isp-speed-filter__range"),
+    );
+    const tooltipBottom = (range) => Math.max(
+      ...Array.from(
+        range.querySelectorAll(".rc-slider-tooltip"),
+        (tooltip) => tooltip.getBoundingClientRect().bottom,
+      ),
+    );
+    const uploadHeadingTop = ranges[1]
+      .querySelector("h6")
+      .getBoundingClientRect().top;
+    const switchTop = document
+      .getElementById("isp_speed_missing_switch")
+      .closest(".mantine-Switch-root")
+      .getBoundingClientRect().top;
+    return {
+      downloadTooltipBottom: tooltipBottom(ranges[0]),
+      uploadHeadingTop,
+      uploadTooltipBottom: tooltipBottom(ranges[1]),
+      switchTop,
+    };
+  });
+
+  expect(geometry.uploadHeadingTop).toBeGreaterThanOrEqual(
+    geometry.downloadTooltipBottom + 8,
+  );
+  expect(geometry.switchTop).toBeGreaterThanOrEqual(
+    geometry.uploadTooltipBottom + 8,
+  );
+});

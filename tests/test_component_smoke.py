@@ -3,7 +3,9 @@ import unittest
 from dash import dcc, html
 
 from pages.component_factories import (
+    build_isp_speed_components,
     build_location_filter_components,
+    build_range_filter,
     build_subtype_filter,
     build_title_card,
 )
@@ -63,6 +65,39 @@ class ComponentsSmokeTest(unittest.TestCase):
         dropdown = dropdown_wrapper.children[0]
         self.assertIsInstance(dropdown, dcc.Dropdown)
         self.assertEqual(dropdown.value, [])
+
+    def test_range_filter_reserves_tooltip_space_before_switch(self) -> None:
+        component = build_range_filter(
+            slider_id="test-slider",
+            min_value=0,
+            max_value=100,
+            value=[0, 100],
+            component_id="test-range-filter",
+            dynamic_id="test-range-filter-controls",
+            include_missing_switch_id="test-missing-switch",
+            include_missing_switch_label="Include unknown values",
+        )
+
+        controls = component.children[1]
+        slider_wrapper, missing_switch = controls.children
+
+        self.assertEqual(controls.className, "range-filter__controls")
+        self.assertEqual(
+            slider_wrapper.className,
+            "range-filter__slider-with-switch",
+        )
+        self.assertIsInstance(slider_wrapper.children, dcc.RangeSlider)
+        self.assertEqual(missing_switch.id, "test-missing-switch")
+
+    def test_isp_speed_filter_reserves_space_below_both_sliders(self) -> None:
+        component = build_isp_speed_components(10_000, 10_000)
+
+        download_range, upload_range, missing_switch = component.children
+
+        self.assertEqual(component.className, "isp-speed-filter")
+        self.assertEqual(download_range.className, "isp-speed-filter__range")
+        self.assertEqual(upload_range.className, "isp-speed-filter__range")
+        self.assertEqual(missing_switch.id, "isp_speed_missing_switch")
 
     def test_title_card_links_to_mcp_setup_page(self) -> None:
         title_card = build_title_card(

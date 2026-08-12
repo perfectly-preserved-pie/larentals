@@ -68,6 +68,19 @@
   display: none;
 }
 
+/* RangeSlider tooltips are absolutely positioned and therefore do not add to
+   the slider's layout height. Reserve a row for bottom tooltips before laying
+   out the missing-value switch so its label cannot overlap them. */
+.range-filter__slider-with-switch {
+  padding-bottom: 2.75rem;
+}
+
+/* The ISP control has two stacked sliders and does not use build_range_filter.
+   Give both bottom tooltip rows space so they clear the next heading/switch. */
+.isp-speed-filter__range {
+  padding-bottom: 2.75rem;
+}
+
 @media (max-width: 1099.98px) {
   .listing-page-layout {
     display: block;
