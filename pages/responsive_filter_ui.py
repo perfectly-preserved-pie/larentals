@@ -360,7 +360,10 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
     clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="openFilterAccordionSection"),
         Output(f"{page_type}-options-accordion", "active_item"),
-        [Input(f"{page_type}-quick-{key}", "n_clicks") for key in quick_ids],
+        [
+            Input("viewport-listener", "event"),
+            *[Input(f"{page_type}-quick-{key}", "n_clicks") for key in quick_ids],
+        ],
         State(f"{page_type}-options-accordion", "active_item"),
         prevent_initial_call=True,
     )

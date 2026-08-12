@@ -659,6 +659,21 @@
     pet_policy: "Pet Policy",
   });
 
+  const ACCORDION_DEFAULTS = Object.freeze({
+    lease: Object.freeze({
+      desktop: Object.freeze([
+        "listed_date", "location", "subtypes", "monthly_rent", "bedrooms", "bathrooms",
+      ]),
+      compact: Object.freeze(["location", "monthly_rent", "bedrooms"]),
+    }),
+    buy: Object.freeze({
+      desktop: Object.freeze([
+        "listed_date", "location", "subtypes", "list_price", "bedrooms", "bathrooms",
+      ]),
+      compact: Object.freeze(["location", "list_price", "bedrooms"]),
+    }),
+  });
+
   /**
    * Scroll to and focus a named filter accordion section.
    * @param {ListingPage} page Listing mode containing the accordion.
@@ -909,14 +924,26 @@
       },
 
       /**
-       * Add the quick-filter target to the accordion's expanded sections.
+       * Apply viewport-specific defaults or add a quick-filter target to the
+       * accordion's expanded sections.
        * @returns {string[] | *} Expanded section keys or Dash's no-update value.
        */
       openFilterAccordionSection: function () {
         const args = Array.prototype.slice.call(arguments);
         const current = Array.isArray(args[args.length - 1]) ? args[args.length - 1] : [];
         const id = triggeredIds()[0] || "";
-        const page = id.startsWith("buy-") ? "buy" : "lease";
+        const page = id.startsWith("buy-") ? "buy" : id.startsWith("lease-") ? "lease" : currentPage();
+        if (id === "viewport-listener") {
+          const viewportEvent = args[0];
+          const isCompact = viewportEvent && typeof viewportEvent["detail.isMobile"] === "boolean"
+            ? viewportEvent["detail.isMobile"]
+            : window.innerWidth < DESKTOP_BREAKPOINT;
+          const mode = isCompact ? "compact" : "desktop";
+          ui.accordionModes = ui.accordionModes || {};
+          if (ui.accordionModes[page] === mode) return window.dash_clientside.no_update;
+          ui.accordionModes[page] = mode;
+          return ACCORDION_DEFAULTS[page][mode].slice();
+        }
         const button = document.getElementById(id);
         if (button?.classList.contains("map-filter-chip--active")) {
           return window.dash_clientside.no_update;

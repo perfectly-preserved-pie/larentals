@@ -94,9 +94,12 @@ class BuyComponents(BaseClass):
             "display": "block",
         },
         active_filter_items=(
+            "listed_date",
             "location",
+            "subtypes",
             "list_price",
             "bedrooms",
+            "bathrooms",
         ),
         accordion_class_name="options-accordion",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",

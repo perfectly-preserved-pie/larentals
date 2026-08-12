@@ -115,9 +115,12 @@ class LeaseComponents(BaseClass):
             "display": "block",
         },
         active_filter_items=(
+            "listed_date",
             "location",
+            "subtypes",
             "monthly_rent",
             "bedrooms",
+            "bathrooms",
         ),
         accordion_class_name="options-accordion dmc",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -217,9 +220,9 @@ class LeaseComponents(BaseClass):
             ("Location", build_location_filter_components(self.page_type), "location"),
             ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("Monthly Rent", self._build_rental_price_filter(), "monthly_rent"),
-            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
+            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             ("Pet Policy", self.create_pets_radio_button(), "pet_policy"),
             (
                 "Deposits",

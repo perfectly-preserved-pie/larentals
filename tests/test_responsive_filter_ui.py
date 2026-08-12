@@ -120,17 +120,31 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         )
         self.assertEqual(stores[-1].data, {"count": None})
 
-    def test_essential_sections_only_are_expanded_initially(self) -> None:
+    def test_desktop_sections_are_expanded_initially(self) -> None:
         """
-        Verify the initial sidebar emphasizes the most-used filter sections.
+        Verify the persistent desktop sidebar opens its primary filter sections.
         """
         self.assertEqual(
             LeaseComponents.CONFIG.active_filter_items,
-            ("location", "monthly_rent", "bedrooms"),
+            (
+                "listed_date",
+                "location",
+                "subtypes",
+                "monthly_rent",
+                "bedrooms",
+                "bathrooms",
+            ),
         )
         self.assertEqual(
             BuyComponents.CONFIG.active_filter_items,
-            ("location", "list_price", "bedrooms"),
+            (
+                "listed_date",
+                "location",
+                "subtypes",
+                "list_price",
+                "bedrooms",
+                "bathrooms",
+            ),
         )
         self.assertEqual(FILTER_UI_BREAKPOINT, 1100)
 
