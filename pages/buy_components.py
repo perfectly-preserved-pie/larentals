@@ -18,6 +18,7 @@ from .component_factories import (
     build_year_built_filter,
 )
 from .component_models import FilterSection, PageConfig, PageParts
+from .responsive_filter_ui import build_map_filter_toolbar
 
 
 class BuyComponents(BaseClass):
@@ -88,17 +89,14 @@ class BuyComponents(BaseClass):
         subtitle="An interactive map of available residential properties for sale in Los Angeles County. Updated weekly.",
         map_style={
             "width": "100%",
-            "height": "100vh",
+            "height": "100dvh",
             "margin": "0",
             "display": "block",
         },
         active_filter_items=(
-            "listed_date",
             "location",
-            "subtypes",
             "list_price",
             "bedrooms",
-            "bathrooms",
         ),
         accordion_class_name="options-accordion",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -148,6 +146,7 @@ class BuyComponents(BaseClass):
             filter_items=self._build_filter_sections(),
             map_component=self._build_map_component(),
             map_overlay_children=[
+                build_map_filter_toolbar(self.page_type),
                 build_map_gesture_control(),
                 build_school_layer_map_prompt(self.page_type),
             ],

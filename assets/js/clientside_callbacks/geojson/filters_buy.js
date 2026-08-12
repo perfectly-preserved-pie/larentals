@@ -273,3 +273,39 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         }
     })
 });
+
+window.larentals = window.larentals || {};
+window.larentals.filters = window.larentals.filters || {};
+/**
+ * Adapt the responsive Buy filter-state object to the existing filter engine.
+ * @param {Object<string, *>} state Applied for-sale filter values.
+ * @param {{type: string, features: Array<Object>}} fullGeojson Source listings.
+ * @returns {{type: string, features: Array<Object>}} Filtered Buy listings.
+ */
+window.larentals.filters.filterBuyState = function(state, fullGeojson) {
+    return window.dash_clientside.clientside.filterAndClusterBuy(
+        state.priceRange,
+        state.bedroomsRange,
+        state.bathroomsRange,
+        state.sqftRange,
+        state.sqftMissing,
+        state.ppsqftRange,
+        state.ppsqftMissing,
+        state.lotSizeRange,
+        state.lotSizeMissing,
+        state.yearRange,
+        state.yearMissing,
+        state.subtypes,
+        state.dateStart,
+        state.dateEnd,
+        state.dateMissing,
+        state.hoaRange,
+        state.hoaMissing,
+        state.hoaFrequency,
+        state.downloadRange,
+        state.uploadRange,
+        state.ispMissing,
+        state.zipBoundary,
+        fullGeojson
+    );
+};

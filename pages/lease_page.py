@@ -19,6 +19,11 @@ from functions.zip_geocoding_utils import (
 )
 from functions.sql_helpers import get_earliest_listed_date
 from functions.data_paths import LARENTALS_DB_PATH, SOCAL_SERVICE_AREA_ZIP_CODES_PATH, ZIP_PLACE_CROSSWALK_PATH
+from .responsive_filter_ui import (
+  build_filter_ui_stores,
+  build_responsive_listing_shell,
+  register_responsive_filter_callbacks,
+)
 from loguru import logger
 import bleach
 import dash
@@ -66,7 +71,6 @@ def layout(**_: object) -> dbc.Container:
   """
   lease_components = get_lease_components()
 
-  collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="lease-geojson-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="lease-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
   school_layer_prompt_state_store = dcc.Store(
@@ -105,7 +109,7 @@ def layout(**_: object) -> dbc.Container:
 
   return dbc.Container(
     [
-      collapse_store,
+      *build_filter_ui_stores("lease"),
       geojson_store,
       zip_boundary_store,
       school_layer_prompt_state_store,
@@ -116,27 +120,20 @@ def layout(**_: object) -> dbc.Container:
       analytics_school_filter_store,
       kickstart,
       earliest_date_store,
-      dbc.Row(
-        [
-          dbc.Col(
-            [lease_components.title_card, lease_components.user_options_card], 
-            lg=3, md=12, sm=12, xs=12,
-            className="options-col d-lg-block",  # Always visible on desktop
-          ),
-          dbc.Col(
-            [lease_components.map_card], 
-            lg=9, md=12, sm=12, xs=12,
-            className="map-col position-lg-relative"
-          ),
-        ],
-        className="g-0",
-        style={"minHeight": "100vh"}
+      build_responsive_listing_shell(
+        page_type="lease",
+        title_card=lease_components.title_card,
+        user_options_card=lease_components.user_options_card,
+        map_card=lease_components.map_card,
       ),
     ],
     fluid=True,
     className="dbc p-0",
     style={"overflowX": "hidden"}  # Prevent horizontal scroll
   )
+
+
+register_responsive_filter_callbacks("lease")
 
 # Server-side callbacks
 @callback(
@@ -561,52 +558,6 @@ clientside_callback(
   State(LayersClass.layers_control_id("lease"), "overlays"),
   State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
   prevent_initial_call=True,
-)
-
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='filterAndClusterLease'
-  ),
-  Output('lease_geojson', 'data'),
-  [ # The order of these inputs must match the order of the arguments in the filterAndCluster function
-    Input('rental_price_slider', 'value'),
-    Input('bedrooms_slider', 'value'),
-    Input('bathrooms_slider', 'value'),
-    Input('pets_radio', 'value'),
-    Input('sqft_slider', 'value'),
-    Input('sqft_missing_switch', 'checked'),
-    Input('ppsqft_slider', 'value'),
-    Input('ppsqft_missing_switch', 'checked'),
-    Input('garage_spaces_slider', 'value'),
-    Input('garage_missing_switch', 'checked'),
-    Input('yrbuilt_slider', 'value'),
-    Input('yrbuilt_missing_switch', 'checked'),
-    Input('terms_checklist', 'value'),
-    Input('terms_missing_switch', 'checked'),
-    Input('furnished_checklist', 'value'),
-    Input('furnished_missing_switch', 'checked'),
-    Input('security_deposit_slider', 'value'),
-    Input('security_deposit_missing_switch', 'checked'),
-    Input('pet_deposit_slider', 'value'),
-    Input('pet_deposit_missing_switch', 'checked'),
-    Input('key_deposit_slider', 'value'),
-    Input('key_deposit_missing_switch', 'checked'),
-    Input('other_deposit_slider', 'value'),
-    Input('other_deposit_missing_switch', 'checked'),
-    Input('laundry_checklist', 'value'),
-    Input('laundry_missing_switch', 'checked'),
-    Input('subtype_checklist', 'value'),
-    Input('listed_date_datepicker_lease', 'start_date'),
-    Input('listed_date_datepicker_lease', 'end_date'),
-    Input('listed_date_missing_switch', 'checked'),
-    Input('isp_download_speed_slider', 'value'),
-    Input('isp_upload_speed_slider', 'value'),
-    Input('isp_speed_missing_switch', 'checked'),
-    Input('rent_control_status', 'value'),
-    Input('lease-zip-boundary-store', 'data'),
-    Input('lease-geojson-store', "data"),
-  ],
 )
 
 clientside_callback(
