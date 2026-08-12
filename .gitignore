@@ -232,3 +232,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 .codex
+
+# Playwright UI test artifacts
+node_modules/
+playwright-report/
+test-results/

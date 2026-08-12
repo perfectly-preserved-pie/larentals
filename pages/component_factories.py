@@ -617,12 +617,15 @@ def build_school_layer_map_prompt(page_type: str) -> html.Div:
                 ),
                 html.Div(
                     [
-                        dbc.Button(
+                        html.Button(
                             "Show filters",
                             id=f"{prefix}-show-filters-button",
-                            color="success",
-                            size="sm",
-                            className="school-layer-map-prompt__button",
+                            type="button",
+                            className="btn btn-success btn-sm school-layer-map-prompt__button",
+                            **{
+                                "data-filter-open": page_type,
+                                "data-filter-source": "school-prompt",
+                            },
                         ),
                         dbc.Button(
                             "Dismiss",

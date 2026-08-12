@@ -1,4 +1,4 @@
-const LAYERS_CONTROL_MOBILE_BREAKPOINT = 768;
+const LAYERS_CONTROL_COLLAPSE_BREAKPOINT = 1100;
 const VIEWPORT_EVENT_NAME = "viewportchange";
 
 /**
@@ -52,7 +52,7 @@ function setupViewportEvents() {
     /** @type {ViewportDetail} */
     const detail = {
       width,
-      isMobile: width < LAYERS_CONTROL_MOBILE_BREAKPOINT,
+      isMobile: width < LAYERS_CONTROL_COLLAPSE_BREAKPOINT,
     };
 
     if (
@@ -125,7 +125,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
       }
 
       if (typeof window !== "undefined") {
-        return getViewportWidth() < LAYERS_CONTROL_MOBILE_BREAKPOINT;
+        return getViewportWidth() < LAYERS_CONTROL_COLLAPSE_BREAKPOINT;
       }
 
       if (typeof currentCollapsed === "boolean") {

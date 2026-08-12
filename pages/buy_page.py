@@ -18,6 +18,11 @@ from functions.zip_geocoding_utils import (
 )
 from functions.sql_helpers import get_earliest_listed_date
 from functions.data_paths import LARENTALS_DB_PATH, SOCAL_SERVICE_AREA_ZIP_CODES_PATH, ZIP_PLACE_CROSSWALK_PATH
+from .responsive_filter_ui import (
+  build_filter_ui_stores,
+  build_responsive_listing_shell,
+  register_responsive_filter_callbacks,
+)
 from dash.dependencies import ALL, Input, Output, State
 from loguru import logger
 import bleach
@@ -67,7 +72,6 @@ def layout(**_: object) -> dbc.Container:
     The buy page layout container.
   """
   components = get_buy_components()
-  collapse_store = dcc.Store(id="collapse-store", data={"is_open": False})
   geojson_store = dcc.Store(id="buy-geojson-store", storage_type="memory", data=None)
   zip_boundary_store = dcc.Store(id="buy-zip-boundary-store", storage_type="memory", data={"zip_codes": [], "features": [], "error": None})
   school_layer_prompt_state_store = dcc.Store(
@@ -105,7 +109,7 @@ def layout(**_: object) -> dbc.Container:
 
   return dbc.Container(
     [
-      collapse_store,
+      *build_filter_ui_stores("buy"),
       geojson_store,
       zip_boundary_store,
       school_layer_prompt_state_store,
@@ -116,23 +120,11 @@ def layout(**_: object) -> dbc.Container:
       analytics_school_filter_store,
       kickstart,
       earliest_date_store,
-      dbc.Row(
-        [
-          dbc.Col(
-          [components.title_card, components.user_options_card], 
-            lg=3, md=12, sm=12, xs=12,
-            style={"height": "100vh", "overflowY": "auto"},  # Full height with scroll on desktop
-            className="d-lg-block"  # Always visible on desktop
-        ),
-          dbc.Col(
-          [components.map_card], 
-            lg=9, md=12, sm=12, xs=12,
-            style={"height": "100vh"},  # Full viewport height
-            className="position-lg-relative"
-          ),
-        ],
-        className="g-0",
-        style={"minHeight": "100vh"}
+      build_responsive_listing_shell(
+        page_type="buy",
+        title_card=components.title_card,
+        user_options_card=components.user_options_card,
+        map_card=components.map_card,
       ),
       # Keep the subtype selection available for any future callbacks that need it.
       dcc.Store(id='selected_subtype', data=[])
@@ -141,6 +133,9 @@ def layout(**_: object) -> dbc.Container:
     className="dbc p-0",
     style={"overflowX": "hidden"}  # Prevent horizontal scroll
   )
+
+
+register_responsive_filter_callbacks("buy")
 
 ## BEGIN CALLBACKS ##
 # Keep subtype selection in sync with the store
@@ -579,39 +574,6 @@ clientside_callback(
   State(LayersClass.layers_control_id("buy"), "overlays"),
   State({"type": "lazy-layer-geojson", "page": "buy", "layer": ALL}, "id"),
   prevent_initial_call=True,
-)
-
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='filterAndClusterBuy'
-  ),
-  Output('buy_geojson', 'data'),
-  [
-    Input('list_price_slider', 'value'),
-    Input('bedrooms_slider', 'value'),
-    Input('bathrooms_slider', 'value'),
-    Input('sqft_slider', 'value'),
-    Input('sqft_missing_switch', 'checked'),
-    Input('ppsqft_slider', 'value'),
-    Input('ppsqft_missing_switch', 'checked'),
-    Input('lot_size_slider', 'value'),
-    Input('lot_size_missing_switch', 'checked'),
-    Input('yrbuilt_slider', 'value'),
-    Input('yrbuilt_missing_switch', 'checked'),
-    Input('subtype_checklist', 'value'),
-    Input('listed_date_datepicker_buy', 'start_date'),
-    Input('listed_date_datepicker_buy', 'end_date'),
-    Input('listed_date_missing_switch', 'checked'),
-    Input('hoa_fee_slider', 'value'),
-    Input('hoa_fee_missing_switch', 'checked'),
-    Input('hoa_fee_frequency_checklist', 'value'),
-    Input('isp_download_speed_slider', 'value'),
-    Input('isp_upload_speed_slider', 'value'),
-    Input('isp_speed_missing_switch', 'checked'),
-    Input('buy-zip-boundary-store', 'data'),
-    Input('buy-geojson-store', "data")
-  ],
 )
 
 clientside_callback(

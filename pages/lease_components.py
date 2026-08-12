@@ -23,6 +23,7 @@ from .component_factories import (
     build_year_built_filter,
 )
 from .component_models import FilterSection, PageConfig, PageParts
+from .responsive_filter_ui import build_map_filter_toolbar
 from functions.rso import add_rso_status_to_listing_geojson
 
 
@@ -109,19 +110,14 @@ class LeaseComponents(BaseClass):
         subtitle="An interactive map of available rentals in Los Angeles County. Updated weekly.",
         map_style={
             "width": "100%",
-            "height": "100vh",
+            "height": "100dvh",
             "margin": "0",
             "display": "block",
         },
         active_filter_items=(
-            "listed_date",
             "location",
-            "subtypes",
             "monthly_rent",
-            "rent_control",
             "bedrooms",
-            "bathrooms",
-            "pet_policy",
         ),
         accordion_class_name="options-accordion dmc",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -176,6 +172,7 @@ class LeaseComponents(BaseClass):
             filter_items=self._build_filter_sections(),
             map_component=self._build_map_component(),
             map_overlay_children=[
+                build_map_filter_toolbar(self.page_type),
                 build_map_gesture_control(),
                 build_school_layer_map_prompt(self.page_type),
             ],

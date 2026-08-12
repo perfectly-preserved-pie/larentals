@@ -439,3 +439,52 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         }
     })
 });
+
+window.larentals = window.larentals || {};
+window.larentals.filters = window.larentals.filters || {};
+/**
+ * Adapt the responsive Rent filter-state object to the existing filter engine.
+ * @param {Object<string, *>} state Applied rental filter values.
+ * @param {{type: string, features: Array<Object>}} fullGeojson Source listings.
+ * @returns {{type: string, features: Array<Object>}} Filtered rental listings.
+ */
+window.larentals.filters.filterLeaseState = function(state, fullGeojson) {
+    return window.dash_clientside.clientside.filterAndClusterLease(
+        state.priceRange,
+        state.bedroomsRange,
+        state.bathroomsRange,
+        state.pets,
+        state.sqftRange,
+        state.sqftMissing,
+        state.ppsqftRange,
+        state.ppsqftMissing,
+        state.parkingRange,
+        state.parkingMissing,
+        state.yearRange,
+        state.yearMissing,
+        state.terms,
+        state.termsMissing,
+        state.furnished,
+        state.furnishedMissing,
+        state.securityRange,
+        state.securityMissing,
+        state.petDepositRange,
+        state.petDepositMissing,
+        state.keyDepositRange,
+        state.keyDepositMissing,
+        state.otherDepositRange,
+        state.otherDepositMissing,
+        state.laundry,
+        state.laundryMissing,
+        state.subtypes,
+        state.dateStart,
+        state.dateEnd,
+        state.dateMissing,
+        state.downloadRange,
+        state.uploadRange,
+        state.ispMissing,
+        state.rentControl,
+        state.zipBoundary,
+        fullGeojson
+    );
+};
