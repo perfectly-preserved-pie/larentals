@@ -2,7 +2,11 @@ import unittest
 
 from dash import dcc, html
 
-from pages.component_factories import build_subtype_filter, build_title_card
+from pages.component_factories import (
+    build_location_filter_components,
+    build_subtype_filter,
+    build_title_card,
+)
 from pages.components import BuyComponents, LeaseComponents
 
 
@@ -19,6 +23,17 @@ def _collect_components(component):
 
 
 class ComponentsSmokeTest(unittest.TestCase):
+    def test_location_inputs_use_associated_labels(self) -> None:
+        for page_type in ("lease", "buy"):
+            with self.subTest(page_type=page_type):
+                component = build_location_filter_components(page_type)
+                label, location_input = component.children[:2]
+
+                self.assertIsInstance(label, html.Label)
+                self.assertEqual(label.htmlFor, f"{page_type}-location-input")
+                self.assertIsInstance(location_input, dcc.Input)
+                self.assertNotIn("aria-label", location_input.to_plotly_json()["props"])
+
     def test_buy_components_build_core_cards(self) -> None:
         components = BuyComponents()
 

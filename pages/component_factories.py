@@ -176,11 +176,16 @@ def build_location_filter_components(page_type: str) -> html.Div:
     """
     return html.Div(
         [
+            html.Label(
+                "Filter listings by neighborhood or ZIP code",
+                htmlFor=f"{page_type}-location-input",
+                className="visually-hidden",
+            ),
             dcc.Input(
                 id=f"{page_type}-location-input",
                 type="text",
                 debounce=True,
-                placeholder="Neighborhood or ZIP code (e.g., Highland Park or 90042)",
+                placeholder="Neighborhood or ZIP code",
             ),
             html.Div(
                 id=f"{page_type}-location-status",
