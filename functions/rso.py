@@ -187,6 +187,19 @@ def lookup_rso_property_for_listing(
     return _result_from_record(record) if isinstance(record, dict) else _empty_result(data_available=True)
 
 
+def prewarm_rso_property_lookup_cache(
+    artifact_path: Path = RSO_PROPERTY_LOOKUP_PATH,
+) -> None:
+    """Load the local RSO inventory before the first listing popup."""
+    try:
+        mtime_ns = artifact_path.stat().st_mtime_ns
+    except OSError:
+        logger.warning("RSO lookup artifact is unavailable at %s", artifact_path)
+        return
+
+    _load_lookup(str(artifact_path), mtime_ns)
+
+
 def add_rso_status_to_listing_geojson(payload: dict[str, Any]) -> dict[str, Any]:
     """Attach a client-filter-friendly RSO status to each listing feature.
 

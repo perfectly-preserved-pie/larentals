@@ -14,6 +14,7 @@ from functions.lahd import (
   prewarm_lahd_listing_lookup_cache,
   prewarm_lahd_live_dataset_status_cache,
 )
+from functions.rso import prewarm_rso_property_lookup_cache
 from functions.mcp_usage_logging import register_mcp_usage_logging
 from functions.source_map_logging import register_source_map_error_filter
 from functions.mcp_listings import configure_listings_mcp
@@ -176,6 +177,7 @@ def prewarm_startup_caches() -> None:
   start_time = time.perf_counter()
   prewarm_lahd_live_dataset_status_cache()
   prewarm_lahd_listing_lookup_cache()
+  prewarm_rso_property_lookup_cache()
 
   # Import after Dash is initialized because page modules call dash.register_page.
   from pages.buy_components import BuyComponents
