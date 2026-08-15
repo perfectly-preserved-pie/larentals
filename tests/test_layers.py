@@ -147,6 +147,7 @@ def test_layers_control_omits_satellite_without_mapbox_token(monkeypatch) -> Non
 
     assert isinstance(oil_wells, dl.Overlay)
     assert oil_wells.name == "Oil & Gas Wells"
+    assert control.collapsed is False
 
 
 def test_layers_control_includes_mapbox_satellite_when_configured(monkeypatch) -> None:

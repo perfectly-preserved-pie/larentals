@@ -5,7 +5,6 @@ from dash import dcc, callback, clientside_callback, ClientsideFunction
 from functions.layers import (
   STREET_BASE_LAYER_NAME,
   LayersClass,
-  register_responsive_layers_control_callback,
 )
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
@@ -168,8 +167,6 @@ clientside_callback(
   Input("buy_geojson", "data"),
   State("buy-map-spinner", "style"),
 )
-
-register_responsive_layers_control_callback("buy")
 
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),

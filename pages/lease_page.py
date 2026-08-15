@@ -6,7 +6,6 @@ from dash.dependencies import ALL, Input, Output, State
 from functions.layers import (
   STREET_BASE_LAYER_NAME,
   LayersClass,
-  register_responsive_layers_control_callback,
 )
 from functions.zip_geocoding_utils import (
   geocode_place_cached,
@@ -474,8 +473,6 @@ clientside_callback(
   Input("lease_geojson", "data"),
   State("lease-map-spinner", "style"),
 )
-
-register_responsive_layers_control_callback("lease")
 
 clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),

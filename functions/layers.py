@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from dash import ClientsideFunction, clientside_callback, no_update
-from dash.dependencies import Input, Output, State
+from dash import no_update
 from dash_extensions.javascript import Namespace
 from dotenv import load_dotenv
 from functions.alpr_cameras import load_alpr_camera_geojson
@@ -1099,13 +1098,19 @@ class LayersClass:
             A populated control containing the street base layer, an optional
             token-authenticated satellite layer, the cached parcel overlay, and
             the requested lazy GeoJSON overlays.
+
+        Notes:
+            `collapsed` is deliberately false at construction time so Leaflet
+            does not register its hover-only expansion handlers. The browser-side
+            layers-control enhancement owns the initial collapsed presentation,
+            explicit disclosure button, and accessible dismissal behavior.
         """
-        checked_keys = set(checked_layer_keys)
-        overlays = [
+        checked_keys: set[str] = set(checked_layer_keys)
+        overlays: list[dl.Overlay] = [
             cls.create_lazy_overlay(page_key, layer_key, checked=layer_key in checked_keys)
             for layer_key in layer_keys
         ]
-        base_layers = [cls.create_street_base_layer(checked=True)]
+        base_layers: list[dl.BaseLayer] = [cls.create_street_base_layer(checked=True)]
         if mapbox_access_token := get_mapbox_access_token():
             base_layers.append(
                 cls.create_mapbox_satellite_base_layer(
@@ -1113,11 +1118,11 @@ class LayersClass:
                     checked=False,
                 )
             )
-        tile_overlays = [cls.create_parcel_tile_overlay(checked=False)]
+        tile_overlays: list[dl.Overlay] = [cls.create_parcel_tile_overlay(checked=False)]
         return dl.LayersControl(
             [*base_layers, *tile_overlays, *overlays],
             id=cls.layers_control_id(page_key),
-            collapsed=True,
+            collapsed=False,
             position='topleft',
             sortLayers=True,
         )
@@ -1260,19 +1265,3 @@ class LayersClass:
             'crime',
             data=cls.load_layer_data('crime'),
         )
-
-
-def register_responsive_layers_control_callback(page_key: str) -> None:
-    """
-    Register the shared clientside callback for a page's `dl.LayersControl`.
-
-    Args:
-        page_key: Page identifier, such as `"lease"` or `"buy"`.
-    """
-    clientside_callback(
-        ClientsideFunction(namespace="clientside", function_name="layersControlCollapsed"),
-        Output(LayersClass.layers_control_id(page_key), "collapsed"),
-        Input("viewport-sync-initial", "n_intervals"),
-        Input("viewport-listener", "event"),
-        State(LayersClass.layers_control_id(page_key), "collapsed"),
-    )
