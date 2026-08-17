@@ -168,6 +168,51 @@ test("tablet uses a right drawer and desktop keeps a persistent sidebar", async 
   expect(errors).toEqual([]);
 });
 
+test("mobile location drafts do not cover the map with a loading overlay", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await collectPageErrors(page);
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "lease");
+
+  const spinner = page.locator("#lease-map-spinner");
+  await expect(spinner).toHaveCSS("display", "none");
+  await page.locator("#lease-filter-open-button").click();
+
+  const nearbySwitch = page.locator("#lease-nearby-zip-switch");
+  await nearbySwitch.click();
+  await page.waitForFunction(
+    () => window.larentals.responsiveFilters.drafts.lease.nearbyZip === true,
+  );
+  await expect(spinner).toHaveCSS("display", "none");
+  await nearbySwitch.click();
+
+  const input = page.locator("input#lease-location-input");
+  await input.fill("Downey");
+  await input.press("Enter");
+  await page.waitForFunction(() => {
+    const draft = window.larentals?.responsiveFilters?.drafts?.lease;
+    return JSON.stringify(draft?.locationText) === JSON.stringify(["Downey"]) &&
+      Array.isArray(draft?.zipBoundary?.zip_codes) &&
+      draft.zipBoundary.zip_codes.includes("90240");
+  });
+
+  await expect(spinner).toHaveCSS("display", "none");
+  const stagedState = await page.evaluate(() => ({
+    draft: window.larentals.responsiveFilters.drafts.lease.locationText,
+    applied: window.larentals.responsiveFilters.applied.lease.locationText,
+  }));
+  expect(stagedState).toEqual({ draft: ["Downey"], applied: [] });
+
+  await page.locator("#lease-filter-apply-button").click();
+  await page.waitForFunction(
+    () => JSON.stringify(window.larentals?.responsiveFilters?.applied?.lease?.locationText) ===
+      JSON.stringify(["Downey"]),
+  );
+  await expect(spinner).toHaveCSS("display", "none");
+  await expect(page.locator("#lease-quick-location")).toHaveClass(/map-filter-chip--active/);
+  expect(errors).toEqual([]);
+});
+
 test("range slider tooltips stay clear of missing-value switches", async ({ page }) => {
   await page.setViewportSize({ width: 440, height: 900 });
   await page.goto(`${BASE_URL}/buy`, { waitUntil: "domcontentloaded" });

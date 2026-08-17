@@ -455,10 +455,7 @@ clientside_callback(
     function_name='showMapSpinner'
   ),
   Output("buy-map-spinner", "style", allow_duplicate=True),
-  [
-    Input('buy-location-input', 'value'),
-    Input('buy-nearby-zip-switch', 'checked'),
-  ],
+  Input('buy-filter-applied-store', 'data'),
   prevent_initial_call=True,
 )
 

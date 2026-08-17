@@ -439,10 +439,7 @@ clientside_callback(
     function_name='showMapSpinner'
   ),
   Output("lease-map-spinner", "style", allow_duplicate=True),
-  [
-    Input('lease-location-input', 'value'),
-    Input('lease-nearby-zip-switch', 'checked'),
-  ],
+  Input('lease-filter-applied-store', 'data'),
   prevent_initial_call=True,
 )
 
