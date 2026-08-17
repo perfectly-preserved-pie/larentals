@@ -108,6 +108,11 @@ for (const entry of [
     await page.evaluate(() => {
       window.dash_clientside.set_props("bedrooms_slider", { value: [2, 3] });
     });
+    await page.waitForFunction(
+      (key) => JSON.stringify(window.larentals.responsiveFilters.drafts[key].bedroomsRange) ===
+        JSON.stringify([2, 3]),
+      entry.pageType,
+    );
     await page.locator(`#${entry.pageType}-filter-close-button`).click({ force: true });
     await page.waitForFunction(
       (key) => JSON.stringify(window.larentals.responsiveFilters.drafts[key].bedroomsRange) ===

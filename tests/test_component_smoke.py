@@ -1,5 +1,6 @@
 import unittest
 
+import dash_mantine_components as dmc
 from dash import dcc, html
 
 from pages.component_factories import (
@@ -33,8 +34,22 @@ class ComponentsSmokeTest(unittest.TestCase):
 
                 self.assertIsInstance(label, html.Label)
                 self.assertEqual(label.htmlFor, f"{page_type}-location-input")
-                self.assertIsInstance(location_input, dcc.Input)
-                self.assertNotIn("aria-label", location_input.to_plotly_json()["props"])
+                self.assertIsInstance(location_input, dmc.TagsInput)
+                props = location_input.to_plotly_json()["props"]
+                self.assertEqual(props["value"], [])
+                self.assertEqual(props["splitChars"], [";"])
+                self.assertEqual(props["maxTags"], 5)
+                self.assertEqual(
+                    props["description"],
+                    "Add up to 5 locations.",
+                )
+                self.assertEqual(
+                    props["placeholder"],
+                    "Type a location, then press Enter",
+                )
+                self.assertTrue(props["acceptValueOnBlur"])
+                self.assertNotIn("inputProps", props)
+                self.assertNotIn("aria-label", props)
 
     def test_buy_components_build_core_cards(self) -> None:
         components = BuyComponents()

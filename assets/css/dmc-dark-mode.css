@@ -168,6 +168,29 @@ body {
     outline: 0;
 }
 
+:root[data-mantine-color-scheme="dark"] .options-accordion .location-tags-input .mantine-TagsInput-input {
+    background: var(--wttl-dark-input);
+    border-color: var(--wttl-dark-border-strong);
+    color: var(--wttl-dark-text);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .location-tags-input:focus-within .mantine-TagsInput-input {
+    border-color: var(--wttl-dark-accent);
+    box-shadow: 0 0 0 0.18rem var(--wttl-dark-accent-soft);
+}
+
+:root[data-mantine-color-scheme="dark"] .options-accordion .location-tags-input input[type="text"].mantine-TagsInput-inputField.mantine-PillsInputField-field,
+:root[data-mantine-color-scheme="dark"] .options-accordion .location-tags-input input[type="text"].mantine-TagsInput-inputField.mantine-PillsInputField-field:focus {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 24px;
+    outline: 0;
+    padding: 0;
+    width: auto;
+}
+
 :root[data-mantine-color-scheme="dark"] .options-accordion .dash-datepicker {
     background: transparent;
     color: var(--wttl-dark-text);

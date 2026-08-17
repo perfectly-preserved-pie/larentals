@@ -155,6 +155,29 @@
   }
 
   /**
+   * Format the location control's string or tag-array value consistently.
+   * @param {*} value Current location control value.
+   * @returns {string} Human-readable location list.
+   */
+  function locationText(value) {
+    if (Array.isArray(value)) {
+      return value.map(function (item) { return String(item || "").trim(); })
+        .filter(Boolean)
+        .join(", ");
+    }
+    return String(value || "").trim();
+  }
+
+  /**
+   * Serialize a location value without collapsing tag boundaries.
+   * @param {*} value Current location control value.
+   * @returns {string} Stable comparison key for pending location updates.
+   */
+  function locationValueKey(value) {
+    return JSON.stringify(Array.isArray(value) ? value : String(value || ""));
+  }
+
+  /**
    * Identify the listing mode represented by the current URL.
    * @returns {ListingPage} Current Rent or Buy page key.
    */
@@ -218,7 +241,7 @@
       ids.includes(zipStoreId) &&
       pendingLocation &&
       pendingLocation.expires >= Date.now() &&
-      pendingLocation.text === String(state.locationText || "")
+      pendingLocation.valueKey === locationValueKey(state.locationText)
     );
     const shouldApply = isInitial || window.innerWidth >= DESKTOP_BREAKPOINT ||
       ids.includes(applyId) || forced || completesPendingLocation;
@@ -242,9 +265,10 @@
       ui.applied[page] = clone(state);
       if (ids.includes(applyId)) {
         ui.pendingApplyAnalytics[page] = true;
-        if (String(state.locationText || "").trim()) {
+        const pendingLocationText = locationText(state.locationText);
+        if (pendingLocationText) {
           ui.pendingLocationApply[page] = {
-            text: String(state.locationText || ""),
+            valueKey: locationValueKey(state.locationText),
             expires: Date.now() + 15_000,
           };
         } else {
@@ -400,7 +424,7 @@
 
     if (active) {
       if (group === "location") {
-        const location = String(state.locationText || "Selected area");
+        const location = locationText(state.locationText) || "Selected area";
         text = `${location.length > 22 ? `${location.slice(0, 21)}…` : location} ×`;
       } else if (group === "price") {
         text = rangeLabel(page === "lease" ? "Rent" : "Price", state.priceRange, defaults.priceRange, true);
@@ -422,11 +446,36 @@
   }
 
   /**
+   * Keep location-entry instructions aligned with the device and tag state.
+   * @param {ListingPage} page Listing mode to update.
+   * @returns {void}
+   */
+  function setLocationInputCues(page) {
+    const input = document.getElementById(`${page}-location-input`);
+    if (input instanceof HTMLInputElement) {
+      input.setAttribute("enterkeyhint", "next");
+      const value = ui.drafts[page] && ui.drafts[page].locationText;
+      const hasLocation = Array.isArray(value)
+        ? value.some(function (item) { return String(item || "").trim(); })
+        : Boolean(String(value || "").trim());
+      const action = window.matchMedia("(pointer: coarse)").matches
+        ? "tap Next"
+        : "press Enter";
+      input.setAttribute(
+        "placeholder",
+        `Type ${hasLocation ? "another" : "a"} location, then ${action}`
+      );
+    }
+  }
+
+  /**
    * Synchronize toolbar labels, counts, and chips with filter state.
    * @param {ListingPage} page Listing mode to render.
    * @returns {void}
    */
   function render(page) {
+    setLocationInputCues(page);
+
     const appliedState = ui.applied[page];
     const defaults = ui.defaults[page];
     if (!appliedState || !defaults) return;

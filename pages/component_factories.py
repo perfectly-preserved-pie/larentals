@@ -191,11 +191,18 @@ def build_location_filter_components(page_type: str) -> html.Div:
                 htmlFor=f"{page_type}-location-input",
                 className="visually-hidden",
             ),
-            dcc.Input(
+            dmc.TagsInput(
                 id=f"{page_type}-location-input",
-                type="text",
-                debounce=True,
-                placeholder="Neighborhood or ZIP code",
+                value=[],
+                placeholder="Type a location, then press Enter",
+                description="Add up to 5 locations.",
+                splitChars=[";"],
+                acceptValueOnBlur=True,
+                allowDuplicates=False,
+                clearable=True,
+                maxTags=5,
+                w="100%",
+                className="location-tags-input",
             ),
             html.Div(
                 id=f"{page_type}-location-status",

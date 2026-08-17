@@ -17,6 +17,31 @@ class FakeNominatimResponse:
         return self._payload
 
 
+def _zip_feature(
+    zip_code: str,
+    *,
+    west: float,
+    south: float,
+    east: float,
+    north: float,
+) -> dict:
+    """Build a rectangular ZIP polygon fixture."""
+    return {
+        "type": "Feature",
+        "properties": {"ZIPCODE": zip_code},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [west, south],
+                [east, south],
+                [east, north],
+                [west, north],
+                [west, south],
+            ]],
+        },
+    }
+
+
 def test_normalize_place_query_defaults_unqualified_places_to_california() -> None:
     assert geocoding._normalize_place_query("Chinatown") == "Chinatown, CA"
     assert geocoding._normalize_place_query("Canoga Park") == "Canoga Park, CA"
@@ -52,6 +77,137 @@ def test_get_zip_codes_for_place_returns_crosswalk_zips_without_polygons() -> No
         "92674",
     }
     assert geocoding.get_zip_features_for_place("Anaheim", crosswalk, []) == []
+
+
+def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
+    crosswalk = {
+        "PASADENA": {"91101"},
+        "GLENDALE": {"91201"},
+    }
+    polygons = [
+        _zip_feature(
+            "91101",
+            west=-118.16,
+            south=34.13,
+            east=-118.14,
+            north=34.16,
+        ),
+        _zip_feature(
+            "91201",
+            west=-118.28,
+            south=34.15,
+            east=-118.25,
+            north=34.19,
+        ),
+    ]
+    geocode_calls: list[str] = []
+
+    def fake_geocode(location: str) -> None:
+        geocode_calls.append(location)
+        return None
+
+    payload, status = geocoding.resolve_locations_to_zip_boundaries(
+        [" Pasadena, CA ", "<b>Glendale</b>", "pasadena, ca"],
+        crosswalk,
+        polygons,
+        geocode=fake_geocode,
+    )
+
+    assert payload["zip_codes"] == ["91101", "91201"]
+    assert [
+        feature["properties"]["ZIPCODE"] for feature in payload["features"]
+    ] == ["91101", "91201"]
+    assert payload["error"] is None
+    assert status == "Filtering by ZIP codes: 91101, 91201."
+    assert geocode_calls == []
+
+
+def test_resolve_locations_reports_partial_failures_without_dropping_matches() -> None:
+    polygon = _zip_feature(
+        "91101",
+        west=-118.16,
+        south=34.13,
+        east=-118.14,
+        north=34.16,
+    )
+
+    payload, status = geocoding.resolve_locations_to_zip_boundaries(
+        ["Pasadena", "Atlantis"],
+        {"PASADENA": {"91101"}},
+        [polygon],
+        geocode=lambda _location: None,
+    )
+
+    assert payload == {
+        "zip_codes": ["91101"],
+        "features": [polygon],
+        "error": None,
+    }
+    assert status == (
+        "Filtering by ZIP codes: 91101. "
+        "Could not find a California location matching 'Atlantis'."
+    )
+
+
+def test_resolve_locations_expands_nearby_zips_for_each_tag() -> None:
+    polygons = [
+        _zip_feature(
+            "91101",
+            west=-118.16,
+            south=34.13,
+            east=-118.14,
+            north=34.16,
+        ),
+        _zip_feature(
+            "91102",
+            west=-118.14,
+            south=34.13,
+            east=-118.12,
+            north=34.16,
+        ),
+        _zip_feature(
+            "91201",
+            west=-118.28,
+            south=34.15,
+            east=-118.25,
+            north=34.19,
+        ),
+        _zip_feature(
+            "91202",
+            west=-118.25,
+            south=34.15,
+            east=-118.22,
+            north=34.19,
+        ),
+    ]
+    geocoded = {
+        "Pasadena": {
+            "lat": 34.145,
+            "lon": -118.15,
+            "query": "Pasadena, CA",
+            "bbox": [34.14, 34.15, -118.15, -118.13],
+            "display_name": "Pasadena, California",
+        },
+        "Glendale": {
+            "lat": 34.17,
+            "lon": -118.26,
+            "query": "Glendale, CA",
+            "bbox": [34.16, 34.18, -118.26, -118.24],
+            "display_name": "Glendale, California",
+        },
+    }
+
+    payload, _status = geocoding.resolve_locations_to_zip_boundaries(
+        ["Pasadena", "Glendale"],
+        {"PASADENA": {"91101"}, "GLENDALE": {"91201"}},
+        polygons,
+        include_nearby=True,
+        geocode=geocoded.get,
+    )
+
+    assert payload["zip_codes"] == ["91101", "91102", "91201", "91202"]
+    assert len(payload["features"]) == 4
+    assert payload["error"] is None
 
 
 def test_load_zip_place_crosswalk_skips_pandas_string_missing_values(

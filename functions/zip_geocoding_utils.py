@@ -3,7 +3,7 @@ from loguru import logger
 from pathlib import Path
 from shapely.geometry import Point, shape, box
 from shapely.prepared import prep
-from typing import Any, Sequence, TypeAlias, TypedDict
+from typing import Any, Callable, Sequence, TypeAlias, TypedDict
 import bleach
 import json
 import pandas as pd
@@ -663,3 +663,160 @@ def get_zip_features_for_place(
         if zip_code in target_zips:
             features.append(feature)
     return features
+
+
+def resolve_locations_to_zip_boundaries(
+    locations: Sequence[str] | str | None,
+    zip_place_crosswalk: dict[str, set[str]],
+    zip_polygons: list[GeoJSONFeature],
+    *,
+    include_nearby: bool = False,
+    geocode: Callable[[str], PlaceGeocodeResult | None] | None = None,
+) -> tuple[dict[str, Any], str]:
+    """
+    Resolve one or more user-entered locations to a combined ZIP boundary.
+
+    Each location is resolved independently so commas can remain part of a
+    single value such as ``"Pasadena, CA"``. Matching ZIP codes and polygon
+    features are combined with OR semantics and deduplicated by ZIP code.
+
+    Args:
+        locations: Location values from a tags input. A string is accepted for
+            backwards compatibility and is treated as one complete location.
+        zip_place_crosswalk: Mapping from uppercase city names to ZIP codes.
+        zip_polygons: ZIP polygon features available to the listing filter.
+        include_nearby: Whether to include ZIPs intersecting each geocoded
+            location's bounding box.
+        geocode: Optional geocoder override, primarily for deterministic tests.
+
+    Returns:
+        A tuple containing the combined boundary-store payload and a status
+        message suitable for display below the location control.
+    """
+    raw_locations = (
+        [locations]
+        if isinstance(locations, str)
+        else list(locations or [])
+    )
+    cleaned_locations: list[str] = []
+    seen_locations: set[str] = set()
+    for raw_location in raw_locations:
+        cleaned = sanitize_location_input(str(raw_location or ""))
+        comparison_key = cleaned.casefold()
+        if not cleaned or comparison_key in seen_locations:
+            continue
+        seen_locations.add(comparison_key)
+        cleaned_locations.append(cleaned)
+
+    if not cleaned_locations:
+        return {"zip_codes": [], "features": [], "error": None}, ""
+
+    geocode_location = geocode or geocode_place_cached
+    zip_codes: set[str] = set()
+    features_by_zip: dict[str, GeoJSONFeature] = {}
+    not_found: list[str] = []
+    outside_service_area: list[str] = []
+
+    def add_features(features: Sequence[GeoJSONFeature]) -> None:
+        """Add features and their ZIP codes to the combined result."""
+        for feature in features:
+            zip_code = str(
+                feature.get("properties", {}).get("ZIPCODE") or ""
+            ).strip()
+            if not zip_code:
+                continue
+            zip_codes.add(zip_code)
+            features_by_zip.setdefault(zip_code, feature)
+
+    for location in cleaned_locations:
+        crosswalk_zips = get_zip_codes_for_place(location, zip_place_crosswalk)
+        if crosswalk_zips:
+            zip_codes.update(zip_code for zip_code in crosswalk_zips if zip_code)
+            add_features(
+                get_zip_features_for_place(
+                    location,
+                    zip_place_crosswalk,
+                    zip_polygons,
+                )
+            )
+
+            if include_nearby:
+                geocoded = geocode_location(location)
+                if geocoded:
+                    add_features(
+                        intersect_bbox_with_zip_polygons(
+                            geocoded["bbox"],
+                            zip_polygons,
+                        )
+                    )
+            continue
+
+        geocoded = geocode_location(location)
+        if not geocoded:
+            not_found.append(location)
+            continue
+
+        location_features: list[GeoJSONFeature] = []
+        point_feature = get_zip_feature_for_point(
+            geocoded["lat"],
+            geocoded["lon"],
+            zip_polygons,
+        )
+        if point_feature:
+            location_features.append(point_feature)
+        if include_nearby:
+            location_features.extend(
+                intersect_bbox_with_zip_polygons(
+                    geocoded["bbox"],
+                    zip_polygons,
+                )
+            )
+
+        if not location_features:
+            outside_service_area.append(location)
+            continue
+
+        add_features(location_features)
+
+    sorted_zip_codes = sorted(zip_codes)
+    status_parts: list[str] = []
+    if sorted_zip_codes:
+        label = ", ".join(sorted_zip_codes[:5])
+        if len(sorted_zip_codes) > 5:
+            label = f"{label} +{len(sorted_zip_codes) - 5} more"
+        status_parts.append(f"Filtering by ZIP codes: {label}.")
+
+    if not_found:
+        if len(not_found) == 1:
+            status_parts.append(
+                f"Could not find a California location matching '{not_found[0]}'."
+            )
+        else:
+            labels = ", ".join(f"'{location}'" for location in not_found)
+            status_parts.append(
+                f"Could not find California locations matching: {labels}."
+            )
+
+    if outside_service_area:
+        if len(outside_service_area) == 1 and not sorted_zip_codes:
+            status_parts.append(
+                "No ZIP code boundaries found for the specified location."
+            )
+        else:
+            labels = ", ".join(
+                f"'{location}'" for location in outside_service_area
+            )
+            status_parts.append(f"No ZIP code boundaries found for: {labels}.")
+
+    error: str | None = None
+    if not sorted_zip_codes:
+        error = "place_outside" if outside_service_area else "place_not_found"
+
+    return (
+        {
+            "zip_codes": sorted_zip_codes,
+            "features": list(features_by_zip.values()),
+            "error": error,
+        },
+        " ".join(status_parts),
+    )
