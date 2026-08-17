@@ -79,6 +79,24 @@ def test_get_zip_codes_for_place_returns_crosswalk_zips_without_polygons() -> No
     assert geocoding.get_zip_features_for_place("Anaheim", crosswalk, []) == []
 
 
+@pytest.mark.parametrize(
+    ("location", "expected"),
+    [
+        ("90210", "90210"),
+        ("90210-1234", "90210"),
+        ("90210, CA", "90210"),
+        ("90210 California", "90210"),
+        ("Beverly Hills 90210", None),
+        ("100 Main St, 90210", None),
+    ],
+)
+def test_explicit_zip_code_accepts_only_standalone_zip_queries(
+    location: str,
+    expected: str | None,
+) -> None:
+    assert geocoding._explicit_zip_code(location) == expected
+
+
 def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
     crosswalk = {
         "PASADENA": {"91101"},
@@ -180,34 +198,97 @@ def test_resolve_locations_expands_nearby_zips_for_each_tag() -> None:
             north=34.19,
         ),
     ]
-    geocoded = {
-        "Pasadena": {
-            "lat": 34.145,
-            "lon": -118.15,
-            "query": "Pasadena, CA",
-            "bbox": [34.14, 34.15, -118.15, -118.13],
-            "display_name": "Pasadena, California",
-        },
-        "Glendale": {
-            "lat": 34.17,
-            "lon": -118.26,
-            "query": "Glendale, CA",
-            "bbox": [34.16, 34.18, -118.26, -118.24],
-            "display_name": "Glendale, California",
-        },
-    }
-
     payload, _status = geocoding.resolve_locations_to_zip_boundaries(
         ["Pasadena", "Glendale"],
         {"PASADENA": {"91101"}, "GLENDALE": {"91201"}},
         polygons,
         include_nearby=True,
-        geocode=geocoded.get,
+        geocode=lambda _location: pytest.fail(
+            "Crosswalk places should not require geocoding for adjacency"
+        ),
     )
 
     assert payload["zip_codes"] == ["91101", "91102", "91201", "91202"]
     assert len(payload["features"]) == 4
     assert payload["error"] is None
+
+
+def test_get_adjacent_zip_features_returns_only_one_touching_ring() -> None:
+    polygons = [
+        _zip_feature("90001", west=0, south=0, east=1, north=1),
+        _zip_feature("90002", west=1, south=0, east=2, north=1),
+        _zip_feature("90003", west=2, south=0, east=3, north=1),
+        _zip_feature("90004", west=4, south=0, east=5, north=1),
+    ]
+
+    adjacent = geocoding.get_adjacent_zip_features([polygons[0]], polygons)
+
+    assert [feature["properties"]["ZIPCODE"] for feature in adjacent] == [
+        "90002"
+    ]
+
+
+def test_nearby_zip_adjacency_is_consistent_across_location_types() -> None:
+    polygons = [
+        _zip_feature(
+            "90001",
+            west=-118.30,
+            south=34.00,
+            east=-118.20,
+            north=34.10,
+        ),
+        _zip_feature(
+            "90002",
+            west=-118.20,
+            south=34.00,
+            east=-118.10,
+            north=34.10,
+        ),
+        _zip_feature(
+            "90003",
+            west=-118.10,
+            south=34.00,
+            east=-118.00,
+            north=34.10,
+        ),
+    ]
+    geocoded = {
+        "Example neighborhood": {
+            "lat": 34.05,
+            "lon": -118.25,
+            "query": "Example neighborhood, CA",
+            "bbox": [33.9, 34.2, -118.4, -117.9],
+            "display_name": "Example neighborhood, California",
+        },
+        "100 Example Ave": {
+            "lat": 34.05,
+            "lon": -118.25,
+            "query": "100 Example Ave, CA",
+            "bbox": [34.049, 34.051, -118.251, -118.249],
+            "display_name": "100 Example Avenue, California",
+        },
+    }
+
+    cases = [
+        ("Example City", {"EXAMPLE CITY": {"90001"}}),
+        ("90001", {}),
+        ("Example neighborhood", {}),
+        ("100 Example Ave", {}),
+    ]
+    for location, crosswalk in cases:
+        payload, _status = geocoding.resolve_locations_to_zip_boundaries(
+            [location],
+            crosswalk,
+            polygons,
+            include_nearby=True,
+            geocode=geocoded.get,
+        )
+
+        assert payload["zip_codes"] == ["90001", "90002"]
+        assert [
+            feature["properties"]["ZIPCODE"]
+            for feature in payload["features"]
+        ] == ["90001", "90002"]
 
 
 def test_load_zip_place_crosswalk_skips_pandas_string_missing_values(

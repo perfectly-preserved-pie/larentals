@@ -1,8 +1,7 @@
 from collections import defaultdict
 from loguru import logger
 from pathlib import Path
-from shapely.geometry import Point, shape, box
-from shapely.prepared import prep
+from shapely.geometry import Point, shape
 from typing import Any, Callable, Sequence, TypeAlias, TypedDict
 import bleach
 import json
@@ -516,41 +515,6 @@ def load_zip_polygons(geojson_path: str | Path) -> list[GeoJSONFeature]:
     return geojson.get("features", [])
 
 
-def intersect_bbox_with_zip_polygons(
-    nominatim_bbox: Sequence[float],
-    zip_polygons: list[GeoJSONFeature],
-) -> list[GeoJSONFeature]:
-    """
-    Return ZIP polygon features that intersect a Nominatim bounding box.
-
-    Args:
-        nominatim_bbox: Nominatim bbox as [south, north, west, east] floats.
-        zip_polygons: List of GeoJSON feature dicts (Polygon/MultiPolygon).
-
-    Returns:
-        A list of feature dicts that intersect the bbox.
-    """
-    # Initalize an empty list to hold matching features
-    matches: list[GeoJSONFeature] = []
-    # Turn the Nominatim bbox into a Shapely box
-    bbox_shape = box(nominatim_bbox[2], nominatim_bbox[0], nominatim_bbox[3], nominatim_bbox[1])
-    # Prepare the box for faster intersection tests
-    prepared_bbox = prep(bbox_shape)
-    # Since the ZIP features are already polygons we can prepare them directly
-    for feature in zip_polygons:
-        # Get the geometry from the feature
-        geometry = feature.get("geometry")
-        if not geometry:
-            continue
-        # Turn the feature geometry into a Shapely shape
-        feature_boundary = shape(geometry)
-        # Now check for intersection
-        if prepared_bbox.intersects(feature_boundary):
-            matches.append(feature)
-
-    return matches
-
-
 def get_zip_feature_for_point(
     lat: float,
     lon: float,
@@ -665,6 +629,74 @@ def get_zip_features_for_place(
     return features
 
 
+def get_zip_features_by_code(
+    zip_codes: Sequence[str] | set[str],
+    zip_polygons: list[GeoJSONFeature],
+) -> list[GeoJSONFeature]:
+    """Return available ZIP polygon features for the requested ZIP codes."""
+    targets = {str(zip_code).strip() for zip_code in zip_codes if zip_code}
+    if not targets:
+        return []
+
+    return [
+        feature
+        for feature in zip_polygons
+        if str(feature.get("properties", {}).get("ZIPCODE") or "").strip()
+        in targets
+    ]
+
+
+def get_adjacent_zip_features(
+    base_features: Sequence[GeoJSONFeature],
+    zip_polygons: list[GeoJSONFeature],
+) -> list[GeoJSONFeature]:
+    """
+    Return one ring of ZIP polygons that touch any base ZIP polygon.
+
+    Bounding boxes from a geocoder have different meanings for addresses,
+    neighborhoods, cities, and postcodes. Polygon adjacency gives the nearby
+    switch one consistent meaning after each input has resolved to base ZIPs.
+    """
+    base_zip_codes: set[str] = set()
+    base_shapes = []
+    for feature in base_features:
+        zip_code = str(
+            feature.get("properties", {}).get("ZIPCODE") or ""
+        ).strip()
+        geometry = feature.get("geometry")
+        if not zip_code or not geometry or zip_code in base_zip_codes:
+            continue
+        base_zip_codes.add(zip_code)
+        base_shapes.append(shape(geometry))
+
+    if not base_shapes:
+        return []
+
+    adjacent: list[GeoJSONFeature] = []
+    for feature in zip_polygons:
+        zip_code = str(
+            feature.get("properties", {}).get("ZIPCODE") or ""
+        ).strip()
+        geometry = feature.get("geometry")
+        if not zip_code or not geometry or zip_code in base_zip_codes:
+            continue
+        candidate_shape = shape(geometry)
+        if any(candidate_shape.touches(base_shape) for base_shape in base_shapes):
+            adjacent.append(feature)
+
+    return adjacent
+
+
+def _explicit_zip_code(location: str) -> str | None:
+    """Return a standalone ZIP, optionally qualified with a CA suffix."""
+    match = re.fullmatch(
+        r"(\d{5})(?:-\d{4})?(?:(?:\s*,\s*|\s+)(?:CA|California))?",
+        str(location).strip(),
+        flags=re.IGNORECASE,
+    )
+    return match.group(1) if match else None
+
+
 def resolve_locations_to_zip_boundaries(
     locations: Sequence[str] | str | None,
     zip_place_crosswalk: dict[str, set[str]],
@@ -685,8 +717,8 @@ def resolve_locations_to_zip_boundaries(
             backwards compatibility and is treated as one complete location.
         zip_place_crosswalk: Mapping from uppercase city names to ZIP codes.
         zip_polygons: ZIP polygon features available to the listing filter.
-        include_nearby: Whether to include ZIPs intersecting each geocoded
-            location's bounding box.
+        include_nearby: Whether to include one ring of ZIP polygons touching
+            the ZIP polygons resolved from the supplied locations.
         geocode: Optional geocoder override, primarily for deterministic tests.
 
     Returns:
@@ -714,6 +746,7 @@ def resolve_locations_to_zip_boundaries(
     geocode_location = geocode or geocode_place_cached
     zip_codes: set[str] = set()
     features_by_zip: dict[str, GeoJSONFeature] = {}
+    base_features_by_zip: dict[str, GeoJSONFeature] = {}
     not_found: list[str] = []
     outside_service_area: list[str] = []
 
@@ -728,27 +761,46 @@ def resolve_locations_to_zip_boundaries(
             zip_codes.add(zip_code)
             features_by_zip.setdefault(zip_code, feature)
 
+    def add_base_features(features: Sequence[GeoJSONFeature]) -> None:
+        """Add resolved base features and retain them for nearby expansion."""
+        add_features(features)
+        for feature in features:
+            zip_code = str(
+                feature.get("properties", {}).get("ZIPCODE") or ""
+            ).strip()
+            if zip_code:
+                base_features_by_zip.setdefault(zip_code, feature)
+
+    known_crosswalk_zips = {
+        str(zip_code).strip()
+        for place_zips in zip_place_crosswalk.values()
+        for zip_code in place_zips
+        if zip_code
+    }
+
     for location in cleaned_locations:
         crosswalk_zips = get_zip_codes_for_place(location, zip_place_crosswalk)
         if crosswalk_zips:
             zip_codes.update(zip_code for zip_code in crosswalk_zips if zip_code)
-            add_features(
+            add_base_features(
                 get_zip_features_for_place(
                     location,
                     zip_place_crosswalk,
                     zip_polygons,
                 )
             )
+            continue
 
-            if include_nearby:
-                geocoded = geocode_location(location)
-                if geocoded:
-                    add_features(
-                        intersect_bbox_with_zip_polygons(
-                            geocoded["bbox"],
-                            zip_polygons,
-                        )
-                    )
+        explicit_zip = _explicit_zip_code(location)
+        explicit_features = get_zip_features_by_code(
+            [explicit_zip] if explicit_zip else [],
+            zip_polygons,
+        )
+        if explicit_zip and (
+            explicit_features or explicit_zip in known_crosswalk_zips
+        ):
+            zip_codes.add(explicit_zip)
+            add_base_features(explicit_features)
             continue
 
         geocoded = geocode_location(location)
@@ -764,19 +816,20 @@ def resolve_locations_to_zip_boundaries(
         )
         if point_feature:
             location_features.append(point_feature)
-        if include_nearby:
-            location_features.extend(
-                intersect_bbox_with_zip_polygons(
-                    geocoded["bbox"],
-                    zip_polygons,
-                )
-            )
 
         if not location_features:
             outside_service_area.append(location)
             continue
 
-        add_features(location_features)
+        add_base_features(location_features)
+
+    if include_nearby:
+        add_features(
+            get_adjacent_zip_features(
+                list(base_features_by_zip.values()),
+                zip_polygons,
+            )
+        )
 
     sorted_zip_codes = sorted(zip_codes)
     status_parts: list[str] = []
