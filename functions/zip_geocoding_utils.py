@@ -25,7 +25,7 @@ PlaceCache: TypeAlias = dict[str, PlaceGeocodeResult]
 
 _DEFAULT_PLACE_CACHE_PATH = Path("/mnt/cache/location/place_geocode_cache.json")
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-_PLACE_CACHE_VERSION = "v4"
+_PLACE_CACHE_VERSION = "v5"
 _DEFAULT_LOCATION_CONTEXT = "CA"
 _SERVICE_AREA_COUNTY_PRIORITIES = {
     "los angeles": 0,
@@ -143,6 +143,81 @@ def _query_place_name(query: str) -> str:
         name = name.split(",", 1)[0]
     name = re.sub(r"\b\d{5}(?:-\d{4})?\b", "", name)
     return _normalize_comparison_text(name)
+
+
+def _query_requested_locality(query: str) -> str | None:
+    """Extract an explicit city or neighborhood qualifier from an address."""
+    if not _query_looks_like_street_address(query) or "," not in str(query):
+        return None
+
+    for raw_part in str(query).split(",")[1:]:
+        locality = re.sub(r"\b\d{5}(?:-\d{4})?\b", "", raw_part).strip()
+        locality = re.sub(
+            r"(?:^|\s)(?:ca|california|us|usa|united states)$",
+            "",
+            locality,
+            flags=re.IGNORECASE,
+        ).strip()
+        if not locality:
+            continue
+        if re.match(
+            r"^(?:(?:apt|apartment|unit|suite|ste|room|rm|floor|fl)\b|#)",
+            locality,
+            flags=re.IGNORECASE,
+        ):
+            continue
+
+        normalized = _normalize_comparison_text(locality)
+        if normalized.endswith(" county"):
+            continue
+        return normalized or None
+
+    return None
+
+
+def _normalize_locality_name(value: object) -> str:
+    """Normalize Nominatim locality labels for exact comparisons."""
+    normalized = _normalize_comparison_text(str(value or ""))
+    for prefix in ("city of ", "town of ", "village of "):
+        if normalized.startswith(prefix):
+            return normalized[len(prefix):]
+    return normalized
+
+
+def _candidate_matches_requested_locality(
+    result: dict[str, Any],
+    requested_locality: str,
+) -> bool:
+    """Check that a geocoder candidate contains the requested locality."""
+    address = result.get("address")
+    if isinstance(address, dict):
+        locality_names = (
+            address.get(key)
+            for key in (
+                "neighbourhood",
+                "quarter",
+                "suburb",
+                "city_district",
+                "city",
+                "town",
+                "village",
+                "hamlet",
+                "municipality",
+            )
+        )
+        if any(
+            _normalize_locality_name(name) == requested_locality
+            for name in locality_names
+            if name
+        ):
+            return True
+
+    display_parts = str(result.get("display_name", "")).split(",")
+    return any(
+        _normalize_locality_name(part) == requested_locality
+        for part in display_parts
+        if part.strip()
+    )
 
 
 def _normalize_place_query(query: str) -> str:
@@ -466,6 +541,26 @@ def geocode_place_cached(
             f"Rejecting Nominatim results for '{query}': no California match found in candidates {candidate_labels}"
         )
         return None
+
+    requested_locality = _query_requested_locality(sanitized_query)
+    if requested_locality:
+        locality_results = [
+            result
+            for result in california_results
+            if _candidate_matches_requested_locality(result, requested_locality)
+        ]
+        if not locality_results:
+            candidate_labels = [
+                result.get("display_name", "<unknown>")
+                for result in california_results[:3]
+            ]
+            logger.warning(
+                f"Rejecting Nominatim results for '{query}': no candidate "
+                f"matched requested locality '{requested_locality}' in "
+                f"{candidate_labels}"
+            )
+            return None
+        california_results = locality_results
 
     selected_result = min(
         california_results,

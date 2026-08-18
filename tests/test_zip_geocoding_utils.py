@@ -52,6 +52,25 @@ def test_normalize_place_query_defaults_unqualified_places_to_california() -> No
     assert geocoding._normalize_place_query("Chinatown, CA") == "Chinatown, CA"
 
 
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        ("111 S Grand Ave, Los Angeles, CA", "los angeles"),
+        ("1910 S Union St #1073, Anaheim 92805", "anaheim"),
+        ("100 Main St, Apt 4, Pasadena, CA", "pasadena"),
+        ("100 Main St, # 4, Pasadena, CA", "pasadena"),
+        ("100 Main St, CA 90210", None),
+        ("100 Main St, Los Angeles County, CA", None),
+        ("Venice, CA", None),
+    ],
+)
+def test_query_requested_locality_extracts_address_qualifier(
+    query: str,
+    expected: str | None,
+) -> None:
+    assert geocoding._query_requested_locality(query) == expected
+
+
 def test_service_area_priority_includes_direct_la_neighboring_counties() -> None:
     assert geocoding._service_area_priority({"address": {"county": "Los Angeles County"}}) == 0
     assert geocoding._service_area_priority({"address": {"county": "Orange County"}}) == 1
@@ -449,3 +468,132 @@ def test_geocode_place_cached_keeps_exact_orange_county_address_ahead_of_la_coun
     assert result["lat"] == 33.80612
     assert result["lon"] == -117.909534
     assert calls[0]["params"]["q"] == "1910 S Union St #1073, Anaheim 92805, CA"
+
+
+def test_geocode_place_cached_enforces_requested_city_for_la_county_address(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    payload = [
+        {
+            "lat": "34.0858458",
+            "lon": "-117.8723354",
+            "class": "place",
+            "type": "house",
+            "addresstype": "house",
+            "importance": 0.9,
+            "display_name": (
+                "111, South Grand Avenue, Covina, Los Angeles County, "
+                "California, 91724, United States"
+            ),
+            "address": {
+                "house_number": "111",
+                "road": "South Grand Avenue",
+                "town": "Covina",
+                "county": "Los Angeles County",
+                "state": "California",
+                "postcode": "91724",
+                "country_code": "us",
+            },
+            "boundingbox": [
+                "34.0857958",
+                "34.0858958",
+                "-117.8723854",
+                "-117.8722854",
+            ],
+        },
+        {
+            "lat": "34.0553450",
+            "lon": "-118.2498450",
+            "class": "place",
+            "type": "house",
+            "addresstype": "house",
+            "importance": 0.1,
+            "display_name": (
+                "111, South Grand Avenue, Los Angeles, Los Angeles County, "
+                "California, 90012, United States"
+            ),
+            "address": {
+                "house_number": "111",
+                "road": "South Grand Avenue",
+                "city": "Los Angeles",
+                "county": "Los Angeles County",
+                "state": "California",
+                "postcode": "90012",
+                "country_code": "us",
+            },
+            "boundingbox": [
+                "34.0552950",
+                "34.0553950",
+                "-118.2498950",
+                "-118.2497950",
+            ],
+        },
+    ]
+
+    monkeypatch.setattr(
+        geocoding.requests,
+        "get",
+        lambda *_args, **_kwargs: FakeNominatimResponse(payload),
+    )
+
+    result = geocoding.geocode_place_cached(
+        "111 S Grand Ave, Los Angeles, CA",
+        cache_path=tmp_path / "place_cache.json",
+    )
+
+    assert result is not None
+    assert result["display_name"].startswith(
+        "111, South Grand Avenue, Los Angeles,"
+    )
+    assert result["lat"] == 34.055345
+    assert result["lon"] == -118.249845
+
+
+def test_geocode_place_cached_rejects_candidates_from_wrong_requested_city(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    payload = [
+        {
+            "lat": "34.0858458",
+            "lon": "-117.8723354",
+            "class": "place",
+            "type": "house",
+            "addresstype": "house",
+            "importance": 0.9,
+            "display_name": (
+                "111, South Grand Avenue, Covina, Los Angeles County, "
+                "California, 91724, United States"
+            ),
+            "address": {
+                "house_number": "111",
+                "road": "South Grand Avenue",
+                "town": "Covina",
+                "county": "Los Angeles County",
+                "state": "California",
+                "postcode": "91724",
+                "country_code": "us",
+            },
+            "boundingbox": [
+                "34.0857958",
+                "34.0858958",
+                "-117.8723854",
+                "-117.8722854",
+            ],
+        }
+    ]
+
+    monkeypatch.setattr(
+        geocoding.requests,
+        "get",
+        lambda *_args, **_kwargs: FakeNominatimResponse(payload),
+    )
+
+    assert (
+        geocoding.geocode_place_cached(
+            "111 S Grand Ave, Los Angeles, CA",
+            cache_path=tmp_path / "place_cache.json",
+        )
+        is None
+    )
