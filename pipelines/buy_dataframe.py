@@ -337,8 +337,6 @@ def main() -> None:
       df_old["listed_date"] = pd.to_datetime(df_old["listed_date"], errors="coerce")
       df_old["date_processed"] = pd.to_datetime(df_old["date_processed"], errors="coerce")
       df_combined = merge_listing_dataframes(df, df_old)
-      # Clean up outliers
-      df_combined = drop_high_outliers(df=df_combined, cols=["lot_size"], iqr_multiplier=4.0, absolute_caps={"lot_size": 100000})
     else:
       df_combined = df.copy()
 

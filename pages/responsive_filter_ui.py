@@ -7,6 +7,62 @@ import dash_bootstrap_components as dbc
 
 FILTER_UI_BREAKPOINT = 1100
 
+_HYBRID_RANGE_SLIDERS = {
+    "lease": (
+        "rental_price_slider",
+        "sqft_slider",
+        "ppsqft_slider",
+        "security_deposit_slider",
+        "pet_deposit_slider",
+        "key_deposit_slider",
+        "other_deposit_slider",
+    ),
+    "buy": (
+        "list_price_slider",
+        "sqft_slider",
+        "ppsqft_slider",
+        "lot_size_slider",
+        "hoa_fee_slider",
+    ),
+}
+_registered_hybrid_range_sliders: set[str] = set()
+
+
+def _hybrid_range_input_id(slider_id: str, bound: str) -> str:
+    """Return the exact-value field id paired with a range slider."""
+    return f"{slider_id.removesuffix('_slider')}_{bound}_input"
+
+
+def _register_hybrid_range_callbacks(page_type: str) -> None:
+    """Keep exact-value fields and their finite display slider synchronized."""
+    for slider_id in _HYBRID_RANGE_SLIDERS[page_type]:
+        if slider_id in _registered_hybrid_range_sliders:
+            continue
+        _registered_hybrid_range_sliders.add(slider_id)
+        minimum_input_id = _hybrid_range_input_id(slider_id, "minimum")
+        maximum_input_id = _hybrid_range_input_id(slider_id, "maximum")
+        minimum_clear_id = f"{slider_id.removesuffix('_slider')}_minimum_clear"
+        maximum_clear_id = f"{slider_id.removesuffix('_slider')}_maximum_clear"
+        clientside_callback(
+            ClientsideFunction(
+                namespace="clientside",
+                function_name="syncHybridRangeFilter",
+            ),
+            Output(slider_id, "value"),
+            Output(minimum_input_id, "value"),
+            Output(maximum_input_id, "value"),
+            Output(minimum_clear_id, "style"),
+            Output(maximum_clear_id, "style"),
+            Input(slider_id, "value"),
+            Input(minimum_input_id, "value"),
+            Input(maximum_input_id, "value"),
+            Input(minimum_clear_id, "n_clicks"),
+            Input(maximum_clear_id, "n_clicks"),
+            State(slider_id, "min"),
+            State(slider_id, "max"),
+            prevent_initial_call=True,
+        )
+
 
 def build_filter_ui_stores(page_type: str) -> list[dcc.Store]:
     """
@@ -316,6 +372,8 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
     These callbacks capture control values, calculate preview counts, apply
     committed filters to the map, and open the requested accordion section.
     """
+    _register_hybrid_range_callbacks(page_type)
+
     if page_type == "lease":
         capture_inputs = _lease_capture_inputs()
         capture_function = "captureLeaseFilterState"
@@ -376,15 +434,24 @@ def _lease_capture_inputs() -> list[Input]:
     The order matches the arguments accepted by ``captureLeaseFilterState``.
     """
     return [
-        Input("rental_price_slider", "value"),
+        Input("rental_price_minimum_input", "value"),
+        Input("rental_price_maximum_input", "value"),
+        Input("rental_price_slider", "max"),
         Input("bedrooms_slider", "value"),
+        Input("bedrooms_slider", "max"),
         Input("bathrooms_slider", "value"),
+        Input("bathrooms_slider", "max"),
         Input("pets_radio", "value"),
-        Input("sqft_slider", "value"),
+        Input("sqft_minimum_input", "value"),
+        Input("sqft_maximum_input", "value"),
+        Input("sqft_slider", "max"),
         Input("sqft_missing_switch", "checked"),
-        Input("ppsqft_slider", "value"),
+        Input("ppsqft_minimum_input", "value"),
+        Input("ppsqft_maximum_input", "value"),
+        Input("ppsqft_slider", "max"),
         Input("ppsqft_missing_switch", "checked"),
         Input("garage_spaces_slider", "value"),
+        Input("garage_spaces_slider", "max"),
         Input("garage_missing_switch", "checked"),
         Input("yrbuilt_slider", "value"),
         Input("yrbuilt_missing_switch", "checked"),
@@ -392,13 +459,21 @@ def _lease_capture_inputs() -> list[Input]:
         Input("terms_missing_switch", "checked"),
         Input("furnished_checklist", "value"),
         Input("furnished_missing_switch", "checked"),
-        Input("security_deposit_slider", "value"),
+        Input("security_deposit_minimum_input", "value"),
+        Input("security_deposit_maximum_input", "value"),
+        Input("security_deposit_slider", "max"),
         Input("security_deposit_missing_switch", "checked"),
-        Input("pet_deposit_slider", "value"),
+        Input("pet_deposit_minimum_input", "value"),
+        Input("pet_deposit_maximum_input", "value"),
+        Input("pet_deposit_slider", "max"),
         Input("pet_deposit_missing_switch", "checked"),
-        Input("key_deposit_slider", "value"),
+        Input("key_deposit_minimum_input", "value"),
+        Input("key_deposit_maximum_input", "value"),
+        Input("key_deposit_slider", "max"),
         Input("key_deposit_missing_switch", "checked"),
-        Input("other_deposit_slider", "value"),
+        Input("other_deposit_minimum_input", "value"),
+        Input("other_deposit_maximum_input", "value"),
+        Input("other_deposit_slider", "max"),
         Input("other_deposit_missing_switch", "checked"),
         Input("laundry_checklist", "value"),
         Input("laundry_missing_switch", "checked"),
@@ -424,14 +499,24 @@ def _buy_capture_inputs() -> list[Input]:
     The order matches the arguments accepted by ``captureBuyFilterState``.
     """
     return [
-        Input("list_price_slider", "value"),
+        Input("list_price_minimum_input", "value"),
+        Input("list_price_maximum_input", "value"),
+        Input("list_price_slider", "max"),
         Input("bedrooms_slider", "value"),
+        Input("bedrooms_slider", "max"),
         Input("bathrooms_slider", "value"),
-        Input("sqft_slider", "value"),
+        Input("bathrooms_slider", "max"),
+        Input("sqft_minimum_input", "value"),
+        Input("sqft_maximum_input", "value"),
+        Input("sqft_slider", "max"),
         Input("sqft_missing_switch", "checked"),
-        Input("ppsqft_slider", "value"),
+        Input("ppsqft_minimum_input", "value"),
+        Input("ppsqft_maximum_input", "value"),
+        Input("ppsqft_slider", "max"),
         Input("ppsqft_missing_switch", "checked"),
-        Input("lot_size_slider", "value"),
+        Input("lot_size_minimum_input", "value"),
+        Input("lot_size_maximum_input", "value"),
+        Input("lot_size_slider", "max"),
         Input("lot_size_missing_switch", "checked"),
         Input("yrbuilt_slider", "value"),
         Input("yrbuilt_missing_switch", "checked"),
@@ -440,7 +525,9 @@ def _buy_capture_inputs() -> list[Input]:
         Input("listed_date_datepicker_buy", "start_date"),
         Input("listed_date_datepicker_buy", "end_date"),
         Input("listed_date_missing_switch", "checked"),
-        Input("hoa_fee_slider", "value"),
+        Input("hoa_fee_minimum_input", "value"),
+        Input("hoa_fee_maximum_input", "value"),
+        Input("hoa_fee_slider", "max"),
         Input("hoa_fee_missing_switch", "checked"),
         Input("hoa_fee_frequency_checklist", "value"),
         Input("isp_download_speed_slider", "value"),

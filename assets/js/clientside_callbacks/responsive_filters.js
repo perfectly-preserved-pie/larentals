@@ -22,15 +22,27 @@
   ui.openedAt = ui.openedAt || {};
   ui.pageStartedAt = ui.pageStartedAt || {};
 
+  /**
+   * Describe the pair of exact-value controls backing one hybrid range.
+   * @param {string} stem Component id prefix shared by both fields.
+   * @returns {{minimum: string[], maximum: string[]}} Control mapping.
+   */
+  function exactRangeControl(stem) {
+    return Object.freeze({
+      minimum: [`${stem}_minimum_input`, "value"],
+      maximum: [`${stem}_maximum_input`, "value"],
+    });
+  }
+
   const CONTROL_MAP = Object.freeze({
     lease: Object.freeze({
-      priceRange: ["rental_price_slider", "value"],
+      priceRange: exactRangeControl("rental_price"),
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
       pets: ["pets_radio", "value"],
-      sqftRange: ["sqft_slider", "value"],
+      sqftRange: exactRangeControl("sqft"),
       sqftMissing: ["sqft_missing_switch", "checked"],
-      ppsqftRange: ["ppsqft_slider", "value"],
+      ppsqftRange: exactRangeControl("ppsqft"),
       ppsqftMissing: ["ppsqft_missing_switch", "checked"],
       parkingRange: ["garage_spaces_slider", "value"],
       parkingMissing: ["garage_missing_switch", "checked"],
@@ -40,13 +52,13 @@
       termsMissing: ["terms_missing_switch", "checked"],
       furnished: ["furnished_checklist", "value"],
       furnishedMissing: ["furnished_missing_switch", "checked"],
-      securityRange: ["security_deposit_slider", "value"],
+      securityRange: exactRangeControl("security_deposit"),
       securityMissing: ["security_deposit_missing_switch", "checked"],
-      petDepositRange: ["pet_deposit_slider", "value"],
+      petDepositRange: exactRangeControl("pet_deposit"),
       petDepositMissing: ["pet_deposit_missing_switch", "checked"],
-      keyDepositRange: ["key_deposit_slider", "value"],
+      keyDepositRange: exactRangeControl("key_deposit"),
       keyDepositMissing: ["key_deposit_missing_switch", "checked"],
-      otherDepositRange: ["other_deposit_slider", "value"],
+      otherDepositRange: exactRangeControl("other_deposit"),
       otherDepositMissing: ["other_deposit_missing_switch", "checked"],
       laundry: ["laundry_checklist", "value"],
       laundryMissing: ["laundry_missing_switch", "checked"],
@@ -64,14 +76,14 @@
       zipBoundary: ["lease-zip-boundary-store", "data"],
     }),
     buy: Object.freeze({
-      priceRange: ["list_price_slider", "value"],
+      priceRange: exactRangeControl("list_price"),
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
-      sqftRange: ["sqft_slider", "value"],
+      sqftRange: exactRangeControl("sqft"),
       sqftMissing: ["sqft_missing_switch", "checked"],
-      ppsqftRange: ["ppsqft_slider", "value"],
+      ppsqftRange: exactRangeControl("ppsqft"),
       ppsqftMissing: ["ppsqft_missing_switch", "checked"],
-      lotSizeRange: ["lot_size_slider", "value"],
+      lotSizeRange: exactRangeControl("lot_size"),
       lotSizeMissing: ["lot_size_missing_switch", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
       yearMissing: ["yrbuilt_missing_switch", "checked"],
@@ -80,7 +92,7 @@
       dateStart: ["listed_date_datepicker_buy", "start_date"],
       dateEnd: ["listed_date_datepicker_buy", "end_date"],
       dateMissing: ["listed_date_missing_switch", "checked"],
-      hoaRange: ["hoa_fee_slider", "value"],
+      hoaRange: exactRangeControl("hoa_fee"),
       hoaMissing: ["hoa_fee_missing_switch", "checked"],
       hoaFrequency: ["hoa_fee_frequency_checklist", "value"],
       downloadRange: ["isp_download_speed_slider", "value"],
@@ -152,6 +164,29 @@
    */
   function equal(left, right) {
     return JSON.stringify(left) === JSON.stringify(right);
+  }
+
+  /**
+   * Convert a formatted numeric field value to a finite number.
+   * @param {*} value Candidate field value.
+   * @returns {number | null} Parsed number, or null for a blank/invalid value.
+   */
+  function finiteFieldNumber(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return null;
+    const number = Number(String(value).replaceAll(",", ""));
+    return Number.isFinite(number) ? number : null;
+  }
+
+  /**
+   * Build the filter range represented by exact minimum/maximum fields.
+   * A null upper value means that the range is unlimited above.
+   * @param {*} minimum Minimum field value.
+   * @param {*} maximum Maximum field value.
+   * @returns {[number, number | null]} Normalized exact range.
+   */
+  function exactRange(minimum, maximum) {
+    const normalizedMinimum = finiteFieldNumber(minimum);
+    return [Math.max(0, normalizedMinimum === null ? 0 : normalizedMinimum), finiteFieldNumber(maximum)];
   }
 
   /**
@@ -401,8 +436,9 @@
     if (!Array.isArray(value) || !Array.isArray(defaults)) return label;
     const formatter = currency ? compactCurrency : function (number) { return String(number); };
     if (equal(value, defaults)) return label;
-    if (value[0] === defaults[0]) return `${label} ≤ ${formatter(value[1])} ×`;
-    if (value[1] === defaults[1]) return `${label} ≥ ${formatter(value[0])} ×`;
+    const upperIsOpen = value[1] === null || value[1] === undefined || value[1] === "";
+    if (value[0] === defaults[0] && !upperIsOpen) return `${label} ≤ ${formatter(value[1])} ×`;
+    if (upperIsOpen) return `${label} ≥ ${formatter(value[0])} ×`;
     return `${label} ${formatter(value[0])}–${formatter(value[1])} ×`;
   }
 
@@ -547,6 +583,16 @@
     (keys || Object.keys(mapping)).forEach(function (key) {
       const target = mapping[key];
       if (!target || !(key in state)) return;
+      if (!Array.isArray(target) && target.minimum && target.maximum) {
+        const range = Array.isArray(state[key]) ? state[key] : [0, null];
+        const minimumProps = {};
+        const maximumProps = {};
+        minimumProps[target.minimum[1]] = range[0];
+        maximumProps[target.maximum[1]] = range[1] ?? "";
+        window.dash_clientside.set_props(target.minimum[0], minimumProps);
+        window.dash_clientside.set_props(target.maximum[0], maximumProps);
+        return;
+      }
       const props = {};
       props[target[1]] = clone(state[key]);
       window.dash_clientside.set_props(target[0], props);
@@ -884,27 +930,155 @@
   window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
       /**
+       * Synchronize a finite display slider with exact range fields.
+       * Clearing Maximum intentionally keeps the slider at its visual cap while
+       * representing an unbounded filter in the exact field.
+       * @returns {Array<*>} Slider, minimum field, and maximum field updates.
+       */
+      syncHybridRangeFilter: function (
+        sliderRange, minimumInput, maximumInput, _minimumClearClicks,
+        _maximumClearClicks,
+        sliderMinimum, sliderMaximum
+      ) {
+        const noUpdate = window.dash_clientside.no_update;
+        const triggered = triggeredIds();
+        const minimumTriggered = triggered.some(function (id) {
+          return id.endsWith("_minimum_input");
+        });
+        const maximumTriggered = triggered.some(function (id) {
+          return id.endsWith("_maximum_input");
+        });
+        const minimumClearTriggered = triggered.some(function (id) {
+          return id.endsWith("_minimum_clear");
+        });
+        const maximumClearTriggered = triggered.some(function (id) {
+          return id.endsWith("_maximum_clear");
+        });
+        const hiddenClear = { visibility: "hidden" };
+        const visibleClear = { visibility: "visible" };
+        const lowerLimit = Number(sliderMinimum);
+        const upperLimit = Number(sliderMaximum);
+        const clamp = function (value) {
+          return Math.min(upperLimit, Math.max(lowerLimit, value));
+        };
+        const selected = Array.isArray(sliderRange)
+          ? [Number(sliderRange[0]), Number(sliderRange[1])]
+          : [lowerLimit, upperLimit];
+        const clearVisibility = function (visible) {
+          return visible ? visibleClear : hiddenClear;
+        };
+
+        if (minimumClearTriggered) {
+          const currentMaximum = finiteFieldNumber(maximumInput);
+          const visualMaximum = clamp(currentMaximum === null ? upperLimit : currentMaximum);
+          return [
+            [lowerLimit, visualMaximum],
+            String(lowerLimit),
+            noUpdate,
+            hiddenClear,
+            clearVisibility(currentMaximum !== null),
+          ];
+        }
+
+        if (maximumClearTriggered) {
+          const currentMinimum = finiteFieldNumber(minimumInput);
+          const visualMinimum = clamp(currentMinimum === null ? lowerLimit : currentMinimum);
+          return [
+            [visualMinimum, upperLimit],
+            noUpdate,
+            "",
+            clearVisibility(currentMinimum !== null && currentMinimum > lowerLimit),
+            hiddenClear,
+          ];
+        }
+
+        if (!minimumTriggered && !maximumTriggered) {
+          const currentMinimum = finiteFieldNumber(minimumInput);
+          const currentMaximum = finiteFieldNumber(maximumInput);
+          const preserveMinimum = selected[0] >= upperLimit && currentMinimum > upperLimit;
+          const preserveMaximum = selected[1] >= upperLimit && (
+            currentMaximum === null || currentMaximum >= upperLimit
+          );
+          return [
+            noUpdate,
+            preserveMinimum ? noUpdate : selected[0],
+            preserveMaximum ? noUpdate : selected[1],
+            clearVisibility((preserveMinimum ? currentMinimum : selected[0]) > lowerLimit),
+            preserveMaximum && currentMaximum === null ? hiddenClear : visibleClear,
+          ];
+        }
+
+        let minimum = finiteFieldNumber(minimumInput);
+        let maximum = finiteFieldNumber(maximumInput);
+        let minimumUpdate = noUpdate;
+        let maximumUpdate = noUpdate;
+        if (minimum === null || minimum < 0) {
+          minimum = Math.max(0, lowerLimit);
+          minimumUpdate = minimum;
+        }
+        if (maximum !== null && maximum < 0) {
+          maximum = 0;
+          maximumUpdate = maximum;
+        }
+        if (maximum !== null && minimum > maximum) {
+          if (maximumTriggered && !minimumTriggered) {
+            minimum = maximum;
+            minimumUpdate = minimum;
+          } else {
+            maximum = minimum;
+            maximumUpdate = maximum;
+          }
+        }
+
+        const visualMinimum = clamp(minimum);
+        const visualMaximum = clamp(maximum === null ? upperLimit : maximum);
+        return [
+          [Math.min(visualMinimum, visualMaximum), Math.max(visualMinimum, visualMaximum)],
+          minimumUpdate,
+          maximumUpdate,
+          clearVisibility(minimum > lowerLimit),
+          maximum === null ? hiddenClear : visibleClear,
+        ];
+      },
+
+      /**
        * Capture rental controls in Dash callback order and stage or apply them.
        * @returns {Array<*>} Draft and applied values for the callback outputs.
        */
       captureLeaseFilterState: function (
-        priceRange, bedroomsRange, bathroomsRange, pets,
-        sqftRange, sqftMissing, ppsqftRange, ppsqftMissing,
-        parkingRange, parkingMissing, yearRange, yearMissing,
+        priceMinimum, priceMaximum, priceUpperBound,
+        bedroomsRange, bedroomsUpperBound,
+        bathroomsRange, bathroomsUpperBound, pets,
+        sqftMinimum, sqftMaximum, sqftUpperBound, sqftMissing,
+        ppsqftMinimum, ppsqftMaximum, ppsqftUpperBound, ppsqftMissing,
+        parkingRange, parkingUpperBound, parkingMissing, yearRange, yearMissing,
         terms, termsMissing, furnished, furnishedMissing,
-        securityRange, securityMissing, petDepositRange, petDepositMissing,
-        keyDepositRange, keyDepositMissing, otherDepositRange, otherDepositMissing,
+        securityMinimum, securityMaximum, securityUpperBound, securityMissing,
+        petDepositMinimum, petDepositMaximum, petDepositUpperBound, petDepositMissing,
+        keyDepositMinimum, keyDepositMaximum, keyDepositUpperBound, keyDepositMissing,
+        otherDepositMinimum, otherDepositMaximum, otherDepositUpperBound, otherDepositMissing,
         laundry, laundryMissing, subtypes, listedRange, dateStart, dateEnd,
         dateMissing, downloadRange, uploadRange, ispMissing, rentControl,
         locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
       ) {
+        const priceRange = exactRange(priceMinimum, priceMaximum);
+        const sqftRange = exactRange(sqftMinimum, sqftMaximum);
+        const ppsqftRange = exactRange(ppsqftMinimum, ppsqftMaximum);
+        const securityRange = exactRange(securityMinimum, securityMaximum);
+        const petDepositRange = exactRange(petDepositMinimum, petDepositMaximum);
+        const keyDepositRange = exactRange(keyDepositMinimum, keyDepositMaximum);
+        const otherDepositRange = exactRange(otherDepositMinimum, otherDepositMaximum);
         return finalizeCapture("lease", {
-          priceRange, bedroomsRange, bathroomsRange, pets,
-          sqftRange, sqftMissing, ppsqftRange, ppsqftMissing,
-          parkingRange, parkingMissing, yearRange, yearMissing,
+          priceRange, priceUpperBound, bedroomsRange, bedroomsUpperBound,
+          bathroomsRange, bathroomsUpperBound, pets,
+          sqftRange, sqftUpperBound, sqftMissing,
+          ppsqftRange, ppsqftUpperBound, ppsqftMissing,
+          parkingRange, parkingUpperBound, parkingMissing, yearRange, yearMissing,
           terms, termsMissing, furnished, furnishedMissing,
-          securityRange, securityMissing, petDepositRange, petDepositMissing,
-          keyDepositRange, keyDepositMissing, otherDepositRange, otherDepositMissing,
+          securityRange, securityUpperBound, securityMissing,
+          petDepositRange, petDepositUpperBound, petDepositMissing,
+          keyDepositRange, keyDepositUpperBound, keyDepositMissing,
+          otherDepositRange, otherDepositUpperBound, otherDepositMissing,
           laundry, laundryMissing, subtypes, listedRange, dateStart, dateEnd,
           dateMissing, downloadRange, uploadRange, ispMissing, rentControl,
           locationText, nearbyZip, zipBoundary,
@@ -916,20 +1090,31 @@
        * @returns {Array<*>} Draft and applied values for the callback outputs.
        */
       captureBuyFilterState: function (
-        priceRange, bedroomsRange, bathroomsRange,
-        sqftRange, sqftMissing, ppsqftRange, ppsqftMissing,
-        lotSizeRange, lotSizeMissing, yearRange, yearMissing,
+        priceMinimum, priceMaximum, priceUpperBound,
+        bedroomsRange, bedroomsUpperBound,
+        bathroomsRange, bathroomsUpperBound,
+        sqftMinimum, sqftMaximum, sqftUpperBound, sqftMissing,
+        ppsqftMinimum, ppsqftMaximum, ppsqftUpperBound, ppsqftMissing,
+        lotSizeMinimum, lotSizeMaximum, lotSizeUpperBound, lotSizeMissing,
+        yearRange, yearMissing,
         subtypes, listedRange, dateStart, dateEnd, dateMissing,
-        hoaRange, hoaMissing, hoaFrequency,
+        hoaMinimum, hoaMaximum, hoaUpperBound, hoaMissing, hoaFrequency,
         downloadRange, uploadRange, ispMissing,
         locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
       ) {
+        const priceRange = exactRange(priceMinimum, priceMaximum);
+        const sqftRange = exactRange(sqftMinimum, sqftMaximum);
+        const ppsqftRange = exactRange(ppsqftMinimum, ppsqftMaximum);
+        const lotSizeRange = exactRange(lotSizeMinimum, lotSizeMaximum);
+        const hoaRange = exactRange(hoaMinimum, hoaMaximum);
         return finalizeCapture("buy", {
-          priceRange, bedroomsRange, bathroomsRange,
-          sqftRange, sqftMissing, ppsqftRange, ppsqftMissing,
-          lotSizeRange, lotSizeMissing, yearRange, yearMissing,
+          priceRange, priceUpperBound, bedroomsRange, bedroomsUpperBound,
+          bathroomsRange, bathroomsUpperBound,
+          sqftRange, sqftUpperBound, sqftMissing,
+          ppsqftRange, ppsqftUpperBound, ppsqftMissing,
+          lotSizeRange, lotSizeUpperBound, lotSizeMissing, yearRange, yearMissing,
           subtypes, listedRange, dateStart, dateEnd, dateMissing,
-          hoaRange, hoaMissing, hoaFrequency,
+          hoaRange, hoaUpperBound, hoaMissing, hoaFrequency,
           downloadRange, uploadRange, ispMissing,
           locationText, nearbyZip, zipBoundary,
         }, currentApplied);

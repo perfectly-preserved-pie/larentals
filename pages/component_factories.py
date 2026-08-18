@@ -1,5 +1,7 @@
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date
+import math
 from typing import Any, Mapping
 from dash import dcc, html
 from dash_extensions.javascript import Namespace
@@ -8,6 +10,7 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
 import numpy as np
+import pandas as pd
 
 from .component_models import DashId, FilterSection, PageConfig, PageParts
 from functions.convex_hull import generate_convex_hulls
@@ -18,6 +21,144 @@ from functions.layers import (
     SCHOOL_LAYER_GRADE_BAND_OPTIONS,
     SCHOOL_LAYER_LEVEL_OPTIONS,
 )
+
+
+@dataclass(frozen=True)
+class CappedRangeBounds:
+    """Robust display bounds that preserve values above the visible scale."""
+
+    minimum: int | float
+    maximum: int | float
+    is_capped: bool
+    capped_at: int | float | None = None
+
+    @property
+    def display_maximum(self) -> int | float:
+        """Return the largest numeric value shown on a finite slider scale."""
+        if self.is_capped and self.capped_at is not None:
+            return self.capped_at
+        return self.maximum
+
+    def marks(
+        self,
+        *,
+        currency: bool = False,
+        suffix: str = "",
+        include_open_end: bool = True,
+        target_intervals: int = 5,
+    ) -> Mapping[int | float, str] | None:
+        """Return readable marks, optionally followed by an ``Unlimited`` stop."""
+        if not self.is_capped and include_open_end:
+            return None
+
+        finite_maximum = self.display_maximum
+
+        def format_value(value: int | float) -> str:
+            numeric = float(value)
+            absolute = abs(numeric)
+            scale = 1.0
+            unit = ""
+            if absolute >= 1_000_000:
+                scale = 1_000_000
+                unit = "M"
+            elif absolute >= 1_000:
+                scale = 1_000
+                unit = "k"
+            scaled = numeric / scale
+            rendered = (
+                f"{scaled:,.0f}"
+                if scaled.is_integer()
+                else f"{scaled:,.2f}".rstrip("0").rstrip(".")
+            )
+            prefix = "$" if currency else ""
+            return f"{prefix}{rendered}{unit}{suffix}"
+
+        span = float(finite_maximum) - float(self.minimum)
+        if span <= 0:
+            return {
+                self.minimum: format_value(self.minimum),
+            }
+        target_step = span / max(1, target_intervals)
+        minimum_tick_step = 10 ** math.floor(math.log10(target_step))
+        tick_step = _readable_ceiling(
+            target_step,
+            minimum_step=minimum_tick_step,
+        )
+
+        marks: dict[int | float, str] = {}
+        current = float(self.minimum)
+        while current <= float(finite_maximum):
+            key: int | float = int(current) if current.is_integer() else current
+            marks[key] = format_value(key)
+            current = round(current + tick_step, 10)
+
+        marks[finite_maximum] = format_value(finite_maximum)
+        if include_open_end and self.is_capped:
+            marks[self.maximum] = "Unlimited"
+        return marks
+
+
+def _readable_ceiling(value: float, *, minimum_step: float) -> float:
+    """Round a positive value up to a readable slider endpoint."""
+    if not np.isfinite(value) or value <= 0:
+        return minimum_step
+
+    magnitude = 10 ** math.floor(math.log10(value))
+    normalized = value / magnitude
+    multiplier = next(
+        candidate
+        for candidate in (1, 1.25, 1.5, 2, 2.5, 5, 10)
+        if normalized <= candidate
+    )
+    rounded = multiplier * magnitude
+    return max(rounded, minimum_step)
+
+
+def iqr_capped_range_bounds(
+    values: Sequence[Any] | pd.Series,
+    *,
+    minimum: int | float = 0,
+    step: int | float = 1,
+    iqr_multiplier: float = 1.5,
+) -> CappedRangeBounds:
+    """
+    Build non-destructive slider bounds using the IQR fence as a display cap.
+
+    Values above the IQR-derived display cap remain in the dataset. When
+    ``is_capped`` is true, ``capped_at`` remains an exact selectable value and
+    ``maximum`` is a separate final stop meaning no upper limit.
+    """
+    numeric = pd.to_numeric(pd.Series(values), errors="coerce").dropna()
+    numeric = numeric[np.isfinite(numeric)]
+    if numeric.empty:
+        return CappedRangeBounds(minimum, minimum + step, False)
+
+    observed_max = float(numeric.max())
+    q1 = float(numeric.quantile(0.25))
+    q3 = float(numeric.quantile(0.75))
+    iqr = q3 - q1
+    if iqr <= 0:
+        return CappedRangeBounds(minimum, max(minimum + step, observed_max), False)
+
+    upper_fence = q3 + iqr_multiplier * iqr
+    display_max = _readable_ceiling(upper_fence, minimum_step=float(step))
+    if display_max >= observed_max:
+        return CappedRangeBounds(minimum, max(minimum + step, observed_max), False)
+
+    if float(display_max).is_integer():
+        display_max = int(display_max)
+
+    span = float(display_max) - float(minimum)
+    target_step = span / 5
+    minimum_tick_step = 10 ** math.floor(math.log10(target_step))
+    overflow_step = _readable_ceiling(
+        target_step,
+        minimum_step=minimum_tick_step,
+    )
+    slider_max = float(display_max) + overflow_step
+    if slider_max.is_integer():
+        slider_max = int(slider_max)
+    return CappedRangeBounds(minimum, slider_max, True, display_max)
 
 
 def build_range_filter(
@@ -33,9 +174,12 @@ def build_range_filter(
     include_missing_switch_label: str | None = None,
     switch_style: Mapping[str, Any] | None = None,
     step: int | float | None = None,
-    marks: Mapping[int, str] | None = None,
+    marks: Mapping[int | float, str] | None = None,
     container_style: Mapping[str, Any] | None = None,
     header_children: Sequence[Any] | None = None,
+    show_exact_inputs: bool = False,
+    input_prefix: str = "",
+    input_suffix: str = "",
 ) -> html.Div:
     """
     Build a standard slider-based filter section.
@@ -55,14 +199,28 @@ def build_range_filter(
         marks: Optional slider marks.
         container_style: Optional style for the outer wrapper.
         header_children: Optional header content shown above the slider.
+        show_exact_inputs: Show synchronized minimum and maximum number fields.
+        input_prefix: Prefix displayed inside both exact-value fields.
+        input_suffix: Suffix displayed inside both exact-value fields.
 
     Returns:
         A fully assembled filter ``Div``.
     """
-    tooltip = {
-        "placement": "bottom",
-        "always_visible": True,
-    }
+    has_open_upper_bound = bool(
+        marks
+        and any(
+            str(mark.get("label", "") if isinstance(mark, Mapping) else mark) == "Unlimited"
+            for mark in marks.values()
+        )
+    )
+    tooltip = {"placement": "bottom"}
+    if not show_exact_inputs:
+        tooltip.update(
+            {
+                "placement": "top" if has_open_upper_bound else "bottom",
+                "always_visible": True,
+            }
+        )
     if tooltip_transform is not None:
         tooltip["transform"] = tooltip_transform
 
@@ -71,23 +229,112 @@ def build_range_filter(
         "min": min_value,
         "max": max_value,
         "value": value,
-        "updatemode": "mouseup",
-        "tooltip": tooltip,
+        "updatemode": "drag" if show_exact_inputs else "mouseup",
+        "allow_direct_input": False,
     }
+    if not show_exact_inputs:
+        slider_kwargs["tooltip"] = tooltip
     if step is not None:
         slider_kwargs["step"] = step
     if marks is not None:
         slider_kwargs["marks"] = marks
+    if show_exact_inputs:
+        slider_kwargs["className"] = "range-filter__hybrid-slider"
+    elif has_open_upper_bound:
+        slider_kwargs["className"] = "range-filter__open-ended-slider"
 
     slider = dcc.RangeSlider(**slider_kwargs)
     has_missing_switch = bool(
         include_missing_switch_id and include_missing_switch_label
     )
-    body_children = [
-        html.Div(slider, className="range-filter__slider-with-switch")
-        if has_missing_switch
-        else slider
-    ]
+    body_children: list[Any] = []
+    if show_exact_inputs:
+        input_step = step if step is not None else 1
+        input_common = {
+            "min": min_value,
+            "step": input_step,
+            "allowNegative": False,
+            "allowDecimal": False,
+            "hideControls": True,
+            "clampBehavior": "none",
+            "thousandSeparator": ",",
+            "debounce": 250,
+            "autoComplete": "off",
+            "className": "range-filter__exact-input",
+        }
+        if input_prefix:
+            input_common["prefix"] = input_prefix
+        if input_suffix:
+            input_common["suffix"] = input_suffix
+        input_stem = slider_id.removesuffix("_slider")
+        minimum_clear_button = dmc.ActionIcon(
+            DashIconify(icon="tabler:x", width=17),
+            id=f"{input_stem}_minimum_clear",
+            n_clicks=0,
+            variant="subtle",
+            color="gray",
+            size=32,
+            radius="sm",
+            className="range-filter__minimum-clear-button",
+            style={"visibility": "hidden"},
+            buttonProps={
+                "type": "button",
+                "aria-label": "Reset minimum to zero",
+                "title": "Reset minimum to zero",
+            },
+        )
+        unlimited_button = dmc.ActionIcon(
+            DashIconify(icon="tabler:x", width=17),
+            id=f"{input_stem}_maximum_clear",
+            n_clicks=0,
+            variant="subtle",
+            color="gray",
+            size=32,
+            radius="sm",
+            className="range-filter__unlimited-button",
+            style={"visibility": "hidden"},
+            buttonProps={
+                "type": "button",
+                "aria-label": "Set maximum to unlimited",
+                "title": "Set maximum to unlimited",
+            },
+        )
+        body_children.append(
+            html.Div(
+                [
+                    dmc.NumberInput(
+                        id=f"{input_stem}_minimum_input",
+                        label="Minimum",
+                        value=min_value,
+                        placeholder=str(min_value),
+                        rightSection=minimum_clear_button,
+                        rightSectionWidth=36,
+                        rightSectionPointerEvents="auto",
+                        **input_common,
+                    ),
+                    dmc.NumberInput(
+                        id=f"{input_stem}_maximum_input",
+                        label="Maximum",
+                        value=None,
+                        placeholder="Unlimited",
+                        rightSection=unlimited_button,
+                        rightSectionWidth=36,
+                        rightSectionPointerEvents="auto",
+                        **input_common,
+                    ),
+                ],
+                className="range-filter__exact-inputs",
+            )
+        )
+        body_children.append(
+            html.Div(slider, className="range-filter__hybrid-slider-wrap")
+        )
+    else:
+        body_children.append(
+            html.Div(slider, className="range-filter__slider-with-switch")
+            if has_missing_switch
+            else slider
+        )
 
     if has_missing_switch:
         body_children.append(

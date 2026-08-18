@@ -37,6 +37,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
          * @param {boolean} speedIncludeMissing - Whether to include listings with missing ISP speeds
          * @param {string} rentControlStatus - Selected LA City rent-control status
+         * @param {number} priceUpperBound - Finite display maximum for the rent slider
+         * @param {number} bedroomsUpperBound - Slider endpoint that represents bedrooms-or-more
+         * @param {number} bathroomsUpperBound - Slider endpoint that represents bathrooms-or-more
+         * @param {number} sqftUpperBound - Finite display maximum for square footage
+         * @param {number} ppsqftUpperBound - Finite display maximum for price per square foot
+         * @param {number} parkingUpperBound - Slider endpoint that represents parking-spaces-or-more
+         * @param {number} securityUpperBound - Finite display maximum for security deposits
+         * @param {number} petDepositUpperBound - Finite display maximum for pet deposits
+         * @param {number} keyDepositUpperBound - Finite display maximum for key deposits
+         * @param {number} otherDepositUpperBound - Finite display maximum for other deposits
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload
          * @param {Object} fullGeojson - GeoJSON data with .features array
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
@@ -76,6 +86,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             uploadSpeedRange,
             speedIncludeMissing,
             rentControlStatus,
+            priceUpperBound,
+            bedroomsUpperBound,
+            bathroomsUpperBound,
+            sqftUpperBound,
+            ppsqftUpperBound,
+            parkingUpperBound,
+            securityUpperBound,
+            petDepositUpperBound,
+            keyDepositUpperBound,
+            otherDepositUpperBound,
             zipBoundaryData,
             fullGeojson
         ) {
@@ -102,6 +122,24 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minPetDeposit, maxPetDeposit]           = petDepositRange;
             const [minKeyDeposit, maxKeyDeposit]           = keyDepositRange;
             const [minOtherDeposit, maxOtherDeposit]       = otherDepositRange;
+
+            const upperIsOpen = (selectedMaximum, configuredMaximum) => (
+                Number.isFinite(Number(configuredMaximum)) &&
+                selectedMaximum >= Number(configuredMaximum)
+            );
+            const exactUpperIsOpen = (selectedMaximum) => (
+                selectedMaximum === null || selectedMaximum === undefined || selectedMaximum === ""
+            );
+            const priceUpperIsOpen = exactUpperIsOpen(maxPrice);
+            const bedroomsUpperIsOpen = upperIsOpen(maxBedrooms, bedroomsUpperBound);
+            const bathroomsUpperIsOpen = upperIsOpen(maxBathrooms, bathroomsUpperBound);
+            const sqftUpperIsOpen = exactUpperIsOpen(maxSqft);
+            const ppsqftUpperIsOpen = exactUpperIsOpen(maxPpsqft);
+            const parkingUpperIsOpen = upperIsOpen(maxParking, parkingUpperBound);
+            const securityUpperIsOpen = exactUpperIsOpen(maxSecurityDeposit);
+            const petDepositUpperIsOpen = exactUpperIsOpen(maxPetDeposit);
+            const keyDepositUpperIsOpen = exactUpperIsOpen(maxKeyDeposit);
+            const otherDepositUpperIsOpen = exactUpperIsOpen(maxOtherDeposit);
 
             const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
                 ? downloadSpeedRange
@@ -191,30 +229,36 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 let sqftFilter = true;
                 if (sqftIncludeMissingBool) {
                     sqftFilter = (sqft === null || sqft === undefined) ||
-                                 (sqft >= minSqft && sqft <= maxSqft);
+                                 (sqft >= minSqft &&
+                                  (sqftUpperIsOpen || sqft <= maxSqft));
                 } else {
                     sqftFilter = (sqft !== null && sqft !== undefined) &&
-                                 (sqft >= minSqft && sqft <= maxSqft);
+                                 (sqft >= minSqft &&
+                                  (sqftUpperIsOpen || sqft <= maxSqft));
                 }
 
                 // 3) ppsqftFilter
                 let ppsqftFilter = true;
                 if (ppsqftIncludeMissingBool) {
                     ppsqftFilter = (ppsqft === null || ppsqft === undefined) ||
-                                   (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                                   (ppsqft >= minPpsqft &&
+                                    (ppsqftUpperIsOpen || ppsqft <= maxPpsqft));
                 } else {
                     ppsqftFilter = (ppsqft !== null && ppsqft !== undefined) &&
-                                   (ppsqft >= minPpsqft && ppsqft <= maxPpsqft);
+                                   (ppsqft >= minPpsqft &&
+                                    (ppsqftUpperIsOpen || ppsqft <= maxPpsqft));
                 }
 
                 // 4) parkingFilter
                 let parkingFilter = true;
                 if (parkingSpacesIncludeMissingBool) {
                     parkingFilter = (parkingSpaces === null || parkingSpaces === undefined) ||
-                                    (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                                    (parkingSpaces >= minParking &&
+                                     (parkingUpperIsOpen || parkingSpaces <= maxParking));
                 } else {
                     parkingFilter = (parkingSpaces !== null && parkingSpaces !== undefined) &&
-                                    (parkingSpaces >= minParking && parkingSpaces <= maxParking);
+                                    (parkingSpaces >= minParking &&
+                                     (parkingUpperIsOpen || parkingSpaces <= maxParking));
                 }
 
                 // 5) yearBuiltFilter
@@ -268,40 +312,48 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 let securityDepositFilter = true;
                 if (securityDepositIncludeMissingBool) {
                     securityDepositFilter = (securityDeposit === null || securityDeposit === undefined) ||
-                                            (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                                            (securityDeposit >= minSecurityDeposit &&
+                                             (securityUpperIsOpen || securityDeposit <= maxSecurityDeposit));
                 } else {
                     securityDepositFilter = (securityDeposit !== null && securityDeposit !== undefined) &&
-                                            (securityDeposit >= minSecurityDeposit && securityDeposit <= maxSecurityDeposit);
+                                            (securityDeposit >= minSecurityDeposit &&
+                                             (securityUpperIsOpen || securityDeposit <= maxSecurityDeposit));
                 }
 
                 // 9) petDepositFilter
                 let petDepositFilter = true;
                 if (petDepositIncludeMissingBool) {
                     petDepositFilter = (petDeposit === null || petDeposit === undefined) ||
-                                       (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                                       (petDeposit >= minPetDeposit &&
+                                        (petDepositUpperIsOpen || petDeposit <= maxPetDeposit));
                 } else {
                     petDepositFilter = (petDeposit !== null && petDeposit !== undefined) &&
-                                       (petDeposit >= minPetDeposit && petDeposit <= maxPetDeposit);
+                                       (petDeposit >= minPetDeposit &&
+                                        (petDepositUpperIsOpen || petDeposit <= maxPetDeposit));
                 }
 
                 // 10) keyDepositFilter
                 let keyDepositFilter = true;
                 if (keyDepositIncludeMissingBool) {
                     keyDepositFilter = (keyDeposit === null || keyDeposit === undefined) ||
-                                       (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                                       (keyDeposit >= minKeyDeposit &&
+                                        (keyDepositUpperIsOpen || keyDeposit <= maxKeyDeposit));
                 } else {
                     keyDepositFilter = (keyDeposit !== null && keyDeposit !== undefined) &&
-                                       (keyDeposit >= minKeyDeposit && keyDeposit <= maxKeyDeposit);
+                                       (keyDeposit >= minKeyDeposit &&
+                                        (keyDepositUpperIsOpen || keyDeposit <= maxKeyDeposit));
                 }
 
                 // 11) otherDepositFilter
                 let otherDepositFilter = true;
                 if (otherDepositIncludeMissingBool) {
                     otherDepositFilter = (otherDeposit === null || otherDeposit === undefined) ||
-                                         (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
+                                         (otherDeposit >= minOtherDeposit &&
+                                          (otherDepositUpperIsOpen || otherDeposit <= maxOtherDeposit));
                 } else {
                     otherDepositFilter = (otherDeposit !== null && otherDeposit !== undefined) &&
-                                         (otherDeposit >= minOtherDeposit && otherDeposit <= maxOtherDeposit);
+                                         (otherDeposit >= minOtherDeposit &&
+                                          (otherDepositUpperIsOpen || otherDeposit <= maxOtherDeposit));
                 }
 
                 // 12) laundryFilter
@@ -328,9 +380,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
 
                 // 14) priceFilter, bedroomsFilter, bathroomsFilter
-                const priceFilter = (price >= minPrice && price <= maxPrice);
-                const bedroomsFilter = (bedrooms >= minBedrooms && bedrooms <= maxBedrooms);
-                const bathroomsFilter = (bathrooms >= minBathrooms && bathrooms <= maxBathrooms);
+                const priceFilter = price >= minPrice &&
+                    (priceUpperIsOpen || price <= maxPrice);
+                const bedroomsFilter = bedrooms >= minBedrooms &&
+                    (bedroomsUpperIsOpen || bedrooms <= maxBedrooms);
+                const bathroomsFilter = bathrooms >= minBathrooms &&
+                    (bathroomsUpperIsOpen || bathrooms <= maxBathrooms);
 
                 // 15) dateFilter
                 let dateFilter = true;
@@ -484,6 +539,16 @@ window.larentals.filters.filterLeaseState = function(state, fullGeojson) {
         state.uploadRange,
         state.ispMissing,
         state.rentControl,
+        state.priceUpperBound,
+        state.bedroomsUpperBound,
+        state.bathroomsUpperBound,
+        state.sqftUpperBound,
+        state.ppsqftUpperBound,
+        state.parkingUpperBound,
+        state.securityUpperBound,
+        state.petDepositUpperBound,
+        state.keyDepositUpperBound,
+        state.otherDepositUpperBound,
         state.zipBoundary,
         fullGeojson
     );

@@ -21,6 +21,7 @@ from .component_factories import (
     build_school_layer_map_prompt,
     build_subtype_filter,
     build_year_built_filter,
+    iqr_capped_range_bounds,
 )
 from .component_models import FilterSection, PageConfig, PageParts
 from .responsive_filter_ui import build_map_filter_toolbar
@@ -320,14 +321,22 @@ class LeaseComponents(BaseClass):
         Returns:
             A rent filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["list_price"], minimum=0, step=1)
         return build_range_filter(
             slider_id="rental_price_slider",
-            min_value=self.df["list_price"].min(),
-            max_value=self.df["list_price"].max(),
-            value=[0, self.df["list_price"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="rental_price_div",
             dynamic_id=self.dynamic_output_id("rental_price"),
             tooltip_transform="formatCurrency",
+            marks=bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_prefix="$",
             container_style={"marginBottom": "10px"},
         )
 
@@ -338,14 +347,16 @@ class LeaseComponents(BaseClass):
         Returns:
             A bedrooms filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["bedrooms"], minimum=0, step=1)
         return build_range_filter(
             slider_id="bedrooms_slider",
-            min_value=0,
-            max_value=self.df["bedrooms"].max(),
-            value=[0, self.df["bedrooms"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.maximum,
+            value=[bounds.minimum, bounds.maximum],
             component_id="bedrooms_div",
             dynamic_id=self.dynamic_output_id("bedrooms"),
             step=1,
+            marks=bounds.marks(),
         )
 
     def _build_bathrooms_filter(self) -> html.Div:
@@ -355,14 +366,18 @@ class LeaseComponents(BaseClass):
         Returns:
             A bathrooms filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(
+            self.df["total_bathrooms"], minimum=0, step=1
+        )
         return build_range_filter(
             slider_id="bathrooms_slider",
-            min_value=0,
-            max_value=self.df["total_bathrooms"].max(),
-            value=[0, self.df["total_bathrooms"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.maximum,
+            value=[bounds.minimum, bounds.maximum],
             component_id="bathrooms_div",
             dynamic_id=self.dynamic_output_id("bathrooms"),
             step=1,
+            marks=bounds.marks(),
         )
 
     def _build_parking_spaces_filter(self) -> html.Div:
@@ -372,13 +387,18 @@ class LeaseComponents(BaseClass):
         Returns:
             A parking filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(
+            self.df["parking_spaces"], minimum=0, step=1
+        )
         return build_range_filter(
             slider_id="garage_spaces_slider",
-            min_value=0,
-            max_value=self.df["parking_spaces"].max(),
-            value=[0, self.df["parking_spaces"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.maximum,
+            value=[bounds.minimum, bounds.maximum],
             component_id="garage_spaces_div",
             dynamic_id=self.dynamic_output_id("garage_spaces"),
+            step=1,
+            marks=bounds.marks(),
             include_missing_switch_id="garage_missing_switch",
             include_missing_switch_label="Include properties with an unknown number of garage spaces",
             container_style={"marginBottom": "10px"},
@@ -391,14 +411,22 @@ class LeaseComponents(BaseClass):
         Returns:
             A price-per-square-foot filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["ppsqft"], minimum=0, step=1)
         return build_range_filter(
             slider_id="ppsqft_slider",
-            min_value=self.df["ppsqft"].min(),
-            max_value=self.df["ppsqft"].max(),
-            value=[self.df["ppsqft"].min(), self.df["ppsqft"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="ppsqft_div",
             dynamic_id=self.dynamic_output_id("ppsqft"),
             tooltip_transform="formatCurrency",
+            marks=bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_prefix="$",
             include_missing_switch_id="ppsqft_missing_switch",
             include_missing_switch_label="Include properties with an unknown price per square foot",
             container_style={"marginBottom": "10px"},
@@ -411,14 +439,21 @@ class LeaseComponents(BaseClass):
         Returns:
             A square-footage filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["sqft"], minimum=0, step=1)
         return build_range_filter(
             slider_id="sqft_slider",
-            min_value=self.df["sqft"].min(),
-            max_value=self.df["sqft"].max(),
-            value=[self.df["sqft"].min(), self.df["sqft"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="square_footage_div",
             dynamic_id=self.dynamic_output_id("sqft"),
             tooltip_transform="formatSqFt",
+            marks=bounds.marks(
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_suffix=" sq ft",
             include_missing_switch_id="sqft_missing_switch",
             include_missing_switch_label="Include properties with an unknown square footage",
             switch_style={"marginTop": "15px"},
@@ -451,14 +486,22 @@ class LeaseComponents(BaseClass):
         Returns:
             A deposit filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df[column], minimum=0, step=1)
         return build_range_filter(
             slider_id=slider_id,
-            min_value=self.df[column].min(),
-            max_value=self.df[column].max(),
-            value=[self.df[column].min(), self.df[column].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id=component_id,
             dynamic_id=self.dynamic_output_id(dynamic_index),
             tooltip_transform="formatCurrency",
+            marks=bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_prefix="$",
             include_missing_switch_id=switch_id,
             include_missing_switch_label=switch_label,
             container_style={"marginBottom": "10px"},

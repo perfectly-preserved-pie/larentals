@@ -39,8 +39,16 @@ async function waitForFilterState(page, pageType) {
 }
 
 for (const entry of [
-  { pageType: "lease", path: "/", sliderId: "rental_price_slider" },
-  { pageType: "buy", path: "/buy", sliderId: "list_price_slider" },
+  {
+    pageType: "lease",
+    path: "/",
+    maximumInputId: "rental_price_maximum_input",
+  },
+  {
+    pageType: "buy",
+    path: "/buy",
+    maximumInputId: "list_price_maximum_input",
+  },
 ]) {
   test(`${entry.pageType} uses a map-first staged filter sheet on phones`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -68,11 +76,11 @@ for (const entry of [
     await expect(panel).toHaveAttribute("role", "dialog");
     await expect(panel).toHaveAttribute("aria-modal", "true");
 
-    await page.evaluate(({ sliderId, upper }) => {
-      window.dash_clientside.set_props(sliderId, { value: [0, upper] });
+    await page.evaluate(({ maximumInputId, upper }) => {
+      window.dash_clientside.set_props(maximumInputId, { value: upper });
     }, {
-      sliderId: entry.sliderId,
-      upper: Math.max(1, Math.round(initial.defaults.priceRange[1] * 0.55)),
+      maximumInputId: entry.maximumInputId,
+      upper: Math.max(1, Math.round(initial.defaults.priceUpperBound * 0.55)),
     });
 
     await page.waitForFunction(
@@ -203,7 +211,7 @@ test("mobile location drafts do not cover the map with a loading overlay", async
   }));
   expect(stagedState).toEqual({ draft: ["Downey"], applied: [] });
 
-  await page.locator("#lease-filter-apply-button").click();
+  await page.evaluate(() => document.getElementById("lease-filter-apply-button").click());
   await page.waitForFunction(
     () => JSON.stringify(window.larentals?.responsiveFilters?.applied?.lease?.locationText) ===
       JSON.stringify(["Downey"]),
@@ -213,35 +221,284 @@ test("mobile location drafts do not cover the map with a loading overlay", async
   expect(errors).toEqual([]);
 });
 
-test("range slider tooltips stay clear of missing-value switches", async ({ page }) => {
+test("hybrid ranges keep exact and unbounded outlier filtering", async ({ page }) => {
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "lease");
+  await page.getByText("Deposits", { exact: true }).click();
+  const securityMarks = page.locator("#security_deposit_slider .dash-slider-mark");
+  await expect(securityMarks).toHaveCount(3);
+  await expect(securityMarks).toHaveText(["$0", "$5k", "$10k"]);
+  await expect(page.locator("#security_deposit_slider")).not.toContainText("Unlimited");
+
+  const securityMinimum = page.locator("input#security_deposit_minimum_input");
+  const securityMaximum = page.locator("input#security_deposit_maximum_input");
+  const securityMinimumClear = page.locator("#security_deposit_minimum_clear");
+  const securityUnlimited = page.locator("#security_deposit_maximum_clear");
+  await expect(securityMinimum).toHaveValue("$0");
+  await expect(securityMinimumClear).toBeHidden();
+  await expect(securityMaximum).toHaveValue("");
+  await expect(securityMaximum).toHaveAttribute("placeholder", "Unlimited");
+  await expect(securityUnlimited).toBeHidden();
+  await expect(
+    page.locator('#security_deposit_slider .dash-slider-thumb[aria-label="Maximum"]'),
+  ).toHaveAttribute("aria-valuemax", "10000");
+
+  await securityMaximum.fill("675000");
+  await securityMaximum.press("Tab");
+  await page.waitForFunction(
+    () => JSON.stringify(window.larentals.responsiveFilters.drafts.lease.securityRange) ===
+      JSON.stringify([0, 675000]),
+  );
+  await expect(securityMaximum).toHaveValue("$675,000");
+  await expect(securityUnlimited).toBeVisible();
+  await expect(securityUnlimited).toHaveAttribute(
+    "aria-label",
+    "Set maximum to unlimited",
+  );
+  await expect(
+    page.locator('#security_deposit_slider .dash-slider-thumb[aria-label="Maximum"]'),
+  ).toHaveAttribute("aria-valuenow", "10000");
+
+  await securityUnlimited.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(
+    () => window.larentals.responsiveFilters.drafts.lease.securityRange[1] === null,
+  );
+  await expect(securityMaximum).toHaveValue("");
+  await expect(securityUnlimited).toBeHidden();
+
+  const securityDisplayMaximum = await page.evaluate(
+    () => window.larentals.responsiveFilters.defaults.lease.securityUpperBound,
+  );
+  await page.evaluate((upper) => {
+    window.dash_clientside.set_props("security_deposit_slider", {
+      value: [1000, upper],
+    });
+  }, securityDisplayMaximum);
+  await page.waitForFunction(
+    () => JSON.stringify(window.larentals.responsiveFilters.drafts.lease.securityRange) ===
+      JSON.stringify([1000, null]),
+  );
+  await expect(securityMinimum).toHaveValue("$1,000");
+  await expect(securityMaximum).toHaveValue("");
+  await expect(securityMinimumClear).toBeVisible();
+  await expect(securityMinimumClear).toHaveAttribute(
+    "aria-label",
+    "Reset minimum to zero",
+  );
+
+  await securityMinimumClear.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(
+    () => window.larentals.responsiveFilters.drafts.lease.securityRange[0] === 0,
+  );
+  await expect(securityMinimum).toHaveValue("$0");
+  await expect(securityMinimumClear).toBeHidden();
+  await expect(securityMaximum).toHaveValue("");
+
+  await page.evaluate((upper) => {
+    window.dash_clientside.set_props("security_deposit_slider", {
+      value: [1000, upper / 2],
+    });
+  }, securityDisplayMaximum);
+  await page.waitForFunction(
+    (upper) => JSON.stringify(window.larentals.responsiveFilters.drafts.lease.securityRange) ===
+      JSON.stringify([1000, upper / 2]),
+    securityDisplayMaximum,
+  );
+  await expect(securityMaximum).toHaveValue("$5,000");
+  await expect(securityUnlimited).toBeVisible();
+
+  const leaseResult = await page.evaluate(() => {
+    const defaults = structuredClone(window.larentals.responsiveFilters.defaults.lease);
+    Object.assign(defaults, {
+      pets: "Both",
+      sqftMissing: true,
+      ppsqftMissing: true,
+      parkingMissing: true,
+      yearMissing: true,
+      terms: [],
+      termsMissing: true,
+      furnished: [],
+      furnishedMissing: true,
+      securityMissing: false,
+      petDepositMissing: true,
+      keyDepositMissing: true,
+      otherDepositMissing: true,
+      laundry: [],
+      laundryMissing: true,
+      subtypes: [],
+      dateMissing: true,
+      ispMissing: true,
+      rentControl: "any",
+      zipBoundary: {},
+    });
+    const feature = {
+      type: "Feature",
+      geometry: null,
+      properties: {
+        mls_number: "capped-lease-test",
+        list_price: defaults.priceRange[0],
+        bedrooms: 15,
+        total_bathrooms: 12,
+        sqft: null,
+        ppsqft: null,
+        parking_spaces: null,
+        year_built: null,
+        terms: null,
+        furnished: null,
+        security_deposit: 675000,
+        pet_deposit: null,
+        key_deposit: null,
+        other_deposit: null,
+        laundry_category: null,
+        listed_date: null,
+        best_dn: null,
+        best_up: null,
+      },
+    };
+    const source = { type: "FeatureCollection", features: [feature] };
+    const withoutMaximum = window.larentals.filters.filterLeaseState(defaults, source).features.length;
+    defaults.securityRange = [0, defaults.securityUpperBound];
+    const atDisplayCap = window.larentals.filters.filterLeaseState(defaults, source).features.length;
+    defaults.securityRange = [0, 675000];
+    const atExactMaximum = window.larentals.filters.filterLeaseState(defaults, source).features.length;
+    return { withoutMaximum, atDisplayCap, atExactMaximum };
+  });
+
+  expect(leaseResult).toEqual({ withoutMaximum: 1, atDisplayCap: 0, atExactMaximum: 1 });
+
+  await page.goto(`${BASE_URL}/buy`, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "buy");
+  const bedroomMarks = page.locator("#bedrooms_slider .dash-slider-mark");
+  await expect(bedroomMarks).toHaveCount(7);
+  await expect(bedroomMarks.nth(5)).toHaveText("5");
+  await expect(bedroomMarks.last()).toHaveText("Unlimited");
+  await expect(bedroomMarks.last()).toBeVisible();
+  await expect(
+    page.locator('#bedrooms_slider .dash-slider-thumb[aria-label="Maximum"] .dash-slider-tooltip'),
+  ).toBeHidden();
+  const bedroomEndpointGeometry = await page.evaluate(() => {
+    const label = document.querySelector(
+      "#bedrooms_slider .dash-slider-mark:last-of-type",
+    ).getBoundingClientRect();
+    const exactCap = document.querySelector(
+      "#bedrooms_slider .dash-slider-mark:nth-last-of-type(2)",
+    ).getBoundingClientRect();
+    const maximumThumb = document.querySelector(
+      '#bedrooms_slider .dash-slider-thumb[aria-label="Maximum"]',
+    ).getBoundingClientRect();
+    const filter = document.getElementById("bedrooms_div_buy").getBoundingClientRect();
+    return {
+      labelLeft: label.left,
+      labelRight: label.right,
+      labelCenter: label.left + label.width / 2,
+      exactCapRight: exactCap.right,
+      thumbCenter: maximumThumb.left + maximumThumb.width / 2,
+      filterRight: filter.right,
+    };
+  });
+  expect(Math.abs(
+    bedroomEndpointGeometry.labelCenter - bedroomEndpointGeometry.thumbCenter,
+  )).toBeLessThanOrEqual(1);
+  expect(bedroomEndpointGeometry.exactCapRight + 4).toBeLessThanOrEqual(
+    bedroomEndpointGeometry.labelLeft,
+  );
+  expect(bedroomEndpointGeometry.labelRight).toBeLessThanOrEqual(
+    bedroomEndpointGeometry.filterRight + 1,
+  );
+  await expect(page.locator("#sqft_slider")).toContainText("2.5k");
+  await expect(page.locator("#sqft_slider")).not.toContainText("Unlimited");
+  await expect(page.locator("#lot_size_slider")).toContainText("12.5k");
+  await expect(page.locator("#lot_size_slider")).not.toContainText("Unlimited");
+  await expect(page.locator("input#sqft_maximum_input")).toHaveAttribute(
+    "placeholder",
+    "Unlimited",
+  );
+
+  const buyResult = await page.evaluate(() => {
+    const defaults = structuredClone(window.larentals.responsiveFilters.defaults.buy);
+    Object.assign(defaults, {
+      sqftMissing: true,
+      ppsqftMissing: true,
+      lotSizeMissing: true,
+      yearMissing: true,
+      subtypes: [],
+      dateMissing: true,
+      hoaMissing: true,
+      hoaFrequency: [],
+      ispMissing: true,
+      zipBoundary: {},
+    });
+    const outlierPrice = defaults.priceUpperBound * 10;
+    const feature = {
+      type: "Feature",
+      geometry: null,
+      properties: {
+        mls_number: "capped-buy-test",
+        list_price: outlierPrice,
+        bedrooms: 15,
+        total_bathrooms: 12,
+        sqft: null,
+        ppsqft: null,
+        lot_size: null,
+        year_built: null,
+        hoa_fee: null,
+        listed_date: null,
+        best_dn: null,
+        best_up: null,
+      },
+    };
+    const source = { type: "FeatureCollection", features: [feature] };
+    const withoutMaximum = window.larentals.filters.filterBuyState(defaults, source).features.length;
+    defaults.priceRange = [0, defaults.priceUpperBound];
+    const atDisplayCap = window.larentals.filters.filterBuyState(defaults, source).features.length;
+    defaults.priceRange = [0, outlierPrice];
+    const atExactMaximum = window.larentals.filters.filterBuyState(defaults, source).features.length;
+    defaults.bedroomsRange = [0, defaults.bedroomsUpperBound - 1];
+    const belowDiscreteSentinel = window.larentals.filters.filterBuyState(defaults, source).features.length;
+    return { withoutMaximum, atDisplayCap, atExactMaximum, belowDiscreteSentinel };
+  });
+
+  expect(buyResult).toEqual({
+    withoutMaximum: 1,
+    atDisplayCap: 0,
+    atExactMaximum: 1,
+    belowDiscreteSentinel: 0,
+  });
+});
+
+test("hybrid range fields and marks stay clear of missing-value switches", async ({ page }) => {
   await page.setViewportSize({ width: 440, height: 900 });
   await page.goto(`${BASE_URL}/buy`, { waitUntil: "domcontentloaded" });
   await waitForFilterState(page, "buy");
   await page.locator("#buy-filter-open-button").click();
   await page.getByRole("button", { name: "Lot Size", exact: true }).click();
 
-  const slider = page.locator("#lot_size_div_buy .range-filter__slider-with-switch");
+  const exactInputs = page.locator("#lot_size_div_buy .range-filter__exact-inputs");
+  const slider = page.locator("#lot_size_div_buy .range-filter__hybrid-slider-wrap");
   const missingSwitch = page.locator("#lot_size_missing_switch");
+  await expect(exactInputs).toBeVisible();
   await expect(slider).toBeVisible();
   await expect(missingSwitch).toBeVisible();
 
   const geometry = await page.evaluate(() => {
-    const tooltipBottom = Math.max(
+    const marksBottom = Math.max(
       ...Array.from(
         document.querySelectorAll(
-          "#lot_size_div_buy .range-filter__slider-with-switch .rc-slider-tooltip",
+          "#lot_size_div_buy .range-filter__hybrid-slider-wrap .dash-slider-mark",
         ),
-        (tooltip) => tooltip.getBoundingClientRect().bottom,
+        (mark) => mark.getBoundingClientRect().bottom,
       ),
     );
     const switchTop = document
       .getElementById("lot_size_missing_switch")
       .closest(".mantine-Switch-root")
       .getBoundingClientRect().top;
-    return { tooltipBottom, switchTop };
+    return { marksBottom, switchTop };
   });
 
-  expect(geometry.switchTop).toBeGreaterThanOrEqual(geometry.tooltipBottom + 8);
+  expect(geometry.switchTop).toBeGreaterThanOrEqual(geometry.marksBottom + 8);
 });
 
 test("ISP slider tooltips stay clear of the next control", async ({ page }) => {

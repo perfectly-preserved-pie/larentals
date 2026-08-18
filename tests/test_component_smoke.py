@@ -9,6 +9,7 @@ from pages.component_factories import (
     build_range_filter,
     build_subtype_filter,
     build_title_card,
+    iqr_capped_range_bounds,
 )
 from pages.components import BuyComponents, LeaseComponents
 
@@ -103,6 +104,111 @@ class ComponentsSmokeTest(unittest.TestCase):
         )
         self.assertIsInstance(slider_wrapper.children, dcc.RangeSlider)
         self.assertEqual(missing_switch.id, "test-missing-switch")
+
+    def test_hybrid_range_filter_has_exact_fields_and_finite_slider(self) -> None:
+        component = build_range_filter(
+            slider_id="test_price_slider",
+            min_value=0,
+            max_value=10_000,
+            value=[0, 10_000],
+            component_id="test-price-filter",
+            dynamic_id="test-price-filter-controls",
+            tooltip_transform="formatCurrency",
+            marks={0: "$0", 5_000: "$5k", 10_000: "$10k"},
+            show_exact_inputs=True,
+            input_prefix="$",
+        )
+
+        controls = component.children[1]
+        exact_inputs, slider_wrapper = controls.children
+        minimum_input, maximum_input = exact_inputs.children
+        slider = slider_wrapper.children
+
+        self.assertEqual(exact_inputs.className, "range-filter__exact-inputs")
+        self.assertIsInstance(minimum_input, dmc.NumberInput)
+        self.assertEqual(minimum_input.id, "test_price_minimum_input")
+        self.assertEqual(minimum_input.label, "Minimum")
+        self.assertEqual(minimum_input.value, 0)
+        minimum_clear_button = minimum_input.rightSection
+        self.assertIsInstance(minimum_clear_button, dmc.ActionIcon)
+        self.assertEqual(minimum_clear_button.id, "test_price_minimum_clear")
+        self.assertEqual(minimum_clear_button.style, {"visibility": "hidden"})
+        self.assertEqual(
+            minimum_clear_button.buttonProps["aria-label"],
+            "Reset minimum to zero",
+        )
+        self.assertEqual(maximum_input.id, "test_price_maximum_input")
+        self.assertEqual(maximum_input.label, "Maximum")
+        self.assertIsNone(maximum_input.value)
+        self.assertEqual(maximum_input.placeholder, "Unlimited")
+        unlimited_button = maximum_input.rightSection
+        self.assertIsInstance(unlimited_button, dmc.ActionIcon)
+        self.assertEqual(unlimited_button.id, "test_price_maximum_clear")
+        self.assertEqual(unlimited_button.style, {"visibility": "hidden"})
+        self.assertEqual(
+            unlimited_button.buttonProps["aria-label"],
+            "Set maximum to unlimited",
+        )
+        self.assertEqual(slider_wrapper.className, "range-filter__hybrid-slider-wrap")
+        self.assertEqual(slider.className, "range-filter__hybrid-slider")
+        self.assertEqual(slider.max, 10_000)
+        self.assertEqual(slider.updatemode, "drag")
+        self.assertNotIn("tooltip", slider.to_plotly_json()["props"])
+
+    def test_iqr_slider_cap_buckets_outliers_without_discarding_them(self) -> None:
+        bounds = iqr_capped_range_bounds(
+            [1, 2, 2, 3] * 25 + [15],
+            minimum=0,
+            step=1,
+        )
+
+        self.assertTrue(bounds.is_capped)
+        self.assertEqual(bounds.capped_at, 5)
+        self.assertEqual(bounds.maximum, 6)
+        self.assertEqual(bounds.display_maximum, 5)
+        self.assertEqual(
+            bounds.marks(),
+            {0: "0", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "Unlimited"},
+        )
+        self.assertEqual(
+            bounds.marks(include_open_end=False, target_intervals=3),
+            {0: "0", 2: "2", 4: "4", 5: "5"},
+        )
+
+    def test_iqr_slider_cap_rounds_currency_to_a_readable_endpoint(self) -> None:
+        bounds = iqr_capped_range_bounds(
+            [2_250, 2_500, 3_000, 3_646] * 25 + [675_000],
+            minimum=0,
+            step=1,
+        )
+
+        self.assertTrue(bounds.is_capped)
+        self.assertEqual(bounds.capped_at, 10_000)
+        self.assertEqual(bounds.maximum, 12_000)
+        self.assertEqual(bounds.display_maximum, 10_000)
+        self.assertEqual(bounds.marks(currency=True)[10_000], "$10k")
+        self.assertEqual(bounds.marks(currency=True)[12_000], "Unlimited")
+        self.assertEqual(
+            bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            {0: "$0", 5_000: "$5k", 10_000: "$10k"},
+        )
+
+    def test_iqr_slider_uses_observed_max_when_data_has_no_high_outlier(self) -> None:
+        bounds = iqr_capped_range_bounds([1, 2, 3, 3], minimum=0, step=1)
+
+        self.assertFalse(bounds.is_capped)
+        self.assertIsNone(bounds.capped_at)
+        self.assertEqual(bounds.maximum, 3)
+        self.assertEqual(bounds.display_maximum, 3)
+        self.assertIsNone(bounds.marks())
+        self.assertEqual(
+            bounds.marks(include_open_end=False, target_intervals=3),
+            {0: "0", 1: "1", 2: "2", 3: "3"},
+        )
 
     def test_isp_speed_filter_reserves_space_below_both_sliders(self) -> None:
         component = build_isp_speed_components(10_000, 10_000)

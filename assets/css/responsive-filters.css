@@ -75,6 +75,105 @@
   padding-bottom: 2.75rem;
 }
 
+.range-filter__exact-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.25rem 0 0.9rem;
+}
+
+.range-filter__exact-input {
+  min-width: 0;
+}
+
+.range-filter__exact-input input {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hybrid filters use the fields for exact values and the rail for quick,
+   approximate adjustment. The inset keeps endpoint labels centered on their
+   knobs without clipping against the filter panel. */
+.range-filter__hybrid-slider-wrap {
+  padding: 0.25rem 0 1.25rem;
+}
+
+.range-filter__hybrid-slider {
+  width: calc(100% - 2.5rem);
+  margin: 0 1.25rem;
+}
+
+/* Open-ended sliders reserve room for numeric value tooltips above the rail.
+   At the Unlimited endpoint the mark below the knob already communicates the
+   value, so its duplicate tooltip is hidden. */
+.range-filter__open-ended-slider {
+  width: calc(100% - 2rem);
+  margin-top: 2.5rem;
+  margin-right: 2rem;
+}
+
+/* Keep the first and open-ended final tick inside the narrow filter panel.
+   Dash centers mark labels by default, which clips half of the final label. */
+.range-filter__controls .dash-slider-mark {
+  white-space: nowrap;
+}
+
+.range-filter__controls .dash-slider-mark:first-of-type {
+  transform: translateX(0) !important;
+  text-align: left;
+}
+
+.range-filter__open-ended-slider .dash-slider-mark:nth-last-of-type(2) {
+  transform: translateX(calc(-100% - 0.25rem)) !important;
+  text-align: right;
+}
+
+.range-filter__controls .dash-slider-mark:last-of-type {
+  transform: translateX(-100%) !important;
+  text-align: right;
+  color: var(--filter-panel-accent);
+  font-weight: 600;
+}
+
+.range-filter__hybrid-slider .dash-slider-mark:first-of-type,
+.range-filter__hybrid-slider .dash-slider-mark:last-of-type {
+  transform: translateX(-50%) !important;
+  text-align: center;
+}
+
+.range-filter__hybrid-slider .dash-slider-mark:last-of-type {
+  color: inherit;
+  font-weight: 400;
+}
+
+/* Reserve enough width for the positive open-ended label while keeping the
+   exact cap immediately before it distinct and selectable. */
+.range-filter__open-ended-slider .dash-slider-mark:last-of-type {
+  width: 4rem;
+  transform: translateX(-50%) !important;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.05;
+}
+
+.range-filter__open-ended-slider
+  .dash-slider-thumb[aria-label="Maximum"]
+  .dash-slider-tooltip
+  > div {
+  /* The endpoint value is a short discrete label (for example, “Unlimited”),
+     not a second input. Let the bubble hug its content. */
+  min-width: 0;
+  width: max-content;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.range-filter__open-ended-slider
+  .dash-slider-thumb[aria-label="Maximum"][data-unlimited="true"]
+  .dash-slider-tooltip {
+  display: none;
+}
+
 /* The ISP control has two stacked sliders and does not use build_range_filter.
    Give both bottom tooltip rows space so they clear the next heading/switch. */
 .isp-speed-filter__range {

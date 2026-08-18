@@ -8,6 +8,8 @@ from pages.buy_components import BuyComponents
 from pages.lease_components import LeaseComponents
 from pages.responsive_filter_ui import (
     FILTER_UI_BREAKPOINT,
+    _buy_capture_inputs,
+    _lease_capture_inputs,
     build_filter_ui_stores,
     build_map_filter_toolbar,
     build_responsive_listing_shell,
@@ -147,6 +149,55 @@ class ResponsiveFilterUiTest(unittest.TestCase):
             ),
         )
         self.assertEqual(FILTER_UI_BREAKPOINT, 1100)
+
+    def test_hybrid_ranges_capture_exact_fields_and_slider_display_bounds(self) -> None:
+        lease_inputs = {
+            (item.component_id, item.component_property)
+            for item in _lease_capture_inputs()
+        }
+        buy_inputs = {
+            (item.component_id, item.component_property)
+            for item in _buy_capture_inputs()
+        }
+
+        for slider_id in (
+            "bedrooms_slider",
+            "bathrooms_slider",
+            "garage_spaces_slider",
+        ):
+            self.assertIn((slider_id, "max"), lease_inputs)
+
+        for slider_id in (
+            "bedrooms_slider",
+            "bathrooms_slider",
+        ):
+            self.assertIn((slider_id, "max"), buy_inputs)
+
+        hybrid_sliders = {
+            "lease": (
+                "rental_price_slider",
+                "sqft_slider",
+                "ppsqft_slider",
+                "security_deposit_slider",
+                "pet_deposit_slider",
+                "key_deposit_slider",
+                "other_deposit_slider",
+            ),
+            "buy": (
+                "list_price_slider",
+                "sqft_slider",
+                "ppsqft_slider",
+                "lot_size_slider",
+                "hoa_fee_slider",
+            ),
+        }
+        for page_type, slider_ids in hybrid_sliders.items():
+            inputs = lease_inputs if page_type == "lease" else buy_inputs
+            for slider_id in slider_ids:
+                stem = slider_id.removesuffix("_slider")
+                self.assertIn((f"{stem}_minimum_input", "value"), inputs)
+                self.assertIn((f"{stem}_maximum_input", "value"), inputs)
+                self.assertIn((slider_id, "max"), inputs)
 
 
 if __name__ == "__main__":

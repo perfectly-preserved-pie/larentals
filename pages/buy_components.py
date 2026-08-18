@@ -16,6 +16,7 @@ from .component_factories import (
     build_school_layer_map_prompt,
     build_subtype_filter,
     build_year_built_filter,
+    iqr_capped_range_bounds,
 )
 from .component_models import FilterSection, PageConfig, PageParts
 from .responsive_filter_ui import build_map_filter_toolbar
@@ -223,14 +224,22 @@ class BuyComponents(BaseClass):
         Returns:
             A list-price filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["list_price"], minimum=0, step=1)
         return build_range_filter(
             slider_id="list_price_slider",
-            min_value=self.df["list_price"].min(),
-            max_value=self.df["list_price"].max(),
-            value=[0, self.df["list_price"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="list_price_div_buy",
             dynamic_id=self.dynamic_output_id("list_price"),
             tooltip_transform="formatCurrency",
+            marks=bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_prefix="$",
             container_style={"marginBottom": "10px"},
         )
 
@@ -241,14 +250,16 @@ class BuyComponents(BaseClass):
         Returns:
             A bedrooms filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["bedrooms"], minimum=0, step=1)
         return build_range_filter(
             slider_id="bedrooms_slider",
-            min_value=0,
-            max_value=self.df["bedrooms"].max(),
-            value=[0, self.df["bedrooms"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.maximum,
+            value=[bounds.minimum, bounds.maximum],
             component_id="bedrooms_div_buy",
             dynamic_id=self.dynamic_output_id("bedrooms"),
             step=1,
+            marks=bounds.marks(),
         )
 
     def _build_bathrooms_filter(self) -> html.Div:
@@ -258,14 +269,18 @@ class BuyComponents(BaseClass):
         Returns:
             A bathrooms filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(
+            self.df["total_bathrooms"], minimum=0, step=1
+        )
         return build_range_filter(
             slider_id="bathrooms_slider",
-            min_value=0,
-            max_value=self.df["total_bathrooms"].max(),
-            value=[0, self.df["total_bathrooms"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.maximum,
+            value=[bounds.minimum, bounds.maximum],
             component_id="bathrooms_div_buy",
             dynamic_id=self.dynamic_output_id("bathrooms"),
             step=1,
+            marks=bounds.marks(),
         )
 
     def _build_ppsqft_filter(self) -> html.Div:
@@ -275,14 +290,22 @@ class BuyComponents(BaseClass):
         Returns:
             A price-per-square-foot filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["ppsqft"], minimum=0, step=1)
         return build_range_filter(
             slider_id="ppsqft_slider",
-            min_value=self.df["ppsqft"].min(),
-            max_value=self.df["ppsqft"].max(),
-            value=[self.df["ppsqft"].min(), self.df["ppsqft"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="ppsqft_div",
             dynamic_id=self.dynamic_output_id("ppsqft"),
             tooltip_transform="formatCurrency",
+            marks=bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_prefix="$",
             include_missing_switch_id="ppsqft_missing_switch",
             include_missing_switch_label="Include properties with an unknown price per square foot",
             container_style={"marginBottom": "10px"},
@@ -295,14 +318,21 @@ class BuyComponents(BaseClass):
         Returns:
             A square-footage filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["sqft"], minimum=0, step=1)
         return build_range_filter(
             slider_id="sqft_slider",
-            min_value=self.df["sqft"].min(),
-            max_value=self.df["sqft"].max(),
-            value=[self.df["sqft"].min(), self.df["sqft"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="square_footage_div",
             dynamic_id=self.dynamic_output_id("sqft"),
             tooltip_transform="formatSqFt",
+            marks=bounds.marks(
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_suffix=" sq ft",
             include_missing_switch_id="sqft_missing_switch",
             include_missing_switch_label="Include properties with an unknown square footage",
             container_style={"marginBottom": "10px"},
@@ -337,25 +367,22 @@ class BuyComponents(BaseClass):
         Returns:
             A lot-size filter ``Div``.
         """
-        lot_sizes = self.df["lot_size"]
-        has_values = lot_sizes.notna().any()
-
-        lot_min = float(np.nanmin(lot_sizes)) if has_values else 0.0
-        lot_max = float(np.nanmax(lot_sizes)) if has_values else 1.0
-
-        if not np.isfinite(lot_min):
-            lot_min = 0.0
-        if not np.isfinite(lot_max) or lot_max < lot_min:
-            lot_max = max(lot_min, 1.0)
+        bounds = iqr_capped_range_bounds(self.df["lot_size"], minimum=0, step=1)
 
         return build_range_filter(
             slider_id="lot_size_slider",
-            min_value=lot_min,
-            max_value=lot_max,
-            value=[lot_min, lot_max],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="lot_size_div_buy",
             dynamic_id=self.dynamic_output_id("lot_size"),
             tooltip_transform="formatSqFt",
+            marks=bounds.marks(
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_suffix=" sq ft",
             include_missing_switch_id="lot_size_missing_switch",
             include_missing_switch_label="Include properties with an unknown lot size",
             container_style={"marginBottom": "10px"},
@@ -368,8 +395,9 @@ class BuyComponents(BaseClass):
         Returns:
             An HOA-fee filter ``Div``.
         """
+        bounds = iqr_capped_range_bounds(self.df["hoa_fee"], minimum=0, step=1)
         num_steps = 5
-        span = self.df["hoa_fee"].max() - self.df["hoa_fee"].min()
+        span = bounds.display_maximum - bounds.minimum
         if not np.isfinite(span) or span <= 0:
             step_value = 1
         else:
@@ -378,12 +406,19 @@ class BuyComponents(BaseClass):
 
         return build_range_filter(
             slider_id="hoa_fee_slider",
-            min_value=self.df["hoa_fee"].min(),
-            max_value=self.df["hoa_fee"].max(),
-            value=[self.df["hoa_fee"].min(), self.df["hoa_fee"].max()],
+            min_value=bounds.minimum,
+            max_value=bounds.display_maximum,
+            value=[bounds.minimum, bounds.display_maximum],
             component_id="hoa_fee_div_buy",
             dynamic_id=self.dynamic_output_id("hoa_fee"),
             tooltip_transform="formatCurrency",
+            marks=bounds.marks(
+                currency=True,
+                include_open_end=False,
+                target_intervals=3,
+            ),
+            show_exact_inputs=True,
+            input_prefix="$",
             include_missing_switch_id="hoa_fee_missing_switch",
             include_missing_switch_label="Include properties with an unknown HOA fee",
             container_style={"marginBottom": "10px"},

@@ -24,6 +24,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
          * @param {Array<number>} downloadSpeedRange - [minDownload, maxDownload] for filtering by `best_dn`.
          * @param {Array<number>} uploadSpeedRange - [minUpload, maxUpload] for filtering by `best_up`.
+         * @param {number} priceUpperBound - Finite display maximum for the price slider.
+         * @param {number} bedroomsUpperBound - Slider endpoint that represents bedrooms-or-more.
+         * @param {number} bathroomsUpperBound - Slider endpoint that represents bathrooms-or-more.
+         * @param {number} sqftUpperBound - Finite display maximum for square footage.
+         * @param {number} ppsqftUpperBound - Finite display maximum for price per square foot.
+         * @param {number} lotSizeUpperBound - Finite display maximum for lot size.
+         * @param {number} hoaUpperBound - Finite display maximum for HOA fees.
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
@@ -50,6 +57,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             downloadSpeedRange,
             uploadSpeedRange,
             speedIncludeMissing,
+            priceUpperBound,
+            bedroomsUpperBound,
+            bathroomsUpperBound,
+            sqftUpperBound,
+            ppsqftUpperBound,
+            lotSizeUpperBound,
+            hoaUpperBound,
             zipBoundaryData,
             fullGeojson
         ) {
@@ -91,6 +105,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
+            const upperIsOpen = (selectedMaximum, configuredMaximum) => (
+                Number.isFinite(Number(configuredMaximum)) &&
+                selectedMaximum >= Number(configuredMaximum)
+            );
+            const exactUpperIsOpen = (selectedMaximum) => (
+                selectedMaximum === null || selectedMaximum === undefined || selectedMaximum === ""
+            );
+            const priceUpperIsOpen = exactUpperIsOpen(maxPrice);
+            const bedroomsUpperIsOpen = upperIsOpen(maxBedrooms, bedroomsUpperBound);
+            const bathroomsUpperIsOpen = upperIsOpen(maxBathrooms, bathroomsUpperBound);
+            const sqftUpperIsOpen = exactUpperIsOpen(maxSqft);
+            const ppsqftUpperIsOpen = exactUpperIsOpen(maxPpsqft);
+            const lotSizeUpperIsOpen = exactUpperIsOpen(maxLotSize);
+            const hoaUpperIsOpen = exactUpperIsOpen(maxHOA);
             const zipCodes = Array.isArray(zipBoundaryData?.zip_codes)
                 ? zipBoundaryData.zip_codes
                 : (zipBoundaryData?.zip_code ? [String(zipBoundaryData.zip_code).trim()] : []);
@@ -109,33 +137,39 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 1) Price Filter
                 const priceVal = parseFloat(props.list_price) || 0;
-                const priceInRange = (priceVal >= minPrice && priceVal <= maxPrice);
+                const priceInRange = priceVal >= minPrice &&
+                    (priceUpperIsOpen || priceVal <= maxPrice);
 
                 // 2) Bedrooms Filter
                 const bedroomsVal = parseFloat(props.bedrooms) || 0;
-                const bedroomsInRange = (bedroomsVal >= minBedrooms && bedroomsVal <= maxBedrooms);
+                const bedroomsInRange = bedroomsVal >= minBedrooms &&
+                    (bedroomsUpperIsOpen || bedroomsVal <= maxBedrooms);
 
                 // 3) Bathrooms Filter
                 const bathroomsVal = parseFloat(props.total_bathrooms) || 0;
-                const bathroomsInRange = (bathroomsVal >= minBathrooms && bathroomsVal <= maxBathrooms);
+                const bathroomsInRange = bathroomsVal >= minBathrooms &&
+                    (bathroomsUpperIsOpen || bathroomsVal <= maxBathrooms);
 
                 // 4) Sqft Filter
                 const sqftVal = parseFloat(props.sqft);
-                let sqftFilter = !isNaN(sqftVal) && (sqftVal >= minSqft && sqftVal <= maxSqft);
+                let sqftFilter = !isNaN(sqftVal) && sqftVal >= minSqft &&
+                    (sqftUpperIsOpen || sqftVal <= maxSqft);
                 if (sqftIncludeMissingBool && (props.sqft == null || isNaN(sqftVal))) {
                     sqftFilter = true;
                 }
 
                 // 5) PPSqft Filter
                 const ppsqftVal = parseFloat(props.ppsqft);
-                let ppsqftFilter = !isNaN(ppsqftVal) && (ppsqftVal >= minPpsqft && ppsqftVal <= maxPpsqft);
+                let ppsqftFilter = !isNaN(ppsqftVal) && ppsqftVal >= minPpsqft &&
+                    (ppsqftUpperIsOpen || ppsqftVal <= maxPpsqft);
                 if (ppsqftIncludeMissingBool && (props.ppsqft == null || isNaN(ppsqftVal))) {
                     ppsqftFilter = true;
                 }
 
                 // 6) Lot Size Filter
                 const lotSizeVal = parseFloat(props.lot_size);
-                let lotSizeFilter = !isNaN(lotSizeVal) && (lotSizeVal >= minLotSize && lotSizeVal <= maxLotSize);
+                let lotSizeFilter = !isNaN(lotSizeVal) && lotSizeVal >= minLotSize &&
+                    (lotSizeUpperIsOpen || lotSizeVal <= maxLotSize);
                 if (lotSizeIncludeMissingBool && (props.lot_size == null || isNaN(lotSizeVal))) {
                     lotSizeFilter = true;
                 }
@@ -183,7 +217,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 10) HOA Fee Filter
                 const hoaVal = parseFloat(props.hoa_fee);
-                let hoaFilter = !isNaN(hoaVal) && (hoaVal >= minHOA && hoaVal <= maxHOA);
+                let hoaFilter = !isNaN(hoaVal) && hoaVal >= minHOA &&
+                    (hoaUpperIsOpen || hoaVal <= maxHOA);
                 if (hoaFeeIncludeMissingBool && (props.hoa_fee == null || isNaN(hoaVal))) {
                     hoaFilter = true;
                 }
@@ -305,6 +340,13 @@ window.larentals.filters.filterBuyState = function(state, fullGeojson) {
         state.downloadRange,
         state.uploadRange,
         state.ispMissing,
+        state.priceUpperBound,
+        state.bedroomsUpperBound,
+        state.bathroomsUpperBound,
+        state.sqftUpperBound,
+        state.ppsqftUpperBound,
+        state.lotSizeUpperBound,
+        state.hoaUpperBound,
         state.zipBoundary,
         fullGeojson
     );
