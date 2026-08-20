@@ -3,6 +3,11 @@ import pyarrow
 
 
 def test_pandas_3_uses_installed_pyarrow_for_default_strings() -> None:
+    """Verify that pandas 3 uses installed pyarrow for default strings.
+
+    Returns:
+        None.
+    """
     series = pd.Series(["ready", None])
 
     assert pyarrow.__version__

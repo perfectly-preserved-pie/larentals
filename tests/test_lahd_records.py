@@ -1,6 +1,8 @@
 import gzip
+from pathlib import Path
 
 import orjson
+import pytest
 import requests
 
 from api import listings
@@ -8,8 +10,33 @@ from functions import lahd
 from functions import lahd_records_ui
 
 
-def test_fetch_lahd_property_record_details_normalizes_rows(monkeypatch) -> None:
-    def fake_request(url, params):
+def test_fetch_lahd_property_record_details_normalizes_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that fetch lahd property record details normalizes rows.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
+    def fake_request(
+        url: str,
+        params: dict[str, object],
+    ) -> list[dict[str, object]]:
+        """Handle fake request.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            params: Query parameters included with the HTTP request.
+
+        Returns:
+            A list containing the fake request.
+
+        Raises:
+            AssertionError: If the operation cannot be completed.
+        """
         assert params["apn"] == "5046034015"
         assert params["$limit"] == 2
         if url == lahd.LAHD_INVESTIGATION_DATASET_URL:
@@ -68,16 +95,53 @@ def test_fetch_lahd_property_record_details_normalizes_rows(monkeypatch) -> None
     assert payload["truncated"]["violations"] is True
 
 
-def test_fetch_lahd_property_record_details_falls_back_to_snapshot(monkeypatch) -> None:
+def test_fetch_lahd_property_record_details_falls_back_to_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that fetch lahd property record details falls back to snapshot.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     response = requests.Response()
     response.status_code = 403
     response.url = lahd.LAHD_INVESTIGATION_DATASET_URL
     error = requests.HTTPError("403 Client Error: Forbidden", response=response)
 
-    def fake_investigation_records(apn, limit):
+    def fake_investigation_records(
+        apn: str,
+        limit: int,
+    ) -> list[dict[str, object]]:
+        """Handle fake investigation records.
+
+        Args:
+            apn: Assessor Parcel Number identifying the property.
+            limit: Maximum number of records to return.
+
+        Returns:
+            A list containing the fake investigation records.
+
+        Raises:
+            error: If the operation cannot be completed.
+        """
         raise error
 
-    def fake_violation_records(apn, limit):
+    def fake_violation_records(
+        apn: str,
+        limit: int,
+    ) -> list[dict[str, object]]:
+        """Handle fake violation records.
+
+        Args:
+            apn: Assessor Parcel Number identifying the property.
+            limit: Maximum number of records to return.
+
+        Returns:
+            A list containing the fake violation records.
+        """
         return []
 
     monkeypatch.setattr(lahd, "_fetch_property_investigation_records", fake_investigation_records)
@@ -117,8 +181,27 @@ def test_fetch_lahd_property_record_details_falls_back_to_snapshot(monkeypatch) 
     assert "logged-in access" in payload["detail_status"]["message"]
 
 
-def test_live_lahd_dataset_status_reports_non_200(monkeypatch) -> None:
-    def fake_get(url, **kwargs):
+def test_live_lahd_dataset_status_reports_non_200(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that live lahd dataset status reports non 200.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
+    def fake_get(url: str, **kwargs: object) -> requests.Response:
+        """Handle fake get.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            **kwargs: Additional keyword arguments forwarded to the dependency.
+
+        Returns:
+            An HTTP response containing the fake get.
+        """
         response = requests.Response()
         response.status_code = 403 if url == lahd.LAHD_INVESTIGATION_DATASET_URL else 200
         return response
@@ -138,7 +221,17 @@ def test_live_lahd_dataset_status_reports_non_200(monkeypatch) -> None:
     }
 
 
-def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(monkeypatch) -> None:
+def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that listing lahd summary hidden when live datasets unavailable.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     monkeypatch.setattr(
         listings,
         "is_listing_in_los_angeles_city",
@@ -146,7 +239,18 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(monkeypatch)
     )
     monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: False)
 
-    def fail_lookup(**_kwargs):
+    def fail_lookup(**_kwargs: object) -> None:
+        """Handle fail lookup.
+
+        Args:
+            **_kwargs: Ignored keyword arguments accepted by the test double.
+
+        Returns:
+            None.
+
+        Raises:
+            AssertionError: If the operation cannot be completed.
+        """
         raise AssertionError("Local LAHD snapshot should not be used when live datasets are unavailable.")
 
     monkeypatch.setattr(listings, "lookup_lahd_property_for_listing", fail_lookup)
@@ -164,7 +268,15 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(monkeypatch)
     assert summary["jurisdiction_in_scope"] is True
 
 
-def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path) -> None:
+def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path: Path) -> None:
+    """Verify that lahd listing lookup uses spatial candidates.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     artifact_path = tmp_path / "lookup.json.gz"
     payload = {
         "records": [
@@ -209,11 +321,21 @@ def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path) -> None:
 
 
 def test_lahd_records_grids_do_not_repeat_property_address() -> None:
+    """Verify that lahd records grids do not repeat property address.
+
+    Returns:
+        None.
+    """
     assert "address" not in {column["field"] for column in lahd_records_ui.CASE_COLUMN_DEFS}
     assert "address" not in {column["field"] for column in lahd_records_ui.VIOLATION_COLUMN_DEFS}
 
 
 def test_lahd_scope_uses_official_la_city_boundary() -> None:
+    """Verify that lahd scope uses official la city boundary.
+
+    Returns:
+        None.
+    """
     assert (
         lahd.is_listing_in_los_angeles_city(
             city="North Hollywood",

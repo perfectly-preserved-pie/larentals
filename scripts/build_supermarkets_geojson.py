@@ -33,8 +33,7 @@ EXCLUDED_BUSINESS_NAME_PATTERNS = (
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the merged supermarket GeoJSON builder.
+    """Parse command-line arguments for the merged supermarket GeoJSON builder.
 
     Returns:
         Parsed CLI arguments.
@@ -101,8 +100,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_location(location_value: str) -> tuple[float, float] | None:
-    """
-    Parse the source CSV LOCATION column into latitude/longitude values.
+    """Parse the source CSV LOCATION column into latitude/longitude values.
 
     Args:
         location_value: Raw LOCATION string from the CSV, e.g. "(34.10, -118.23)".
@@ -124,8 +122,7 @@ def within_bounds(
     longitude: float,
     bounds: tuple[float, float, float, float] = DEFAULT_VALID_BOUNDS,
 ) -> bool:
-    """
-    Check whether a point falls inside the accepted lon/lat bounding box.
+    """Check whether a point falls inside the accepted lon/lat bounding box.
 
     Args:
         latitude: Latitude value to test.
@@ -140,8 +137,7 @@ def within_bounds(
 
 
 def normalize_value(value: str | None) -> str | None:
-    """
-    Normalize raw string values to trimmed strings or `None`.
+    """Normalize raw string values to trimmed strings or `None`.
 
     Args:
         value: Raw string value.
@@ -157,8 +153,7 @@ def normalize_value(value: str | None) -> str | None:
 
 
 def build_full_address(parts: list[str | None]) -> str | None:
-    """
-    Join address fragments into a display-ready address string.
+    """Join address fragments into a display-ready address string.
 
     Args:
         parts: Ordered address fragments.
@@ -174,8 +169,7 @@ def should_exclude_business(
     dba_name: str | None,
     business_name: str | None,
 ) -> bool:
-    """
-    Check whether a business name looks like a gas-station-style record.
+    """Check whether a business name looks like a gas-station-style record.
 
     Args:
         dba_name: Display-facing DBA name from the source dataset.
@@ -205,8 +199,7 @@ def build_geojson_feature(
     latitude: float,
     longitude: float,
 ) -> dict[str, Any] | None:
-    """
-    Build a GeoJSON point feature from normalized properties and coordinates.
+    """Build a GeoJSON point feature from normalized properties and coordinates.
 
     Args:
         properties: GeoJSON feature properties.
@@ -230,8 +223,7 @@ def build_geojson_feature(
 
 
 def build_la_feature(row: dict[str, str]) -> dict[str, Any] | None:
-    """
-    Convert one Los Angeles CSV row into a GeoJSON point feature.
+    """Convert one Los Angeles CSV row into a GeoJSON point feature.
 
     Args:
         row: CSV row keyed by source column names.
@@ -288,8 +280,7 @@ def build_la_features(
     input_path: Path,
     included_naics_codes: set[str],
 ) -> list[dict[str, Any]]:
-    """
-    Build Los Angeles supermarket features from the active-businesses CSV.
+    """Build Los Angeles supermarket features from the active-businesses CSV.
 
     Args:
         input_path: Path to the source CSV file.
@@ -313,8 +304,7 @@ def build_la_features(
 
 
 def load_existing_features(output_path: Path) -> list[dict[str, Any]]:
-    """
-    Load the current derived GeoJSON as a fallback base dataset.
+    """Load the current derived GeoJSON as a fallback base dataset.
 
     Args:
         output_path: Path to the derived supermarket GeoJSON file.
@@ -343,8 +333,7 @@ def fetch_json(
     *,
     params: dict[str, Any],
 ) -> dict[str, Any]:
-    """
-    Perform a JSON GET request and return the parsed payload.
+    """Perform a JSON GET request and return the parsed payload.
 
     Args:
         session: Reusable HTTP session.
@@ -368,8 +357,7 @@ def fetch_santa_monica_grocery_records(
     api_url: str,
     resource_id: str,
 ) -> list[dict[str, Any]]:
-    """
-    Fetch Santa Monica grocery-license records from the CKAN SQL API.
+    """Fetch Santa Monica grocery-license records from the CKAN SQL API.
 
     Args:
         session: Reusable HTTP session.
@@ -390,8 +378,7 @@ def fetch_santa_monica_grocery_records(
 
 
 def load_geocode_cache(cache_path: Path) -> dict[str, Any]:
-    """
-    Load cached Nominatim geocoding results from disk.
+    """Load cached Nominatim geocoding results from disk.
 
     Args:
         cache_path: Path to the JSON cache file.
@@ -407,12 +394,14 @@ def load_geocode_cache(cache_path: Path) -> dict[str, Any]:
 
 
 def save_geocode_cache(cache_path: Path, cache: dict[str, Any]) -> None:
-    """
-    Persist the Nominatim geocode cache to disk.
+    """Persist the Nominatim geocode cache to disk.
 
     Args:
         cache_path: Path to the JSON cache file.
         cache: Cache content to save.
+
+    Returns:
+        None.
     """
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(cache, indent=2, sort_keys=True), encoding="utf-8")
@@ -430,8 +419,7 @@ def geocode_with_nominatim(
     cache: dict[str, Any],
     last_request_timestamp: float | None,
 ) -> tuple[tuple[float, float] | None, float | None]:
-    """
-    Geocode a single address using cached Nominatim lookups.
+    """Geocode a single address using cached Nominatim lookups.
 
     Args:
         session: Reusable HTTP session.
@@ -512,8 +500,7 @@ def build_santa_monica_features(
     delay_seconds: float,
     cache_path: Path,
 ) -> list[dict[str, Any]]:
-    """
-    Fetch, geocode, and convert Santa Monica grocery-license records into features.
+    """Fetch, geocode, and convert Santa Monica grocery-license records into features.
 
     Args:
         session: Reusable HTTP session.
@@ -600,8 +587,7 @@ def build_santa_monica_features(
 
 
 def feature_dedup_key(feature: dict[str, Any]) -> str:
-    """
-    Build a stable deduplication key for a supermarket feature.
+    """Build a stable deduplication key for a supermarket feature.
 
     Args:
         feature: GeoJSON feature to key.
@@ -624,8 +610,7 @@ def feature_dedup_key(feature: dict[str, Any]) -> str:
 
 
 def merge_features(feature_groups: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
-    """
-    Merge multiple feature lists while deduplicating by source-aware keys.
+    """Merge multiple feature lists while deduplicating by source-aware keys.
 
     Args:
         feature_groups: Ordered feature groups to merge.
@@ -653,8 +638,7 @@ def build_feature_collection(
     nominatim_user_agent: str,
     nominatim_delay_seconds: float,
 ) -> dict[str, Any]:
-    """
-    Build the merged supermarket GeoJSON FeatureCollection.
+    """Build the merged supermarket GeoJSON FeatureCollection.
 
     Args:
         input_path: Path to the Los Angeles source CSV.
@@ -703,8 +687,10 @@ def build_feature_collection(
 
 
 def main() -> None:
-    """
-    Build and write the merged supermarket GeoJSON dataset.
+    """Build and write the merged supermarket GeoJSON dataset.
+
+    Returns:
+        None.
     """
     args = parse_args()
     input_path = Path(args.input)

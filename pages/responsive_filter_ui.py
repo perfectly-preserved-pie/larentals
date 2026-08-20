@@ -29,12 +29,27 @@ _registered_hybrid_range_sliders: set[str] = set()
 
 
 def _hybrid_range_input_id(slider_id: str, bound: str) -> str:
-    """Return the exact-value field id paired with a range slider."""
+    """Return the exact-value field id paired with a range slider.
+
+    Args:
+        slider_id: Dash identifier of the hybrid range slider.
+        bound: Range endpoint, either ``minimum`` or ``maximum``.
+
+    Returns:
+        The hybrid range input identifier text.
+    """
     return f"{slider_id.removesuffix('_slider')}_{bound}_input"
 
 
 def _register_hybrid_range_callbacks(page_type: str) -> None:
-    """Keep exact-value fields and their finite display slider synchronized."""
+    """Keep exact-value fields and their finite display slider synchronized.
+
+    Args:
+        page_type: Listing page type, either ``buy`` or ``lease``.
+
+    Returns:
+        None.
+    """
     for slider_id in _HYBRID_RANGE_SLIDERS[page_type]:
         if slider_id in _registered_hybrid_range_sliders:
             continue
@@ -65,11 +80,16 @@ def _register_hybrid_range_callbacks(page_type: str) -> None:
 
 
 def build_filter_ui_stores(page_type: str) -> list[dcc.Store]:
-    """
-    Create the client-side stores used by a listing page's filters.
+    """Create the client-side stores used by a listing page's filters.
 
     The stores keep draft values, applied values, and the preview result count
     separate so mobile users can cancel edits without changing the map.
+
+    Args:
+        page_type: Listing page type, either ``buy`` or ``lease``.
+
+    Returns:
+        The client-side stores used to retain filter UI state.
     """
     return [
         dcc.Store(id=f"{page_type}-filter-draft-store", storage_type="memory"),
@@ -83,11 +103,16 @@ def build_filter_ui_stores(page_type: str) -> list[dcc.Store]:
 
 
 def build_map_filter_toolbar(page_type: str) -> html.Div:
-    """
-    Build the compact toolbar shown over the map on smaller screens.
+    """Build the compact toolbar shown over the map on smaller screens.
 
     ``page_type`` selects the Rent or Buy labels, links, and quick-filter chips.
     The toolbar itself is hidden when the persistent desktop sidebar is visible.
+
+    Args:
+        page_type: Listing page type, either ``buy`` or ``lease``.
+
+    Returns:
+        The responsive filter toolbar component for the map.
     """
     price_label = "Monthly rent" if page_type == "lease" else "List price"
     price_section = "monthly_rent" if page_type == "lease" else "list_price"
@@ -230,11 +255,19 @@ def build_responsive_listing_shell(
     user_options_card: Component,
     map_card: Component,
 ) -> html.Div:
-    """
-    Arrange one filter tree beside or over the listing map.
+    """Arrange one filter tree beside or over the listing map.
 
     Desktop widths show the filter content as a sidebar. Smaller widths reuse
     that same content inside a dismissible drawer or bottom sheet.
+
+    Args:
+        page_type: Listing page type, either ``buy`` or ``lease``.
+        title_card: Dash card containing the page title and introductory content.
+        user_options_card: Dash card containing the listing filter controls.
+        map_card: Dash card containing the interactive listing map.
+
+    Returns:
+        The responsive page shell containing filters, listings, and the map.
     """
     listing_label = "rentals" if page_type == "lease" else "homes"
 
@@ -344,11 +377,19 @@ def _quick_filter_button(
     label: str,
     section: str,
 ) -> html.Button:
-    """
-    Create a shortcut that opens one section of the responsive filter panel.
+    """Create a shortcut that opens one section of the responsive filter panel.
 
     ``key`` supplies the button identity while ``section`` identifies the
     accordion section that should receive focus.
+
+    Args:
+        page_type: Listing page type, either ``buy`` or ``lease``.
+        key: Lookup, component, or object key identifying the requested item.
+        label: User-facing label displayed for the component.
+        section: Filter section associated with the quick-filter button.
+
+    Returns:
+        A button component for the requested quick filter.
     """
     return html.Button(
         label,
@@ -366,11 +407,19 @@ def _quick_filter_button(
 
 
 def register_responsive_filter_callbacks(page_type: str) -> None:
-    """
-    Register the client-side callbacks for one listing page.
+    """Register the client-side callbacks for one listing page.
 
     These callbacks capture control values, calculate preview counts, apply
     committed filters to the map, and open the requested accordion section.
+
+    Args:
+        page_type: Listing page type, either ``buy`` or ``lease``.
+
+    Returns:
+        None.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     _register_hybrid_range_callbacks(page_type)
 
@@ -428,10 +477,12 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
 
 
 def _lease_capture_inputs() -> list[Input]:
-    """
-    Return every Dash input that contributes to the rental filter state.
+    """Return every Dash input that contributes to the rental filter state.
 
     The order matches the arguments accepted by ``captureLeaseFilterState``.
+
+    Returns:
+        A list containing the lease capture inputs.
     """
     return [
         Input("rental_price_minimum_input", "value"),
@@ -493,10 +544,12 @@ def _lease_capture_inputs() -> list[Input]:
 
 
 def _buy_capture_inputs() -> list[Input]:
-    """
-    Return every Dash input that contributes to the for-sale filter state.
+    """Return every Dash input that contributes to the for-sale filter state.
 
     The order matches the arguments accepted by ``captureBuyFilterState``.
+
+    Returns:
+        A list containing the buy capture inputs.
     """
     return [
         Input("list_price_minimum_input", "value"),

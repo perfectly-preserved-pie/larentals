@@ -34,7 +34,11 @@ class CappedRangeBounds:
 
     @property
     def display_maximum(self) -> int | float:
-        """Return the largest numeric value shown on a finite slider scale."""
+        """Return the largest numeric value shown on a finite slider scale.
+
+        Returns:
+            The largest value displayed on the finite slider.
+        """
         if self.is_capped and self.capped_at is not None:
             return self.capped_at
         return self.maximum
@@ -47,13 +51,31 @@ class CappedRangeBounds:
         include_open_end: bool = True,
         target_intervals: int = 5,
     ) -> Mapping[int | float, str] | None:
-        """Return readable marks, optionally followed by an ``Unlimited`` stop."""
+        """Return readable marks, optionally followed by an ``Unlimited`` stop.
+
+        Args:
+            currency: Whether currency behavior is enabled.
+            suffix: Unit suffix appended to each generated slider label.
+            include_open_end: Whether include open end behavior is enabled.
+            target_intervals: Approximate number of labeled intervals to generate.
+
+        Returns:
+            A mapping containing the marks.
+        """
         if not self.is_capped and include_open_end:
             return None
 
         finite_maximum = self.display_maximum
 
         def format_value(value: int | float) -> str:
+            """Handle format value.
+
+            Args:
+                value: Numeric slider mark to format for display.
+
+            Returns:
+                The formatted value text.
+            """
             numeric = float(value)
             absolute = abs(numeric)
             scale = 1.0
@@ -99,7 +121,15 @@ class CappedRangeBounds:
 
 
 def _readable_ceiling(value: float, *, minimum_step: float) -> float:
-    """Round a positive value up to a readable slider endpoint."""
+    """Round a positive value up to a readable slider endpoint.
+
+    Args:
+        value: Raw upper bound that should be rounded for display.
+        minimum_step: Smallest permitted interval between adjacent rounded values.
+
+    Returns:
+        A rounded, human-readable upper bound.
+    """
     if not np.isfinite(value) or value <= 0:
         return minimum_step
 
@@ -121,12 +151,20 @@ def iqr_capped_range_bounds(
     step: int | float = 1,
     iqr_multiplier: float = 1.5,
 ) -> CappedRangeBounds:
-    """
-    Build non-destructive slider bounds using the IQR fence as a display cap.
+    """Build non-destructive slider bounds using the IQR fence as a display cap.
 
     Values above the IQR-derived display cap remain in the dataset. When
     ``is_capped`` is true, ``capped_at`` remains an exact selectable value and
     ``maximum`` is a separate final stop meaning no upper limit.
+
+    Args:
+        values: Observed numeric values used to derive slider limits.
+        minimum: Observed lower bound of the slider range.
+        step: Slider interval used when rounding and capping the range.
+        iqr_multiplier: Number of interquartile ranges above Q3 used as the outlier fence.
+
+    Returns:
+        The calculated slider bounds and outlier cap metadata.
     """
     numeric = pd.to_numeric(pd.Series(values), errors="coerce").dropna()
     numeric = numeric[np.isfinite(numeric)]
@@ -181,8 +219,7 @@ def build_range_filter(
     input_prefix: str = "",
     input_suffix: str = "",
 ) -> html.Div:
-    """
-    Build a standard slider-based filter section.
+    """Build a standard slider-based filter section.
 
     Args:
         slider_id: Dash id for the slider.
@@ -359,8 +396,7 @@ def build_range_filter(
 
 
 def build_isp_speed_components(max_download: float, max_upload: float) -> html.Div:
-    """
-    Build download and upload speed controls.
+    """Build download and upload speed controls.
 
     Args:
         max_download: Upper bound for download speed.
@@ -422,8 +458,7 @@ def build_isp_speed_components(max_download: float, max_upload: float) -> html.D
 
 
 def build_location_filter_components(page_type: str) -> html.Div:
-    """
-    Build the shared location filter controls.
+    """Build the shared location filter controls.
 
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
@@ -472,7 +507,15 @@ def build_location_filter_status(
     boundary_payload: Mapping[str, Any],
     status: str,
 ) -> str | list[Any]:
-    """Render a compact ZIP summary with additional ZIPs in a popover."""
+    """Render a compact ZIP summary with additional ZIPs in a popover.
+
+    Args:
+        boundary_payload: Resolved boundary data used to build the location status.
+        status: Current status text to render for the user.
+
+    Returns:
+        The location-filter status text and optional ZIP-code popover.
+    """
     zip_codes = sorted(
         str(zip_code)
         for zip_code in boundary_payload.get("zip_codes", [])
@@ -543,8 +586,7 @@ def build_title_card(
     subtitle: str,
     last_updated: str | None,
 ) -> dbc.Card:
-    """
-    Build the shared page title card.
+    """Build the shared page title card.
 
     Args:
         title: Heading shown at the top of the sidebar.
@@ -689,8 +731,7 @@ def build_map(
     layers_control: dl.LayersControl | None,
     map_style: Mapping[str, Any],
 ) -> dl.Map:
-    """
-    Build the shared Dash Leaflet map shell.
+    """Build the shared Dash Leaflet map shell.
 
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
@@ -743,8 +784,7 @@ def build_map(
 
 
 def build_map_gesture_control() -> html.Div:
-    """
-    Build the webcam gesture-control panel for the shared map.
+    """Build the webcam gesture-control panel for the shared map.
 
     Returns:
         A map overlay that is docked into the Leaflet controls stack.
@@ -825,8 +865,7 @@ def build_map_card(
     body_class_name: str | None = None,
     card_class_name: str | None = None,
 ) -> dbc.Card:
-    """
-    Wrap a map component in the standard loading-card layout.
+    """Wrap a map component in the standard loading-card layout.
 
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
@@ -885,8 +924,7 @@ def build_filter_card(
     accordion_id: str | None = None,
     accordion_class_name: str = "options-accordion dmc",
 ) -> dbc.Card:
-    """
-    Build the accordion card used for page filters.
+    """Build the accordion card used for page filters.
 
     Args:
         items: Accordion sections as ``(title, children, item_id)`` tuples.
@@ -922,8 +960,7 @@ def build_filter_card(
 
 
 def build_school_layer_map_prompt(page_type: str) -> html.Div:
-    """
-    Build the floating map prompt that points users to school-layer controls.
+    """Build the floating map prompt that points users to school-layer controls.
 
     Args:
         page_type: Page key such as ``buy`` or ``lease``.
@@ -982,8 +1019,7 @@ def build_school_layer_map_prompt(page_type: str) -> html.Div:
 
 
 def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
-    """
-    Build the conditional, map-only filter panel for the schools overlay.
+    """Build the conditional, map-only filter panel for the schools overlay.
 
     Args:
         page_type: Page key such as ``buy`` or ``lease``.
@@ -1196,8 +1232,7 @@ def build_subtype_filter(
     outer_id: str | None = None,
     dropdown_style: Mapping[str, Any] | None = None,
 ) -> html.Div:
-    """
-    Build the shared subtype dropdown section.
+    """Build the shared subtype dropdown section.
 
     Args:
         values: Sorted subtype labels to offer.
@@ -1245,8 +1280,7 @@ def build_listed_date_filter(
     datepicker_id: str,
     component_id: str,
 ) -> html.Div:
-    """
-    Build the shared listed-date filter section.
+    """Build the shared listed-date filter section.
 
     Args:
         earliest_date: Earliest date available in the dataset.
@@ -1319,8 +1353,7 @@ def build_year_built_filter(
     dynamic_id: DashId,
     component_id: str,
 ) -> html.Div:
-    """
-    Build the shared year-built slider section.
+    """Build the shared year-built slider section.
 
     Args:
         min_year: Minimum year in the dataset.
@@ -1355,8 +1388,7 @@ def build_page_parts(
     map_component: Any,
     map_overlay_children: Sequence[Any] | None = None,
 ) -> PageParts:
-    """
-    Assemble the top-level cards consumed by a page layout.
+    """Assemble the top-level cards consumed by a page layout.
 
     Args:
         config: Static page configuration.

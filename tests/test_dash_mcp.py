@@ -8,6 +8,11 @@ from dash import Dash, html
 
 class DashMcpTest(unittest.TestCase):
     def test_app_constructor_opts_into_dash_mcp(self) -> None:
+        """Verify that app constructor opts into dash mcp.
+
+        Returns:
+            None.
+        """
         app_source = Path("app.py").read_text(encoding="utf-8")
         module = ast.parse(app_source)
 
@@ -30,6 +35,11 @@ class DashMcpTest(unittest.TestCase):
         self.assertIs(enable_mcp_keywords[0].value.value, True)
 
     def test_dash_mcp_endpoint_initializes_over_http(self) -> None:
+        """Verify that dash mcp endpoint initializes over http.
+
+        Returns:
+            None.
+        """
         app = Dash(__name__, enable_mcp=True)
         app.layout = html.Div("MCP smoke test")
         client = app.server.test_client()

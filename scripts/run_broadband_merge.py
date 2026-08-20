@@ -18,8 +18,7 @@ DEFAULT_GEOPACKAGE_LAYER = "ca_broadband_availability_aggregate"
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line options for the broadband merge job.
+    """Parse command-line options for the broadband merge job.
 
     Returns:
         Parsed command-line arguments.
@@ -55,11 +54,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """
-    Execute the broadband spatial merge using the selected inputs.
+    """Execute the broadband spatial merge using the selected inputs.
 
     Side Effects:
         Reads geospatial source files and writes the merged output artifact.
+
+    Returns:
+        None.
     """
     args = parse_args()
     predicate = args.predicate or ("intersects" if args.buffer_meters > 0 else "within")

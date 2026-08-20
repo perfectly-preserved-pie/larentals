@@ -12,8 +12,7 @@ from functions.listing_enrichment_utils import (
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line options for initializing enrichment tables.
+    """Parse command-line options for initializing enrichment tables.
 
     Returns:
         Parsed command-line arguments.
@@ -45,11 +44,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """
-    Create or upgrade the local listing-enrichment tables.
+    """Create or upgrade the local listing-enrichment tables.
 
     Side Effects:
         Opens the configured SQLite database and changes its schema.
+
+    Returns:
+        None.
     """
     args = parse_args()
     db_path = Path(args.db_path).expanduser()

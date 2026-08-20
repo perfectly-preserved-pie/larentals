@@ -13,27 +13,40 @@ MAX_LOG_ARGUMENTS_LENGTH = 1_000
 
 
 def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
-    """
-    Register tool-usage logging for the Dash MCP endpoint.
+    """Register tool-usage logging for the Dash MCP endpoint.
 
     MCP clients make several protocol and discovery requests for every session.
     Those requests are intentionally ignored: a log record is emitted only when
     a client invokes a tool.
+
+    Args:
+        server: Flask application receiving the registered API routes.
+        mcp_path: Filesystem path for the mcp.
+
+    Returns:
+        None.
     """
     normalized_mcp_path = _normalize_mcp_path(mcp_path)
 
     @server.before_request
     def start_mcp_usage_timer() -> None:
-        """
-        Record the start time for a tool-call request.
+        """Record the start time for a tool-call request.
+
+        Returns:
+            None.
         """
         if request.path == normalized_mcp_path:
             g.mcp_usage_start_time = time.perf_counter()
 
     @server.after_request
     def log_mcp_usage(response: Response) -> Response:
-        """
-        Emit a compact usage record after a tool-call response completes.
+        """Emit a compact usage record after a tool-call response completes.
+
+        Args:
+            response: HTTP response being validated or summarized.
+
+        Returns:
+            An HTTP response containing the log MCP usage.
         """
         if request.path != normalized_mcp_path:
             return response
@@ -61,22 +74,51 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
 
 
 def _normalize_mcp_path(mcp_path: str) -> str:
+    """Handle normalize mcp path.
+
+    Args:
+        mcp_path: Filesystem path for the mcp.
+
+    Returns:
+        The filesystem path for the MCP.
+    """
     path = str(mcp_path or "").strip() or "_mcp"
     return "/" + path.strip("/")
 
 
 def _get_json_payload() -> dict[str, Any] | None:
+    """Handle get json payload.
+
+    Returns:
+        A mapping containing the requested JSON payload.
+    """
     payload = request.get_json(silent=True)
     return payload if isinstance(payload, dict) else None
 
 
 def _rpc_method_from_payload(payload: dict[str, Any] | None) -> str | None:
+    """Handle rpc method from payload.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        The RPC method from payload text, or ``None`` when unavailable.
+    """
     if not isinstance(payload, dict):
         return None
     return _clean_log_value(payload.get("method"))
 
 
 def _target_from_payload(payload: dict[str, Any] | None) -> str | None:
+    """Handle target from payload.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        The target from payload text, or ``None`` when unavailable.
+    """
     if not isinstance(payload, dict):
         return None
 
@@ -92,6 +134,14 @@ def _target_from_payload(payload: dict[str, Any] | None) -> str | None:
 
 
 def _arguments_from_payload(payload: dict[str, Any] | None) -> str:
+    """Handle arguments from payload.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        The arguments from payload text.
+    """
     if not isinstance(payload, dict):
         return "{}"
 
@@ -110,7 +160,14 @@ def _arguments_from_payload(payload: dict[str, Any] | None) -> str:
 
 
 def _result_summary(response: Response) -> str:
-    """Return useful outcome metadata without logging a tool's full response."""
+    """Return useful outcome metadata without logging a tool's full response.
+
+    Args:
+        response: HTTP response being validated or summarized.
+
+    Returns:
+        The result summary text.
+    """
     payload = response.get_json(silent=True)
     if not isinstance(payload, dict):
         return "unparseable"
@@ -142,6 +199,14 @@ def _result_summary(response: Response) -> str:
 
 
 def _clean_log_value(value: Any) -> str | None:
+    """Handle clean log value.
+
+    Args:
+        value: Arbitrary tool argument or result value to sanitize for logs.
+
+    Returns:
+        The clean log value text, or ``None`` when unavailable.
+    """
     if value is None:
         return None
 

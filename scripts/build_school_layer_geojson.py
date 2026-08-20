@@ -51,11 +51,13 @@ DEFAULT_SCHOOL_COLUMNS: tuple[str, ...] = (
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """
-    Parse command-line arguments for the schools-layer build pipeline.
+    """Parse command-line arguments for the schools-layer build pipeline.
 
     Returns:
         Parsed CLI arguments.
+
+    Args:
+        argv: Optional command-line argument sequence; defaults to ``sys.argv``.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -110,8 +112,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def download_file(url: str, destination: Path) -> Path:
-    """
-    Download a remote file to disk.
+    """Download a remote file to disk.
 
     Args:
         url: Remote HTTP(S) URL.
@@ -138,14 +139,16 @@ def download_file(url: str, destination: Path) -> Path:
 
 
 def resolve_local_source_path(args: argparse.Namespace) -> Path:
-    """
-    Resolve the on-disk GeoPackage path to read from.
+    """Resolve the on-disk GeoPackage path to read from.
 
     Args:
         args: Parsed CLI arguments.
 
     Returns:
         Local path to the GeoPackage artifact.
+
+    Raises:
+        FileNotFoundError: If the operation cannot be completed.
     """
     source = str(args.source)
     if is_remote_url(source):
@@ -161,8 +164,7 @@ def resolve_local_source_path(args: argparse.Namespace) -> Path:
 
 
 def build_school_layer(args: argparse.Namespace) -> tuple[Path, Path, int]:
-    """
-    Build the final school-layer GeoJSON artifact.
+    """Build the final school-layer GeoJSON artifact.
 
     Args:
         args: Parsed CLI arguments.
@@ -190,8 +192,10 @@ def build_school_layer(args: argparse.Namespace) -> tuple[Path, Path, int]:
 
 
 def main() -> None:
-    """
-    Build the school-layer GeoJSON artifact from the selected source.
+    """Build the school-layer GeoJSON artifact from the selected source.
+
+    Returns:
+        None.
     """
     args = parse_args()
     source_path, output_path, feature_count = build_school_layer(args)

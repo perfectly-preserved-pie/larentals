@@ -35,8 +35,7 @@ GeoJsonObject = dict[str, Any]
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the breakfast burrito dataset builder.
+    """Parse command-line arguments for the breakfast burrito dataset builder.
 
     Args:
         None. Reads arguments from `sys.argv`.
@@ -62,8 +61,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def normalize_text(value: str | None) -> str:
-    """
-    Normalize scraped text by collapsing whitespace and invisible separators.
+    """Normalize scraped text by collapsing whitespace and invisible separators.
 
     Args:
         value: Raw text value scraped from HTML.
@@ -79,8 +77,7 @@ def normalize_text(value: str | None) -> str:
 
 
 def normalize_name_key(value: str | None) -> str:
-    """
-    Build a normalized lookup key for matching restaurant names across sources.
+    """Build a normalized lookup key for matching restaurant names across sources.
 
     Args:
         value: Raw restaurant name text.
@@ -92,8 +89,7 @@ def normalize_name_key(value: str | None) -> str:
 
 
 def extract_link_target(anchor: Tag | None) -> str | None:
-    """
-    Resolve the destination URL encoded inside a sheet anchor tag.
+    """Resolve the destination URL encoded inside a sheet anchor tag.
 
     Args:
         anchor: BeautifulSoup anchor tag from the published sheet.
@@ -116,8 +112,7 @@ def extract_link_target(anchor: Tag | None) -> str | None:
 
 
 def parse_numeric(value: str) -> float | None:
-    """
-    Parse a numeric sheet cell, tolerating currency symbols and blanks.
+    """Parse a numeric sheet cell, tolerating currency symbols and blanks.
 
     Args:
         value: Raw cell text.
@@ -136,8 +131,7 @@ def parse_numeric(value: str) -> float | None:
 
 
 def parse_explicit_latlong(value: str) -> Coordinates | None:
-    """
-    Parse literal `lat, lon` text from the published sheet.
+    """Parse literal `lat, lon` text from the published sheet.
 
     Args:
         value: Raw `LatLong` cell text.
@@ -155,8 +149,7 @@ def parse_explicit_latlong(value: str) -> Coordinates | None:
 
 
 def extract_coordinates(latlong_text: str, maps_url: str | None) -> Coordinates | None:
-    """
-    Extract coordinates from either explicit sheet text or embedded Google Maps URLs.
+    """Extract coordinates from either explicit sheet text or embedded Google Maps URLs.
 
     Args:
         latlong_text: Raw `LatLong` sheet cell text.
@@ -192,8 +185,7 @@ def parse_table_row(
     *,
     review_url_map: dict[str, str],
 ) -> GeoJsonObject | None:
-    """
-    Convert one published-sheet row into a breakfast burrito GeoJSON feature.
+    """Convert one published-sheet row into a breakfast burrito GeoJSON feature.
 
     Args:
         cells: Table cells extracted from one sheet row.
@@ -260,8 +252,7 @@ def parse_table_row(
 
 
 def build_review_url_map(rankings_html: str) -> dict[str, str]:
-    """
-    Collect direct LABreakfastBurrito review URLs keyed by normalized restaurant name.
+    """Collect direct LABreakfastBurrito review URLs keyed by normalized restaurant name.
 
     Args:
         rankings_html: Raw HTML fetched from the LABreakfastBurrito site.
@@ -298,8 +289,7 @@ def build_feature_collection(
     *,
     review_url_map: dict[str, str],
 ) -> GeoJsonObject:
-    """
-    Build the full breakfast burrito GeoJSON feature collection from the sheet HTML.
+    """Build the full breakfast burrito GeoJSON feature collection from the sheet HTML.
 
     Args:
         sheet_html: Raw HTML for the published Google Sheet.
@@ -307,6 +297,9 @@ def build_feature_collection(
 
     Returns:
         GeoJSON feature collection dictionary for all usable breakfast burrito entries.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     soup = BeautifulSoup(sheet_html, "html.parser")
     table = soup.select_one("table.waffle")
@@ -331,8 +324,7 @@ def build_feature_collection(
 
 
 def fetch_sheet_html(sheet_html_url: str) -> str:
-    """
-    Download the published Google Sheet HTML used for the breakfast burrito layer.
+    """Download the published Google Sheet HTML used for the breakfast burrito layer.
 
     Args:
         sheet_html_url: Published Google Sheets HTML URL.
@@ -350,8 +342,7 @@ def fetch_sheet_html(sheet_html_url: str) -> str:
 
 
 def fetch_html(url: str) -> str:
-    """
-    Download arbitrary HTML content needed by the dataset builder.
+    """Download arbitrary HTML content needed by the dataset builder.
 
     Args:
         url: Source URL to fetch.
@@ -369,8 +360,7 @@ def fetch_html(url: str) -> str:
 
 
 def write_geojson(feature_collection: GeoJsonObject, output_path: Path) -> None:
-    """
-    Persist the derived breakfast burrito GeoJSON to disk.
+    """Persist the derived breakfast burrito GeoJSON to disk.
 
     Args:
         feature_collection: GeoJSON feature collection to serialize.
@@ -384,8 +374,7 @@ def write_geojson(feature_collection: GeoJsonObject, output_path: Path) -> None:
 
 
 def main() -> None:
-    """
-    Build the breakfast burrito GeoJSON dataset from live source HTML.
+    """Build the breakfast burrito GeoJSON dataset from live source HTML.
 
     Args:
         None. Reads CLI arguments and performs the end-to-end build workflow.

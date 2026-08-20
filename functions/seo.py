@@ -15,8 +15,13 @@ SITE_DESCRIPTION = (
 
 
 def get_public_page_paths(page_registry: Mapping[str, Mapping[str, Any]]) -> list[str]:
-  """
-  Return crawlable public paths from Dash's page registry.
+  """Return crawlable public paths from Dash's page registry.
+
+  Args:
+      page_registry: Dash page registry used to discover public routes.
+
+  Returns:
+      A list containing the requested public page paths.
   """
   paths = {
     str(page.get("path"))
@@ -31,8 +36,14 @@ def get_public_page_paths(page_registry: Mapping[str, Mapping[str, Any]]) -> lis
 
 
 def build_sitemap_xml(base_url: str, page_paths: list[str]) -> bytes:
-  """
-  Build a sitemap XML document for the supplied page paths.
+  """Build a sitemap XML document for the supplied page paths.
+
+  Args:
+      base_url: Canonical public base URL without a trailing slash.
+      page_paths: Public application paths included in the generated document.
+
+  Returns:
+      The sitemap XML document.
   """
   ElementTree.register_namespace("", SITEMAP_NAMESPACE)
   urlset = ElementTree.Element(f"{{{SITEMAP_NAMESPACE}}}urlset")
@@ -47,8 +58,13 @@ def build_sitemap_xml(base_url: str, page_paths: list[str]) -> bytes:
 
 
 def build_robots_txt(base_url: str) -> str:
-  """
-  Build a minimal robots.txt that advertises the sitemap.
+  """Build a minimal robots.txt that advertises the sitemap.
+
+  Args:
+      base_url: Canonical public base URL without a trailing slash.
+
+  Returns:
+      The robots.txt directives.
   """
   return "\n".join([
     "User-agent: *",
@@ -60,8 +76,13 @@ def build_robots_txt(base_url: str) -> str:
 
 
 def build_llms_txt(base_url: str) -> str:
-  """
-  Build a concise site guide for AI answer engines and LLM retrieval.
+  """Build a concise site guide for AI answer engines and LLM retrieval.
+
+  Args:
+      base_url: Canonical public base URL without a trailing slash.
+
+  Returns:
+      The llms.txt site description.
   """
   normalized_base_url = base_url.rstrip("/")
 
@@ -98,8 +119,13 @@ def build_llms_txt(base_url: str) -> str:
 
 
 def build_structured_data_script(base_url: str) -> str:
-  """
-  Build JSON-LD structured data for the public app shell.
+  """Build JSON-LD structured data for the public app shell.
+
+  Args:
+      base_url: Canonical public base URL without a trailing slash.
+
+  Returns:
+      The constructed structured data script text.
   """
   normalized_base_url = base_url.rstrip("/")
   structured_data = {

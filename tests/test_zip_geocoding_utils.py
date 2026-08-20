@@ -8,12 +8,30 @@ from functions import zip_geocoding_utils as geocoding
 
 class FakeNominatimResponse:
     def __init__(self, payload: list[dict]) -> None:
+        """Initialize the instance.
+
+        Args:
+            payload: Structured request, listing, or artifact payload to validate or summarize.
+
+        Returns:
+            None.
+        """
         self._payload = payload
 
     def raise_for_status(self) -> None:
+        """Handle raise for status.
+
+        Returns:
+            None.
+        """
         return None
 
     def json(self) -> list[dict]:
+        """Handle json.
+
+        Returns:
+            The stored JSON payload.
+        """
         return self._payload
 
 
@@ -25,7 +43,18 @@ def _zip_feature(
     east: float,
     north: float,
 ) -> dict:
-    """Build a rectangular ZIP polygon fixture."""
+    """Build a rectangular ZIP polygon fixture.
+
+    Args:
+        zip_code: Five-digit ZIP code identifying the service area.
+        west: Western longitude of the rectangular test feature.
+        south: Southern latitude of the rectangular test feature.
+        east: Eastern longitude of the rectangular test feature.
+        north: Northern latitude of the rectangular test feature.
+
+    Returns:
+        A rectangular GeoJSON feature for the requested ZIP code.
+    """
     return {
         "type": "Feature",
         "properties": {"ZIPCODE": zip_code},
@@ -43,6 +72,11 @@ def _zip_feature(
 
 
 def test_normalize_place_query_defaults_unqualified_places_to_california() -> None:
+    """Verify that normalize place query defaults unqualified places to california.
+
+    Returns:
+        None.
+    """
     assert geocoding._normalize_place_query("Chinatown") == "Chinatown, CA"
     assert geocoding._normalize_place_query("Canoga Park") == "Canoga Park, CA"
     assert (
@@ -68,10 +102,24 @@ def test_query_requested_locality_extracts_address_qualifier(
     query: str,
     expected: str | None,
 ) -> None:
+    """Verify that query requested locality extracts address qualifier.
+
+    Args:
+        query: User-entered place query being parsed or resolved.
+        expected: Expected normalized output for the parametrized test case.
+
+    Returns:
+        None.
+    """
     assert geocoding._query_requested_locality(query) == expected
 
 
 def test_service_area_priority_includes_direct_la_neighboring_counties() -> None:
+    """Verify that service area priority includes direct la neighboring counties.
+
+    Returns:
+        None.
+    """
     assert geocoding._service_area_priority({"address": {"county": "Los Angeles County"}}) == 0
     assert geocoding._service_area_priority({"address": {"county": "Orange County"}}) == 1
     assert geocoding._service_area_priority({"address": {"county": "Ventura County"}}) == 2
@@ -84,6 +132,11 @@ def test_service_area_priority_includes_direct_la_neighboring_counties() -> None
 
 
 def test_get_zip_codes_for_place_returns_crosswalk_zips_without_polygons() -> None:
+    """Verify that get zip codes for place returns crosswalk zips without polygons.
+
+    Returns:
+        None.
+    """
     crosswalk = {
         "ANAHEIM": {"92805"},
         "SAN CLEMENTE": {"92672", "92673", "92674"},
@@ -113,10 +166,24 @@ def test_explicit_zip_code_accepts_only_standalone_zip_queries(
     location: str,
     expected: str | None,
 ) -> None:
+    """Verify that explicit zip code accepts only standalone zip queries.
+
+    Args:
+        location: Place, address, or geocoder result being resolved.
+        expected: Expected normalized output for the parametrized test case.
+
+    Returns:
+        None.
+    """
     assert geocoding._explicit_zip_code(location) == expected
 
 
 def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
+    """Verify that resolve locations combines tags without splitting commas.
+
+    Returns:
+        None.
+    """
     crosswalk = {
         "PASADENA": {"91101"},
         "GLENDALE": {"91201"},
@@ -140,6 +207,14 @@ def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
     geocode_calls: list[str] = []
 
     def fake_geocode(location: str) -> None:
+        """Handle fake geocode.
+
+        Args:
+            location: Place, address, or geocoder result being resolved.
+
+        Returns:
+            None.
+        """
         geocode_calls.append(location)
         return None
 
@@ -160,6 +235,11 @@ def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
 
 
 def test_resolve_locations_reports_partial_failures_without_dropping_matches() -> None:
+    """Verify that resolve locations reports partial failures without dropping matches.
+
+    Returns:
+        None.
+    """
     polygon = _zip_feature(
         "91101",
         west=-118.16,
@@ -187,6 +267,11 @@ def test_resolve_locations_reports_partial_failures_without_dropping_matches() -
 
 
 def test_resolve_locations_expands_nearby_zips_for_each_tag() -> None:
+    """Verify that resolve locations expands nearby zips for each tag.
+
+    Returns:
+        None.
+    """
     polygons = [
         _zip_feature(
             "91101",
@@ -233,6 +318,11 @@ def test_resolve_locations_expands_nearby_zips_for_each_tag() -> None:
 
 
 def test_get_adjacent_zip_features_returns_only_one_touching_ring() -> None:
+    """Verify that get adjacent zip features returns only one touching ring.
+
+    Returns:
+        None.
+    """
     polygons = [
         _zip_feature("90001", west=0, south=0, east=1, north=1),
         _zip_feature("90002", west=1, south=0, east=2, north=1),
@@ -248,6 +338,11 @@ def test_get_adjacent_zip_features_returns_only_one_touching_ring() -> None:
 
 
 def test_nearby_zip_adjacency_is_consistent_across_location_types() -> None:
+    """Verify that nearby zip adjacency is consistent across location types.
+
+    Returns:
+        None.
+    """
     polygons = [
         _zip_feature(
             "90001",
@@ -313,6 +408,14 @@ def test_nearby_zip_adjacency_is_consistent_across_location_types() -> None:
 def test_load_zip_place_crosswalk_skips_pandas_string_missing_values(
     tmp_path: Path,
 ) -> None:
+    """Verify that load zip place crosswalk skips pandas string missing values.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     csv_path = tmp_path / "crosswalk.csv"
     pd.DataFrame(
         [
@@ -343,6 +446,15 @@ def test_geocode_place_cached_prefers_la_county_for_ambiguous_california_place(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that geocode place cached prefers la county for ambiguous california place.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     payload = [
         {
             "lat": "37.7943011",
@@ -387,6 +499,17 @@ def test_geocode_place_cached_prefers_la_county_for_ambiguous_california_place(
     calls = []
 
     def fake_get(url: str, params: dict, timeout: int, headers: dict) -> FakeNominatimResponse:
+        """Handle fake get.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            params: Query parameters included with the HTTP request.
+            timeout: HTTP request timeout in seconds.
+            headers: HTTP headers included with the request.
+
+        Returns:
+            An HTTP response containing the fake get.
+        """
         calls.append({"url": url, "params": params.copy(), "timeout": timeout, "headers": headers})
         return FakeNominatimResponse(payload)
 
@@ -405,6 +528,15 @@ def test_geocode_place_cached_keeps_exact_orange_county_address_ahead_of_la_coun
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that geocode place cached keeps exact orange county address ahead of la county.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     payload = [
         {
             "lat": "34.0505360",
@@ -450,6 +582,17 @@ def test_geocode_place_cached_keeps_exact_orange_county_address_ahead_of_la_coun
     calls = []
 
     def fake_get(url: str, params: dict, timeout: int, headers: dict) -> FakeNominatimResponse:
+        """Handle fake get.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            params: Query parameters included with the HTTP request.
+            timeout: HTTP request timeout in seconds.
+            headers: HTTP headers included with the request.
+
+        Returns:
+            An HTTP response containing the fake get.
+        """
         calls.append({"url": url, "params": params.copy(), "timeout": timeout, "headers": headers})
         return FakeNominatimResponse(payload)
 
@@ -474,6 +617,15 @@ def test_geocode_place_cached_enforces_requested_city_for_la_county_address(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that geocode place cached enforces requested city for la county address.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     payload = [
         {
             "lat": "34.0858458",
@@ -554,6 +706,15 @@ def test_geocode_place_cached_rejects_candidates_from_wrong_requested_city(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that geocode place cached rejects candidates from wrong requested city.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     payload = [
         {
             "lat": "34.0858458",

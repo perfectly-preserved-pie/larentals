@@ -23,6 +23,11 @@ from scripts.build_school_layer_geojson import parse_args as parse_school_layer_
 
 
 def test_school_layer_builder_parse_args_use_geopackage_defaults() -> None:
+    """Verify that school layer builder parse args use geopackage defaults.
+
+    Returns:
+        None.
+    """
     args = parse_school_layer_args([])
 
     assert args.source == DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_URL
@@ -33,6 +38,11 @@ def test_school_layer_builder_parse_args_use_geopackage_defaults() -> None:
 
 
 def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normalizes_fields() -> None:
+    """Verify that build school layer geojson from gdf filters closed schools and normalizes fields.
+
+    Returns:
+        None.
+    """
     schools = gpd.GeoDataFrame(
         {
             "SchoolName": ["Franklin High", "Closed Campus"],
@@ -82,6 +92,11 @@ def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normaliz
 
 
 def test_build_school_layer_geojson_from_gdf_reprojects_coordinates_to_wgs84() -> None:
+    """Verify that build school layer geojson from gdf reprojects coordinates to wgs84.
+
+    Returns:
+        None.
+    """
     schools = gpd.GeoDataFrame(
         {
             "SchoolName": ["Franklin High"],
@@ -111,6 +126,11 @@ def test_build_school_layer_geojson_from_gdf_reprojects_coordinates_to_wgs84() -
 
 
 def test_build_school_preview_url_points_to_world_imagery_export() -> None:
+    """Verify that build school preview url points to world imagery export.
+
+    Returns:
+        None.
+    """
     url = build_school_preview_url(-118.2437, 34.0522)
 
     assert url is not None
@@ -124,7 +144,17 @@ def test_build_school_preview_url_points_to_world_imagery_export() -> None:
     assert params["f"] == ["image"]
 
 
-def test_layers_control_omits_satellite_without_mapbox_token(monkeypatch) -> None:
+def test_layers_control_omits_satellite_without_mapbox_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that layers control omits satellite without mapbox token.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     monkeypatch.delenv("MAPBOX_ACCESS_TOKEN", raising=False)
     control = LayersClass.create_layers_control("lease", ["oil_well"])
 
@@ -150,7 +180,17 @@ def test_layers_control_omits_satellite_without_mapbox_token(monkeypatch) -> Non
     assert control.collapsed is False
 
 
-def test_layers_control_includes_mapbox_satellite_when_configured(monkeypatch) -> None:
+def test_layers_control_includes_mapbox_satellite_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that layers control includes mapbox satellite when configured.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     monkeypatch.setenv("MAPBOX_ACCESS_TOKEN", "pk.test-token")
 
     control = LayersClass.create_layers_control("lease", [])
@@ -174,11 +214,26 @@ def test_layers_control_includes_mapbox_satellite_when_configured(monkeypatch) -
 
 
 def test_build_mapbox_satellite_tile_url_rejects_blank_token() -> None:
+    """Verify that build mapbox satellite tile url rejects blank token.
+
+    Returns:
+        None.
+    """
     with pytest.raises(ValueError, match="must not be blank"):
         build_mapbox_satellite_tile_url("  ")
 
 
-def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom(monkeypatch) -> None:
+def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that build map uses controlled basemaps and supports detail zoom.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     monkeypatch.delenv("MAPBOX_ACCESS_TOKEN", raising=False)
     control = LayersClass.create_layers_control("buy", [])
     map_component = build_map(
@@ -196,6 +251,11 @@ def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom(monkeypatch
 
 
 def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment() -> None:
+    """Verify that filter school layer geojson respects search bands flags and enrollment.
+
+    Returns:
+        None.
+    """
     geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -282,6 +342,11 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
 
 
 def test_build_school_layer_geojson_from_gdf_derives_early_grades_and_recent_open_flag() -> None:
+    """Verify that build school layer geojson from gdf derives early grades and recent open flag.
+
+    Returns:
+        None.
+    """
     schools = gpd.GeoDataFrame(
         {
             "SchoolName": ["Sunrise Academy"],
@@ -312,6 +377,11 @@ def test_build_school_layer_geojson_from_gdf_derives_early_grades_and_recent_ope
 
 
 def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened() -> None:
+    """Verify that filter school layer geojson respects early grades and recently opened.
+
+    Returns:
+        None.
+    """
     geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -362,6 +432,11 @@ def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened()
 
 
 def test_filter_school_layer_geojson_accepts_numeric_flag_values() -> None:
+    """Verify that filter school layer geojson accepts numeric flag values.
+
+    Returns:
+        None.
+    """
     geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -395,6 +470,11 @@ def test_filter_school_layer_geojson_accepts_numeric_flag_values() -> None:
 
 
 def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range() -> None:
+    """Verify that filter school layer geojson keeps unknown enrollment at default range.
+
+    Returns:
+        None.
+    """
     geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -431,6 +511,11 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
 
 
 def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> None:
+    """Verify that filter school layer geojson treats all grade bands as unfiltered.
+
+    Returns:
+        None.
+    """
     geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -498,6 +583,11 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
 
 
 def test_filter_school_layer_geojson_respects_campus_configuration() -> None:
+    """Verify that filter school layer geojson respects campus configuration.
+
+    Returns:
+        None.
+    """
     geojson = {
         "type": "FeatureCollection",
         "features": [

@@ -26,8 +26,7 @@ ON {REPORT_TABLE_NAME} (listing_type, report_option, mls_number)
 
 
 def infer_listing_type_from_page_path(page_path: str) -> str:
-    """
-    Infer the listing type from the current browser path.
+    """Infer the listing type from the current browser path.
 
     Args:
         page_path: Browser pathname submitted by the popup UI.
@@ -47,8 +46,13 @@ def infer_listing_type_from_page_path(page_path: str) -> str:
 
 
 def normalize_mls_number(value: object) -> str:
-    """
-    Normalize an MLS number into a trimmed string without a trailing `.0`.
+    """Normalize an MLS number into a trimmed string without a trailing `.0`.
+
+    Args:
+        value: Raw MLS identifier from a request or database row.
+
+    Returns:
+        The normalized MLS number text.
     """
     normalized = str(value).strip()
     if normalized.endswith(".0"):
@@ -57,8 +61,13 @@ def normalize_mls_number(value: object) -> str:
 
 
 def ensure_listing_reports_schema(conn: sqlite3.Connection) -> None:
-    """
-    Create the append-only listing reports table and lookup index if needed.
+    """Create the append-only listing reports table and lookup index if needed.
+
+    Args:
+        conn: Open SQLite database connection.
+
+    Returns:
+        None.
     """
     conn.execute(_CREATE_LISTING_REPORTS_TABLE_SQL)
     conn.execute(_CREATE_LISTING_REPORTS_LOOKUP_INDEX_SQL)
@@ -73,8 +82,7 @@ def insert_listing_report(
     text_report: Optional[str],
     page_path: str,
 ) -> None:
-    """
-    Insert a single user-submitted listing report.
+    """Insert a single user-submitted listing report.
 
     Args:
         conn: Open SQLite connection.
@@ -83,6 +91,12 @@ def insert_listing_report(
         option: User-selected report category.
         text_report: Optional free-form explanation.
         page_path: Browser pathname supplied by the client.
+
+    Returns:
+        None.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if listing_type not in VALID_LISTING_TYPES:
         raise ValueError(f"Invalid listing_type: {listing_type}")
@@ -109,8 +123,7 @@ def get_reported_inactive_mls_numbers(
     *,
     listing_type: str,
 ) -> set[str]:
-    """
-    Return MLS numbers that users have reported as inactive for a listing type.
+    """Return MLS numbers that users have reported as inactive for a listing type.
 
     Args:
         conn: Open SQLite connection.
@@ -118,6 +131,9 @@ def get_reported_inactive_mls_numbers(
 
     Returns:
         Set of MLS numbers flagged with the inactive report option.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if listing_type not in VALID_LISTING_TYPES:
         raise ValueError(f"Invalid listing_type: {listing_type}")

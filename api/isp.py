@@ -84,8 +84,7 @@ BUY_ISP_SQL = """
 
 
 def build_provider_option_payload(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
-    """
-    Convert ISP database rows into the JSON payload expected by the popup renderer.
+    """Convert ISP database rows into the JSON payload expected by the popup renderer.
 
     Args:
         rows: SQLite rows returned from the lease/buy provider-options queries.
@@ -113,19 +112,20 @@ def build_provider_option_payload(rows: list[sqlite3.Row]) -> list[dict[str, Any
 
 
 def register_isp_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
-    """
-    Register HTTP routes for fetching ISP options on-demand.
+    """Register HTTP routes for fetching ISP options on-demand.
 
     Args:
         server: The Flask server instance (typically `app.server` in Dash).
         db_path: Path to the SQLite database file.
+
+    Returns:
+        None.
     """
     bp = Blueprint("isp_api", __name__)
 
     @bp.get("/api/lease/isp-options/<listing_id>")
     def get_lease_isp_options(listing_id: str) -> Response:
-        """
-        Return normalized ISP options associated with a lease listing.
+        """Return normalized ISP options associated with a lease listing.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -141,8 +141,7 @@ def register_isp_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> N
 
     @bp.get("/api/buy/isp-options/<listing_id>")
     def get_buy_isp_options(listing_id: str) -> Response:
-        """
-        Return normalized ISP options associated with a buy listing.
+        """Return normalized ISP options associated with a buy listing.
 
         Args:
             listing_id: MLS identifier supplied in the route path.

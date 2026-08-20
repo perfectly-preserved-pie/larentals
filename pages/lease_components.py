@@ -130,8 +130,7 @@ class LeaseComponents(BaseClass):
 
     @classmethod
     def get_cached_geojson_payload(cls) -> dict:
-        """
-        Return the cached lease GeoJSON payload for the current database version.
+        """Return the cached lease GeoJSON payload for the current database version.
 
         Returns:
             A GeoJSON feature collection for the lease map store.
@@ -146,8 +145,10 @@ class LeaseComponents(BaseClass):
         return add_rso_status_to_listing_geojson(payload)
 
     def __init__(self) -> None:
-        """
-        Load lease data and assemble the top-level page cards.
+        """Load lease data and assemble the top-level page cards.
+
+        Returns:
+            None.
         """
         super().__init__(
             table_name=self.CONFIG.table_name,
@@ -164,8 +165,7 @@ class LeaseComponents(BaseClass):
         self.map_card = self.parts.map_card
 
     def _build_page_parts(self) -> PageParts:
-        """
-        Build the title, sidebar, and map cards for the lease page.
+        """Build the title, sidebar, and map cards for the lease page.
 
         Returns:
             The assembled ``PageParts`` bundle.
@@ -193,8 +193,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_map_component(self) -> object:
-        """
-        Build the lease map component with shared overlays and styles.
+        """Build the lease map component with shared overlays and styles.
 
         Returns:
             The configured lease map component.
@@ -210,8 +209,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_filter_sections(self) -> list[FilterSection]:
-        """
-        Build the accordion sections shown on the lease sidebar.
+        """Build the accordion sections shown on the lease sidebar.
 
         Returns:
             Ordered filter-section tuples for the lease page.
@@ -285,8 +283,7 @@ class LeaseComponents(BaseClass):
         ]
 
     def create_rent_control_filter(self) -> html.Div:
-        """
-        Build the mutually exclusive LA City rent-control status filter.
+        """Build the mutually exclusive LA City rent-control status filter.
 
         Returns:
             A segmented control for the available coverage states.
@@ -315,8 +312,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_rental_price_filter(self) -> html.Div:
-        """
-        Build the monthly-rent slider section.
+        """Build the monthly-rent slider section.
 
         Returns:
             A rent filter ``Div``.
@@ -341,8 +337,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_bedrooms_filter(self) -> html.Div:
-        """
-        Build the bedrooms slider section.
+        """Build the bedrooms slider section.
 
         Returns:
             A bedrooms filter ``Div``.
@@ -360,8 +355,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_bathrooms_filter(self) -> html.Div:
-        """
-        Build the bathrooms slider section.
+        """Build the bathrooms slider section.
 
         Returns:
             A bathrooms filter ``Div``.
@@ -381,8 +375,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_parking_spaces_filter(self) -> html.Div:
-        """
-        Build the parking-spaces slider section.
+        """Build the parking-spaces slider section.
 
         Returns:
             A parking filter ``Div``.
@@ -405,8 +398,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_ppsqft_filter(self) -> html.Div:
-        """
-        Build the price-per-square-foot slider section.
+        """Build the price-per-square-foot slider section.
 
         Returns:
             A price-per-square-foot filter ``Div``.
@@ -433,8 +425,7 @@ class LeaseComponents(BaseClass):
         )
 
     def _build_square_footage_filter(self) -> html.Div:
-        """
-        Build the square-footage slider section.
+        """Build the square-footage slider section.
 
         Returns:
             A square-footage filter ``Div``.
@@ -471,8 +462,7 @@ class LeaseComponents(BaseClass):
         dynamic_index: str,
         component_id: str,
     ) -> html.Div:
-        """
-        Build a deposit slider section for one lease deposit field.
+        """Build a deposit slider section for one lease deposit field.
 
         Args:
             title: Visible section title.
@@ -514,8 +504,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_subtype_checklist(self) -> html.Div:
-        """
-        Build the subtype dropdown for lease listings.
+        """Build the subtype dropdown for lease listings.
 
         Returns:
             A subtype filter ``Div``.
@@ -537,8 +526,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_pets_radio_button(self) -> html.Div:
-        """
-        Build the pet-policy radio controls.
+        """Build the pet-policy radio controls.
 
         Returns:
             A pet-policy filter ``Div``.
@@ -567,8 +555,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_rental_terms_checklist(self) -> html.Div:
-        """
-        Build the rental-terms chip selector and unknown switch.
+        """Build the rental-terms chip selector and unknown switch.
 
         Returns:
             A rental-terms filter ``Div``.
@@ -650,8 +637,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_furnished_checklist(self) -> html.Div:
-        """
-        Build the furnished-status filter.
+        """Build the furnished-status filter.
 
         Returns:
             A furnished filter ``Div``.
@@ -701,8 +687,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_laundry_checklist(self) -> html.Div:
-        """
-        Build the laundry-category filter.
+        """Build the laundry-category filter.
 
         Returns:
             A laundry filter ``Div``.
@@ -750,8 +735,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_listed_date_components(self) -> html.Div:
-        """
-        Build the listed-date filter section for the lease page.
+        """Build the listed-date filter section for the lease page.
 
         Returns:
             A listed-date filter ``Div``.
@@ -764,8 +748,7 @@ class LeaseComponents(BaseClass):
         )
 
     def create_year_built_components(self) -> html.Div:
-        """
-        Build the year-built filter section for the lease page.
+        """Build the year-built filter section for the lease page.
 
         Returns:
             A year-built filter ``Div``.

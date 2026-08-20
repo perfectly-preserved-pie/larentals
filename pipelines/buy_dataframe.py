@@ -37,21 +37,23 @@ USE_NOMINATIM = False
 LOGFILE = "~/larentals/buy_dataframe.log"
 
 def main() -> None:
-  """
-  Build the normalized buy-listings dataframe and publish its artifacts.
+  """Build the normalized buy-listings dataframe and publish its artifacts.
 
   Returns:
     ``None`` after the pipeline completes.
 
   Side Effects:
     Reads source data, writes the normalized buy dataset, and logs progress.
+
+  Raises:
+      FileNotFoundError: If the operation cannot be completed.
   """
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample",  type=int, default=None,
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
     help="Path to log file (default ~/larentals/buy_dataframe.log)")
-  parser.add_argument("--use-env",   action="store_true",           
+  parser.add_argument("--use-env",   action="store_true",
     help="Load from .env instead of SSM")
   parser.add_argument("--use-nominatim", action="store_true",
     help="If set, use Nominatim instead of Google for geocoding"
@@ -349,7 +351,7 @@ def main() -> None:
       source_file_hash=source_file_hash,
     )
     df_combined.reset_index(drop=True, inplace=True)
-    
+
     df_combined = reconstruct_missing_address_components(df_combined)
 
     # Clean up address fields
@@ -435,7 +437,7 @@ def main() -> None:
     except Exception as e:
       logger.error(f"Error updating SQLite table '{target_table}': {e}")
       sys.exit(1)
-    
+
   except Exception as e:
     logger.exception(f"Error in buy pipeline: {e}")
     sys.exit(1)

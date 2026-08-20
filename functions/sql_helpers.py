@@ -11,8 +11,7 @@ def get_earliest_listed_date(
     table_name: str = "lease",
     date_column: str = "listed_date",
 ) -> Optional[str]:
-    """
-    Fetch the earliest non-null listed date from a SQLite table.
+    """Fetch the earliest non-null listed date from a SQLite table.
 
     This is intended for seeding Dash date pickers. It returns a string in
     "YYYY-MM-DD" format, or None if no valid dates exist.
@@ -59,8 +58,7 @@ def get_latest_date_processed(
     table_name: str = "lease",
     date_column: str = "date_processed",
 ) -> Optional[str]:
-    """
-    Fetch the latest non-null date_processed from a SQLite table.
+    """Fetch the latest non-null date_processed from a SQLite table.
 
     This is intended for display purposes. It returns a string in
     "MM/DD/YYYY" format, or None if no valid dates exist.

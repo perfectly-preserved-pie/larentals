@@ -62,8 +62,13 @@ class RsoListingLookupResult(TypedDict):
 
 
 def _normalize_address(value: object) -> str:
-    """
-    Normalize an address for property-level RSO matching.
+    """Normalize an address for property-level RSO matching.
+
+    Args:
+        value: Raw property address used as an RSO lookup key.
+
+    Returns:
+        The normalized address text.
     """
     raw_value = str(value or "").strip().upper()
     if not raw_value:
@@ -78,8 +83,13 @@ def _normalize_address(value: object) -> str:
 
 
 def _parse_int(value: object) -> int | None:
-    """
-    Convert a non-negative numeric value to an integer.
+    """Convert a non-negative numeric value to an integer.
+
+    Args:
+        value: Numeric-like Power BI field to parse, defaulting invalid input to zero.
+
+    Returns:
+        The parsed int value, or ``None`` when unavailable.
     """
     try:
         parsed = int(float(value))
@@ -89,8 +99,14 @@ def _parse_int(value: object) -> int | None:
 
 
 def _coverage_from_counts(rso_units: int, unit_range: str) -> str:
-    """
-    Derive a conservative coverage status from LAHD's public fields.
+    """Derive a conservative coverage status from LAHD's public fields.
+
+    Args:
+        rso_units: Number of rent-stabilized units reported for the property.
+        unit_range: Source unit-range label used to determine RSO coverage.
+
+    Returns:
+        The coverage from counts text.
     """
     numbers = [int(value) for value in re.findall(r"\d+", unit_range)]
     if len(numbers) == 1 and rso_units >= numbers[0]:
@@ -101,8 +117,13 @@ def _coverage_from_counts(rso_units: int, unit_range: str) -> str:
 
 
 def _empty_result(*, data_available: bool) -> RsoListingLookupResult:
-    """
-    Return the default result for an unavailable or unmatched lookup.
+    """Return the default result for an unavailable or unmatched lookup.
+
+    Args:
+        data_available: Whether the backing dataset was available for the lookup.
+
+    Returns:
+        An empty RSO lookup result with the requested availability state.
     """
     return {
         "data_available": data_available,
@@ -117,8 +138,13 @@ def _empty_result(*, data_available: bool) -> RsoListingLookupResult:
 
 
 def _result_from_record(record: dict[str, Any]) -> RsoListingLookupResult:
-    """
-    Convert an RSO inventory record into a popup-safe result.
+    """Convert an RSO inventory record into a popup-safe result.
+
+    Args:
+        record: RSO property record matched to the listing.
+
+    Returns:
+        A normalized RSO lookup result built from the matched record.
     """
     rso_units = _parse_int(record.get("rso_units")) or 0
     unit_range = str(record.get("unit_range") or "").strip()
@@ -136,8 +162,14 @@ def _result_from_record(record: dict[str, Any]) -> RsoListingLookupResult:
 
 @lru_cache(maxsize=4)
 def _load_lookup(artifact_path: str, artifact_mtime_ns: int) -> dict[str, Any]:
-    """
-    Load and index the local RSO inventory by normalized address.
+    """Load and index the local RSO inventory by normalized address.
+
+    Args:
+        artifact_path: Filesystem path to the local data artifact.
+        artifact_mtime_ns: Artifact modification time used to invalidate the cache.
+
+    Returns:
+        A mapping containing the loaded lookup.
     """
     del artifact_mtime_ns
     try:
@@ -171,8 +203,14 @@ def lookup_rso_property_for_listing(
     address: object,
     artifact_path: Path = RSO_PROPERTY_LOOKUP_PATH,
 ) -> RsoListingLookupResult:
-    """
-    Look up a listing's property in the local LAHD RSO inventory.
+    """Look up a listing's property in the local LAHD RSO inventory.
+
+    Args:
+        address: Street address used to identify or geocode the property.
+        artifact_path: Filesystem path to the local data artifact.
+
+    Returns:
+        The matching RSO property for listing.
     """
     try:
         mtime_ns = artifact_path.stat().st_mtime_ns
@@ -190,7 +228,14 @@ def lookup_rso_property_for_listing(
 def prewarm_rso_property_lookup_cache(
     artifact_path: Path = RSO_PROPERTY_LOOKUP_PATH,
 ) -> None:
-    """Load the local RSO inventory before the first listing popup."""
+    """Load the local RSO inventory before the first listing popup.
+
+    Args:
+        artifact_path: Filesystem path to the local data artifact.
+
+    Returns:
+        None.
+    """
     try:
         mtime_ns = artifact_path.stat().st_mtime_ns
     except OSError:
@@ -206,6 +251,12 @@ def add_rso_status_to_listing_geojson(payload: dict[str, Any]) -> dict[str, Any]
     Listings outside LA City and listings not found in the public inventory are
     intentionally both ``unknown``. An inventory omission is not a finding that
     a property is not rent controlled.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        A mapping containing the updated RSO status to listing GeoJSON.
     """
     features = payload.get("features")
     if not isinstance(features, list):
@@ -231,8 +282,13 @@ def add_rso_status_to_listing_geojson(payload: dict[str, Any]) -> dict[str, Any]
 
 
 def _powerbi_headers(request_id: str) -> dict[str, str]:
-    """
-    Build the headers required by the public Power BI report endpoint.
+    """Build the headers required by the public Power BI report endpoint.
+
+    Args:
+        request_id: Power BI request identifier included in tracing headers.
+
+    Returns:
+        A mapping containing the powerbi headers.
     """
     return {
         "Content-Type": "application/json",
@@ -243,8 +299,14 @@ def _powerbi_headers(request_id: str) -> dict[str, str]:
 
 
 def _build_query(apn_min: int, apn_max: int) -> dict[str, Any]:
-    """
-    Build a public-dashboard query for one half-open APN range.
+    """Build a public-dashboard query for one half-open APN range.
+
+    Args:
+        apn_min: Inclusive lower APN bound for the query.
+        apn_max: Inclusive upper APN bound for the query.
+
+    Returns:
+        A mapping containing the constructed query.
     """
     fields = ["APN", "BillingYear", "Address", "City", "Zip", "RSO_Units", "UnitRange"]
     select = [
@@ -283,8 +345,13 @@ def _build_query(apn_min: int, apn_max: int) -> dict[str, Any]:
 
 
 def _decode_powerbi_rows(dataset: dict[str, Any]) -> list[dict[str, Any]]:
-    """
-    Decode the compact row representation returned by Power BI.
+    """Decode the compact row representation returned by Power BI.
+
+    Args:
+        dataset: Decoded Power BI dataset containing dictionaries and compressed rows.
+
+    Returns:
+        A list containing the decoded powerbi rows.
     """
     try:
         rows = dataset["PH"][0]["DM0"]
@@ -319,15 +386,29 @@ def _decode_powerbi_rows(dataset: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def fetch_current_rso_records() -> tuple[list[dict[str, Any]], str]:
-    """
-    Fetch the complete current public LAHD RSO inventory.
+    """Fetch the complete current public LAHD RSO inventory.
+
+    Returns:
+        A tuple containing the fetched current RSO records.
+
+    Raises:
+        RuntimeError: If the operation cannot be completed.
     """
     records: list[dict[str, Any]] = []
     source_timestamp = ""
 
     def fetch_partition(apn_min: int, apn_max: int) -> None:
-        """
-        Fetch one APN range, splitting it if Power BI truncates the result.
+        """Fetch one APN range, splitting it if Power BI truncates the result.
+
+        Args:
+            apn_min: Inclusive lower APN bound for the query.
+            apn_max: Inclusive upper APN bound for the query.
+
+        Returns:
+            None.
+
+        Raises:
+            RuntimeError: If the operation cannot be completed.
         """
         nonlocal source_timestamp
         response = requests.post(
@@ -367,8 +448,13 @@ def fetch_current_rso_records() -> tuple[list[dict[str, Any]], str]:
 
 
 def refresh_local_rso_property_lookup(output_path: Path = RSO_PROPERTY_LOOKUP_PATH) -> Path:
-    """
-    Fetch LAHD's public RSO inventory and write the local lookup artifact.
+    """Fetch LAHD's public RSO inventory and write the local lookup artifact.
+
+    Args:
+        output_path: Filesystem path where the generated artifact is written.
+
+    Returns:
+        The refreshed local RSO property lookup.
     """
     started_at = time.time()
     records, source_timestamp = fetch_current_rso_records()

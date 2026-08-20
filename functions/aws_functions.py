@@ -10,10 +10,17 @@ def load_ssm_parameters(
     region: str = "us-west-1",
     decrypt: bool = True
 ) -> Dict[str, str]:
-    """
-    Fetch all SSM parameters under `path` and return a dict mapping
+    """Fetch all SSM parameters under `path` and return a dict mapping
     each parameter name (suffix) → its value.  SecureStrings are
     decrypted if `decrypt=True`.
+
+    Args:
+        path: Filesystem path to the source file, dataset, database, or artifact.
+        region: AWS region containing the requested service or resource.
+        decrypt: Whether SecureString parameters should be decrypted.
+
+    Returns:
+        A mapping containing the loaded SSM parameters.
     """
     client = boto3.client("ssm", region_name=region)
     paginator = client.get_paginator("get_parameters_by_path")
@@ -37,12 +44,19 @@ def upload_file_to_s3(
     bucket: str,
     key: str
 ) -> None:
-    """
-    Upload a local file to the specified S3 bucket.
+    """Upload a local file to the specified S3 bucket.
 
     :param local_path: Path to the file on the local filesystem.
     :param bucket: Name of the S3 bucket.
     :param key:   Destination key name under which to store the file.
+
+    Args:
+        local_path: Filesystem path for the local.
+        bucket: S3 bucket containing the object.
+        key: Lookup, component, or object key identifying the requested item.
+
+    Returns:
+        None.
     """
     s3 = boto3.client("s3")
     s3.upload_file(local_path, bucket, key)

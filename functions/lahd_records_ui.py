@@ -22,8 +22,10 @@ LAHD_RECORD_EVENT_PROPS = [
 
 
 def create_lahd_records_listener() -> EventListener:
-    """
-    Create the hidden browser-event bridge used by Leaflet popup buttons.
+    """Create the hidden browser-event bridge used by Leaflet popup buttons.
+
+    Returns:
+        The created LAHD records listener.
     """
     return EventListener(
         id="lahd-records-listener",
@@ -33,8 +35,10 @@ def create_lahd_records_listener() -> EventListener:
 
 
 def create_lahd_records_drawer() -> dmc.Drawer:
-    """
-    Create the global Housing Department records drawer shared by lease and buy pages.
+    """Create the global Housing Department records drawer shared by lease and buy pages.
+
+    Returns:
+        The created LAHD records drawer.
     """
     return dmc.Drawer(
         id="lahd-records-drawer",
@@ -64,8 +68,13 @@ def create_lahd_records_drawer() -> dmc.Drawer:
 
 
 def register_lahd_records_drawer_callback(app: Any) -> None:
-    """
-    Register callbacks that load and display LAHD records in the drawer.
+    """Register callbacks that load and display LAHD records in the drawer.
+
+    Args:
+        app: Dash application on which the callback is registered.
+
+    Returns:
+        None.
     """
     """
     Register the callback that fills the Housing Department records drawer from an APN event.
@@ -79,6 +88,17 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
         prevent_initial_call=True,
     )
     def open_lahd_records_drawer(event: dict[str, Any] | None) -> tuple[bool, Any, Any]:
+        """Handle open lahd records drawer.
+
+        Args:
+            event: Dash or browser event payload being handled.
+
+        Returns:
+            A tuple containing the open LAHD records drawer.
+
+        Raises:
+            PreventUpdate: If the operation cannot be completed.
+        """
         apn = _event_value(event, "detail.apn")
         if not apn:
             raise PreventUpdate
@@ -97,8 +117,13 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
 
 
 def build_lahd_records_drawer_content(details: dict[str, Any]) -> Any:
-    """
-    Build the drawer body for one APN's Housing Department records.
+    """Build the drawer body for one APN's Housing Department records.
+
+    Args:
+        details: Normalized LAHD detail payload containing summary and record rows.
+
+    Returns:
+        The constructed LAHD records drawer content.
     """
     cases = _as_list(details.get("cases"))
     violations = _as_list(details.get("violations"))
@@ -195,8 +220,14 @@ GRID_OPTIONS = {
 
 
 def _event_value(event: dict[str, Any] | None, key: str) -> str | None:
-    """
-    Read an EventListener value from either flattened or nested event shapes.
+    """Read an EventListener value from either flattened or nested event shapes.
+
+    Args:
+        event: Dash or browser event payload being handled.
+        key: Lookup, component, or object key identifying the requested item.
+
+    Returns:
+        The event value text, or ``None`` when unavailable.
     """
     if not isinstance(event, dict):
         return None
@@ -215,8 +246,13 @@ def _event_value(event: dict[str, Any] | None, key: str) -> str | None:
 
 
 def _as_list(value: Any) -> list[dict[str, Any]]:
-    """
-    Return a list of record dictionaries.
+    """Return a list of record dictionaries.
+
+    Args:
+        value: Optional scalar or collection to normalize into a list.
+
+    Returns:
+        A list containing the as list.
     """
     if not isinstance(value, list):
         return []
@@ -224,8 +260,13 @@ def _as_list(value: Any) -> list[dict[str, Any]]:
 
 
 def _format_count(value: Any) -> str:
-    """
-    Format a summary count for display.
+    """Format a summary count for display.
+
+    Args:
+        value: Numeric-like issue count to format for display.
+
+    Returns:
+        The formatted count text.
     """
     try:
         return f"{int(value):,}"
@@ -234,8 +275,13 @@ def _format_count(value: Any) -> str:
 
 
 def _primary_address_from_summary(summary: Any) -> str | None:
-    """
-    Return the first Housing Department address for drawer-title fallback.
+    """Return the first Housing Department address for drawer-title fallback.
+
+    Args:
+        summary: Normalized property summary used to build the UI content.
+
+    Returns:
+        The primary address from summary text, or ``None`` when unavailable.
     """
     if not isinstance(summary, dict):
         return None
@@ -250,8 +296,14 @@ def _primary_address_from_summary(summary: Any) -> str | None:
 
 
 def _build_drawer_title(apn: Any, address: Any) -> Any:
-    """
-    Build the drawer title block.
+    """Build the drawer title block.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        address: Street address used to identify or geocode the property.
+
+    Returns:
+        The constructed drawer title.
     """
     address_text = str(address or "").strip()
     return html.Div(
@@ -266,8 +318,13 @@ def _build_drawer_title(apn: Any, address: Any) -> Any:
 
 
 def _build_summary(summary: dict[str, Any]) -> html.Div:
-    """
-    Build the compact summary metrics above the tables.
+    """Build the compact summary metrics above the tables.
+
+    Args:
+        summary: Normalized property summary used to build the UI content.
+
+    Returns:
+        The constructed summary.
     """
     metrics = [
         ("Documented Issues", summary.get("documented_issue_count"), "cases + citations"),
@@ -295,8 +352,13 @@ def _build_summary(summary: dict[str, Any]) -> html.Div:
 
 
 def _build_truncation_notice(truncated: dict[str, Any]) -> Any:
-    """
-    Render a small notice if the row limit was reached.
+    """Render a small notice if the row limit was reached.
+
+    Args:
+        truncated: Flags indicating which record collections were truncated.
+
+    Returns:
+        The constructed truncation notice.
     """
     cases_truncated = bool(truncated.get("cases"))
     violations_truncated = bool(truncated.get("violations"))
@@ -317,8 +379,13 @@ def _build_truncation_notice(truncated: dict[str, Any]) -> Any:
 
 
 def _build_detail_status_notice(detail_status: dict[str, Any]) -> Any:
-    """
-    Render a small notice when the drawer is showing aggregate snapshot data.
+    """Render a small notice when the drawer is showing aggregate snapshot data.
+
+    Args:
+        detail_status: Availability and error metadata for the live record details.
+
+    Returns:
+        The constructed detail status notice.
     """
     if detail_status.get("live_records_available") is not False:
         return None
@@ -340,8 +407,16 @@ def _build_grid(
     column_defs: list[dict[str, Any]],
     empty_message: str,
 ) -> Any:
-    """
-    Build a Dash AG Grid table for Housing Department records.
+    """Build a Dash AG Grid table for Housing Department records.
+
+    Args:
+        grid_id: Dash component identifier for the records grid.
+        rows: Records to write, summarize, or display.
+        column_defs: AG Grid column definitions for the records table.
+        empty_message: Message shown when the records table has no rows.
+
+    Returns:
+        The constructed grid.
     """
     grid_options = {
         **GRID_OPTIONS,
@@ -360,8 +435,13 @@ def _build_grid(
 
 
 def _build_source_links(sources: dict[str, Any]) -> html.Div:
-    """
-    Render source links under the grids.
+    """Render source links under the grids.
+
+    Args:
+        sources: Source metadata or source labels to combine.
+
+    Returns:
+        The constructed source links.
     """
     return html.Div(
         [
@@ -384,8 +464,14 @@ def _build_source_links(sources: dict[str, Any]) -> html.Div:
 
 
 def _build_error_content(apn: Any, exc: Exception) -> html.Div:
-    """
-    Render a recoverable load error inside the drawer.
+    """Render a recoverable load error inside the drawer.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        exc: Exception raised while loading the records.
+
+    Returns:
+        The constructed error content.
     """
     return html.Div(
         [

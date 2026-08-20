@@ -6,8 +6,7 @@ import geopandas as gpd
 # 2025 Eaton Fire: https://gis.data.ca.gov/datasets/CALFIRE-Forestry::dins-2025-eaton-public-view/about
 
 def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, lease_geojson_path: str, buy_geojson_path: str, buffer_distance: float = 10) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    """
-    Checks for fire damage in lease and buy properties based on Palisades and Eaton fire datasets.
+    """Checks for fire damage in lease and buy properties based on Palisades and Eaton fire datasets.
 
     Parameters:
         palisades_geojson_path (str): Path to the Palisades fire GeoJSON file.
@@ -83,8 +82,10 @@ def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, leas
     return lease_gdf, buy_gdf
 
 def main() -> None:
-    """
-    Run the wildfire-damage analysis from the configured input datasets.
+    """Run the wildfire-damage analysis from the configured input datasets.
+
+    Returns:
+        None.
     """
     parser = argparse.ArgumentParser(description='Check fire damage for lease and buy properties.')
     parser.add_argument('--buffer_distance', type=float, default=10, help='Buffer distance for the spatial join.')
@@ -97,10 +98,10 @@ def main() -> None:
     buy_geojson_path = 'data/derived/layers/buy.geojson'
 
     lease_gdf, buy_gdf = check_fire_damage(
-        palisades_geojson_path, 
-        eaton_geojson_path, 
-        lease_geojson_path, 
-        buy_geojson_path, 
+        palisades_geojson_path,
+        eaton_geojson_path,
+        lease_geojson_path,
+        buy_geojson_path,
         args.buffer_distance
     )
 

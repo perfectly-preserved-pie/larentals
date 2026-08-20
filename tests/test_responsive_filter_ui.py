@@ -17,11 +17,16 @@ from pages.responsive_filter_ui import (
 
 
 def _collect_components(component: Any) -> Iterator[Any]:
-    """
-    Yield every component and text node in a Dash component tree.
+    """Yield every component and text node in a Dash component tree.
 
     Lists and tuples are traversed recursively so tests can inspect deeply
     nested controls without depending on their exact layout structure.
+
+    Args:
+        component: Dash component or nested component collection to traverse.
+
+    Yields:
+        Values produced by the iterator.
     """
     if isinstance(component, (list, tuple)):
         for child in component:
@@ -36,8 +41,10 @@ def _collect_components(component: Any) -> Iterator[Any]:
 
 class ResponsiveFilterUiTest(unittest.TestCase):
     def test_filter_shell_keeps_one_filter_tree_and_map_main(self) -> None:
-        """
-        Verify the responsive shell does not duplicate the filter controls.
+        """Verify the responsive shell does not duplicate the filter controls.
+
+        Returns:
+            None.
         """
         shell = build_responsive_listing_shell(
             page_type="lease",
@@ -66,8 +73,10 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         )
 
     def test_toolbar_has_accessible_open_trigger_and_quick_filters(self) -> None:
-        """
-        Verify the compact toolbar exposes its controls and current mode.
+        """Verify the compact toolbar exposes its controls and current mode.
+
+        Returns:
+            None.
         """
         toolbar = build_map_filter_toolbar("buy")
         components = list(_collect_components(toolbar))
@@ -108,8 +117,10 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         self.assertIn("is-selected", current_modes[0].className)
 
     def test_page_filter_stores_are_scoped(self) -> None:
-        """
-        Verify each listing page receives its own filter state stores.
+        """Verify each listing page receives its own filter state stores.
+
+        Returns:
+            None.
         """
         stores = build_filter_ui_stores("lease")
         self.assertEqual(
@@ -123,8 +134,10 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         self.assertEqual(stores[-1].data, {"count": None})
 
     def test_desktop_sections_are_expanded_initially(self) -> None:
-        """
-        Verify the persistent desktop sidebar opens its primary filter sections.
+        """Verify the persistent desktop sidebar opens its primary filter sections.
+
+        Returns:
+            None.
         """
         self.assertEqual(
             LeaseComponents.CONFIG.active_filter_items,
@@ -151,6 +164,11 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         self.assertEqual(FILTER_UI_BREAKPOINT, 1100)
 
     def test_hybrid_ranges_capture_exact_fields_and_slider_display_bounds(self) -> None:
+        """Verify that hybrid ranges capture exact fields and slider display bounds.
+
+        Returns:
+            None.
+        """
         lease_inputs = {
             (item.component_id, item.component_property)
             for item in _lease_capture_inputs()

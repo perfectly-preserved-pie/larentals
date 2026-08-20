@@ -124,13 +124,18 @@ CANONICAL_ORDER: list[str] = [
 ]
 
 def normalize_token(token: str) -> str:
-    """
-    Normalize a single rental term token for dictionary lookup.
+    """Normalize a single rental term token for dictionary lookup.
 
     This is designed to collapse common punctuation variants like:
       - "1-Year" -> "1 YEAR"
       - "1+Year" -> "1 YEAR"
       - "Month-to-Month" -> "MONTH TO MONTH"
+
+    Args:
+        token: Raw token to normalize or compare.
+
+    Returns:
+        The normalized token text.
     """
     return (
         token.upper()
@@ -143,11 +148,16 @@ def normalize_token(token: str) -> str:
 
 
 def _tokenize_terms(raw: str) -> list[str]:
-    """
-    Split raw terms string into tokens.
+    """Split raw terms string into tokens.
 
     Handles commas, semicolons, slashes, pipes, and repeated whitespace.
     Does not upper-case here; normalization happens in normalize_token().
+
+    Args:
+        raw: Delimited lease-term text or collection to split into tokens.
+
+    Returns:
+        A list containing the tokenize terms.
     """
     parts = re.split(r"[,\;/|]+", raw)
     tokens: list[str] = []
@@ -159,11 +169,16 @@ def _tokenize_terms(raw: str) -> list[str]:
 
 
 def normalize_terms(raw: Optional[str]) -> list[str]:
-    """
-    Normalize a raw lease terms field into canonical codes.
+    """Normalize a raw lease terms field into canonical codes.
 
     Returns a deduped list ordered by CANONICAL_ORDER.
     Unknown / empty / NULL -> ["Unknown"].
+
+    Args:
+        raw: Lease-term text or collection to normalize and deduplicate.
+
+    Returns:
+        A list containing the normalized terms.
     """
     if raw is None:
         return ["Unknown"]
@@ -192,11 +207,16 @@ def normalize_terms(raw: Optional[str]) -> list[str]:
 
 
 def backfill_lease_terms(db_path: str) -> None:
-    """
-    Backfill lease.terms and lease.terms_norm with canonical values.
+    """Backfill lease.terms and lease.terms_norm with canonical values.
 
     - lease.terms: a comma-joined canonical string (for simple filtering / display)
     - lease.terms_norm: JSON list of canonical codes (structured)
+
+    Args:
+        db_path: Filesystem path to the SQLite database.
+
+    Returns:
+        None.
     """
     conn = sqlite3.connect(db_path)
     try:
@@ -222,8 +242,10 @@ def backfill_lease_terms(db_path: str) -> None:
 
 
 def main() -> None:
-    """
-    Normalize lease terms in the local lease database.
+    """Normalize lease terms in the local lease database.
+
+    Returns:
+        None.
     """
     db_path = LARENTALS_DB_PATH
     backfill_lease_terms(str(db_path))

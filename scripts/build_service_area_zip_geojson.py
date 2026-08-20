@@ -28,11 +28,13 @@ SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """
-    Parse command-line arguments for the service-area ZIP/ZCTA builder.
+    """Parse command-line arguments for the service-area ZIP/ZCTA builder.
 
     Returns:
         Parsed CLI arguments.
+
+    Args:
+        argv: Optional command-line argument sequence; defaults to ``sys.argv``.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -96,8 +98,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def normalize_zip_code(value: object) -> str | None:
-    """
-    Normalize a raw DB ZIP value to a five-digit ZIP string.
+    """Normalize a raw DB ZIP value to a five-digit ZIP string.
 
     Args:
         value: Raw value from SQLite, often a string like "90001.0".
@@ -120,14 +121,16 @@ def normalize_zip_code(value: object) -> str | None:
 
 
 def require_safe_identifier(value: str) -> str:
-    """
-    Validate a SQLite identifier used in generated SQL.
+    """Validate a SQLite identifier used in generated SQL.
 
     Args:
         value: Candidate table name.
 
     Returns:
         The same identifier when safe.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if SAFE_IDENTIFIER_PATTERN.fullmatch(value) is None:
         raise ValueError(f"Unsafe SQLite identifier: {value!r}")
@@ -135,12 +138,17 @@ def require_safe_identifier(value: str) -> str:
 
 
 def iter_chunks(values: Sequence[str], chunk_size: int) -> Iterable[list[str]]:
-    """
-    Yield ``values`` in fixed-size chunks.
+    """Yield ``values`` in fixed-size chunks.
 
     Args:
         values: Ordered values to chunk.
         chunk_size: Maximum chunk length.
+
+    Yields:
+        Values produced by the iterator.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if chunk_size < 1:
         raise ValueError("chunk_size must be greater than zero")
@@ -153,8 +161,7 @@ def read_listing_zip_codes(
     db_path: Path,
     table_names: Sequence[str] = DEFAULT_TABLES,
 ) -> tuple[list[str], list[str]]:
-    """
-    Read and normalize ZIP codes from listing tables.
+    """Read and normalize ZIP codes from listing tables.
 
     Args:
         db_path: SQLite database path.
@@ -181,8 +188,7 @@ def read_listing_zip_codes(
 
 
 def arcgis_where_for_zips(zip_codes: Sequence[str], field_name: str = "GEOID") -> str:
-    """
-    Build a safe ArcGIS SQL where clause for five-digit ZIP codes.
+    """Build a safe ArcGIS SQL where clause for five-digit ZIP codes.
 
     Args:
         zip_codes: Normalized ZIP codes.
@@ -190,6 +196,9 @@ def arcgis_where_for_zips(zip_codes: Sequence[str], field_name: str = "GEOID") -
 
     Returns:
         SQL where clause.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if not zip_codes:
         return "1=0"
@@ -211,8 +220,7 @@ def fetch_zcta_features(
     geometry_precision: int = 6,
     timeout: int = 120,
 ) -> tuple[list[dict[str, Any]], list[str]]:
-    """
-    Fetch California ZCTA polygons for ZIP codes from ArcGIS.
+    """Fetch California ZCTA polygons for ZIP codes from ArcGIS.
 
     Args:
         zip_codes: Normalized ZIP codes to fetch.
@@ -223,6 +231,9 @@ def fetch_zcta_features(
 
     Returns:
         Tuple of ``(features, missing_zip_codes)``.
+
+    Raises:
+        RuntimeError: If the operation cannot be completed.
     """
     features_by_zip: dict[str, dict[str, Any]] = {}
     query_url = f"{source_url.rstrip('/')}/query"
@@ -273,8 +284,7 @@ def fetch_ca_zip_area_features(
     geometry_precision: int = 6,
     timeout: int = 120,
 ) -> tuple[list[dict[str, Any]], list[str]]:
-    """
-    Fetch California ZIP area polygons for ZIPs missing from Census ZCTAs.
+    """Fetch California ZIP area polygons for ZIPs missing from Census ZCTAs.
 
     Args:
         zip_codes: Normalized ZIP codes to fetch.
@@ -285,6 +295,9 @@ def fetch_ca_zip_area_features(
 
     Returns:
         Tuple of ``(features, missing_zip_codes)``.
+
+    Raises:
+        RuntimeError: If the operation cannot be completed.
     """
     features_by_zip: dict[str, dict[str, Any]] = {}
     query_url = f"{source_url.rstrip('/')}/query"
@@ -327,8 +340,7 @@ def fetch_ca_zip_area_features(
 
 
 def build_service_area_geojson(args: argparse.Namespace) -> tuple[dict[str, Any], list[str], list[str]]:
-    """
-    Build the final service-area ZIP/ZCTA GeoJSON payload.
+    """Build the final service-area ZIP/ZCTA GeoJSON payload.
 
     Args:
         args: Parsed CLI arguments.
@@ -395,12 +407,14 @@ def build_service_area_geojson(args: argparse.Namespace) -> tuple[dict[str, Any]
 
 
 def write_geojson(payload: dict[str, Any], output_path: Path) -> None:
-    """
-    Write a compact ASCII GeoJSON payload.
+    """Write a compact ASCII GeoJSON payload.
 
     Args:
         payload: FeatureCollection payload.
         output_path: Destination path.
+
+    Returns:
+        None.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -410,8 +424,13 @@ def write_geojson(payload: dict[str, Any], output_path: Path) -> None:
 
 
 def main() -> None:
-    """
-    Build the service-area ZIP GeoJSON artifact from configured sources.
+    """Build the service-area ZIP GeoJSON artifact from configured sources.
+
+    Returns:
+        None.
+
+    Raises:
+        SystemExit: If the operation cannot be completed.
     """
     args = parse_args()
     payload, zip_codes, skipped_raw_values = build_service_area_geojson(args)

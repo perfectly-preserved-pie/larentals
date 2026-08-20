@@ -120,13 +120,18 @@ CANONICAL_ORDER: list[str] = [
 ]
 
 def normalize_token(token: str) -> str:
-    """
-    Normalize a single rental term token for dictionary lookup.
+    """Normalize a single rental term token for dictionary lookup.
 
     This is designed to collapse common punctuation variants like:
       - "1-Year" -> "1 YEAR"
       - "1+Year" -> "1 YEAR"
       - "Month-to-Month" -> "MONTH TO MONTH"
+
+    Args:
+        token: Raw token to normalize or compare.
+
+    Returns:
+        The normalized token text.
     """
     return (
         token.upper()
@@ -138,11 +143,16 @@ def normalize_token(token: str) -> str:
     )
 
 def _tokenize_terms(raw: str) -> list[str]:
-    """
-    Split raw terms string into tokens.
+    """Split raw terms string into tokens.
 
     Handles commas, semicolons, slashes, pipes, and repeated whitespace.
     Does not upper-case here; normalization happens in normalize_token().
+
+    Args:
+        raw: Delimited feature text or collection to split into tokens.
+
+    Returns:
+        A list containing the tokenize terms.
     """
     parts = re.split(r"[,\;/|]+", raw)
     tokens: list[str] = []
@@ -154,11 +164,16 @@ def _tokenize_terms(raw: str) -> list[str]:
 
 
 def normalize_terms(raw: Optional[str]) -> list[str]:
-    """
-    Normalize a raw lease terms field into canonical codes.
+    """Normalize a raw lease terms field into canonical codes.
 
     Returns a deduped list ordered by CANONICAL_ORDER.
     Unknown / empty / NULL -> ["Unknown"].
+
+    Args:
+        raw: Feature text or collection to normalize and deduplicate.
+
+    Returns:
+        A list containing the normalized terms.
     """
     if raw is None:
         return ["Unknown"]
@@ -227,12 +242,17 @@ _SUBTYPE_WS_RE = re.compile(r"\s+")
 _SUBTYPE_PARENS_SUFFIX_RE = re.compile(r"\s*\([^)]*\)\s*$")
 
 def normalize_subtype(raw: Optional[str]) -> str:
-    """
-    Normalize a raw MLS subtype into a canonical subtype.
+    """Normalize a raw MLS subtype into a canonical subtype.
 
     - Known values map via SUBTYPE_SYNONYMS.
     - Missing/empty values -> 'Unknown'.
     - Unmapped but present values become their own canonical subtype (cleaned).
+
+    Args:
+        raw: Raw MLS property subtype label.
+
+    Returns:
+        The normalized subtype text.
     """
     if raw is None:
         return "Unknown"

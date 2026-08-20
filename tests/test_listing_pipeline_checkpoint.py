@@ -29,15 +29,47 @@ from functions.listing_pipeline_checkpoint import (
 
 class RecordingS3Client:
     def __init__(self) -> None:
+        """Initialize the instance.
+
+        Returns:
+            None.
+        """
         self.objects: dict[tuple[str, str], bytes] = {}
         self.put_count = 0
 
-    def put_object(self, *, Bucket, Key, Body, **kwargs):
+    def put_object(
+        self,
+        *,
+        Bucket: str,
+        Key: str,
+        Body: BytesIO,
+        **kwargs: object,
+    ) -> dict[str, object]:
+        """Handle put object.
+
+        Args:
+            Bucket: S3 bucket receiving or containing the object.
+            Key: S3 object key identifying the uploaded or requested object.
+            Body: Binary object body uploaded to S3.
+            **kwargs: Additional keyword arguments forwarded to the dependency.
+
+        Returns:
+            A mapping containing the put object.
+        """
         self.objects[(Bucket, Key)] = Body.read()
         self.put_count += 1
         return {}
 
-    def get_object(self, *, Bucket, Key):
+    def get_object(self, *, Bucket: str, Key: str) -> dict[str, BytesIO]:
+        """Handle get object.
+
+        Args:
+            Bucket: S3 bucket receiving or containing the object.
+            Key: S3 object key identifying the uploaded or requested object.
+
+        Returns:
+            A mapping containing the requested object.
+        """
         return {"Body": BytesIO(self.objects[(Bucket, Key)])}
 
 
@@ -54,14 +86,36 @@ class FakeLocation:
 
 class FakeGeolocator:
     def __init__(self) -> None:
+        """Initialize the instance.
+
+        Returns:
+            None.
+        """
         self.calls = 0
 
-    def geocode(self, *args, **kwargs):
+    def geocode(self, *args: object, **kwargs: object) -> FakeLocation:
+        """Handle geocode.
+
+        Args:
+            *args: Additional positional arguments forwarded to the dependency.
+            **kwargs: Additional keyword arguments forwarded to the dependency.
+
+        Returns:
+            A fixed fake geocoder result for Los Angeles.
+        """
         self.calls += 1
         return FakeLocation()
 
 
 def test_checkpoint_is_committed_and_uploaded_as_valid_sqlite(tmp_path: Path) -> None:
+    """Verify that checkpoint is committed and uploaded as valid sqlite.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     s3 = RecordingS3Client()
     checkpoint_path = tmp_path / "buy.sqlite"
     store = ListingCheckpointStore(
@@ -107,6 +161,14 @@ def test_checkpoint_is_committed_and_uploaded_as_valid_sqlite(tmp_path: Path) ->
 def test_checkpoint_store_upgrades_an_existing_older_schema(
     tmp_path: Path,
 ) -> None:
+    """Verify that checkpoint store upgrades an existing older schema.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     checkpoint_path = tmp_path / "legacy.sqlite"
     with sqlite3.connect(checkpoint_path) as connection:
         connection.execute(
@@ -155,9 +217,26 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that listing scrape and image are reused from checkpoint.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     calls = {"scrape": 0, "image": 0}
 
-    def fake_scrape(**kwargs):
+    def fake_scrape(**kwargs: object) -> tuple[pd.Timestamp, str, str]:
+        """Handle fake scrape.
+
+        Args:
+            **kwargs: Additional keyword arguments forwarded to the dependency.
+
+        Returns:
+            A tuple containing the fake scrape.
+        """
         calls["scrape"] += 1
         return (
             pd.Timestamp("2026-07-20"),
@@ -165,7 +244,23 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
             "https://example.test/MLS-1",
         )
 
-    def fake_image(source_url, mls, imagekit_instance, folder=None):
+    def fake_image(
+        source_url: str,
+        mls: str,
+        imagekit_instance: object,
+        folder: str | None = None,
+    ) -> str:
+        """Handle fake image.
+
+        Args:
+            source_url: URL for the source.
+            mls: MLS identifier for the listing.
+            imagekit_instance: Configured ImageKit client used for image operations.
+            folder: ImageKit destination folder for the listing image.
+
+        Returns:
+            The fake image text.
+        """
         calls["image"] += 1
         assert folder == "/listings/buy"
         return "https://ik.example.test/listings/buy/MLS-1.jpg"
@@ -221,6 +316,14 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
 def test_listing_progress_log_identifies_type_fallback_source_and_eta(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Verify that listing progress log identifies type fallback source and eta.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     messages: list[str] = []
 
     monkeypatch.setattr(
@@ -263,10 +366,27 @@ def test_listing_progress_log_identifies_type_fallback_source_and_eta(
 def test_inactive_check_log_identifies_type_provider_result_and_eta(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Verify that inactive check log identifies type provider result and eta.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     messages: list[str] = []
     agency_checks: list[tuple[str, str]] = []
 
     def fake_agency_check(url: str, mls: str) -> bool:
+        """Handle fake agency check.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            mls: MLS identifier for the listing.
+
+        Returns:
+            Whether the fake agency reports the listing as inactive.
+        """
         agency_checks.append((url, mls))
         return False
 
@@ -306,10 +426,28 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that inactive checks resume from checkpoint until source changes.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     checks: list[tuple[str, str]] = []
     deleted_images: list[str] = []
 
     def fake_agency_check(url: str, mls: str) -> bool:
+        """Handle fake agency check.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            mls: MLS identifier for the listing.
+
+        Returns:
+            Whether the fake agency reports the listing as inactive.
+        """
         checks.append((url, mls))
         return mls == "MLS-INACTIVE"
 
@@ -374,6 +512,14 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
 def test_geocode_is_reused_for_the_same_address(
     tmp_path: Path,
 ) -> None:
+    """Verify that geocode is reused for the same address.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     store = ListingCheckpointStore(
         tmp_path / "lease.sqlite",
         listing_type="lease",
@@ -413,6 +559,14 @@ def test_geocode_is_reused_for_the_same_address(
 def test_missing_location_fields_and_coordinates_share_one_lookup(
     tmp_path: Path,
 ) -> None:
+    """Verify that missing location fields and coordinates share one lookup.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     store = ListingCheckpointStore(
         tmp_path / "lease.sqlite",
         listing_type="lease",
@@ -471,6 +625,11 @@ def test_missing_location_fields_and_coordinates_share_one_lookup(
 
 
 def test_missing_location_fields_accept_text_in_float_inferred_columns() -> None:
+    """Verify that missing location fields accept text in float inferred columns.
+
+    Returns:
+        None.
+    """
     geolocator = FakeGeolocator()
     source = pd.DataFrame(
         [
@@ -506,6 +665,11 @@ def test_missing_location_fields_accept_text_in_float_inferred_columns() -> None
 
 
 def test_re_geocode_assigns_text_metadata_into_numeric_columns() -> None:
+    """Verify that re geocode assigns text metadata into numeric columns.
+
+    Returns:
+        None.
+    """
     source = pd.DataFrame(
         [
             {
@@ -531,6 +695,11 @@ def test_re_geocode_assigns_text_metadata_into_numeric_columns() -> None:
 
 
 def test_address_reconstruction_handles_empty_arrow_string_selection() -> None:
+    """Verify that address reconstruction handles empty arrow string selection.
+
+    Returns:
+        None.
+    """
     source = pd.DataFrame(
         {
             "street_address": pd.Series(["100 Main St"], dtype="string"),
@@ -551,6 +720,11 @@ def test_address_reconstruction_handles_empty_arrow_string_selection() -> None:
 
 
 def test_address_reconstruction_assigns_text_into_numeric_columns() -> None:
+    """Verify that address reconstruction assigns text into numeric columns.
+
+    Returns:
+        None.
+    """
     source = pd.DataFrame(
         {
             "street_address": pd.Series(["100 Main St", pd.NA], dtype="string"),
@@ -576,6 +750,11 @@ def test_address_reconstruction_assigns_text_into_numeric_columns() -> None:
 
 
 def test_reported_inactive_flags_normalize_sqlite_and_string_values() -> None:
+    """Verify that reported inactive flags normalize sqlite and string values.
+
+    Returns:
+        None.
+    """
     source = pd.Series(
         [0, 1, 0.0, 1.0, "0", "0.0", "False", "1", "1.0", "true", pd.NA]
     )
@@ -599,6 +778,11 @@ def test_reported_inactive_flags_normalize_sqlite_and_string_values() -> None:
 
 
 def test_remove_trailing_zero_handles_pandas_3_string_dtype() -> None:
+    """Verify that remove trailing zero handles pandas 3 string dtype.
+
+    Returns:
+        None.
+    """
     source = pd.DataFrame(
         {
             "default_string": pd.Series(["90001.0", None], dtype="str"),
@@ -616,6 +800,11 @@ def test_remove_trailing_zero_handles_pandas_3_string_dtype() -> None:
 
 
 def test_column_merge_preserves_old_enrichment_after_failed_refresh() -> None:
+    """Verify that column merge preserves old enrichment after failed refresh.
+
+    Returns:
+        None.
+    """
     address = "100 Main St, Los Angeles 90001"
     old_photo_hash = photo_fingerprint("https://images.example.test/old.jpg")
     old = pd.DataFrame(
@@ -662,6 +851,11 @@ def test_column_merge_preserves_old_enrichment_after_failed_refresh() -> None:
 
 
 def test_merge_accepts_legacy_object_dtypes_and_pandas_3_strings() -> None:
+    """Verify that merge accepts legacy object dtypes and pandas 3 strings.
+
+    Returns:
+        None.
+    """
     old = pd.DataFrame(
         {
             "mls_number": pd.Series(["MLS-1", "MLS-OLD"], dtype="object"),
@@ -724,6 +918,11 @@ def test_merge_accepts_legacy_object_dtypes_and_pandas_3_strings() -> None:
 
 
 def test_changed_address_and_photo_invalidate_failed_enrichment() -> None:
+    """Verify that changed address and photo invalidate failed enrichment.
+
+    Returns:
+        None.
+    """
     old_address = "100 Main St, Los Angeles 90001"
     new_address = "900 New St, Los Angeles 90002"
     old = pd.DataFrame(

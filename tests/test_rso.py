@@ -1,4 +1,5 @@
 import gzip
+from pathlib import Path
 
 import orjson
 
@@ -6,6 +7,11 @@ from functions import rso
 
 
 def test_decode_powerbi_rows_expands_dictionaries_and_repeated_values() -> None:
+    """Verify that decode powerbi rows expands dictionaries and repeated values.
+
+    Returns:
+        None.
+    """
     dataset = {
         "ValueDicts": {"D0": ["123 MAIN ST"], "D1": ["LOS ANGELES"], "D2": ["90001"], "D3": ["2-4 units"]},
         "PH": [
@@ -53,7 +59,15 @@ def test_decode_powerbi_rows_expands_dictionaries_and_repeated_values() -> None:
     ]
 
 
-def test_lookup_reports_all_or_some_coverage_conservatively(tmp_path) -> None:
+def test_lookup_reports_all_or_some_coverage_conservatively(tmp_path: Path) -> None:
+    """Verify that lookup reports all or some coverage conservatively.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     artifact = tmp_path / "rso.json.gz"
     payload = {
         "records": [

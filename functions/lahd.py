@@ -15,6 +15,7 @@ from loguru import logger
 import orjson
 import requests
 from shapely.geometry import Point, shape
+from shapely.geometry.base import BaseGeometry
 from functions.data_paths import (
     LA_CITY_BOUNDARY_PATH,
     LAHD_PROPERTY_GEOCODE_CACHE_PATH,
@@ -200,15 +201,22 @@ class LahdListingLookupResult(TypedDict):
 
 
 def _generated_timestamp() -> str:
-    """
-    Return an RFC 3339-like UTC timestamp for payload metadata.
+    """Return an RFC 3339-like UTC timestamp for payload metadata.
+
+    Returns:
+        The generated timestamp text.
     """
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _is_valid_heat_geojson(payload: Any) -> bool:
-    """
-    Check whether a decoded object looks like the expected LAHD layer payload.
+    """Check whether a decoded object looks like the expected LAHD layer payload.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        Whether the payload is a valid LAHD heatmap GeoJSON artifact.
     """
     return (
         isinstance(payload, dict)
@@ -218,8 +226,10 @@ def _is_valid_heat_geojson(payload: Any) -> bool:
 
 
 def load_local_lahd_property_heat_geojson() -> GeoJsonDict | None:
-    """
-    Load the precomputed LAHD property heatmap artifact when present.
+    """Load the precomputed LAHD property heatmap artifact when present.
+
+    Returns:
+        The loaded local LAHD property heat GeoJSON.
     """
     artifact_path = LAHD_LOCAL_ARTIFACT_PATH
     if not artifact_path.exists():
@@ -252,8 +262,17 @@ def write_local_lahd_property_heat_geojson(
     payload: GeoJsonDict,
     output_path: Path | None = None,
 ) -> Path:
-    """
-    Persist a derived LAHD heatmap payload to the local datasets folder.
+    """Persist a derived LAHD heatmap payload to the local datasets folder.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+        output_path: Filesystem path where the generated artifact is written.
+
+    Returns:
+        The written local LAHD property heat GeoJSON.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if not _is_valid_heat_geojson(payload):
         raise ValueError("LAHD heatmap artifact payload must be a GeoJSON FeatureCollection.")
@@ -268,8 +287,13 @@ def write_local_lahd_property_heat_geojson(
 
 
 def _is_valid_lookup_payload(payload: Any) -> bool:
-    """
-    Check whether a decoded object looks like the expected LAHD lookup payload.
+    """Check whether a decoded object looks like the expected LAHD lookup payload.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        Whether the payload is a valid LAHD property lookup artifact.
     """
     return isinstance(payload, dict) and isinstance(payload.get("records"), list)
 
@@ -278,8 +302,17 @@ def write_local_lahd_property_lookup(
     payload: JsonDict,
     output_path: Path | None = None,
 ) -> Path:
-    """
-    Persist a derived LAHD property lookup payload to the local datasets folder.
+    """Persist a derived LAHD property lookup payload to the local datasets folder.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+        output_path: Filesystem path where the generated artifact is written.
+
+    Returns:
+        The written local LAHD property lookup.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if not _is_valid_lookup_payload(payload):
         raise ValueError("LAHD lookup artifact payload must contain a records list.")
@@ -294,8 +327,17 @@ def write_local_lahd_property_lookup(
 
 
 def _request_socrata_rows(url: str, params: dict[str, object]) -> list[JsonDict]:
-    """
-    Fetch rows from a Socrata SODA endpoint.
+    """Fetch rows from a Socrata SODA endpoint.
+
+    Args:
+        url: URL requested, validated, or downloaded by the function.
+        params: Query parameters included with the HTTP request.
+
+    Returns:
+        A list containing the request socrata rows.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     response = requests.get(
         url,
@@ -311,8 +353,13 @@ def _request_socrata_rows(url: str, params: dict[str, object]) -> list[JsonDict]
 
 
 def _request_socrata_status_code(url: str) -> int | None:
-    """
-    Return the HTTP status for a cheap Socrata availability probe.
+    """Return the HTTP status for a cheap Socrata availability probe.
+
+    Args:
+        url: URL requested, validated, or downloaded by the function.
+
+    Returns:
+        The request socrata status code value, or ``None`` when unavailable.
     """
     try:
         response = requests.get(
@@ -329,8 +376,10 @@ def _request_socrata_status_code(url: str) -> int | None:
 
 @lru_cache(maxsize=1)
 def _get_lahd_live_dataset_status() -> JsonDict:
-    """
-    Probe both live LAHD Socrata datasets once for this app process.
+    """Probe both live LAHD Socrata datasets once for this app process.
+
+    Returns:
+        The requested LAHD live dataset status.
     """
     datasets = {
         "investigation": LAHD_INVESTIGATION_DATASET_URL,
@@ -357,29 +406,37 @@ def _get_lahd_live_dataset_status() -> JsonDict:
 
 
 def get_lahd_live_dataset_status() -> JsonDict:
-    """
-    Return cached live LAHD dataset availability for popup UI gating.
+    """Return cached live LAHD dataset availability for popup UI gating.
+
+    Returns:
+        The requested LAHD live dataset status.
     """
     return _get_lahd_live_dataset_status()
 
 
 def live_lahd_datasets_available() -> bool:
-    """
-    Return whether the live LAHD Socrata datasets are currently reachable.
+    """Return whether the live LAHD Socrata datasets are currently reachable.
+
+    Returns:
+        Whether both live LAHD datasets are currently available.
     """
     return bool(get_lahd_live_dataset_status().get("available"))
 
 
 def prewarm_lahd_live_dataset_status_cache() -> None:
-    """
-    Resolve live LAHD dataset availability during startup.
+    """Resolve live LAHD dataset availability during startup.
+
+    Returns:
+        None.
     """
     get_lahd_live_dataset_status()
 
 
 def _get_socrata_app_token() -> str | None:
-    """
-    Return the configured Socrata app token from `.env` or the environment.
+    """Return the configured Socrata app token from `.env` or the environment.
+
+    Returns:
+        The requested socrata app token text, or ``None`` when unavailable.
     """
     token = os.getenv("SOCRATA_APP_TOKEN")
     if not token:
@@ -389,8 +446,10 @@ def _get_socrata_app_token() -> str | None:
 
 
 def _build_socrata_headers() -> dict[str, str]:
-    """
-    Build headers for city Socrata requests, including an optional app token.
+    """Build headers for city Socrata requests, including an optional app token.
+
+    Returns:
+        A mapping containing the constructed socrata headers.
     """
     headers = {
         "User-Agent": "WhereToLive.LA/1.0",
@@ -403,8 +462,14 @@ def _build_socrata_headers() -> dict[str, str]:
 
 
 def _fetch_investigation_rows(limit: int, *, offset: int = 0) -> list[JsonDict]:
-    """
-    Fetch top LAHD investigation/enforcement property aggregates.
+    """Fetch top LAHD investigation/enforcement property aggregates.
+
+    Args:
+        limit: Maximum number of records to return.
+        offset: Number of source records to skip before reading the next page.
+
+    Returns:
+        A list containing the fetched investigation rows.
     """
     return _request_socrata_rows(
         LAHD_INVESTIGATION_DATASET_URL,
@@ -425,8 +490,14 @@ def _fetch_investigation_rows(limit: int, *, offset: int = 0) -> list[JsonDict]:
 
 
 def _fetch_violation_rows(limit: int, *, offset: int = 0) -> list[JsonDict]:
-    """
-    Fetch top LAHD code-violation property aggregates.
+    """Fetch top LAHD code-violation property aggregates.
+
+    Args:
+        limit: Maximum number of records to return.
+        offset: Number of source records to skip before reading the next page.
+
+    Returns:
+        A list containing the fetched violation rows.
     """
     return _request_socrata_rows(
         LAHD_VIOLATION_DATASET_URL,
@@ -446,8 +517,14 @@ def _fetch_violation_rows(limit: int, *, offset: int = 0) -> list[JsonDict]:
 
 
 def _fetch_property_investigation_records(apn: str, limit: int) -> list[JsonDict]:
-    """
-    Fetch raw LAHD investigation/enforcement rows for one property APN.
+    """Fetch raw LAHD investigation/enforcement rows for one property APN.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        limit: Maximum number of records to return.
+
+    Returns:
+        A list containing the fetched property investigation records.
     """
     return _request_socrata_rows(
         LAHD_INVESTIGATION_DATASET_URL,
@@ -461,8 +538,14 @@ def _fetch_property_investigation_records(apn: str, limit: int) -> list[JsonDict
 
 
 def _fetch_property_violation_records(apn: str, limit: int) -> list[JsonDict]:
-    """
-    Fetch raw LAHD code-violation rows for one property APN.
+    """Fetch raw LAHD code-violation rows for one property APN.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        limit: Maximum number of records to return.
+
+    Returns:
+        A list containing the fetched property violation records.
     """
     return _request_socrata_rows(
         LAHD_VIOLATION_DATASET_URL,
@@ -476,15 +559,25 @@ def _fetch_property_violation_records(apn: str, limit: int) -> list[JsonDict]:
 
 
 def _normalize_lahd_record_text(value: object) -> str:
-    """
-    Convert nullable Socrata values to compact display text.
+    """Convert nullable Socrata values to compact display text.
+
+    Args:
+        value: Raw text field from a LAHD dataset row.
+
+    Returns:
+        The normalized LAHD record text text.
     """
     return str(value or "").strip()
 
 
 def _normalize_investigation_record(row: JsonDict) -> JsonDict:
-    """
-    Convert a raw investigation/enforcement row into drawer-ready data.
+    """Convert a raw investigation/enforcement row into drawer-ready data.
+
+    Args:
+        row: Raw LAHD investigation or enforcement record.
+
+    Returns:
+        The normalized investigation record.
     """
     filed_date = _coerce_date_string(row.get("case_filed_date")) or ""
     closed_date = _coerce_date_string(row.get("closed_date")) or ""
@@ -499,8 +592,13 @@ def _normalize_investigation_record(row: JsonDict) -> JsonDict:
 
 
 def _normalize_violation_record(row: JsonDict) -> JsonDict:
-    """
-    Convert a raw code-violation row into drawer-ready data.
+    """Convert a raw code-violation row into drawer-ready data.
+
+    Args:
+        row: Raw LAHD property-violation record.
+
+    Returns:
+        The normalized violation record.
     """
     cited = _parse_int(row.get("violations_cited"))
     cleared = min(cited, _parse_int(row.get("violations_cleared")))
@@ -515,8 +613,14 @@ def _normalize_violation_record(row: JsonDict) -> JsonDict:
 
 
 def _summarize_lahd_property_records(cases: list[JsonDict], violations: list[JsonDict]) -> JsonDict:
-    """
-    Build compact counts and address/date context for one APN's record drawer.
+    """Build compact counts and address/date context for one APN's record drawer.
+
+    Args:
+        cases: Normalized LAHD investigation and enforcement cases to summarize.
+        violations: Normalized LAHD violation records to summarize.
+
+    Returns:
+        Aggregate issue and case counts derived from the live LAHD records.
     """
     case_dates = [str(row.get("filed_date") or "") for row in cases if row.get("filed_date")]
     addresses = sorted(
@@ -547,8 +651,13 @@ def _summarize_lahd_property_records(cases: list[JsonDict], violations: list[Jso
 
 
 def _summarize_lahd_lookup_record(record: JsonDict) -> JsonDict:
-    """
-    Build drawer summary counts from the local aggregate LAHD lookup snapshot.
+    """Build drawer summary counts from the local aggregate LAHD lookup snapshot.
+
+    Args:
+        record: Property record loaded from the local LAHD lookup artifact.
+
+    Returns:
+        Aggregate issue and case counts derived from a lookup artifact record.
     """
     address = str(record.get("address") or "").strip()
     return {
@@ -567,8 +676,13 @@ def _summarize_lahd_lookup_record(record: JsonDict) -> JsonDict:
 
 
 def _lahd_detail_unavailable_message(exc: Exception) -> str:
-    """
-    Return a user-facing explanation for live LAHD detail fetch failures.
+    """Return a user-facing explanation for live LAHD detail fetch failures.
+
+    Args:
+        exc: Exception raised while loading the records.
+
+    Returns:
+        The LAHD detail unavailable message text.
     """
     if isinstance(exc, requests.HTTPError) and exc.response is not None and exc.response.status_code == 403:
         return (
@@ -582,8 +696,14 @@ def _lahd_detail_unavailable_message(exc: Exception) -> str:
 
 
 def _build_lahd_detail_fallback_from_lookup(apn: str, exc: Exception) -> JsonDict | None:
-    """
-    Return aggregate-only LAHD details from the local lookup snapshot when live rows fail.
+    """Return aggregate-only LAHD details from the local lookup snapshot when live rows fail.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        exc: Exception raised while loading the records.
+
+    Returns:
+        The constructed LAHD detail fallback from lookup.
     """
     record = lookup_lahd_property_record_by_apn(apn)
     if record is None:
@@ -622,11 +742,20 @@ def fetch_lahd_property_record_details(
     apn: str,
     row_limit: int = LAHD_RECORD_DETAIL_LIMIT,
 ) -> JsonDict:
-    """
-    Return detailed LAHD case and violation rows for a property APN.
+    """Return detailed LAHD case and violation rows for a property APN.
 
     The popup summary uses a local lookup artifact; this detail fetch is live
     and only runs when a user asks to inspect the underlying records.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        row_limit: Maximum live case and violation records retained per collection.
+
+    Returns:
+        The fetched LAHD property record details.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     normalized_apn = _normalize_apn(apn)
     if not normalized_apn:
@@ -677,8 +806,13 @@ def fetch_lahd_property_record_details(
 
 
 def _parse_int(value: object) -> int:
-    """
-    Coerce Socrata numeric strings into non-negative integers.
+    """Coerce Socrata numeric strings into non-negative integers.
+
+    Args:
+        value: Numeric-like LAHD field to parse, defaulting invalid input to zero.
+
+    Returns:
+        The parsed integer, defaulting to zero for invalid input.
     """
     try:
         parsed = int(float(str(value)))
@@ -688,23 +822,39 @@ def _parse_int(value: object) -> int:
 
 
 def _normalize_apn(value: object) -> str:
-    """
-    Normalize APNs into the digit-only form used by the LAHub parcel layer.
+    """Normalize APNs into the digit-only form used by the LAHub parcel layer.
+
+    Args:
+        value: Raw assessor parcel number, with or without separators.
+
+    Returns:
+        The normalized APN text.
     """
     digits = re.sub(r"\D+", "", str(value or ""))
     return digits
 
 
 def _normalize_address(value: object) -> str:
-    """
-    Normalize address text for fallback de-duplication.
+    """Normalize address text for fallback de-duplication.
+
+    Args:
+        value: Raw property address used as a lookup key.
+
+    Returns:
+        The normalized address text.
     """
     return re.sub(r"[^A-Z0-9]+", " ", str(value or "").upper()).strip()
 
 
 def _aggregate_key(apn: str, address: str) -> str | None:
-    """
-    Build the stable property key used to merge LAHD sources.
+    """Build the stable property key used to merge LAHD sources.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        address: Street address used to identify or geocode the property.
+
+    Returns:
+        The aggregate key text, or ``None`` when unavailable.
     """
     if apn:
         return f"apn:{apn}"
@@ -715,8 +865,13 @@ def _aggregate_key(apn: str, address: str) -> str | None:
 
 
 def _blank_aggregate(apn: str = "") -> LahdPropertyAggregate:
-    """
-    Create an empty LAHD property aggregate.
+    """Create an empty LAHD property aggregate.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+
+    Returns:
+        A zero-initialized LAHD property aggregate.
     """
     return {
         "apn": apn,
@@ -739,8 +894,13 @@ def _blank_aggregate(apn: str = "") -> LahdPropertyAggregate:
 
 
 def _coerce_date_string(value: object) -> str | None:
-    """
-    Convert a Socrata calendar-date value into a `YYYY-MM-DD` string.
+    """Convert a Socrata calendar-date value into a `YYYY-MM-DD` string.
+
+    Args:
+        value: Raw LAHD date field to convert to an ISO date.
+
+    Returns:
+        The converted date string text, or ``None`` when unavailable.
     """
     if value is None:
         return None
@@ -751,8 +911,14 @@ def _coerce_date_string(value: object) -> str | None:
 
 
 def _pick_earlier_date(existing: str | None, candidate: object) -> str | None:
-    """
-    Return the earlier non-empty ISO date string.
+    """Return the earlier non-empty ISO date string.
+
+    Args:
+        existing: Date currently retained by the aggregate.
+        candidate: New date considered as an earlier replacement.
+
+    Returns:
+        The pick earlier date text, or ``None`` when unavailable.
     """
     candidate_date = _coerce_date_string(candidate)
     if not candidate_date:
@@ -763,8 +929,14 @@ def _pick_earlier_date(existing: str | None, candidate: object) -> str | None:
 
 
 def _pick_later_date(existing: str | None, candidate: object) -> str | None:
-    """
-    Return the later non-empty ISO date string.
+    """Return the later non-empty ISO date string.
+
+    Args:
+        existing: Date currently retained by the aggregate.
+        candidate: New date considered as a later replacement.
+
+    Returns:
+        The pick later date text, or ``None`` when unavailable.
     """
     candidate_date = _coerce_date_string(candidate)
     if not candidate_date:
@@ -778,13 +950,28 @@ def _merge_lahd_rows(
     investigation_rows: list[JsonDict],
     violation_rows: list[JsonDict],
 ) -> list[LahdPropertyAggregate]:
-    """
-    Merge investigation and violation aggregates into one property list.
+    """Merge investigation and violation aggregates into one property list.
+
+    Args:
+        investigation_rows: Grouped LAHD investigation rows to merge by property.
+        violation_rows: Grouped LAHD violation rows to merge by property.
+
+    Returns:
+        A list containing the merged LAHD rows.
     """
     aggregates: dict[str, LahdPropertyAggregate] = {}
     address_scores: dict[str, dict[str, int]] = {}
 
     def ensure_record(apn: str, address: str) -> tuple[str, LahdPropertyAggregate] | None:
+        """Handle ensure record.
+
+        Args:
+            apn: Assessor Parcel Number identifying the property.
+            address: Street address used to identify or geocode the property.
+
+        Returns:
+            The aggregate key and record, or ``None`` when the row has no key.
+        """
         key = _aggregate_key(apn, address)
         if not key:
             return None
@@ -863,8 +1050,14 @@ def _merge_lahd_rows(
 
 
 def _coordinates_in_bounds(lat: float, lon: float) -> bool:
-    """
-    Check whether a coordinate falls within the coarse LA City map bounds.
+    """Check whether a coordinate falls within the coarse LA City map bounds.
+
+    Args:
+        lat: Latitude in decimal degrees.
+        lon: Longitude in decimal degrees.
+
+    Returns:
+        Whether the coordinates fall within the LAHD coverage bounds.
     """
     return (
         LAHD_COORDINATE_BOUNDS["min_lat"] <= lat <= LAHD_COORDINATE_BOUNDS["max_lat"]
@@ -873,8 +1066,13 @@ def _coordinates_in_bounds(lat: float, lon: float) -> bool:
 
 
 def _coerce_float(value: object) -> float | None:
-    """
-    Convert a numeric-like value to a finite float.
+    """Convert a numeric-like value to a finite float.
+
+    Args:
+        value: Numeric-like coordinate or measurement to convert.
+
+    Returns:
+        The converted float value, or ``None`` when unavailable.
     """
     try:
         result = float(value)
@@ -884,16 +1082,30 @@ def _coerce_float(value: object) -> float | None:
 
 
 def _normalize_city_label(value: object) -> str:
-    """
-    Normalize an MLS city/community label for jurisdiction fallback checks.
+    """Normalize an MLS city/community label for jurisdiction fallback checks.
+
+    Args:
+        value: Raw MLS city or community label.
+
+    Returns:
+        The normalized city label text.
     """
     return re.sub(r"\s+", " ", str(value or "").strip().upper())
 
 
 @lru_cache(maxsize=2)
-def _load_la_city_boundary(boundary_path: str, boundary_mtime_ns: int):
-    """
-    Load the official City of Los Angeles boundary geometry.
+def _load_la_city_boundary(
+    boundary_path: str,
+    boundary_mtime_ns: int,
+) -> BaseGeometry | None:
+    """Load the official City of Los Angeles boundary geometry.
+
+    Args:
+        boundary_path: Filesystem path to the jurisdiction boundary GeoJSON.
+        boundary_mtime_ns: File modification time included in the cache key.
+
+    Returns:
+        The loaded la city boundary.
     """
     del boundary_mtime_ns
 
@@ -934,13 +1146,22 @@ def is_listing_in_los_angeles_city(
     longitude: object,
     boundary_path: Path = LA_CITY_BOUNDARY_PATH,
 ) -> bool | None:
-    """
-    Return whether a listing appears to be within City of Los Angeles limits.
+    """Return whether a listing appears to be within City of Los Angeles limits.
 
     `False` is returned only when coordinates place the listing outside the
     official city boundary and the MLS city label is not a known Los Angeles
     community label. `None` means jurisdiction could not be confidently
     determined, so callers should avoid hiding data based on scope alone.
+
+    Args:
+        city: MLS city or community label used for jurisdiction detection.
+        latitude: Property latitude in decimal degrees.
+        longitude: Property longitude in decimal degrees.
+        boundary_path: Filesystem path to the jurisdiction boundary GeoJSON.
+
+    Returns:
+        Whether the listing is within the City of Los Angeles, or ``None``
+        when its jurisdiction cannot be determined.
     """
     normalized_city = _normalize_city_label(city)
     lat = _coerce_float(latitude)
@@ -969,8 +1190,13 @@ def is_listing_in_los_angeles_city(
 
 
 def _load_geocode_cache(cache_path: Path) -> dict[str, JsonDict]:
-    """
-    Load cached LAHD property coordinate results.
+    """Load cached LAHD property coordinate results.
+
+    Args:
+        cache_path: Filesystem path to the persistent cache.
+
+    Returns:
+        A mapping containing the loaded geocode cache.
     """
     if not cache_path.exists():
         return {}
@@ -983,16 +1209,27 @@ def _load_geocode_cache(cache_path: Path) -> dict[str, JsonDict]:
 
 
 def _write_geocode_cache(cache_path: Path, cache: dict[str, JsonDict]) -> None:
-    """
-    Persist cached LAHD property coordinate results.
+    """Persist cached LAHD property coordinate results.
+
+    Args:
+        cache_path: Filesystem path to the persistent cache.
+        cache: Mutable geocoding cache keyed by normalized property identity.
+
+    Returns:
+        None.
     """
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_bytes(orjson.dumps(cache, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS))
 
 
 def _cache_key_for_record(record: LahdPropertyAggregate) -> str:
-    """
-    Return the coordinate-cache key for an aggregate record.
+    """Return the coordinate-cache key for an aggregate record.
+
+    Args:
+        record: LAHD property record whose identity should be cached.
+
+    Returns:
+        The cache key for record text.
     """
     if record["apn"]:
         return f"apn:{record['apn']}"
@@ -1000,8 +1237,13 @@ def _cache_key_for_record(record: LahdPropertyAggregate) -> str:
 
 
 def _centroid_from_feature(feature: JsonDict) -> tuple[float, float] | None:
-    """
-    Extract a representative lon/lat point from a GeoJSON polygon feature.
+    """Extract a representative lon/lat point from a GeoJSON polygon feature.
+
+    Args:
+        feature: GeoJSON feature being inspected or rendered.
+
+    Returns:
+        A tuple containing the centroid from feature.
     """
     geometry = feature.get("geometry")
     if not isinstance(geometry, dict):
@@ -1024,8 +1266,13 @@ def _centroid_from_feature(feature: JsonDict) -> tuple[float, float] | None:
 
 
 def _quote_sql_string(value: str) -> str:
-    """
-    Quote a string for the simple ArcGIS SQL `IN (...)` clauses used here.
+    """Quote a string for the simple ArcGIS SQL `IN (...)` clauses used here.
+
+    Args:
+        value: Literal text to escape and quote for SQL.
+
+    Returns:
+        The quote SQL string text.
     """
     return "'" + value.replace("'", "''") + "'"
 
@@ -1034,8 +1281,14 @@ def _query_parcel_centroid_chunk(
     session: requests.Session,
     apns: list[str],
 ) -> dict[str, tuple[float, float]]:
-    """
-    Query LAHub parcel polygons for one APN chunk and return representative points.
+    """Query LAHub parcel polygons for one APN chunk and return representative points.
+
+    Args:
+        session: HTTP session used to query parcel centroids from ArcGIS.
+        apns: Assessor Parcel Numbers included in the parcel query.
+
+    Returns:
+        A mapping containing the query parcel centroid chunk.
     """
     if not apns:
         return {}
@@ -1086,8 +1339,13 @@ def _query_parcel_centroid_chunk(
 
 
 def _fetch_parcel_centroids(apns: list[str]) -> dict[str, tuple[float, float]]:
-    """
-    Fetch APN representative points from the LAHub parcel layer.
+    """Fetch APN representative points from the LAHub parcel layer.
+
+    Args:
+        apns: Assessor Parcel Numbers included in the parcel query.
+
+    Returns:
+        A mapping containing the fetched parcel centroids.
     """
     unique_apns = sorted({apn for apn in apns if apn})
     if not unique_apns:
@@ -1111,8 +1369,15 @@ def _attach_coordinates(
     candidate_limit: int,
     cache_path: Path,
 ) -> list[LahdPropertyAggregate]:
-    """
-    Attach coordinates to top LAHD property records using cached and LAHub parcel points.
+    """Attach coordinates to top LAHD property records using cached and LAHub parcel points.
+
+    Args:
+        records: Property or source records to transform into the requested artifact.
+        candidate_limit: Maximum parcel candidates queried in each geocoding batch.
+        cache_path: Filesystem path to the persistent cache.
+
+    Returns:
+        A list containing the attach coordinates.
     """
     candidates = records[:candidate_limit]
     cache = _load_geocode_cache(cache_path)
@@ -1173,8 +1438,16 @@ def _attach_coordinates(
 
 
 def _distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Estimate the distance between two nearby coordinates in meters.
+    """Estimate the distance between two nearby coordinates in meters.
+
+    Args:
+        lat1: Latitude of the first point, in decimal degrees.
+        lon1: Longitude of the first point, in decimal degrees.
+        lat2: Latitude of the second point, in decimal degrees.
+        lon2: Longitude of the second point, in decimal degrees.
+
+    Returns:
+        The approximate distance between the coordinates, in meters.
     """
     lat1_rad = math.radians(lat1)
     lat2_rad = math.radians(lat2)
@@ -1185,12 +1458,17 @@ def _distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> floa
 
 
 def _normalize_property_address_for_lookup(value: object) -> str:
-    """
-    Normalize a listing or LAHD address to a parcel-level street-address key.
+    """Normalize a listing or LAHD address to a parcel-level street-address key.
 
     MLS rental addresses often include unit fragments (`#4`, `APT 2`, etc.) while
     LAHD records are property-level. This strips unit text and normalizes common
     street suffixes before comparison.
+
+    Args:
+        value: Property address to canonicalize for artifact matching.
+
+    Returns:
+        The normalized property address for lookup text.
     """
     raw_value = str(value or "").strip().upper()
     if not raw_value:
@@ -1206,8 +1484,13 @@ def _normalize_property_address_for_lookup(value: object) -> str:
 
 
 def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
-    """
-    Convert a compact marker tuple into a popup lookup record.
+    """Convert a compact marker tuple into a popup lookup record.
+
+    Args:
+        point: Spatial point and associated property record to normalize.
+
+    Returns:
+        A normalized marker lookup record, or ``None`` if coordinates are invalid.
     """
     if not isinstance(point, list) or len(point) < 16:
         return None
@@ -1242,8 +1525,14 @@ def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
 
 
 def _lahd_spatial_bucket(lat: float, lon: float) -> tuple[int, int]:
-    """
-    Return the lookup-grid bucket for a latitude/longitude pair.
+    """Return the lookup-grid bucket for a latitude/longitude pair.
+
+    Args:
+        lat: Latitude in decimal degrees.
+        lon: Longitude in decimal degrees.
+
+    Returns:
+        A tuple containing the LAHD spatial bucket.
     """
     return (
         math.floor(lat / LAHD_LOOKUP_SPATIAL_CELL_DEGREES),
@@ -1252,8 +1541,10 @@ def _lahd_spatial_bucket(lat: float, lon: float) -> tuple[int, int]:
 
 
 def _lahd_spatial_neighbor_span() -> int:
-    """
-    Return the number of adjacent coordinate buckets to inspect for nearby matches.
+    """Return the number of adjacent coordinate buckets to inspect for nearby matches.
+
+    Returns:
+        The number of adjacent spatial buckets required for the search radius.
     """
     conservative_degrees = LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS / 60_000
     return max(1, math.ceil(conservative_degrees / LAHD_LOOKUP_SPATIAL_CELL_DEGREES))
@@ -1265,8 +1556,15 @@ def _candidate_lahd_records_near(
     latitude: float,
     longitude: float,
 ) -> list[JsonDict]:
-    """
-    Return lookup records in nearby coordinate buckets for distance matching.
+    """Return lookup records in nearby coordinate buckets for distance matching.
+
+    Args:
+        spatial_index: LAHD records grouped into coordinate buckets for nearby lookup.
+        latitude: Property latitude in decimal degrees.
+        longitude: Property longitude in decimal degrees.
+
+    Returns:
+        A list containing the candidate LAHD records near.
     """
     bucket_lat, bucket_lon = _lahd_spatial_bucket(latitude, longitude)
     span = _lahd_spatial_neighbor_span()
@@ -1282,8 +1580,14 @@ def _empty_lahd_listing_lookup_result(
     data_available: bool,
     jurisdiction_in_scope: bool | None = True,
 ) -> LahdListingLookupResult:
-    """
-    Return the default no-match payload used by listing popups.
+    """Return the default no-match payload used by listing popups.
+
+    Args:
+        data_available: Whether the backing dataset was available for the lookup.
+        jurisdiction_in_scope: Whether jurisdiction in scope behavior is enabled.
+
+    Returns:
+        An empty LAHD lookup result for an unmatched listing.
     """
     return {
         "matched": False,
@@ -1305,15 +1609,19 @@ def _empty_lahd_listing_lookup_result(
 
 
 def out_of_scope_lahd_listing_lookup_result() -> LahdListingLookupResult:
-    """
-    Return a hidden-by-client payload for listings outside LAHD jurisdiction.
+    """Return a hidden-by-client payload for listings outside LAHD jurisdiction.
+
+    Returns:
+        A lookup result indicating that the listing is outside LAHD coverage.
     """
     return _empty_lahd_listing_lookup_result(data_available=True, jurisdiction_in_scope=False)
 
 
 def unavailable_lahd_listing_lookup_result() -> LahdListingLookupResult:
-    """
-    Return a hidden-by-client payload when live LAHD datasets are unavailable.
+    """Return a hidden-by-client payload when live LAHD datasets are unavailable.
+
+    Returns:
+        A lookup result indicating that LAHD data is unavailable.
     """
     return _empty_lahd_listing_lookup_result(data_available=False)
 
@@ -1324,8 +1632,15 @@ def _matched_lahd_listing_lookup_result(
     match_type: str,
     match_distance_meters: float | None = None,
 ) -> LahdListingLookupResult:
-    """
-    Convert a lookup record into the serializable popup payload.
+    """Convert a lookup record into the serializable popup payload.
+
+    Args:
+        record: LAHD property record matched to the listing.
+        match_type: Strategy that produced the LAHD property match.
+        match_distance_meters: Distance between the listing and matched LAHD property, in meters.
+
+    Returns:
+        A populated LAHD lookup result for the matched property.
     """
     return {
         "matched": True,
@@ -1355,8 +1670,14 @@ def _load_lahd_listing_lookup(
     artifact_path: str,
     artifact_mtime_ns: int,
 ) -> dict[str, Any]:
-    """
-    Load the LAHD property lookup records for listing popups.
+    """Load the LAHD property lookup records for listing popups.
+
+    Args:
+        artifact_path: Filesystem path to the local data artifact.
+        artifact_mtime_ns: Artifact modification time used to invalidate the cache.
+
+    Returns:
+        A mapping containing the loaded LAHD listing lookup.
     """
     del artifact_mtime_ns
 
@@ -1419,8 +1740,13 @@ def _load_lahd_listing_lookup(
 
 
 def _load_lahd_lookup_artifact(artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH) -> dict[str, Any]:
-    """
-    Load the cached LAHD lookup artifact with indexes.
+    """Load the cached LAHD lookup artifact with indexes.
+
+    Args:
+        artifact_path: Filesystem path to the local data artifact.
+
+    Returns:
+        A mapping containing the loaded LAHD lookup artifact.
     """
     try:
         artifact_mtime_ns = artifact_path.stat().st_mtime_ns
@@ -1434,8 +1760,14 @@ def lookup_lahd_property_record_by_apn(
     apn: object,
     artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH,
 ) -> JsonDict | None:
-    """
-    Return a local aggregate LAHD lookup record by APN.
+    """Return a local aggregate LAHD lookup record by APN.
+
+    Args:
+        apn: Assessor Parcel Number identifying the property.
+        artifact_path: Filesystem path to the local data artifact.
+
+    Returns:
+        The matching LAHD property record by APN.
     """
     normalized_apn = _normalize_apn(apn)
     if not normalized_apn:
@@ -1449,8 +1781,13 @@ def lookup_lahd_property_record_by_apn(
 def get_lahd_property_lookup_metadata(
     artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH,
 ) -> JsonDict:
-    """
-    Return metadata for the local LAHD aggregate lookup snapshot.
+    """Return metadata for the local LAHD aggregate lookup snapshot.
+
+    Args:
+        artifact_path: Filesystem path to the local data artifact.
+
+    Returns:
+        The requested LAHD property lookup metadata.
     """
     lookup = _load_lahd_lookup_artifact(artifact_path)
     metadata = lookup.get("metadata")
@@ -1458,8 +1795,10 @@ def get_lahd_property_lookup_metadata(
 
 
 def prewarm_lahd_listing_lookup_cache() -> None:
-    """
-    Load local LAHD lookup data during app startup instead of the first popup.
+    """Load local LAHD lookup data during app startup instead of the first popup.
+
+    Returns:
+        None.
     """
     started_at = time.time()
     try:
@@ -1487,11 +1826,19 @@ def lookup_lahd_property_for_listing(
     longitude: object,
     artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH,
 ) -> LahdListingLookupResult:
-    """
-    Return an LAHD issue summary for a listing popup.
+    """Return an LAHD issue summary for a listing popup.
 
     Matching uses a normalized property-level address first, then falls back to a
     conservative nearest-parcel search against the LAHD lookup artifact.
+
+    Args:
+        address: Street address used to identify or geocode the property.
+        latitude: Property latitude in decimal degrees.
+        longitude: Property longitude in decimal degrees.
+        artifact_path: Filesystem path to the local data artifact.
+
+    Returns:
+        The matching LAHD property for listing.
     """
     try:
         artifact_mtime_ns = artifact_path.stat().st_mtime_ns
@@ -1544,8 +1891,14 @@ def lookup_lahd_property_for_listing(
 
 
 def _pick_quantile_threshold(values: list[int], fraction: float) -> int:
-    """
-    Return a stable integer quantile threshold from a sorted integer distribution.
+    """Return a stable integer quantile threshold from a sorted integer distribution.
+
+    Args:
+        values: Integer scores from which the quantile is selected.
+        fraction: Quantile fraction between zero and one.
+
+    Returns:
+        The integer score at the requested quantile, bounded by the minimum.
     """
     if not values:
         return 0
@@ -1554,8 +1907,13 @@ def _pick_quantile_threshold(values: list[int], fraction: float) -> int:
 
 
 def _marker_score_thresholds(marker_records: list[LahdPropertyAggregate]) -> tuple[int, int, int, int]:
-    """
-    Derive discrete score thresholds for zoomed-in marker styling.
+    """Derive discrete score thresholds for zoomed-in marker styling.
+
+    Args:
+        marker_records: Property records eligible to become map markers.
+
+    Returns:
+        A tuple containing the marker score thresholds.
     """
     scores = sorted(
         int(record["problem_score"])
@@ -1573,8 +1931,13 @@ def _marker_score_thresholds(marker_records: list[LahdPropertyAggregate]) -> tup
 
 
 def _build_heat_points(records: list[LahdPropertyAggregate]) -> list[HeatPointTuple]:
-    """
-    Convert geocoded records into Leaflet.heat weighted point tuples.
+    """Convert geocoded records into Leaflet.heat weighted point tuples.
+
+    Args:
+        records: Property or source records to transform into the requested artifact.
+
+    Returns:
+        A list containing the constructed heat points.
     """
     if not records:
         return []
@@ -1595,8 +1958,13 @@ def _build_heat_points(records: list[LahdPropertyAggregate]) -> list[HeatPointTu
 
 
 def _build_marker_points(records: list[LahdPropertyAggregate]) -> list[MarkerPointTuple]:
-    """
-    Convert geocoded records into compact popup-ready marker tuples.
+    """Convert geocoded records into compact popup-ready marker tuples.
+
+    Args:
+        records: Property or source records to transform into the requested artifact.
+
+    Returns:
+        A list containing the constructed marker points.
     """
     return [
         [
@@ -1625,8 +1993,14 @@ def _build_heat_anchor_feature(
     heat_records: list[LahdPropertyAggregate],
     marker_records: list[LahdPropertyAggregate],
 ) -> GeoJsonDict:
-    """
-    Build the single invisible GeoJSON anchor used to mount the LAHD heat layer.
+    """Build the single invisible GeoJSON anchor used to mount the LAHD heat layer.
+
+    Args:
+        heat_records: Geocoded LAHD records used to anchor the heatmap extent.
+        marker_records: Property records eligible to become map markers.
+
+    Returns:
+        The constructed heat anchor feature.
     """
     if not heat_records:
         anchor_lat = (LAHD_COORDINATE_BOUNDS["min_lat"] + LAHD_COORDINATE_BOUNDS["max_lat"]) / 2
@@ -1665,8 +2039,14 @@ def _build_lahd_property_lookup_payload(
     *,
     aggregate_limit: int,
 ) -> JsonDict:
-    """
-    Build the compact property lookup artifact used by listing popups.
+    """Build the compact property lookup artifact used by listing popups.
+
+    Args:
+        lookup_records: Normalized property records written to the lookup artifact.
+        aggregate_limit: Maximum number of aggregate records to retrieve.
+
+    Returns:
+        The constructed LAHD property lookup payload.
     """
     max_problem_score = max((int(record["problem_score"]) for record in lookup_records), default=0)
     metadata: LahdLookupMetadata = {
@@ -1692,8 +2072,14 @@ def _build_live_lahd_property_lookup(
     aggregate_limit: int = LAHD_DEFAULT_LOOKUP_LIMIT,
     geocode_cache_path: Path = LAHD_GEOCODE_CACHE_PATH,
 ) -> JsonDict:
-    """
-    Build the full listing-popup LAHD property lookup payload.
+    """Build the full listing-popup LAHD property lookup payload.
+
+    Args:
+        aggregate_limit: Maximum number of aggregate records to retrieve.
+        geocode_cache_path: Filesystem path to the persistent geocoding cache.
+
+    Returns:
+        The constructed live LAHD property lookup.
     """
     started_at = time.time()
     investigation_rows = _fetch_investigation_rows(aggregate_limit)
@@ -1719,8 +2105,16 @@ def _build_live_lahd_property_heat_geojson(
     max_marker_points: int = LAHD_MAX_MARKER_POINTS,
     geocode_cache_path: Path = LAHD_GEOCODE_CACHE_PATH,
 ) -> GeoJsonDict:
-    """
-    Build the LAHD property heatmap payload from Socrata and LAHub parcels.
+    """Build the LAHD property heatmap payload from Socrata and LAHub parcels.
+
+    Args:
+        aggregate_limit: Maximum number of aggregate records to retrieve.
+        max_heat_points: Maximum number of heatmap points to emit.
+        max_marker_points: Maximum number of property markers to emit.
+        geocode_cache_path: Filesystem path to the persistent geocoding cache.
+
+    Returns:
+        The constructed live LAHD property heat GeoJSON.
     """
     started_at = time.time()
     investigation_rows = _fetch_investigation_rows(aggregate_limit)
@@ -1761,8 +2155,10 @@ def _build_live_lahd_property_heat_geojson(
 
 
 def build_lahd_property_heat_geojson() -> GeoJsonDict:
-    """
-    Return the preferred LAHD property heatmap payload.
+    """Return the preferred LAHD property heatmap payload.
+
+    Returns:
+        The constructed LAHD property heat GeoJSON.
     """
     local_payload = load_local_lahd_property_heat_geojson()
     if local_payload is not None:
@@ -1783,8 +2179,20 @@ def refresh_local_lahd_property_heat_geojson(
     max_marker_points: int = LAHD_MAX_MARKER_POINTS,
     geocode_cache_path: Path = LAHD_GEOCODE_CACHE_PATH,
 ) -> Path:
-    """
-    Rebuild the LAHD heatmap payload and write it to disk.
+    """Rebuild the LAHD heatmap payload and write it to disk.
+
+    Args:
+        output_path: Filesystem path where the generated artifact is written.
+        aggregate_limit: Maximum number of aggregate records to retrieve.
+        max_heat_points: Maximum number of heatmap points to emit.
+        max_marker_points: Maximum number of property markers to emit.
+        geocode_cache_path: Filesystem path to the persistent geocoding cache.
+
+    Returns:
+        The refreshed local LAHD property heat GeoJSON.
+
+    Raises:
+        RuntimeError: If the operation cannot be completed.
     """
     payload = _build_live_lahd_property_heat_geojson(
         aggregate_limit=aggregate_limit,
@@ -1803,8 +2211,18 @@ def refresh_local_lahd_property_lookup(
     aggregate_limit: int = LAHD_DEFAULT_LOOKUP_LIMIT,
     geocode_cache_path: Path = LAHD_GEOCODE_CACHE_PATH,
 ) -> Path:
-    """
-    Rebuild the listing-popup LAHD lookup payload and write it to disk.
+    """Rebuild the listing-popup LAHD lookup payload and write it to disk.
+
+    Args:
+        output_path: Filesystem path where the generated artifact is written.
+        aggregate_limit: Maximum number of aggregate records to retrieve.
+        geocode_cache_path: Filesystem path to the persistent geocoding cache.
+
+    Returns:
+        The refreshed local LAHD property lookup.
+
+    Raises:
+        RuntimeError: If the operation cannot be completed.
     """
     payload = _build_live_lahd_property_lookup(
         aggregate_limit=aggregate_limit,

@@ -12,6 +12,11 @@ from functions.seo import (
 
 class SeoTest(unittest.TestCase):
   def test_get_public_page_paths_uses_dash_registry_paths(self) -> None:
+    """Verify that get public page paths uses dash registry paths.
+
+    Returns:
+        None.
+    """
     page_registry = {
       "pages.lease_page": {"path": "/"},
       "pages.buy_page": {"path": "/buy"},
@@ -22,6 +27,11 @@ class SeoTest(unittest.TestCase):
     self.assertEqual(get_public_page_paths(page_registry), ["/", "/buy", "/mcp"])
 
   def test_build_sitemap_xml_contains_canonical_public_urls(self) -> None:
+    """Verify that build sitemap xml contains canonical public urls.
+
+    Returns:
+        None.
+    """
     sitemap = build_sitemap_xml("https://wheretolive.la", ["/", "/buy", "/mcp"])
     sitemap_text = sitemap.decode("utf-8")
     root = ElementTree.fromstring(sitemap)
@@ -43,6 +53,11 @@ class SeoTest(unittest.TestCase):
     self.assertNotIn("_mcp", sitemap_text)
 
   def test_build_robots_txt_points_to_sitemap(self) -> None:
+    """Verify that build robots txt points to sitemap.
+
+    Returns:
+        None.
+    """
     robots_txt = build_robots_txt("https://wheretolive.la/")
 
     self.assertIn("User-agent: *", robots_txt)
@@ -50,6 +65,11 @@ class SeoTest(unittest.TestCase):
     self.assertIn("Sitemap: https://wheretolive.la/sitemap.xml", robots_txt)
 
   def test_build_llms_txt_describes_primary_ai_search_context(self) -> None:
+    """Verify that build llms txt describes primary ai search context.
+
+    Returns:
+        None.
+    """
     llms_txt = build_llms_txt("https://wheretolive.la/")
 
     self.assertIn("# WhereToLive.LA", llms_txt)
@@ -61,6 +81,11 @@ class SeoTest(unittest.TestCase):
     self.assertIn("machine interface, not a browser page", llms_txt)
 
   def test_build_structured_data_script_contains_web_app_schema(self) -> None:
+    """Verify that build structured data script contains web app schema.
+
+    Returns:
+        None.
+    """
     script = build_structured_data_script("https://wheretolive.la/")
 
     self.assertIn('type="application/ld+json"', script)

@@ -64,6 +64,12 @@ def _lease_listing(**overrides: object) -> dict[str, object]:
     """Build a complete lease row for test database fixtures.
 
     Keyword overrides keep individual test cases focused on relevant fields.
+
+    Args:
+        **overrides: Field values that override the test listing defaults.
+
+    Returns:
+        A mapping containing the lease listing.
     """
     listing: dict[str, object] = {
         "mls_number": "L1",
@@ -98,6 +104,12 @@ def _buy_listing(**overrides: object) -> dict[str, object]:
     """Build a complete for-sale row for test database fixtures.
 
     Values intentionally mirror the source table's text-heavy schema.
+
+    Args:
+        **overrides: Field values that override the test listing defaults.
+
+    Returns:
+        A mapping containing the buy listing.
     """
     listing: dict[str, object] = {
         "mls_number": "B1",
@@ -134,6 +146,12 @@ def listing_db(tmp_path: Path) -> Path:
     """Create a temporary database containing lease and buy tables.
 
     The returned path is read by both unit and MCP transport tests.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        The temporary SQLite database populated with test listings.
     """
     db_path: Path = tmp_path / "listings.db"
     lease_rows: list[dict[str, object]] = [
@@ -197,6 +215,14 @@ def _post_mcp(
     """Post one JSON-RPC message through the test MCP transport.
 
     Session and protocol headers match a Streamable HTTP client.
+
+    Args:
+        client: Flask test client used to send the request.
+        session_id: MCP session identifier sent with the request.
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        An HTTP response containing the post MCP.
     """
     headers: dict[str, str] = {
         "Accept": "application/json, text/event-stream",
@@ -209,6 +235,14 @@ def _post_mcp(
 
 
 def test_searches_and_paginates_lease_listings(listing_db: Path) -> None:
+    """Verify that searches and paginates lease listings.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+
+    Returns:
+        None.
+    """
     result = search_listings_in_database(
         listing_db,
         listing_type="lease",
@@ -239,6 +273,14 @@ def test_searches_and_paginates_lease_listings(listing_db: Path) -> None:
 def test_searches_buy_listings_with_numeric_and_buy_specific_filters(
     listing_db: Path,
 ) -> None:
+    """Verify that searches buy listings with numeric and buy specific filters.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+
+    Returns:
+        None.
+    """
     result = search_listings_in_database(
         listing_db,
         listing_type="buy",
@@ -271,6 +313,14 @@ def test_searches_buy_listings_with_numeric_and_buy_specific_filters(
 
 
 def test_search_uses_parameterized_location_filter(listing_db: Path) -> None:
+    """Verify that search uses parameterized location filter.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+
+    Returns:
+        None.
+    """
     result = search_listings_in_database(
         listing_db, listing_type="buy", location="' OR 1=1 --"
     )
@@ -301,11 +351,29 @@ def test_search_rejects_invalid_filters(
     arguments: dict[str, object],
     message: str,
 ) -> None:
+    """Verify that search rejects invalid filters.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+        arguments: Tool arguments submitted in the MCP request.
+        message: Expected validation or protocol error message.
+
+    Returns:
+        None.
+    """
     with pytest.raises(ValueError, match=message):
         search_listings_in_database(listing_db, **arguments)
 
 
 def test_mcp_exposes_one_tool_supporting_lease_and_buy(listing_db: Path) -> None:
+    """Verify that mcp exposes one tool supporting lease and buy.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+
+    Returns:
+        None.
+    """
     configure_listings_mcp()
     app = Dash(__name__, enable_mcp=True)
     app.layout = html.Div("Curated MCP test")
@@ -406,6 +474,14 @@ def test_mcp_exposes_one_tool_supporting_lease_and_buy(listing_db: Path) -> None
 
 
 def test_mcp_validation_error_does_not_destabilize_session(listing_db: Path) -> None:
+    """Verify that mcp validation error does not destabilize session.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+
+    Returns:
+        None.
+    """
     configure_listings_mcp()
     app = Dash(__name__, enable_mcp=True)
     app.layout = html.Div("MCP validation test")

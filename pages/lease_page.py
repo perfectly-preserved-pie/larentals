@@ -48,8 +48,7 @@ ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk(str(ZIP_PLACE_CROSSWALK_PATH))
 
 @lru_cache(maxsize=1)
 def get_lease_components() -> LeaseComponents:
-  """
-  Build and cache the lease-page component tree for the process lifetime.
+  """Build and cache the lease-page component tree for the process lifetime.
 
   Returns:
     The initialized lease-page component collection.
@@ -64,14 +63,16 @@ def get_lease_components() -> LeaseComponents:
   return components
 
 def layout(**_: object) -> dbc.Container:
-  """
-  Build the lease page layout on demand.
+  """Build the lease page layout on demand.
 
   Dash Pages may pass query-string parameters into page layout
   callables. This page does not use them, so extra kwargs are ignored.
 
   Returns:
     The lease page layout container.
+
+  Args:
+      **_: Unused callback arguments accepted by the framework.
   """
   lease_components = get_lease_components()
 
@@ -169,11 +170,13 @@ register_responsive_filter_callbacks("lease")
   prevent_initial_call=True,
 )
 def load_lease_geojson(_: int) -> dict:
-  """
-  Load the full lease GeoJSON into the browser store once, after the page renders.
+  """Load the full lease GeoJSON into the browser store once, after the page renders.
 
   Returns:
     A GeoJSON dict suitable for dl.GeoJSON(data=...).
+
+  Args:
+      _: Unused callback arguments accepted by the framework.
   """
   return LeaseComponents.get_cached_geojson_payload()
 
@@ -188,8 +191,15 @@ def load_lease_optional_layers(
   layer_ids: list[dict[str, str]] | None,
   current_data: list[dict] | None,
 ) -> list[dict]:
-  """
-  Lazy-load optional map layers only after the user enables them.
+  """Lazy-load optional map layers only after the user enables them.
+
+  Args:
+      selected_overlays: Names of map overlays currently selected by the user.
+      layer_ids: Pattern-matching Dash identifiers for the lazy GeoJSON layers.
+      current_data: Existing GeoJSON payloads aligned with the lazy layer identifiers.
+
+  Returns:
+      A list containing the loaded lease optional layers.
   """
   return LayersClass.resolve_lazy_layer_data(
     selected_overlays=selected_overlays,
@@ -204,8 +214,13 @@ def load_lease_optional_layers(
   Input(LayersClass.layers_control_id("lease"), "overlays"),
 )
 def toggle_lease_school_layer_controls(selected_overlays: list[str] | None) -> bool:
-  """
-  Show the map-only school filter panel when the Schools overlay is enabled.
+  """Show the map-only school filter panel when the Schools overlay is enabled.
+
+  Args:
+      selected_overlays: Names of map overlays currently selected by the user.
+
+  Returns:
+      Whether the school-layer controls should be shown.
   """
   return LayersClass.overlay_is_selected(selected_overlays, "schools")
 
@@ -224,8 +239,16 @@ def update_lease_school_layer_prompt_state(
   _dismiss_clicks: int | None,
   prompt_state: dict | None,
 ) -> dict[str, bool]:
-  """
-  Keep the school-layer prompt visible until the user dismisses it.
+  """Keep the school-layer prompt visible until the user dismisses it.
+
+  Args:
+      selected_overlays: Names of map overlays currently selected by the user.
+      _show_clicks: Show-button click count supplied by Dash.
+      _dismiss_clicks: Dismiss-button click count supplied by Dash.
+      prompt_state: Stored state tracking whether the map prompt is active or dismissed.
+
+  Returns:
+      A mapping containing the updated lease school layer prompt state.
   """
   state = prompt_state or {"dismissed": False, "schools_active": False}
   schools_active = LayersClass.overlay_is_selected(selected_overlays, "schools")
@@ -257,8 +280,14 @@ def update_lease_school_layer_prompt_class(
   selected_overlays: list[str] | None,
   prompt_state: dict | None,
 ) -> str:
-  """
-  Reveal the map prompt only while the school overlay is active and undisposed.
+  """Reveal the map prompt only while the school overlay is active and undisposed.
+
+  Args:
+      selected_overlays: Names of map overlays currently selected by the user.
+      prompt_state: Stored state tracking whether the map prompt is active or dismissed.
+
+  Returns:
+      The updated lease school layer prompt class text.
   """
   base_class_name = "school-layer-map-prompt"
   prompt_dismissed = bool((prompt_state or {}).get("dismissed"))
@@ -277,8 +306,13 @@ def update_lease_school_layer_prompt_class(
 def update_lease_school_layer_controls_card_class(
   selected_overlays: list[str] | None,
 ) -> str:
-  """
-  Add an accent state so the school control card reads as newly available.
+  """Add an accent state so the school control card reads as newly available.
+
+  Args:
+      selected_overlays: Names of map overlays currently selected by the user.
+
+  Returns:
+      The updated lease school layer controls card class text.
   """
   base_class_name = "mt-3 school-layer-panel-card"
   if LayersClass.overlay_is_selected(selected_overlays, "schools"):
@@ -320,8 +354,24 @@ def update_lease_school_layer(
   title_i_only: bool | None,
   recently_opened_only: bool | None,
 ) -> dict | object:
-  """
-  Filter the school overlay from the cached raw GeoJSON payload.
+  """Filter the school overlay from the cached raw GeoJSON payload.
+
+  Args:
+      selected_overlays: Names of map overlays currently selected by the user.
+      search_text: Case-insensitive school-name search text.
+      school_levels: Selected school-level labels used as filters.
+      grade_bands: Selected elementary, middle, or high-school grade bands.
+      campus_configurations: Selected campus configurations, such as traditional or alternative.
+      early_grades: Selected early-grade options used to filter schools.
+      funding_types: Selected school funding types used as filters.
+      enrollment_range: Inclusive student-enrollment range used to filter schools.
+      charter_only: Whether to restrict results to charter entries.
+      magnet_only: Whether to restrict results to magnet entries.
+      title_i_only: Whether to restrict results to title i entries.
+      recently_opened_only: Whether to restrict results to recently opened entries.
+
+  Returns:
+      The updated lease school layer.
   """
   if not LayersClass.overlay_is_selected(selected_overlays, "schools"):
     return dash.no_update
@@ -353,8 +403,7 @@ def update_lease_zip_boundary(
   locations: list[str] | None,
   include_nearby: bool | None,
 ) -> tuple[dict, str | list[object]]:
-  """
-  Update the ZIP boundary store based on the user-entered locations.
+  """Update the ZIP boundary store based on the user-entered locations.
 
   Each tag is resolved independently, then all matching ZIPs are combined
   with OR semantics. The HUD crosswalk is preferred, with geocoding and
@@ -362,6 +411,10 @@ def update_lease_zip_boundary(
 
   Returns:
     A tuple of (boundary payload dict, status content).
+
+  Args:
+      locations: Location queries submitted by the user.
+      include_nearby: Whether ZIP codes adjacent to each resolved location are included.
   """
   payload, status = resolve_locations_to_zip_boundaries(
     locations,
@@ -477,5 +530,5 @@ clientside_callback(
   Output('listed_date_datepicker_lease', 'start_date'),
   Input('listed_time_range_radio', 'value'),
   State('earliest_date_store', 'data'),
-  
+
 )

@@ -20,12 +20,18 @@ def _ensure_object_columns(
     df: pd.DataFrame,
     columns: tuple[str, ...],
 ) -> None:
-    """
-    Prepare geocoding metadata columns to receive text values.
+    """Prepare geocoding metadata columns to receive text values.
 
     An entirely empty input column is often inferred as numeric. Converting it
     to object first lets the pipeline safely store statuses, provider names,
     address hashes, and missing values under pandas 3.
+
+    Args:
+        df: Dataframe to ensure object columns.
+        columns: Column names to read or process.
+
+    Returns:
+        None.
     """
     for column in columns:
         if column in df.columns:
@@ -43,15 +49,17 @@ def return_coordinates(
     nominatim_user_agent: str = "larentals-geocoder",
     nominatim_timeout: int = 10
 ) -> Tuple[Optional[float], Optional[float]]:
-    """
-    Fetches the latitude and longitude of a given address using geocoding. Uses Nominatim if flagged, otherwise defaults to GoogleV3.
-    
+    """Fetches the latitude and longitude of a given address using geocoding. Uses Nominatim if flagged, otherwise defaults to GoogleV3.
+
     Parameters:
     address (str): The full street address.
     row_index (int): The row index for logging.
     geolocator (GoogleV3): An instance of a geocoding class.
     total_rows (int): Total number of rows for logging.
-    
+    use_nominatim (bool): Whether to use Nominatim instead of GoogleV3.
+    nominatim_user_agent (str): User-agent sent to Nominatim.
+    nominatim_timeout (int): Nominatim request timeout in seconds.
+
     Returns:
     Tuple[Optional[float], Optional[float]]: Latitude and Longitude as a tuple, or (None, None) if unsuccessful.
     """
@@ -86,39 +94,37 @@ def return_coordinates(
     return None, None
 
 def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
-    """
-    Fetches the city name for a given address using geocoding.
-    
+    """Fetches the city name for a given address using geocoding.
+
     Parameters:
     address (str): The full street address.
     geolocator (GoogleV3): An instance of a GoogleV3 geocoding class.
-    
+
     Returns:
     Optional[str]: The city name, or None if unsuccessful.
     """
     # Initialize city variable
     city = None
-    
+
     try:
         geocode_info = geolocator.geocode(address, components={'administrative_area': 'CA', 'country': 'US'})
-        
+
         # Get raw geocode information
         raw = geocode_info.raw['address_components']
-        
+
         # Find the 'locality' aka city
         city = [addr['long_name'] for addr in raw if 'locality' in addr['types']][0]
-        
+
         logger.info(f"Fetched city ({city}) for {address}.")
     except AttributeError:
         logger.warning(f"Geocoding returned no results for {address}.")
     except Exception as e:
         logger.warning(f"Couldn't fetch city for {address} because of {e}.")
-    
+
     return city
 
 def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[str]:
-    """
-    Fetches the postal code for a given address using geocoding.
+    """Fetches the postal code for a given address using geocoding.
 
     Parameters:
     address (str): The full street address.
@@ -152,9 +158,8 @@ def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[str]:
 
     return postalcode
 
-def fetch_missing_zip_codes(df: pd.DataFrame, geolocator) -> pd.DataFrame:
-    """
-    For rows where the 'zip_code' is missing or equals "Assessor",
+def fetch_missing_zip_codes(df: pd.DataFrame, geolocator: GoogleV3) -> pd.DataFrame:
+    """For rows where the 'zip_code' is missing or equals "Assessor",
     this function retrieves the missing postal code using the row's 'short_address'
     and updates the dataframe accordingly.
 
@@ -179,7 +184,15 @@ def fetch_missing_zip_codes(df: pd.DataFrame, geolocator) -> pd.DataFrame:
     return df
 
 
-def _has_text(value) -> bool:
+def _has_text(value: object) -> bool:
+    """Handle has text.
+
+    Args:
+        value: Candidate city, ZIP, or address field to validate.
+
+    Returns:
+        Whether the value contains usable, non-placeholder text.
+    """
     if value is None or value is pd.NA:
         return False
     try:
@@ -191,6 +204,15 @@ def _has_text(value) -> bool:
 
 
 def _google_address_component(raw: dict, component_types: tuple[str, ...]) -> str | None:
+    """Handle google address component.
+
+    Args:
+        raw: Raw Google geocoder response containing address components.
+        component_types: Google address-component types to search in priority order.
+
+    Returns:
+        The google address component text, or ``None`` when unavailable.
+    """
     components = raw.get("address_components", []) if isinstance(raw, dict) else []
     for component_type in component_types:
         for component in components:
@@ -209,11 +231,21 @@ def fill_missing_location_fields_with_checkpoint(
     city_column: str = "city",
     zip_column: str = "zip_code",
 ) -> pd.DataFrame:
-    """
-    Resolve missing city/ZIP fields once and checkpoint the Google response.
+    """Resolve missing city/ZIP fields once and checkpoint the Google response.
 
     Coordinates returned by the same request are carried forward so the normal
     coordinate stage does not issue a second geocode request for that listing.
+
+    Args:
+        df: Dataframe to fill missing location fields with checkpoint.
+        geolocator: Configured geocoder used to resolve the address.
+        checkpoint_store: Optional checkpoint store used to resume prior processing.
+        street_column: Dataframe column containing street addresses.
+        city_column: Dataframe column containing city names.
+        zip_column: Dataframe column containing ZIP codes.
+
+    Returns:
+        The fill missing location fields with checkpoint dataframe.
     """
     # CSV/Excel inputs commonly infer location columns containing numbers and
     # missing values as float64. Geocoded city/ZIP values are text, so make the
@@ -315,11 +347,21 @@ def fill_missing_location_fields_with_checkpoint(
 
 
 def _usable_coordinates(
-    latitude,
-    longitude,
+    latitude: object,
+    longitude: object,
     *,
     max_valid_latitude: float | None = None,
 ) -> bool:
+    """Handle usable coordinates.
+
+    Args:
+        latitude: Property latitude in decimal degrees.
+        longitude: Property longitude in decimal degrees.
+        max_valid_latitude: Optional upper latitude bound used to reject bad coordinates.
+
+    Returns:
+        Whether both coordinates are present and numeric.
+    """
     try:
         lat = float(latitude)
         lon = float(longitude)
@@ -341,11 +383,21 @@ def update_dataframe_with_geocoding(
     use_nominatim: bool = False,
     max_valid_latitude: float | None = 35.393528,
 ) -> pd.DataFrame:
-    """
-    Geocode listings with address-keyed checkpoint reuse.
+    """Geocode listings with address-keyed checkpoint reuse.
 
     A checkpoint hit avoids another paid lookup. Legacy coordinates are reused
     only when their normalized address still matches the incoming address.
+
+    Args:
+        df: Dataframe to update dataframe with geocoding.
+        geolocator: Configured geocoder used to resolve the address.
+        checkpoint_store: Optional checkpoint store used to resume prior processing.
+        existing_df: Previously published listings to merge with the new dataframe.
+        use_nominatim: Whether to use Nominatim instead of the Google geocoder.
+        max_valid_latitude: Optional upper latitude bound used to reject bad coordinates.
+
+    Returns:
+        The updated dataframe with geocoding dataframe.
     """
     for coordinate_column in ("latitude", "longitude"):
         if coordinate_column in df.columns:
@@ -478,9 +530,18 @@ def re_geocode_above_lat_threshold(
     checkpoint_store: ListingCheckpointStore | None = None,
     use_nominatim: bool = False,
 ) -> pd.DataFrame:
-    """
-    For rows where 'latitude' exceeds lat_threshold, re-fetch coordinates
+    """For rows where 'latitude' exceeds lat_threshold, re-fetch coordinates
     and overwrite the 'latitude' and 'longitude' columns in-place.
+
+    Args:
+        df: Dataframe to re geocode above lat threshold.
+        geolocator: Configured geocoder used to resolve the address.
+        lat_threshold: Latitude above which coordinates are considered erroneous.
+        checkpoint_store: Optional checkpoint store used to resume prior processing.
+        use_nominatim: Whether to use Nominatim instead of the Google geocoder.
+
+    Returns:
+        The re geocode above lat threshold dataframe.
     """
     if "latitude" not in df.columns:
         return df

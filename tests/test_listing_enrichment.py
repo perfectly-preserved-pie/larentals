@@ -28,6 +28,11 @@ from scripts.enrich_schools import (
 )
 
 def test_extract_grade_span_and_band_classification() -> None:
+    """Verify that extract grade span and band classification.
+
+    Returns:
+        None.
+    """
     assert extract_grade_span("K-5") == (0, 5)
     assert extract_grade_span("6/8") == (6, 8)
     assert extract_grade_span("PK-5") == (-1, 5)
@@ -36,6 +41,11 @@ def test_extract_grade_span_and_band_classification() -> None:
 
 
 def test_school_parse_args_use_official_defaults() -> None:
+    """Verify that school parse args use official defaults.
+
+    Returns:
+        None.
+    """
     args = parse_school_args([])
     assert args.region == DEFAULT_REGION_NAME
     assert args.schools_path == str(DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_PATH)
@@ -47,10 +57,28 @@ def test_resolve_local_dataset_path_downloads_missing_default_artifact(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    """Verify that resolve local dataset path downloads missing default artifact.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     default_path = tmp_path / "schools.gpkg"
     calls: list[tuple[str, Path]] = []
 
     def fake_download(url: str, destination: Path) -> Path:
+        """Handle fake download.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            destination: Filesystem path where the downloaded file is written.
+
+        Returns:
+            The destination path returned by the fake downloader.
+        """
         calls.append((url, destination))
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text("stub", encoding="utf-8")
@@ -72,6 +100,14 @@ def test_resolve_local_dataset_path_downloads_missing_default_artifact(
 def test_resolve_local_dataset_path_raises_for_missing_non_default_artifact(
     tmp_path: Path,
 ) -> None:
+    """Verify that resolve local dataset path raises for missing non default artifact.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     missing_path = tmp_path / "custom-schools.gpkg"
 
     with pytest.raises(FileNotFoundError, match="School dataset not found"):
@@ -84,11 +120,21 @@ def test_resolve_local_dataset_path_raises_for_missing_non_default_artifact(
 
 
 def test_resolve_region_bbox_for_southern_california() -> None:
+    """Verify that resolve region bbox for southern california.
+
+    Returns:
+        None.
+    """
     assert resolve_region_bbox("southern-california") == (-121.0, 32.0, -114.0, 35.9)
     assert resolve_region_bbox("all") is None
 
 
 def test_filter_gdf_to_bbox_keeps_only_southern_california_points() -> None:
+    """Verify that filter gdf to bbox keeps only southern california points.
+
+    Returns:
+        None.
+    """
     points = gpd.GeoDataFrame(
         {"name": ["los_angeles", "san_francisco"]},
         geometry=gpd.points_from_xy([-118.2437, -122.4194], [34.0522, 37.7749]),
@@ -101,6 +147,11 @@ def test_filter_gdf_to_bbox_keeps_only_southern_california_points() -> None:
 
 
 def test_read_local_geospatial_dataset_reprojects_bbox_to_dataset_crs() -> None:
+    """Verify that read local geospatial dataset reprojects bbox to dataset crs.
+
+    Returns:
+        None.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         path = Path(temp_dir) / "points.gpkg"
         points = gpd.GeoDataFrame(
@@ -120,6 +171,11 @@ def test_read_local_geospatial_dataset_reprojects_bbox_to_dataset_crs() -> None:
 
 
 def test_build_source_version_keeps_remote_urls() -> None:
+    """Verify that build source version keeps remote urls.
+
+    Returns:
+        None.
+    """
     version = build_source_version(
         [
             DEFAULT_CA_PUBLIC_SCHOOLS_GPKG_URL,
@@ -131,6 +187,11 @@ def test_build_source_version_keeps_remote_urls() -> None:
 
 
 def test_rebuild_enrichment_table_drops_legacy_columns_and_rows() -> None:
+    """Verify that rebuild enrichment table drops legacy columns and rows.
+
+    Returns:
+        None.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         db_path = Path(temp_dir) / "enrichment.db"
 
@@ -163,6 +224,11 @@ def test_rebuild_enrichment_table_drops_legacy_columns_and_rows() -> None:
 
 
 def test_upsert_listing_enrichment_rows_updates_existing_records() -> None:
+    """Verify that upsert listing enrichment rows updates existing records.
+
+    Returns:
+        None.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         db_path = Path(temp_dir) / "enrichment.db"
 
@@ -205,6 +271,11 @@ def test_upsert_listing_enrichment_rows_updates_existing_records() -> None:
 
 
 def test_upsert_listing_enrichment_rows_skips_missing_mls_numbers() -> None:
+    """Verify that upsert listing enrichment rows skips missing mls numbers.
+
+    Returns:
+        None.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         db_path = Path(temp_dir) / "enrichment.db"
         source = pd.DataFrame(

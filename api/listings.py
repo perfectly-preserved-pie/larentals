@@ -72,8 +72,7 @@ BUY_LISTING_DETAIL_SQL = """
 
 
 def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | None:
-    """
-    Convert a single SQLite row into the popup-detail JSON payload.
+    """Convert a single SQLite row into the popup-detail JSON payload.
 
     Args:
         row: SQLite row returned from a page-specific listing detail query.
@@ -88,19 +87,20 @@ def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | No
 
 
 def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
-    """
-    Register on-demand listing-detail routes used by lazy-loaded popups.
+    """Register on-demand listing-detail routes used by lazy-loaded popups.
 
     Args:
         server: The Flask server instance (typically `app.server` in Dash).
         db_path: Path to the SQLite database file.
+
+    Returns:
+        None.
     """
     bp = Blueprint("listing_api", __name__)
 
     @bp.get("/api/lease/listing-details/<listing_id>")
     def get_lease_listing_details(listing_id: str) -> Response:
-        """
-        Return lease listing details and related LAHD/RSO summaries.
+        """Return lease listing details and related LAHD/RSO summaries.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -125,8 +125,7 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
     @bp.get("/api/buy/listing-details/<listing_id>")
     def get_buy_listing_details(listing_id: str) -> Response:
-        """
-        Return buy listing details and the related LAHD summary.
+        """Return buy listing details and the related LAHD summary.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -152,8 +151,13 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
 
 def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
-    """
-    Return a Housing Department summary only for listings in LA City scope.
+    """Return a Housing Department summary only for listings in LA City scope.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        A mapping containing the constructed LAHD listing summary.
     """
     in_scope = is_listing_in_los_angeles_city(
         city=payload.get("city"),
@@ -174,8 +178,13 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_rso_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
-    """
-    Return a conservative LA City RSO summary for a rental listing popup.
+    """Return a conservative LA City RSO summary for a rental listing popup.
+
+    Args:
+        payload: Structured request, listing, or artifact payload to validate or summarize.
+
+    Returns:
+        A mapping containing the constructed RSO listing summary.
     """
     in_scope = is_listing_in_los_angeles_city(
         city=payload.get("city"),

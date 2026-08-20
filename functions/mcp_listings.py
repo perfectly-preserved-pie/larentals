@@ -168,6 +168,9 @@ def configure_listings_mcp() -> None:
     """Configure Dash to expose only curated listing tools.
 
     Layout resources and raw callback tools are intentionally disabled.
+
+    Returns:
+        None.
     """
     configure_mcp_server(
         include_layout=False,
@@ -182,6 +185,16 @@ def _optional_text(value: str | None, *, field_name: str) -> str | None:
     """Normalize an optional text filter and enforce its size limit.
 
     Empty strings become ``None`` so they do not add SQL predicates.
+
+    Args:
+        value: Optional request field to trim and normalize.
+        field_name: Human-readable field label used in validation errors.
+
+    Returns:
+        The optional text text, or ``None`` when unavailable.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if value is None:
         return None
@@ -199,6 +212,15 @@ def _validate_iso_date(value: str | None) -> str | None:
     """Validate an optional ISO date used by the listing-date filter.
 
     The normalized ``YYYY-MM-DD`` value is returned unchanged.
+
+    Args:
+        value: Optional date filter expected in ISO ``YYYY-MM-DD`` form.
+
+    Returns:
+        The validate ISO date text, or ``None`` when unavailable.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     normalized = _optional_text(value, field_name="listed_after")
     if normalized is None:
@@ -214,6 +236,16 @@ def _validate_non_negative(value: int | None, *, field_name: str) -> None:
     """Validate an optional integer filter that cannot be negative.
 
     Booleans are rejected even though they are integer subclasses in Python.
+
+    Args:
+        value: Optional numeric search bound that must not be negative.
+        field_name: Human-readable field label used in validation errors.
+
+    Returns:
+        None.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if value is not None and (
         isinstance(value, bool) or not isinstance(value, int) or value < 0
@@ -225,6 +257,12 @@ def _connect_read_only(db_path: str | Path) -> sqlite3.Connection:
     """Open a SQLite database connection that cannot perform writes.
 
     Rows are exposed by column name to simplify response normalization.
+
+    Args:
+        db_path: Filesystem path to the SQLite database.
+
+    Returns:
+        A read-only SQLite connection.
     """
     resolved_path = Path(db_path).resolve()
     connection = sqlite3.connect(f"file:{resolved_path}?mode=ro", uri=True)
@@ -237,6 +275,12 @@ def _like_pattern(value: str) -> str:
     """Build a literal substring pattern for a SQL ``LIKE`` clause.
 
     User-provided wildcard characters are escaped before wrapping the value.
+
+    Args:
+        value: User search text to escape for a parameterized SQL LIKE clause.
+
+    Returns:
+        The like pattern text.
     """
     escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     return f"%{escaped}%"
@@ -246,6 +290,12 @@ def _normalize_zip_code(value: Any) -> str | None:
     """Normalize ZIP codes loaded from mixed SQLite column types.
 
     Spreadsheet-derived values such as ``91101.0`` become ``91101``.
+
+    Args:
+        value: Raw ZIP-code filter from the MCP request.
+
+    Returns:
+        The normalized ZIP code text, or ``None`` when unavailable.
     """
     if value is None:
         return None
@@ -257,6 +307,13 @@ def _listing_from_row(row: sqlite3.Row, listing_type: ListingType) -> Listing:
     """Convert one database row into the public MCP listing shape.
 
     Only the detail mapping appropriate to ``listing_type`` is populated.
+
+    Args:
+        row: SQLite result row containing one listing and enrichment fields.
+        listing_type: Listing market, either ``buy`` or ``lease``.
+
+    Returns:
+        A validated listing created from the database row.
     """
     values: dict[str, Any] = dict(row)
     lease_details: LeaseDetails | None
@@ -336,6 +393,32 @@ def search_listings_in_database(
     """Query one listing table with validated, parameterized filters.
 
     Results are normalized into a shared schema and capped by pagination.
+
+    Args:
+        db_path: Filesystem path to the SQLite database.
+        listing_type: Listing market, either ``buy`` or ``lease``.
+        location: Place, address, or geocoder result being resolved.
+        property_type: Listing property type used to constrain the search.
+        min_price: Inclusive minimum price filter.
+        max_price: Inclusive maximum price filter.
+        min_bedrooms: Inclusive minimum bedrooms filter.
+        min_bathrooms: Inclusive minimum bathrooms filter.
+        min_square_feet: Inclusive minimum square feet filter.
+        pet_friendly: Whether pet friendly behavior is enabled.
+        furnished: Whether furnished behavior is enabled.
+        min_lot_size: Inclusive minimum lot size filter.
+        max_hoa_fee: Inclusive maximum hoa fee filter.
+        senior_community: Whether senior community behavior is enabled.
+        listed_after: Optional ISO date requiring listings to be newer than that date.
+        sort: Requested field and direction used to order search results.
+        page: One-based result page number.
+        page_size: Maximum number of listings returned per page.
+
+    Returns:
+        The matching listings and pagination metadata.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if listing_type not in ("lease", "buy"):
         raise ValueError("listing_type must be either lease or buy")
@@ -551,6 +634,28 @@ def search_listings(
     ``max_hoa_fee``, and ``senior_community`` are buy-only. ``listed_after``
     must use YYYY-MM-DD. At most 20 listings are returned per call; request the
     next page when ``has_next_page`` is true.
+
+    Args:
+        listing_type: Listing market, either ``buy`` or ``lease``.
+        location: Place, address, or geocoder result being resolved.
+        property_type: Listing property type used to constrain the search.
+        min_price: Inclusive minimum price filter.
+        max_price: Inclusive maximum price filter.
+        min_bedrooms: Inclusive minimum bedrooms filter.
+        min_bathrooms: Inclusive minimum bathrooms filter.
+        min_square_feet: Inclusive minimum square feet filter.
+        pet_friendly: Whether pet friendly behavior is enabled.
+        furnished: Whether furnished behavior is enabled.
+        min_lot_size: Inclusive minimum lot size filter.
+        max_hoa_fee: Inclusive maximum hoa fee filter.
+        senior_community: Whether senior community behavior is enabled.
+        listed_after: Optional ISO date requiring listings to be newer than that date.
+        sort: Requested field and direction used to order search results.
+        page: One-based result page number.
+        page_size: Maximum number of listings returned per page.
+
+    Returns:
+        The matching listings and pagination metadata.
     """
     return search_listings_in_database(
         DEFAULT_DB_PATH,

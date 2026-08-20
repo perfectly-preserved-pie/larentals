@@ -1,4 +1,5 @@
 import unittest
+from collections.abc import Iterator
 
 import dash_mantine_components as dmc
 from dash import dcc, html
@@ -15,7 +16,15 @@ from pages.component_factories import (
 from pages.components import BuyComponents, LeaseComponents
 
 
-def _collect_components(component):
+def _collect_components(component: object) -> Iterator[object]:
+    """Handle collect components.
+
+    Args:
+        component: Dash component or nested component collection to traverse.
+
+    Yields:
+        Values produced by the iterator.
+    """
     if isinstance(component, (list, tuple)):
         for child in component:
             yield from _collect_components(child)
@@ -29,6 +38,11 @@ def _collect_components(component):
 
 class ComponentsSmokeTest(unittest.TestCase):
     def test_location_inputs_use_associated_labels(self) -> None:
+        """Verify that location inputs use associated labels.
+
+        Returns:
+            None.
+        """
         for page_type in ("lease", "buy"):
             with self.subTest(page_type=page_type):
                 component = build_location_filter_components(page_type)
@@ -54,6 +68,11 @@ class ComponentsSmokeTest(unittest.TestCase):
                 self.assertNotIn("aria-label", props)
 
     def test_short_location_status_stays_plain_text(self) -> None:
+        """Verify that short location status stays plain text.
+
+        Returns:
+            None.
+        """
         status = "Filtering by ZIP codes: 90027, 90039."
 
         rendered = build_location_filter_status(
@@ -64,6 +83,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(rendered, status)
 
     def test_long_location_status_puts_additional_zips_in_popover(self) -> None:
+        """Verify that long location status puts additional zips in popover.
+
+        Returns:
+            None.
+        """
         zip_codes = ["90027", "90039", "90041", "90065", "91011", "91020"]
         status = (
             "Filtering by ZIP codes: 90027, 90039, 90041, 90065, 91011 "
@@ -96,6 +120,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         )
 
     def test_buy_components_build_core_cards(self) -> None:
+        """Verify that buy components build core cards.
+
+        Returns:
+            None.
+        """
         components = BuyComponents()
 
         self.assertIsNotNone(components.parts)
@@ -104,6 +133,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertIsNotNone(components.map_card)
 
     def test_lease_components_build_core_cards(self) -> None:
+        """Verify that lease components build core cards.
+
+        Returns:
+            None.
+        """
         components = LeaseComponents()
 
         self.assertIsNotNone(components.parts)
@@ -112,6 +146,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertIsNotNone(components.map_card)
 
     def test_subtype_filter_defaults_to_include_all_state(self) -> None:
+        """Verify that subtype filter defaults to include all state.
+
+        Returns:
+            None.
+        """
         component = build_subtype_filter(
             values=["Apartment", "Townhouse", "Unknown"],
             dynamic_id="subtype-wrapper",
@@ -126,6 +165,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(dropdown.value, [])
 
     def test_range_filter_reserves_tooltip_space_before_switch(self) -> None:
+        """Verify that range filter reserves tooltip space before switch.
+
+        Returns:
+            None.
+        """
         component = build_range_filter(
             slider_id="test-slider",
             min_value=0,
@@ -149,6 +193,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(missing_switch.id, "test-missing-switch")
 
     def test_hybrid_range_filter_has_exact_fields_and_finite_slider(self) -> None:
+        """Verify that hybrid range filter has exact fields and finite slider.
+
+        Returns:
+            None.
+        """
         component = build_range_filter(
             slider_id="test_price_slider",
             min_value=0,
@@ -199,6 +248,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertNotIn("tooltip", slider.to_plotly_json()["props"])
 
     def test_iqr_slider_cap_buckets_outliers_without_discarding_them(self) -> None:
+        """Verify that iqr slider cap buckets outliers without discarding them.
+
+        Returns:
+            None.
+        """
         bounds = iqr_capped_range_bounds(
             [1, 2, 2, 3] * 25 + [15],
             minimum=0,
@@ -219,6 +273,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         )
 
     def test_iqr_slider_cap_rounds_currency_to_a_readable_endpoint(self) -> None:
+        """Verify that iqr slider cap rounds currency to a readable endpoint.
+
+        Returns:
+            None.
+        """
         bounds = iqr_capped_range_bounds(
             [2_250, 2_500, 3_000, 3_646] * 25 + [675_000],
             minimum=0,
@@ -241,6 +300,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         )
 
     def test_iqr_slider_uses_observed_max_when_data_has_no_high_outlier(self) -> None:
+        """Verify that iqr slider uses observed max when data has no high outlier.
+
+        Returns:
+            None.
+        """
         bounds = iqr_capped_range_bounds([1, 2, 3, 3], minimum=0, step=1)
 
         self.assertFalse(bounds.is_capped)
@@ -254,6 +318,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         )
 
     def test_isp_speed_filter_reserves_space_below_both_sliders(self) -> None:
+        """Verify that isp speed filter reserves space below both sliders.
+
+        Returns:
+            None.
+        """
         component = build_isp_speed_components(10_000, 10_000)
 
         download_range, upload_range, missing_switch = component.children
@@ -264,6 +333,11 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(missing_switch.id, "isp_speed_missing_switch")
 
     def test_title_card_links_to_mcp_setup_page(self) -> None:
+        """Verify that title card links to mcp setup page.
+
+        Returns:
+            None.
+        """
         title_card = build_title_card(
             title="WhereToLive.LA",
             subtitle="Interactive housing map",

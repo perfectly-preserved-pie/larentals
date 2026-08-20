@@ -24,5 +24,11 @@ def layout(**_: object) -> html.Main:
     """Build the MCP documentation page on demand.
 
     Dash may pass query-string values, which this static page does not use.
+
+    Args:
+        **_: Unused callback arguments accepted by the framework.
+
+    Returns:
+        The MCP documentation page layout.
     """
     return build_mcp_docs_layout()

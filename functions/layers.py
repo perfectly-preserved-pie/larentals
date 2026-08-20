@@ -98,13 +98,27 @@ SCHOOL_LAYER_LEVEL_OPTIONS: tuple[str, ...] = (
 
 
 def get_mapbox_access_token() -> str | None:
-    """Return the configured public Mapbox token, if one is available."""
+    """Return the configured public Mapbox token, if one is available.
+
+    Returns:
+        The requested mapbox access token text, or ``None`` when unavailable.
+    """
     token = os.getenv("MAPBOX_ACCESS_TOKEN", "").strip()
     return token or None
 
 
 def build_mapbox_satellite_tile_url(access_token: str) -> str:
-    """Build the browser-facing Mapbox Satellite Raster Tiles API template."""
+    """Build the browser-facing Mapbox Satellite Raster Tiles API template.
+
+    Args:
+        access_token: Mapbox access token used to authorize tile requests.
+
+    Returns:
+        The constructed mapbox satellite tile URL text.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
+    """
     normalized_token = str(access_token).strip()
     if not normalized_token:
         raise ValueError("Mapbox access token must not be blank.")
@@ -165,8 +179,13 @@ class LayerConfig:
 
 
 def _normalize_school_text(value: object) -> str | None:
-    """
-    Return a trimmed text value, or ``None`` when the source is blank.
+    """Return a trimmed text value, or ``None`` when the source is blank.
+
+    Args:
+        value: Raw school attribute to normalize as display text.
+
+    Returns:
+        The normalized school text text, or ``None`` when unavailable.
     """
     if value is None:
         return None
@@ -178,8 +197,13 @@ def _normalize_school_text(value: object) -> str | None:
 
 
 def _normalize_school_flag(value: object) -> int | None:
-    """
-    Normalize common `Y`/`N` flag values into integers for GeoJSON properties.
+    """Normalize common `Y`/`N` flag values into integers for GeoJSON properties.
+
+    Args:
+        value: Raw boolean-like school attribute.
+
+    Returns:
+        The normalized school flag value, or ``None`` when unavailable.
     """
     if value is None or pd.isna(value):
         return None
@@ -205,8 +229,13 @@ def _normalize_school_flag(value: object) -> int | None:
 
 
 def _school_flag_label(value: object) -> str:
-    """
-    Return a popup-friendly label for a normalized school flag.
+    """Return a popup-friendly label for a normalized school flag.
+
+    Args:
+        value: Raw boolean-like school attribute to display as Yes or No.
+
+    Returns:
+        The school flag label text.
     """
     normalized = _normalize_school_flag(value)
     if normalized == 1:
@@ -217,8 +246,13 @@ def _school_flag_label(value: object) -> str:
 
 
 def _parse_school_grade_token(value: object) -> int | None:
-    """
-    Convert a grade token like `TK`, `K`, `06`, or `12` into a sortable integer.
+    """Convert a grade token like `TK`, `K`, `06`, or `12` into a sortable integer.
+
+    Args:
+        value: Raw grade label such as ``TK``, ``K``, or ``12``.
+
+    Returns:
+        The parsed school grade token value, or ``None`` when unavailable.
     """
     normalized = _normalize_school_text(value)
     if normalized is None:
@@ -235,8 +269,13 @@ def _parse_school_grade_token(value: object) -> int | None:
 
 
 def _format_school_grade_value(value: int | None) -> str | None:
-    """
-    Convert a numeric grade token back into a display label.
+    """Convert a numeric grade token back into a display label.
+
+    Args:
+        value: Numeric grade index to convert to a display label.
+
+    Returns:
+        The formatted school grade value text, or ``None`` when unavailable.
     """
     if value is None:
         return None
@@ -248,8 +287,14 @@ def _format_school_grade_value(value: int | None) -> str | None:
 
 
 def _build_school_grade_bands(low_grade: object, high_grade: object) -> list[str]:
-    """
-    Return the canonical grade-band labels touched by a school.
+    """Return the canonical grade-band labels touched by a school.
+
+    Args:
+        low_grade: Lowest grade offered by the school.
+        high_grade: Highest grade offered by the school.
+
+    Returns:
+        A list containing the constructed school grade bands.
     """
     low = _parse_school_grade_token(low_grade)
     high = _parse_school_grade_token(high_grade)
@@ -268,8 +313,14 @@ def _build_school_grade_bands(low_grade: object, high_grade: object) -> list[str
 
 
 def _build_school_grade_span_display(low_grade: object, high_grade: object) -> str | None:
-    """
-    Build a compact popup display value like `K-5` or `6-12`.
+    """Build a compact popup display value like `K-5` or `6-12`.
+
+    Args:
+        low_grade: Lowest grade offered by the school.
+        high_grade: Highest grade offered by the school.
+
+    Returns:
+        The constructed school grade span display text, or ``None`` when unavailable.
     """
     low = _parse_school_grade_token(low_grade)
     high = _parse_school_grade_token(high_grade)
@@ -286,8 +337,13 @@ def _build_school_grade_span_display(low_grade: object, high_grade: object) -> s
 
 
 def _normalize_school_url(value: object) -> str | None:
-    """
-    Normalize a school website into a browser-usable URL when possible.
+    """Normalize a school website into a browser-usable URL when possible.
+
+    Args:
+        value: Raw school website field, with or without a URL scheme.
+
+    Returns:
+        The normalized school URL text, or ``None`` when unavailable.
     """
     normalized = _normalize_school_text(value)
     if normalized is None:
@@ -298,8 +354,13 @@ def _normalize_school_url(value: object) -> str | None:
 
 
 def _normalize_school_date(value: object) -> str | None:
-    """
-    Normalize source dates into a compact YYYY-MM-DD display string.
+    """Normalize source dates into a compact YYYY-MM-DD display string.
+
+    Args:
+        value: Raw school opening-date field.
+
+    Returns:
+        The normalized school date text, or ``None`` when unavailable.
     """
     if value is None or pd.isna(value):
         return None
@@ -314,8 +375,13 @@ def _normalize_school_date(value: object) -> str | None:
 
 
 def _school_grade_offered(value: object) -> bool:
-    """
-    Determine whether a grade-specific source field indicates the grade is offered.
+    """Determine whether a grade-specific source field indicates the grade is offered.
+
+    Args:
+        value: Raw boolean-like flag indicating whether a grade is offered.
+
+    Returns:
+        Whether the school offers the requested grade.
     """
     if value is None or pd.isna(value):
         return False
@@ -335,8 +401,13 @@ def _school_grade_offered(value: object) -> bool:
 
 
 def _school_is_recently_opened(value: object) -> bool:
-    """
-    Flag schools with a source open date on or after 2018-01-01.
+    """Flag schools with a source open date on or after 2018-01-01.
+
+    Args:
+        value: Raw recently-opened flag or opening date.
+
+    Returns:
+        Whether the school opened within the configured recent period.
     """
     if value is None or pd.isna(value):
         return False
@@ -349,8 +420,14 @@ def _school_is_recently_opened(value: object) -> bool:
 
 
 def build_school_preview_url(longitude: float | None, latitude: float | None) -> str | None:
-    """
-    Build a public ArcGIS World Imagery preview around a school point.
+    """Build a public ArcGIS World Imagery preview around a school point.
+
+    Args:
+        longitude: Property longitude in decimal degrees.
+        latitude: Property latitude in decimal degrees.
+
+    Returns:
+        The constructed school preview URL text, or ``None`` when unavailable.
     """
     if longitude is None or latitude is None:
         return None
@@ -374,8 +451,16 @@ def build_school_preview_url(longitude: float | None, latitude: float | None) ->
 
 
 def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDict:
-    """
-    Normalize a public-schools GeoDataFrame into the final map-layer GeoJSON payload.
+    """Normalize a public-schools GeoDataFrame into the final map-layer GeoJSON payload.
+
+    Args:
+        schools: Dataframe to build school layer geojson from gdf.
+
+    Returns:
+        The constructed school layer GeoJSON from geodataframe.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if schools.empty:
         return {"type": "FeatureCollection", "features": []}
@@ -540,8 +625,13 @@ def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDic
 def load_school_layer_geojson_artifact(
     path: str | Path = DEFAULT_SCHOOL_LAYER_GEOJSON_PATH,
 ) -> GeoJsonDict:
-    """
-    Load the baked school-layer GeoJSON artifact from disk.
+    """Load the baked school-layer GeoJSON artifact from disk.
+
+    Args:
+        path: Filesystem path to the source file, dataset, database, or artifact.
+
+    Returns:
+        The loaded school layer GeoJSON artifact.
     """
     artifact_path = Path(path)
     if not artifact_path.exists():
@@ -574,8 +664,24 @@ def filter_school_layer_geojson(
     title_i_only: bool = False,
     recently_opened_only: bool = False,
 ) -> GeoJsonDict:
-    """
-    Filter the cached school layer payload for the map-only school controls.
+    """Filter the cached school layer payload for the map-only school controls.
+
+    Args:
+        geojson_data: School-layer GeoJSON feature collection to filter.
+        search_text: Case-insensitive school-name search text.
+        school_levels: Selected school-level labels used as filters.
+        grade_bands: Selected elementary, middle, or high-school grade bands.
+        campus_configurations: Selected campus configurations, such as traditional or alternative.
+        early_grades: Selected early-grade options used to filter schools.
+        funding_types: Selected school funding types used as filters.
+        enrollment_range: Inclusive student-enrollment range used to filter schools.
+        charter_only: Whether to restrict results to charter entries.
+        magnet_only: Whether to restrict results to magnet entries.
+        title_i_only: Whether to restrict results to title i entries.
+        recently_opened_only: Whether to restrict results to recently opened entries.
+
+    Returns:
+        The filtered school layer GeoJSON.
     """
     if not geojson_data:
         return {"type": "FeatureCollection", "features": []}
@@ -807,7 +913,14 @@ class LayersClass:
 
     @staticmethod
     def create_street_base_layer(*, checked: bool = True) -> dl.BaseLayer:
-        """Create the OpenStreetMap base layer used by both listing maps."""
+        """Create the OpenStreetMap base layer used by both listing maps.
+
+        Args:
+            checked: Whether checked behavior is enabled.
+
+        Returns:
+            The created street base layer.
+        """
         return dl.BaseLayer(
             dl.TileLayer(
                 url=STREET_TILE_URL,
@@ -826,7 +939,15 @@ class LayersClass:
         *,
         checked: bool = False,
     ) -> dl.BaseLayer:
-        """Create the token-authenticated Mapbox Satellite base layer."""
+        """Create the token-authenticated Mapbox Satellite base layer.
+
+        Args:
+            access_token: Mapbox access token used to authorize tile requests.
+            checked: Whether checked behavior is enabled.
+
+        Returns:
+            The created mapbox satellite base layer.
+        """
         return dl.BaseLayer(
             dl.TileLayer(
                 url=build_mapbox_satellite_tile_url(access_token),
@@ -841,7 +962,14 @@ class LayersClass:
 
     @staticmethod
     def create_parcel_tile_overlay(*, checked: bool = False) -> dl.Overlay:
-        """Create the cached LA County Assessor parcel-boundary overlay."""
+        """Create the cached LA County Assessor parcel-boundary overlay.
+
+        Args:
+            checked: Whether checked behavior is enabled.
+
+        Returns:
+            The created parcel tile overlay.
+        """
         return dl.Overlay(
             dl.TileLayer(
                 url=LA_COUNTY_PARCEL_TILE_URL,
@@ -857,8 +985,7 @@ class LayersClass:
 
     @classmethod
     def get_layer_config(cls, layer_key: str) -> LayerConfig:
-        """
-        Return the registered layer configuration for a given layer key.
+        """Return the registered layer configuration for a given layer key.
 
         Args:
             layer_key: Internal layer identifier, such as `"farmers_markets"`.
@@ -878,14 +1005,16 @@ class LayersClass:
 
     @classmethod
     def load_layer_data(cls, layer_key: str) -> GeoJsonDict:
-        """
-        Load a registered layer payload with simple per-process caching.
+        """Load a registered layer payload with simple per-process caching.
 
         Args:
             layer_key: Internal layer identifier, such as `"farmers_markets"`.
 
         Returns:
             The parsed GeoJSON object.
+
+        Raises:
+            ValueError: If the operation cannot be completed.
         """
         spec = cls.get_layer_config(layer_key)
         dataset = spec.dataset
@@ -917,8 +1046,7 @@ class LayersClass:
 
     @classmethod
     def get_layer_config_by_dataset(cls, dataset: str) -> LayerConfig | None:
-        """
-        Return the first registered layer config matching a dataset cache key.
+        """Return the first registered layer config matching a dataset cache key.
 
         Args:
             dataset: Dataset/cache identifier, such as `"oil_well"`.
@@ -937,8 +1065,7 @@ class LayersClass:
         geojson_data: GeoJsonDict,
         bounds: tuple[float, float, float, float],
     ) -> GeoJsonDict:
-        """
-        Filter point features to a valid lon/lat bounding box.
+        """Filter point features to a valid lon/lat bounding box.
 
         Args:
             geojson_data: GeoJSON FeatureCollection payload to filter.
@@ -984,8 +1111,7 @@ class LayersClass:
         component_id: str | LazyLayerGeoJsonId | None = None,
         data: GeoJsonDict | None = None,
     ) -> dl.GeoJSON:
-        """
-        Build a `dl.GeoJSON` component from a registered layer config.
+        """Build a `dl.GeoJSON` component from a registered layer config.
 
         Args:
             layer_key: Internal key identifying which layer config to use.
@@ -1015,8 +1141,7 @@ class LayersClass:
 
     @classmethod
     def lazy_layer_geojson_id(cls, page_key: str, layer_key: str) -> LazyLayerGeoJsonId:
-        """
-        Build a pattern-matching id for a lazy-loaded GeoJSON layer component.
+        """Build a pattern-matching id for a lazy-loaded GeoJSON layer component.
 
         Args:
             page_key: Page identifier, such as `"lease"` or `"buy"`.
@@ -1033,8 +1158,7 @@ class LayersClass:
 
     @classmethod
     def layers_control_id(cls, page_key: str) -> str:
-        """
-        Return the Dash id used by a page's `dl.LayersControl`.
+        """Return the Dash id used by a page's `dl.LayersControl`.
 
         Args:
             page_key: Page identifier, such as `"lease"` or `"buy"`.
@@ -1052,8 +1176,7 @@ class LayersClass:
         *,
         checked: bool = False,
     ) -> dl.Overlay:
-        """
-        Create a lazy overlay wrapper for a registered layer.
+        """Create a lazy overlay wrapper for a registered layer.
 
         The returned overlay contains a `dl.GeoJSON` child with `data=None`.
         A callback can later populate the child when the overlay is enabled.
@@ -1086,8 +1209,7 @@ class LayersClass:
         *,
         checked_layer_keys: Sequence[str] = (),
     ) -> dl.LayersControl:
-        """
-        Create a `dl.LayersControl` with shared base layers and optional overlays.
+        """Create a `dl.LayersControl` with shared base layers and optional overlays.
 
         Args:
             page_key: Page identifier owning the control.
@@ -1136,8 +1258,7 @@ class LayersClass:
         *,
         excluded_layer_keys: Sequence[str] = (),
     ) -> list[Any]:
-        """
-        Resolve which lazy overlay payloads should be loaded for a callback update.
+        """Resolve which lazy overlay payloads should be loaded for a callback update.
 
         This helper is designed for a Dash callback whose output targets
         `({"type": "lazy-layer-geojson", ...}, "data")`.
@@ -1146,6 +1267,7 @@ class LayersClass:
             selected_overlays: Names currently enabled in `dl.LayersControl.overlays`.
             layer_ids: Pattern-matching ids for the targeted GeoJSON components.
             current_data: Existing GeoJSON payloads for those components.
+            excluded_layer_keys: Layer keys that must not be loaded.
 
         Returns:
             A list aligned to `layer_ids`, containing either:
@@ -1190,16 +1312,21 @@ class LayersClass:
         selected_overlays: Optional[Sequence[str]],
         layer_key: str,
     ) -> bool:
-        """
-        Return whether a named overlay is currently enabled in the map control.
+        """Return whether a named overlay is currently enabled in the map control.
+
+        Args:
+            selected_overlays: Names of map overlays currently selected by the user.
+            layer_key: Internal key identifying the overlay configuration.
+
+        Returns:
+            Whether the requested overlay is currently selected.
         """
         spec = cls.get_layer_config(layer_key)
         return spec.name in set(selected_overlays or [])
 
     @classmethod
     def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
-        """
-        Create an eagerly loaded oil and gas wells GeoJSON layer.
+        """Create an eagerly loaded oil and gas wells GeoJSON layer.
 
         Returns:
             A configured `dl.GeoJSON` component for oil well data.
@@ -1209,11 +1336,10 @@ class LayersClass:
             'oil_well',
             data=cls.load_layer_data('oil_well'),
         )
-    
+
     @classmethod
     def create_farmers_markets_layer(cls) -> dl.GeoJSON:
-        """
-        Create an eagerly loaded farmers markets GeoJSON layer.
+        """Create an eagerly loaded farmers markets GeoJSON layer.
 
         Returns:
             A configured `dl.GeoJSON` component for farmers market data.
@@ -1226,8 +1352,7 @@ class LayersClass:
 
     @classmethod
     def create_supermarkets_grocery_layer(cls) -> dl.GeoJSON:
-        """
-        Create an eagerly loaded supermarkets and grocery stores GeoJSON layer.
+        """Create an eagerly loaded supermarkets and grocery stores GeoJSON layer.
 
         Returns:
             A configured `dl.GeoJSON` component for supermarket and grocery store data.
@@ -1240,8 +1365,7 @@ class LayersClass:
 
     @classmethod
     def create_breakfast_burritos_layer(cls) -> dl.GeoJSON:
-        """
-        Create an eagerly loaded breakfast burritos GeoJSON layer.
+        """Create an eagerly loaded breakfast burritos GeoJSON layer.
 
         Returns:
             A configured `dl.GeoJSON` component for breakfast burrito data.
@@ -1254,8 +1378,7 @@ class LayersClass:
 
     @classmethod
     def create_crime_layer(cls) -> dl.GeoJSON:
-        """
-        Create an eagerly loaded crime GeoJSON layer.
+        """Create an eagerly loaded crime GeoJSON layer.
 
         Returns:
             A configured `dl.GeoJSON` component for crime data.

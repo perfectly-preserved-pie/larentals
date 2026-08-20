@@ -25,7 +25,14 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 
 def _format_duration(seconds: float) -> str:
-    """Format a duration for compact progress logs."""
+    """Format a duration for compact progress logs.
+
+    Args:
+        seconds: Elapsed duration in seconds.
+
+    Returns:
+        The formatted duration text.
+    """
     seconds = max(0, round(seconds))
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -37,7 +44,14 @@ def _format_duration(seconds: float) -> str:
 
 
 def _source_label(sources: set[str]) -> str:
-    """Return listing sources in their preferred lookup order."""
+    """Return listing sources in their preferred lookup order.
+
+    Args:
+        sources: Source metadata or source labels to combine.
+
+    Returns:
+        The source label text.
+    """
     return "+".join(
         source for source in ("BHHS", "The Agency") if source in sources
     ) or "none"
@@ -47,12 +61,18 @@ def _ensure_object_columns(
     df: pd.DataFrame,
     columns: Sequence[str],
 ) -> None:
-    """
-    Prepare columns that will receive several kinds of Python values.
+    """Prepare columns that will receive several kinds of Python values.
 
     Pandas 3 rejects assignments that do not match a column's inferred dtype.
     These enrichment columns can contain strings, timestamps, and missing
     values, so they deliberately use the flexible object dtype.
+
+    Args:
+        df: Dataframe to ensure object columns.
+        columns: Column names to read or process.
+
+    Returns:
+        None.
     """
     for column in columns:
         if column in df.columns:
@@ -62,16 +82,29 @@ def _ensure_object_columns(
 
 
 def normalize_reported_inactive_flags(series: pd.Series) -> pd.Series:
-    """
-    Convert stored inactive-listing flags into nullable pandas booleans.
+    """Convert stored inactive-listing flags into nullable pandas booleans.
 
     SQLite and older pipeline runs may represent the same flag as an integer,
     float, string, or boolean. Missing and unrecognized values are treated as
     false.
+
+    Args:
+        series: Reported-inactive flag series to normalize.
+
+    Returns:
+        The normalized reported inactive flags.
     """
     truthy_values = {"1", "1.0", "true", "t", "yes", "y"}
 
     def is_reported(value: object) -> bool:
+        """Handle is reported.
+
+        Args:
+            value: Raw reported-inactive flag from pandas or SQLite.
+
+        Returns:
+            Whether the listing is marked as reported inactive.
+        """
         try:
             if bool(pd.isna(value)):
                 return False
@@ -93,13 +126,21 @@ def remove_inactive_listings(
     checkpoint_store: ListingCheckpointStore | None = None,
     source_file_hash: str = "ad-hoc",
 ) -> pd.DataFrame:
-    """
-    Remove listings that have expired or been sold from the DataFrame.
+    """Remove listings that have expired or been sold from the DataFrame.
 
     Completed provider checks are checkpointed one listing at a time. A result
     is reusable only while both the source-file revision and listing URL match,
     which makes an interrupted run resumable without making future weekly
     refreshes stale.
+
+    Args:
+        df: Dataframe to remove inactive listings.
+        table_name: SQLite table to inspect or modify.
+        checkpoint_store: Optional checkpoint store used to resume prior processing.
+        source_file_hash: Fingerprint identifying the source listing file.
+
+    Returns:
+        The updated inactive listings dataframe.
     """
     to_delete = []
     total_rows = len(df)
@@ -192,21 +233,26 @@ def remove_inactive_listings(
 
 def update_dataframe_with_listing_data(
     df: pd.DataFrame,
-    imagekit_instance,
+    imagekit_instance: Any,
     *,
     listing_type: str = "lease",
     checkpoint_store: ListingCheckpointStore | None = None,
     source_file_hash: str = "ad-hoc",
 ) -> pd.DataFrame:
-    """
-    Updates the DataFrame with listing date, MLS photo, and listing URL by scraping BHHS and using The Agency's API.
+    """Updates the DataFrame with listing date, MLS photo, and listing URL by scraping BHHS and using The Agency's API.
 
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
     imagekit_instance: The ImageKit instance for image transformations.
+    listing_type: Listing market, either ``buy`` or ``lease``.
+    checkpoint_store: Optional store used to resume prior enrichment work.
+    source_file_hash: Fingerprint identifying the source listing file.
 
     Returns:
     pd.DataFrame: The updated DataFrame.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     if listing_type not in {"buy", "lease"}:
         raise ValueError(f"Unsupported listing type: {listing_type!r}")
@@ -233,6 +279,14 @@ def update_dataframe_with_listing_data(
     )
 
     def usable(value: Any) -> bool:
+        """Handle usable.
+
+        Args:
+            value: Candidate enrichment field to check for meaningful content.
+
+        Returns:
+            Whether the value is present and usable.
+        """
         if value is None or value is pd.NA:
             return False
         try:
@@ -241,6 +295,14 @@ def update_dataframe_with_listing_data(
             return True
 
     def first_usable(*values: Any) -> Any:
+        """Handle first usable.
+
+        Args:
+            *values: Candidate values ordered by preference.
+
+        Returns:
+            The first present, non-placeholder input, or ``None`` if none qualify.
+        """
         return next((value for value in values if usable(value)), None)
 
     for position, row_index in enumerate(df.index, start=1):
@@ -439,13 +501,19 @@ def merge_listing_dataframes(
     new_df: pd.DataFrame,
     old_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    """
-    Merge listing refreshes per column while preserving trusted old enrichment.
+    """Merge listing refreshes per column while preserving trusted old enrichment.
 
     Source columns prefer non-null incoming values. Enrichment values only win
     when their stage succeeded; otherwise legacy values fill the gaps. Changed
     addresses invalidate legacy coordinates, and a changed upstream photo
     invalidates the legacy ImageKit URL when its replacement failed.
+
+    Args:
+        new_df: Dataframe to merge listing dataframes.
+        old_df: Dataframe to merge listing dataframes.
+
+    Returns:
+        The merged listing dataframes dataframe.
     """
     if old_df.empty:
         return new_df.drop_duplicates(subset=["mls_number"], keep="last").copy()
@@ -556,12 +624,17 @@ def merge_listing_dataframes(
 
 
 def reconstruct_missing_address_components(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Restore address components from ``full_street_address`` when possible.
+    """Restore address components from ``full_street_address`` when possible.
 
     Merging current listings with SQLite data can leave ZIP and street-number
     columns with a numeric dtype. Cast the destination columns to object before
     assigning extracted text so pandas does not reject valid string values.
+
+    Args:
+        df: Dataframe to reconstruct missing address components.
+
+    Returns:
+        The reconstruct missing address components dataframe.
     """
     result = df.copy()
     required_columns = ("street_address", "city", "zip_code", "street_number")
@@ -598,8 +671,13 @@ def reconstruct_missing_address_components(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def categorize_laundry_features(feature: object) -> str:
-    """
-    Map raw laundry text or values to the application's laundry category.
+    """Map raw laundry text or values to the application's laundry category.
+
+    Args:
+        feature: GeoJSON feature being inspected or rendered.
+
+    Returns:
+        The categorize laundry features text.
     """
     # If it's NaN, treat as unknown
     if pd.isna(feature):
@@ -631,15 +709,20 @@ def categorize_laundry_features(feature: object) -> str:
         return 'None'
     else:
         return 'Other'
-    
+
 def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Flatten the 'subtype' column in-place by mapping attached/detached abbreviations
-    (e.g. 'SFR/A', 'SFR/D', 'CONDO/A', etc.) to a simplified label 
+    """Flatten the 'subtype' column in-place by mapping attached/detached abbreviations
+    (e.g. 'SFR/A', 'SFR/D', 'CONDO/A', etc.) to a simplified label
     (e.g. 'Single Family', 'Condominium', etc.).
-    
+
     :param df: A pandas DataFrame with a column named 'subtype'.
     :return: The same DataFrame (df) with its 'subtype' column flattened.
+
+    Args:
+        df: Dataframe to flatten subtype column.
+
+    Returns:
+        The flatten subtype column dataframe.
     """
 
     # Create a mapping from various raw subtype strings → flattened label
@@ -686,14 +769,21 @@ def flatten_subtype_column(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def refresh_invalid_mls_photos(
-    input_geojson_path: str, 
-    output_geojson_path: str, 
-    imagekit_instance
+    input_geojson_path: str,
+    output_geojson_path: str,
+    imagekit_instance: Any,
 ) -> None:
-    """
-    Loads a GeoJSON file as JSON, checks if the 'mls_photo' URL for each feature is valid,
+    """Loads a GeoJSON file as JSON, checks if the 'mls_photo' URL for each feature is valid,
     regenerates data for features with invalid photos using update_dataframe_with_listing_data,
     and writes out the updated GeoJSON.
+
+    Args:
+        input_geojson_path: Filesystem path for the input geojson.
+        output_geojson_path: Filesystem path for the output geojson.
+        imagekit_instance: Configured ImageKit client used for image operations.
+
+    Returns:
+        None.
     """
     try:
         with open(input_geojson_path, 'r') as f:
@@ -739,8 +829,7 @@ def refresh_invalid_mls_photos(
         logger.error(f"Error saving updated GeoJSON to {output_geojson_path}: {e}")
 
 def reduce_geojson_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Drops specified columns from a DataFrame.
+    """Drops specified columns from a DataFrame.
 
     The following columns will be dropped if they exist in the DataFrame:
       - latitude
@@ -783,8 +872,13 @@ def reduce_geojson_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def remove_trailing_zero(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Remove trailing '.0' from all columns except hoa_fee and space_rent in the given DataFrame. Convert to string if necessary.
+    """Remove trailing '.0' from all columns except hoa_fee and space_rent in the given DataFrame. Convert to string if necessary.
+
+    Args:
+        df: Dataframe to remove trailing zero.
+
+    Returns:
+        The updated trailing zero dataframe.
     """
     for col in df.columns:
         if col not in ['hoa_fee', 'space_rent']:

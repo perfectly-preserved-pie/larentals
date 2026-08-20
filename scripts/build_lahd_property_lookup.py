@@ -17,8 +17,10 @@ from functions.lahd import (
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the LAHD listing lookup artifact builder.
+    """Parse command-line arguments for the LAHD listing lookup artifact builder.
+
+    Returns:
+        The parsed command-line arguments.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -52,8 +54,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """
-    Build the LAHD lookup artifact or print its default output path.
+    """Build the LAHD lookup artifact or print its default output path.
+
+    Returns:
+        The process exit status.
     """
     args = parse_args()
 

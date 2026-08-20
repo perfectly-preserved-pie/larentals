@@ -8,8 +8,7 @@ from typing import Any
 load_dotenv(find_dotenv())
 
 def get_howloud_score(lat: float, lon: float) -> dict[str, Any] | None:
-    """
-    Fetch the HowLoud score for one latitude/longitude pair.
+    """Fetch the HowLoud score for one latitude/longitude pair.
 
     Args:
         lat: Latitude of the location.
@@ -41,10 +40,9 @@ def get_howloud_score(lat: float, lon: float) -> dict[str, Any] | None:
         else:
             logger.error(f"Error fetching HowLoud score for {lat}, {lon}. Error: {e}. Response: {r.text}")
         return None
-    
+
 def get_score_for_row(row: pd.Series, existing_howloud_columns: list[str]) -> dict[str, Any]:
-  """
-  Fetch missing HowLoud data for a dataframe row when needed.
+  """Fetch missing HowLoud data for a dataframe row when needed.
 
   Args:
     row: Listing row containing ``Latitude`` and ``Longitude`` values.
@@ -60,8 +58,7 @@ def get_score_for_row(row: pd.Series, existing_howloud_columns: list[str]) -> di
 def update_existing_howloud_columns(
     df: pd.DataFrame, existing_howloud_columns: list[str]
 ) -> pd.DataFrame:
-  """
-  Fill existing HowLoud columns with values returned by the API.
+  """Fill existing HowLoud columns with values returned by the API.
 
   Args:
     df: Listings dataframe to update.
@@ -81,8 +78,7 @@ def update_existing_howloud_columns(
   return df
 
 def cast_howloud_columns(df: pd.DataFrame) -> pd.DataFrame:
-  """
-  Cast HowLoud columns to nullable integer or string dtypes.
+  """Cast HowLoud columns to nullable integer or string dtypes.
 
   Args:
     df: Listings dataframe containing HowLoud columns.
@@ -102,8 +98,7 @@ def cast_howloud_columns(df: pd.DataFrame) -> pd.DataFrame:
   return df
 
 def update_howloud_scores(df: pd.DataFrame) -> pd.DataFrame:
-  """
-  Refresh and normalize HowLoud score columns in a listings dataframe.
+  """Refresh and normalize HowLoud score columns in a listings dataframe.
 
   Args:
     df: Listings dataframe to enrich.
@@ -116,8 +111,8 @@ def update_howloud_scores(df: pd.DataFrame) -> pd.DataFrame:
   """
   howloud_keys = ["score", "airports", "traffictext", "localtext", "airportstext", "traffic", "scoretext", "local"]
   existing_howloud_columns = [f"howloud_{key}" for key in howloud_keys if f"howloud_{key}" in df.columns]
-  
+
   df = update_existing_howloud_columns(df, existing_howloud_columns)
   df = cast_howloud_columns(df)
-  
+
   return df

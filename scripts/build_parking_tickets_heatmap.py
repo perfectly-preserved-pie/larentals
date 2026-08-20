@@ -16,8 +16,7 @@ from functions.parking_tickets import (
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the parking heatmap artifact builder.
+    """Parse command-line arguments for the parking heatmap artifact builder.
 
     Returns:
         Parsed CLI arguments.
@@ -43,8 +42,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """
-    Build the parking heatmap artifact or print its default output path.
+    """Build the parking heatmap artifact or print its default output path.
 
     Returns:
         Exit status code where `0` means success.

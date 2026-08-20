@@ -28,12 +28,14 @@ def register_report_listing_routes(
     server: Any,
     db_path: str = str(LARENTALS_DB_PATH),
 ) -> None:
-    """
-    Register the user-facing listing report endpoint.
+    """Register the user-facing listing report endpoint.
 
     Args:
         server: The Flask server instance (typically `app.server` in Dash).
         db_path: Path to the SQLite database file.
+
+    Returns:
+        None.
     """
     with sqlite3.connect(db_path) as conn:
         ensure_listing_reports_schema(conn)
@@ -41,8 +43,7 @@ def register_report_listing_routes(
 
     @server.route("/report_listing", methods=["POST"])
     def report_listing() -> tuple[Response, int]:
-        """
-        Validate and persist a user-submitted listing report.
+        """Validate and persist a user-submitted listing report.
 
         Returns:
             A JSON response and HTTP status code confirming persistence.

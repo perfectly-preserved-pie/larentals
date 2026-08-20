@@ -8,21 +8,41 @@ from functions.mcp_usage_logging import _result_summary, register_mcp_usage_logg
 
 class McpUsageLoggingTest(unittest.TestCase):
     def setUp(self) -> None:
+        """Handle setUp.
+
+        Returns:
+            None.
+        """
         app = Flask(__name__)
         register_mcp_usage_logging(app)
 
         @app.route("/_mcp", methods=["GET", "POST"])
         def mcp_endpoint() -> Response:
+            """Handle mcp endpoint.
+
+            Returns:
+                An HTTP response containing the MCP endpoint.
+            """
             status = 500 if request.args.get("failed") else 200
             return Response("{}", status=status, mimetype="application/json")
 
         @app.route("/health")
         def health() -> str:
+            """Handle health.
+
+            Returns:
+                The health text.
+            """
             return "ok"
 
         self.client = app.test_client()
 
     def test_logs_tool_invocation_with_search_filters_and_result_summary(self) -> None:
+        """Verify that logs tool invocation with search filters and result summary.
+
+        Returns:
+            None.
+        """
         payload = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -59,6 +79,11 @@ class McpUsageLoggingTest(unittest.TestCase):
         self.assertNotIn("argument_keys", log_output)
 
     def test_suppresses_non_tool_mcp_requests(self) -> None:
+        """Verify that suppresses non tool mcp requests.
+
+        Returns:
+            None.
+        """
         with patch("functions.mcp_usage_logging.logger.info") as log_info:
             response = self.client.post(
                 "/_mcp", json={"jsonrpc": "2.0", "method": "tools/list"}
@@ -68,6 +93,11 @@ class McpUsageLoggingTest(unittest.TestCase):
         log_info.assert_not_called()
 
     def test_suppresses_failed_non_tool_mcp_requests(self) -> None:
+        """Verify that suppresses failed non tool mcp requests.
+
+        Returns:
+            None.
+        """
         with patch("functions.mcp_usage_logging.logger.info") as log_info:
             response = self.client.get("/_mcp?failed=1")
 
@@ -75,6 +105,11 @@ class McpUsageLoggingTest(unittest.TestCase):
         log_info.assert_not_called()
 
     def test_logs_missing_result_payload(self) -> None:
+        """Verify that logs missing result payload.
+
+        Returns:
+            None.
+        """
         payload = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -89,6 +124,11 @@ class McpUsageLoggingTest(unittest.TestCase):
         self.assertIn("result=missing", log_info.call_args.args[0])
 
     def test_summarizes_structured_tool_result_without_listing_data(self) -> None:
+        """Verify that summarizes structured tool result without listing data.
+
+        Returns:
+            None.
+        """
         response = Response(
             '{"result":{"structuredContent":{"result":{'
             '"listing_type":"lease","total_results":2,"page":1,'
@@ -105,6 +145,11 @@ class McpUsageLoggingTest(unittest.TestCase):
         self.assertNotIn("123 Private Street", summary)
 
     def test_ignores_non_mcp_paths(self) -> None:
+        """Verify that ignores non mcp paths.
+
+        Returns:
+            None.
+        """
         with patch("functions.mcp_usage_logging.logger.info") as log_info:
             response = self.client.get("/health")
 

@@ -23,6 +23,15 @@ def _setup_card(
     """Build one client-specific setup card.
 
     The shared structure keeps Claude, Hermes, and generic instructions aligned.
+
+    Args:
+        icon: Iconify icon identifier displayed in the card heading.
+        label: User-facing label displayed for the component.
+        title: Heading displayed at the top of the card.
+        children: Dash child components rendered inside the card.
+
+    Returns:
+        A Dash article containing one setup option.
     """
     return html.Article(
         [
@@ -42,6 +51,14 @@ def _feature_card(*, icon: str, title: str, copy: str) -> html.Article:
     """Build a compact capability card for the page overview.
 
     Each card pairs one MCP capability with a short plain-language explanation.
+
+    Args:
+        icon: Iconify icon identifier displayed in the card heading.
+        title: Heading displayed at the top of the card.
+        copy: Explanatory copy displayed in the feature card.
+
+    Returns:
+        A Dash article describing one MCP feature.
     """
     return html.Article(
         [
@@ -56,6 +73,9 @@ def build_mcp_docs_layout() -> html.Main:
     """Build the responsive documentation page for the public MCP server.
 
     The page includes endpoint copying, client setup, capabilities, and prompts.
+
+    Returns:
+        The complete Dash layout for the MCP documentation page.
     """
     claude_command = (
         "claude mcp add --transport http wheretolive "

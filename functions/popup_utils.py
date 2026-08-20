@@ -8,6 +8,18 @@ from string import Formatter
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def _format_template_value(value: Any, template: str | None = None) -> str:
+  """Handle format template value.
+
+  Args:
+      value: Listing field substituted into the popup template.
+      template: Format template applied to a popup field value.
+
+  Returns:
+      The formatted template value text.
+
+  Raises:
+      ValueError: If the operation cannot be completed.
+  """
   if template is None:
     return f"{value}"
 
@@ -40,13 +52,12 @@ def _format_template_value(value: Any, template: str | None = None) -> str:
   return "".join(formatted_parts)
 
 def format_value_lease(value: Any, template: str | None = None) -> str:
-  """
-  Formats the given value based on its type and value.
-  
+  """Formats the given value based on its type and value.
+
   Parameters:
   value (Any): The value to be formatted.
   template (str): A format template for the value.
-  
+
   Returns:
   str: The formatted value as a string.
   """
@@ -63,13 +74,12 @@ def format_value_lease(value: Any, template: str | None = None) -> str:
     raise
 
 def format_value_buy(value: Any, template: str | None = None) -> str:
-  """
-  Formats the given value based on its type and value.
-  
+  """Formats the given value based on its type and value.
+
   Parameters:
   value (Any): The value to be formatted.
   template (str): A format template for the value.
-  
+
   Returns:
   str: The formatted value as a string.
   """

@@ -10,7 +10,11 @@ _REGISTERED = False
 
 
 def register_filter_exclusion_devtool() -> None:
-    """Register the custom devtools panel once per process."""
+    """Register the custom devtools panel once per process.
+
+    Returns:
+        None.
+    """
     global _REGISTERED
 
     if _REGISTERED:

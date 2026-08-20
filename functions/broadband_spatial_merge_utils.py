@@ -34,8 +34,7 @@ class ProviderJoinConfig:
 
 
 def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
-    """
-    Spatially join listings (lat/lon points) to provider polygons from a GeoPackage layer,
+    """Spatially join listings (lat/lon points) to provider polygons from a GeoPackage layer,
     and write the joined results back into the SQLite database.
 
     Writes a normalized table: one row per (listing_id × matching provider polygon).
@@ -50,6 +49,9 @@ def write_provider_options_from_geopackage(cfg: ProviderJoinConfig) -> int:
 
     Returns:
         Number of rows written to cfg.output_table.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
     """
     providers = gpd.read_file(cfg.geopackage_path, layer=cfg.geopackage_layer)
     logger.debug(f"Loaded {len(providers):,} provider polygons from GeoPackage layer '{cfg.geopackage_layer}'")

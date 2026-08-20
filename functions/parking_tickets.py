@@ -117,8 +117,7 @@ class ParkingMarkerPoint(TypedDict):
 
 
 def _generated_timestamp() -> str:
-    """
-    Return an RFC 3339-like UTC timestamp for payload metadata.
+    """Return an RFC 3339-like UTC timestamp for payload metadata.
 
     Returns:
         Timestamp string such as `2026-03-25T20:15:42Z`.
@@ -127,8 +126,7 @@ def _generated_timestamp() -> str:
 
 
 def _is_valid_parking_heat_geojson(payload: Any) -> bool:
-    """
-    Check whether a decoded object looks like the expected parking layer payload.
+    """Check whether a decoded object looks like the expected parking layer payload.
 
     Args:
         payload: Decoded JSON object loaded from disk or built in memory.
@@ -145,8 +143,7 @@ def _is_valid_parking_heat_geojson(payload: Any) -> bool:
 
 
 def load_local_parking_tickets_heat_geojson() -> GeoJsonDict | None:
-    """
-    Load the precomputed local 2025 parking heatmap artifact when present.
+    """Load the precomputed local 2025 parking heatmap artifact when present.
 
     Returns:
         Parsed GeoJSON payload from the private parking-tickets artifact,
@@ -183,8 +180,7 @@ def write_local_parking_tickets_heat_geojson(
     payload: GeoJsonDict,
     output_path: Path | None = None,
 ) -> Path:
-    """
-    Persist a derived parking heatmap payload to the local datasets folder.
+    """Persist a derived parking heatmap payload to the local datasets folder.
 
     Args:
         payload: GeoJSON `FeatureCollection` to save as a gzipped JSON artifact.
@@ -210,8 +206,7 @@ def write_local_parking_tickets_heat_geojson(
 
 
 def _pick_quantile_threshold(values: list[int], fraction: float) -> int:
-    """
-    Return a stable integer quantile threshold from a sorted integer distribution.
+    """Return a stable integer quantile threshold from a sorted integer distribution.
 
     Args:
         values: Sorted positive integer values.
@@ -230,8 +225,7 @@ def _pick_quantile_threshold(values: list[int], fraction: float) -> int:
 
 
 def _format_socrata_day(value: date) -> str:
-    """
-    Return a start-of-day timestamp string accepted by the Socrata API.
+    """Return a start-of-day timestamp string accepted by the Socrata API.
 
     Args:
         value: Calendar date to convert into a midnight timestamp string.
@@ -243,8 +237,7 @@ def _format_socrata_day(value: date) -> str:
 
 
 def _parse_socrata_date(value: str | None) -> date | None:
-    """
-    Parse a Socrata calendar-date string into a Python `date`.
+    """Parse a Socrata calendar-date string into a Python `date`.
 
     Args:
         value: Raw Socrata date string, usually in ISO-like timestamp form.
@@ -263,8 +256,7 @@ def _parse_socrata_date(value: str | None) -> date | None:
 
 
 def _build_valid_coordinate_where_clause() -> str:
-    """
-    Return the shared coordinate and data-quality filters for parking citations.
+    """Return the shared coordinate and data-quality filters for parking citations.
 
     Returns:
         SoQL boolean expression that excludes blank dates, missing coordinates,
@@ -282,8 +274,7 @@ def _build_valid_coordinate_where_clause() -> str:
 
 
 def _get_socrata_app_token() -> str | None:
-    """
-    Return the configured Socrata app token from `.env` or the environment.
+    """Return the configured Socrata app token from `.env` or the environment.
 
     Returns:
         Trimmed token string when `SOCRATA_APP_TOKEN` is configured, otherwise `None`.
@@ -296,8 +287,7 @@ def _get_socrata_app_token() -> str | None:
 
 
 def _build_socrata_headers() -> dict[str, str]:
-    """
-    Build headers for Socrata requests, including an optional app token.
+    """Build headers for Socrata requests, including an optional app token.
 
     Returns:
         Header mapping containing the app's user agent, JSON accept header, and
@@ -314,8 +304,7 @@ def _build_socrata_headers() -> dict[str, str]:
 
 
 def _coerce_socrata_payload_rows(payload: Any) -> list[JsonDict]:
-    """
-    Normalize Socrata response payloads into a list of row dictionaries.
+    """Normalize Socrata response payloads into a list of row dictionaries.
 
     SODA 2.1 query responses are plain JSON arrays. The SODA 3 query endpoint is
     also documented as JSON, but this helper stays defensive in case the domain
@@ -348,8 +337,7 @@ def _request_socrata_rows_v3(
     page_number: int = 1,
     page_size: int = 50000,
 ) -> list[dict[str, Any]]:
-    """
-    Fetch rows from the Socrata v3 query endpoint.
+    """Fetch rows from the Socrata v3 query endpoint.
 
     Args:
         query: SoQL query string to execute against the v3 endpoint.
@@ -406,8 +394,7 @@ def _request_socrata_rows_v3(
 
 
 def _request_socrata_rows(params: dict[str, Any]) -> list[JsonDict]:
-    """
-    Fetch rows from the city Socrata SODA 2.1 endpoint with a stable app user-agent.
+    """Fetch rows from the city Socrata SODA 2.1 endpoint with a stable app user-agent.
 
     This remains as a compatibility fallback when no app token is configured for
     the v3 API yet.
@@ -438,8 +425,7 @@ def _request_parking_ticket_rows(
     page_size: int = 50000,
     legacy_params: dict[str, Any],
 ) -> list[JsonDict]:
-    """
-    Request parking-ticket rows, preferring Socrata v3 when a token is present.
+    """Request parking-ticket rows, preferring Socrata v3 when a token is present.
 
     The user explicitly requested the v3 API, but the workspace may not have a
     token configured yet. In that case, we preserve a working lazy layer by
@@ -474,8 +460,7 @@ def _request_parking_ticket_rows(
 
 
 def _fetch_grouped_parking_ticket_rows(window_start: date, window_end: date) -> list[JsonDict]:
-    """
-    Fetch grouped parking hotspots for a recent window from the city dataset.
+    """Fetch grouped parking hotspots for a recent window from the city dataset.
 
     The heat layer wants many individual hotspots, not a handful of coarse
     kilometer-wide buckets. We therefore aggregate at a much finer coordinate
@@ -541,8 +526,7 @@ def _fetch_grouped_parking_ticket_rows(window_start: date, window_end: date) -> 
 
 
 def _fetch_grouped_marker_rows(window_start: date, window_end: date) -> list[JsonDict]:
-    """
-    Fetch grouped parking hotspots for zoomed-in marker rendering.
+    """Fetch grouped parking hotspots for zoomed-in marker rendering.
 
     These rows keep the human-readable `location` string and the source point
     coordinates used by the Socrata `geocodelocation` field so close-up markers
@@ -613,8 +597,7 @@ def _fetch_grouped_marker_rows(window_start: date, window_end: date) -> list[Jso
 
 
 def _coerce_grouped_heat_rows(grouped_rows: list[JsonDict]) -> list[ParkingHeatPoint]:
-    """
-    Validate and normalize grouped hotspot rows returned from the city API.
+    """Validate and normalize grouped hotspot rows returned from the city API.
 
     Args:
         grouped_rows: Raw grouped row payload emitted by the selected Socrata endpoint.
@@ -670,8 +653,7 @@ def _coerce_grouped_heat_rows(grouped_rows: list[JsonDict]) -> list[ParkingHeatP
 
 
 def _coerce_grouped_marker_rows(grouped_rows: list[JsonDict]) -> list[ParkingMarkerPoint]:
-    """
-    Validate and normalize grouped hotspot rows used for zoomed-in markers.
+    """Validate and normalize grouped hotspot rows used for zoomed-in markers.
 
     Args:
         grouped_rows: Raw grouped marker payload emitted by the Socrata endpoint.
@@ -734,8 +716,7 @@ def _coerce_grouped_marker_rows(grouped_rows: list[JsonDict]) -> list[ParkingMar
 
 
 def _normalize_marker_location_key(location: str) -> str:
-    """
-    Return a stable normalized key for same-address marker merging.
+    """Return a stable normalized key for same-address marker merging.
 
     Args:
         location: Raw location string from the city dataset.
@@ -756,8 +737,7 @@ def _normalize_marker_location_key(location: str) -> str:
 
 
 def _distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Estimate the distance between two nearby coordinates in meters.
+    """Estimate the distance between two nearby coordinates in meters.
 
     Args:
         lat1: Latitude of point A.
@@ -779,8 +759,7 @@ def _distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> floa
 def _merge_marker_points_by_location_proximity(
     marker_points: list[ParkingMarkerPoint],
 ) -> list[ParkingMarkerPoint]:
-    """
-    Merge same-address marker points that are effectively the same curb spot.
+    """Merge same-address marker points that are effectively the same curb spot.
 
     The source dataset can assign slightly different geocodes to the same block
     address, which creates duplicate-looking markers. We collapse those nearby
@@ -875,8 +854,7 @@ def _merge_marker_points_by_location_proximity(
 
 
 def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPoint]:
-    """
-    Attach normalized heat intensities to hotspot rows.
+    """Attach normalized heat intensities to hotspot rows.
 
     Leaflet.heat supports weighted points, but raw citation counts create a map
     where one or two giant hotspots dominate the whole color scale. A square-root
@@ -918,8 +896,7 @@ def _attach_heat_intensity(points: list[ParkingHeatPoint]) -> list[ParkingHeatPo
 
 
 def _marker_frequency_thresholds(marker_points: list[ParkingMarkerPoint]) -> tuple[int, int, int, int]:
-    """
-    Derive discrete ticket-frequency thresholds for zoomed-in marker styling.
+    """Derive discrete ticket-frequency thresholds for zoomed-in marker styling.
 
     Args:
         marker_points: Normalized hotspot rows used for close-up markers.
@@ -953,8 +930,7 @@ def _build_heat_anchor_feature(
     max_citation_count: int,
     marker_frequency_breaks: tuple[int, int, int, int],
 ) -> GeoJsonDict:
-    """
-    Build the single invisible GeoJSON anchor used to mount the heat layer.
+    """Build the single invisible GeoJSON anchor used to mount the heat layer.
 
     Dash Leaflet's `GeoJSON` component renders one Leaflet layer per feature.
     Rather than returning tens of thousands of invisible markers, we return a
@@ -1022,8 +998,7 @@ def _build_heat_anchor_feature(
 
 
 def _build_live_parking_tickets_heat_geojson() -> GeoJsonDict:
-    """
-    Build the full-year 2025 parking-ticket heatmap payload from Socrata.
+    """Build the full-year 2025 parking-ticket heatmap payload from Socrata.
 
     Returns:
         GeoJSON `FeatureCollection` containing a single invisible anchor feature
@@ -1089,8 +1064,7 @@ def _build_live_parking_tickets_heat_geojson() -> GeoJsonDict:
 
 
 def build_parking_tickets_heat_geojson() -> GeoJsonDict:
-    """
-    Return the preferred parking heatmap payload for the fixed 2025 dataset.
+    """Return the preferred parking heatmap payload for the fixed 2025 dataset.
 
     The app should use the precomputed local artifact because rebuilding this
     full-year dataset live is intentionally handled offline.
@@ -1111,8 +1085,7 @@ def build_parking_tickets_heat_geojson() -> GeoJsonDict:
 
 
 def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
-    """
-    Return the preferred parking heatmap payload.
+    """Return the preferred parking heatmap payload.
 
     Returns:
         GeoJSON `FeatureCollection` for the fixed 2025 dataset.
@@ -1121,8 +1094,7 @@ def build_latest_parking_tickets_heat_geojson() -> GeoJsonDict:
 
 
 def refresh_local_parking_tickets_heat_geojson(output_path: Path | None = None) -> Path:
-    """
-    Rebuild the parking heatmap payload from Socrata and write it to disk.
+    """Rebuild the parking heatmap payload from Socrata and write it to disk.
 
     Args:
         output_path: Optional artifact destination. Defaults to the canonical

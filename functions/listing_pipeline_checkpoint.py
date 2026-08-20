@@ -102,7 +102,15 @@ class S3CheckpointClient(Protocol):
     """Small portion of the S3 client used by the checkpoint store."""
 
     def get_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:
-        """Download the current version of a checkpoint object."""
+        """Download the current version of a checkpoint object.
+
+        Args:
+            Bucket: S3 bucket receiving or containing the object.
+            Key: S3 object key identifying the uploaded or requested object.
+
+        Returns:
+            A mapping containing the requested object.
+        """
         ...
 
     def put_object(
@@ -113,17 +121,38 @@ class S3CheckpointClient(Protocol):
         Body: BinaryIO,
         ContentType: str,
     ) -> dict[str, Any]:
-        """Upload the latest complete checkpoint database."""
+        """Upload the latest complete checkpoint database.
+
+        Args:
+            Bucket: S3 bucket receiving or containing the object.
+            Key: S3 object key identifying the uploaded or requested object.
+            Body: Binary object body uploaded to S3.
+            ContentType: MIME type stored with the S3 object.
+
+        Returns:
+            A mapping containing the put object.
+        """
         ...
 
 
 def _utc_now() -> str:
-    """Return the current UTC time in a format SQLite can store as text."""
+    """Return the current UTC time in a format SQLite can store as text.
+
+    Returns:
+        The UTC now text.
+    """
     return datetime.now(timezone.utc).isoformat()
 
 
 def _json_scalar(value: object) -> JsonScalar:
-    """Turn common pandas values into plain values SQLite and JSON understand."""
+    """Turn common pandas values into plain values SQLite and JSON understand.
+
+    Args:
+        value: Scalar value being prepared for deterministic JSON serialization.
+
+    Returns:
+        A JSON-compatible scalar representation of the input.
+    """
     if value is None or value is pd.NA:
         return None
     try:
@@ -154,6 +183,12 @@ def stable_fingerprint(value: object) -> str | None:
     Text is trimmed, lowercased, and normalized before hashing so harmless
     whitespace differences do not cause another paid operation. Empty values
     return ``None`` because there is nothing useful to compare.
+
+    Args:
+        value: JSON-compatible structure whose content should be fingerprinted.
+
+    Returns:
+        A stable fingerprint for the stable.
     """
     normalized = _json_scalar(value)
     if normalized is None:
@@ -171,6 +206,12 @@ def file_fingerprint(path: str | Path) -> str:
 
     The sample and full runs receive the same identifier when they read the
     same file, allowing work completed by the sample run to be reused.
+
+    Args:
+        path: Filesystem path to the source file, dataset, database, or artifact.
+
+    Returns:
+        A stable fingerprint for the file.
     """
     digest = sha256()
     with Path(path).open("rb") as input_file:
@@ -189,6 +230,13 @@ def listing_input_fingerprint(
     Generated enrichment columns are deliberately left out. The result changes
     when the source file or meaningful source fields change, which tells the
     pipeline that the listing page should be checked again.
+
+    Args:
+        row: Listing row containing the fields that determine scrape identity.
+        source_file_hash: Fingerprint identifying the source listing file.
+
+    Returns:
+        A stable fingerprint for the listing input.
     """
     values = {
         str(key): _json_scalar(value)
@@ -205,7 +253,14 @@ def listing_input_fingerprint(
 
 
 def address_fingerprint(address: object) -> str | None:
-    """Identify an address so coordinates are reused only while it is unchanged."""
+    """Identify an address so coordinates are reused only while it is unchanged.
+
+    Args:
+        address: Street address used to identify or geocode the property.
+
+    Returns:
+        A stable fingerprint for the address.
+    """
     normalized = _json_scalar(address)
     if not isinstance(normalized, str):
         return stable_fingerprint(normalized)
@@ -215,7 +270,14 @@ def address_fingerprint(address: object) -> str | None:
 
 
 def photo_fingerprint(source_photo_url: object) -> str | None:
-    """Identify the source photo so ImageKit is called only when it changes."""
+    """Identify the source photo so ImageKit is called only when it changes.
+
+    Args:
+        source_photo_url: Original listing-photo URL.
+
+    Returns:
+        A stable fingerprint for the photo.
+    """
     return stable_fingerprint(source_photo_url)
 
 
@@ -230,6 +292,13 @@ def inactive_check_fingerprint(
     transition to inactive between weekly pipeline runs. Reusing the source
     file fingerprint lets a restarted run (and the full run after its sample
     run) skip checks already completed for that exact input.
+
+    Args:
+        listing_url: URL for the listing.
+        source_file_hash: Fingerprint identifying the source listing file.
+
+    Returns:
+        A stable fingerprint for the inactive check.
     """
     url = _json_scalar(listing_url)
     normalized_url = " ".join(url.strip().split()) if isinstance(url, str) else url
@@ -268,6 +337,20 @@ class ListingCheckpointStore:
         compatible client for tests or custom AWS configuration. When
         ``restore_remote`` is true, an existing S3 checkpoint is downloaded only
         if the local file does not already exist.
+
+        Args:
+            path: Filesystem path to the source file, dataset, database, or artifact.
+            listing_type: Listing market, either ``buy`` or ``lease``.
+            s3_bucket: Optional S3 bucket used for remote checkpoint persistence.
+            s3_key: Object key used for the remote checkpoint file.
+            s3_client: Optional S3-compatible client used for checkpoint transfers.
+            restore_remote: Whether to restore a remote checkpoint during initialization.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If the operation cannot be completed.
         """
         if listing_type not in {"buy", "lease"}:
             raise ValueError(f"Unsupported listing type: {listing_type!r}")
@@ -291,11 +374,19 @@ class ListingCheckpointStore:
 
     @property
     def remote_enabled(self) -> bool:
-        """Report whether completed steps will also be saved to S3."""
+        """Report whether completed steps will also be saved to S3.
+
+        Returns:
+            Whether the remote enabled condition is satisfied.
+        """
         return self.s3_client is not None
 
     def _connect(self) -> sqlite3.Connection:
-        """Open SQLite with settings that favor durable commits over speed."""
+        """Open SQLite with settings that favor durable commits over speed.
+
+        Returns:
+            An open SQLite connection configured for checkpoint access.
+        """
         connection = sqlite3.connect(self.path, timeout=30)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA journal_mode=DELETE")
@@ -308,6 +399,9 @@ class ListingCheckpointStore:
         The download is written to a temporary file and then renamed into
         place. A missing S3 object is expected on a brand-new pipeline run and
         simply results in a new local checkpoint.
+
+        Returns:
+            None.
         """
         assert self.s3_client is not None
         assert self.s3_bucket is not None
@@ -338,7 +432,11 @@ class ListingCheckpointStore:
             temporary_path.unlink(missing_ok=True)
 
     def _ensure_schema(self) -> None:
-        """Create the checkpoint table and add columns introduced by upgrades."""
+        """Create the checkpoint table and add columns introduced by upgrades.
+
+        Returns:
+            None.
+        """
         definitions = ",\n          ".join(
             f'"{name}" {column_type}' for name, column_type in CHECKPOINT_COLUMNS
         )
@@ -365,7 +463,14 @@ class ListingCheckpointStore:
                 )
 
     def get(self, mls_number: object) -> dict[str, Any] | None:
-        """Return the saved work for one MLS number, if it has been processed."""
+        """Return the saved work for one MLS number, if it has been processed.
+
+        Args:
+            mls_number: MLS identifier for the listing.
+
+        Returns:
+            A mapping containing the requested get.
+        """
         normalized_mls = normalize_mls_number(mls_number)
         with self._connect() as connection:
             row = connection.execute(
@@ -384,6 +489,16 @@ class ListingCheckpointStore:
         A listing is inserted the first time it is seen. Later pipeline stages
         update only the values they provide, so scraping, image, and geocoding
         results can be committed independently.
+
+        Args:
+            mls_number: MLS identifier for the listing.
+            **values: Checkpoint columns and values to insert or update.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If the operation cannot be completed.
         """
         unexpected = set(values) - _MUTABLE_COLUMNS
         if unexpected:
@@ -418,7 +533,11 @@ class ListingCheckpointStore:
             )
 
     def sync_remote(self) -> None:
-        """Upload the complete, committed SQLite file as the latest checkpoint."""
+        """Upload the complete, committed SQLite file as the latest checkpoint.
+
+        Returns:
+            None.
+        """
         if self.s3_client is None:
             return
         assert self.s3_bucket is not None
@@ -438,6 +557,16 @@ class ListingCheckpointStore:
         Failure is deliberately fatal: once a paid operation succeeds, the
         pipeline must not continue unless that result is durable. Otherwise a
         later crash could repeat paid Google Maps or ImageKit work.
+
+        Args:
+            mls_number: MLS identifier for the listing.
+            **values: Checkpoint fields to persist for the listing.
+
+        Returns:
+            None.
+
+        Raises:
+            CheckpointPersistenceError: If the operation cannot be completed.
         """
         try:
             self.upsert(mls_number, **values)

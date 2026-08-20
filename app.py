@@ -68,7 +68,7 @@ app = Dash(
   meta_tags = [
     {"name": "viewport", "content": "width=device-width, initial-scale=1"}
   ],
-  name = __name__, 
+  name = __name__,
   use_pages = True,
 )
 
@@ -76,7 +76,7 @@ app = Dash(
 app.title = "WhereToLive.LA"
 app.description = "An interactive map of available rental & for-sale properties in Los Angeles County."
 
-# Configure compression 
+# Configure compression
 app.server.config["COMPRESS_MIN_SIZE"] = 1024  # only compress responses >= 1KB
 app.server.config["COMPRESS_MIMETYPES"] = [
   "text/html",
@@ -97,8 +97,10 @@ register_source_map_error_filter(server)
 
 @server.route("/sitemap.xml")
 def sitemap_xml() -> Response:
-  """
-  Render the canonical sitemap for all public Dash pages.
+  """Render the canonical sitemap for all public Dash pages.
+
+  Returns:
+      An HTTP response containing the sitemap XML.
   """
   page_paths = get_public_page_paths(dash.page_registry)
   return Response(
@@ -109,8 +111,10 @@ def sitemap_xml() -> Response:
 
 @server.route("/robots.txt")
 def robots_txt() -> Response:
-  """
-  Render crawler directives with the canonical sitemap location.
+  """Render crawler directives with the canonical sitemap location.
+
+  Returns:
+      An HTTP response containing the robots text.
   """
   return Response(
     build_robots_txt(CANONICAL_BASE_URL),
@@ -120,8 +124,10 @@ def robots_txt() -> Response:
 
 @server.route("/llms.txt")
 def llms_txt() -> Response:
-  """
-  Render the machine-readable site description for language-model clients.
+  """Render the machine-readable site description for language-model clients.
+
+  Returns:
+      An HTTP response containing the llms text.
   """
   return Response(
     build_llms_txt(CANONICAL_BASE_URL),
@@ -149,8 +155,7 @@ app.index_string = """<!DOCTYPE html>
 """
 
 def create_initial_viewport_sync() -> dcc.Interval:
-  """
-  Create a one-shot interval used to seed responsive clientside state.
+  """Create a one-shot interval used to seed responsive clientside state.
 
   Returns:
     A short-lived interval that fires once after the app mounts.
@@ -158,8 +163,7 @@ def create_initial_viewport_sync() -> dcc.Interval:
   return dcc.Interval(id="viewport-sync-initial", interval=250, n_intervals=0, max_intervals=1)
 
 def create_viewport_listener() -> EventListener:
-  """
-  Create the hidden event bridge for viewport-aware Dash callbacks.
+  """Create the hidden event bridge for viewport-aware Dash callbacks.
 
   Returns:
     An `EventListener` configured to forward browser `viewportchange` events.
@@ -171,8 +175,10 @@ def create_viewport_listener() -> EventListener:
   )
 
 def prewarm_startup_caches() -> None:
-  """
-  Populate expensive local caches before the first browser/API request.
+  """Populate expensive local caches before the first browser/API request.
+
+  Returns:
+      None.
   """
   start_time = time.perf_counter()
   prewarm_lahd_live_dataset_status_cache()
@@ -232,11 +238,13 @@ register_lahd_records_drawer_callback(app)
 prewarm_startup_caches()
 
 def main() -> None:
-  """
-  Start the Dash development server when invoked as a console script.
+  """Start the Dash development server when invoked as a console script.
 
   Side Effects:
     Binds the configured local web server and blocks while serving requests.
+
+  Returns:
+      None.
   """
   app.run(debug=True)
 

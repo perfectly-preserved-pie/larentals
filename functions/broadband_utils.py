@@ -11,8 +11,7 @@ def query_cpuc(
     consumer: bool = True,
     timeout_s: float = 15.0,
 ) -> Dict[str, Any]:
-    """
-    Query the CPUC Provider Identify ArcGIS layer for ISP options at a point.
+    """Query the CPUC Provider Identify ArcGIS layer for ISP options at a point.
 
     This performs a point-in-polygon lookup against provider coverage areas.
 
@@ -86,12 +85,17 @@ class ISPOption:
 
 
 def tech_code_to_label(tech_code: int) -> str:
-    """
-    Convert FCC/BDC technology codes (as used by CPUC) to readable labels.
+    """Convert FCC/BDC technology codes (as used by CPUC) to readable labels.
 
     Notes:
         CPUC's layer uses the same TechCode scheme commonly used in FCC BDC reporting.
         Not all codes may appear; unknowns are returned as "Unknown (<code>)".
+
+    Args:
+        tech_code: FCC broadband technology code to translate.
+
+    Returns:
+        The tech code to label text.
     """
     mapping: Dict[int, str] = {
         10: "Copper wire (xDSL/ethernet over copper/T1, etc.)",
@@ -109,17 +113,23 @@ def tech_code_to_label(tech_code: int) -> str:
 
 
 def _to_float_or_none(value: Any) -> Optional[float]:
-    """Convert a JSON value to float, returning None if missing/unparseable."""
+    """Convert a JSON value to float, returning None if missing/unparseable.
+
+    Args:
+        value: Numeric-like broadband attribute to convert.
+
+    Returns:
+        The parsed floating-point number, or ``None`` for invalid input.
+    """
     if value is None:
         return None
     try:
         return float(value)
     except (TypeError, ValueError):
         return None
-    
+
 def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
-    """
-    Dedupe options by (DBA, TechCode, Busconsm), keeping the best speeds.
+    """Dedupe options by (DBA, TechCode, Busconsm), keeping the best speeds.
 
     "Best" is defined as:
         higher max_down_mbps, then higher max_up_mbps.
@@ -133,6 +143,14 @@ def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
     best: Dict[Tuple[str, int, str], ISPOption] = {}
 
     def norm_busconsm(v: Optional[str]) -> str:
+        """Handle norm busconsm.
+
+        Args:
+            v: Raw broadband business/residential code to normalize.
+
+        Returns:
+            The norm busconsm text.
+        """
         return (v or "X").strip().upper()
 
     for opt in options:
@@ -151,6 +169,14 @@ def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
             best[key] = opt
 
     def tech_priority(label: str) -> int:
+        """Handle tech priority.
+
+        Args:
+            label: User-facing label displayed for the component.
+
+        Returns:
+            The numeric ranking assigned to the broadband technology code.
+        """
         t = label.lower()
         if "fiber" in t:
             return 1
@@ -170,8 +196,7 @@ def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
     )
 
 def parse_cpuc_response(payload: Dict[str, Any]) -> List[ISPOption]:
-    """
-    Parse the CPUC ArcGIS response JSON into a normalized list of ISPOption.
+    """Parse the CPUC ArcGIS response JSON into a normalized list of ISPOption.
 
     Args:
         payload: The JSON response from the ArcGIS endpoint.

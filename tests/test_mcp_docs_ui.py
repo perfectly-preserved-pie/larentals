@@ -1,16 +1,23 @@
 """Smoke tests for the human-facing MCP documentation page."""
 
 import unittest
+from collections.abc import Iterator
 
 from dash import dcc, html
 
 from functions.mcp_docs_ui import MCP_ENDPOINT, build_mcp_docs_layout
 
 
-def _collect_components(component: object):
+def _collect_components(component: object) -> Iterator[object]:
   """Yield every Dash component in a layout tree.
 
   Lists and tuples are traversed so nested cards and copy controls are covered.
+
+  Args:
+      component: Dash component or nested component collection to traverse.
+
+  Yields:
+      Values produced by the iterator.
   """
   if isinstance(component, (list, tuple)):
     for child in component:
@@ -25,12 +32,20 @@ def _collect_components(component: object):
 
 class McpDocsUiTest(unittest.TestCase):
   def setUp(self) -> None:
-    """Build one documentation layout for each isolated test case."""
+    """Build one documentation layout for each isolated test case.
+
+    Returns:
+        None.
+    """
     self.layout = build_mcp_docs_layout()
     self.components = list(_collect_components(self.layout))
 
   def test_layout_exposes_copyable_public_endpoint(self) -> None:
-    """Keep the displayed and copied endpoint consistent."""
+    """Keep the displayed and copied endpoint consistent.
+
+    Returns:
+        None.
+    """
     codes = [item for item in self.components if isinstance(item, html.Code)]
     clipboards = [
       item for item in self.components if isinstance(item, dcc.Clipboard)
@@ -40,14 +55,22 @@ class McpDocsUiTest(unittest.TestCase):
     self.assertIn(MCP_ENDPOINT, [clipboard.content for clipboard in clipboards])
 
   def test_layout_covers_supported_clients_and_listing_modes(self) -> None:
-    """Ensure essential setup and capability copy remains present."""
+    """Ensure essential setup and capability copy remains present.
+
+    Returns:
+        None.
+    """
     text = str(self.layout.to_plotly_json())
 
     for expected in ("Claude", "Hermes", "lease", "buy", "Streamable HTTP"):
       self.assertIn(expected, text)
 
   def test_layout_has_navigation_and_theme_control(self) -> None:
-    """Verify that users can return home and use the shared theme callback."""
+    """Verify that users can return home and use the shared theme callback.
+
+    Returns:
+        None.
+    """
     links = [item for item in self.components if isinstance(item, dcc.Link)]
     ids = [getattr(item, "id", None) for item in self.components]
 

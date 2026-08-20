@@ -9,8 +9,10 @@ from functions.rso import refresh_local_rso_property_lookup
 
 
 def main() -> None:
-    """
-    Build the local RSO lookup artifact from LAHD's public dashboard.
+    """Build the local RSO lookup artifact from LAHD's public dashboard.
+
+    Returns:
+        None.
     """
     parser = argparse.ArgumentParser(description="Build the current LAHD RSO property lookup for listing popups.")
     parser.add_argument("--output", type=Path, default=None, help="Optional path for the generated gzip JSON lookup.")

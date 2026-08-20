@@ -43,12 +43,16 @@ class BroadbandGeopackageConfig:
 
     @property
     def metadata_path(self) -> Path:
+        """Handle metadata path.
+
+        Returns:
+            The filesystem path for the metadata.
+        """
         return self.output_path.with_suffix(f"{self.output_path.suffix}.metadata.json")
 
 
 def parse_args(argv: list[str] | None = None) -> BroadbandGeopackageConfig:
-    """
-    Parse command-line arguments into a typed fetch configuration.
+    """Parse command-line arguments into a typed fetch configuration.
 
     Args:
         argv: Optional argument list for tests or programmatic use. When omitted,
@@ -83,8 +87,7 @@ def parse_args(argv: list[str] | None = None) -> BroadbandGeopackageConfig:
 
 
 def require_command(command: str) -> None:
-    """
-    Ensure an external command is available before starting slow work.
+    """Ensure an external command is available before starting slow work.
 
     The download is large enough that it is better to fail immediately if GDAL
     is missing. On AL2023, ``ogr2ogr`` is provided by the ``gdal310`` package.
@@ -94,6 +97,9 @@ def require_command(command: str) -> None:
 
     Raises:
         RuntimeError: If the executable cannot be found.
+
+    Returns:
+        None.
     """
 
     if shutil.which(command) is None:
@@ -104,6 +110,14 @@ def require_command(command: str) -> None:
 
 
 def _interesting_headers(headers: object) -> dict[str, str]:
+    """Handle interesting headers.
+
+    Args:
+        headers: HTTP headers included with the request.
+
+    Returns:
+        A mapping containing the interesting headers.
+    """
     return {
         header: value
         for header in ("ETag", "Last-Modified", "Content-Length")
@@ -112,11 +126,16 @@ def _interesting_headers(headers: object) -> dict[str, str]:
 
 
 def probe_source(url: str) -> dict[str, str]:
-    """
-    Fetch lightweight source validators without downloading the full archive.
+    """Fetch lightweight source validators without downloading the full archive.
 
     CPUC's file is large and changes infrequently, so ETag/Last-Modified checks
     let normal pipeline runs reuse the existing GeoPackage artifact.
+
+    Args:
+        url: URL requested, validated, or downloaded by the function.
+
+    Returns:
+        A mapping containing the discovered source.
     """
 
     request = urllib.request.Request(
@@ -129,8 +148,7 @@ def probe_source(url: str) -> dict[str, str]:
 
 
 def load_metadata(path: Path) -> dict[str, object] | None:
-    """
-    Load cached source metadata, returning None for absent or invalid files.
+    """Load cached source metadata, returning None for absent or invalid files.
 
     Args:
         path: Metadata JSON path to read.
@@ -155,8 +173,7 @@ def source_matches_metadata(
     config: BroadbandGeopackageConfig,
     source_headers: dict[str, str],
 ) -> bool:
-    """
-    Check whether cached output metadata still matches the remote source.
+    """Check whether cached output metadata still matches the remote source.
 
     Args:
         config: Source and output paths for the broadband artifact.
@@ -181,8 +198,7 @@ def write_metadata(
     source_headers: dict[str, str],
     archive_sha256: str,
 ) -> None:
-    """
-    Persist source headers and archive identity beside the output artifact.
+    """Persist source headers and archive identity beside the output artifact.
 
     Args:
         config: Source and output paths for the broadband artifact.
@@ -191,6 +207,9 @@ def write_metadata(
 
     Side Effects:
         Writes a JSON metadata file adjacent to the configured output.
+
+    Returns:
+        None.
     """
     metadata = {
         "source_url": config.source_url,
@@ -206,8 +225,7 @@ def write_metadata(
 
 
 def download_file(url: str, destination: Path) -> tuple[dict[str, str], str]:
-    """
-    Download the CPUC broadband archive to a local file.
+    """Download the CPUC broadband archive to a local file.
 
     CPUC serves the broadband extract as a zip attachment. A project-specific
     user agent makes the request easier to identify in server logs and avoids
@@ -221,6 +239,9 @@ def download_file(url: str, destination: Path) -> tuple[dict[str, str], str]:
         urllib.error.URLError: If the remote server cannot be reached.
         TimeoutError: If the response stalls past the configured timeout.
         OSError: If the destination cannot be written.
+
+    Returns:
+        A tuple containing the downloaded file.
     """
 
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -235,8 +256,7 @@ def download_file(url: str, destination: Path) -> tuple[dict[str, str], str]:
 
 
 def extract_archive(zip_path: Path, extract_dir: Path) -> None:
-    """
-    Extract a CPUC zip archive into a temporary directory.
+    """Extract a CPUC zip archive into a temporary directory.
 
     The current CPUC fixed-consumer download is a shapefile bundle even though
     the webpage labels the link as a File Geodatabase. Older or future downloads
@@ -250,6 +270,9 @@ def extract_archive(zip_path: Path, extract_dir: Path) -> None:
     Raises:
         zipfile.BadZipFile: If the downloaded file is not a valid zip archive.
         OSError: If the archive contents cannot be written.
+
+    Returns:
+        None.
     """
 
     with zipfile.ZipFile(zip_path) as archive:
@@ -257,8 +280,7 @@ def extract_archive(zip_path: Path, extract_dir: Path) -> None:
 
 
 def find_source_dataset(extract_dir: Path) -> Path:
-    """
-    Locate the GIS dataset to feed into ``ogr2ogr``.
+    """Locate the GIS dataset to feed into ``ogr2ogr``.
 
     CPUC has alternated between File Geodatabase and shapefile packaging for
     downloadable broadband layers. GDAL can read both, so the lookup prefers a
@@ -288,8 +310,7 @@ def find_source_dataset(extract_dir: Path) -> Path:
 
 
 def convert_to_geopackage(source_dataset: Path, output_path: Path, layer_name: str) -> None:
-    """
-    Convert the CPUC vector dataset into the app's expected GeoPackage layer.
+    """Convert the CPUC vector dataset into the app's expected GeoPackage layer.
 
     The merge script reads a single GeoPackage layer named
     ``ca_broadband_availability_aggregate`` by default. ``PROMOTE_TO_MULTI``
@@ -304,6 +325,9 @@ def convert_to_geopackage(source_dataset: Path, output_path: Path, layer_name: s
     Raises:
         subprocess.CalledProcessError: If ``ogr2ogr`` fails.
         OSError: If the output directory cannot be created.
+
+    Returns:
+        None.
     """
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -327,8 +351,7 @@ def convert_to_geopackage(source_dataset: Path, output_path: Path, layer_name: s
 
 
 def build_geopackage(config: BroadbandGeopackageConfig) -> None:
-    """
-    Download, extract, and convert CPUC broadband data into a GeoPackage.
+    """Download, extract, and convert CPUC broadband data into a GeoPackage.
 
     Temporary download and extraction files are removed automatically after the
     conversion finishes. The resulting GeoPackage is suitable for
@@ -342,6 +365,9 @@ def build_geopackage(config: BroadbandGeopackageConfig) -> None:
         urllib.error.URLError: If the CPUC download fails.
         zipfile.BadZipFile: If the downloaded archive is invalid.
         subprocess.CalledProcessError: If GDAL cannot convert the dataset.
+
+    Returns:
+        None.
     """
 
     source_headers: dict[str, str] = {}
@@ -381,11 +407,16 @@ def build_geopackage(config: BroadbandGeopackageConfig) -> None:
 
 
 def main() -> None:
-    """
-    CLI entry point for ``uv run fetch-cpuc-broadband-geopackage``.
+    """CLI entry point for ``uv run fetch-cpuc-broadband-geopackage``.
 
     Exceptions are converted to a concise stderr message and exit code ``1`` so
     failures are obvious in EC2 user-data logs.
+
+    Returns:
+        None.
+
+    Raises:
+        SystemExit: If the operation cannot be completed.
     """
 
     config = parse_args()

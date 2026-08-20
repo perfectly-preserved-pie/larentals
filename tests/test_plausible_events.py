@@ -9,6 +9,11 @@ REPORT_SOURCE = Path("assets/js/report_listing.js").read_text(encoding="utf-8")
 
 
 def test_all_plausible_product_events_are_instrumented() -> None:
+    """Verify that all plausible product events are instrumented.
+
+    Returns:
+        None.
+    """
     expected_events = {
         "Filter Changed",
         "Filter Section Opened",
@@ -26,12 +31,22 @@ def test_all_plausible_product_events_are_instrumented() -> None:
 
 
 def test_listing_links_use_delegated_analytics_class() -> None:
+    """Verify that listing links use delegated analytics class.
+
+    Returns:
+        None.
+    """
     assert POPUP_SOURCE.count('class="plausible-listing-link"') == 2
     assert 'closest(".plausible-listing-link")' in POPUP_SOURCE
     assert "trackListingLinkClicked()" in POPUP_SOURCE
 
 
 def test_report_submission_tracks_only_after_success() -> None:
+    """Verify that report submission tracks only after success.
+
+    Returns:
+        None.
+    """
     success_branch = REPORT_SOURCE.index("if (response.ok)")
     tracking_call = REPORT_SOURCE.index("trackReportListingSubmitted")
     success_message = REPORT_SOURCE.index("Your report has been submitted")
@@ -40,6 +55,11 @@ def test_report_submission_tracks_only_after_success() -> None:
 
 
 def test_analytics_payloads_do_not_reference_sensitive_listing_fields() -> None:
+    """Verify that analytics payloads do not reference sensitive listing fields.
+
+    Returns:
+        None.
+    """
     forbidden_property_names = {
         "address",
         "coordinates",
@@ -55,6 +75,11 @@ def test_analytics_payloads_do_not_reference_sensitive_listing_fields() -> None:
 
 
 def test_filter_maps_use_only_semantic_categories() -> None:
+    """Verify that filter maps use only semantic categories.
+
+    Returns:
+        None.
+    """
     assert 'rental_price_slider: "monthly_rent"' in ANALYTICS_SOURCE
     assert 'list_price_slider: "list_price"' in ANALYTICS_SOURCE
     assert '"lease-zip-boundary-store": "location"' in ANALYTICS_SOURCE

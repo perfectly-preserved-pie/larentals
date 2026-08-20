@@ -16,18 +16,26 @@ load_dotenv(find_dotenv())
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def imagekit_transform(
-        bhhs_mls_photo_url: Optional[str], 
-        mls: str, 
+        bhhs_mls_photo_url: Optional[str],
+        mls: str,
         imagekit_instance: ImageKit,
         folder: Optional[str] = None,
     ) -> Optional[str]:
-    """
-    Uploads and transforms an image using ImageKit.
+    """Uploads and transforms an image using ImageKit.
+
+    Args:
+        bhhs_mls_photo_url: URL for the bhhs MLS photo.
+        mls: MLS identifier for the listing.
+        imagekit_instance: Configured ImageKit client used for image operations.
+        folder: ImageKit destination folder for the listing image.
+
+    Returns:
+        The transformed ImageKit URL, or ``None`` if processing fails.
     """
     # Initialize variables
     uploaded_image: Optional[str] = None
     transformed_image: Optional[str] = None
-    
+
     # Set up upload options
     options = UploadFileRequestOptions(
         is_private_file=False,
@@ -35,7 +43,7 @@ def imagekit_transform(
         overwrite_file=True,
         folder=folder,
     )
-    
+
     # Check if a photo URL is available
     if pd.notnull(bhhs_mls_photo_url):
         try:
@@ -50,7 +58,7 @@ def imagekit_transform(
     else:
         logger.info(f"No image URL found on BHHS for {mls}. Not uploading anything to ImageKit.")
         return None  # Return early if no image URL
-    
+
     # Transform the uploaded image if it exists
     if uploaded_image:
         try:
@@ -65,12 +73,11 @@ def imagekit_transform(
         except Exception as e:
             logger.warning(f"Couldn't transform image because {e}.")
             return None  # Return early if transform fails
-    
+
     return transformed_image
 
 def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
-    """
-    Yields successive n-sized chunks from lst.
+    """Yields successive n-sized chunks from lst.
 
     Parameters:
     lst (List): The list to be chunked.
@@ -83,11 +90,10 @@ def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
         yield lst[i:i + chunk_size]
 
 def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> None:
-    """
-    This function reclaims space in ImageKit by deleting images in bulk that are not referenced in the GeoJSON.
+    """This function reclaims space in ImageKit by deleting images in bulk that are not referenced in the GeoJSON.
 
     Parameters:
-    df_path (str): The path to the GeoJSON file.
+    geojson_path (str): The path to the GeoJSON file.
     imagekit_instance (ImageKit): An instance of ImageKit initialized with the appropriate credentials.
 
     Returns:
@@ -107,17 +113,25 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
 
     # Initialize a list for file IDs to delete
     file_ids_for_deletion: List[str] = [
-        file.file_id for file in list_files 
+        file.file_id for file in list_files
         if os.path.splitext(file.name)[0] not in referenced_mls_numbers
     ]
 
     # Function to handle bulk deletion in chunks
     def delete_in_chunks(file_ids: List[str], imagekit_instance: ImageKit) -> None:
-        """Deletes files in chunks of 100 to avoid overloading the API requests."""
+        """Deletes files in chunks of 100 to avoid overloading the API requests.
+
+        Args:
+            file_ids: ImageKit file identifiers to delete in one or more batches.
+            imagekit_instance: Configured ImageKit client used for image operations.
+
+        Returns:
+            None.
+        """
         for i in range(0, len(file_ids), 100):
             chunk = file_ids[i:i + 100]
             bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=chunk)
-            
+
             if not bulk_delete_result.successfully_deleted_file_ids:
                 # Since successfully_deleted_file_ids is None or empty, no files were deleted.
                 logger.error("No files were deleted.")
@@ -134,8 +148,7 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     logger.info(f"Total number of files requested for deletion: {len(file_ids_for_deletion)}")
 
 def delete_single_mls_image(mls_number: str) -> None:
-    """
-    Deletes all images associated with a single MLS number from ImageKit.
+    """Deletes all images associated with a single MLS number from ImageKit.
 
     Parameters:
     mls_number (str): The MLS number associated with the images.

@@ -87,6 +87,14 @@ DEFAULT_USER_AGENT = "WhereToLive.LA/1.0 school enrichment downloader"
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Handle parse args.
+
+    Args:
+        argv: Optional command-line argument sequence; defaults to ``sys.argv``.
+
+    Returns:
+        The parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Populate buy_enrichment / lease_enrichment with school district and "
@@ -148,8 +156,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def download_file(url: str, destination: Path) -> Path:
-    """
-    Download a remote file to disk.
+    """Download a remote file to disk.
+
+    Args:
+        url: URL requested, validated, or downloaded by the function.
+        destination: Filesystem path where the downloaded file is written.
+
+    Returns:
+        The downloaded file.
     """
     destination.parent.mkdir(parents=True, exist_ok=True)
     with requests.get(
@@ -173,8 +187,19 @@ def resolve_local_dataset_path(
     default_remote_url: str,
     dataset_label: str,
 ) -> str:
-    """
-    Resolve a dataset path, auto-downloading only when the default local artifact is missing.
+    """Resolve a dataset path, auto-downloading only when the default local artifact is missing.
+
+    Args:
+        path_value: User-supplied local path or remote dataset URL.
+        default_local_path: Filesystem path for the default local.
+        default_remote_url: URL for the default remote.
+        dataset_label: Human-readable dataset name used in status and error messages.
+
+    Returns:
+        The filesystem path for the local dataset.
+
+    Raises:
+        FileNotFoundError: If the operation cannot be completed.
     """
     if not path_value:
         return path_value
@@ -194,8 +219,13 @@ def resolve_local_dataset_path(
 
 
 def resolve_input_dataset_paths(args: argparse.Namespace) -> argparse.Namespace:
-    """
-    Resolve local/default dataset paths before reading any geospatial inputs.
+    """Resolve local/default dataset paths before reading any geospatial inputs.
+
+    Args:
+        args: Parsed command-line options identifying the input datasets and tables.
+
+    Returns:
+        The argument namespace with all school and district dataset paths resolved.
     """
     args.schools_path = resolve_local_dataset_path(
         args.schools_path,
@@ -214,12 +244,33 @@ def resolve_input_dataset_paths(args: argparse.Namespace) -> argparse.Namespace:
 
 
 def resolve_listing_tables(selection: str) -> list[ListingTable]:
+    """Handle resolve listing tables.
+
+    Args:
+        selection: Requested listing-table selection: buy, lease, or both.
+
+    Returns:
+        A list containing the resolved listing tables.
+    """
     if selection == "all":
         return ["buy", "lease"]
     return [selection]  # type: ignore[list-item]
 
 
 def choose_column(columns: pd.Index, override: str | None, candidates: tuple[str, ...]) -> str | None:
+    """Handle choose column.
+
+    Args:
+        columns: Column names to read or process.
+        override: Explicit column override supplied by the user.
+        candidates: Candidate column names or values considered in priority order.
+
+    Returns:
+        The selected column text, or ``None`` when unavailable.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
+    """
     if override:
         if override not in columns:
             raise ValueError(f"Column not found: {override}")
@@ -228,8 +279,14 @@ def choose_column(columns: pd.Index, override: str | None, candidates: tuple[str
 
 
 def dataset_columns_for_path(path: str, *, layer: str | None) -> pd.Index | None:
-    """
-    Return lightweight dataset column metadata for local files when available.
+    """Return lightweight dataset column metadata for local files when available.
+
+    Args:
+        path: Filesystem path to the source file, dataset, database, or artifact.
+        layer: Named geospatial layer to read from the dataset.
+
+    Returns:
+        The filesystem path for the dataset columns for.
     """
     if is_remote_url(path):
         return None
@@ -250,8 +307,13 @@ def dataset_columns_for_path(path: str, *, layer: str | None) -> pd.Index | None
 
 
 def parse_grade_token(value: object) -> int | None:
-    """
-    Normalize a single grade token such as `K`, `TK`, `5`, or `12`.
+    """Normalize a single grade token such as `K`, `TK`, `5`, or `12`.
+
+    Args:
+        value: Raw grade label such as ``TK``, ``K``, or ``12``.
+
+    Returns:
+        The parsed grade token value, or ``None`` when unavailable.
     """
     if value is None:
         return None
@@ -267,8 +329,13 @@ def parse_grade_token(value: object) -> int | None:
 
 
 def extract_grade_span(value: object) -> tuple[int, int] | None:
-    """
-    Parse a grade-span string like `K-5`, `6-8`, or `9/12`.
+    """Parse a grade-span string like `K-5`, `6-8`, or `9/12`.
+
+    Args:
+        value: Source grade-span label to parse.
+
+    Returns:
+        A tuple containing the extracted grade span.
     """
     if value is None:
         return None
@@ -298,6 +365,17 @@ def extract_grade_span_from_row(
     low_grade_col: str | None,
     high_grade_col: str | None,
 ) -> tuple[int, int] | None:
+    """Handle extract grade span from row.
+
+    Args:
+        row: School record containing the configured grade fields.
+        grade_span_col: Optional source column containing a complete grade span.
+        low_grade_col: Optional source column containing the lowest grade offered.
+        high_grade_col: Optional source column containing the highest grade offered.
+
+    Returns:
+        A tuple containing the extracted grade span from row.
+    """
     if grade_span_col:
         span = extract_grade_span(row.get(grade_span_col))
         if span is not None:
@@ -313,8 +391,13 @@ def extract_grade_span_from_row(
 
 
 def grade_span_bands(span: tuple[int, int] | None) -> set[str]:
-    """
-    Return the school bands touched by a grade span.
+    """Return the school bands touched by a grade span.
+
+    Args:
+        span: Inclusive low and high grade indices.
+
+    Returns:
+        A set containing the grade span bands.
     """
     if span is None:
         return set()
@@ -335,6 +418,18 @@ def prepare_school_points(
     *,
     bbox: tuple[float, float, float, float],
 ) -> tuple[gpd.GeoDataFrame, str]:
+    """Handle prepare school points.
+
+    Args:
+        args: Parsed command-line options identifying school source columns and filters.
+        bbox: Geographic bounding box ordered as minimum longitude, minimum latitude, maximum longitude, and maximum latitude.
+
+    Returns:
+        A tuple containing the prepared school points.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
+    """
     available_columns = dataset_columns_for_path(args.schools_path, layer=args.schools_layer)
     columns_index = available_columns
     if columns_index is None:
@@ -393,6 +488,18 @@ def compute_nearest_school_band(
     result_name_col: str,
     result_distance_col: str,
 ) -> pd.DataFrame:
+    """Handle compute nearest school band.
+
+    Args:
+        listings: Dataframe to compute nearest school band.
+        schools: Dataframe to compute nearest school band.
+        band: School grade band whose nearest campus should be calculated.
+        result_name_col: Output column receiving nearest-school names.
+        result_distance_col: Output column receiving nearest-school distances.
+
+    Returns:
+        The computed nearest school band dataframe.
+    """
     band_schools = schools[schools["school_bands"].apply(lambda values: band in values)].copy()
     if band_schools.empty:
         return pd.DataFrame(columns=["mls_number", result_name_col, result_distance_col])
@@ -419,6 +526,18 @@ def prepare_district_polygons(
     *,
     bbox: tuple[float, float, float, float],
 ) -> tuple[gpd.GeoDataFrame, str, str | None] | None:
+    """Handle prepare district polygons.
+
+    Args:
+        args: Parsed command-line options identifying district source columns and filters.
+        bbox: Geographic bounding box ordered as minimum longitude, minimum latitude, maximum longitude, and maximum latitude.
+
+    Returns:
+        A tuple containing the prepared district polygons.
+
+    Raises:
+        ValueError: If the operation cannot be completed.
+    """
     if args.skip_districts or not args.districts_path:
         return None
 
@@ -455,6 +574,17 @@ def compute_district_join(
     name_col: str,
     type_col: str | None,
 ) -> pd.DataFrame:
+    """Handle compute district join.
+
+    Args:
+        listings: Dataframe to compute district join.
+        districts: Dataframe to compute district join.
+        name_col: District-name source column copied into the enrichment output.
+        type_col: Optional district-type source column.
+
+    Returns:
+        The computed district join dataframe.
+    """
     columns = [name_col] + ([type_col] if type_col else []) + ["geometry"]
     joined = gpd.sjoin(
         listings[["mls_number", "geometry"]],
@@ -475,6 +605,15 @@ def compute_district_join(
 
 
 def enrich_table(listing_table: ListingTable, args: argparse.Namespace) -> int:
+    """Handle enrich table.
+
+    Args:
+        listing_table: Listing table, either ``buy`` or ``lease``.
+        args: Parsed command-line options controlling enrichment inputs and output storage.
+
+    Returns:
+        The number of listing rows written to the enrichment table.
+    """
     region_bbox = resolve_region_bbox(args.region)
     listings = load_listing_points(args.db_path, listing_table, bbox=region_bbox)
     if listings.empty:
@@ -529,6 +668,11 @@ def enrich_table(listing_table: ListingTable, args: argparse.Namespace) -> int:
 
 
 def main() -> None:
+    """Handle main.
+
+    Returns:
+        None.
+    """
     args = resolve_input_dataset_paths(parse_args())
     Path(args.db_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
 

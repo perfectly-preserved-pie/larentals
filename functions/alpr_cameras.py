@@ -51,16 +51,17 @@ class AlprCameraDatasetConfig:
 
     @property
     def metadata_path(self) -> Path:
-        """
-        Return the sidecar metadata path for the configured output artifact.
+        """Return the sidecar metadata path for the configured output artifact.
+
+        Returns:
+            The filesystem path for the metadata.
         """
 
         return self.output_path.with_suffix(f"{self.output_path.suffix}.metadata.json")
 
 
 def default_alpr_camera_dataset_config(*, force: bool = False) -> AlprCameraDatasetConfig:
-    """
-    Build the default live-endpoint ALPR camera fetch configuration.
+    """Build the default live-endpoint ALPR camera fetch configuration.
 
     Args:
         force: Whether to rebuild even when cached source validators match.
@@ -79,8 +80,7 @@ def default_alpr_camera_dataset_config(*, force: bool = False) -> AlprCameraData
 
 
 def _interesting_headers(headers: Message) -> dict[str, str]:
-    """
-    Extract stable cache validators from an HTTP response header mapping.
+    """Extract stable cache validators from an HTTP response header mapping.
 
     Args:
         headers: HTTP response headers returned by ``urllib``.
@@ -98,8 +98,7 @@ def _interesting_headers(headers: Message) -> dict[str, str]:
 
 
 def probe_source(url: str) -> dict[str, str]:
-    """
-    Fetch lightweight source validators without downloading the full camera feed.
+    """Fetch lightweight source validators without downloading the full camera feed.
 
     Args:
         url: Live ALPR camera GeoJSON endpoint to probe.
@@ -121,8 +120,7 @@ def probe_source(url: str) -> dict[str, str]:
 
 
 def load_metadata(path: Path) -> dict[str, Any] | None:
-    """
-    Read a local ALPR camera artifact metadata sidecar.
+    """Read a local ALPR camera artifact metadata sidecar.
 
     Args:
         path: Metadata JSON path to read.
@@ -149,8 +147,7 @@ def source_matches_metadata(
     config: AlprCameraDatasetConfig,
     source_headers: dict[str, str],
 ) -> bool:
-    """
-    Check whether the local artifact is current for the probed source headers.
+    """Check whether the local artifact is current for the probed source headers.
 
     Args:
         config: Active ALPR camera artifact configuration.
@@ -177,8 +174,7 @@ def source_matches_metadata(
 
 
 def _maybe_decompress_response(body: bytes, headers: Message) -> bytes:
-    """
-    Decompress an HTTP response body when the source sends gzip bytes.
+    """Decompress an HTTP response body when the source sends gzip bytes.
 
     Args:
         body: Raw response body.
@@ -195,8 +191,7 @@ def _maybe_decompress_response(body: bytes, headers: Message) -> bytes:
 
 
 def download_source_payload(url: str) -> tuple[dict[str, str], str, Any]:
-    """
-    Download and parse the upstream ALPR camera feed.
+    """Download and parse the upstream ALPR camera feed.
 
     The upstream URL currently ends with `.gz`, but can be served either as
     plain GeoJSON or a gzip-compressed response depending on its CDN behavior.
@@ -227,8 +222,7 @@ def download_source_payload(url: str) -> tuple[dict[str, str], str, Any]:
 
 
 def _to_float(value: Any) -> float | None:
-    """
-    Convert a JSON scalar to ``float`` when possible.
+    """Convert a JSON scalar to ``float`` when possible.
 
     Args:
         value: Raw JSON value to convert.
@@ -246,8 +240,7 @@ def _to_float(value: Any) -> float | None:
 
 
 def _coordinates_in_bounds(lon: float, lat: float, bounds: dict[str, float]) -> bool:
-    """
-    Determine whether a longitude/latitude pair falls inside a bounding box.
+    """Determine whether a longitude/latitude pair falls inside a bounding box.
 
     Args:
         lon: Longitude in WGS84.
@@ -266,8 +259,7 @@ def _coordinates_in_bounds(lon: float, lat: float, bounds: dict[str, float]) -> 
 
 
 def _osm_url(osm_type: Any, osm_id: Any) -> str | None:
-    """
-    Build an OpenStreetMap element URL from source feature metadata.
+    """Build an OpenStreetMap element URL from source feature metadata.
 
     Args:
         osm_type: OSM element type such as ``node`` or ``way``.
@@ -288,8 +280,7 @@ def _osm_url(osm_type: Any, osm_id: Any) -> str | None:
 
 
 def _normalize_properties(properties: dict[str, Any]) -> dict[str, Any]:
-    """
-    Keep and enrich the ALPR properties used by the map layer and popup.
+    """Keep and enrich the ALPR properties used by the map layer and popup.
 
     Args:
         properties: Raw upstream GeoJSON feature properties.
@@ -332,8 +323,7 @@ def _normalize_properties(properties: dict[str, Any]) -> dict[str, Any]:
 
 
 def _feature_from_geojson_feature(feature: dict[str, Any], bounds: dict[str, float]) -> GeoJsonDict | None:
-    """
-    Normalize one upstream GeoJSON point feature for the local artifact.
+    """Normalize one upstream GeoJSON point feature for the local artifact.
 
     Args:
         feature: Raw upstream GeoJSON feature.
@@ -371,8 +361,7 @@ def build_alpr_camera_feature_collection(
     bounds: dict[str, float] | None = None,
     source_url: str = DEFAULT_ALPR_CAMERA_SOURCE_URL,
 ) -> GeoJsonDict:
-    """
-    Normalize the upstream ALPR payload into a SoCal-clipped GeoJSON layer.
+    """Normalize the upstream ALPR payload into a SoCal-clipped GeoJSON layer.
 
     The pipeline intentionally targets the live DeFlock/FlockHopper GeoJSON
     endpoint only. No brand/operator filtering is applied; all ALPR records
@@ -436,8 +425,7 @@ def build_alpr_camera_feature_collection(
 
 
 def _is_valid_alpr_camera_geojson(payload: Any) -> bool:
-    """
-    Check whether a decoded object looks like an ALPR GeoJSON artifact.
+    """Check whether a decoded object looks like an ALPR GeoJSON artifact.
 
     Args:
         payload: Decoded JSON object.
@@ -458,8 +446,7 @@ def write_local_alpr_camera_geojson(
     payload: GeoJsonDict,
     output_path: Path | None = None,
 ) -> Path:
-    """
-    Persist a normalized ALPR GeoJSON artifact as gzipped JSON.
+    """Persist a normalized ALPR GeoJSON artifact as gzipped JSON.
 
     Args:
         payload: GeoJSON FeatureCollection to write.
@@ -492,8 +479,7 @@ def write_metadata(
     feature_count: int,
     source_feature_count: int,
 ) -> None:
-    """
-    Write the ALPR artifact metadata sidecar.
+    """Write the ALPR artifact metadata sidecar.
 
     Args:
         config: Active ALPR camera artifact configuration.
@@ -501,6 +487,9 @@ def write_metadata(
         source_sha256: SHA-256 digest of the downloaded source response body.
         feature_count: Number of features retained in the local artifact.
         source_feature_count: Number of features reported by the live source.
+
+    Returns:
+        None.
     """
 
     metadata = {
@@ -523,8 +512,7 @@ def write_metadata(
 
 
 def refresh_local_alpr_camera_geojson(config: AlprCameraDatasetConfig) -> Path:
-    """
-    Refresh the local SoCal ALPR camera artifact from the live endpoint.
+    """Refresh the local SoCal ALPR camera artifact from the live endpoint.
 
     Args:
         config: Source URL, output path, clipping bounds, and force flag.
@@ -567,8 +555,7 @@ def refresh_local_alpr_camera_geojson(config: AlprCameraDatasetConfig) -> Path:
 def load_local_alpr_camera_geojson(
     artifact_path: Path | None = None,
 ) -> GeoJsonDict | None:
-    """
-    Load the precomputed local ALPR camera artifact.
+    """Load the precomputed local ALPR camera artifact.
 
     Args:
         artifact_path: Optional artifact path. Defaults to the canonical local
@@ -601,8 +588,7 @@ def load_local_alpr_camera_geojson(
 
 
 def load_alpr_camera_geojson() -> GeoJsonDict:
-    """
-    Load the ALPR camera GeoJSON payload for the lazy map layer.
+    """Load the ALPR camera GeoJSON payload for the lazy map layer.
 
     Returns:
         Parsed local ALPR camera FeatureCollection.

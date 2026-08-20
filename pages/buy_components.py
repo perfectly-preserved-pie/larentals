@@ -109,8 +109,7 @@ class BuyComponents(BaseClass):
 
     @classmethod
     def get_cached_geojson_payload(cls) -> dict:
-        """
-        Return the cached buy GeoJSON payload for the current database version.
+        """Return the cached buy GeoJSON payload for the current database version.
 
         Returns:
             A GeoJSON feature collection for the buy map store.
@@ -123,8 +122,10 @@ class BuyComponents(BaseClass):
         )
 
     def __init__(self) -> None:
-        """
-        Load buy data and assemble the top-level page cards.
+        """Load buy data and assemble the top-level page cards.
+
+        Returns:
+            None.
         """
         super().__init__(
             table_name=self.CONFIG.table_name,
@@ -138,8 +139,7 @@ class BuyComponents(BaseClass):
         self.map_card = self.parts.map_card
 
     def _build_page_parts(self) -> PageParts:
-        """
-        Build the title, sidebar, and map cards for the buy page.
+        """Build the title, sidebar, and map cards for the buy page.
 
         Returns:
             The assembled ``PageParts`` bundle.
@@ -167,8 +167,7 @@ class BuyComponents(BaseClass):
         )
 
     def _build_map_component(self) -> object:
-        """
-        Build the buy map component with shared overlays and styles.
+        """Build the buy map component with shared overlays and styles.
 
         Returns:
             The configured buy map component.
@@ -184,8 +183,7 @@ class BuyComponents(BaseClass):
         )
 
     def _build_filter_sections(self) -> list[FilterSection]:
-        """
-        Build the accordion sections shown on the buy sidebar.
+        """Build the accordion sections shown on the buy sidebar.
 
         Returns:
             Ordered filter-section tuples for the buy page.
@@ -218,8 +216,7 @@ class BuyComponents(BaseClass):
         ]
 
     def _build_list_price_filter(self) -> html.Div:
-        """
-        Build the list-price slider section.
+        """Build the list-price slider section.
 
         Returns:
             A list-price filter ``Div``.
@@ -244,8 +241,7 @@ class BuyComponents(BaseClass):
         )
 
     def _build_bedrooms_filter(self) -> html.Div:
-        """
-        Build the bedrooms slider section.
+        """Build the bedrooms slider section.
 
         Returns:
             A bedrooms filter ``Div``.
@@ -263,8 +259,7 @@ class BuyComponents(BaseClass):
         )
 
     def _build_bathrooms_filter(self) -> html.Div:
-        """
-        Build the bathrooms slider section.
+        """Build the bathrooms slider section.
 
         Returns:
             A bathrooms filter ``Div``.
@@ -284,8 +279,7 @@ class BuyComponents(BaseClass):
         )
 
     def _build_ppsqft_filter(self) -> html.Div:
-        """
-        Build the price-per-square-foot slider section.
+        """Build the price-per-square-foot slider section.
 
         Returns:
             A price-per-square-foot filter ``Div``.
@@ -312,8 +306,7 @@ class BuyComponents(BaseClass):
         )
 
     def _build_square_footage_filter(self) -> html.Div:
-        """
-        Build the square-footage slider section.
+        """Build the square-footage slider section.
 
         Returns:
             A square-footage filter ``Div``.
@@ -339,8 +332,7 @@ class BuyComponents(BaseClass):
         )
 
     def create_subtype_checklist(self) -> html.Div:
-        """
-        Build the subtype dropdown for buy listings.
+        """Build the subtype dropdown for buy listings.
 
         Returns:
             A subtype filter ``Div``.
@@ -361,8 +353,7 @@ class BuyComponents(BaseClass):
         )
 
     def create_lot_size_components(self) -> html.Div:
-        """
-        Build the lot-size slider section.
+        """Build the lot-size slider section.
 
         Returns:
             A lot-size filter ``Div``.
@@ -389,8 +380,7 @@ class BuyComponents(BaseClass):
         )
 
     def create_hoa_fee_components(self) -> html.Div:
-        """
-        Build the HOA-fee slider section.
+        """Build the HOA-fee slider section.
 
         Returns:
             An HOA-fee filter ``Div``.
@@ -432,8 +422,7 @@ class BuyComponents(BaseClass):
         )
 
     def create_hoa_fee_frequency_checklist(self) -> html.Div:
-        """
-        Build the HOA-frequency filter.
+        """Build the HOA-frequency filter.
 
         Returns:
             An HOA-frequency filter ``Div``.
@@ -462,8 +451,7 @@ class BuyComponents(BaseClass):
         )
 
     def create_listed_date_components(self) -> html.Div:
-        """
-        Build the listed-date filter section for the buy page.
+        """Build the listed-date filter section for the buy page.
 
         Returns:
             A listed-date filter ``Div``.
@@ -476,8 +464,7 @@ class BuyComponents(BaseClass):
         )
 
     def create_year_built_components(self) -> html.Div:
-        """
-        Build the year-built filter section for the buy page.
+        """Build the year-built filter section for the buy page.
 
         Returns:
             A year-built filter ``Div``.

@@ -38,7 +38,14 @@ class HostCircuitOpen(requests.ConnectionError):
 
 
 def _retry_after_seconds(response: requests.Response) -> Optional[float]:
-    """Return a non-negative Retry-After value, if the server supplied one."""
+    """Return a non-negative Retry-After value, if the server supplied one.
+
+    Args:
+        response: HTTP response being validated or summarized.
+
+    Returns:
+        The server-requested retry delay in seconds, or ``None`` when absent.
+    """
     value = response.headers.get("Retry-After")
     if not value:
         return None
@@ -57,7 +64,14 @@ def _retry_after_seconds(response: requests.Response) -> Optional[float]:
 
 
 def _wait_for_request_slot(host: str) -> None:
-    """Reserve the next request slot while honoring any shared cooldown."""
+    """Reserve the next request slot while honoring any shared cooldown.
+
+    Args:
+        host: Network host whose request or circuit-breaker state is being managed.
+
+    Returns:
+        None.
+    """
     with _rate_limit_lock:
         now = time.monotonic()
         request_at = max(now, _next_request_at.get(host, now), _cooldown_until.get(host, now))
@@ -70,6 +84,15 @@ def _wait_for_request_slot(host: str) -> None:
 
 
 def _set_cooldown(host: str, delay: float) -> None:
+    """Handle set cooldown.
+
+    Args:
+        host: Network host whose request or circuit-breaker state is being managed.
+        delay: Cooldown duration in seconds.
+
+    Returns:
+        None.
+    """
     with _rate_limit_lock:
         _cooldown_until[host] = max(
             _cooldown_until.get(host, 0.0), time.monotonic() + delay
@@ -77,6 +100,17 @@ def _set_cooldown(host: str, delay: float) -> None:
 
 
 def _raise_if_circuit_open(host: str) -> None:
+    """Handle raise if circuit open.
+
+    Args:
+        host: Network host whose request or circuit-breaker state is being managed.
+
+    Returns:
+        None.
+
+    Raises:
+        HostCircuitOpen: If the operation cannot be completed.
+    """
     with _rate_limit_lock:
         remaining = _circuit_open_until.get(host, 0.0) - time.monotonic()
 
@@ -88,7 +122,18 @@ def _raise_if_circuit_open(host: str) -> None:
 
 
 def _record_transport_failure(host: str, error: requests.RequestException) -> int:
-    """Track a transport failure, returning its consecutive host failure count."""
+    """Track a transport failure, returning its consecutive host failure count.
+
+    Args:
+        host: Network host whose request or circuit-breaker state is being managed.
+        error: Transport exception recorded for the host circuit breaker.
+
+    Returns:
+        The host's updated consecutive transport-failure count.
+
+    Raises:
+        HostCircuitOpen: If the operation cannot be completed.
+    """
     with _rate_limit_lock:
         failures = _transport_failures.get(host, 0) + 1
         _transport_failures[host] = failures
@@ -108,6 +153,14 @@ def _record_transport_failure(host: str, error: requests.RequestException) -> in
 
 
 def _record_request_success(host: str) -> None:
+    """Handle record request success.
+
+    Args:
+        host: Network host whose request or circuit-breaker state is being managed.
+
+    Returns:
+        None.
+    """
     with _rate_limit_lock:
         _transport_failures.pop(host, None)
         _circuit_open_until.pop(host, None)
@@ -120,6 +173,14 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
     use exponential backoff with jitter, avoiding synchronized retry bursts.
     The final response is returned to preserve existing callers' ``raise_for_status``
     behavior and error handling.
+
+    Args:
+        url: URL requested, validated, or downloaded by the function.
+        headers: HTTP headers included with the request.
+        timeout: HTTP request timeout in seconds.
+
+    Returns:
+        The successful HTTP response received after any retries.
     """
     host = urlparse(url).netloc.lower()
     response: Optional[requests.Response] = None
@@ -170,8 +231,7 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
     return response
 
 def check_expired_listing_bhhs(url: str, mls_number: str) -> bool | None:
-    """
-    Checks if a BHHS listing has expired by looking for a specific message on the page.
+    """Checks if a BHHS listing has expired by looking for a specific message on the page.
 
     Parameters:
     url (str): The URL of the listing to check.
@@ -218,13 +278,13 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool | None:
     return None
 
 def check_expired_listing_theagency(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool | None:
-    """
-    Checks if a listing has been sold based on the 'IsSold' key from The Agency API.
+    """Checks if a listing has been sold based on the 'IsSold' key from The Agency API.
 
     Parameters:
     listing_url (str): The URL of the listing to check.
     mls_number (str): The MLS number of the listing.
-    board_code (str, optional): The board code extracted from the listing URL or a default value.
+    board_code (str, optional): Brokerage board identifier extracted from the listing URL;
+        falls back to the configured board when omitted.
 
     Returns:
     bool: True if the listing has been sold, False otherwise.
@@ -261,7 +321,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
         if is_sold:
             logger.debug(f"The Agency reports MLS {mls_number} as sold.")
         return is_sold
-    
+
     except HostCircuitOpen:
         logger.debug(
             f"Skipping Agency expiration check for MLS {mls_number}; "
@@ -279,7 +339,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
             return False
         logger.error(f"HTTP {code} error for MLS {mls_number}: {http_err}")
         return None
-    
+
     except requests.RequestException as req_err:
         logger.error(f"Network error checking MLS {mls_number}: {req_err}")
         return None
@@ -289,8 +349,7 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
         return None
 
 def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
-    """
-    Scrapes the BHHS website for listing details.
+    """Scrapes the BHHS website for listing details.
 
     Parameters:
     url (str): The URL of the listing to scrape.
@@ -360,8 +419,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     return None, None, None
 
 def extract_street_name(full_street_address: str) -> Optional[str]:
-    """
-    Extracts the street name from a full street address.
+    """Extracts the street name from a full street address.
 
     This function handles addresses with or without unit numbers and directional indicators.
     It splits the address to isolate the street name component.
@@ -396,8 +454,7 @@ def extract_street_name(full_street_address: str) -> Optional[str]:
         return None
 
 def extract_zip_code(full_street_address: str) -> Optional[str]:
-    """
-    Extracts the ZIP code from a full street address.
+    """Extracts the ZIP code from a full street address.
 
     Uses regular expressions to find a 5-digit ZIP code, optionally handling ZIP+4 formats.
 
@@ -418,8 +475,7 @@ def fetch_the_agency_data(
     row_index: int,
     total_rows: int,
 ) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
-    """
-    Fetches property data for a given MLS number from The Agency API.
+    """Fetches property data for a given MLS number from The Agency API.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.
@@ -427,7 +483,7 @@ def fetch_the_agency_data(
     total_rows (int): Total rows being processed for progress indication.
 
     Returns:
-    Tuple[Optional[datetime.date], Optional[str], Optional[str]]: 
+    Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
         - The listing date (as a datetime.date object) if found; otherwise, None.
         - The detail URL of the property if found; otherwise, None.
         - The first property image URL if found; otherwise, None.
@@ -491,7 +547,7 @@ def fetch_the_agency_data(
             logger.debug(f"Image Source for MLS {mls_number}: {img_src}")
         else:
             logger.debug(f"No images found for MLS {mls_number}.")
-        
+
         populated_fields = sum(
             value is not None for value in (list_date, detail_url, img_src)
         )
@@ -517,13 +573,15 @@ def fetch_the_agency_data(
     return None, None, None
 
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
-    """
-    Updates the HOA fee value for a given MLS number by scraping the HOA fee from the detailed listing webpage.
+    """Updates the HOA fee value for a given MLS number by scraping the HOA fee from the detailed listing webpage.
     Logs a message only when the HOA fee value changes.
-    
+
     Parameters:
     df (pd.DataFrame): The DataFrame containing the listings.
     mls_number (str): The MLS number of the listing to update the HOA fee for.
+
+    Returns:
+        None.
     """
     # Define headers to mimic a browser request
     headers = {
@@ -535,7 +593,7 @@ def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
         # Fetch the main listing page
         main_response = get_with_backoff(main_url, headers=headers)
         main_response.raise_for_status()
-        main_soup = BeautifulSoup(main_response.text, 'html.parser')     
+        main_soup = BeautifulSoup(main_response.text, 'html.parser')
         # Find the link to the details page
         link_tag = main_soup.find('a', attrs={'class': 'btn cab waves-effect waves-light btn-details show-listing-details'})
         if link_tag:

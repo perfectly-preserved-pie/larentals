@@ -19,8 +19,10 @@ from functions.lahd import (
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the LAHD heatmap artifact builder.
+    """Parse command-line arguments for the LAHD heatmap artifact builder.
+
+    Returns:
+        The parsed command-line arguments.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -67,8 +69,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """
-    Build the LAHD heatmap artifact or print its default output path.
+    """Build the LAHD heatmap artifact or print its default output path.
+
+    Returns:
+        The process exit status.
     """
     args = parse_args()
 

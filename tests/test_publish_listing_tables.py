@@ -7,6 +7,16 @@ from scripts.publish_listing_tables import publish_listing_tables
 
 
 def _create_table(db_path: Path, table_name: str, rows: list[tuple[str, int]]) -> None:
+    """Handle create table.
+
+    Args:
+        db_path: Filesystem path to the SQLite database.
+        table_name: SQLite table to inspect or modify.
+        rows: Records to write, summarize, or display.
+
+    Returns:
+        None.
+    """
     with sqlite3.connect(db_path) as connection:
         connection.execute(
             f'CREATE TABLE "{table_name}" (mls_number TEXT, list_price INTEGER)'
@@ -20,6 +30,14 @@ def _create_table(db_path: Path, table_name: str, rows: list[tuple[str, int]]) -
 def test_publish_replaces_both_listing_tables_and_preserves_other_tables(
     tmp_path: Path,
 ) -> None:
+    """Verify that publish replaces both listing tables and preserves other tables.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     destination = tmp_path / "larentals.db"
     buy_stage = tmp_path / "buy-stage.db"
     lease_stage = tmp_path / "lease-stage.db"
@@ -46,6 +64,14 @@ def test_publish_replaces_both_listing_tables_and_preserves_other_tables(
 def test_publish_does_not_change_destination_when_a_stage_is_invalid(
     tmp_path: Path,
 ) -> None:
+    """Verify that publish does not change destination when a stage is invalid.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     destination = tmp_path / "larentals.db"
     buy_stage = tmp_path / "buy-stage.db"
     missing_lease_stage = tmp_path / "missing-lease-stage.db"

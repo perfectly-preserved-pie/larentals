@@ -8,6 +8,14 @@ from scripts.fetch_cpuc_broadband_geopackage import (
 
 
 def test_source_matches_metadata_when_output_and_headers_match(tmp_path: Path) -> None:
+    """Verify that source matches metadata when output and headers match.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     output_path = tmp_path / "ca_broadband_geopackage.gpkg"
     output_path.write_text("stub", encoding="utf-8")
     config = BroadbandGeopackageConfig(
@@ -27,6 +35,14 @@ def test_source_matches_metadata_when_output_and_headers_match(tmp_path: Path) -
 
 
 def test_source_metadata_mismatch_forces_rebuild(tmp_path: Path) -> None:
+    """Verify that source metadata mismatch forces rebuild.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     output_path = tmp_path / "ca_broadband_geopackage.gpkg"
     output_path.write_text("stub", encoding="utf-8")
     config = BroadbandGeopackageConfig(

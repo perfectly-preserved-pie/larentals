@@ -4,16 +4,44 @@ import requests
 
 
 class FakeResponse:
-    def __init__(self, status_code: int, headers=None):
+    def __init__(
+        self,
+        status_code: int,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """Initialize the instance.
+
+        Args:
+            status_code: HTTP status code exposed by the fake response.
+            headers: HTTP headers included with the request.
+
+        Returns:
+            None.
+        """
         self.status_code = status_code
         self.headers = headers or {}
         self.closed = False
 
-    def close(self):
+    def close(self) -> None:
+        """Handle close.
+
+        Returns:
+            None.
+        """
         self.closed = True
 
 
-def test_get_with_backoff_honors_retry_after_and_retries(monkeypatch):
+def test_get_with_backoff_honors_retry_after_and_retries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that get with backoff honors retry after and retries.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
     scraping._transport_failures.clear()
@@ -22,7 +50,15 @@ def test_get_with_backoff_honors_retry_after_and_retries(monkeypatch):
     sleeps = []
     responses = [FakeResponse(429, {"Retry-After": "7"}), FakeResponse(200)]
 
-    def sleep(seconds):
+    def sleep(seconds: float) -> None:
+        """Handle sleep.
+
+        Args:
+            seconds: Simulated sleep duration in seconds.
+
+        Returns:
+            None.
+        """
         sleeps.append(seconds)
         clock[0] += seconds
 
@@ -36,7 +72,17 @@ def test_get_with_backoff_honors_retry_after_and_retries(monkeypatch):
     assert sleeps == [7.0]
 
 
-def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(monkeypatch):
+def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that get with backoff uses jittered backoff when retry after is missing.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
     scraping._transport_failures.clear()
@@ -45,7 +91,15 @@ def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(monk
     sleeps = []
     responses = [FakeResponse(503), FakeResponse(200)]
 
-    def sleep(seconds):
+    def sleep(seconds: float) -> None:
+        """Handle sleep.
+
+        Args:
+            seconds: Simulated sleep duration in seconds.
+
+        Returns:
+            None.
+        """
         sleeps.append(seconds)
         clock[0] += seconds
 
@@ -61,7 +115,17 @@ def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(monk
     assert sleeps == [1.5, 3.5]
 
 
-def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(monkeypatch):
+def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that get with backoff opens circuit after repeated connection failures.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
     scraping._transport_failures.clear()
@@ -69,10 +133,30 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(monke
     clock = [0.0]
     request_count = [0]
 
-    def sleep(seconds):
+    def sleep(seconds: float) -> None:
+        """Handle sleep.
+
+        Args:
+            seconds: Simulated sleep duration in seconds.
+
+        Returns:
+            None.
+        """
         clock[0] += seconds
 
-    def fail_request(*args, **kwargs):
+    def fail_request(*args: object, **kwargs: object) -> None:
+        """Handle fail request.
+
+        Args:
+            *args: Additional positional arguments forwarded to the dependency.
+            **kwargs: Additional keyword arguments forwarded to the dependency.
+
+        Returns:
+            None.
+
+        Raises:
+            requests.ConnectionError: If the operation cannot be completed.
+        """
         request_count[0] += 1
         raise requests.ConnectionError(ConnectionResetError(104, "Connection reset by peer"))
 
@@ -93,7 +177,12 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(monke
     assert request_count[0] == scraping.TRANSPORT_FAILURE_THRESHOLD
 
 
-def test_transport_failure_count_is_exposed_before_circuit_opens():
+def test_transport_failure_count_is_exposed_before_circuit_opens() -> None:
+    """Verify that transport failure count is exposed before circuit opens.
+
+    Returns:
+        None.
+    """
     scraping._transport_failures.clear()
     scraping._circuit_open_until.clear()
     host = "search-service.idcrealestate.com"
@@ -106,7 +195,17 @@ def test_transport_failure_count_is_exposed_before_circuit_opens():
     assert host not in scraping._circuit_open_until
 
 
-def test_get_with_backoff_recovers_after_circuit_cooldown(monkeypatch):
+def test_get_with_backoff_recovers_after_circuit_cooldown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify that get with backoff recovers after circuit cooldown.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
     scraping._transport_failures.clear()
@@ -134,7 +233,15 @@ def test_get_with_backoff_recovers_after_circuit_cooldown(monkeypatch):
     assert host not in scraping._circuit_open_until
 
 
-def test_host_circuits_are_isolated(monkeypatch):
+def test_host_circuits_are_isolated(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that host circuits are isolated.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
     scraping._transport_failures.clear()
@@ -143,7 +250,16 @@ def test_host_circuits_are_isolated(monkeypatch):
     scraping._circuit_open_until[agency_host] = 60.0
     request_count = [0]
 
-    def successful_request(*args, **kwargs):
+    def successful_request(*args: object, **kwargs: object) -> FakeResponse:
+        """Handle successful request.
+
+        Args:
+            *args: Additional positional arguments forwarded to the dependency.
+            **kwargs: Additional keyword arguments forwarded to the dependency.
+
+        Returns:
+            An HTTP response containing the successful request.
+        """
         request_count[0] += 1
         return FakeResponse(200)
 

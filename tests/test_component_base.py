@@ -9,17 +9,40 @@ from pages.component_base import BaseClass
 
 class BaseClassEnrichmentTest(unittest.TestCase):
     def setUp(self) -> None:
+        """Handle setUp.
+
+        Returns:
+            None.
+        """
         self.temp_dir = tempfile.TemporaryDirectory()
         self.db_path = Path(self.temp_dir.name) / "larentals-test.db"
 
     def tearDown(self) -> None:
+        """Handle tearDown.
+
+        Returns:
+            None.
+        """
         self.temp_dir.cleanup()
 
     def _write_db(self, schema_sql: str) -> None:
+        """Handle write db.
+
+        Args:
+            schema_sql: SQL column definitions used to create the test table.
+
+        Returns:
+            None.
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.executescript(schema_sql)
 
     def test_select_columns_can_include_enrichment_fields(self) -> None:
+        """Verify that select columns can include enrichment fields.
+
+        Returns:
+            None.
+        """
         self._write_db(
             """
             CREATE TABLE buy (
@@ -91,6 +114,11 @@ class BaseClassEnrichmentTest(unittest.TestCase):
         self.assertAlmostEqual(loader.df.loc[0, "best_up"], 50.0)
 
     def test_missing_enrichment_table_is_ignored(self) -> None:
+        """Verify that missing enrichment table is ignored.
+
+        Returns:
+            None.
+        """
         self._write_db(
             """
             CREATE TABLE lease (

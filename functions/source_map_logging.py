@@ -13,6 +13,14 @@ class DashComponentSourceMapErrorFilter(logging.Filter):
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Handle filter.
+
+        Args:
+            record: Log record being checked for a suppressible source-map error.
+
+        Returns:
+            Whether the log record should be emitted.
+        """
         message = record.getMessage()
         is_missing_component_source_map = (
             record.levelno >= logging.ERROR
@@ -23,8 +31,13 @@ class DashComponentSourceMapErrorFilter(logging.Filter):
 
 
 def register_source_map_error_filter(server: Any) -> None:
-    """
-    Install a log filter that suppresses expected browser source-map errors.
+    """Install a log filter that suppresses expected browser source-map errors.
+
+    Args:
+        server: Flask application receiving the registered API routes.
+
+    Returns:
+        None.
     """
     """Prevent optional Dash component source-map lookup failures from logging."""
     server.logger.addFilter(DashComponentSourceMapErrorFilter())

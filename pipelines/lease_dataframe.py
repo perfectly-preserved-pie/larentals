@@ -33,21 +33,23 @@ import sqlite3
 import sys
 
 def main() -> None:
-  """
-  Build the normalized lease-listings dataframe and publish its artifacts.
+  """Build the normalized lease-listings dataframe and publish its artifacts.
 
   Returns:
     ``None`` after the pipeline completes.
 
   Side Effects:
     Reads source data, writes the normalized lease dataset, and logs progress.
+
+  Raises:
+      FileNotFoundError: If the operation cannot be completed.
   """
   parser = argparse.ArgumentParser()
   parser.add_argument("-n","--sample", type=int, default=None,
     help="If set, run on a sample and exit before write")
   parser.add_argument("-l","--logfile", type=str, default=None,
     help="Path to log file (default ~/larentals/lease_dataframe.log)")
-  parser.add_argument("--use-env",   action="store_true",           
+  parser.add_argument("--use-env",   action="store_true",
     help="Load from .env instead of SSM")
   parser.add_argument("--use-nominatim", action="store_true",
     help="If set, use Nominatim instead of Google for geocoding"
@@ -181,7 +183,7 @@ def main() -> None:
       .apply(pd.to_numeric, errors='coerce')
       .round(0)
     )
-    
+
     # Assign cleaned columns back to the dataframe
     df[cols] = numeric_cleaned
 
@@ -223,9 +225,9 @@ def main() -> None:
 
     # Create a new column with the full street address
     df["full_street_address"] = (
-        df["street_number"].astype(str) + ' ' + 
-        df["street_name"].str.strip() + ', ' + 
-        df['city'] + ' ' + 
+        df["street_number"].astype(str) + ' ' +
+        df["street_name"].str.strip() + ', ' +
+        df['city'] + ' ' +
         df["zip_code"].astype(str)
     )
 
@@ -270,8 +272,8 @@ def main() -> None:
     df.laundry = df.laundry.fillna(value="Unknown")
     # Replace various patterns in the Laundry column with "Community Laundry"
     df.laundry = df.laundry.str.replace(
-      r'Community Laundry Area|Laundry Area|Community|Common', 
-      'Community Laundry', 
+      r'Community Laundry Area|Laundry Area|Community|Common',
+      'Community Laundry',
       regex=True
     )
 

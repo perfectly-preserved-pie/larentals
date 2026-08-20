@@ -8,16 +8,39 @@ from scripts import build_service_area_zip_geojson as builder
 
 class FakeResponse:
     def __init__(self, payload: dict) -> None:
+        """Initialize the instance.
+
+        Args:
+            payload: Structured request, listing, or artifact payload to validate or summarize.
+
+        Returns:
+            None.
+        """
         self._payload = payload
 
     def raise_for_status(self) -> None:
+        """Handle raise for status.
+
+        Returns:
+            None.
+        """
         return None
 
     def json(self) -> dict:
+        """Handle json.
+
+        Returns:
+            The stored JSON payload.
+        """
         return self._payload
 
 
 def test_normalize_zip_code_handles_listing_values() -> None:
+    """Verify that normalize zip code handles listing values.
+
+    Returns:
+        None.
+    """
     assert builder.normalize_zip_code("90001") == "90001"
     assert builder.normalize_zip_code("90001.0") == "90001"
     assert builder.normalize_zip_code("92805-1234") == "92805"
@@ -27,6 +50,14 @@ def test_normalize_zip_code_handles_listing_values() -> None:
 
 
 def test_read_listing_zip_codes_uses_configured_tables(tmp_path: Path) -> None:
+    """Verify that read listing zip codes uses configured tables.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
     db_path = tmp_path / "listings.db"
     with sqlite3.connect(db_path) as conn:
         conn.execute("CREATE TABLE buy (zip_code TEXT)")
@@ -47,9 +78,28 @@ def test_read_listing_zip_codes_uses_configured_tables(tmp_path: Path) -> None:
 
 
 def test_fallback_fetch_queries_only_california_zip_areas(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that fallback fetch queries only california zip areas.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace dependencies during the test.
+
+    Returns:
+        None.
+    """
     calls = []
 
     def fake_post(url: str, data: dict, headers: dict, timeout: int) -> FakeResponse:
+        """Handle fake post.
+
+        Args:
+            url: URL requested, validated, or downloaded by the function.
+            data: Form or request body captured by the HTTP test double.
+            headers: HTTP headers included with the request.
+            timeout: HTTP request timeout in seconds.
+
+        Returns:
+            An HTTP response containing the fake post.
+        """
         calls.append({"url": url, "data": data, "headers": headers, "timeout": timeout})
         return FakeResponse(
             {

@@ -24,8 +24,7 @@ _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def categorize_laundry_features(feature: object) -> str:
-    """
-    Collapse raw laundry text into a smaller set of filter buckets.
+    """Collapse raw laundry text into a smaller set of filter buckets.
 
     Args:
         feature: Raw laundry text from the listing row.
@@ -70,8 +69,7 @@ def _normalize_unknown_text(
     *,
     decode_html: bool = False,
 ) -> pd.Series:
-    """
-    Replace missing-like values with ``Unknown`` and optionally decode HTML.
+    """Replace missing-like values with ``Unknown`` and optionally decode HTML.
 
     Args:
         series: Series to normalize.
@@ -87,7 +85,14 @@ def _normalize_unknown_text(
 
 
 def _db_cache_token(db_path: str = DB_PATH) -> int:
-    """Return a cheap cache-busting token derived from the backing SQLite file."""
+    """Return a cheap cache-busting token derived from the backing SQLite file.
+
+    Args:
+        db_path: Filesystem path to the SQLite database.
+
+    Returns:
+        The database file's nanosecond modification time, or zero if unavailable.
+    """
     try:
         return os.stat(db_path).st_mtime_ns
     except OSError:
@@ -95,8 +100,7 @@ def _db_cache_token(db_path: str = DB_PATH) -> int:
 
 
 def _require_safe_identifier(name: str, *, field_name: str) -> str:
-    """
-    Validate a SQL identifier (table/column/index name).
+    """Validate a SQL identifier (table/column/index name).
 
     Args:
         name: The identifier to validate.
@@ -114,8 +118,7 @@ def _require_safe_identifier(name: str, *, field_name: str) -> str:
 
 
 def _sqlite_table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
-    """
-    Return whether a SQLite table or view exists.
+    """Return whether a SQLite table or view exists.
 
     Args:
         conn: Open SQLite connection.
@@ -141,8 +144,7 @@ def _sqlite_table_columns(
     conn: sqlite3.Connection,
     table_name: str,
 ) -> set[str]:
-    """
-    Return the column names declared on a SQLite table or view.
+    """Return the column names declared on a SQLite table or view.
 
     Args:
         conn: Open SQLite connection.
@@ -164,8 +166,7 @@ def _build_cached_geojson_payload(
     db_mtime_ns: int,
     categorize_lease_laundry: bool = False,
 ) -> dict:
-    """
-    Build and cache a GeoJSON payload without constructing any Dash UI components.
+    """Build and cache a GeoJSON payload without constructing any Dash UI components.
 
     Args:
         table_name: Source table name.
@@ -205,8 +206,7 @@ class BaseClass:
         select_columns: Optional[Sequence[str]] = None,
         include_last_updated: bool = True,
     ) -> None:
-        """
-        Load a table/view from SQLite and prepare the DataFrame.
+        """Load a table/view from SQLite and prepare the DataFrame.
 
         Args:
             table_name: SQLite table/view name (e.g. "lease" or "buy").
@@ -214,6 +214,12 @@ class BaseClass:
             select_columns: Optional list/tuple of columns to select instead of SELECT *.
                 Use this to shrink payload for faster startup and smaller GeoJSON.
             include_last_updated: Whether to query the table's processed timestamp.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If the operation cannot be completed.
         """
         safe_table = _require_safe_identifier(table_name, field_name="table_name")
 
@@ -325,8 +331,7 @@ class BaseClass:
             )
 
     def dynamic_output_id(self, index: str) -> dict[str, str]:
-        """
-        Build the pattern-matching output id used by dynamic filter sections.
+        """Build the pattern-matching output id used by dynamic filter sections.
 
         Args:
             index: Logical filter name.
@@ -337,8 +342,7 @@ class BaseClass:
         return {"type": f"dynamic_output_div_{self.page_type}", "index": index}
 
     def map_center(self) -> tuple[float, float]:
-        """
-        Compute the average map center from the current geometry column.
+        """Compute the average map center from the current geometry column.
 
         Returns:
             A ``(lat, lng)`` tuple for the initial map center.
@@ -346,8 +350,7 @@ class BaseClass:
         return float(self.df.geometry.y.mean()), float(self.df.geometry.x.mean())
 
     def create_optional_layers_control(self) -> Optional[dl.LayersControl]:
-        """
-        Build the optional layers control when a page enables extra overlays.
+        """Build the optional layers control when a page enables extra overlays.
 
         Returns:
             A configured ``LayersControl`` or ``None`` when unused.
@@ -361,9 +364,11 @@ class BaseClass:
         )
 
     def return_geojson(self) -> dict:
-        """
-        Return a GeoJSON FeatureCollection for the current GeoDataFrame.
+        """Return a GeoJSON FeatureCollection for the current GeoDataFrame.
         Convert datetime-like columns to ISO strings.
+
+        Returns:
+            A GeoJSON feature collection built from the selected listings.
         """
         gdf = self.df.copy()
 
@@ -401,12 +406,14 @@ class BaseClass:
         return json.loads(geojson_str)
 
     def _attach_isp_speeds(self, conn: sqlite3.Connection, table_name: str) -> None:
-        """
-        Join best available ISP speeds onto the listing dataframe.
+        """Join best available ISP speeds onto the listing dataframe.
 
         Args:
             conn: Open SQLite connection.
             table_name: Listing table currently being loaded.
+
+        Returns:
+            None.
         """
         if table_name not in {"lease", "buy"}:
             return
@@ -453,8 +460,7 @@ class BaseClass:
         conn: sqlite3.Connection,
         table_name: str,
     ) -> None:
-        """
-        Join listing-level enrichment fields onto the current dataframe.
+        """Join listing-level enrichment fields onto the current dataframe.
 
         Enrichment tables follow the convention ``<listing_table>_enrichment`` and
         must expose an ``mls_number`` join key. This keeps derived spatial/context
@@ -464,6 +470,9 @@ class BaseClass:
         Args:
             conn: Open SQLite connection.
             table_name: Listing table currently being loaded.
+
+        Returns:
+            None.
         """
         if table_name not in {"lease", "buy"}:
             return
@@ -513,8 +522,7 @@ class BaseClass:
         self.df = self.df.merge(enrichment_df, on="mls_number", how="left")
 
     def _safe_speed_max(self, column: str) -> float:
-        """
-        Return a safe slider maximum for an ISP speed column.
+        """Return a safe slider maximum for an ISP speed column.
 
         Args:
             column: Dataframe column to inspect.

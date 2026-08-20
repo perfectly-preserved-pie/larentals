@@ -10,7 +10,19 @@ from functions.data_paths import LARENTALS_DB_PATH
 
 
 def _read_table_schema(stage_path: Path, table_name: str) -> str:
-    """Return a staged table's CREATE TABLE statement after validating it."""
+    """Return a staged table's CREATE TABLE statement after validating it.
+
+    Args:
+        stage_path: Filesystem path to the staged SQLite database.
+        table_name: SQLite table to inspect or modify.
+
+    Returns:
+        The loaded table schema text.
+
+    Raises:
+        FileNotFoundError: If the operation cannot be completed.
+        ValueError: If the operation cannot be completed.
+    """
     if not stage_path.is_file():
         raise FileNotFoundError(f"Staging database does not exist: {stage_path}")
 
@@ -44,7 +56,16 @@ def publish_listing_tables(
     buy_stage_path: str | Path,
     lease_stage_path: str | Path,
 ) -> None:
-    """Replace buy and lease together, leaving other canonical tables intact."""
+    """Replace buy and lease together, leaving other canonical tables intact.
+
+    Args:
+        db_path: Filesystem path to the SQLite database.
+        buy_stage_path: Filesystem path for the buy stage.
+        lease_stage_path: Filesystem path for the lease stage.
+
+    Returns:
+        None.
+    """
     destination = Path(db_path)
     buy_stage = Path(buy_stage_path)
     lease_stage = Path(lease_stage_path)
@@ -76,8 +97,10 @@ def publish_listing_tables(
 
 
 def main() -> None:
-    """
-    Validate staged listing tables and publish them atomically to SQLite.
+    """Validate staged listing tables and publish them atomically to SQLite.
+
+    Returns:
+        None.
     """
     parser = argparse.ArgumentParser(
         description="Atomically publish staged buy and lease listing tables."
