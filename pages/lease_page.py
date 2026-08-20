@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from .components import LeaseComponents
+from .component_factories import build_location_filter_status
 from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import ALL, Input, Output, State
 from functions.layers import (
@@ -351,7 +352,7 @@ def update_lease_school_layer(
 def update_lease_zip_boundary(
   locations: list[str] | None,
   include_nearby: bool | None,
-) -> tuple[dict, str]:
+) -> tuple[dict, str | list[object]]:
   """
   Update the ZIP boundary store based on the user-entered locations.
 
@@ -360,14 +361,15 @@ def update_lease_zip_boundary(
   point-in-polygon lookup as a fallback.
 
   Returns:
-    A tuple of (boundary payload dict, status message string).
+    A tuple of (boundary payload dict, status content).
   """
-  return resolve_locations_to_zip_boundaries(
+  payload, status = resolve_locations_to_zip_boundaries(
     locations,
     ZIP_PLACE_CROSSWALK,
     ZIP_POLYGONS,
     include_nearby=bool(include_nearby),
   )
+  return payload, build_location_filter_status(payload, status)
 
 
 clientside_callback(

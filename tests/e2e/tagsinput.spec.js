@@ -33,6 +33,21 @@ test("location tags preserve commas and accept multiple places", async ({ page }
     { timeout: 15_000 }
   );
 
+  const moreZipCodes = page
+    .locator("#lease-location-status .location-zip-more-button")
+    .first();
+  await expect(moreZipCodes).toHaveText(/\+\d+ more/);
+  await expect(moreZipCodes).toHaveAttribute(
+    "aria-label",
+    /Show \d+ additional ZIP codes/
+  );
+  await moreZipCodes.click();
+  const zipPopover = page.locator(".location-zip-popover").first();
+  await expect(zipPopover).toBeVisible();
+  await expect(zipPopover.locator("[role='listitem']").first()).toHaveText(
+    /^\d{5}$/
+  );
+
   await page.evaluate(() => {
     document.documentElement.setAttribute("data-mantine-color-scheme", "dark");
   });
@@ -64,6 +79,9 @@ test("location instructions match the mobile keyboard action", async ({ browser 
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
 
+  await page.locator("#lease-filter-open-button").tap();
+  await expect(page.locator("#lease-filter-panel")).toHaveClass(/is-open/);
+
   const input = page.locator(
     ".location-tags-input input#lease-location-input, " +
     ".location-tags-input#lease-location-input input"
@@ -73,6 +91,29 @@ test("location instructions match the mobile keyboard action", async ({ browser 
     "placeholder",
     "Type a location, then tap Next"
   );
+
+  await input.fill("Pasadena, CA");
+  await input.press("Enter");
+  await input.fill("Glendale");
+  await input.press("Enter");
+
+  const moreZipCodes = page.locator(
+    "#lease-location-status .location-zip-more-button"
+  );
+  await expect(moreZipCodes).toBeVisible({ timeout: 15_000 });
+  await moreZipCodes.tap();
+
+  const zipPopover = page.locator(".location-zip-popover").first();
+  await expect(zipPopover).toBeVisible();
+  const popoverIsTopmost = await zipPopover.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const center = document.elementFromPoint(
+      bounds.left + bounds.width / 2,
+      bounds.top + Math.min(bounds.height / 2, 40)
+    );
+    return element === center || element.contains(center);
+  });
+  expect(popoverIsTopmost).toBe(true);
 
   await context.close();
 });

@@ -6,6 +6,7 @@ from dash import dcc, html
 from pages.component_factories import (
     build_isp_speed_components,
     build_location_filter_components,
+    build_location_filter_status,
     build_range_filter,
     build_subtype_filter,
     build_title_card,
@@ -51,6 +52,48 @@ class ComponentsSmokeTest(unittest.TestCase):
                 self.assertTrue(props["acceptValueOnBlur"])
                 self.assertNotIn("inputProps", props)
                 self.assertNotIn("aria-label", props)
+
+    def test_short_location_status_stays_plain_text(self) -> None:
+        status = "Filtering by ZIP codes: 90027, 90039."
+
+        rendered = build_location_filter_status(
+            {"zip_codes": ["90027", "90039"]},
+            status,
+        )
+
+        self.assertEqual(rendered, status)
+
+    def test_long_location_status_puts_additional_zips_in_popover(self) -> None:
+        zip_codes = ["90027", "90039", "90041", "90065", "91011", "91020"]
+        status = (
+            "Filtering by ZIP codes: 90027, 90039, 90041, 90065, 91011 "
+            "+1 more. Could not find a California location matching 'Atlantis'."
+        )
+
+        rendered = build_location_filter_status(
+            {"zip_codes": zip_codes},
+            status,
+        )
+
+        self.assertIsInstance(rendered, list)
+        popover = rendered[1]
+        self.assertIsInstance(popover, dmc.Popover)
+        target, dropdown = popover.children
+        button = target.children
+        self.assertEqual(button.children, "+1 more")
+        self.assertEqual(
+            button.to_plotly_json()["props"]["aria-label"],
+            "Show 1 additional ZIP code",
+        )
+        zip_list = dropdown.children[1]
+        self.assertEqual(
+            [item.children for item in zip_list.children],
+            ["91020"],
+        )
+        self.assertEqual(
+            rendered[-1],
+            " Could not find a California location matching 'Atlantis'.",
+        )
 
     def test_buy_components_build_core_cards(self) -> None:
         components = BuyComponents()

@@ -453,11 +453,7 @@ def build_location_filter_components(page_type: str) -> html.Div:
             ),
             html.Div(
                 id=f"{page_type}-location-status",
-                style={
-                    "marginTop": "6px",
-                    "fontSize": "0.85rem",
-                    "color": "#9aa0a6",
-                },
+                className="location-filter-status",
             ),
             dmc.Switch(
                 id=f"{page_type}-nearby-zip-switch",
@@ -470,6 +466,75 @@ def build_location_filter_components(page_type: str) -> html.Div:
         ],
         style={"marginBottom": "10px"},
     )
+
+
+def build_location_filter_status(
+    boundary_payload: Mapping[str, Any],
+    status: str,
+) -> str | list[Any]:
+    """Render a compact ZIP summary with additional ZIPs in a popover."""
+    zip_codes = sorted(
+        str(zip_code)
+        for zip_code in boundary_payload.get("zip_codes", [])
+        if zip_code
+    )
+    if len(zip_codes) <= 5:
+        return status
+
+    visible_zip_codes = zip_codes[:5]
+    additional_zip_codes = zip_codes[5:]
+    additional_count = len(additional_zip_codes)
+    zip_label = "ZIP code" if additional_count == 1 else "ZIP codes"
+    summary = (
+        f"Filtering by ZIP codes: {', '.join(visible_zip_codes)} "
+        f"+{additional_count} more."
+    )
+    suffix = status[len(summary):] if status.startswith(summary) else ""
+
+    return [
+        f"Filtering by ZIP codes: {', '.join(visible_zip_codes)} ",
+        dmc.Popover(
+            [
+                dmc.PopoverTarget(
+                    dmc.UnstyledButton(
+                        f"+{additional_count} more",
+                        className="location-zip-more-button",
+                        **{
+                            "aria-label": (
+                                f"Show {additional_count} additional {zip_label}"
+                            ),
+                        },
+                    )
+                ),
+                dmc.PopoverDropdown(
+                    [
+                        html.Div(
+                            f"{additional_count} additional {zip_label}",
+                            className="location-zip-popover-title",
+                        ),
+                        html.Div(
+                            [
+                                html.Span(zip_code, role="listitem")
+                                for zip_code in additional_zip_codes
+                            ],
+                            className="location-zip-popover-list",
+                            role="list",
+                        ),
+                    ],
+                    className="location-zip-popover",
+                ),
+            ],
+            position="bottom-start",
+            shadow="md",
+            withArrow=True,
+            width=240,
+            # The responsive filter sheet sits at z-index 2400. Mantine's
+            # portaled dropdown must clear it on phones and tablets.
+            zIndex=2410,
+        ),
+        ".",
+        suffix,
+    ]
 
 
 def build_title_card(

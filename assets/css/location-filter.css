@@ -1,0 +1,52 @@
+.location-filter-status {
+    color: #9aa0a6;
+    font-size: 0.85rem;
+    margin-top: 6px;
+}
+
+.location-filter-status .mantine-Popover-root {
+    display: inline-block;
+}
+
+.location-zip-more-button {
+    color: inherit;
+    cursor: pointer;
+    display: inline;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.location-zip-more-button:hover {
+    color: var(--mantine-primary-color-filled, #0ca678);
+}
+
+.location-zip-more-button:focus-visible {
+    border-radius: 3px;
+    outline: 2px solid var(--mantine-primary-color-filled, #0ca678);
+    outline-offset: 2px;
+}
+
+.location-zip-popover-title {
+    color: var(--mantine-color-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.location-zip-popover-list {
+    display: grid;
+    font-variant-numeric: tabular-nums;
+    gap: 4px 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 180px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.location-zip-popover-list span {
+    color: var(--mantine-color-text);
+    line-height: 1.4;
+}
