@@ -1,5 +1,11 @@
 from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
-from functions.webscraping_utils import check_expired_listing_bhhs, check_expired_listing_theagency, webscrape_bhhs, fetch_the_agency_data
+from functions.webscraping_utils import (
+    check_expired_listing_bhhs,
+    check_expired_listing_rentcast,
+    check_expired_listing_theagency,
+    fetch_the_agency_data,
+    webscrape_bhhs,
+)
 from functions.listing_pipeline_checkpoint import (
     CheckpointPersistenceError,
     ListingCheckpointStore,
@@ -14,6 +20,7 @@ from functions.listing_report_utils import normalize_mls_number
 from loguru import logger
 from typing import Any, Sequence
 import json
+import os
 import pandas as pd
 import re
 import requests
@@ -119,6 +126,54 @@ def normalize_reported_inactive_flags(series: pd.Series) -> pd.Series:
     )
 
 
+def _check_listing_inactive_sources(
+    *,
+    url: str,
+    full_street_address: object,
+    mls_number: str,
+    listing_type: str,
+) -> tuple[bool | None, str]:
+    """Check a listing through the ordered provider fallback chain.
+
+    Brokerage sources remain first because they carry CRMLS-derived records and
+    do not consume a metered API allowance. RentCast is only used when enabled
+    and the MLS-backed sources cannot determine a status.
+
+    Args:
+        url: Saved public listing URL, if one is available.
+        full_street_address: Property address used by address-based fallbacks.
+        mls_number: MLS identifier whose current status is being checked.
+        listing_type: Listing category, either ``buy`` or ``lease``.
+
+    Returns:
+        The nullable inactive flag and a label describing the checked sources.
+    """
+    checked: list[str] = []
+    result: bool | None = None
+
+    if "bhhscalifornia.com" in url:
+        checked.append("BHHS")
+        result = check_expired_listing_bhhs(url, mls_number)
+    elif "theagencyre.com" in url:
+        checked.append("The Agency")
+        result = check_expired_listing_theagency(url, mls_number)
+
+    if result is None and "The Agency" not in checked:
+        checked.append("The Agency")
+        result = check_expired_listing_theagency(url, mls_number)
+
+    if result is None and os.getenv("RENTCAST_API_KEY"):
+        checked.append("RentCast")
+        address = full_street_address if isinstance(full_street_address, str) else ""
+        result = check_expired_listing_rentcast(
+            address,
+            mls_number,
+            listing_type,
+        )
+
+    return result, "→".join(checked) or "none"
+
+
 def remove_inactive_listings(
     df: pd.DataFrame,
     table_name: str,
@@ -147,7 +202,7 @@ def remove_inactive_listings(
     started_at = time.monotonic()
     logger.info(
         f"Checking {total_rows} {table_name} listings for inactive status "
-        "(provider selected from listing URL)."
+        "(MLS-backed sources with optional RentCast fallback)."
     )
 
     for position, row in enumerate(df.itertuples(), start=1):
@@ -162,45 +217,42 @@ def remove_inactive_listings(
         provider = "none"
         inactive = False
         cached = False
-        if 'bhhscalifornia.com' in url:
-            provider = "BHHS"
-        elif 'theagencyre.com' in url:
-            provider = "The Agency"
-
-        if provider != "none":
-            check_hash = inactive_check_fingerprint(
-                url,
-                source_file_hash=source_file_hash,
+        check_result: bool | None = None
+        check_hash = inactive_check_fingerprint(
+            url,
+            source_file_hash=source_file_hash,
+        )
+        record = checkpoint_store.get(mls) if checkpoint_store else None
+        cached_result = record.get("inactive_check_is_inactive") if record else None
+        cached = bool(
+            record
+            and record.get("inactive_check_input_hash") == check_hash
+            and record.get("inactive_check_status") == "success"
+            and cached_result is not None
+        )
+        if cached:
+            inactive = bool(cached_result)
+            check_result = inactive
+            provider = str(record.get("inactive_check_provider") or "unknown")
+        else:
+            check_result, provider = _check_listing_inactive_sources(
+                url=url,
+                full_street_address=getattr(row, "full_street_address", ""),
+                mls_number=mls,
+                listing_type=table_name,
             )
-            record = checkpoint_store.get(mls) if checkpoint_store else None
-            result = record.get("inactive_check_is_inactive") if record else None
-            cached = bool(
-                record
-                and record.get("inactive_check_input_hash") == check_hash
-                and record.get("inactive_check_status") == "success"
-                and result is not None
-            )
-            if cached:
-                inactive = bool(result)
-                provider = str(record.get("inactive_check_provider") or provider)
-            else:
-                check_result = (
-                    check_expired_listing_bhhs(url, mls)
-                    if provider == "BHHS"
-                    else check_expired_listing_theagency(url, mls)
-                )
-                # ``None`` means the provider could not be checked (for
-                # example, a timeout). Leave it uncached so a later run retries.
-                if check_result is not None:
-                    inactive = bool(check_result)
-                    if checkpoint_store:
-                        checkpoint_store.checkpoint(
-                            mls,
-                            inactive_check_input_hash=check_hash,
-                            inactive_check_status="success",
-                            inactive_check_provider=provider,
-                            inactive_check_is_inactive=inactive,
-                        )
+            # ``None`` means no provider could determine status. Leave it
+            # uncached so a later run or newly configured fallback retries it.
+            if check_result is not None:
+                inactive = bool(check_result)
+                if checkpoint_store:
+                    checkpoint_store.checkpoint(
+                        mls,
+                        inactive_check_input_hash=check_hash,
+                        inactive_check_status="success",
+                        inactive_check_provider=provider,
+                        inactive_check_is_inactive=inactive,
+                    )
 
         if inactive:
             to_delete.append(mls)
@@ -212,8 +264,8 @@ def remove_inactive_listings(
             "removed"
             if inactive
             else "kept"
-            if provider != "none"
-            else "skipped (no supported listing URL)"
+            if check_result is False
+            else "kept (status unknown)"
         )
         checked = "checkpoint" if cached else provider
         logger.info(

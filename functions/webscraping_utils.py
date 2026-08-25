@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from loguru import logger
 from typing import Tuple, Optional
+import os
 import pandas as pd
 import re
 import requests
@@ -10,7 +11,7 @@ import sys
 import time
 import random
 import threading
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
@@ -277,32 +278,31 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool | None:
     # leave this result uncached and retry it on a later pipeline run.
     return None
 
-def check_expired_listing_theagency(listing_url: str, mls_number: str, board_code: str = 'clr') -> bool | None:
-    """Checks if a listing has been sold based on the 'IsSold' key from The Agency API.
+def _agency_board_code(listing_url: str, default: str) -> str:
+    """Extract The Agency's board code from one of its public listing URLs.
 
-    Parameters:
-    listing_url (str): The URL of the listing to check.
-    mls_number (str): The MLS number of the listing.
-    board_code (str, optional): Brokerage board identifier extracted from the listing URL;
-        falls back to the configured board when omitted.
+    Args:
+        listing_url: Saved The Agency listing URL.
+        default: Board code used when the URL does not include one.
 
     Returns:
-    bool: True if the listing has been sold, False otherwise.
+        The extracted or default board code.
     """
-    # Try to extract the board code from the listing_url if it varies
-    try:
-        pattern = r'https://.*?idcrealestate\.com/.*?/(?P<board_code>\w+)/'
-        match = re.search(pattern, listing_url)
-        if match:
-            board_code = match.group('board_code')
-        else:
-            # Use the default board_code provided in the function parameter
-            pass  # board_code remains as provided
-    except Exception as e:
-        logger.warning(f"Could not extract board code from listing URL: {listing_url}. Error: {e}")
+    match = re.search(
+        r"theagencyre\.com/[^/]+/(?P<board_code>[a-z0-9_]+)/",
+        listing_url or "",
+        flags=re.IGNORECASE,
+    )
+    return match.group("board_code") if match else default
 
-    api_url = f'https://search-service.idcrealestate.com/api/property/en_US/d4/sold-detail/{board_code}/{mls_number}'
-    headers = {
+
+def _agency_headers() -> dict[str, str]:
+    """Return headers used by The Agency's public listing search client.
+
+    Returns:
+        HTTP headers for an Agency listing request.
+    """
+    return {
         "User-Agent": "Mozilla/5.0",
         "Accept": "*/*",
         "Accept-Language": "en-US,en;q=0.5",
@@ -313,40 +313,210 @@ def check_expired_listing_theagency(listing_url: str, mls_number: str, board_cod
         "Connection": "keep-alive",
     }
 
+
+def _agency_result_is_inactive(data: object) -> bool | None:
+    """Interpret active and off-market records returned by The Agency.
+
+    Args:
+        data: Decoded Agency JSON response.
+
+    Returns:
+        True for an inactive record, False for an active record, or None when unknown.
+    """
+    if not isinstance(data, dict):
+        return None
+
+    if data.get("IsOffMarket") is True or data.get("IsSold") is True:
+        return True
+
+    status = str(data.get("Status") or data.get("ListingStatus") or "").strip().lower()
+    if status in {
+        "cancelled",
+        "canceled",
+        "closed",
+        "expired",
+        "leased",
+        "off market",
+        "rented",
+        "sold",
+        "withdrawn",
+    }:
+        return True
+    if status:
+        return False
+    return None
+
+
+def check_expired_listing_theagency(
+    listing_url: str,
+    mls_number: str,
+    board_code: str = "clr",
+) -> bool | None:
+    """Check The Agency's active and off-market indexes for an MLS listing.
+
+    The off-market endpoint contains expired, withdrawn, leased, and sold
+    records; it does not consistently expose an ``IsSold`` key. An active
+    lookup is therefore attempted first, followed by the off-market lookup.
+
+    Args:
+        listing_url: Saved listing URL used to infer the board code.
+        mls_number: MLS identifier whose status is being checked.
+        board_code: Default board code when the URL does not contain one.
+
+    Returns:
+        True if the listing is inactive, False if active, or None if unknown.
+    """
+    board_code = _agency_board_code(listing_url, board_code)
+    base_url = "https://search-service.idcrealestate.com/api/property/en_US/d4"
+    headers = _agency_headers()
+
     try:
-        response = get_with_backoff(api_url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        is_sold = data.get('IsSold', False)
-        if is_sold:
-            logger.debug(f"The Agency reports MLS {mls_number} as sold.")
-        return is_sold
+        active_response = get_with_backoff(
+            f"{base_url}/detail/{board_code}/{mls_number}",
+            headers=headers,
+        )
+        if active_response.status_code != 404:
+            active_response.raise_for_status()
+            result = _agency_result_is_inactive(active_response.json())
+            if result is not None:
+                return result
+
+        off_market_response = get_with_backoff(
+            f"{base_url}/sold-detail/{board_code}/{mls_number}",
+            headers=headers,
+        )
+        if off_market_response.status_code == 404:
+            logger.debug(
+                f"The Agency has no active or off-market record for MLS {mls_number}."
+            )
+            return None
+        off_market_response.raise_for_status()
+        result = _agency_result_is_inactive(off_market_response.json())
+        if result:
+            logger.debug(f"The Agency reports MLS {mls_number} as inactive.")
+        return result
 
     except HostCircuitOpen:
         logger.debug(
             f"Skipping Agency expiration check for MLS {mls_number}; "
             "host circuit is open."
         )
-        return None
+    except requests.HTTPError as error:
+        code = error.response.status_code if error.response is not None else "Unknown"
+        logger.error(f"HTTP {code} error for MLS {mls_number}: {error}")
+    except requests.RequestException as error:
+        logger.error(f"Network error checking MLS {mls_number}: {error}")
+    except (TypeError, ValueError) as error:
+        logger.error(f"Invalid Agency response checking MLS {mls_number}: {error}")
 
-    except requests.exceptions.HTTPError as http_err:
-        code = http_err.response.status_code if http_err.response is not None else 'Unknown'
-        if code == 404:
-            logger.debug(
-                f"The Agency sold-listing check returned 404 for MLS "
-                f"{mls_number}."
-            )
-            return False
-        logger.error(f"HTTP {code} error for MLS {mls_number}: {http_err}")
-        return None
+    return None
 
-    except requests.RequestException as req_err:
-        logger.error(f"Network error checking MLS {mls_number}: {req_err}")
-        return None
 
-    except Exception as error:
-        logger.error(f"Unexpected error checking MLS {mls_number}: {error}")
+def _rentcast_address(full_street_address: str) -> str:
+    """Add California to the project's ``street, city ZIP`` address format.
+
+    Args:
+        full_street_address: Property address from the listing dataframe.
+
+    Returns:
+        Address formatted for RentCast's exact-address query.
+    """
+    address = " ".join(full_street_address.split())
+    if re.search(r",\s*(?:CA|California)\s+\d{5}(?:-\d{4})?$", address, re.IGNORECASE):
+        return address
+
+    match = re.match(r"^(?P<prefix>.+,\s*[^,]+?)\s+(?P<zip>\d{5}(?:-\d{4})?)$", address)
+    if not match:
+        return address
+    return f"{match.group('prefix')}, CA {match.group('zip')}"
+
+
+def _rentcast_has_mls(records: object, mls_number: str) -> bool:
+    """Return whether a RentCast response contains the exact MLS identifier.
+
+    Args:
+        records: Decoded list of RentCast listing records.
+        mls_number: Expected MLS identifier.
+
+    Returns:
+        Whether an exact normalized MLS identifier is present.
+    """
+    if not isinstance(records, list):
+        return False
+    expected = re.sub(r"\.0$", "", str(mls_number).strip()).casefold()
+    return any(
+        re.sub(r"\.0$", "", str(record.get("mlsNumber", "")).strip()).casefold()
+        == expected
+        for record in records
+        if isinstance(record, dict)
+    )
+
+
+def check_expired_listing_rentcast(
+    full_street_address: str,
+    mls_number: str,
+    listing_type: str,
+    *,
+    api_key: str | None = None,
+) -> bool | None:
+    """Use RentCast's public-source listing database as an optional fallback.
+
+    Exact MLS matching prevents a new listing for the same address from being
+    confused with the older MLS record. Missing results remain unknown because
+    RentCast is broad-coverage public data, not the originating MLS.
+
+    Args:
+        full_street_address: Property address used for the exact-address query.
+        mls_number: MLS identifier whose status is being checked.
+        listing_type: Listing category, either ``buy`` or ``lease``.
+        api_key: Optional RentCast key overriding ``RENTCAST_API_KEY``.
+
+    Returns:
+        True if inactive, False if active, or None when RentCast cannot confirm either.
+    """
+    api_key = api_key or os.getenv("RENTCAST_API_KEY")
+    if (
+        not api_key
+        or not isinstance(full_street_address, str)
+        or not full_street_address.strip()
+    ):
         return None
+    if listing_type not in {"buy", "lease"}:
+        raise ValueError(f"Unsupported listing type for RentCast: {listing_type}")
+
+    resource = "sale" if listing_type == "buy" else "rental/long-term"
+    endpoint = f"https://api.rentcast.io/v1/listings/{resource}"
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "WhereToLive.LA listing-status checker",
+        "X-Api-Key": api_key,
+    }
+    address = _rentcast_address(full_street_address)
+
+    try:
+        for status, inactive in (("Active", False), ("Inactive", True)):
+            query = urlencode({"address": address, "status": status, "limit": 50})
+            response = get_with_backoff(f"{endpoint}?{query}", headers=headers)
+            response.raise_for_status()
+            if _rentcast_has_mls(response.json(), mls_number):
+                logger.debug(
+                    f"RentCast reports MLS {mls_number} as {status.lower()}."
+                )
+                return inactive
+    except HostCircuitOpen:
+        logger.debug(
+            f"Skipping RentCast expiration check for MLS {mls_number}; "
+            "host circuit is open."
+        )
+    except requests.HTTPError as error:
+        code = error.response.status_code if error.response is not None else "Unknown"
+        logger.warning(f"RentCast returned HTTP {code} for MLS {mls_number}: {error}")
+    except requests.RequestException as error:
+        logger.warning(f"Network error checking RentCast for MLS {mls_number}: {error}")
+    except (TypeError, ValueError) as error:
+        logger.warning(f"Invalid RentCast response for MLS {mls_number}: {error}")
+
+    return None
 
 def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
     """Scrapes the BHHS website for listing details.

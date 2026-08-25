@@ -1,6 +1,7 @@
 from functions import webscraping_utils as scraping
 import pytest
 import requests
+from urllib.parse import parse_qs, urlparse
 
 
 class FakeResponse:
@@ -8,18 +9,21 @@ class FakeResponse:
         self,
         status_code: int,
         headers: dict[str, str] | None = None,
+        json_data: object = None,
     ) -> None:
         """Initialize the instance.
 
         Args:
             status_code: HTTP status code exposed by the fake response.
             headers: HTTP headers included with the request.
+            json_data: Decoded JSON payload returned by ``json``.
 
         Returns:
             None.
         """
         self.status_code = status_code
         self.headers = headers or {}
+        self.json_data = json_data
         self.closed = False
 
     def close(self) -> None:
@@ -29,6 +33,29 @@ class FakeResponse:
             None.
         """
         self.closed = True
+
+    def json(self) -> object:
+        """Return the configured JSON response payload.
+
+        Returns:
+            The configured decoded response body.
+        """
+        return self.json_data
+
+    def raise_for_status(self) -> None:
+        """Raise the same exception family as ``requests.Response``.
+
+        Returns:
+            None.
+
+        Raises:
+            requests.HTTPError: If the fake status is an HTTP error.
+        """
+        if self.status_code >= 400:
+            raise requests.HTTPError(
+                f"HTTP {self.status_code}",
+                response=self,
+            )
 
 
 def test_get_with_backoff_honors_retry_after_and_retries(
@@ -279,3 +306,173 @@ def test_host_circuits_are_isolated(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert response.status_code == 200
     assert request_count[0] == 1
+
+
+def test_agency_active_index_reports_active_listing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An active Agency record should finish the lookup without a second call.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace the HTTP dependency.
+
+    Returns:
+        None.
+    """
+    urls: list[str] = []
+
+    def fake_get(url: str, *, headers: dict[str, str]) -> FakeResponse:
+        """Return one active Agency response.
+
+        Args:
+            url: Requested Agency endpoint.
+            headers: HTTP headers included with the request.
+
+        Returns:
+            A fake active listing response.
+        """
+        urls.append(url)
+        return FakeResponse(200, json_data={"Status": "Active"})
+
+    monkeypatch.setattr(scraping, "get_with_backoff", fake_get)
+
+    result = scraping.check_expired_listing_theagency(
+        "https://www.theagencyre.com/condominium/clr/MLS-1/address",
+        "MLS-1",
+    )
+
+    assert result is False
+    assert urls == [
+        "https://search-service.idcrealestate.com/api/property/en_US/d4/detail/clr/MLS-1"
+    ]
+
+
+def test_agency_off_market_index_recognizes_expired_listing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The off-market payload uses Status/IsOffMarket rather than IsSold.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace the HTTP dependency.
+
+    Returns:
+        None.
+    """
+    responses = [
+        FakeResponse(404),
+        FakeResponse(
+            200,
+            json_data={"Status": "Expired", "IsOffMarket": True},
+        ),
+    ]
+
+    monkeypatch.setattr(
+        scraping,
+        "get_with_backoff",
+        lambda *args, **kwargs: responses.pop(0),
+    )
+
+    assert (
+        scraping.check_expired_listing_theagency("", "21-773252") is True
+    )
+
+
+def test_agency_missing_from_both_indexes_is_unknown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Two missing records must not be treated as proof of an active listing.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace the HTTP dependency.
+
+    Returns:
+        None.
+    """
+    responses = [FakeResponse(404), FakeResponse(404)]
+    monkeypatch.setattr(
+        scraping,
+        "get_with_backoff",
+        lambda *args, **kwargs: responses.pop(0),
+    )
+
+    assert scraping.check_expired_listing_theagency("", "UNKNOWN") is None
+
+
+def test_rentcast_matches_exact_mls_across_active_and_inactive_indexes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A relisted address must not hide the inactive status of the old MLS ID.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace the HTTP dependency.
+
+    Returns:
+        None.
+    """
+    urls: list[str] = []
+    responses = [
+        FakeResponse(200, json_data=[{"mlsNumber": "NEW-MLS"}]),
+        FakeResponse(200, json_data=[{"mlsNumber": "OLD-MLS"}]),
+    ]
+
+    def fake_get(url: str, *, headers: dict[str, str]) -> FakeResponse:
+        """Return each configured RentCast response in order.
+
+        Args:
+            url: Requested RentCast endpoint and query string.
+            headers: HTTP headers included with the request.
+
+        Returns:
+            The next fake listing response.
+        """
+        urls.append(url)
+        assert headers["X-Api-Key"] == "test-key"
+        return responses.pop(0)
+
+    monkeypatch.setattr(scraping, "get_with_backoff", fake_get)
+
+    result = scraping.check_expired_listing_rentcast(
+        "100 Main St, Los Angeles 90001",
+        "OLD-MLS",
+        "lease",
+        api_key="test-key",
+    )
+
+    assert result is True
+    queries = [parse_qs(urlparse(url).query) for url in urls]
+    assert [query["status"] for query in queries] == [["Active"], ["Inactive"]]
+    assert all(
+        query["address"] == ["100 Main St, Los Angeles, CA 90001"]
+        for query in queries
+    )
+
+
+def test_rentcast_missing_exact_mls_is_unknown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Coverage gaps or another listing at the address are not inactive proof.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace the HTTP dependency.
+
+    Returns:
+        None.
+    """
+    monkeypatch.setattr(
+        scraping,
+        "get_with_backoff",
+        lambda *args, **kwargs: FakeResponse(
+            200,
+            json_data=[{"mlsNumber": "DIFFERENT-MLS"}],
+        ),
+    )
+
+    assert (
+        scraping.check_expired_listing_rentcast(
+            "100 Main St, Los Angeles 90001",
+            "MISSING-MLS",
+            "buy",
+            api_key="test-key",
+        )
+        is None
+    )

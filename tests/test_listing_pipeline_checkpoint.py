@@ -422,6 +422,111 @@ def test_inactive_check_log_identifies_type_provider_result_and_eta(
     )
 
 
+def test_inactive_check_falls_back_from_bhhs_to_agency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unavailable BHHS page should fall back to the Agency index.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace status providers.
+
+    Returns:
+        None.
+    """
+    checks: list[str] = []
+    deleted_images: list[str] = []
+
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_bhhs",
+        lambda url, mls: checks.append("BHHS"),
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_theagency",
+        lambda url, mls: checks.append("The Agency") or True,
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.delete_single_mls_image",
+        deleted_images.append,
+    )
+
+    result = remove_inactive_listings(
+        pd.DataFrame(
+            [
+                {
+                    "mls_number": "MLS-4",
+                    "listing_url": "https://www.bhhscalifornia.com/listing/MLS-4",
+                    "full_street_address": "100 Main St, Los Angeles 90001",
+                }
+            ]
+        ),
+        table_name="buy",
+    )
+
+    assert result.empty
+    assert checks == ["BHHS", "The Agency"]
+    assert deleted_images == ["MLS-4"]
+
+
+def test_inactive_check_uses_rentcast_for_missing_listing_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The public-data fallback should cover listings with no brokerage URL.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace status providers.
+
+    Returns:
+        None.
+    """
+    checks: list[tuple[str, str, str]] = []
+    monkeypatch.setenv("RENTCAST_API_KEY", "configured")
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_theagency",
+        lambda url, mls: None,
+    )
+
+    def fake_rentcast(address: str, mls: str, listing_type: str) -> bool:
+        """Record and satisfy one RentCast fallback lookup.
+
+        Args:
+            address: Property address submitted to RentCast.
+            mls: MLS identifier submitted to RentCast.
+            listing_type: Listing category submitted to RentCast.
+
+        Returns:
+            True to identify the listing as inactive.
+        """
+        checks.append((address, mls, listing_type))
+        return True
+
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_rentcast",
+        fake_rentcast,
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.delete_single_mls_image",
+        lambda mls: None,
+    )
+
+    result = remove_inactive_listings(
+        pd.DataFrame(
+            [
+                {
+                    "mls_number": "MLS-5",
+                    "listing_url": pd.NA,
+                    "full_street_address": "200 Main St, Los Angeles 90001",
+                }
+            ]
+        ),
+        table_name="lease",
+    )
+
+    assert result.empty
+    assert checks == [
+        ("200 Main St, Los Angeles 90001", "MLS-5", "lease")
+    ]
+
+
 def test_inactive_checks_resume_from_checkpoint_until_source_changes(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
