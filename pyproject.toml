@@ -23,7 +23,7 @@ dependencies = [
   "geopandas~=1.1.4",
   "geopy~=2.5.0",
   "gevent~=26.8.0",
-  "gunicorn~=26.0.0",
+  "gunicorn>=26.0,<26.3",
   "imagekitio==4.2.0",
   "loguru~=0.7.3",
   "numpy~=2.5.2",
