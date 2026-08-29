@@ -39,6 +39,9 @@ You can click the toggle buttons next to the title to switch between For Rent an
 See the [MCP setup guide](https://wheretolive.la/mcp) for copyable Claude,
 Hermes, and generic client instructions.
 
+The endpoint supports the stateless MCP `2026-07-28` protocol and retains
+Dash's initialization-based `2025-11-25` transport for legacy clients.
+
 
 ## What I'm Using
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) (webscraping MLS photos and links)

@@ -16,6 +16,7 @@ from functions.lahd import (
 )
 from functions.rso import prewarm_rso_property_lookup_cache
 from functions.mcp_usage_logging import register_mcp_usage_logging
+from functions.mcp_2026 import register_mcp_2026_transport
 from functions.source_map_logging import register_source_map_error_filter
 from functions.mcp_listings import configure_listings_mcp
 from functions.seo import (
@@ -92,6 +93,7 @@ Compress(app.server)
 # For Gunicorn
 server = app.server
 register_mcp_usage_logging(server)
+register_mcp_2026_transport(server, allowed_origins={CANONICAL_BASE_URL})
 register_source_map_error_filter(server)
 
 

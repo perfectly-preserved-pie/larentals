@@ -14,6 +14,7 @@ from functions.mcp_listings import (
     configure_listings_mcp,
     search_listings_in_database,
 )
+from functions.mcp_2026 import MODERN_PROTOCOL_VERSION, register_mcp_2026_transport
 
 
 LEASE_SCHEMA = """
@@ -231,6 +232,40 @@ def _post_mcp(
     }
     if session_id:
         headers["Mcp-Session-Id"] = session_id
+    return client.post("/_mcp", data=json.dumps(payload), headers=headers)
+
+
+def _post_modern_mcp(
+    client: FlaskClient,
+    payload: dict[str, Any],
+) -> TestResponse:
+    """Post a stateless MCP 2026-07-28 request with mirrored HTTP headers.
+
+    Args:
+        client: Flask test client used to send the modern request.
+        payload: JSON-RPC request body to enrich with required metadata.
+
+    Returns:
+        The HTTP response returned by the modern MCP transport.
+    """
+    method = payload["method"]
+    headers = {
+        "Accept": "application/json, text/event-stream",
+        "Content-Type": "application/json",
+        "MCP-Protocol-Version": MODERN_PROTOCOL_VERSION,
+        "Mcp-Method": method,
+    }
+    params = payload.setdefault("params", {})
+    params["_meta"] = {
+        "io.modelcontextprotocol/protocolVersion": MODERN_PROTOCOL_VERSION,
+        "io.modelcontextprotocol/clientInfo": {
+            "name": "listing-test",
+            "version": "1.0.0",
+        },
+        "io.modelcontextprotocol/clientCapabilities": {},
+    }
+    if method == "tools/call":
+        headers["Mcp-Name"] = params["name"]
     return client.post("/_mcp", data=json.dumps(payload), headers=headers)
 
 
@@ -471,6 +506,54 @@ def test_mcp_exposes_one_tool_supporting_lease_and_buy(listing_db: Path) -> None
     assert lease_result["total_results"] == 2
     assert buy_result["listing_type"] == "buy"
     assert buy_result["total_results"] == 1
+
+
+def test_modern_mcp_calls_listing_tool_without_a_session(listing_db: Path) -> None:
+    """Invoke the real listing tool over the stateless 2026-07-28 transport.
+
+    Args:
+        listing_db: Temporary listing database supplied by the pytest fixture.
+
+    Returns:
+        None.
+    """
+    configure_listings_mcp()
+    app = Dash(__name__, enable_mcp=True)
+    app.layout = html.Div("Modern curated MCP test")
+    register_mcp_2026_transport(
+        app.server, allowed_origins={"https://wheretolive.la"}
+    )
+    client = app.server.test_client()
+
+    with patch("functions.mcp_listings.DEFAULT_DB_PATH", listing_db):
+        response = _post_modern_mcp(
+            client,
+            {
+                "jsonrpc": "2.0",
+                "id": "modern-call",
+                "method": "tools/call",
+                "params": {
+                    "name": "search_listings",
+                    "arguments": {
+                        "listing_type": "buy",
+                        "max_price": 800_000,
+                    },
+                },
+            },
+        )
+
+    payload = response.get_json()
+    result = payload["result"]
+    listing_result = result["structuredContent"]["result"]
+    assert response.status_code == 200
+    assert response.headers.get("Mcp-Session-Id") is None
+    assert result["resultType"] == "complete"
+    assert result["isError"] is False
+    assert "ttlMs" not in result
+    assert "cacheScope" not in result
+    assert "io.modelcontextprotocol/serverInfo" in result["_meta"]
+    assert listing_result["listing_type"] == "buy"
+    assert listing_result["total_results"] == 1
 
 
 def test_mcp_validation_error_does_not_destabilize_session(listing_db: Path) -> None:
