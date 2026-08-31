@@ -13,6 +13,7 @@ from .component_factories import (
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
+    build_location_suggestions,
     build_map,
     build_map_gesture_control,
     build_page_parts,
@@ -44,6 +45,7 @@ class LeaseComponents(BaseClass):
 
     LEASE_COLUMNS: tuple[str, ...] = (
         "mls_number",
+        "city",
         "latitude",
         "longitude",
         "zip_code",
@@ -216,7 +218,17 @@ class LeaseComponents(BaseClass):
         """
         return [
             ("Listed Date", self.create_listed_date_components(), "listed_date"),
-            ("Location", build_location_filter_components(self.page_type), "location"),
+            (
+                "Location",
+                build_location_filter_components(
+                    self.page_type,
+                    build_location_suggestions(
+                        self.df.get("city", []).tolist(),
+                        self.df.get("zip_code", []).tolist(),
+                    ),
+                ),
+                "location",
+            ),
             ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("Monthly Rent", self._build_rental_price_filter(), "monthly_rent"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),

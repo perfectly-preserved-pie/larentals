@@ -1,3 +1,58 @@
+.location-add-button,
+.location-entry-help--touch {
+    display: none;
+}
+
+.location-entry-help {
+    color: var(--mantine-color-dimmed, #6c757d);
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.location-resolving-status {
+    align-items: center;
+    color: var(--mantine-color-dimmed, #6c757d);
+    display: flex;
+    font-size: 0.85rem;
+    gap: 7px;
+    margin-top: 6px;
+}
+
+.location-resolving-indicator {
+    animation: location-resolving-spin 0.8s linear infinite;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-radius: 50%;
+    border-top-color: currentColor;
+    height: 14px;
+    width: 14px;
+}
+
+.location-tags-input .mantine-TagsInput-pill button {
+    min-height: 24px;
+    min-width: 24px;
+}
+
+@keyframes location-resolving-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (pointer: coarse) {
+    .location-add-button {
+        display: inline-flex;
+        min-height: 44px;
+    }
+
+    .location-entry-help--desktop {
+        display: none;
+    }
+
+    .location-entry-help--touch {
+        display: inline;
+    }
+}
+
 .location-filter-status {
     color: #9aa0a6;
     font-size: 0.85rem;

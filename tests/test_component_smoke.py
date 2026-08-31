@@ -8,6 +8,7 @@ from pages.component_factories import (
     build_isp_speed_components,
     build_location_filter_components,
     build_location_filter_status,
+    build_location_suggestions,
     build_range_filter,
     build_subtype_filter,
     build_title_card,
@@ -46,26 +47,65 @@ class ComponentsSmokeTest(unittest.TestCase):
         for page_type in ("lease", "buy"):
             with self.subTest(page_type=page_type):
                 component = build_location_filter_components(page_type)
-                label, location_input = component.children[:2]
+                label, entry_row, help_text = component.children[:3]
+                location_input, add_button = entry_row.children
 
                 self.assertIsInstance(label, html.Label)
                 self.assertEqual(label.htmlFor, f"{page_type}-location-input")
                 self.assertIsInstance(location_input, dmc.TagsInput)
                 props = location_input.to_plotly_json()["props"]
                 self.assertEqual(props["value"], [])
+                self.assertEqual(props["searchValue"], "")
                 self.assertEqual(props["splitChars"], [";"])
                 self.assertEqual(props["maxTags"], 5)
                 self.assertEqual(
-                    props["description"],
-                    "Add up to 5 locations.",
-                )
-                self.assertEqual(
                     props["placeholder"],
-                    "Type a location, then press Enter",
+                    "Search neighborhoods, cities, or ZIPs",
                 )
-                self.assertTrue(props["acceptValueOnBlur"])
+                self.assertFalse(props["acceptValueOnBlur"])
+                self.assertIn("Los Feliz, CA", props["data"])
+                self.assertIn("Silver Lake, CA", props["data"])
+                self.assertIsInstance(add_button, html.Button)
+                self.assertEqual(add_button.id, f"{page_type}-location-add-button")
+                desktop_help, touch_help = help_text.children
+                self.assertIn("press Enter", desktop_help.children)
+                self.assertIn("tap Add", touch_help.children)
                 self.assertNotIn("inputProps", props)
                 self.assertNotIn("aria-label", props)
+
+                loading = component.children[3]
+                self.assertIsInstance(loading, dcc.Loading)
+                loading_props = loading.to_plotly_json()["props"]
+                self.assertEqual(
+                    loading_props["target_components"],
+                    {f"{page_type}-location-status": "children"},
+                )
+                self.assertIn(
+                    "Resolving locations",
+                    "".join(
+                        str(child)
+                        for child in loading_props["custom_spinner"].children
+                    ),
+                )
+                status = loading.children
+                status_props = status.to_plotly_json()["props"]
+                self.assertEqual(status_props["role"], "status")
+                self.assertEqual(status_props["aria-live"], "polite")
+                self.assertEqual(status_props["aria-atomic"], "true")
+
+    def test_location_suggestions_include_listing_places_and_zip_codes(self) -> None:
+        """Build canonical suggestions from local listing values."""
+        suggestions = build_location_suggestions(
+            ["SILVER LAKE", "Pasadena", "#302, LONG BEACH", "BDPK", None],
+            ["90026", "91030-1234", None],
+        )
+
+        self.assertIn("Silver Lake, CA", suggestions)
+        self.assertIn("Pasadena, CA", suggestions)
+        self.assertIn("Los Feliz, CA", suggestions)
+        self.assertNotIn("#302, Long Beach, CA", suggestions)
+        self.assertNotIn("Bdpk, CA", suggestions)
+        self.assertEqual(suggestions[-2:], ["90026", "91030"])
 
     def test_short_location_status_stays_plain_text(self) -> None:
         """Verify that short location status stays plain text.

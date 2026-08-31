@@ -537,7 +537,10 @@ def geocode_place_cached(
         return None
 
     if not payload:
-        logger.info(f"No Nominatim candidates found for '{query}' after normalizing to '{normalized}'.")
+        logger.debug(
+            f"No Nominatim candidates found for '{query}' "
+            f"after normalizing to '{normalized}'."
+        )
         return None
 
     logger.debug(f"Nominatim response for '{query}': {payload}")
@@ -816,6 +819,34 @@ def _explicit_zip_code(location: str) -> str | None:
     return match.group(1) if match else None
 
 
+def _expand_comma_separated_locations(locations: Sequence[str]) -> list[str]:
+    """Expand an obvious comma-separated list entered as a single tag.
+
+    Commas normally belong to a location (for example, ``"Pasadena, CA"``),
+    so only entries containing at least three non-state place names are
+    expanded. This catches the common ``"Silver Lake, Los Feliz, South
+    Pasadena"`` input without changing qualified places or street addresses.
+
+    Args:
+        locations: Sanitized location tags supplied by the user.
+
+    Returns:
+        Location values with obvious comma-separated lists expanded.
+    """
+    expanded: list[str] = []
+    for location in locations:
+        parts = [part.strip() for part in location.split(",") if part.strip()]
+        looks_like_address = bool(re.search(r"\d", location))
+        has_state_part = any(
+            part.casefold() in {"ca", "california"} for part in parts
+        )
+        if len(parts) >= 3 and not looks_like_address and not has_state_part:
+            expanded.extend(parts)
+        else:
+            expanded.append(location)
+    return expanded
+
+
 def resolve_locations_to_zip_boundaries(
     locations: Sequence[str] | str | None,
     zip_place_crosswalk: dict[str, set[str]],
@@ -857,6 +888,17 @@ def resolve_locations_to_zip_boundaries(
             continue
         seen_locations.add(comparison_key)
         cleaned_locations.append(cleaned)
+
+    expanded_locations = _expand_comma_separated_locations(cleaned_locations)
+    cleaned_locations = []
+    seen_locations.clear()
+    for location in expanded_locations:
+        comparison_key = location.casefold()
+        if comparison_key in seen_locations:
+            continue
+        seen_locations.add(comparison_key)
+        cleaned_locations.append(location)
+    cleaned_locations = cleaned_locations[:5]
 
     if not cleaned_locations:
         return {"zip_codes": [], "features": [], "error": None}, ""

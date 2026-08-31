@@ -18,6 +18,7 @@
   ui.forceApplyUntil = ui.forceApplyUntil || {};
   ui.pendingApplyAnalytics = ui.pendingApplyAnalytics || {};
   ui.pendingLocationApply = ui.pendingLocationApply || {};
+  ui.lastLocationErrorKey = ui.lastLocationErrorKey || {};
   ui.restoring = ui.restoring || {};
   ui.openedAt = ui.openedAt || {};
   ui.pageStartedAt = ui.pageStartedAt || {};
@@ -489,19 +490,21 @@
   function setLocationInputCues(page) {
     const input = document.getElementById(`${page}-location-input`);
     if (input instanceof HTMLInputElement) {
-      input.setAttribute("enterkeyhint", "next");
-      const value = ui.drafts[page] && ui.drafts[page].locationText;
-      const hasLocation = Array.isArray(value)
-        ? value.some(function (item) { return String(item || "").trim(); })
-        : Boolean(String(value || "").trim());
-      const action = window.matchMedia("(pointer: coarse)").matches
-        ? "tap Next"
-        : "press Enter";
-      input.setAttribute(
-        "placeholder",
-        `Type ${hasLocation ? "another" : "a"} location, then ${action}`
-      );
+      input.setAttribute("enterkeyhint", "done");
+      input.setAttribute("placeholder", "Search neighborhoods, cities, or ZIPs");
     }
+    window.requestAnimationFrame(function () {
+      const rootElement = input?.closest(".location-tags-input");
+      if (!rootElement) return;
+      rootElement.querySelectorAll(".mantine-TagsInput-pill").forEach(function (pill) {
+        const removeButton = pill.querySelector("button");
+        if (!removeButton) return;
+        const copy = pill.cloneNode(true);
+        copy.querySelectorAll("button").forEach(function (button) { button.remove(); });
+        const label = String(copy.textContent || "").trim();
+        if (label) removeButton.setAttribute("aria-label", `Remove ${label}`);
+      });
+    });
   }
 
   /**
@@ -511,6 +514,24 @@
    */
   function render(page) {
     setLocationInputCues(page);
+
+    const draftState = ui.drafts[page];
+    const locationError = draftState?.zipBoundary?.error || null;
+    if (locationError) {
+      const errorKey = `${locationValueKey(draftState.locationText)}:${locationError}`;
+      if (ui.lastLocationErrorKey[page] !== errorKey) {
+        ui.lastLocationErrorKey[page] = errorKey;
+        root.analytics?.trackEvent?.("Location Resolution Failed", {
+          page,
+          error: locationError,
+          entry_count: Array.isArray(draftState.locationText)
+            ? draftState.locationText.length
+            : Number(Boolean(locationText(draftState.locationText))),
+        });
+      }
+    } else {
+      ui.lastLocationErrorKey[page] = null;
+    }
 
     const appliedState = ui.applied[page];
     const defaults = ui.defaults[page];
@@ -679,8 +700,18 @@
 
     const title = document.getElementById(`${page}-filter-panel-title`);
     window.setTimeout(function () {
+      if (!panel.classList.contains("is-open")) return;
+      const activeElement = document.activeElement;
+      // A touch user can reach a control before this delayed focus handoff.
+      // Do not steal focus and dismiss an open combobox in that case.
+      if (
+        activeElement instanceof HTMLElement
+        && panel.contains(activeElement)
+        && activeElement !== title
+        && activeElement !== panel
+      ) return;
       (title || panel).focus({ preventScroll: true });
-      focusSection(page, section);
+      focusSection(page, section, true);
     }, 180);
 
     root.analytics?.trackEvent?.("Filter Drawer Opened", {
@@ -773,14 +804,27 @@
    * Scroll to and focus a named filter accordion section.
    * @param {ListingPage} page Listing mode containing the accordion.
    * @param {string} [section] Section key to focus.
+   * @param {boolean} [preserveUserFocus=false] Avoid overriding a control the
+   * user reached while the drawer was opening.
    * @returns {void}
    */
-  function focusSection(page, section) {
+  function focusSection(page, section, preserveUserFocus = false) {
     if (!section) return;
     const accordion = document.getElementById(`${page}-options-accordion`);
     const expected = SECTION_LABELS[section];
     if (!accordion || !expected) return;
     window.setTimeout(function () {
+      const panel = panelFor(page);
+      const title = document.getElementById(`${page}-filter-panel-title`);
+      const activeElement = document.activeElement;
+      if (
+        preserveUserFocus
+        && panel
+        && activeElement instanceof HTMLElement
+        && panel.contains(activeElement)
+        && activeElement !== title
+        && activeElement !== panel
+      ) return;
       const button = Array.from(accordion.querySelectorAll(".accordion-button")).find(function (item) {
         return String(item.textContent || "").trim() === expected;
       });
@@ -791,11 +835,65 @@
   }
 
   /**
+   * Commit the visible free-form location text with the TagsInput's native
+   * Enter behavior. The adjacent button gives touch users the same action
+   * without requiring a particular software-keyboard layout.
+   * @param {ListingPage} page Listing mode whose location control is updated.
+   * @returns {void}
+   */
+  function addTypedLocation(page) {
+    const input = document.getElementById(`${page}-location-input`);
+    if (!(input instanceof HTMLInputElement) || !input.value.trim()) return;
+    input.focus({ preventScroll: true });
+    input.dispatchEvent(new KeyboardEvent("keydown", {
+      key: "Enter",
+      code: "Enter",
+      bubbles: true,
+      cancelable: true,
+    }));
+  }
+
+  /**
    * Route delegated clicks to open, close, apply, clear, or remove actions.
    * @param {MouseEvent} event Captured document click.
    * @returns {void}
    */
   function clickHandler(event) {
+    const locationRemoveTrigger = event.target.closest(
+      ".location-tags-input .mantine-TagsInput-pill button"
+    );
+    if (locationRemoveTrigger) {
+      root.analytics?.trackEvent?.("Location Removed", {
+        page: currentPage(),
+        method: "chip",
+      });
+    }
+
+    const suggestionTrigger = event.target.closest("[role='option']");
+    const activeInput = document.activeElement;
+    if (
+      suggestionTrigger
+      && activeInput instanceof HTMLInputElement
+      && /^(lease|buy)-location-input$/.test(activeInput.id)
+    ) {
+      root.analytics?.trackEvent?.("Location Added", {
+        page: activeInput.id.startsWith("buy-") ? "buy" : "lease",
+        method: "suggestion_pointer",
+      });
+    }
+
+    const locationAddTrigger = event.target.closest(".location-add-button");
+    if (locationAddTrigger) {
+      const page = locationAddTrigger.id.startsWith("buy-") ? "buy" : "lease";
+      event.preventDefault();
+      root.analytics?.trackEvent?.("Location Added", {
+        page,
+        method: "add_button",
+      });
+      addTypedLocation(page);
+      return;
+    }
+
     const openTrigger = event.target.closest("[data-filter-open]");
     if (openTrigger) {
       const page = openTrigger.dataset.filterOpen;
@@ -853,8 +951,33 @@
    */
   function keyHandler(event) {
     const page = currentPage();
+    if (
+      event.isTrusted
+      && event.key === "Enter"
+      && event.target instanceof HTMLInputElement
+      && /^(lease|buy)-location-input$/.test(event.target.id)
+      && event.target.value.trim()
+    ) {
+      root.analytics?.trackEvent?.("Location Added", {
+        page,
+        method: event.target.getAttribute("aria-activedescendant")
+          ? "suggestion_keyboard"
+          : "free_form_keyboard",
+      });
+    }
+
     const panel = panelFor(page);
     if (!panel || !panel.classList.contains("is-open")) return;
+
+    if (
+      event.key === "Escape"
+      && event.target instanceof HTMLInputElement
+      && /^(lease|buy)-location-input$/.test(event.target.id)
+      && event.target.getAttribute("aria-expanded") === "true"
+    ) {
+      // Let the combobox consume Escape before treating it as drawer dismissal.
+      return;
+    }
 
     if (event.key === "Escape") {
       event.preventDefault();

@@ -234,6 +234,50 @@ def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
     assert geocode_calls == []
 
 
+def test_resolve_locations_expands_obvious_comma_separated_list() -> None:
+    """Treat three unqualified comma-separated places as separate locations."""
+    crosswalk = {
+        "SILVER LAKE": {"90026"},
+        "LOS FELIZ": {"90027"},
+        "SOUTH PASADENA": {"91030"},
+    }
+    polygons = [
+        _zip_feature("90026", west=0, south=0, east=1, north=1),
+        _zip_feature("90027", west=1, south=0, east=2, north=1),
+        _zip_feature("91030", west=2, south=0, east=3, north=1),
+    ]
+
+    payload, status = geocoding.resolve_locations_to_zip_boundaries(
+        ["Silver Lake, Los Feliz, South Pasadena"],
+        crosswalk,
+        polygons,
+        geocode=lambda location: pytest.fail(
+            f"Comma-separated place should not be geocoded as one query: {location}"
+        ),
+    )
+
+    assert payload["zip_codes"] == ["90026", "90027", "91030"]
+    assert status == "Filtering by ZIP codes: 90026, 90027, 91030."
+
+
+def test_resolve_locations_preserves_qualified_place_and_address_commas() -> None:
+    """Do not reinterpret state-qualified places or addresses as lists."""
+    geocode_calls: list[str] = []
+
+    def fake_geocode(location: str) -> None:
+        geocode_calls.append(location)
+        return None
+
+    geocoding.resolve_locations_to_zip_boundaries(
+        ["Pasadena, CA", "100 Main St, Pasadena, CA"],
+        {},
+        [],
+        geocode=fake_geocode,
+    )
+
+    assert geocode_calls == ["Pasadena, CA", "100 Main St, Pasadena, CA"]
+
+
 def test_resolve_locations_reports_partial_failures_without_dropping_matches() -> None:
     """Verify that resolve locations reports partial failures without dropping matches.
 

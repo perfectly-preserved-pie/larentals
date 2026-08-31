@@ -6,6 +6,9 @@ ANALYTICS_SOURCE = Path(
 ).read_text(encoding="utf-8")
 POPUP_SOURCE = Path("assets/js/popup.js").read_text(encoding="utf-8")
 REPORT_SOURCE = Path("assets/js/report_listing.js").read_text(encoding="utf-8")
+RESPONSIVE_FILTERS_SOURCE = Path(
+    "assets/js/clientside_callbacks/responsive_filters.js"
+).read_text(encoding="utf-8")
 
 
 def test_all_plausible_product_events_are_instrumented() -> None:
@@ -85,3 +88,10 @@ def test_filter_maps_use_only_semantic_categories() -> None:
     assert '"lease-zip-boundary-store": "location"' in ANALYTICS_SOURCE
     assert '"buy-zip-boundary-store": "location"' in ANALYTICS_SOURCE
     assert 'trackEvent("Filter Changed", { category: category })' in ANALYTICS_SOURCE
+    assert 'trackEvent?.("Location Added"' in RESPONSIVE_FILTERS_SOURCE
+    assert 'method: "suggestion_pointer"' in RESPONSIVE_FILTERS_SOURCE
+    assert '"suggestion_keyboard"' in RESPONSIVE_FILTERS_SOURCE
+    assert '"free_form_keyboard"' in RESPONSIVE_FILTERS_SOURCE
+    assert 'method: "add_button"' in RESPONSIVE_FILTERS_SOURCE
+    assert 'trackEvent?.("Location Removed"' in RESPONSIVE_FILTERS_SOURCE
+    assert 'trackEvent?.("Location Resolution Failed"' in RESPONSIVE_FILTERS_SOURCE

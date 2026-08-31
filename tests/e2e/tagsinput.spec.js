@@ -1,6 +1,6 @@
 const { test, expect } = require("@playwright/test");
 
-test("location tags preserve commas and accept multiple places", async ({ page }) => {
+test("location suggestions and Add button accept multiple places", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
 
   const control = page.locator(".location-tags-input").first();
@@ -9,22 +9,44 @@ test("location tags preserve commas and accept multiple places", async ({ page }
     ".location-tags-input#lease-location-input input"
   ).first();
   await expect(input).toBeVisible();
-  await expect(input).toHaveAttribute("enterkeyhint", "next");
+  await expect(input).toHaveAttribute("enterkeyhint", "done");
   await expect(input).not.toHaveAttribute("inputprops");
   await expect(input).toHaveAttribute(
     "placeholder",
-    "Type a location, then press Enter"
+    "Search neighborhoods, cities, or ZIPs"
   );
+  await expect(page.locator("#lease-location-add-button")).toBeHidden();
+  await expect(page.locator(".location-entry-help--desktop").first()).toBeVisible();
+  await expect(page.locator("#lease-location-status")).toHaveAttribute("role", "status");
+  await expect(page.locator("#lease-location-status")).toHaveAttribute("aria-live", "polite");
+
+  await input.fill("Silver Lake");
+  const silverLakeOption = page.getByRole("option", {
+    name: "Silver Lake, CA",
+    exact: true,
+  });
+  await expect(silverLakeOption).toBeVisible();
+  await input.press("Escape");
+  await expect(silverLakeOption).toBeHidden();
+  await expect(input).toHaveValue("Silver Lake");
+  await input.press("ArrowDown");
+  await expect(silverLakeOption).toBeVisible();
+  await input.press("Enter");
+  await expect(control).toContainText("Silver Lake, CA");
 
   await input.pressSequentially("Pasadena, CA");
-  await expect(control.locator(".mantine-TagsInput-pill")).toHaveCount(0);
+  await expect(control.locator(".mantine-TagsInput-pill")).toHaveCount(1);
   await input.press("Enter");
-  await expect(input).toHaveAttribute(
-    "placeholder",
-    "Type another location, then press Enter"
-  );
+  await expect(control).toContainText("Pasadena, CA");
+  await expect(input).toHaveValue("");
   await input.pressSequentially("Glendale");
   await input.press("Enter");
+  await expect(control).toContainText("Glendale");
+  await expect(input).toHaveValue("");
+  await expect(control.locator(".mantine-TagsInput-pill")).toHaveCount(3);
+  await expect(
+    control.locator(".mantine-TagsInput-pill button").first()
+  ).toHaveAttribute("aria-label", "Remove Silver Lake, CA");
 
   await expect(control).toContainText("Pasadena, CA");
   await expect(control).toContainText("Glendale");
@@ -82,20 +104,47 @@ test("location instructions match the mobile keyboard action", async ({ browser 
   await page.locator("#lease-filter-open-button").tap();
   await expect(page.locator("#lease-filter-panel")).toHaveClass(/is-open/);
 
+  const control = page.locator(".location-tags-input").first();
   const input = page.locator(
     ".location-tags-input input#lease-location-input, " +
     ".location-tags-input#lease-location-input input"
   ).first();
-  await expect(input).toHaveAttribute("enterkeyhint", "next");
+  await expect(input).toHaveAttribute("enterkeyhint", "done");
   await expect(input).toHaveAttribute(
     "placeholder",
-    "Type a location, then tap Next"
+    "Search neighborhoods, cities, or ZIPs"
   );
+  await expect(page.locator("#lease-location-add-button")).toBeVisible();
+  await expect(page.locator(".location-entry-help--touch").first()).toBeVisible();
+
+  await input.fill("Silver Lake");
+  const suggestion = page.getByRole("option", {
+    name: "Silver Lake, CA",
+    exact: true,
+  });
+  await expect(suggestion).toBeVisible();
+  await suggestion.tap();
+  await expect(control).toContainText("Silver Lake, CA");
+  await expect(input).toHaveValue("");
 
   await input.fill("Pasadena, CA");
-  await input.press("Enter");
+  await page.locator("#lease-location-add-button").tap();
+  await expect(control).toContainText("Pasadena, CA");
+  await expect(input).toHaveValue("");
   await input.fill("Glendale");
-  await input.press("Enter");
+  await page.locator("#lease-location-add-button").tap();
+  await expect(control).toContainText("Glendale");
+  await expect(input).toHaveValue("");
+  const firstRemoveButton = control
+    .locator(".mantine-TagsInput-pill button")
+    .first();
+  await expect(firstRemoveButton).toHaveAttribute("aria-label", "Remove Silver Lake, CA");
+  const removeTargetSize = await firstRemoveButton.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { width: bounds.width, height: bounds.height };
+  });
+  expect(removeTargetSize.width).toBeGreaterThanOrEqual(24);
+  expect(removeTargetSize.height).toBeGreaterThanOrEqual(24);
 
   const moreZipCodes = page.locator(
     "#lease-location-status .location-zip-more-button"

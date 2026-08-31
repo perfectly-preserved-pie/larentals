@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 import math
+import re
 from typing import Any, Mapping
 from dash import dcc, html
 from dash_extensions.javascript import Namespace
@@ -457,7 +458,75 @@ def build_isp_speed_components(max_download: float, max_upload: float) -> html.D
     )
 
 
-def build_location_filter_components(page_type: str) -> html.Div:
+_COMMON_LA_LOCATION_SUGGESTIONS: tuple[str, ...] = (
+    "Atwater Village, CA",
+    "Boyle Heights, CA",
+    "Chinatown, CA",
+    "Downtown Los Angeles, CA",
+    "Echo Park, CA",
+    "Glassell Park, CA",
+    "Highland Park, CA",
+    "Hollywood, CA",
+    "Koreatown, CA",
+    "Los Feliz, CA",
+    "Mar Vista, CA",
+    "Mid-City, CA",
+    "Silver Lake, CA",
+    "Venice, CA",
+    "West Adams, CA",
+)
+_INVALID_LISTING_LOCATION_LABELS = {
+    "BDPK",
+    "CNGA",
+    "CULV",
+    "LA",
+    "NHLW",
+    "SM",
+    "TUJ",
+}
+
+
+def build_location_suggestions(
+    city_values: Sequence[object] | None = None,
+    zip_values: Sequence[object] | None = None,
+) -> list[str]:
+    """Build locally sourced suggestions for the location tags input.
+
+    Args:
+        city_values: City or neighborhood labels present in listing data.
+        zip_values: ZIP codes present in listing data.
+
+    Returns:
+        Sorted, deduplicated California place labels followed by ZIP codes.
+    """
+    places = set(_COMMON_LA_LOCATION_SUGGESTIONS)
+    for raw_city in city_values or []:
+        city = " ".join(str(raw_city or "").strip().split())
+        if (
+            not city
+            or city.casefold() in {"none", "nan", "unknown"}
+            or city.upper() in _INVALID_LISTING_LOCATION_LABELS
+        ):
+            continue
+        if city.startswith("#") or not any(character.isalpha() for character in city):
+            continue
+        city = city.title()
+        if not re.search(r"(?:,\s*)?(?:CA|California)$", city, re.IGNORECASE):
+            city = f"{city}, CA"
+        places.add(city)
+
+    zip_codes = {
+        match.group(1)
+        for raw_zip in zip_values or []
+        if (match := re.fullmatch(r"\s*(\d{5})(?:-\d{4})?\s*", str(raw_zip or "")))
+    }
+    return sorted(places, key=str.casefold) + sorted(zip_codes)
+
+
+def build_location_filter_components(
+    page_type: str,
+    suggestions: Sequence[str] | None = None,
+) -> html.Div:
     """Build the shared location filter controls.
 
     Args:
@@ -473,22 +542,90 @@ def build_location_filter_components(page_type: str) -> html.Div:
                 htmlFor=f"{page_type}-location-input",
                 className="visually-hidden",
             ),
-            dmc.TagsInput(
-                id=f"{page_type}-location-input",
-                value=[],
-                placeholder="Type a location, then press Enter",
-                description="Add up to 5 locations.",
-                splitChars=[";"],
-                acceptValueOnBlur=True,
-                allowDuplicates=False,
-                clearable=True,
-                maxTags=5,
+            dmc.Group(
+                [
+                    dmc.TagsInput(
+                        id=f"{page_type}-location-input",
+                        value=[],
+                        searchValue="",
+                        data=list(suggestions or _COMMON_LA_LOCATION_SUGGESTIONS),
+                        limit=8,
+                        placeholder="Search neighborhoods, cities, or ZIPs",
+                        splitChars=[";"],
+                        acceptValueOnBlur=False,
+                        allowDuplicates=False,
+                        clearable=True,
+                        maxTags=5,
+                        # The responsive filter sheet sits at z-index 2400.
+                        # Keep the portaled suggestion menu above it on touch
+                        # layouts, matching the location ZIP popover below.
+                        comboboxProps={
+                            "zIndex": 2410,
+                            "position": "bottom-start",
+                            "width": "target",
+                            "floatingStrategy": "fixed",
+                        },
+                        flex=1,
+                        className="location-tags-input",
+                    ),
+                    html.Button(
+                        "Add",
+                        id=f"{page_type}-location-add-button",
+                        type="button",
+                        className="btn btn-outline-info location-add-button",
+                        style={"flexShrink": 0},
+                        **{"aria-label": "Add typed location"},
+                    ),
+                ],
+                align="flex-end",
+                gap="xs",
+                wrap="nowrap",
                 w="100%",
-                className="location-tags-input",
+                className="location-entry-row",
             ),
             html.Div(
-                id=f"{page_type}-location-status",
-                className="location-filter-status",
+                [
+                    html.Span(
+                        "Select a suggestion, or press Enter to add one location. "
+                        "Up to 5.",
+                        className="location-entry-help--desktop",
+                    ),
+                    html.Span(
+                        "Tap a suggestion, or type one location and tap Add. Up to 5.",
+                        className="location-entry-help--touch",
+                    ),
+                ],
+                className="location-entry-help",
+            ),
+            dcc.Loading(
+                html.Div(
+                    id=f"{page_type}-location-status",
+                    className="location-filter-status",
+                    role="status",
+                    **{
+                        "aria-live": "polite",
+                        "aria-atomic": "true",
+                    },
+                ),
+                target_components={f"{page_type}-location-status": "children"},
+                custom_spinner=html.Div(
+                    [
+                        html.Span(
+                            className="location-resolving-indicator",
+                            **{"aria-hidden": "true"},
+                        ),
+                        "Resolving locations…",
+                    ],
+                    className="location-resolving-status",
+                    role="status",
+                    **{
+                        "aria-live": "polite",
+                        "aria-atomic": "true",
+                    },
+                ),
+                delay_show=150,
+                delay_hide=100,
+                parent_className="location-status-loading-wrapper",
             ),
             dmc.Switch(
                 id=f"{page_type}-nearby-zip-switch",
