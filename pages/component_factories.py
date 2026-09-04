@@ -1461,6 +1461,7 @@ def build_listed_date_filter(
                     ),
                     dcc.DatePickerRange(
                         id=datepicker_id,
+                        number_of_months_shown=1,
                         max_date_allowed=today,
                         start_date=earliest_date,
                         end_date=today,
@@ -1480,6 +1481,7 @@ def build_listed_date_filter(
         ],
         style={"marginBottom": "10px"},
         id=component_id,
+        className="listed-date-filter",
     )
 
 

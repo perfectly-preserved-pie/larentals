@@ -42,6 +42,74 @@
   overscroll-behavior: contain;
 }
 
+/* Keep the calendar in the scrollable filter flow. A floating two-month
+   popup can extend behind the map or the mobile sheet footer. */
+.listed-date-filter {
+  font-size: 16px;
+}
+
+.accordion-body:has(.listed-date-filter) {
+  padding-inline: 8px;
+}
+
+.listed-date-filter .dash-datepicker-controls {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  width: 100%;
+  justify-items: center;
+}
+
+.listed-date-filter .dash-datepicker-controls > .dash-input {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.listed-date-filter .dash-datepicker-month-nav {
+  width: 32px;
+  height: 40px;
+}
+
+.listed-date-filter .dash-datepicker-month-nav:last-child {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.listed-date-filter .dash-dropdown-focus-target {
+  /* Dash's invisible focus input otherwise adds its default width to the
+     calendar's scroll area on narrow screens. */
+  width: 1px;
+}
+
+.listed-date-filter .dash-datepicker > [data-radix-popper-content-wrapper] {
+  position: relative !important;
+  transform: none !important;
+  min-width: 0 !important;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.listed-date-filter .dash-datepicker-content {
+  width: 100%;
+  max-width: 100%;
+  box-shadow: none;
+}
+
+.listed-date-filter .dash-datepicker-input-wrapper {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 6px;
+  padding-inline: 8px;
+}
+
+.listed-date-filter .dash-datepicker-input {
+  min-width: 0;
+  width: 100% !important;
+}
+
+.listed-date-filter .dash-datepicker-input-wrapper > div {
+  min-width: 0;
+  width: 100%;
+}
+
 .responsive-filter-panel__body > .card,
 .responsive-filter-panel__body > div > .card {
   border-right: 0;
