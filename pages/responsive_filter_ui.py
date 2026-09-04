@@ -406,6 +406,72 @@ def _quick_filter_button(
     )
 
 
+_SUBTYPE_QUICK_REGISTERED = False
+
+
+def _register_subtype_quick_callbacks() -> None:
+    """Wire the two quick subtype toggles to the subtype dropdown, once.
+
+    ``subtype_checklist`` is a single global id shared by both listing pages,
+    while this module's callbacks register per page. Without the guard the second
+    registration is a duplicate output and Dash refuses to start.
+
+    Side Effects:
+        Registers two clientside callbacks the first time it is called.
+
+    Returns:
+        None.
+    """
+    global _SUBTYPE_QUICK_REGISTERED
+    if _SUBTYPE_QUICK_REGISTERED:
+        return
+    _SUBTYPE_QUICK_REGISTERED = True
+
+    # The quick toggles and the dropdown are one filter with two faces. The
+    # buttons write into the dropdown (the single source of truth), and a second
+    # callback reads that value back to light them up. Splitting it this way
+    # keeps the buttons' own state out of the graph, so there is no cycle.
+    clientside_callback(
+        """
+        function (aptClicks, houseClicks, current) {
+            const trigger = (window.dash_clientside.callback_context.triggered || [])[0];
+            if (!trigger || !trigger.prop_id) return window.dash_clientside.no_update;
+            const id = trigger.prop_id.split(".")[0];
+            const button = document.getElementById(id);
+            const value = button && button.dataset ? button.dataset.subtypeValue : null;
+            if (!value) return window.dash_clientside.no_update;
+            const selected = Array.isArray(current) ? current.slice() : [];
+            const at = selected.indexOf(value);
+            if (at === -1) selected.push(value);
+            else selected.splice(at, 1);
+            return selected;
+        }
+        """,
+        Output("subtype_checklist", "value"),
+        Input("subtype-quick-0", "n_clicks"),
+        Input("subtype-quick-1", "n_clicks"),
+        State("subtype_checklist", "value"),
+        prevent_initial_call=True,
+    )
+
+    clientside_callback(
+        """
+        function (selected) {
+            const chosen = Array.isArray(selected) ? selected : [];
+            const base = "mode-switch__option btn";
+            return ["subtype-quick-0", "subtype-quick-1"].map(function (id) {
+                const button = document.getElementById(id);
+                const value = button && button.dataset ? button.dataset.subtypeValue : null;
+                return value && chosen.indexOf(value) !== -1 ? base + " active" : base;
+            });
+        }
+        """,
+        Output("subtype-quick-0", "className"),
+        Output("subtype-quick-1", "className"),
+        Input("subtype_checklist", "value"),
+    )
+
+
 def register_responsive_filter_callbacks(page_type: str) -> None:
     """Register the client-side callbacks for one listing page.
 
@@ -464,14 +530,12 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
         Input(f"{page_type}-geojson-store", "data"),
     )
 
+    _register_subtype_quick_callbacks()
+
     clientside_callback(
-        ClientsideFunction(namespace="clientside", function_name="openFilterAccordionSection"),
-        Output(f"{page_type}-options-accordion", "active_item"),
-        [
-            Input("viewport-listener", "event"),
-            *[Input(f"{page_type}-quick-{key}", "n_clicks") for key in quick_ids],
-        ],
-        State(f"{page_type}-options-accordion", "active_item"),
+        ClientsideFunction(namespace="clientside", function_name="scrollToFilterSection"),
+        Output(f"{page_type}-analytics-section-store", "data"),
+        [Input(f"{page_type}-quick-{key}", "n_clicks") for key in quick_ids],
         prevent_initial_call=True,
     )
 
@@ -496,46 +560,46 @@ def _lease_capture_inputs() -> list[Input]:
         Input("sqft_minimum_input", "value"),
         Input("sqft_maximum_input", "value"),
         Input("sqft_slider", "max"),
-        Input("sqft_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("ppsqft_minimum_input", "value"),
         Input("ppsqft_maximum_input", "value"),
         Input("ppsqft_slider", "max"),
-        Input("ppsqft_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("garage_spaces_slider", "value"),
         Input("garage_spaces_slider", "max"),
-        Input("garage_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("yrbuilt_slider", "value"),
-        Input("yrbuilt_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("terms_checklist", "value"),
-        Input("terms_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("furnished_checklist", "value"),
-        Input("furnished_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("security_deposit_minimum_input", "value"),
         Input("security_deposit_maximum_input", "value"),
         Input("security_deposit_slider", "max"),
-        Input("security_deposit_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("pet_deposit_minimum_input", "value"),
         Input("pet_deposit_maximum_input", "value"),
         Input("pet_deposit_slider", "max"),
-        Input("pet_deposit_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("key_deposit_minimum_input", "value"),
         Input("key_deposit_maximum_input", "value"),
         Input("key_deposit_slider", "max"),
-        Input("key_deposit_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("other_deposit_minimum_input", "value"),
         Input("other_deposit_maximum_input", "value"),
         Input("other_deposit_slider", "max"),
-        Input("other_deposit_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("laundry_checklist", "value"),
-        Input("laundry_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("subtype_checklist", "value"),
         Input("listed_time_range_radio", "value"),
         Input("listed_date_datepicker_lease", "start_date"),
         Input("listed_date_datepicker_lease", "end_date"),
-        Input("listed_date_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("isp_download_speed_slider", "value"),
         Input("isp_upload_speed_slider", "value"),
-        Input("isp_speed_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("rent_control_status", "value"),
         Input("lease-location-input", "value"),
         Input("lease-nearby-zip-switch", "checked"),
@@ -562,30 +626,30 @@ def _buy_capture_inputs() -> list[Input]:
         Input("sqft_minimum_input", "value"),
         Input("sqft_maximum_input", "value"),
         Input("sqft_slider", "max"),
-        Input("sqft_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("ppsqft_minimum_input", "value"),
         Input("ppsqft_maximum_input", "value"),
         Input("ppsqft_slider", "max"),
-        Input("ppsqft_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("lot_size_minimum_input", "value"),
         Input("lot_size_maximum_input", "value"),
         Input("lot_size_slider", "max"),
-        Input("lot_size_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("yrbuilt_slider", "value"),
-        Input("yrbuilt_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("subtype_checklist", "value"),
         Input("listed_time_range_radio", "value"),
         Input("listed_date_datepicker_buy", "start_date"),
         Input("listed_date_datepicker_buy", "end_date"),
-        Input("listed_date_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("hoa_fee_minimum_input", "value"),
         Input("hoa_fee_maximum_input", "value"),
         Input("hoa_fee_slider", "max"),
-        Input("hoa_fee_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("hoa_fee_frequency_checklist", "value"),
         Input("isp_download_speed_slider", "value"),
         Input("isp_upload_speed_slider", "value"),
-        Input("isp_speed_missing_switch", "checked"),
+        Input("include-missing", "checked"),
         Input("buy-location-input", "value"),
         Input("buy-nearby-zip-switch", "checked"),
         Input("buy-zip-boundary-store", "data"),

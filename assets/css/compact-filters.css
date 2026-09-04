@@ -1,0 +1,541 @@
+
+:root {
+  --filter-gap: 0.85rem;
+  --filter-label: 0.8125rem;
+  --filter-help: 0.6875rem;
+}
+
+.title-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.title-card > .card-body {
+  padding: 0.9rem 0.9rem 0.75rem;
+}
+
+.site-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.site-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+/* Rent/sale switch: one control, not two buttons with a divider between. */
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0.7rem;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+}
+
+.mode-switch__option.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wttl-dark-text-muted, inherit);
+  font-size: 0.82rem;
+  font-weight: 550;
+}
+
+/* Only the outer edges of a segmented control are round; the seams are square,
+ * so the group reads as one control instead of loose pills in a tray. */
+.mode-switch__option.btn:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.mode-switch__option.btn:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.mode-switch__option.btn:hover {
+  background: rgba(128, 128, 128, 0.14);
+  color: var(--wttl-dark-text, inherit);
+}
+
+.mode-switch__option.btn.active {
+  background: var(--wttl-dark-accent, #4fc3b4);
+  color: #10201e;
+}
+
+.mode-switch__option.btn i {
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.site-updated {
+  margin: 0.6rem 0 0;
+  color: var(--wttl-dark-text-faint, rgba(120, 120, 120, 0.8));
+  font-size: var(--filter-help);
+}
+
+.title-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.85rem;
+  margin-top: 0.45rem;
+}
+
+.dbc .title-card-link {
+  font-size: var(--filter-help);
+}
+
+.filter-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.filter-card > .card-body {
+  padding: 0 0.9rem 1.5rem;
+}
+
+.filter-section {
+  padding: var(--filter-gap) 0;
+  border-top: 1px solid var(--wttl-dark-border, rgba(128, 128, 128, 0.16));
+}
+
+.filter-section:first-child {
+  border-top: 0;
+  padding-top: 0.35rem;
+}
+
+.filter-section__title {
+  margin: 0 0 0.45rem;
+  color: var(--wttl-dark-text, inherit);
+  font-size: var(--filter-label);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.filter-section__body > div {
+  margin-bottom: 0 !important;
+}
+
+.filter-section__body label,
+.filter-section__body .mantine-Switch-label {
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.filter-section__body .location-entry-help--desktop,
+.filter-section__body .location-entry-help--touch {
+  font-size: var(--filter-help);
+  opacity: 0.62;
+}
+
+.filter-section__body .mantine-Switch-root {
+  margin-top: 0.5rem !important;
+}
+
+.filter-section__body .mantine-Switch-label {
+  color: var(--wttl-dark-text-muted, inherit);
+}
+
+.filter-section__body .rc-slider {
+  margin-top: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.filter-section__body .row {
+  --bs-gutter-x: 0.5rem;
+}
+
+/* Short radio sets stay on one line instead of wrapping to a 2x2 grid. */
+.filter-inline-radio {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 0.2rem 0.5rem;
+}
+
+.filter-inline-radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-right: 0;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.filter-section--flash {
+  animation: filter-section-flash 1.1s ease-out;
+}
+
+@keyframes filter-section-flash {
+  from {
+    background-color: var(--wttl-dark-accent-soft, rgba(79, 195, 180, 0.2));
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-section--flash {
+    animation: none;
+  }
+}
+
+/* Min and max on one line above the slider they drive. minmax(0,1fr) rather
+ * than 1fr, which refuses to go below the input's intrinsic width. */
+.range-filter__exact-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.15rem;
+}
+
+.range-filter__exact-input,
+.range-filter__exact-input .mantine-NumberInput-wrapper {
+  min-width: 0;
+}
+
+.range-filter__exact-input input {
+  height: 28px;
+  min-height: 28px;
+  min-width: 0;
+  padding: 0 26px 0 7px;
+  font-size: 0.78rem;
+}
+
+.range-filter__minimum-clear-button,
+.range-filter__unlimited-button {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+}
+
+.range-filter__missing-switch {
+  margin-top: 0.45rem;
+}
+
+.range-filter__missing-switch .mantine-Switch-label {
+  color: var(--wttl-dark-text-faint, inherit);
+  font-size: var(--filter-help);
+}
+
+.dist {
+  position: relative;
+  width: calc(100% - 2.5rem);
+  height: 26px;
+  margin: 0 1.25rem -6px;
+  pointer-events: none;
+}
+
+.dist__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 100%;
+}
+
+.dist__bar {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 1px 1px 0 0;
+  background: var(--wttl-dist-in, #f0a249);
+  opacity: 0.85;
+}
+
+.dist__mask {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--wttl-dist-mask, rgba(21, 24, 38, 0.72));
+  transition: left 90ms linear, width 90ms linear, right 90ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dist__mask {
+    transition: none;
+  }
+}
+
+.filter-section {
+  position: relative;
+}
+
+.filter-section > .filter-section__body > div > .mantine-Switch-root:last-child,
+.filter-section .range-filter__missing-switch:not(.range-filter__missing-switch--inline) {
+  position: absolute;
+  top: var(--filter-gap);
+  right: 0;
+  margin-top: 0 !important;
+  line-height: 1;
+}
+
+.filter-section .mantine-Switch-root[class*="missing"] .mantine-Switch-label,
+.filter-section > .filter-section__body > div > .mantine-Switch-root:last-child .mantine-Switch-label {
+  color: var(--wttl-dark-text-faint, inherit);
+  font-size: var(--filter-help);
+  padding-left: 0.3rem;
+}
+
+.filter-subtitle {
+  margin: 0.75rem 0 0.25rem;
+  color: var(--wttl-dark-text-muted, inherit);
+  font-size: var(--filter-help);
+  font-weight: 600;
+}
+
+.filter-section__body > div > div:first-child > .filter-subtitle {
+  margin-top: 0;
+}
+
+.filter-section .mantine-Switch-input:checked + .mantine-Switch-track,
+.filter-section .mantine-Switch-input:checked + * {
+  background-color: var(--wttl-dark-accent, #f0a249);
+  border-color: var(--wttl-dark-accent, #f0a249);
+}
+
+/* Radio sets read as one segmented control rather than loose bullets. */
+.filter-inline-radio {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+}
+
+.filter-inline-radio label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0;
+  padding: 0.25rem 0.2rem;
+  border-radius: 0;
+  color: var(--wttl-dark-text-muted, inherit);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filter-inline-radio label:first-of-type {
+  border-radius: 4px 0 0 4px;
+}
+
+.filter-inline-radio label:last-of-type {
+  border-radius: 0 4px 4px 0;
+}
+
+/* The native dot is redundant once the whole cell lights up. */
+.filter-inline-radio input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-inline-radio label:has(input:checked) {
+  background: var(--wttl-dark-accent, #f0a249);
+  color: #1a1206;
+  font-weight: 600;
+}
+
+.filter-inline-radio label:has(input:focus-visible) {
+  outline: 2px solid var(--wttl-dark-accent-strong, #ffb865);
+  outline-offset: 1px;
+}
+
+/* The two kinds of home most searches start from, in the same segmented shape
+ * as the rent/sale switch above. The dropdown below stays for finer picks. */
+.subtype-quick {
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+}
+
+/* ---------- Chip sets ---------- */
+
+/* A short, fixed set of choices reads faster as visible chips than as a
+ * searchable dropdown that hides them behind a click. */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.filter-chips label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--wttl-dark-border, rgba(128, 128, 128, 0.2));
+  border-radius: 999px;
+  color: var(--wttl-dark-text-muted, inherit);
+  font-size: 0.74rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filter-chips input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-chips label:has(input:checked) {
+  border-color: var(--wttl-dark-accent, #f0a249);
+  background: var(--wttl-dark-accent, #f0a249);
+  color: #1a1206;
+  font-weight: 600;
+}
+
+.filter-chips label:has(input:focus-visible) {
+  outline: 2px solid var(--wttl-dark-accent-strong, #ffb865);
+  outline-offset: 1px;
+}
+
+.filter-section .range-filter__missing-switch {
+  display: none !important;
+}
+
+.filter-include-missing {
+  margin: 0 0 0.5rem;
+}
+
+.filter-include-missing .mantine-Switch-label {
+  color: var(--wttl-dark-text-muted, inherit);
+  font-size: var(--filter-help);
+}
+
+.filter-note {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--filter-help);
+}
+
+/* Mantine's segmented control, matched to the sidebar's density and accent. */
+.filter-section__body .mantine-SegmentedControl-root {
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+}
+
+.filter-section__body .mantine-SegmentedControl-label {
+  padding: 0.2rem 0.3rem;
+  font-size: 0.75rem;
+}
+
+.filter-section__body .mantine-SegmentedControl-indicator {
+  background: var(--wttl-dark-accent, #f0a249);
+}
+
+.filter-section__body .mantine-SegmentedControl-label[data-active] {
+  color: #1a1206;
+  font-weight: 600;
+}
+
+/* Hover readout: which dollar value is under the pointer. */
+.dist__cursor,
+.dist__readout {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 90ms linear;
+}
+
+.dist--hovered .dist__cursor,
+.dist--hovered .dist__readout {
+  opacity: 1;
+}
+
+.dist__cursor {
+  top: -2px;
+  bottom: -8px;
+  width: 1px;
+  background: var(--wttl-dark-text, #e8eaf4);
+}
+
+.dist__readout {
+  top: -15px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--wttl-dark-text, #e8eaf4);
+  color: var(--wttl-dark-bg, #151826);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dist__cursor,
+  .dist__readout {
+    transition: none;
+  }
+}
+
+.range-filter__hybrid-slider-wrap {
+  padding: 0 0 0.85rem !important;
+}
+
+.filter-section__body .range-filter__controls > div:first-child {
+  margin-top: 0;
+}
+
+.filter-section__body .mantine-InputWrapper-root,
+.filter-section__body .mantine-NumberInput-root {
+  margin-bottom: 0;
+}
+
+.filter-section__body .mantine-InputWrapper-description:empty,
+.filter-section__body .mantine-InputWrapper-error:empty,
+.filter-section__body .mantine-InputWrapper-label:empty {
+  display: none;
+}
+
+.range-filter__header:empty,
+.filter-section__body div:empty:not(.dist__bar):not(.dist__mask):not(.dist__cursor):not(.dist__readout) {
+  display: none;
+}
+
+.filter-section__body .dash-slider-mark {
+  font-size: 0.66rem;
+}
+
+.match-count {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 4px 11px;
+  border: 1px solid var(--wttl-dark-border, rgba(128, 128, 128, 0.2));
+  border-radius: 999px;
+  background: var(--wttl-dark-panel, #1b1f30);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  color: var(--wttl-dark-text, #e8eaf4);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.match-count:empty {
+  display: none;
+}

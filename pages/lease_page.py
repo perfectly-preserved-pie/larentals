@@ -434,14 +434,6 @@ clientside_callback(
 )
 
 clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),
-  Output('lease-analytics-section-store', 'data'),
-  Input('lease-options-accordion', 'active_item'),
-  State('lease-analytics-section-store', 'data'),
-  prevent_initial_call=True,
-)
-
-clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='trackLayerToggled'),
   Output('lease-analytics-layer-store', 'data'),
   Input(LayersClass.layers_control_id("lease"), 'overlays'),

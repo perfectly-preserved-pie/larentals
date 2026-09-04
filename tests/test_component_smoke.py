@@ -94,7 +94,11 @@ class ComponentsSmokeTest(unittest.TestCase):
                 self.assertEqual(status_props["aria-atomic"], "true")
 
     def test_location_suggestions_include_listing_places_and_zip_codes(self) -> None:
-        """Build canonical suggestions from local listing values."""
+        """Build canonical suggestions from local listing values.
+
+        Returns:
+            None.
+        """
         suggestions = build_location_suggestions(
             ["SILVER LAKE", "Pasadena", "#302, LONG BEACH", "BDPK", None],
             ["90026", "91030-1234", None],
@@ -198,14 +202,28 @@ class ComponentsSmokeTest(unittest.TestCase):
         )
 
         self.assertIsInstance(component, html.Div)
-        dropdown_wrapper = component.children[1]
-        self.assertIsInstance(dropdown_wrapper, html.Div)
+        dropdown_wrapper = next(
+            child
+            for child in component.children
+            if getattr(child, "id", None) == "subtype-wrapper"
+        )
         dropdown = dropdown_wrapper.children[0]
         self.assertIsInstance(dropdown, dcc.Dropdown)
         self.assertEqual(dropdown.value, [])
 
-    def test_range_filter_reserves_tooltip_space_before_switch(self) -> None:
-        """Verify that range filter reserves tooltip space before switch.
+        quick = next(
+            child
+            for child in component.children
+            if "subtype-quick" in str(getattr(child, "className", ""))
+        )
+        self.assertEqual([button.children for button in quick.children],
+                         ["Apartment", "Condo or townhouse"])
+
+    def test_range_filter_defers_missing_values_to_the_shared_switch(self) -> None:
+        """Verify that a range filter renders no per-filter missing switch.
+
+        One sidebar-wide switch now answers the missing-values question, so a
+        range filter contributes only its slider.
 
         Returns:
             None.
@@ -221,16 +239,14 @@ class ComponentsSmokeTest(unittest.TestCase):
             include_missing_switch_label="Include unknown values",
         )
 
-        controls = component.children[1]
-        slider_wrapper, missing_switch = controls.children
-
-        self.assertEqual(controls.className, "range-filter__controls")
-        self.assertEqual(
-            slider_wrapper.className,
-            "range-filter__slider-with-switch",
+        controls = next(
+            child
+            for child in component.children
+            if getattr(child, "className", None) == "range-filter__controls"
         )
-        self.assertIsInstance(slider_wrapper.children, dcc.RangeSlider)
-        self.assertEqual(missing_switch.id, "test-missing-switch")
+        self.assertEqual(controls.className, "range-filter__controls")
+        self.assertEqual(len(controls.children), 1)
+        self.assertIsInstance(controls.children[0], dcc.RangeSlider)
 
     def test_hybrid_range_filter_has_exact_fields_and_finite_slider(self) -> None:
         """Verify that hybrid range filter has exact fields and finite slider.
@@ -251,7 +267,11 @@ class ComponentsSmokeTest(unittest.TestCase):
             input_prefix="$",
         )
 
-        controls = component.children[1]
+        controls = next(
+            child
+            for child in component.children
+            if getattr(child, "className", None) == "range-filter__controls"
+        )
         exact_inputs, slider_wrapper = controls.children
         minimum_input, maximum_input = exact_inputs.children
         slider = slider_wrapper.children
@@ -259,7 +279,7 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(exact_inputs.className, "range-filter__exact-inputs")
         self.assertIsInstance(minimum_input, dmc.NumberInput)
         self.assertEqual(minimum_input.id, "test_price_minimum_input")
-        self.assertEqual(minimum_input.label, "Minimum")
+        self.assertEqual(getattr(minimum_input, "aria-label"), "Minimum")
         self.assertEqual(minimum_input.value, 0)
         minimum_clear_button = minimum_input.rightSection
         self.assertIsInstance(minimum_clear_button, dmc.ActionIcon)
@@ -270,7 +290,7 @@ class ComponentsSmokeTest(unittest.TestCase):
             "Reset minimum to zero",
         )
         self.assertEqual(maximum_input.id, "test_price_maximum_input")
-        self.assertEqual(maximum_input.label, "Maximum")
+        self.assertEqual(getattr(maximum_input, "aria-label"), "Maximum")
         self.assertIsNone(maximum_input.value)
         self.assertEqual(maximum_input.placeholder, "Unlimited")
         unlimited_button = maximum_input.rightSection
@@ -357,20 +377,22 @@ class ComponentsSmokeTest(unittest.TestCase):
             {0: "0", 1: "1", 2: "2", 3: "3"},
         )
 
-    def test_isp_speed_filter_reserves_space_below_both_sliders(self) -> None:
-        """Verify that isp speed filter reserves space below both sliders.
+    def test_isp_speed_filter_renders_both_sliders(self) -> None:
+        """Verify that the ISP filter renders a download and an upload range.
+
+        The per-filter missing-values switch is gone; one sidebar-wide switch
+        answers that question for every filter.
 
         Returns:
             None.
         """
         component = build_isp_speed_components(10_000, 10_000)
 
-        download_range, upload_range, missing_switch = component.children
+        download_range, upload_range = component.children
 
         self.assertEqual(component.className, "isp-speed-filter")
         self.assertEqual(download_range.className, "isp-speed-filter__range")
         self.assertEqual(upload_range.className, "isp-speed-filter__range")
-        self.assertEqual(missing_switch.id, "isp_speed_missing_switch")
 
     def test_title_card_links_to_mcp_setup_page(self) -> None:
         """Verify that title card links to mcp setup page.
@@ -380,8 +402,8 @@ class ComponentsSmokeTest(unittest.TestCase):
         """
         title_card = build_title_card(
             title="WhereToLive.LA",
-            subtitle="Interactive housing map",
             last_updated=None,
+            page_type="lease",
         )
 
         links = [

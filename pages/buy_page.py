@@ -165,14 +165,6 @@ clientside_callback(
 )
 
 clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),
-  Output('buy-analytics-section-store', 'data'),
-  Input('buy-options-accordion', 'active_item'),
-  State('buy-analytics-section-store', 'data'),
-  prevent_initial_call=True,
-)
-
-clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='trackLayerToggled'),
   Output('buy-analytics-layer-store', 'data'),
   Input(LayersClass.layers_control_id("buy"), 'overlays'),

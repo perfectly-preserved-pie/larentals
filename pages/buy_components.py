@@ -3,6 +3,7 @@ import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
 
+from functions.distribution import attach_distribution
 from .component_base import BaseClass, _build_cached_geojson_payload, _db_cache_token
 from .component_factories import (
     build_isp_speed_components,
@@ -97,12 +98,8 @@ class BuyComponents(BaseClass):
             "display": "block",
         },
         active_filter_items=(
-            "listed_date",
             "location",
-            "subtypes",
             "list_price",
-            "bedrooms",
-            "bathrooms",
         ),
         accordion_class_name="options-accordion",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -191,7 +188,6 @@ class BuyComponents(BaseClass):
             Ordered filter-section tuples for the buy page.
         """
         return [
-            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             (
                 "Location",
                 build_location_filter_components(
@@ -203,28 +199,29 @@ class BuyComponents(BaseClass):
                 ),
                 "location",
             ),
-            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("List Price", self._build_list_price_filter(), "list_price"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
+            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
+            ("Listed Date", self.create_listed_date_components(), "listed_date"),
+            ("Square Footage", self._build_square_footage_filter(), "square_footage"),
+            ("Lot Size", self.create_lot_size_components(), "lot_size"),
             ("HOA Fees", self.create_hoa_fee_components(), "hoa_fees"),
             (
                 "HOA Fee Frequency",
                 self.create_hoa_fee_frequency_checklist(),
                 "hoa_fee_frequency",
             ),
+            ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
+            ("Year Built", self.create_year_built_components(), "year_built"),
             (
-                "Internet Service Provider (ISP) Speed",
+                "Internet speed",
                 build_isp_speed_components(
                     max_download=self._safe_speed_max("best_dn"),
                     max_upload=self._safe_speed_max("best_up"),
                 ),
                 "isp_speed",
             ),
-            ("Lot Size", self.create_lot_size_components(), "lot_size"),
-            ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
-            ("Square Footage", self._build_square_footage_filter(), "square_footage"),
-            ("Year Built", self.create_year_built_components(), "year_built"),
         ]
 
     def _build_list_price_filter(self) -> html.Div:
@@ -235,6 +232,13 @@ class BuyComponents(BaseClass):
         """
         bounds = iqr_capped_range_bounds(self.df["list_price"], minimum=0, step=1)
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="list_price_slider",
+                series=self.df["list_price"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                prefix="$",
+            ),
             slider_id="list_price_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,
@@ -312,8 +316,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_prefix="$",
-            include_missing_switch_id="ppsqft_missing_switch",
-            include_missing_switch_label="Include properties with an unknown price per square foot",
             container_style={"marginBottom": "10px"},
         )
 
@@ -338,8 +340,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_suffix=" sq ft",
-            include_missing_switch_id="sqft_missing_switch",
-            include_missing_switch_label="Include properties with an unknown square footage",
             container_style={"marginBottom": "10px"},
         )
 
@@ -359,7 +359,7 @@ class BuyComponents(BaseClass):
         return build_subtype_filter(
             values=unique_subtypes,
             dynamic_id=self.dynamic_output_id("subtype"),
-            placeholder="Type of home (e.g. Condominium, Single Family Residence, Townhouse)",
+            placeholder="Any type of home",
             outer_id="subtypes_div_buy",
             dropdown_style={"marginBottom": "10px"},
         )
@@ -386,8 +386,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_suffix=" sq ft",
-            include_missing_switch_id="lot_size_missing_switch",
-            include_missing_switch_label="Include properties with an unknown lot size",
             container_style={"marginBottom": "10px"},
         )
 
@@ -421,8 +419,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_prefix="$",
-            include_missing_switch_id="hoa_fee_missing_switch",
-            include_missing_switch_label="Include properties with an unknown HOA fee",
             container_style={"marginBottom": "10px"},
             step=step_value,
             header_children=[

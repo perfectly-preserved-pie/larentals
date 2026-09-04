@@ -142,23 +142,15 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         self.assertEqual(
             LeaseComponents.CONFIG.active_filter_items,
             (
-                "listed_date",
                 "location",
-                "subtypes",
                 "monthly_rent",
-                "bedrooms",
-                "bathrooms",
             ),
         )
         self.assertEqual(
             BuyComponents.CONFIG.active_filter_items,
             (
-                "listed_date",
                 "location",
-                "subtypes",
                 "list_price",
-                "bedrooms",
-                "bathrooms",
             ),
         )
         self.assertEqual(FILTER_UI_BREAKPOINT, 1100)

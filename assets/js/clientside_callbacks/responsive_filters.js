@@ -42,35 +42,35 @@
       bathroomsRange: ["bathrooms_slider", "value"],
       pets: ["pets_radio", "value"],
       sqftRange: exactRangeControl("sqft"),
-      sqftMissing: ["sqft_missing_switch", "checked"],
+      sqftMissing: ["include-missing", "checked"],
       ppsqftRange: exactRangeControl("ppsqft"),
-      ppsqftMissing: ["ppsqft_missing_switch", "checked"],
+      ppsqftMissing: ["include-missing", "checked"],
       parkingRange: ["garage_spaces_slider", "value"],
-      parkingMissing: ["garage_missing_switch", "checked"],
+      parkingMissing: ["include-missing", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
-      yearMissing: ["yrbuilt_missing_switch", "checked"],
+      yearMissing: ["include-missing", "checked"],
       terms: ["terms_checklist", "value"],
-      termsMissing: ["terms_missing_switch", "checked"],
+      termsMissing: ["include-missing", "checked"],
       furnished: ["furnished_checklist", "value"],
-      furnishedMissing: ["furnished_missing_switch", "checked"],
+      furnishedMissing: ["include-missing", "checked"],
       securityRange: exactRangeControl("security_deposit"),
-      securityMissing: ["security_deposit_missing_switch", "checked"],
+      securityMissing: ["include-missing", "checked"],
       petDepositRange: exactRangeControl("pet_deposit"),
-      petDepositMissing: ["pet_deposit_missing_switch", "checked"],
+      petDepositMissing: ["include-missing", "checked"],
       keyDepositRange: exactRangeControl("key_deposit"),
-      keyDepositMissing: ["key_deposit_missing_switch", "checked"],
+      keyDepositMissing: ["include-missing", "checked"],
       otherDepositRange: exactRangeControl("other_deposit"),
-      otherDepositMissing: ["other_deposit_missing_switch", "checked"],
+      otherDepositMissing: ["include-missing", "checked"],
       laundry: ["laundry_checklist", "value"],
-      laundryMissing: ["laundry_missing_switch", "checked"],
+      laundryMissing: ["include-missing", "checked"],
       subtypes: ["subtype_checklist", "value"],
       listedRange: ["listed_time_range_radio", "value"],
       dateStart: ["listed_date_datepicker_lease", "start_date"],
       dateEnd: ["listed_date_datepicker_lease", "end_date"],
-      dateMissing: ["listed_date_missing_switch", "checked"],
+      dateMissing: ["include-missing", "checked"],
       downloadRange: ["isp_download_speed_slider", "value"],
       uploadRange: ["isp_upload_speed_slider", "value"],
-      ispMissing: ["isp_speed_missing_switch", "checked"],
+      ispMissing: ["include-missing", "checked"],
       rentControl: ["rent_control_status", "value"],
       locationText: ["lease-location-input", "value"],
       nearbyZip: ["lease-nearby-zip-switch", "checked"],
@@ -81,24 +81,24 @@
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
       sqftRange: exactRangeControl("sqft"),
-      sqftMissing: ["sqft_missing_switch", "checked"],
+      sqftMissing: ["include-missing", "checked"],
       ppsqftRange: exactRangeControl("ppsqft"),
-      ppsqftMissing: ["ppsqft_missing_switch", "checked"],
+      ppsqftMissing: ["include-missing", "checked"],
       lotSizeRange: exactRangeControl("lot_size"),
-      lotSizeMissing: ["lot_size_missing_switch", "checked"],
+      lotSizeMissing: ["include-missing", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
-      yearMissing: ["yrbuilt_missing_switch", "checked"],
+      yearMissing: ["include-missing", "checked"],
       subtypes: ["subtype_checklist", "value"],
       listedRange: ["listed_time_range_radio", "value"],
       dateStart: ["listed_date_datepicker_buy", "start_date"],
       dateEnd: ["listed_date_datepicker_buy", "end_date"],
-      dateMissing: ["listed_date_missing_switch", "checked"],
+      dateMissing: ["include-missing", "checked"],
       hoaRange: exactRangeControl("hoa_fee"),
-      hoaMissing: ["hoa_fee_missing_switch", "checked"],
+      hoaMissing: ["include-missing", "checked"],
       hoaFrequency: ["hoa_fee_frequency_checklist", "value"],
       downloadRange: ["isp_download_speed_slider", "value"],
       uploadRange: ["isp_upload_speed_slider", "value"],
-      ispMissing: ["isp_speed_missing_switch", "checked"],
+      ispMissing: ["include-missing", "checked"],
       locationText: ["buy-location-input", "value"],
       nearbyZip: ["buy-nearby-zip-switch", "checked"],
       zipBoundary: ["buy-zip-boundary-store", "data"],
@@ -785,21 +785,6 @@
     pet_policy: "Pet Policy",
   });
 
-  const ACCORDION_DEFAULTS = Object.freeze({
-    lease: Object.freeze({
-      desktop: Object.freeze([
-        "listed_date", "location", "subtypes", "monthly_rent", "bedrooms", "bathrooms",
-      ]),
-      compact: Object.freeze(["location", "monthly_rent", "bedrooms"]),
-    }),
-    buy: Object.freeze({
-      desktop: Object.freeze([
-        "listed_date", "location", "subtypes", "list_price", "bedrooms", "bathrooms",
-      ]),
-      compact: Object.freeze(["location", "list_price", "bedrooms"]),
-    }),
-  });
-
   /**
    * Scroll to and focus a named filter accordion section.
    * @param {ListingPage} page Listing mode containing the accordion.
@@ -1281,33 +1266,31 @@
       },
 
       /**
-       * Apply viewport-specific defaults or add a quick-filter target to the
-       * accordion's expanded sections.
-       * @returns {string[] | *} Expanded section keys or Dash's no-update value.
+       * Scroll the sidebar to the section a quick-filter chip targets.
+       *
+       * Sections are always expanded now, so a chip jumps to its filter rather
+       * than opening it.
+       * @returns {*} Dash's no-update value; the scroll is the side effect.
        */
-      openFilterAccordionSection: function () {
-        const args = Array.prototype.slice.call(arguments);
-        const current = Array.isArray(args[args.length - 1]) ? args[args.length - 1] : [];
+      scrollToFilterSection: function () {
         const id = triggeredIds()[0] || "";
-        const page = id.startsWith("buy-") ? "buy" : id.startsWith("lease-") ? "lease" : currentPage();
-        if (id === "viewport-listener") {
-          const viewportEvent = args[0];
-          const isCompact = viewportEvent && typeof viewportEvent["detail.isMobile"] === "boolean"
-            ? viewportEvent["detail.isMobile"]
-            : window.innerWidth < DESKTOP_BREAKPOINT;
-          const mode = isCompact ? "compact" : "desktop";
-          ui.accordionModes = ui.accordionModes || {};
-          if (ui.accordionModes[page] === mode) return window.dash_clientside.no_update;
-          ui.accordionModes[page] = mode;
-          return ACCORDION_DEFAULTS[page][mode].slice();
-        }
+        if (!id || id === "viewport-listener") return window.dash_clientside.no_update;
         const button = document.getElementById(id);
         if (button?.classList.contains("map-filter-chip--active")) {
           return window.dash_clientside.no_update;
         }
         const section = button?.dataset.filterSection;
         if (!section) return window.dash_clientside.no_update;
-        return current.includes(section) ? current : current.concat(section);
+        const page = id.startsWith("buy-") ? "buy" : id.startsWith("lease-") ? "lease" : currentPage();
+        const target = document.getElementById(page + "-section-" + section);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          target.classList.add("filter-section--flash");
+          window.setTimeout(function () {
+            target.classList.remove("filter-section--flash");
+          }, 1200);
+        }
+        return window.dash_clientside.no_update;
       },
     }),
   });

@@ -1,10 +1,11 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
+import json
 from datetime import date
 import math
 import re
 from typing import Any, Mapping
-from dash import dcc, html
+from dash import Input, Output, clientside_callback, dcc, html
 from dash_extensions.javascript import Namespace
 from dash_iconify import DashIconify
 import dash_bootstrap_components as dbc
@@ -219,6 +220,7 @@ def build_range_filter(
     show_exact_inputs: bool = False,
     input_prefix: str = "",
     input_suffix: str = "",
+    distribution: Any = None,
 ) -> html.Div:
     """Build a standard slider-based filter section.
 
@@ -240,6 +242,7 @@ def build_range_filter(
         show_exact_inputs: Show synchronized minimum and maximum number fields.
         input_prefix: Prefix displayed inside both exact-value fields.
         input_suffix: Suffix displayed inside both exact-value fields.
+        distribution: Optional listing-count strip drawn behind the track.
 
     Returns:
         A fully assembled filter ``Div``.
@@ -256,7 +259,7 @@ def build_range_filter(
         tooltip.update(
             {
                 "placement": "top" if has_open_upper_bound else "bottom",
-                "always_visible": True,
+                "always_visible": False,
             }
         )
     if tooltip_transform is not None:
@@ -311,7 +314,7 @@ def build_range_filter(
             n_clicks=0,
             variant="subtle",
             color="gray",
-            size=32,
+            size=26,
             radius="sm",
             className="range-filter__minimum-clear-button",
             style={"visibility": "hidden"},
@@ -327,7 +330,7 @@ def build_range_filter(
             n_clicks=0,
             variant="subtle",
             color="gray",
-            size=32,
+            size=26,
             radius="sm",
             className="range-filter__unlimited-button",
             style={"visibility": "hidden"},
@@ -342,22 +345,22 @@ def build_range_filter(
                 [
                     dmc.NumberInput(
                         id=f"{input_stem}_minimum_input",
-                        label="Minimum",
                         value=min_value,
                         placeholder=str(min_value),
                         rightSection=minimum_clear_button,
-                        rightSectionWidth=36,
+                        rightSectionWidth=30,
                         rightSectionPointerEvents="auto",
+                        **{"aria-label": "Minimum"},
                         **input_common,
                     ),
                     dmc.NumberInput(
                         id=f"{input_stem}_maximum_input",
-                        label="Maximum",
                         value=None,
                         placeholder="Unlimited",
                         rightSection=unlimited_button,
-                        rightSectionWidth=36,
+                        rightSectionWidth=30,
                         rightSectionPointerEvents="auto",
+                        **{"aria-label": "Maximum"},
                         **input_common,
                     ),
                 ],
@@ -365,39 +368,83 @@ def build_range_filter(
             )
         )
         body_children.append(
-            html.Div(slider, className="range-filter__hybrid-slider-wrap")
+            html.Div(
+                [distribution, slider] if distribution is not None else slider,
+                className="range-filter__hybrid-slider-wrap",
+            )
         )
     else:
         body_children.append(
-            html.Div(slider, className="range-filter__slider-with-switch")
-            if has_missing_switch
+            html.Div(
+                [distribution, slider],
+                className="range-filter__slider-with-switch",
+            )
+            if distribution is not None
             else slider
         )
 
-    if has_missing_switch:
-        body_children.append(
-            dmc.Switch(
-                id=include_missing_switch_id,
-                label=include_missing_switch_label,
-                checked=True,
-                size="sm",
-                color="teal",
-                style=switch_style or {"marginTop": "10px"},
-            )
-        )
+    outer: list[Any] = []
+    if header_children:
+        outer.append(html.Div(list(header_children), className="range-filter__header"))
+    outer.append(
+        html.Div(body_children, id=dynamic_id, className="range-filter__controls")
+    )
 
+    return html.Div(outer, style=container_style, id=component_id)
+
+
+def _format_speed_mark(value: float) -> str:
+    """Format a speed tick as Mbps or Gbps.
+
+    Args:
+        value: Speed in megabits per second.
+
+    Returns:
+        A short label such as ``500M`` or ``1G``.
+    """
+    if value >= 1000:
+        gigabits = value / 1000
+        return f"{gigabits:g}G"
+    return f"{value:g}M"
+
+
+def _build_isp_speed_slider(label: str, slider_id: str, maximum: float) -> html.Div:
+    """Build one single-handle "at least" speed slider.
+
+    Args:
+        label: Subtitle shown above the slider.
+        slider_id: Dash component id for the slider.
+        maximum: Upper bound of the slider track.
+
+    Returns:
+        A ``Div`` containing the labelled slider.
+    """
+    ticks = [0, maximum / 4, maximum / 2, maximum]
     return html.Div(
         [
-            html.Div(list(header_children or [])),
-            html.Div(body_children, id=dynamic_id, className="range-filter__controls"),
+            html.H6(label, className="filter-subtitle"),
+            dcc.Slider(
+                min=0,
+                max=maximum,
+                value=0,
+                id=slider_id,
+                updatemode="mouseup",
+                allow_direct_input=False,
+                marks={t: _format_speed_mark(t) for t in ticks},
+                tooltip={"placement": "bottom", "transform": "formatIspSpeed"},
+            ),
         ],
-        style=container_style,
-        id=component_id,
+        className="isp-speed-filter__range",
     )
 
 
 def build_isp_speed_components(max_download: float, max_upload: float) -> html.Div:
     """Build download and upload speed controls.
+
+    Nobody shops for an upper bound on internet speed, so both controls are
+    single-handle minimums ("at least N") rather than two-handle ranges. That
+    halves the handles and drops the tick marks, which is most of the vertical
+    space this section used to take.
 
     Args:
         max_download: Upper bound for download speed.
@@ -408,50 +455,8 @@ def build_isp_speed_components(max_download: float, max_upload: float) -> html.D
     """
     return html.Div(
         [
-            html.Div(
-                [
-                    html.H6("Download Speed (Mbps)", style={"marginBottom": "5px"}),
-                    dcc.RangeSlider(
-                        min=0,
-                        max=max_download,
-                        value=[0, max_download],
-                        id="isp_download_speed_slider",
-                        updatemode="mouseup",
-                        tooltip={
-                            "placement": "bottom",
-                            "always_visible": True,
-                            "transform": "formatIspSpeed",
-                        },
-                    ),
-                ],
-                className="isp-speed-filter__range",
-            ),
-            html.Div(
-                [
-                    html.H6("Upload Speed (Mbps)", style={"marginBottom": "5px"}),
-                    dcc.RangeSlider(
-                        min=0,
-                        max=max_upload,
-                        value=[0, max_upload],
-                        id="isp_upload_speed_slider",
-                        updatemode="mouseup",
-                        tooltip={
-                            "placement": "bottom",
-                            "always_visible": True,
-                            "transform": "formatIspSpeed",
-                        },
-                    ),
-                ],
-                className="isp-speed-filter__range",
-            ),
-            dmc.Switch(
-                id="isp_speed_missing_switch",
-                label="Include properties with an unknown ISP speed",
-                checked=True,
-                size="sm",
-                color="teal",
-                style={"marginTop": "15px"},
-            ),
+            _build_isp_speed_slider("Download", "isp_download_speed_slider", max_download),
+            _build_isp_speed_slider("Upload", "isp_upload_speed_slider", max_upload),
         ],
         id="isp_speed_div",
         className="isp-speed-filter",
@@ -531,6 +536,7 @@ def build_location_filter_components(
 
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
+        suggestions: Canonical place and ZIP suggestions offered in the input.
 
     Returns:
         A location input block with status text and nearby switch.
@@ -586,12 +592,11 @@ def build_location_filter_components(
             html.Div(
                 [
                     html.Span(
-                        "Select a suggestion, or press Enter to add one location. "
-                        "Up to 5.",
+                        "press Enter to add. Max 5.",
                         className="location-entry-help--desktop",
                     ),
                     html.Span(
-                        "Tap a suggestion, or type one location and tap Add. Up to 5.",
+                        "tap Add. Max 5.",
                         className="location-entry-help--touch",
                     ),
                 ],
@@ -720,120 +725,31 @@ def build_location_filter_status(
 def build_title_card(
     *,
     title: str,
-    subtitle: str,
     last_updated: str | None,
+    page_type: str,
 ) -> dbc.Card:
-    """Build the shared page title card.
+    """Build the shared page identity block at the top of the sidebar.
+
+    The block sits above every filter, so it stays four short rows: name and
+    theme, the rent/sale switch, the data date, and the project links. The old
+    standing subtitle repeated what the switch and the date already say.
 
     Args:
-        title: Heading shown at the top of the sidebar.
-        subtitle: Secondary copy under the title.
+        title: Site name shown at the top of the sidebar.
         last_updated: Optional display date for the latest data refresh.
+        page_type: Current page key such as ``lease`` or ``buy``, used to mark
+            which side of the rent/sale switch is active.
 
     Returns:
         A populated Bootstrap card.
     """
-    title_card_children = [
-        dbc.Row(
-            [
-                dbc.Col(html.H3(title, className="card-title"), width="auto"),
-                dbc.Col(
-                    dbc.ButtonGroup(
-                        [
-                            dbc.Button(
-                                [
-                                    html.I(
-                                        className="fa fa-building",
-                                        style={"marginRight": "5px"},
-                                    ),
-                                    "For Rent",
-                                ],
-                                href="/",
-                                color="primary",
-                            ),
-                            html.Div(
-                                style={
-                                    "width": "1px",
-                                    "backgroundColor": "#ccc",
-                                    "margin": "0 1px",
-                                    "height": "100%",
-                                }
-                            ),
-                            dbc.Button(
-                                [
-                                    html.I(
-                                        className="fa fa-home",
-                                        style={"marginRight": "5px"},
-                                    ),
-                                    "For Sale",
-                                ],
-                                href="/buy",
-                                color="primary",
-                            ),
-                        ],
-                        className="ml-auto",
-                    ),
-                    width="auto",
-                    className="ml-auto",
-                ),
-            ],
-            align="center",
-        ),
-        html.P(subtitle),
-    ]
+    is_lease = page_type == "lease"
 
-    if last_updated is not None:
-        title_card_children.append(
-            html.P(f"Last updated: {last_updated}", style={"marginBottom": "5px"})
-        )
-
-    title_card_children.extend(
+    identity_row = html.Div(
         [
-            html.Div(
-                [
-                    html.A(
-                        [
-                            html.I(className="bi bi-github"),
-                            html.Span("GitHub"),
-                        ],
-                        href="https://github.com/perfectly-preserved-pie/larentals",
-                        target="_blank",
-                        className="title-card-link",
-                    ),
-                    html.A(
-                        [
-                            html.I(className="fa-solid fa-blog"),
-                            html.Span("About This Project"),
-                        ],
-                        href="https://automateordie.dev/wheretolivedotla/",
-                        target="_blank",
-                        className="title-card-link",
-                    ),
-                    html.A(
-                        [
-                            DashIconify(icon="lucide:bot", width=16),
-                            html.Span("MCP"),
-                        ],
-                        href="/mcp",
-                        title="MCP setup instructions",
-                        className="title-card-link",
-                        **{"aria-label": "MCP setup instructions"},
-                    ),
-                    html.A(
-                        [
-                            html.I(className="fa fa-envelope"),
-                            html.Span("hey@wheretolive.la"),
-                        ],
-                        href="mailto:hey@wheretolive.la",
-                        target="_blank",
-                        className="title-card-link",
-                    ),
-                ],
-                className="title-card-links",
-            ),
+            html.H1(title, className="site-name"),
             dmc.Switch(
                 id="color-scheme-switch",
-                label="Toggle light/dark mode",
                 offLabel=DashIconify(
                     icon="radix-icons:sun",
                     width=15,
@@ -846,17 +762,121 @@ def build_title_card(
                 ),
                 className="theme-switch-control",
                 color="gray",
-                mt=5,
                 persisted_props=["checked"],
                 persistence=True,
                 persistence_type="local",
                 size="md",
-                **{"aria-label": "Toggle light/dark mode"},
+                **{"aria-label": "Toggle light and dark mode"},
             ),
-        ]
+        ],
+        className="site-identity",
     )
 
-    return dbc.Card(title_card_children, body=True, className="title-card")
+    mode_switch = html.Div(
+        [
+            dbc.Button(
+                [html.I(className="fa fa-building"), html.Span("For rent")],
+                href="/",
+                className="mode-switch__option",
+                active=is_lease,
+            ),
+            dbc.Button(
+                [html.I(className="fa fa-home"), html.Span("For sale")],
+                href="/buy",
+                className="mode-switch__option",
+                active=not is_lease,
+            ),
+        ],
+        className="mode-switch",
+        role="group",
+        **{"aria-label": "Show rentals or homes for sale"},
+    )
+
+    links = html.Div(
+        [
+            html.A(
+                [html.I(className="bi bi-github"), html.Span("GitHub")],
+                href="https://github.com/perfectly-preserved-pie/larentals",
+                target="_blank",
+                className="title-card-link",
+            ),
+            html.A(
+                [html.I(className="fa-solid fa-blog"), html.Span("About")],
+                href="https://automateordie.dev/wheretolivedotla/",
+                target="_blank",
+                className="title-card-link",
+            ),
+            html.A(
+                [DashIconify(icon="lucide:bot", width=16), html.Span("MCP")],
+                href="/mcp",
+                title="MCP setup instructions",
+                className="title-card-link",
+                **{"aria-label": "MCP setup instructions"},
+            ),
+            html.A(
+                [html.I(className="fa fa-envelope"), html.Span("Contact")],
+                href="mailto:hey@wheretolive.la",
+                target="_blank",
+                className="title-card-link",
+            ),
+        ],
+        className="title-card-links",
+    )
+
+    children: list[Any] = [identity_row, mode_switch]
+
+    if last_updated is not None:
+        children.append(
+            html.P(f"Listings updated {last_updated}", className="site-updated")
+        )
+
+    children.append(links)
+
+    return dbc.Card(children, body=True, className="title-card")
+
+
+_MAP_VIEWPORT_REGISTERED: list[bool] = []
+
+
+def _register_map_viewport_callback() -> None:
+    """Restore the map to wherever the reader last left it.
+
+    A ``moveend`` handler writes the centre and zoom to local storage; this
+    replays them once the map mounts, so a reload does not throw away the part
+    of the county someone had navigated to.
+
+    Registration is global rather than per page because both listing pages use
+    the same ``map`` id and only one is ever mounted.
+
+    Side Effects:
+        Registers one clientside callback the first time it is called.
+
+    Returns:
+        None.
+    """
+    if _MAP_VIEWPORT_REGISTERED:
+        return
+    _MAP_VIEWPORT_REGISTERED.append(True)
+
+    clientside_callback(
+        """
+        function () {
+            try {
+                const raw = window.localStorage.getItem("wttl:map-viewport");
+                if (!raw) return window.dash_clientside.no_update;
+                const saved = JSON.parse(raw);
+                if (!saved || !saved.center || typeof saved.zoom !== "number") {
+                    return window.dash_clientside.no_update;
+                }
+                return {center: saved.center, zoom: saved.zoom, transition: "none"};
+            } catch (err) {
+                return window.dash_clientside.no_update;
+            }
+        }
+        """,
+        Output("map", "viewport"),
+        Input("map", "id"),
+    )
 
 
 def build_map(
@@ -886,6 +906,7 @@ def build_map(
         "load": ns("register_map_for_gesture_controls"),
         "layeradd": ns("register_map_for_gesture_controls"),
     }
+    _register_map_viewport_callback()
     map_children = [
         dl.GeoJSON(
             id=geojson_id,
@@ -999,6 +1020,44 @@ def build_map_gesture_control() -> html.Div:
     )
 
 
+_MATCH_COUNT_PAGES: set[str] = set()
+
+
+def _register_match_count_callback(page_type: str) -> None:
+    """Show how many listings survived the current filters.
+
+    The count reads the GeoJSON actually handed to the map, so it can never
+    disagree with what is drawn.
+
+    Args:
+        page_type: Current page key such as ``lease`` or ``buy``.
+
+    Side Effects:
+        Registers one clientside callback per page.
+
+    Returns:
+        None.
+    """
+    if page_type in _MATCH_COUNT_PAGES:
+        return
+    _MATCH_COUNT_PAGES.add(page_type)
+
+    noun = "rentals" if page_type == "lease" else "homes"
+
+    clientside_callback(
+        """
+        function (data) {
+            const features = (data && data.features) || [];
+            const total = features.length;
+            if (!total) return "No %(noun)s match";
+            return total.toLocaleString("en-US") + " %(noun)s";
+        }
+        """ % {"noun": noun},
+        Output(f"{page_type}-match-count", "children"),
+        Input(f"{page_type}_geojson", "data"),
+    )
+
+
 def build_map_card(
     *,
     page_type: str,
@@ -1044,9 +1103,12 @@ def build_map_card(
             },
         ),
         html.Div(map_component, style={"position": "relative", "zIndex": "0"}),
+        html.Div(id=f"{page_type}-match-count", className="match-count"),
     ]
     if overlay_children:
         body_children.extend(overlay_children)
+
+    _register_match_count_callback(page_type)
 
     body = dbc.CardBody(
         html.Div(
@@ -1059,46 +1121,105 @@ def build_map_card(
     return dbc.Card(body, className=card_class_name)
 
 
+PERSISTED_PROPS: dict[str, str] = {
+    "RangeSlider": "value",
+    "Slider": "value",
+    "Dropdown": "value",
+    "Checklist": "value",
+    "RadioItems": "value",
+    "NumberInput": "value",
+    "TagsInput": "value",
+    "Switch": "checked",
+    "DatePickerRange": "start_date",
+}
+
+
+def apply_filter_persistence(component: Any, *, token: str) -> None:
+    """Make every filter control in a tree remember its value across reloads.
+
+    Args:
+        component: Component, or list of components, to walk.
+        token: Persistence key. Changing it discards stored values, so passing
+            the dataset's refresh date drops filters whose bounds no longer
+            exist rather than restoring an out-of-range selection.
+
+    Side Effects:
+        Sets ``persistence`` and ``persistence_type`` on supported controls.
+
+    Returns:
+        None.
+    """
+    if isinstance(component, (list, tuple)):
+        for child in component:
+            apply_filter_persistence(child, token=token)
+        return
+
+    if type(component).__name__ in PERSISTED_PROPS and isinstance(
+        getattr(component, "id", None), str
+    ):
+        component.persistence = token
+        component.persistence_type = "local"
+
+    children = getattr(component, "children", None)
+    if children is not None:
+        apply_filter_persistence(children, token=token)
+
+
 def build_filter_card(
     *,
     items: Sequence[FilterSection],
-    active_item: Sequence[str],
-    accordion_id: str | None = None,
-    accordion_class_name: str = "options-accordion dmc",
+    page_type: str,
+    persistence_token: str = "v1",
+    list_id: str | None = None,
+    list_class_name: str = "options-accordion dmc",
 ) -> dbc.Card:
-    """Build the accordion card used for page filters.
+    """Build the flat, always-visible filter list for a page sidebar.
+
+    Sections used to collapse behind accordion headers. The sidebar is taller
+    than the viewport either way, so collapsing never removed the scroll; it
+    only hid which filters exist, at the cost of a header bar per section.
 
     Args:
-        items: Accordion sections as ``(title, children, item_id)`` tuples.
-        active_item: Section ids to expand by default.
-        accordion_id: Optional stable id used by clientside callbacks.
-        accordion_class_name: CSS class name for the accordion.
+        items: Filter sections as ``(title, children, item_id)`` tuples.
+        page_type: Current page key such as ``lease`` or ``buy``.
+        persistence_token: Key under which control values are remembered.
+        list_id: Optional stable id used by clientside callbacks.
+        list_class_name: CSS class name for the section list.
 
     Returns:
-        A Bootstrap card containing the filter accordion.
+        A Bootstrap card containing every filter section.
     """
-    accordion = dbc.Accordion(
+    apply_filter_persistence(list(items), token=persistence_token)
+
+    sections = html.Div(
         [
-            dbc.AccordionItem(children, title=title, item_id=item_id)
+            html.Section(
+                [
+                    html.H6(title, className="filter-section__title"),
+                    html.Div(children, className="filter-section__body"),
+                ],
+                id=f"{page_type}-section-{item_id}",
+                className="filter-section",
+            )
             for title, children, item_id in items
         ],
-        flush=True,
-        always_open=True,
-        active_item=list(active_item),
-        id=accordion_id,
-        className=accordion_class_name,
+        id=list_id,
+        className=list_class_name,
     )
 
-    return dbc.Card(
-        [
-            html.P(
-                "Use the options below to filter the map according to your needs.",
-                className="card-text",
-            ),
-            accordion,
-        ],
-        body=True,
+    # One switch for the whole sidebar. Thirteen per-filter copies asked the
+    # same question thirteen times, in thirteen slightly different wordings.
+    include_missing = dmc.Switch(
+        id="include-missing",
+        label="Include listings missing details",
+        checked=True,
+        size="xs",
+        className="filter-include-missing",
+        persistence=persistence_token,
+        persistence_type="local",
     )
+
+    return dbc.Card([include_missing, sections], body=True, className="filter-card")
 
 
 def build_school_layer_map_prompt(page_type: str) -> html.Div:
@@ -1366,6 +1487,62 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     )
 
 
+QUICK_SUBTYPE_LABELS: tuple[str, ...] = ("Apartment", "House", "Condo or townhouse")
+
+SUBTYPE_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Apartment", ("Apartment",)),
+    ("House", ("Single Family Residence",)),
+    ("Condo or townhouse", ("Condominium", "Townhouse")),
+    ("Duplex, triplex or fourplex", ("Duplex", "Triplex", "Quadplex")),
+    ("Loft or studio", ("Loft", "Studio")),
+    ("Co-op", ("Stock Cooperative", "Own Your Own")),
+    ("Room", ("Room For Rent",)),
+)
+
+
+def build_subtype_options(values: Sequence[str]) -> list[dict[str, str]]:
+    """Collapse raw MLS subtypes into the handful of kinds people shop for.
+
+    The feed carries sixteen subtypes, but four of them are almost every listing
+    with a known type and the tail runs down to single listings. Shoppers pick
+    "house" or "apartment", not "Stock Cooperative", so the filter offers groups
+    and a listing's exact subtype stays on its popup.
+
+    A group's value is a JSON array of the raw subtypes it covers. The filter
+    expands it clientside, so membership travels with the option and the two
+    sides cannot drift apart.
+
+    Args:
+        values: Raw subtype values present in the dataset.
+
+    Returns:
+        Dropdown options, common groups first, then anything unmatched.
+    """
+    available = set(values)
+    options: list[dict[str, str]] = []
+    claimed: set[str] = set()
+
+    for label, members in SUBTYPE_GROUPS:
+        present = [member for member in members if member in available]
+        if not present:
+            continue
+        claimed.update(present)
+        options.append(
+            {
+                "label": label,
+                "value": present[0] if len(present) == 1 else json.dumps(present),
+            }
+        )
+
+    leftovers = sorted(available - claimed - {"Unknown"})
+    if leftovers:
+        options.append({"label": "Other", "value": json.dumps(leftovers)})
+    if "Unknown" in available:
+        options.append({"label": "Unlisted", "value": "Unknown"})
+
+    return options
+
+
 def build_subtype_filter(
     *,
     values: Sequence[str],
@@ -1374,10 +1551,10 @@ def build_subtype_filter(
     outer_id: str | None = None,
     dropdown_style: Mapping[str, Any] | None = None,
 ) -> html.Div:
-    """Build the shared subtype dropdown section.
+    """Build the shared subtype section: two quick toggles over a dropdown.
 
     Args:
-        values: Sorted subtype labels to offer.
+        values: Raw subtype values present in the dataset.
         dynamic_id: Pattern-matching id for the dropdown wrapper.
         placeholder: Placeholder text for the dropdown.
         outer_id: Optional id for the outer container.
@@ -1386,33 +1563,55 @@ def build_subtype_filter(
     Returns:
         A subtype-selection ``Div``.
     """
-    data = [{"label": value, "value": value} for value in values]
+    data = build_subtype_options(values)
     container_kwargs = {}
     if outer_id is not None:
         container_kwargs["id"] = outer_id
 
-    return html.Div(
-        [
-            html.Div([]),
+    quick = [option for option in data if option["label"] in QUICK_SUBTYPE_LABELS][:2]
+
+    children: list[Any] = [html.Div([])]
+
+    if len(quick) == 2:
+        children.append(
             html.Div(
                 [
-                    dcc.Dropdown(
-                        clearable=True,
-                        id="subtype_checklist",
-                        maxHeight=400,
-                        multi=True,
-                        options=data,
-                        placeholder=placeholder,
-                        searchable=True,
-                        style=dropdown_style,
-                        value=[],
-                    ),
+                    html.Button(
+                        option["label"],
+                        id=f"subtype-quick-{index}",
+                        n_clicks=0,
+                        type="button",
+                        className="mode-switch__option btn",
+                        **{"data-subtype-value": option["value"]},
+                    )
+                    for index, option in enumerate(quick)
                 ],
-                id=dynamic_id,
-            ),
-        ],
-        **container_kwargs,
+                className="mode-switch subtype-quick",
+                role="group",
+                **{"aria-label": "Filter to the two most common kinds of home"},
+            )
+        )
+
+    children.append(
+        html.Div(
+            [
+                dcc.Dropdown(
+                    clearable=True,
+                    id="subtype_checklist",
+                    maxHeight=400,
+                    multi=True,
+                    options=data,
+                    placeholder=placeholder,
+                    searchable=True,
+                    style=dropdown_style,
+                    value=[],
+                ),
+            ],
+            id=dynamic_id,
+        )
     )
+
+    return html.Div(children, **container_kwargs)
 
 
 def build_listed_date_filter(
@@ -1442,24 +1641,17 @@ def build_listed_date_filter(
                 [
                     html.Div(
                         [
-                            html.H6(
-                                html.Em("I want to see listings posted in the last..."),
-                                style={"marginBottom": "5px"},
-                            ),
                             dcc.RadioItems(
                                 id="listed_time_range_radio",
                                 options=[
-                                    {"label": "2 Weeks", "value": 14},
-                                    {"label": "1 Month", "value": 30},
-                                    {"label": "3 Months", "value": 90},
-                                    {"label": "All Time", "value": 0},
+                                    {"label": "2 wk", "value": 14},
+                                    {"label": "1 mo", "value": 30},
+                                    {"label": "3 mo", "value": 90},
+                                    {"label": "Any", "value": 0},
                                 ],
                                 value=0,
                                 inline=True,
-                                labelStyle={
-                                    "fontSize": "0.8rem",
-                                    "marginRight": "10px",
-                                },
+                                className="filter-inline-radio",
                             ),
                         ],
                         style={"marginBottom": "5px"},
@@ -1547,14 +1739,15 @@ def build_page_parts(
     return PageParts(
         title_card=build_title_card(
             title=config.title,
-            subtitle=config.subtitle,
             last_updated=last_updated,
+            page_type=config.page_type,
         ),
         user_options_card=build_filter_card(
             items=filter_items,
-            active_item=config.active_filter_items,
-            accordion_id=f"{config.page_type}-options-accordion",
-            accordion_class_name=config.accordion_class_name,
+            page_type=config.page_type,
+            persistence_token=str(last_updated or "v1"),
+            list_id=f"{config.page_type}-options-accordion",
+            list_class_name=config.accordion_class_name,
         ),
         map_card=build_map_card(
             page_type=config.page_type,

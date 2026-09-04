@@ -1,0 +1,93 @@
+/* Palette: Los Angeles at dusk.
+ *
+ * Loads after dmc-dark-mode.css (alphabetical) and redefines its tokens in
+ * place, so every existing rule inherits the new scheme without being rewritten.
+ *
+ * The ground is the indigo the sky actually goes over the basin after sunset,
+ * not a tinted black. The accent is sodium-vapor amber, the color of LA street
+ * lighting, which is why it reads as warm light sitting on a cool field rather
+ * than a UI highlight bolted on. Amber earns its place by being scarce: it marks
+ * the live view, the selected slice of a range, and nothing else.
+ *
+ * Jacaranda violet is the secondary, used only where two states must be told
+ * apart at a glance (kept vs. filtered-out inventory).
+ */
+
+:root[data-mantine-color-scheme="dark"],
+:root[data-bs-theme="dark"] {
+  --wttl-dark-bg: #151826;
+  --wttl-dark-panel: #1b1f30;
+  --wttl-dark-section: #212637;
+  --wttl-dark-section-active: #2a3048;
+  --wttl-dark-input: #262c40;
+  --wttl-dark-input-hover: #2e3550;
+  --wttl-dark-border: rgba(197, 205, 236, 0.13);
+  --wttl-dark-border-strong: rgba(197, 205, 236, 0.26);
+  --wttl-dark-text: #e8eaf4;
+  --wttl-dark-text-muted: rgba(232, 234, 244, 0.66);
+  --wttl-dark-text-faint: rgba(232, 234, 244, 0.42);
+  --wttl-dark-accent: #f0a249;
+  --wttl-dark-accent-strong: #ffb865;
+  --wttl-dark-accent-soft: rgba(240, 162, 73, 0.18);
+
+  --wttl-violet: #8b7bd8;
+  --wttl-violet-dim: rgba(139, 123, 216, 0.34);
+
+  --wttl-dist-in: var(--wttl-dark-accent);
+  --wttl-dist-out: var(--wttl-violet-dim);
+  --wttl-dist-mask: rgba(21, 24, 38, 0.72);
+}
+
+/* Cool paper rather than warm cream, so light mode reads as the same product
+ * in daylight instead of a different one. */
+:root[data-mantine-color-scheme="light"],
+:root:not([data-mantine-color-scheme="dark"]) {
+  --wttl-light-bg: #f2f3f9;
+  --wttl-light-panel: #ffffff;
+  --wttl-light-border: rgba(30, 36, 62, 0.14);
+  --wttl-light-text: #191d2e;
+  --wttl-light-text-muted: rgba(25, 29, 46, 0.66);
+  --wttl-light-accent: #b86a12;
+
+  --wttl-violet: #6b5cc4;
+  --wttl-violet-dim: rgba(107, 92, 196, 0.3);
+
+  --wttl-dist-in: var(--wttl-light-accent);
+  --wttl-dist-out: var(--wttl-violet-dim);
+  --wttl-dist-mask: rgba(242, 243, 249, 0.74);
+}
+
+/* Bootstrap's primary drives buttons and links across the app. */
+:root[data-mantine-color-scheme="dark"] {
+  --bs-primary: var(--wttl-dark-accent);
+  --bs-primary-rgb: 240, 162, 73;
+  --bs-link-color: var(--wttl-dark-accent);
+  --bs-link-color-rgb: 240, 162, 73;
+  --bs-link-hover-color: var(--wttl-dark-accent-strong);
+  --bs-body-bg: var(--wttl-dark-bg);
+  --bs-body-color: var(--wttl-dark-text);
+  --bs-border-color: var(--wttl-dark-border);
+}
+
+:root[data-mantine-color-scheme="dark"] .rc-slider-track {
+  background-color: var(--wttl-dark-accent);
+}
+
+:root[data-mantine-color-scheme="dark"] .rc-slider-rail {
+  background-color: rgba(197, 205, 236, 0.16);
+}
+
+:root[data-mantine-color-scheme="dark"] .rc-slider-handle {
+  background-color: var(--wttl-dark-panel);
+  border-color: var(--wttl-dark-accent);
+  opacity: 1;
+}
+
+:root[data-mantine-color-scheme="dark"] .rc-slider-handle:focus-visible,
+:root[data-mantine-color-scheme="dark"] .rc-slider-handle-dragging {
+  box-shadow: 0 0 0 4px var(--wttl-dark-accent-soft);
+}
+
+:root[data-mantine-color-scheme="dark"] .rc-slider-mark-text {
+  color: var(--wttl-dark-text-faint);
+}
