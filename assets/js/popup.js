@@ -490,20 +490,25 @@
     }
 
     /**
-     * Google Street View URL for a listing's coordinates.
+     * Google Maps URL for a listing's address.
      *
-     * Showing a Street View *image* needs a Google Maps API key; linking to one
-     * does not. Until a key is configured this link is the whole fallback, and
-     * it still puts a real photo of the building one click away.
+     * The pano is already embedded above this link, so the link is for going to
+     * the place itself: searching the address drops you on the map with the
+     * usual directions, satellite and nearby options. Coordinates are the
+     * fallback when the address is missing, since they always resolve.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
-     * @returns {string|null} Street View pano URL, or `null` without coordinates.
+     * @returns {string|null} Google Maps URL, or `null` with nothing to point at.
      */
-    function buildStreetViewUrl(popupData) {
+    function buildGoogleMapsUrl(popupData) {
+        const address = normalizeNullableString(popupData?.full_street_address);
+        if (address) {
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        }
         const lat = Number(popupData?.latitude);
         const lng = Number(popupData?.longitude);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+        return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     }
 
     /**
@@ -548,8 +553,7 @@
             return `<div class="listing-popup__media">${inner}</div>`;
         }
 
-        const streetViewUrl = buildStreetViewUrl(popupData);
-        if (!streetViewUrl) return "";
+        const mapsUrl = buildGoogleMapsUrl(popupData);
 
         const embedUrl = buildStreetViewEmbedUrl(popupData);
         const address = normalizeNullableString(popupData.full_street_address) || "this listing";
@@ -567,8 +571,9 @@
                     allowfullscreen></iframe>
             </div>
             <div class="listing-popup__media-caption">
-                No listing photo &middot;
-                <a class="listing-popup__streetview" href="${escapeHtml(streetViewUrl)}" target="_blank" rel="noreferrer">open in Google Maps</a>
+                No listing photo${mapsUrl
+                    ? ` &middot; <a class="listing-popup__streetview" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">open in Google Maps</a>`
+                    : ""}
             </div>
         `;
     }
