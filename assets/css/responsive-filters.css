@@ -245,7 +245,7 @@
 /* The ISP control has two stacked sliders and does not use build_range_filter.
    Give both bottom tooltip rows space so they clear the next heading/switch. */
 .isp-speed-filter__range {
-  padding-bottom: 2.75rem;
+  padding-bottom: 1.25rem;
 }
 
 @media (max-width: 1099.98px) {

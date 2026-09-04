@@ -356,6 +356,58 @@ def build_responsive_listing_shell(
         },
     )
 
+    results_panel = html.Aside(
+        [
+            html.Div(
+                [
+                    html.H2("In view", className="results-panel__title"),
+                    html.Span(
+                        id=f"{page_type}-results-count",
+                        className="results-panel__count",
+                        **{"aria-live": "polite"},
+                    ),
+                ],
+                className="results-panel__header",
+            ),
+            html.Div(
+                id=f"{page_type}-results-list",
+                className="results-panel__list",
+            ),
+        ],
+        id=f"{page_type}-results-panel",
+        className="results-panel",
+        role="complementary",
+        **{
+            "aria-label": f"{listing_label} currently visible on the map",
+            "data-results-panel": page_type,
+        },
+    )
+
+    # Both toggles sit on the layout rather than inside a column, so a collapsed
+    # column can still be reopened.
+    column_toggles = [
+        html.Button(
+            html.I(className="bi bi-layout-sidebar", **{"aria-hidden": "true"}),
+            id=f"{page_type}-toggle-filters",
+            type="button",
+            className="column-toggle column-toggle--left",
+            **{
+                "data-column-toggle": "filters",
+                "aria-label": "Hide or show the filters column",
+            },
+        ),
+        html.Button(
+            html.I(className="bi bi-layout-sidebar-reverse", **{"aria-hidden": "true"}),
+            id=f"{page_type}-toggle-results",
+            type="button",
+            className="column-toggle column-toggle--right",
+            **{
+                "data-column-toggle": "results",
+                "aria-label": "Hide or show the listings column",
+            },
+        ),
+    ]
+
     return html.Div(
         [
             backdrop,
@@ -365,6 +417,8 @@ def build_responsive_listing_shell(
                 id=f"{page_type}-map-main",
                 className="listing-map-col map-col",
             ),
+            results_panel,
+            *column_toggles,
         ],
         className="listing-page-layout",
         **{"data-listing-page": page_type},

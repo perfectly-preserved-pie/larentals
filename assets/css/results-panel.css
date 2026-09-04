@@ -1,0 +1,179 @@
+/* Loads after responsive-filters.css (alphabetical) so it can widen that
+ * file's two-column grid into three without editing it. */
+
+:root {
+  --results-panel-width: clamp(260px, 20vw, 330px);
+}
+
+.results-panel {
+  display: none;
+}
+
+.column-toggle {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .listing-page-layout {
+    position: relative;
+    grid-template-columns: var(--filter-panel-width) minmax(0, 1fr) var(--results-panel-width);
+    transition: grid-template-columns 0.18s ease;
+  }
+
+  .listing-page-layout.is-filters-hidden {
+    grid-template-columns: 0 minmax(0, 1fr) var(--results-panel-width);
+  }
+
+  .listing-page-layout.is-results-hidden {
+    grid-template-columns: var(--filter-panel-width) minmax(0, 1fr) 0;
+  }
+
+  .listing-page-layout.is-filters-hidden.is-results-hidden {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+
+  .listing-page-layout.is-filters-hidden > .responsive-filter-panel.options-col,
+  .listing-page-layout.is-results-hidden > .results-panel {
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .results-panel {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    min-width: 0;
+    height: 100vh;
+    height: 100dvh;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 1px solid var(--filter-panel-border);
+    background: var(--filter-panel-surface);
+    color: var(--filter-panel-text);
+  }
+
+  .results-panel__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0.9rem 0.9rem 0.6rem;
+    border-bottom: 1px solid var(--filter-panel-border);
+  }
+
+  .results-panel__title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .results-panel__count {
+    color: var(--wttl-dark-text-faint, rgba(25, 29, 46, 0.42));
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .results-panel__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .results-panel__empty {
+    margin: 0;
+    padding: 1rem 0.9rem;
+    color: var(--wttl-dark-text-faint, rgba(25, 29, 46, 0.5));
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .results-row {
+    display: grid;
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border: 0;
+    border-bottom: 1px solid var(--filter-panel-border);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    gap: 1px;
+    text-align: left;
+  }
+
+  .results-row:hover,
+  .results-row:focus-visible {
+    background: var(--wttl-dark-section, rgba(30, 36, 62, 0.05));
+  }
+
+  .results-row__price {
+    font-size: 0.875rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .results-row__address {
+    overflow: hidden;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .results-row__meta {
+    color: var(--wttl-dark-text-faint, rgba(25, 29, 46, 0.45));
+    font-size: 0.6875rem;
+  }
+
+  .column-toggle {
+    position: absolute;
+    top: 0.6rem;
+    z-index: 2500;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--filter-panel-border);
+    border-radius: 7px;
+    background: var(--filter-panel-surface);
+    color: var(--filter-panel-text);
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+    opacity: 0.75;
+  }
+
+  .column-toggle:hover,
+  .column-toggle:focus-visible {
+    opacity: 1;
+  }
+
+  .column-toggle--left {
+    left: calc(var(--filter-panel-width) + 0.6rem);
+    transition: left 0.18s ease;
+  }
+
+  .column-toggle--right {
+    right: calc(var(--results-panel-width) + 0.6rem);
+    transition: right 0.18s ease;
+  }
+
+  .listing-page-layout.is-filters-hidden .column-toggle--left {
+    left: 0.6rem;
+  }
+
+  .listing-page-layout.is-results-hidden .column-toggle--right {
+    right: 0.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-page-layout,
+  .column-toggle--left,
+  .column-toggle--right {
+    transition: none;
+  }
+}

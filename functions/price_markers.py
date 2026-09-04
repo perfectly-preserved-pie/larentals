@@ -64,11 +64,26 @@ build_price_marker = assign(
     const label = Number.isFinite(price) ? formatPrice(price) : 'n/a';
     const width = 14 + label.length * 7;
 
+    // The results panel reads these straight off the DOM, which keeps it
+    // independent of any handle on the Leaflet map object.
+    const esc = function(v) {
+        return String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
+    const dataAttrs = ' data-mls="' + esc(props.mls_number) + '"'
+        + ' data-price="' + (Number.isFinite(price) ? price : '') + '"'
+        + ' data-address="' + esc(props.full_street_address) + '"'
+        + ' data-beds="' + esc(props.bedrooms) + '"'
+        + ' data-baths="' + esc(props.total_bathrooms) + '"'
+        + ' data-sqft="' + esc(props.sqft) + '"'
+        + ' data-subtype="' + esc(props.subtype) + '"';
+
     const marker = L.marker(latlng, {
         icon: L.divIcon({
             className: 'price-marker-icon',
-            html: '<span class="price-marker" style="background:' + background + '">'
-                + label + '</span>',
+            html: '<span class="price-marker" style="background:' + background + '"'
+                + dataAttrs + '>' + label + '</span>',
             iconSize: [width, 20],
             // Anchor at the bottom centre so the pill sits above the point it
             // describes rather than covering it.
@@ -76,6 +91,9 @@ build_price_marker = assign(
             popupAnchor: [0, -22]
         })
     });
+    // The results panel reads listing data straight off the layers in view, so
+    // the feature has to travel with the marker.
+    marker.feature = feature;
     return marker;
 }"""
     % {
