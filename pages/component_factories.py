@@ -16,6 +16,7 @@ import pandas as pd
 
 from .component_models import DashId, FilterSection, PageConfig, PageParts
 from functions.convex_hull import generate_convex_hulls
+from functions.price_markers import build_price_marker
 from functions.layers import (
     SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS,
     DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
@@ -913,6 +914,7 @@ def build_map(
             data=None,
             cluster=True,
             clusterToLayer=generate_convex_hulls,
+            pointToLayer=build_price_marker,
             onEachFeature=ns("on_each_feature"),
             zoomToBoundsOnClick=True,
             superClusterOptions={
