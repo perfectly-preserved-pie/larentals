@@ -235,29 +235,18 @@
     }
 
     /**
-     * Render the Housing Department issue row for listing popups.
+     * Render the Housing Department issue value for listing popups.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
-     * @returns {string} HTML row.
+     * @returns {string} HTML value markup, or an empty string.
      */
-    function renderLahdIssueRow(popupData) {
+    function renderLahdValue(popupData) {
         const summary = popupData.lahd_property_summary;
-        if (!summary || typeof summary !== "object") {
-            return "";
-        }
-
+        if (!summary || typeof summary !== "object") return "";
         if (summary.jurisdiction_in_scope === false || summary.data_available === false) {
             return "";
         }
-
-        return `
-            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                <span class="label" style="font-weight: bold;">Housing Dept. Issues</span>
-                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
-                    ${formatLahdIssueSummary(summary)}
-                </span>
-            </div>
-        `;
+        return formatLahdIssueSummary(summary);
     }
 
     /**
@@ -285,24 +274,17 @@
     }
 
     /**
-     * Render the LA City Rent Stabilization Ordinance row for rental popups.
+     * Render the LA City Rent Stabilization Ordinance value for rental popups.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
-     * @returns {string} HTML row.
+     * @returns {string} HTML value markup, or an empty string.
      */
-    function renderRsoRow(popupData) {
+    function renderRsoValue(popupData) {
         const summary = popupData.rso_property_summary;
         if (!summary || typeof summary !== "object" || summary.jurisdiction_in_scope === false) {
             return "";
         }
-        return `
-            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                <span class="label" style="font-weight: bold;">Rent Control Status</span>
-                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
-                    ${formatRsoSummary(summary)}
-                </span>
-            </div>
-        `;
+        return formatRsoSummary(summary);
     }
 
     /**
@@ -386,55 +368,299 @@
         return p;
     }
 
-    /**
-     * Render the popup title block, linking the address when a listing URL exists.
-     *
-     * @param {string|number} address Display-ready street address.
-     * @param {string|null} listingUrl Listing detail URL, if available.
-     * @returns {string} HTML string for the popup heading.
-     */
-    function getListingUrlBlock(address, listingUrl) {
-        if (!listingUrl) {
-            return `
-                <div style="text-align: center;">
-                    <h5>${address}</h5>
-                </div>
-            `;
-        }
+    /** Listing hosts we can name, so the link says where it goes. */
+    const LISTING_HOST_NAMES = {
+        "theagencyre.com": "The Agency",
+        "bhhscalifornia.com": "BHHS California",
+    };
 
-        return `
-            <div style="text-align: center;">
-                <h5><a href="${listingUrl}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank">${address}</a></h5>
-            </div>
-        `;
+    /**
+     * Human name for a listing host, falling back to its bare domain.
+     *
+     * @param {string} url Listing detail URL.
+     * @returns {string} Display name for the host.
+     */
+    function listingHostName(url) {
+        try {
+            const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+            return LISTING_HOST_NAMES[host] || host;
+        } catch (error) {
+            return "the listing site";
+        }
     }
 
     /**
-     * Render the property photo row, optionally wrapping the image in the listing URL.
+     * Format a phone number as (xxx) xxx-xxxx when it has ten digits.
      *
-     * @param {string|null} photoUrl Image URL for the listing.
-     * @param {string|null} listingUrl Listing detail URL, if available.
-     * @returns {string} HTML string for the image row.
+     * The feed mixes "(626) 862-4732" and "310-577-5300", so normalize rather
+     * than print whichever shape the source happened to use.
+     *
+     * @param {unknown} value Raw phone value.
+     * @returns {string|null} Display phone number, or `null` when unusable.
      */
-    function buildImageRow(photoUrl, listingUrl) {
-        if (!photoUrl) return "";
+    function formatPhone(value) {
+        const raw = normalizeNullableString(value);
+        if (!raw) return null;
+        const digits = raw.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+        if (digits.length !== 10) return raw;
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
 
-        const imageTag = `<img src="${photoUrl}" alt="Property Image" style="width:100%;height:auto;">`;
+    /**
+     * Render the "where do I go next" line that sits under the address.
+     *
+     * Around one listing in five is not published on either host. Those used to
+     * show nothing actionable at all, so the fallback promotes the listing
+     * office phone number instead of hiding it in More details.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} HTML string for the source line.
+     */
+    function renderListingSource(popupData) {
+        const listingUrl = normalizeNullableString(popupData.listing_url);
         if (listingUrl) {
             return `
-                <div style="position: relative;">
-                    <a href="${listingUrl}" class="plausible-listing-link" target="_blank" referrerPolicy="noreferrer">
-                        ${imageTag}
+                <div class="listing-popup__source">
+                    <a class="plausible-listing-link" href="${escapeHtml(listingUrl)}" target="_blank" referrerPolicy="noreferrer">
+                        View on ${escapeHtml(listingHostName(listingUrl))}
                     </a>
                 </div>
             `;
         }
 
+        const phone = formatPhone(popupData.phone_number);
+        if (phone) {
+            return `
+                <div class="listing-popup__source listing-popup__source--offline">
+                    <span>Not listed online</span>
+                    <a href="tel:${escapeHtml(phone.replace(/\D/g, ""))}">${escapeHtml(phone)}</a>
+                </div>
+            `;
+        }
+
         return `
-            <div style="position: relative;">
-                ${imageTag}
+            <div class="listing-popup__source listing-popup__source--offline">
+                <span>Not listed online</span>
             </div>
         `;
+    }
+
+    /**
+     * Render the popup heading, linking the address when a listing URL exists.
+     *
+     * @param {string} address Display-ready street address.
+     * @param {string|null} listingUrl Listing detail URL, if available.
+     * @returns {string} HTML string for the popup heading.
+     */
+    function renderHeader(address, listingUrl) {
+        const safeAddress = escapeHtml(address);
+        const title = listingUrl
+            ? `<a class="plausible-listing-link" href="${escapeHtml(listingUrl)}" referrerPolicy="noreferrer" target="_blank">${safeAddress}</a>`
+            : safeAddress;
+        return `<h5 class="listing-popup__address">${title}</h5>`;
+    }
+
+    /**
+     * Google Street View URL for a listing's coordinates.
+     *
+     * Showing a Street View *image* needs a Google Maps API key; linking to one
+     * does not. Until a key is configured this link is the whole fallback, and
+     * it still puts a real photo of the building one click away.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string|null} Street View pano URL, or `null` without coordinates.
+     */
+    function buildStreetViewUrl(popupData) {
+        const lat = Number(popupData?.latitude);
+        const lng = Number(popupData?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+    }
+
+    /**
+     * Embeddable Street View pano URL for a listing's coordinates.
+     *
+     * `output=svembed` is Google's long-standing keyless embed endpoint. It
+     * redirects to /maps/embed, which sends no X-Frame-Options and no CSP
+     * frame-ancestors, so it frames without an API key. It is undocumented
+     * though, so the caption keeps a normal link to Google Maps as a way out if
+     * the endpoint ever stops framing.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string|null} Embeddable pano URL, or `null` without coordinates.
+     */
+    function buildStreetViewEmbedUrl(popupData) {
+        const lat = Number(popupData?.latitude);
+        const lng = Number(popupData?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
+    }
+
+    /**
+     * Render the popup's media slot: the MLS photo when there is one, otherwise
+     * a Street View link tile.
+     *
+     * Roughly one listing in eight arrives without a photo. Those popups used to
+     * open with an empty gap above the address, which reads as a broken image
+     * rather than a missing one.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} HTML string for the media slot.
+     */
+    function renderMedia(popupData) {
+        const photoUrl = normalizeNullableString(popupData.mls_photo);
+        const listingUrl = normalizeNullableString(popupData.listing_url);
+
+        if (photoUrl) {
+            const img = `<img class="listing-popup__photo" src="${escapeHtml(photoUrl)}" alt="Listing photo" loading="lazy">`;
+            const inner = listingUrl
+                ? `<a class="plausible-listing-link" href="${escapeHtml(listingUrl)}" target="_blank" referrerPolicy="noreferrer">${img}</a>`
+                : img;
+            return `<div class="listing-popup__media">${inner}</div>`;
+        }
+
+        const streetViewUrl = buildStreetViewUrl(popupData);
+        if (!streetViewUrl) return "";
+
+        const embedUrl = buildStreetViewEmbedUrl(popupData);
+        const address = normalizeNullableString(popupData.full_street_address) || "this listing";
+
+        // Labelled, because a pano of the block is not a photo of the unit and
+        // should not be mistaken for one.
+        return `
+            <div class="listing-popup__media listing-popup__media--streetview">
+                <iframe
+                    class="listing-popup__streetview-frame"
+                    src="${escapeHtml(embedUrl)}"
+                    title="Street View near ${escapeHtml(address)}"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    allowfullscreen></iframe>
+            </div>
+            <div class="listing-popup__media-caption">
+                No listing photo &middot;
+                <a class="listing-popup__streetview" href="${escapeHtml(streetViewUrl)}" target="_blank" rel="noreferrer">open in Google Maps</a>
+            </div>
+        `;
+    }
+
+    /**
+     * Report whether a value carries no information worth a popup row.
+     *
+     * @param {unknown} value Candidate display value.
+     * @returns {boolean} `true` when the value should be omitted.
+     */
+    function isBlankValue(value) {
+        if (value === null || value === undefined) return true;
+        const normalized = String(value).trim().toLowerCase();
+        return ["", "unknown", "none", "null", "nan", "not available"].includes(normalized);
+    }
+
+    /**
+     * Render one label/value row from trusted HTML.
+     *
+     * @param {string} label Row label.
+     * @param {string} html Pre-rendered value markup.
+     * @param {string} [modifier] Extra class for rows that need a wider value.
+     * @returns {string} HTML row, or an empty string when there is no value.
+     */
+    function rawRow(label, html, modifier) {
+        if (!html) return "";
+        if (!html.includes("<") && isBlankValue(html)) return "";
+        return `
+            <div class="listing-popup__row${modifier ? ` ${modifier}` : ""}">
+                <dt class="listing-popup__label">${escapeHtml(label)}</dt>
+                <dd class="listing-popup__value">${html}</dd>
+            </div>
+        `;
+    }
+
+    /**
+     * Render one label/value row, dropping it when the value says nothing.
+     *
+     * The old popup printed every field it knew about, so a typical listing
+     * showed a column of "Unknown" that buried the handful of facts that were
+     * actually present.
+     *
+     * @param {string} label Row label.
+     * @param {unknown} value Display value.
+     * @returns {string} HTML row, or an empty string when the value is blank.
+     */
+    function row(label, value) {
+        if (isBlankValue(value)) return "";
+        return rawRow(label, escapeHtml(value));
+    }
+
+    /**
+     * Render one figure in the key-stats strip.
+     *
+     * @param {unknown} value Figure to display.
+     * @param {string} label Caption under the figure.
+     * @returns {string} HTML stat cell, or an empty string when blank.
+     */
+    function stat(value, label) {
+        if (isBlankValue(value)) return "";
+        return `
+            <div class="listing-popup__stat">
+                <span class="listing-popup__stat-value">${escapeHtml(value)}</span>
+                <span class="listing-popup__stat-label">${escapeHtml(label)}</span>
+            </div>
+        `;
+    }
+
+    /**
+     * Wrap the populated stat cells in the strip, or render nothing.
+     *
+     * @param {string[]} cells Rendered stat cells.
+     * @returns {string} HTML stats strip.
+     */
+    function renderStats(cells) {
+        const html = cells.join("");
+        return html ? `<div class="listing-popup__stats">${html}</div>` : "";
+    }
+
+    /**
+     * Collapse the rarely-populated fields behind a disclosure.
+     *
+     * @param {string[]} rows Rendered rows.
+     * @returns {string} HTML `<details>` block, or an empty string.
+     */
+    function renderMoreDetails(rows) {
+        const html = rows.join("");
+        if (!html) return "";
+        return `
+            <details class="listing-popup__more">
+                <summary class="listing-popup__more-summary">More details</summary>
+                <dl class="listing-popup__rows">${html}</dl>
+            </details>
+        `;
+    }
+
+    /**
+     * Format bedroom and bathroom counts as a single stat figure.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} Combined bed/bath figure, or an empty string.
+     */
+    function formatBedBath(popupData) {
+        const bedrooms = stripTrailingPointZero(popupData.bedrooms);
+        const bathrooms = stripTrailingPointZero(popupData.total_bathrooms);
+        if (isBlankValue(bedrooms) && isBlankValue(bathrooms)) return "";
+        const bd = isBlankValue(bedrooms) ? "?" : bedrooms;
+        const ba = isBlankValue(bathrooms) ? "?" : bathrooms;
+        return `${bd} / ${ba}`;
+    }
+
+    /**
+     * Format square footage as a stat figure.
+     *
+     * @param {unknown} value Raw square footage.
+     * @returns {string} Localized figure, or an empty string.
+     */
+    function formatSqft(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n) || n <= 0) return "";
+        return n.toLocaleString("en-US");
     }
 
     /**
@@ -461,10 +687,10 @@
     function renderReportLink(listingId) {
         const payload = encodeURIComponent(JSON.stringify({ mls_number: listingId }));
         return `
-            <div style="text-align: center; margin-top: 10px;">
-                <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${payload}"))' style="text-decoration: none; color: #d55e00;">
-                    <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
-                    <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+            <div class="listing-popup__footer">
+                <a class="listing-popup__report" href="#" title="Report this listing" onclick='reportListing(decodeURIComponent("${payload}"))'>
+                    <i class="fa-solid fa-flag"></i>
+                    <span>Report listing</span>
                 </a>
             </div>
         `;
@@ -473,115 +699,57 @@
     /**
      * Build the lease-page popup body for a single listing.
      *
+     * Ordered by what a renter decides on: the photo, the address, the four
+     * figures that rule a listing in or out, then the qualifying facts. Anything
+     * mostly blank across the dataset sits behind "More details".
+     *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
      */
     function generateLeasePopupContent(popupData) {
         const listingUrl = normalizeNullableString(popupData.listing_url);
-        const mlsPhoto = normalizeNullableString(popupData.mls_photo);
-        const fullStreetAddressRaw = stripTrailingPointZero(
-            normalizeNullableString(popupData.full_street_address),
-        ) || "Unknown Address";
-        const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
-        const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
-        const imageRow = buildImageRow(mlsPhoto, listingUrl);
-        const phoneNumber = normalizeNullableString(popupData.phone_number);
-        const phoneNumberBlock = phoneNumber
-            ? `<a href="tel:${phoneNumber}">${phoneNumber}</a>`
-            : "Unknown";
-        const subtype = (popupData?.subtype ?? "Unknown").toString();
-        const mlsNumberDisplay = stripTrailingPointZero(popupData.mls_number);
-        const reportLink = renderReportLink(normalizeListingId(popupData.mls_number));
+        const address = toTitleCase(
+            stripTrailingPointZero(normalizeNullableString(popupData.full_street_address))
+                || "Unknown Address",
+        );
+        const ispHtml = window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? "";
+
+        const primaryRows = [
+            rawRow("Rent control", renderRsoValue(popupData)),
+            rawRow("Housing Dept. issues", renderLahdValue(popupData)),
+            row("Security deposit", formatCurrency(popupData.security_deposit)),
+            row("Pets", popupData.pet_policy),
+            row("Laundry", popupData.laundry),
+            row("Parking", popupData.parking_spaces),
+            row("Furnished", popupData.furnished),
+            row("Listed", formatDate(popupData.listed_date)),
+        ];
+
+        const moreRows = [
+            row("Rental terms", popupData.terms),
+            row("Property type", popupData.subtype),
+            row("Year built", popupData.year_built),
+            row("Pet deposit", formatCurrency(popupData.pet_deposit)),
+            row("Key deposit", formatCurrency(popupData.key_deposit)),
+            row("Other deposit", formatCurrency(popupData.other_deposit)),
+            row("Listing ID (MLS#)", stripTrailingPointZero(popupData.mls_number)),
+            rawRow("ISP options", ispHtml, "listing-popup__row--stacked"),
+        ];
 
         return `
-            <div>
-                ${imageRow}
-                ${listingUrlBlock}
-                <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listed Date</span>
-                        <span class="value">${formatDate(popupData.listed_date)}</span>
-                    </div>
-                    ${renderLahdIssueRow(popupData)}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
-                        <span class="value">${mlsNumberDisplay}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">List Office Phone</span>
-                        <span class="value">${phoneNumberBlock}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Rental Price</span>
-                        <span class="value">${formatCurrency(popupData.list_price)}</span>
-                    </div>
-                    ${renderRsoRow(popupData)}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Security Deposit</span>
-                        <span class="value">${formatCurrency(popupData.security_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Pet Deposit</span>
-                        <span class="value">${formatCurrency(popupData.pet_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Key Deposit</span>
-                        <span class="value">${formatCurrency(popupData.key_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Other Deposit</span>
-                        <span class="value">${formatCurrency(popupData.other_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Square Feet</span>
-                        <span class="value">${popupData.sqft ? `${Number(popupData.sqft).toLocaleString()} sq. ft` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
-                        <span class="value">${popupData.ppsqft ? `$${Number(popupData.ppsqft).toLocaleString()}` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
-                        <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Parking Spaces</span>
-                        <span class="value">${popupData.parking_spaces || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Pets Allowed?</span>
-                        <span class="value">${popupData.pet_policy || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Furnished?</span>
-                        <span class="value">${popupData.furnished || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Laundry Features</span>
-                        <span class="value" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
-                            ${popupData.laundry || "Unknown"}
-                        </span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Year Built</span>
-                        <span class="value">${popupData.year_built || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Rental Terms</span>
-                        <span class="value">${popupData.terms || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Physical Sub Type</span>
-                        <span class="value">${subtype || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
-                        <span class="label" style="font-weight:bold;">ISP Options</span>
-                        <div class="value" style="text-align:right;">
-                            ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
-                        </div>
-                    </div>
-                </div>
-                ${reportLink}
+            <div class="listing-popup">
+                ${renderMedia(popupData)}
+                ${renderHeader(address, listingUrl)}
+                ${renderListingSource(popupData)}
+                ${renderStats([
+                    stat(formatCurrency(popupData.list_price), "per month"),
+                    stat(formatBedBath(popupData), "bed / bath"),
+                    stat(formatSqft(popupData.sqft), "sq ft"),
+                    stat(popupData.ppsqft ? formatCurrency(popupData.ppsqft) : "", "per sq ft"),
+                ])}
+                <dl class="listing-popup__rows">${primaryRows.join("")}</dl>
+                ${renderMoreDetails(moreRows)}
+                ${renderReportLink(normalizeListingId(popupData.mls_number))}
             </div>
         `;
     }
@@ -594,100 +762,49 @@
      */
     function generateBuyPopupContent(popupData) {
         const listingUrl = normalizeNullableString(popupData.listing_url);
-        const mlsPhoto = normalizeNullableString(popupData.mls_photo);
-        const fullStreetAddressRaw = stripTrailingPointZero(
-            normalizeNullableString(popupData.full_street_address),
-        ) || "Unknown Address";
-        const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
-        const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
-        const imageRow = buildImageRow(mlsPhoto, listingUrl);
+        const address = toTitleCase(
+            stripTrailingPointZero(normalizeNullableString(popupData.full_street_address))
+                || "Unknown Address",
+        );
+        const subtype = normalizeNullableString(popupData.subtype);
+        const isSfr = Boolean(subtype)
+            && (subtype.includes("SFR") || subtype.includes("Single Family Residence"));
         const lotSizeDisplay = formatLotSize(popupData.lot_size);
-        const mlsNumberDisplay = stripTrailingPointZero(popupData.mls_number);
-        const subtype = (popupData?.subtype ?? "Unknown").toString();
-        const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
-        const reportLink = renderReportLink(normalizeListingId(popupData.mls_number));
+        const ispHtml = window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? "";
 
-        let parkingContent = "";
-        if (!isSfr) {
-            parkingContent = `
-                <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                    <span class="label" style="font-weight: bold;">Parking Spaces</span>
-                    <span class="value">${popupData.garage_spaces || "Unknown"}</span>
-                </div>
-            `;
-        }
+        const primaryRows = [
+            rawRow("Rent control", renderRsoValue(popupData)),
+            rawRow("Housing Dept. issues", renderLahdValue(popupData)),
+            row("HOA fee", formatCurrency(popupData.hoa_fee)),
+            row("HOA frequency", popupData.hoa_fee_frequency),
+            row("Lot size", lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : ""),
+            isSfr ? "" : row("Parking", popupData.garage_spaces),
+            row("School district", popupData.school_district_name),
+            row("Nearest high school", formatMiles(popupData.nearest_high_school_mi)),
+            row("Listed", formatDate(popupData.listed_date)),
+        ];
+
+        const moreRows = [
+            row("Property type", subtype),
+            row("Year built", popupData.year_built),
+            row("Listing ID (MLS#)", stripTrailingPointZero(popupData.mls_number)),
+            rawRow("ISP options", ispHtml, "listing-popup__row--stacked"),
+        ];
 
         return `
-            <div>
-                ${imageRow}
-                ${listingUrlBlock}
-                <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listed Date</span>
-                        <span class="value">${formatDate(popupData.listed_date)}</span>
-                    </div>
-                    ${renderLahdIssueRow(popupData)}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
-                        <span class="value">${mlsNumberDisplay}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">List Office Phone</span>
-                        <span class="value">Unknown</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">List Price</span>
-                        <span class="value">${formatCurrency(popupData.list_price)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">HOA Fee</span>
-                        <span class="value">${formatCurrency(popupData.hoa_fee)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">HOA Fee Frequency</span>
-                        <span class="value">${popupData.hoa_fee_frequency || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Square Feet</span>
-                        <span class="value">${popupData.sqft ? `${Number(popupData.sqft).toLocaleString()} sq. ft` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
-                        <span class="value">${formatCurrency(popupData.ppsqft)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Lot Size</span>
-                        <span class="value">${lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
-                        <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
-                    </div>
-                    ${parkingContent}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Year Built</span>
-                        <span class="value">${popupData.year_built || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">School District</span>
-                        <span class="value">${popupData.school_district_name || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Nearest High School</span>
-                        <span class="value">${formatMiles(popupData.nearest_high_school_mi)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Physical Sub Type</span>
-                        <span class="value">${subtype || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                        <span class="label" style="font-weight: bold;">ISP Options</span>
-                        <div class="value" style="text-align: right;">
-                            ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
-                        </div>
-                    </div>
-                </div>
-                ${reportLink}
+            <div class="listing-popup">
+                ${renderMedia(popupData)}
+                ${renderHeader(address, listingUrl)}
+                ${renderListingSource(popupData)}
+                ${renderStats([
+                    stat(formatCurrency(popupData.list_price), "list price"),
+                    stat(formatBedBath(popupData), "bed / bath"),
+                    stat(formatSqft(popupData.sqft), "sq ft"),
+                    stat(popupData.ppsqft ? formatCurrency(popupData.ppsqft) : "", "per sq ft"),
+                ])}
+                <dl class="listing-popup__rows">${primaryRows.join("")}</dl>
+                ${renderMoreDetails(moreRows)}
+                ${renderReportLink(normalizeListingId(popupData.mls_number))}
             </div>
         `;
     }

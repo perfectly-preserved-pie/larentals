@@ -750,3 +750,318 @@
     height: 100vh;
   }
 }
+
+/* ---------- Listing popup ----------
+ *
+ * Scoped with :has() so the eight other popup types on this map keep the light
+ * Leaflet chrome their styles already assume.
+ */
+
+.listing-popup {
+  --popup-surface: #ffffff;
+  --popup-inset: #f5f6fa;
+  --popup-border: rgba(30, 36, 62, 0.14);
+  --popup-text: #191d2e;
+  --popup-muted: rgba(25, 29, 46, 0.66);
+  --popup-faint: rgba(25, 29, 46, 0.42);
+  --popup-accent: #b86a12;
+
+  box-sizing: border-box;
+  width: 302px;
+  max-width: 100%;
+  color: var(--popup-text);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+:root[data-mantine-color-scheme="dark"] .listing-popup {
+  --popup-surface: var(--wttl-dark-panel, #1b1f30);
+  --popup-inset: var(--wttl-dark-section, #212637);
+  --popup-border: var(--wttl-dark-border, rgba(197, 205, 236, 0.13));
+  --popup-text: var(--wttl-dark-text, #e8eaf4);
+  --popup-muted: var(--wttl-dark-text-muted, rgba(232, 234, 244, 0.66));
+  --popup-faint: var(--wttl-dark-text-faint, rgba(232, 234, 244, 0.42));
+  --popup-accent: var(--wttl-dark-accent, #f0a249);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper:has(.listing-popup),
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-tip:has(.listing-popup),
+:root[data-mantine-color-scheme="dark"] .leaflet-popup:has(.listing-popup) .leaflet-popup-tip {
+  background: var(--wttl-dark-panel, #1b1f30);
+  color: var(--wttl-dark-text, #e8eaf4);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup:has(.listing-popup) .leaflet-popup-close-button {
+  color: var(--wttl-dark-text-faint, rgba(232, 234, 244, 0.42));
+}
+
+.leaflet-popup-content:has(.listing-popup) {
+  margin: 0;
+  width: auto !important;
+}
+
+.listing-popup__media {
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+  background: var(--popup-inset);
+}
+
+.listing-popup__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* No photo is a fact about the listing, not an error, so the slot shows the
+ * street instead of collapsing to a gap. Captioned, because a pano of the block
+ * is not a photo of the unit. */
+/* Google stacks an address card, a compass and a fullscreen button across the
+ * top of the pano, which on a 302px tile covers half the image. Overhang the
+ * iframe upward and clip it: the chrome above the fold goes, the Google logo and
+ * Terms along the bottom stay put. */
+.listing-popup__media--streetview {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--popup-inset);
+}
+
+.listing-popup__streetview-frame {
+  position: absolute;
+  top: calc(-1 * var(--streetview-crop, 68px));
+  left: 0;
+  display: block;
+  width: 100%;
+  height: calc(100% + var(--streetview-crop, 68px));
+  border: 0;
+}
+
+.listing-popup__media-caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  padding: 6px 13px;
+  border-bottom: 1px solid var(--popup-border);
+  background: var(--popup-inset);
+  color: var(--popup-faint);
+  font-size: 0.6875rem;
+}
+
+.listing-popup__address {
+  margin: 0;
+  padding: 11px 13px 9px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.listing-popup__address a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.listing-popup__address a:hover,
+.listing-popup__address a:focus-visible {
+  color: var(--popup-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listing-popup__stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  border-top: 1px solid var(--popup-border);
+  border-bottom: 1px solid var(--popup-border);
+}
+
+.listing-popup__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 9px 4px;
+  text-align: center;
+}
+
+.listing-popup__stat + .listing-popup__stat {
+  border-left: 1px solid var(--popup-border);
+}
+
+.listing-popup__stat-value {
+  font-size: 0.95rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.listing-popup__stat-label {
+  color: var(--popup-faint);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+}
+
+.listing-popup__rows {
+  margin: 0;
+  padding: 0;
+}
+
+.listing-popup__row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 7px 13px;
+}
+
+.listing-popup__row + .listing-popup__row {
+  border-top: 1px solid var(--popup-border);
+}
+
+.listing-popup__label {
+  color: var(--popup-muted);
+  font-weight: 400;
+}
+
+.listing-popup__value {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- More details ---------- */
+
+.listing-popup__more {
+  border-top: 1px solid var(--popup-border);
+}
+
+.listing-popup__more-summary {
+  padding: 8px 13px;
+  color: var(--popup-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  list-style: none;
+}
+
+.listing-popup__more-summary::-webkit-details-marker {
+  display: none;
+}
+
+.listing-popup__more-summary::after {
+  content: "  +";
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-popup__more[open] > .listing-popup__more-summary::after {
+  content: "  \2212";
+}
+
+.listing-popup__more-summary:hover,
+.listing-popup__more-summary:focus-visible {
+  color: var(--popup-accent);
+}
+
+.listing-popup__more .listing-popup__row:first-child {
+  border-top: 1px solid var(--popup-border);
+}
+
+.listing-popup__footer {
+  padding: 9px 13px 11px;
+  border-top: 1px solid var(--popup-border);
+  text-align: center;
+}
+
+.listing-popup__report {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--popup-faint);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.listing-popup__report:hover,
+.listing-popup__report:focus-visible {
+  color: var(--popup-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Leaflet paints every anchor inside the map its own link blue, at a
+ * specificity (.leaflet-container a) that a single class cannot outrank. */
+.listing-popup .listing-popup__streetview,
+.listing-popup .listing-popup__report {
+  color: var(--popup-muted);
+}
+
+.listing-popup .listing-popup__streetview:hover,
+.listing-popup .listing-popup__streetview:focus-visible,
+.listing-popup .listing-popup__report:hover,
+.listing-popup .listing-popup__report:focus-visible {
+  color: var(--popup-accent);
+}
+
+.listing-popup__row--stacked {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.listing-popup__row--stacked .listing-popup__value {
+  text-align: left;
+}
+
+/* A listing with six ISP providers rendered an 800px popup, which on a laptop
+ * ran off the top of the map: the photo, address and price were unreachable
+ * because a Leaflet popup grows upward from its marker. Cap it against the
+ * viewport and scroll the overflow instead. */
+.listing-popup {
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.listing-popup::-webkit-scrollbar {
+  width: 8px;
+}
+
+.listing-popup::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--popup-border);
+  background-clip: content-box;
+}
+
+.listing-popup::-webkit-scrollbar-thumb:hover {
+  background: var(--popup-muted);
+  background-clip: content-box;
+}
+
+.listing-popup__source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  justify-content: center;
+  padding: 0 13px 10px;
+  font-size: 0.75rem;
+}
+
+.listing-popup .listing-popup__source a {
+  color: var(--popup-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.listing-popup .listing-popup__source a:hover,
+.listing-popup .listing-popup__source a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listing-popup__source--offline span {
+  color: var(--popup-faint);
+}

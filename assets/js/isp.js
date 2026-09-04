@@ -424,7 +424,7 @@
               <details style="margin:6px 0;">
                 <summary style="cursor:pointer;">
                   ${label}<br/>
-                  <span style="color:#222;">${speed}</span>
+                  <span style="color:inherit;">${speed}</span>
                 </summary>
                 <div style="margin:6px 0 0 10px;">
                   <div style="color:#666; font-size:12px; margin-bottom:4px;">Available plans</div>
@@ -437,7 +437,7 @@
           return `
             <div style="margin:6px 0;">
               <div>${label}</div>
-              <div style="color:#222;">${speed}</div>
+              <div style="color:inherit;">${speed}</div>
             </div>
           `;
         })
