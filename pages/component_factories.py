@@ -895,7 +895,12 @@ def build_map(
             onEachFeature=ns("on_each_feature"),
             zoomToBoundsOnClick=True,
             superClusterOptions={
-                "radius": 160,
+                # maxZoom is the last zoom that groups at all, so 14 leaves every
+                # listing as its own pin from neighborhood level in. Below that
+                # the map is unreadable ungrouped, hence the wide radius.
+                "radius": 110,
+                "maxZoom": 14,
+                "minPoints": 5,
                 "minZoom": 3,
             },
         ),

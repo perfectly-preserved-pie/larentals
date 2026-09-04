@@ -820,8 +820,9 @@ class LayersClass:
     - lazy resolution of layer data when users enable overlays
     """
     DEFAULT_SUPERCLUSTER_OPTIONS: ClassVar[dict[str, int]] = {
-        'radius': 160,
-        'maxClusterRadius': 40,
+        'radius': 110,
+        'maxZoom': 14,
+        'minPoints': 5,
         'minZoom': 3,
     }
     LAYER_CONFIGS: ClassVar[dict[str, LayerConfig]] = {

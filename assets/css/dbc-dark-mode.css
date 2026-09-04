@@ -5,7 +5,6 @@
     --Dash-Text-Primary: var(--bs-body-color);
     --Dash-Text-Strong: var(--bs-body-color);
 }
-
 .dbc .title-card-links {
     display: flex;
     flex-wrap: wrap;
