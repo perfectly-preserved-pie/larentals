@@ -432,8 +432,6 @@ class LeaseComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
             container_style={"marginBottom": "10px"},
         )
 
@@ -456,8 +454,6 @@ class LeaseComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_suffix=" sq ft",
             switch_style={"marginTop": "15px"},
             container_style={"marginBottom": "10px"},
         )
@@ -497,8 +493,6 @@ class LeaseComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
             container_style={"marginBottom": "10px"},
             header_children=[
                 html.H5(

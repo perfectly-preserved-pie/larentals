@@ -314,8 +314,6 @@ class BuyComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
             container_style={"marginBottom": "10px"},
         )
 
@@ -338,8 +336,6 @@ class BuyComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_suffix=" sq ft",
             container_style={"marginBottom": "10px"},
         )
 

@@ -325,7 +325,7 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(bounds.display_maximum, 5)
         self.assertEqual(
             bounds.marks(),
-            {0: "0", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "Unlimited"},
+            {0: "0", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6"},
         )
         self.assertEqual(
             bounds.marks(include_open_end=False, target_intervals=3),
@@ -349,7 +349,9 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(bounds.maximum, 12_000)
         self.assertEqual(bounds.display_maximum, 10_000)
         self.assertEqual(bounds.marks(currency=True)[10_000], "$10k")
-        self.assertEqual(bounds.marks(currency=True)[12_000], "Unlimited")
+        # The final stop is still open ended, but it is labelled with the real
+        # maximum rather than a word that hid the number.
+        self.assertEqual(bounds.marks(currency=True)[12_000], "$12k")
         self.assertEqual(
             bounds.marks(
                 currency=True,

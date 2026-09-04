@@ -54,7 +54,7 @@ class CappedRangeBounds:
         include_open_end: bool = True,
         target_intervals: int = 5,
     ) -> Mapping[int | float, str] | None:
-        """Return readable marks, optionally followed by an ``Unlimited`` stop.
+        """Return readable marks, optionally followed by an open-ended final stop.
 
         Args:
             currency: Whether currency behavior is enabled.
@@ -119,7 +119,10 @@ class CappedRangeBounds:
 
         marks[finite_maximum] = format_value(finite_maximum)
         if include_open_end and self.is_capped:
-            marks[self.maximum] = "Unlimited"
+            # The final stop still means "no upper limit", but it sits at the
+            # real maximum in the data, so label it with that number. Reading
+            # "Unlimited" told you nothing about what you were selecting.
+            marks[self.maximum] = format_value(self.maximum)
         return marks
 
 

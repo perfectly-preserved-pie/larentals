@@ -198,8 +198,6 @@
 .range-filter__controls .dash-slider-mark:last-of-type {
   transform: translateX(-100%) !important;
   text-align: right;
-  color: var(--filter-panel-accent);
-  font-weight: 600;
 }
 
 .range-filter__hybrid-slider .dash-slider-mark:first-of-type,
