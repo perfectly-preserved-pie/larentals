@@ -390,6 +390,25 @@
     }
 
     /**
+     * Build a listing URL from an MLS number alone.
+     *
+     * theagencyre.com resolves any `/<segment>/clr/<mls>/<slug>` URL to the
+     * canonical listing page, so neither the property type nor the address slug
+     * has to be right. Measured: this recovers nothing for listings with no
+     * stored URL (0 of 20 sampled returned 200, the rest are genuinely not
+     * published there), so it is a last resort behind both the stored URL and
+     * the phone number, used only where the popup would otherwise offer nothing.
+     *
+     * @param {unknown} mlsNumber Listing MLS number.
+     * @returns {string|null} Constructed lookup URL, or `null` without an MLS.
+     */
+    function buildListingUrlFromMls(mlsNumber) {
+        const id = normalizeListingId(mlsNumber).toLowerCase();
+        if (!id) return null;
+        return `https://www.theagencyre.com/listing/clr/${encodeURIComponent(id)}/x`;
+    }
+
+    /**
      * Format a phone number as (xxx) xxx-xxxx when it has ten digits.
      *
      * The feed mixes "(626) 862-4732" and "310-577-5300", so normalize rather
@@ -434,6 +453,16 @@
                 <div class="listing-popup__source listing-popup__source--offline">
                     <span>Not listed online</span>
                     <a href="tel:${escapeHtml(phone.replace(/\D/g, ""))}">${escapeHtml(phone)}</a>
+                </div>
+            `;
+        }
+
+        const lookupUrl = buildListingUrlFromMls(popupData.mls_number);
+        if (lookupUrl) {
+            return `
+                <div class="listing-popup__source listing-popup__source--offline">
+                    <span>No listing page or phone</span>
+                    <a href="${escapeHtml(lookupUrl)}" target="_blank" rel="noreferrer">Try MLS lookup</a>
                 </div>
             `;
         }
