@@ -1025,42 +1025,6 @@ def build_map_gesture_control() -> html.Div:
     )
 
 
-_MATCH_COUNT_PAGES: set[str] = set()
-
-
-def _register_match_count_callback(page_type: str) -> None:
-    """Show how many listings survived the current filters.
-
-    The count reads the GeoJSON actually handed to the map, so it can never
-    disagree with what is drawn.
-
-    Args:
-        page_type: Current page key such as ``lease`` or ``buy``.
-
-    Side Effects:
-        Registers one clientside callback per page.
-
-    Returns:
-        None.
-    """
-    if page_type in _MATCH_COUNT_PAGES:
-        return
-    _MATCH_COUNT_PAGES.add(page_type)
-
-    noun = "rentals" if page_type == "lease" else "homes"
-
-    clientside_callback(
-        """
-        function (data) {
-            const features = (data && data.features) || [];
-            const total = features.length;
-            if (!total) return "No %(noun)s match";
-            return total.toLocaleString("en-US") + " %(noun)s";
-        }
-        """ % {"noun": noun},
-        Output(f"{page_type}-match-count", "children"),
-        Input(f"{page_type}_geojson", "data"),
-    )
 
 
 def build_map_card(
@@ -1113,7 +1077,6 @@ def build_map_card(
     if overlay_children:
         body_children.extend(overlay_children)
 
-    _register_match_count_callback(page_type)
 
     body = dbc.CardBody(
         html.Div(

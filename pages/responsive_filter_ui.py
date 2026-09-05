@@ -360,6 +360,25 @@ def build_responsive_listing_shell(
                 className="results-panel__header",
             ),
             html.Div(
+                html.Select(
+                    [
+                        html.Option("Price, low to high", value="price-asc"),
+                        html.Option("Price, high to low", value="price-desc"),
+                        html.Option("Beds, most first", value="beds-desc"),
+                        html.Option("Size, largest first", value="sqft-desc"),
+                        html.Option("Price per sq ft, low to high", value="ppsqft-asc"),
+                        html.Option("Newest first", value="newest"),
+                    ],
+                    id=f"{page_type}-results-sort",
+                    className="results-panel__sort",
+                    **{
+                        "data-results-sort": page_type,
+                        "aria-label": "Sort the listings in view",
+                    },
+                ),
+                className="results-panel__sort-row",
+            ),
+            html.Div(
                 id=f"{page_type}-results-list",
                 className="results-panel__list",
             ),

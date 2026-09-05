@@ -74,6 +74,22 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .results-panel__sort-row {
+    padding: 0.5rem 0.9rem;
+    border-bottom: 1px solid var(--filter-panel-border);
+  }
+
+  .results-panel__sort {
+    width: 100%;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--filter-panel-border);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.75rem;
+  }
+
   .results-panel__list {
     flex: 1;
     min-height: 0;

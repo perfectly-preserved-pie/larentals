@@ -29,6 +29,11 @@ BUY_PRICE_HIGH = 949_000
 
 build_price_marker = assign(
     """function(feature, latlng, context){
+    // At zooms where nothing clusters, this is the only callback that sees the
+    // map, so it publishes the handle too.
+    window.larentals = window.larentals || {};
+    if (context && context.map) window.larentals.map = context.map;
+
     const props = feature.properties || {};
     const price = Number(props.list_price);
 
@@ -77,7 +82,9 @@ build_price_marker = assign(
         + ' data-beds="' + esc(props.bedrooms) + '"'
         + ' data-baths="' + esc(props.total_bathrooms) + '"'
         + ' data-sqft="' + esc(props.sqft) + '"'
-        + ' data-subtype="' + esc(props.subtype) + '"';
+        + ' data-subtype="' + esc(props.subtype) + '"'
+        + ' data-ppsqft="' + esc(props.ppsqft) + '"'
+        + ' data-listed="' + esc(props.listed_date) + '"';
 
     const marker = L.marker(latlng, {
         icon: L.divIcon({

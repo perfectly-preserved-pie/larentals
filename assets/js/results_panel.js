@@ -54,6 +54,150 @@
     }
 
     /**
+     * Build a row from a supercluster leaf.
+     *
+     * A cluster bubble hides its listings, but the panel should still name them,
+     * so each visible cluster is expanded through the supercluster index. Leaves
+     * have no rendered marker, hence the coordinates for the click handler.
+     *
+     * @param {object} leaf GeoJSON feature from `getLeaves`.
+     * @returns {object|null} Row descriptor, or `null` for an unusable leaf.
+     */
+    function rowFromLeaf(leaf) {
+        var props = leaf && leaf.properties;
+        var coords = leaf && leaf.geometry && leaf.geometry.coordinates;
+        if (!props || !coords) return null;
+        return {
+            el: null,
+            latlng: [coords[1], coords[0]],
+            price: Number(props.list_price),
+            mls: props.mls_number,
+            address: props.full_street_address,
+            beds: props.bedrooms,
+            baths: props.total_bathrooms,
+            sqft: props.sqft,
+            subtype: props.subtype,
+            ppsqft: Number(props.ppsqft),
+            listed: props.listed_date,
+        };
+    }
+
+    /**
+     * Count every listing inside the viewport, clustered ones included.
+     *
+     * A cluster bubble stands for many listings, so the headline count adds its
+     * size rather than counting the bubble as one. Its on-screen label is
+     * abbreviated ("3k"), hence the exact size travelling as a data attribute.
+     *
+     * @param {DOMRect} box The map viewport rectangle.
+     * @returns {number} Listings visible in frame.
+     */
+    function countInView(box) {
+        var total = 0;
+
+        var clusters = document.querySelectorAll("[data-cluster-count]");
+        for (var c = 0; c < clusters.length; c += 1) {
+            if (!inside(clusters[c], box)) continue;
+            var size = Number(clusters[c].getAttribute("data-cluster-count"));
+            if (isFinite(size)) total += size;
+        }
+
+        var pins = document.querySelectorAll(".price-marker[data-mls]");
+        for (var i = 0; i < pins.length; i += 1) {
+            if (inside(pins[i], box)) total += 1;
+        }
+        return total;
+    }
+
+    /**
+     * Report whether an element's centre sits inside a rectangle.
+     *
+     * @param {Element} el Element to test.
+     * @param {DOMRect} box Rectangle to test against.
+     * @returns {boolean} True when the element's centre is inside.
+     */
+    function inside(el, box) {
+        var rect = el.getBoundingClientRect();
+        if (!rect.width && !rect.height) return false;
+        var x = rect.left + rect.width / 2;
+        var y = rect.top + rect.height / 2;
+        return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+    }
+
+    /**
+     * Update the headline count to describe what is in frame.
+     *
+     * @param {number} total Listings visible in frame.
+     * @returns {void}
+     */
+    function updateMatchCount(total) {
+        var badge = document.querySelector(".match-count");
+        if (!badge) return;
+        var path = String(window.location.pathname || "").toLowerCase();
+        var noun = path.indexOf("/buy") === 0 ? "homes" : "rentals";
+        badge.textContent = total
+            ? total.toLocaleString("en-US") + " " + noun + " in view"
+            : "No " + noun + " in view";
+    }
+
+    /**
+     * Read the selected sort order.
+     *
+     * @returns {string} Sort key, defaulting to cheapest first.
+     */
+    function currentSort() {
+        var select = document.querySelector("[data-results-sort]");
+        return select && select.value ? select.value : "price-asc";
+    }
+
+    /**
+     * Order two rows by a numeric field, always sinking missing values.
+     *
+     * A listing with no square footage should not win "largest first", so blanks
+     * go last whichever direction is chosen.
+     *
+     * @param {string} field Row property to compare.
+     * @param {number} direction 1 for ascending, -1 for descending.
+     * @returns {function(object, object): number} Comparator.
+     */
+    function byNumber(field, direction) {
+        return function (a, b) {
+            var left = Number(a[field]);
+            var right = Number(b[field]);
+            var leftOk = isFinite(left);
+            var rightOk = isFinite(right);
+            if (!leftOk && !rightOk) return 0;
+            if (!leftOk) return 1;
+            if (!rightOk) return -1;
+            return (left - right) * direction;
+        };
+    }
+
+    /**
+     * Build the comparator for a sort key.
+     *
+     * @param {string} key Sort key from the select.
+     * @returns {function(object, object): number} Comparator.
+     */
+    function comparatorFor(key) {
+        switch (key) {
+            case "price-desc": return byNumber("price", -1);
+            case "beds-desc": return byNumber("beds", -1);
+            case "sqft-desc": return byNumber("sqft", -1);
+            case "ppsqft-asc": return byNumber("ppsqft", 1);
+            case "newest": return function (a, b) {
+                var left = Date.parse(a.listed);
+                var right = Date.parse(b.listed);
+                if (isNaN(left) && isNaN(right)) return 0;
+                if (isNaN(left)) return 1;
+                if (isNaN(right)) return -1;
+                return right - left;
+            };
+            default: return byNumber("price", 1);
+        }
+    }
+
+    /**
      * Collect the price markers whose centre falls inside the map viewport.
      *
      * @returns {{rows: object[], clustered: boolean}} Visible rows, and whether
@@ -65,14 +209,28 @@
         var box = container.getBoundingClientRect();
         var rows = [];
 
+        var index = (window.larentals || {}).clusterIndex;
+        var clusters = document.querySelectorAll("[data-cluster-id]");
+        for (var c = 0; c < clusters.length; c += 1) {
+            if (!index || !inside(clusters[c], box)) continue;
+            var clusterId = Number(clusters[c].getAttribute("data-cluster-id"));
+            if (!isFinite(clusterId)) continue;
+            var leaves = [];
+            try {
+                leaves = index.getLeaves(clusterId, Infinity);
+            } catch (error) {
+                leaves = [];
+            }
+            for (var k = 0; k < leaves.length; k += 1) {
+                var leafRow = rowFromLeaf(leaves[k]);
+                if (leafRow) rows.push(leafRow);
+            }
+        }
+
         var markers = document.querySelectorAll(".price-marker[data-mls]");
         for (var i = 0; i < markers.length; i += 1) {
             var el = markers[i];
-            var rect = el.getBoundingClientRect();
-            if (!rect.width && !rect.height) continue;
-            var x = rect.left + rect.width / 2;
-            var y = rect.top + rect.height / 2;
-            if (x < box.left || x > box.right || y < box.top || y > box.bottom) continue;
+            if (!inside(el, box)) continue;
             rows.push({
                 el: el,
                 price: Number(el.getAttribute("data-price")),
@@ -82,18 +240,17 @@
                 baths: el.getAttribute("data-baths"),
                 sqft: el.getAttribute("data-sqft"),
                 subtype: el.getAttribute("data-subtype"),
+                ppsqft: Number(el.getAttribute("data-ppsqft")),
+                listed: el.getAttribute("data-listed"),
             });
         }
 
-        // Cheapest first. The panel exists to make price scannable, and that is
-        // the order someone shopping on price reads in.
-        rows.sort(function (a, b) {
-            if (!isFinite(a.price)) return 1;
-            if (!isFinite(b.price)) return -1;
-            return a.price - b.price;
-        });
-
-        return { rows: rows, clustered: document.querySelectorAll(".marker-cluster").length > 0 };
+        rows.sort(comparatorFor(currentSort()));
+        return {
+            rows: rows,
+            clustered: document.querySelectorAll(".marker-cluster").length > 0,
+            inView: countInView(box),
+        };
     }
 
     /**
@@ -123,6 +280,27 @@
         );
     }
 
+    /**
+     * Click a listing's pin once the map has drawn it.
+     *
+     * Flying to a clustered listing has to finish, and the pin has to render,
+     * before there is anything to open.
+     *
+     * @param {string} mls Listing id to look for.
+     * @param {number} attempt Current retry count.
+     * @returns {void}
+     */
+    function openWhenRendered(mls, attempt) {
+        if (!mls || attempt > 20) return;
+        var pin = document.querySelector('.price-marker[data-mls="' + String(mls).replace(/"/g, "") + '"]');
+        if (pin) {
+            var icon = pin.closest(".leaflet-marker-icon") || pin;
+            icon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+            return;
+        }
+        window.setTimeout(function () { openWhenRendered(mls, attempt + 1); }, 150);
+    }
+
     var currentRows = [];
 
     /**
@@ -137,11 +315,10 @@
 
         var result = collectVisible();
         currentRows = result.rows.slice(0, MAX_ROWS);
+        updateMatchCount(result.inView);
 
         if (!currentRows.length) {
-            list.innerHTML = result.clustered
-                ? '<p class="results-panel__empty">Zoom in to list the listings behind these clusters.</p>'
-                : '<p class="results-panel__empty">No listings in view. Pan or zoom the map.</p>';
+            list.innerHTML = '<p class="results-panel__empty">No listings in view. Pan or zoom the map.</p>';
             if (count) count.textContent = "";
             return;
         }
@@ -164,13 +341,26 @@
         refreshTimer = window.setTimeout(refresh, 150);
     }
 
+    document.addEventListener("change", function (event) {
+        if (event.target && event.target.matches && event.target.matches("[data-results-sort]")) {
+            refresh();
+        }
+    });
+
     document.addEventListener("click", function (event) {
         var row = event.target && event.target.closest ? event.target.closest(".results-row") : null;
         if (!row) return;
         var entry = currentRows[Number(row.getAttribute("data-results-index"))];
-        if (!entry || !entry.el) return;
-        var target = entry.el.closest(".leaflet-marker-icon") || entry.el;
-        target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+        if (!entry) return;
+        if (entry.el) {
+            var target = entry.el.closest(".leaflet-marker-icon") || entry.el;
+            target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+            return;
+        }
+        var map = (window.larentals || {}).map;
+        if (!map || !entry.latlng) return;
+        map.setView(entry.latlng, Math.max(map.getZoom(), 17));
+        openWhenRendered(entry.mls, 0);
     });
 
     document.addEventListener("click", function (event) {
