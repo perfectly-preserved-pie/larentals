@@ -121,14 +121,23 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minLotSize, maxLotSize]        = lotSizeRange;
             const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
             const [minHOA, maxHOA]                = hoaFeeRange;
+            const speedForIndex = function (value, sliderId) {
+                const slider = document.getElementById(sliderId);
+                const holder = slider && slider.closest ? slider.closest("[data-speed-tiers]") : null;
+                const raw = holder ? holder.getAttribute("data-speed-tiers") : "";
+                const tiers = raw ? raw.split(",").map(Number).filter(Number.isFinite) : [];
+                const index = Number(value);
+                if (!tiers.length || !Number.isFinite(index)) return Number.isFinite(index) ? index : 0;
+                const clamped = Math.max(0, Math.min(tiers.length - 1, Math.round(index)));
+                return tiers[clamped];
+            };
+
             const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
                 ? downloadSpeedRange
-                : [downloadSpeedRange, Infinity];
-            // The control is a single-handle minimum, so a scalar means "at least
-            // N", not "exactly N". Arrays still work for the old range shape.
+                : [speedForIndex(downloadSpeedRange, "isp_download_speed_slider"), Infinity];
             const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
                 ? uploadSpeedRange
-                : [uploadSpeedRange, Infinity];
+                : [speedForIndex(uploadSpeedRange, "isp_upload_speed_slider"), Infinity];
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);

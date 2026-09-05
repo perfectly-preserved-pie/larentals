@@ -42,38 +42,22 @@
       bathroomsRange: ["bathrooms_slider", "value"],
       pets: ["pets_radio", "value"],
       sqftRange: ["sqft_slider", "value"],
-      sqftMissing: ["include-missing", "checked"],
       ppsqftRange: ["ppsqft_slider", "value"],
-      ppsqftMissing: ["include-missing", "checked"],
       parkingRange: ["garage_spaces_slider", "value"],
-      parkingMissing: ["include-missing", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
-      yearMissing: ["include-missing", "checked"],
       terms: ["terms_checklist", "value"],
-      termsMissing: ["include-missing", "checked"],
       furnished: ["furnished_checklist", "value"],
-      furnishedMissing: ["include-missing", "checked"],
       securityRange: ["security_deposit_slider", "value"],
-      securityMissing: ["include-missing", "checked"],
       petDepositRange: ["pet_deposit_slider", "value"],
-      petDepositMissing: ["include-missing", "checked"],
       keyDepositRange: ["key_deposit_slider", "value"],
-      keyDepositMissing: ["include-missing", "checked"],
       otherDepositRange: ["other_deposit_slider", "value"],
-      otherDepositMissing: ["include-missing", "checked"],
       laundry: ["laundry_checklist", "value"],
-      laundryMissing: ["include-missing", "checked"],
       subtypes: ["subtype_checklist", "value"],
       listedRange: ["listed_time_range_radio", "value"],
-      dateStart: ["listed_date_datepicker_lease", "start_date"],
-      dateEnd: ["listed_date_datepicker_lease", "end_date"],
-      dateMissing: ["include-missing", "checked"],
       downloadRange: ["isp_download_speed_slider", "value"],
       uploadRange: ["isp_upload_speed_slider", "value"],
-      ispMissing: ["include-missing", "checked"],
       rentControl: ["rent_control_status", "value"],
       locationText: ["lease-location-input", "value"],
-      nearbyZip: ["lease-nearby-zip-switch", "checked"],
       zipBoundary: ["lease-zip-boundary-store", "data"],
     }),
     buy: Object.freeze({
@@ -81,68 +65,56 @@
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
       sqftRange: ["sqft_slider", "value"],
-      sqftMissing: ["include-missing", "checked"],
       ppsqftRange: ["ppsqft_slider", "value"],
-      ppsqftMissing: ["include-missing", "checked"],
       lotSizeRange: exactRangeControl("lot_size"),
-      lotSizeMissing: ["include-missing", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
-      yearMissing: ["include-missing", "checked"],
       subtypes: ["subtype_checklist", "value"],
       listedRange: ["listed_time_range_radio", "value"],
-      dateStart: ["listed_date_datepicker_buy", "start_date"],
-      dateEnd: ["listed_date_datepicker_buy", "end_date"],
-      dateMissing: ["include-missing", "checked"],
       hoaRange: exactRangeControl("hoa_fee"),
-      hoaMissing: ["include-missing", "checked"],
       hoaFrequency: ["hoa_fee_frequency_checklist", "value"],
       downloadRange: ["isp_download_speed_slider", "value"],
       uploadRange: ["isp_upload_speed_slider", "value"],
-      ispMissing: ["include-missing", "checked"],
       locationText: ["buy-location-input", "value"],
-      nearbyZip: ["buy-nearby-zip-switch", "checked"],
       zipBoundary: ["buy-zip-boundary-store", "data"],
     }),
   });
 
   const GROUPS = Object.freeze({
     lease: Object.freeze({
-      location: ["locationText", "nearbyZip"],
+      location: ["locationText"],
       price: ["priceRange"],
       bedrooms: ["bedroomsRange"],
       bathrooms: ["bathroomsRange"],
       pets: ["pets"],
-      sqft: ["sqftRange", "sqftMissing"],
-      ppsqft: ["ppsqftRange", "ppsqftMissing"],
-      parking: ["parkingRange", "parkingMissing"],
-      year: ["yearRange", "yearMissing"],
-      terms: ["terms", "termsMissing"],
-      furnished: ["furnished", "furnishedMissing"],
+      sqft: ["sqftRange"],
+      ppsqft: ["ppsqftRange"],
+      parking: ["parkingRange"],
+      year: ["yearRange"],
+      terms: ["terms"],
+      furnished: ["furnished"],
       deposits: [
-        "securityRange", "securityMissing", "petDepositRange",
-        "petDepositMissing", "keyDepositRange", "keyDepositMissing",
-        "otherDepositRange", "otherDepositMissing",
-      ],
-      laundry: ["laundry", "laundryMissing"],
+        "securityRange", "petDepositRange",
+        "keyDepositRange", "otherDepositRange", ],
+      laundry: ["laundry"],
       subtypes: ["subtypes"],
-      listedDate: ["listedRange", "dateStart", "dateEnd", "dateMissing"],
-      isp: ["downloadRange", "uploadRange", "ispMissing"],
+      listedDate: ["listedRange"],
+      isp: ["downloadRange", "uploadRange"],
       rentControl: ["rentControl"],
     }),
     buy: Object.freeze({
-      location: ["locationText", "nearbyZip"],
+      location: ["locationText"],
       price: ["priceRange"],
       bedrooms: ["bedroomsRange"],
       bathrooms: ["bathroomsRange"],
-      sqft: ["sqftRange", "sqftMissing"],
-      ppsqft: ["ppsqftRange", "ppsqftMissing"],
-      lotSize: ["lotSizeRange", "lotSizeMissing"],
-      year: ["yearRange", "yearMissing"],
+      sqft: ["sqftRange"],
+      ppsqft: ["ppsqftRange"],
+      lotSize: ["lotSizeRange"],
+      year: ["yearRange"],
       subtypes: ["subtypes"],
-      listedDate: ["listedRange", "dateStart", "dateEnd", "dateMissing"],
-      hoa: ["hoaRange", "hoaMissing"],
+      listedDate: ["listedRange"],
+      hoa: ["hoaRange"],
       hoaFrequency: ["hoaFrequency"],
-      isp: ["downloadRange", "uploadRange", "ispMissing"],
+      isp: ["downloadRange", "uploadRange"],
     }),
   });
 
@@ -1157,18 +1129,34 @@
         priceMinimum, priceMaximum, priceUpperBound,
         bedroomsRange, bedroomsUpperBound,
         bathroomsRange, bathroomsUpperBound, pets,
-        sqftRange, sqftUpperBound, sqftMissing,
-        ppsqftRange, ppsqftUpperBound, ppsqftMissing,
-        parkingRange, parkingUpperBound, parkingMissing, yearRange, yearMissing,
-        terms, termsMissing, furnished, furnishedMissing,
-        securityRange, securityUpperBound, securityMissing,
-        petDepositRange, petDepositUpperBound, petDepositMissing,
-        keyDepositRange, keyDepositUpperBound, keyDepositMissing,
-        otherDepositRange, otherDepositUpperBound, otherDepositMissing,
-        laundry, laundryMissing, subtypes, listedRange, dateStart, dateEnd,
-        dateMissing, downloadRange, uploadRange, ispMissing, rentControl,
-        locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
+        sqftRange, sqftUpperBound, ppsqftRange, ppsqftUpperBound, parkingRange, parkingUpperBound, yearRange, terms, furnished, securityRange, securityUpperBound, petDepositRange, petDepositUpperBound, keyDepositRange, keyDepositUpperBound, otherDepositRange, otherDepositUpperBound, laundry, subtypes, listedRange, downloadRange, uploadRange, rentControl,
+        locationText, zipBoundary, _applyClicks, _viewport, currentApplied
       ) {
+        const dateStart = (function () {
+          const days = Number(listedRange);
+          if (!Number.isFinite(days) || days <= 0) return null;
+          const from = new Date();
+          from.setDate(from.getDate() - days);
+          return from.toISOString().slice(0, 10);
+        }());
+        const dateEnd = new Date().toISOString().slice(0, 10);
+
+        const nearbyZip = true;
+
+        const sqftMissing = true;
+        const ppsqftMissing = true;
+        const parkingMissing = true;
+        const yearMissing = true;
+        const termsMissing = true;
+        const furnishedMissing = true;
+        const securityMissing = true;
+        const petDepositMissing = true;
+        const keyDepositMissing = true;
+        const otherDepositMissing = true;
+        const laundryMissing = true;
+        const dateMissing = true;
+        const ispMissing = true;
+
         const priceRange = exactRange(priceMinimum, priceMaximum);
         return finalizeCapture("lease", {
           priceRange, priceUpperBound, bedroomsRange, bedroomsUpperBound,
@@ -1195,15 +1183,28 @@
         priceMinimum, priceMaximum, priceUpperBound,
         bedroomsRange, bedroomsUpperBound,
         bathroomsRange, bathroomsUpperBound,
-        sqftRange, sqftUpperBound, sqftMissing,
-        ppsqftRange, ppsqftUpperBound, ppsqftMissing,
-        lotSizeMinimum, lotSizeMaximum, lotSizeUpperBound, lotSizeMissing,
-        yearRange, yearMissing,
-        subtypes, listedRange, dateStart, dateEnd, dateMissing,
-        hoaMinimum, hoaMaximum, hoaUpperBound, hoaMissing, hoaFrequency,
-        downloadRange, uploadRange, ispMissing,
-        locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
+        sqftRange, sqftUpperBound, ppsqftRange, ppsqftUpperBound, lotSizeMinimum, lotSizeMaximum, lotSizeUpperBound, yearRange, subtypes, listedRange, hoaMinimum, hoaMaximum, hoaUpperBound, hoaFrequency,
+        downloadRange, uploadRange, locationText, zipBoundary, _applyClicks, _viewport, currentApplied
       ) {
+        const dateStart = (function () {
+          const days = Number(listedRange);
+          if (!Number.isFinite(days) || days <= 0) return null;
+          const from = new Date();
+          from.setDate(from.getDate() - days);
+          return from.toISOString().slice(0, 10);
+        }());
+        const dateEnd = new Date().toISOString().slice(0, 10);
+
+        const nearbyZip = true;
+
+        const sqftMissing = true;
+        const ppsqftMissing = true;
+        const yearMissing = true;
+        const dateMissing = true;
+        const ispMissing = true;
+        const lotSizeMissing = true;
+        const hoaMissing = true;
+
         const priceRange = exactRange(priceMinimum, priceMaximum);
         const lotSizeRange = exactRange(lotSizeMinimum, lotSizeMaximum);
         const hoaRange = exactRange(hoaMinimum, hoaMaximum);

@@ -1,4 +1,5 @@
 :root {
+  --slider-handle-radius: 8px;
   --filter-panel-width: clamp(320px, 25vw, 400px);
   --filter-panel-surface: var(--bs-body-bg, #ffffff);
   --filter-panel-border: var(--bs-border-color, rgba(15, 23, 42, 0.16));
@@ -40,74 +41,6 @@
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-
-/* Keep the calendar in the scrollable filter flow. A floating two-month
-   popup can extend behind the map or the mobile sheet footer. */
-.listed-date-filter {
-  font-size: 16px;
-}
-
-.accordion-body:has(.listed-date-filter) {
-  padding-inline: 8px;
-}
-
-.listed-date-filter .dash-datepicker-controls {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 32px;
-  width: 100%;
-  justify-items: center;
-}
-
-.listed-date-filter .dash-datepicker-controls > .dash-input {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.listed-date-filter .dash-datepicker-month-nav {
-  width: 32px;
-  height: 40px;
-}
-
-.listed-date-filter .dash-datepicker-month-nav:last-child {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.listed-date-filter .dash-dropdown-focus-target {
-  /* Dash's invisible focus input otherwise adds its default width to the
-     calendar's scroll area on narrow screens. */
-  width: 1px;
-}
-
-.listed-date-filter .dash-datepicker > [data-radix-popper-content-wrapper] {
-  position: relative !important;
-  transform: none !important;
-  min-width: 0 !important;
-  width: 100%;
-  margin-top: 5px;
-}
-
-.listed-date-filter .dash-datepicker-content {
-  width: 100%;
-  max-width: 100%;
-  box-shadow: none;
-}
-
-.listed-date-filter .dash-datepicker-input-wrapper {
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
-  gap: 6px;
-  padding-inline: 8px;
-}
-
-.listed-date-filter .dash-datepicker-input {
-  min-width: 0;
-  width: 100% !important;
-}
-
-.listed-date-filter .dash-datepicker-input-wrapper > div {
-  min-width: 0;
-  width: 100%;
 }
 
 .responsive-filter-panel__body > .card,
@@ -185,18 +118,8 @@
   white-space: nowrap;
 }
 
-.range-filter__controls .dash-slider-mark:first-of-type {
-  transform: translateX(0) !important;
-  text-align: left;
-}
-
 .range-filter__open-ended-slider .dash-slider-mark:nth-last-of-type(2) {
   transform: translateX(calc(-100% - 0.25rem)) !important;
-  text-align: right;
-}
-
-.range-filter__controls .dash-slider-mark:last-of-type {
-  transform: translateX(-100%) !important;
   text-align: right;
 }
 
@@ -244,6 +167,16 @@
    Give both bottom tooltip rows space so they clear the next heading/switch. */
 .isp-speed-filter__range {
   padding-bottom: 1.25rem;
+}
+
+.isp-speed-filter__range .dash-slider-mark {
+  white-space: nowrap;
+  color: var(--filter-panel-text);
+}
+
+.isp-speed-filter__range .dash-slider-mark.dash-slider-mark-outside-selection {
+  color: var(--filter-panel-text);
+  opacity: 1;
 }
 
 @media (max-width: 1099.98px) {

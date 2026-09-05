@@ -388,13 +388,25 @@ class ComponentsSmokeTest(unittest.TestCase):
         Returns:
             None.
         """
-        component = build_isp_speed_components(10_000, 10_000)
+        tiers = [0, 100, 1_000, 5_000, 10_000]
+        component = build_isp_speed_components(tiers, tiers)
 
         download_range, upload_range = component.children
 
         self.assertEqual(component.className, "isp-speed-filter")
         self.assertEqual(download_range.className, "isp-speed-filter__range")
         self.assertEqual(upload_range.className, "isp-speed-filter__range")
+
+        # The slider steps through tier indexes, not megabits, so the ladder
+        # travels the same distance per tier however lopsided the speeds are.
+        slider = download_range.children[1]
+        self.assertEqual(slider.min, 0)
+        self.assertEqual(slider.max, len(tiers) - 1)
+        self.assertEqual(slider.step, 1)
+        self.assertEqual(
+            download_range.__dict__["data-speed-tiers"], "0,100,1000,5000,10000"
+        )
+        self.assertEqual(slider.marks[len(tiers) - 1], "10G")
 
     def test_title_card_links_to_mcp_setup_page(self) -> None:
         """Verify that title card links to mcp setup page.

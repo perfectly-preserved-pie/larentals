@@ -412,55 +412,75 @@ def _format_speed_mark(value: float) -> str:
     return f"{value:g}M"
 
 
-def _build_isp_speed_slider(label: str, slider_id: str, maximum: float) -> html.Div:
-    """Build one single-handle "at least" speed slider.
+def _build_isp_speed_slider(
+    label: str,
+    slider_id: str,
+    tiers: Sequence[float],
+    mark_count: int = 5,
+) -> html.Div:
+    """Build one single-handle "at least" speed slider over real speed tiers.
+
+    The slider value is an index into `tiers`, not a speed, so every advertised
+    tier gets the same amount of travel. Only a few ticks are labelled because
+    there are up to 25 tiers and the column is narrow.
 
     Args:
         label: Subtitle shown above the slider.
         slider_id: Dash component id for the slider.
-        maximum: Upper bound of the slider track.
+        tiers: Ascending distinct speeds the slider steps through.
+        mark_count: Approximate number of labelled ticks.
 
     Returns:
         A ``Div`` containing the labelled slider.
     """
-    ticks = [0, maximum / 4, maximum / 2, maximum]
+    last = len(tiers) - 1
+    # Interpolate the tick positions rather than stepping by a fixed stride: a
+    # stride that does not divide the ladder evenly leaves the final two ticks
+    # adjacent, and their labels then overlap at the right edge.
+    divisions = max(1, mark_count - 1)
+    indexes = sorted({round(i * last / divisions) for i in range(mark_count)})
     return html.Div(
         [
             html.H6(label, className="filter-subtitle"),
             dcc.Slider(
                 min=0,
-                max=maximum,
+                max=last,
                 value=0,
+                step=1,
                 id=slider_id,
                 updatemode="mouseup",
                 allow_direct_input=False,
-                marks={t: _format_speed_mark(t) for t in ticks},
-                tooltip={"placement": "bottom", "transform": "formatIspSpeed"},
+                # No tooltip: the value is a tier index, and a tooltip transform
+                # is handed only that number, so it would read "7" not "5G".
+                # The marks carry the scale instead.
+                marks={i: _format_speed_mark(tiers[i]) for i in indexes},
             ),
         ],
         className="isp-speed-filter__range",
+        **{"data-speed-tiers": ",".join(f"{t:g}" for t in tiers)},
     )
 
 
-def build_isp_speed_components(max_download: float, max_upload: float) -> html.Div:
+def build_isp_speed_components(
+    download_tiers: Sequence[float],
+    upload_tiers: Sequence[float],
+) -> html.Div:
     """Build download and upload speed controls.
 
     Nobody shops for an upper bound on internet speed, so both controls are
-    single-handle minimums ("at least N") rather than two-handle ranges. That
-    halves the handles and drops the tick marks, which is most of the vertical
-    space this section used to take.
+    single-handle minimums ("at least N") rather than two-handle ranges.
 
     Args:
-        max_download: Upper bound for download speed.
-        max_upload: Upper bound for upload speed.
+        download_tiers: Ascending distinct download speeds in the data.
+        upload_tiers: Ascending distinct upload speeds in the data.
 
     Returns:
         A ``Div`` containing both ISP speed sliders.
     """
     return html.Div(
         [
-            _build_isp_speed_slider("Download", "isp_download_speed_slider", max_download),
-            _build_isp_speed_slider("Upload", "isp_upload_speed_slider", max_upload),
+            _build_isp_speed_slider("Download", "isp_download_speed_slider", download_tiers),
+            _build_isp_speed_slider("Upload", "isp_upload_speed_slider", upload_tiers),
         ],
         id="isp_speed_div",
         className="isp-speed-filter",
@@ -635,14 +655,6 @@ def build_location_filter_components(
                 delay_show=150,
                 delay_hide=100,
                 parent_className="location-status-loading-wrapper",
-            ),
-            dmc.Switch(
-                id=f"{page_type}-nearby-zip-switch",
-                label="Include nearby ZIP codes",
-                checked=False,
-                size="sm",
-                color="teal",
-                style={"marginTop": "8px"},
             ),
         ],
         style={"marginBottom": "10px"},
@@ -1175,19 +1187,10 @@ def build_filter_card(
         className=list_class_name,
     )
 
-    # One switch for the whole sidebar. Thirteen per-filter copies asked the
-    # same question thirteen times, in thirteen slightly different wordings.
-    include_missing = dmc.Switch(
-        id="include-missing",
-        label="Include listings missing details",
-        checked=True,
-        size="xs",
-        className="filter-include-missing",
-        persistence=persistence_token,
-        persistence_type="local",
-    )
-
-    return dbc.Card([include_missing, sections], body=True, className="filter-card")
+    # Listings missing a value are always included. Excluding them emptied the
+    # map, because most listings are missing at least one field, so the switch
+    # only ever had one useful position.
+    return dbc.Card([sections], body=True, className="filter-card")
 
 
 def build_school_layer_map_prompt(page_type: str) -> html.Div:
@@ -1586,7 +1589,6 @@ def build_listed_date_filter(
     *,
     earliest_date: date | str | None,
     dynamic_id: DashId,
-    datepicker_id: str,
     component_id: str,
 ) -> html.Div:
     """Build the shared listed-date filter section.
@@ -1594,7 +1596,6 @@ def build_listed_date_filter(
     Args:
         earliest_date: Earliest date available in the dataset.
         dynamic_id: Pattern-matching id for the main content wrapper.
-        datepicker_id: Id for the date picker component.
         component_id: Outer container id.
 
     Returns:
@@ -1623,22 +1624,6 @@ def build_listed_date_filter(
                             ),
                         ],
                         style={"marginBottom": "5px"},
-                    ),
-                    dcc.DatePickerRange(
-                        id=datepicker_id,
-                        number_of_months_shown=1,
-                        max_date_allowed=today,
-                        start_date=earliest_date,
-                        end_date=today,
-                        initial_visible_month=today,
-                    ),
-                    dmc.Switch(
-                        id="listed_date_missing_switch",
-                        label="Include properties with an unknown listed date",
-                        checked=True,
-                        size="sm",
-                        color="teal",
-                        style={"marginTop": "10px"},
                     ),
                 ],
                 id=dynamic_id,

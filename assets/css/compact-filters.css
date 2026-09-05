@@ -5,6 +5,33 @@
   --filter-help: 0.6875rem;
 }
 
+.filter-section__body .dash-slider-track {
+  margin-left: var(--slider-handle-radius, 8px);
+  margin-right: var(--slider-handle-radius, 8px);
+}
+
+.filter-section__body .dash-slider-tooltip,
+.filter-section__body .dash-slider-tooltip * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* A value tooltip is centred on its handle, so a handle parked at either end
+   needs half a tooltip of room or the sidebar's scroll container cuts it. */
+.filter-section__body .range-filter__controls,
+.filter-section__body .isp-speed-filter__range {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.options-accordion,
+.options-accordion .accordion-item {
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
 .title-card {
   border: 0;
   border-radius: 0;
@@ -30,14 +57,13 @@
   line-height: 1.1;
 }
 
-/* Rent/sale switch: one control, not two buttons with a divider between. */
 .mode-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 3px;
   margin-top: 0.7rem;
-  padding: 2px;
-  border-radius: 7px;
-  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+  padding: 0;
+  background: none;
 }
 
 .mode-switch__option.btn {
@@ -47,8 +73,8 @@
   gap: 0.4rem;
   padding: 0.35rem 0.5rem;
   border: 0;
-  border-radius: 0;
-  background: transparent;
+  border-radius: 5px;
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
   box-shadow: none;
   color: var(--wttl-dark-text-muted, inherit);
   font-size: 0.82rem;
@@ -57,16 +83,8 @@
 
 /* Only the outer edges of a segmented control are round; the seams are square,
  * so the group reads as one control instead of loose pills in a tray. */
-.mode-switch__option.btn:first-child {
-  border-radius: 5px 0 0 5px;
-}
-
-.mode-switch__option.btn:last-child {
-  border-radius: 0 5px 5px 0;
-}
-
 .mode-switch__option.btn:hover {
-  background: rgba(128, 128, 128, 0.14);
+  background: var(--wttl-dark-input-hover, rgba(128, 128, 128, 0.24));
   color: var(--wttl-dark-text, inherit);
 }
 
@@ -310,15 +328,19 @@
   border-color: var(--wttl-dark-accent, #f0a249);
 }
 
-/* Radio sets read as one segmented control rather than loose bullets. */
+/* Radio sets read as one segmented control rather than loose bullets.
+ *
+ * Each option carries its own fill and the strip behind them carries none, so
+ * the selected option occupies exactly the same footprint as the rest. Filling
+ * the whole row and floating a chip on top made the selection look like it sat
+ * above the control rather than inside it. */
 .filter-inline-radio {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 6px;
-  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+  gap: 3px;
+  padding: 0;
+  background: none;
 }
 
 .filter-inline-radio label {
@@ -328,20 +350,15 @@
   gap: 0;
   margin: 0;
   padding: 0.25rem 0.2rem;
-  border-radius: 0;
+  border-radius: 5px;
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
   color: var(--wttl-dark-text-muted, inherit);
   font-size: 0.75rem;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.filter-inline-radio label:first-of-type {
-  border-radius: 4px 0 0 4px;
-}
 
-.filter-inline-radio label:last-of-type {
-  border-radius: 0 4px 4px 0;
-}
 
 /* The native dot is redundant once the whole cell lights up. */
 .filter-inline-radio input[type="radio"] {
@@ -429,21 +446,32 @@
   font-size: var(--filter-help);
 }
 
-/* Mantine's segmented control, matched to the sidebar's density and accent. */
+/* Mantine's segmented control, matched to the radio sets above: the strip is
+ * bare, each option is its own filled button, and the active option is filled
+ * directly rather than by a floating indicator behind it. */
 .filter-section__body .mantine-SegmentedControl-root {
-  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+  padding: 0;
+  gap: 3px;
+  background: none;
 }
 
 .filter-section__body .mantine-SegmentedControl-label {
   padding: 0.2rem 0.3rem;
+  border-radius: 5px;
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
   font-size: 0.75rem;
 }
 
 .filter-section__body .mantine-SegmentedControl-indicator {
-  background: var(--wttl-dark-accent, #f0a249);
+  display: none;
+}
+
+.filter-section__body .mantine-SegmentedControl-control::before {
+  display: none;
 }
 
 .filter-section__body .mantine-SegmentedControl-label[data-active] {
+  background: var(--wttl-dark-accent, #f0a249);
   color: #1a1206;
   font-weight: 600;
 }

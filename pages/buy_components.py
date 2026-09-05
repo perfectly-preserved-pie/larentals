@@ -215,8 +215,8 @@ class BuyComponents(BaseClass):
             (
                 "Internet speed",
                 build_isp_speed_components(
-                    max_download=self._safe_speed_max("best_dn"),
-                    max_upload=self._safe_speed_max("best_up"),
+                    download_tiers=self._speed_tiers("best_dn"),
+                    upload_tiers=self._speed_tiers("best_up"),
                 ),
                 "isp_speed",
             ),
@@ -461,7 +461,6 @@ class BuyComponents(BaseClass):
         return build_listed_date_filter(
             earliest_date=self.earliest_date,
             dynamic_id=self.dynamic_output_id("listed_date"),
-            datepicker_id="listed_date_datepicker_buy",
             component_id="listed_date_div_buy",
         )
 

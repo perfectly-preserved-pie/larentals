@@ -283,8 +283,8 @@ class LeaseComponents(BaseClass):
             (
                 "Internet speed",
                 build_isp_speed_components(
-                    max_download=self._safe_speed_max("best_dn"),
-                    max_upload=self._safe_speed_max("best_up"),
+                    download_tiers=self._speed_tiers("best_dn"),
+                    upload_tiers=self._speed_tiers("best_up"),
                 ),
                 "isp_speed",
             ),
@@ -299,22 +299,21 @@ class LeaseComponents(BaseClass):
         """
         return html.Div(
             [
-                dmc.SegmentedControl(
-                    id="rent_control_status",
-                    value="any",
-                    data=[
-                        {"label": "Any", "value": "any"},
-                        {"label": "All", "value": "all"},
-                        {"label": "Some", "value": "some"},
-                    ],
-                    fullWidth=True,
-                    size="xs",
-                ),
-                dmc.Text(
-                    "LA City only.",
-                    size="xs",
-                    c="dimmed",
-                    className="filter-note",
+                # The caveat is a footnote, not a heading, so it lives in hover
+                # text rather than spending a permanent line in the sidebar.
+                html.Div(
+                    dmc.SegmentedControl(
+                        id="rent_control_status",
+                        value="any",
+                        data=[
+                            {"label": "Any", "value": "any"},
+                            {"label": "All", "value": "all"},
+                            {"label": "Some", "value": "some"},
+                        ],
+                        fullWidth=True,
+                        size="xs",
+                    ),
+                    title="Rent control status is recorded for LA City only.",
                 ),
             ]
         )
@@ -532,23 +531,22 @@ class LeaseComponents(BaseClass):
             [
                 html.Div(
                     [
-                        dcc.RadioItems(
-                            id="pets_radio",
-                            options=[
-                                {"label": "Any", "value": "Both"},
-                                {"label": "Yes", "value": "yes"},
-                                {"label": "Maybe", "value": "maybe"},
-                            ],
-                            value="Both",
-                            className="filter-inline-radio",
-                            inline=True,
-                        ),
-                        dmc.Text(
-                            "Yes: the listing says pets are welcome. "
-                            "Maybe: anything that does not rule them out.",
-                            size="xs",
-                            c="dimmed",
-                            className="filter-note",
+                        html.Div(
+                            dcc.RadioItems(
+                                id="pets_radio",
+                                options=[
+                                    {"label": "Any", "value": "Both"},
+                                    {"label": "Yes", "value": "yes"},
+                                    {"label": "Maybe", "value": "maybe"},
+                                ],
+                                value="Both",
+                                className="filter-inline-radio",
+                                inline=True,
+                            ),
+                            title=(
+                                "Yes: the listing says pets are welcome. "
+                                "Maybe: anything that does not rule them out."
+                            ),
                         ),
                     ],
                     id=self.dynamic_output_id("pets"),
@@ -695,7 +693,6 @@ class LeaseComponents(BaseClass):
         return build_listed_date_filter(
             earliest_date=self.earliest_date,
             dynamic_id=self.dynamic_output_id("listed_date"),
-            datepicker_id="listed_date_datepicker_lease",
             component_id="listed_date_div_lease",
         )
 
