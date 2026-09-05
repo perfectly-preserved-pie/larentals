@@ -349,6 +349,12 @@
         currentRows = result.rows.slice(0, MAX_ROWS);
         updateMatchCount(result.inView);
 
+        var scale = (window.larentals || {}).priceScale;
+        if (scale) {
+            scale.update(result.rows.map(function (row) { return row.price; }));
+            scale.repaint();
+        }
+
         if (!currentRows.length) {
             list.innerHTML = '<p class="results-panel__empty">No listings in view. Pan or zoom the map.</p>';
             if (count) count.textContent = "";

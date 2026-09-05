@@ -3,29 +3,12 @@
 Every listing pin carries its price, coloured on a cheap-to-expensive ramp, so
 cost is scannable straight off the map instead of one popup at a time.
 
-The ramp is anchored to the 10th and 90th percentile of each page's real prices
-rather than to min and max, because a handful of outliers would otherwise flatten
-everything else into one colour. Measured over the current data:
-
-    lease  p10 $1,950     p90 $4,000
-    buy    p10 $449,000   p90 $949,000
-
-Green through red is what was asked for. It is also the one ramp that
-red-green colourblind viewers cannot read, so the endpoints live in
-`PRICE_RAMP_START_HUE` / `PRICE_RAMP_END_HUE` and swapping them to a
-blue-to-orange scale is a two-number change.
+The colour itself comes from `assets/js/price_scale.js`, which ranks a price
+against the listings currently in view rather than against a fixed band. That
+module owns the ramp; this one owns the marker.
 """
 
 from dash_extensions.javascript import assign
-
-# HSL hues for the cheap and expensive ends of the scale.
-PRICE_RAMP_START_HUE = 130  # green
-PRICE_RAMP_END_HUE = 0  # red
-
-LEASE_PRICE_LOW = 1950
-LEASE_PRICE_HIGH = 4000
-BUY_PRICE_LOW = 449_000
-BUY_PRICE_HIGH = 949_000
 
 build_price_marker = assign(
     """function(feature, latlng, context){
@@ -36,13 +19,6 @@ build_price_marker = assign(
 
     const props = feature.properties || {};
     const price = Number(props.list_price);
-
-    // The two pages differ by three orders of magnitude, so the scale has to
-    // know which one it is on. Same test the popup detail fetch uses.
-    const path = String(window.location.pathname || '').toLowerCase();
-    const isBuy = path === '/buy' || path.indexOf('/buy') === 0;
-    const low = isBuy ? %(buy_low)d : %(lease_low)d;
-    const high = isBuy ? %(buy_high)d : %(lease_high)d;
 
     const formatPrice = function(value) {
         if (!Number.isFinite(value)) return '?';
@@ -57,14 +33,10 @@ build_price_marker = assign(
         return '$' + Math.round(value);
     };
 
-    let hue = %(start_hue)d;
-    if (Number.isFinite(price) && high > low) {
-        const t = Math.max(0, Math.min(1, (price - low) / (high - low)));
-        hue = %(start_hue)d + t * (%(end_hue)d - %(start_hue)d);
-    }
-    const background = Number.isFinite(price)
-        ? 'hsl(' + hue.toFixed(0) + ', 62%%, 38%%)'
-        : '#6b7280';
+    // First paint. The scale recolours every pin once it knows what is in view,
+    // so this only has to be right before the map has drawn anything.
+    const scale = (window.larentals || {}).priceScale;
+    const background = scale ? scale.colorFor(price) : '#6b7280';
 
     const label = Number.isFinite(price) ? formatPrice(price) : 'n/a';
     const width = 14 + label.length * 7;
@@ -103,12 +75,4 @@ build_price_marker = assign(
     marker.feature = feature;
     return marker;
 }"""
-    % {
-        "buy_low": BUY_PRICE_LOW,
-        "buy_high": BUY_PRICE_HIGH,
-        "lease_low": LEASE_PRICE_LOW,
-        "lease_high": LEASE_PRICE_HIGH,
-        "start_hue": PRICE_RAMP_START_HUE,
-        "end_hue": PRICE_RAMP_END_HUE,
-    }
 )
