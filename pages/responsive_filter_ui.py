@@ -469,72 +469,6 @@ def _quick_filter_button(
     )
 
 
-_SUBTYPE_QUICK_REGISTERED = False
-
-
-def _register_subtype_quick_callbacks() -> None:
-    """Wire the two quick subtype toggles to the subtype dropdown, once.
-
-    ``subtype_checklist`` is a single global id shared by both listing pages,
-    while this module's callbacks register per page. Without the guard the second
-    registration is a duplicate output and Dash refuses to start.
-
-    Side Effects:
-        Registers two clientside callbacks the first time it is called.
-
-    Returns:
-        None.
-    """
-    global _SUBTYPE_QUICK_REGISTERED
-    if _SUBTYPE_QUICK_REGISTERED:
-        return
-    _SUBTYPE_QUICK_REGISTERED = True
-
-    # The quick toggles and the dropdown are one filter with two faces. The
-    # buttons write into the dropdown (the single source of truth), and a second
-    # callback reads that value back to light them up. Splitting it this way
-    # keeps the buttons' own state out of the graph, so there is no cycle.
-    clientside_callback(
-        """
-        function (aptClicks, houseClicks, current) {
-            const trigger = (window.dash_clientside.callback_context.triggered || [])[0];
-            if (!trigger || !trigger.prop_id) return window.dash_clientside.no_update;
-            const id = trigger.prop_id.split(".")[0];
-            const button = document.getElementById(id);
-            const value = button && button.dataset ? button.dataset.subtypeValue : null;
-            if (!value) return window.dash_clientside.no_update;
-            const selected = Array.isArray(current) ? current.slice() : [];
-            const at = selected.indexOf(value);
-            if (at === -1) selected.push(value);
-            else selected.splice(at, 1);
-            return selected;
-        }
-        """,
-        Output("subtype_checklist", "value"),
-        Input("subtype-quick-0", "n_clicks"),
-        Input("subtype-quick-1", "n_clicks"),
-        State("subtype_checklist", "value"),
-        prevent_initial_call=True,
-    )
-
-    clientside_callback(
-        """
-        function (selected) {
-            const chosen = Array.isArray(selected) ? selected : [];
-            const base = "mode-switch__option btn";
-            return ["subtype-quick-0", "subtype-quick-1"].map(function (id) {
-                const button = document.getElementById(id);
-                const value = button && button.dataset ? button.dataset.subtypeValue : null;
-                return value && chosen.indexOf(value) !== -1 ? base + " active" : base;
-            });
-        }
-        """,
-        Output("subtype-quick-0", "className"),
-        Output("subtype-quick-1", "className"),
-        Input("subtype_checklist", "value"),
-    )
-
-
 def register_responsive_filter_callbacks(page_type: str) -> None:
     """Register the client-side callbacks for one listing page.
 
@@ -593,7 +527,6 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
         Input(f"{page_type}-geojson-store", "data"),
     )
 
-    _register_subtype_quick_callbacks()
 
     clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="scrollToFilterSection"),
@@ -618,7 +551,7 @@ def _lease_capture_inputs() -> list[Input]:
         Input("bedrooms_slider", "max"),
         Input("bathrooms_slider", "value"),
         Input("bathrooms_slider", "max"),
-        Input("pets_radio", "value"),
+        Input("pets_checklist", "value"),
         Input("sqft_slider", "value"),
         Input("sqft_slider", "max"),
         Input("ppsqft_slider", "value"),

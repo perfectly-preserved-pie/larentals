@@ -9,6 +9,7 @@ from .component_factories import (
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
+    build_option_chips,
     build_location_suggestions,
     build_map,
     build_page_parts,
@@ -261,7 +262,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_prefix="$",
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_bedrooms_filter(self) -> html.Div:
@@ -321,7 +321,6 @@ class BuyComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_square_footage_filter(self) -> html.Div:
@@ -342,7 +341,6 @@ class BuyComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            container_style={"marginBottom": "10px"},
         )
 
     def create_subtype_checklist(self) -> html.Div:
@@ -361,7 +359,7 @@ class BuyComponents(BaseClass):
         return build_subtype_filter(
             values=unique_subtypes,
             dynamic_id=self.dynamic_output_id("subtype"),
-            placeholder="Any type of home",
+            placeholder="Narrow",
             outer_id="subtypes_div_buy",
             dropdown_style={"marginBottom": "10px"},
         )
@@ -387,7 +385,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_suffix=" sq ft",
-            container_style={"marginBottom": "10px"},
         )
 
     def create_hoa_fee_components(self) -> html.Div:
@@ -419,7 +416,6 @@ class BuyComponents(BaseClass):
             ),
             show_exact_inputs=True,
             input_prefix="$",
-            container_style={"marginBottom": "10px"},
             step=step_value,
             header_children=[
                 html.H6(
@@ -438,22 +434,9 @@ class BuyComponents(BaseClass):
         hoa_fee_frequency_options = ["N/A", "Monthly"]
 
         return html.Div(
-            dmc.CheckboxGroup(
-                id="hoa_fee_frequency_checklist",
-                value=[],
-                children=dmc.Group(
-                    [
-                        dmc.Checkbox(
-                            label=label,
-                            value=label,
-                            size="sm",
-                            color="teal",
-                        )
-                        for label in hoa_fee_frequency_options
-                    ],
-                    gap="sm",
-                    mt=4,
-                ),
+            build_option_chips(
+                component_id="hoa_fee_frequency_checklist",
+                options=hoa_fee_frequency_options,
             ),
             id=self.dynamic_output_id("hoa_fee_frequency"),
         )

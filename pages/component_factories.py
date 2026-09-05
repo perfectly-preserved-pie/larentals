@@ -205,6 +205,81 @@ def iqr_capped_range_bounds(
     return CappedRangeBounds(minimum, slider_max, True, display_max)
 
 
+# One row of choices, one look. Every set of small buttons in the sidebar comes
+# from one of these two builders, so a new filter cannot quietly invent a fourth
+# shape for the same job. The shapes say what the control does: a connected
+# strip means the choices are exclusive, separated pills mean they stack.
+OPTION_BUTTONS_CLASS = "filter-options filter-options--single"
+OPTION_CHIPS_CLASS = "filter-options filter-options--multi"
+
+
+def _option_dicts(options: Sequence[Any]) -> list[dict[str, Any]]:
+    """Normalize option shorthand into Dash option dictionaries.
+
+    Args:
+        options: Labels, or ``(label, value)`` pairs.
+
+    Returns:
+        A list of ``{"label": ..., "value": ...}`` dictionaries.
+    """
+    return [
+        {"label": option[0], "value": option[1]}
+        if isinstance(option, tuple)
+        else {"label": option, "value": option}
+        for option in options
+    ]
+
+
+def build_option_buttons(
+    *,
+    component_id: str,
+    options: Sequence[Any],
+    value: Any,
+) -> dcc.RadioItems:
+    """Build a row of buttons where exactly one choice is active.
+
+    Args:
+        component_id: Dash id for the control.
+        options: Labels, or ``(label, value)`` pairs, in display order.
+        value: Initially selected value.
+
+    Returns:
+        A radio group rendered as one connected segmented strip.
+    """
+    return dcc.RadioItems(
+        id=component_id,
+        options=_option_dicts(options),
+        value=value,
+        inline=True,
+        className=OPTION_BUTTONS_CLASS,
+    )
+
+
+def build_option_chips(
+    *,
+    component_id: str | DashId,
+    options: Sequence[Any],
+    value: Sequence[Any] | None = None,
+) -> dcc.Checklist:
+    """Build a row of chips where any number of choices can be active.
+
+    Args:
+        component_id: Dash id for the control.
+        options: Labels, or ``(label, value)`` pairs, in display order.
+        value: Initially selected values.
+
+    Returns:
+        A checklist rendered as separate pills.
+    """
+    return dcc.Checklist(
+        id=component_id,
+        options=_option_dicts(options),
+        value=list(value or []),
+        inline=True,
+        className=OPTION_CHIPS_CLASS,
+    )
+
+
 def build_range_filter(
     *,
     slider_id: str,
@@ -218,7 +293,6 @@ def build_range_filter(
     switch_style: Mapping[str, Any] | None = None,
     step: int | float | None = None,
     marks: Mapping[int | float, str] | None = None,
-    container_style: Mapping[str, Any] | None = None,
     header_children: Sequence[Any] | None = None,
     show_exact_inputs: bool = False,
     input_prefix: str = "",
@@ -239,7 +313,6 @@ def build_range_filter(
         switch_style: Optional style override for the missing-values switch.
         step: Optional slider step value.
         marks: Optional slider marks.
-        container_style: Optional style for the outer wrapper.
         header_children: Optional header content shown above the slider.
         show_exact_inputs: Show synchronized minimum and maximum number fields.
         input_prefix: Prefix displayed inside both exact-value fields.
@@ -382,7 +455,7 @@ def build_range_filter(
         html.Div(body_children, id=dynamic_id, className="range-filter__controls")
     )
 
-    return html.Div(outer, style=container_style, id=component_id)
+    return html.Div(outer, id=component_id, className="filter-slider-row")
 
 
 def _format_speed_mark(value: float) -> str:
@@ -444,7 +517,7 @@ def _build_isp_speed_slider(
                 marks={i: _format_speed_mark(tiers[i]) for i in indexes},
             ),
         ],
-        className="isp-speed-filter__range",
+        className="isp-speed-filter__range filter-slider-row",
         **{"data-speed-tiers": ",".join(f"{t:g}" for t in tiers)},
     )
 
@@ -1441,131 +1514,81 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     )
 
 
-QUICK_SUBTYPE_LABELS: tuple[str, ...] = ("Apartment", "House", "Condo or townhouse")
-
 SUBTYPE_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Apartment", ("Apartment",)),
     ("House", ("Single Family Residence",)),
-    ("Condo or townhouse", ("Condominium", "Townhouse")),
+    ("Mobile home", ("Mobile Home On Land",)),
+    ("Townhouse", ("Townhouse",)),
     ("Duplex, triplex or fourplex", ("Duplex", "Triplex", "Quadplex")),
+    ("Apartment", ("Apartment",)),
+    ("Condo", ("Condominium",)),
     ("Loft or studio", ("Loft", "Studio")),
     ("Co-op", ("Stock Cooperative", "Own Your Own")),
     ("Room", ("Room For Rent",)),
+    ("Mixed use", ("Combo - Res & Com", "Commercial Residential")),
+    ("Unknown", ("Unknown",)),
 )
 
-
-def build_subtype_options(values: Sequence[str]) -> list[dict[str, str]]:
-    """Collapse raw MLS subtypes into the handful of kinds people shop for.
-
-    The feed carries sixteen subtypes, but four of them are almost every listing
-    with a known type and the tail runs down to single listings. Shoppers pick
-    "house" or "apartment", not "Stock Cooperative", so the filter offers groups
-    and a listing's exact subtype stays on its popup.
-
-    A group's value is a JSON array of the raw subtypes it covers. The filter
-    expands it clientside, so membership travels with the option and the two
-    sides cannot drift apart.
-
-    Args:
-        values: Raw subtype values present in the dataset.
-
-    Returns:
-        Dropdown options, common groups first, then anything unmatched.
-    """
-    available = set(values)
-    options: list[dict[str, str]] = []
-    claimed: set[str] = set()
-
-    for label, members in SUBTYPE_GROUPS:
-        present = [member for member in members if member in available]
-        if not present:
-            continue
-        claimed.update(present)
-        options.append(
-            {
-                "label": label,
-                "value": present[0] if len(present) == 1 else json.dumps(present),
-            }
-        )
-
-    leftovers = sorted(available - claimed - {"Unknown"})
-    if leftovers:
-        options.append({"label": "Other", "value": json.dumps(leftovers)})
-    if "Unknown" in available:
-        options.append({"label": "Unlisted", "value": "Unknown"})
-
-    return options
+# Every subtype belongs to exactly one kind, so picking a kind picks its whole
+# set. Unknown is the fourth chip because it is 41% of the feed, and without it
+# any choice silently drops every listing that never stated one.
+SUBTYPE_SUPERS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Apartment", ("Apartment", "Condo", "Loft or studio", "Co-op", "Room", "Mixed use")),
+    ("House", ("House", "Mobile home")),
+    ("Townhouse", ("Townhouse", "Duplex, triplex or fourplex")),
+    ("Unknown", ("Unknown",)),
+)
 
 
 def build_subtype_filter(
     *,
     values: Sequence[str],
     dynamic_id: DashId,
-    placeholder: str,
+    placeholder: str = "",
     outer_id: str | None = None,
     dropdown_style: Mapping[str, Any] | None = None,
 ) -> html.Div:
-    """Build the shared subtype section: two quick toggles over a dropdown.
+    """Build the home-type filter: one chip per kind of home.
+
+    The feed carries sixteen subtypes, but nobody shops for a "Stock
+    Cooperative". Every subtype folds into one of three kinds, and a listing's
+    exact subtype still shows on its popup, so the filter asks the only question
+    people actually arrive with.
 
     Args:
         values: Raw subtype values present in the dataset.
-        dynamic_id: Pattern-matching id for the dropdown wrapper.
-        placeholder: Placeholder text for the dropdown.
+        dynamic_id: Pattern-matching id for the control wrapper.
+        placeholder: Unused; kept so both pages can call this the same way.
         outer_id: Optional id for the outer container.
-        dropdown_style: Optional inline style override for the dropdown.
+        dropdown_style: Unused.
 
     Returns:
-        A subtype-selection ``Div``.
+        A home-type filter ``Div``.
     """
-    data = build_subtype_options(values)
+    available = set(values)
+    members = {label: tuple(group) for label, group in SUBTYPE_GROUPS}
+
+    options: list[tuple[str, str]] = []
+    for label, groups in SUBTYPE_SUPERS:
+        present = [
+            subtype
+            for group in groups
+            for subtype in members.get(group, ())
+            if subtype in available
+        ]
+        if present:
+            options.append((label, json.dumps(present)))
+
     container_kwargs = {}
     if outer_id is not None:
         container_kwargs["id"] = outer_id
 
-    quick = [option for option in data if option["label"] in QUICK_SUBTYPE_LABELS][:2]
-
-    children: list[Any] = [html.Div([])]
-
-    if len(quick) == 2:
-        children.append(
-            html.Div(
-                [
-                    html.Button(
-                        option["label"],
-                        id=f"subtype-quick-{index}",
-                        n_clicks=0,
-                        type="button",
-                        className="mode-switch__option btn",
-                        **{"data-subtype-value": option["value"]},
-                    )
-                    for index, option in enumerate(quick)
-                ],
-                className="mode-switch subtype-quick",
-                role="group",
-                **{"aria-label": "Filter to the two most common kinds of home"},
-            )
-        )
-
-    children.append(
+    return html.Div(
         html.Div(
-            [
-                dcc.Dropdown(
-                    clearable=True,
-                    id="subtype_checklist",
-                    maxHeight=400,
-                    multi=True,
-                    options=data,
-                    placeholder=placeholder,
-                    searchable=True,
-                    style=dropdown_style,
-                    value=[],
-                ),
-            ],
+            build_option_chips(component_id="subtype_checklist", options=options),
             id=dynamic_id,
-        )
+        ),
+        **container_kwargs,
     )
-
-    return html.Div(children, **container_kwargs)
 
 
 def build_listed_date_filter(
@@ -1591,22 +1614,10 @@ def build_listed_date_filter(
             html.Div([]),
             html.Div(
                 [
-                    html.Div(
-                        [
-                            dcc.RadioItems(
-                                id="listed_time_range_radio",
-                                options=[
-                                    {"label": "2 wk", "value": 14},
-                                    {"label": "1 mo", "value": 30},
-                                    {"label": "3 mo", "value": 90},
-                                    {"label": "Any", "value": 0},
-                                ],
-                                value=0,
-                                inline=True,
-                                className="filter-inline-radio",
-                            ),
-                        ],
-                        style={"marginBottom": "5px"},
+                    build_option_buttons(
+                        component_id="listed_time_range_radio",
+                        options=[("2 wk", 14), ("1 mo", 30), ("3 mo", 90), ("Any", 0)],
+                        value=0,
                     ),
                 ],
                 id=dynamic_id,
@@ -1648,7 +1659,6 @@ def build_year_built_filter(
         include_missing_switch_id="yrbuilt_missing_switch",
         include_missing_switch_label="Include properties with an unknown year built",
         marks={int(year): str(int(year)) for year in marks_range},
-        container_style={"marginBottom": "10px"},
     )
 
 

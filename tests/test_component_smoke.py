@@ -1,3 +1,4 @@
+import json
 import unittest
 from collections.abc import Iterator
 
@@ -189,35 +190,36 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertIsNotNone(components.user_options_card)
         self.assertIsNotNone(components.map_card)
 
-    def test_subtype_filter_defaults_to_include_all_state(self) -> None:
-        """Verify that subtype filter defaults to include all state.
+    def test_subtype_filter_offers_one_chip_per_kind_of_home(self) -> None:
+        """Verify that the type filter renders the three kinds, unselected.
+
+        Each chip's value carries the raw subtypes it covers, so the filter can
+        expand a kind clientside without a second lookup.
 
         Returns:
             None.
         """
         component = build_subtype_filter(
-            values=["Apartment", "Townhouse", "Unknown"],
+            values=["Apartment", "Townhouse", "Single Family Residence", "Unknown"],
             dynamic_id="subtype-wrapper",
-            placeholder="Type of home",
         )
 
         self.assertIsInstance(component, html.Div)
-        dropdown_wrapper = next(
-            child
-            for child in component.children
-            if getattr(child, "id", None) == "subtype-wrapper"
-        )
-        dropdown = dropdown_wrapper.children[0]
-        self.assertIsInstance(dropdown, dcc.Dropdown)
-        self.assertEqual(dropdown.value, [])
+        wrapper = component.children
+        self.assertEqual(wrapper.id, "subtype-wrapper")
 
-        quick = next(
-            child
-            for child in component.children
-            if "subtype-quick" in str(getattr(child, "className", ""))
+        chips = wrapper.children
+        self.assertIsInstance(chips, dcc.Checklist)
+        self.assertEqual(chips.id, "subtype_checklist")
+        self.assertEqual(chips.value, [])
+        self.assertEqual(
+            [option["label"] for option in chips.options],
+            ["Apartment", "House", "Townhouse", "Unknown"],
         )
-        self.assertEqual([button.children for button in quick.children],
-                         ["Apartment", "Condo or townhouse"])
+        self.assertEqual(
+            [json.loads(option["value"]) for option in chips.options],
+            [["Apartment"], ["Single Family Residence"], ["Townhouse"], ["Unknown"]],
+        )
 
     def test_range_filter_defers_missing_values_to_the_shared_switch(self) -> None:
         """Verify that a range filter renders no per-filter missing switch.
@@ -393,8 +395,9 @@ class ComponentsSmokeTest(unittest.TestCase):
         download_range, upload_range = component.children
 
         self.assertEqual(component.className, "isp-speed-filter")
-        self.assertEqual(download_range.className, "isp-speed-filter__range")
-        self.assertEqual(upload_range.className, "isp-speed-filter__range")
+        self.assertIn("isp-speed-filter__range", download_range.className)
+        self.assertIn("filter-slider-row", download_range.className)
+        self.assertEqual(upload_range.className, download_range.className)
 
         # The slider steps through tier indexes, not megabits, so the ladder
         # travels the same distance per tier however lopsided the speeds are.

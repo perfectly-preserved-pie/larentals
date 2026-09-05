@@ -12,6 +12,7 @@ from .component_base import (
 from .component_factories import (
     build_isp_speed_components,
     build_listed_date_filter,
+    build_option_chips,
     build_location_filter_components,
     build_location_suggestions,
     build_map,
@@ -241,7 +242,7 @@ class LeaseComponents(BaseClass):
                 ],
                 "square_footage",
             ),
-            ("Pets", self.create_pets_radio_button(), "pet_policy"),
+            ("Pets", self.create_pets_filter(), "pet_policy"),
             ("Laundry", self.create_laundry_checklist(), "laundry"),
             ("Parking Spaces", self._build_parking_spaces_filter(), "parking_spaces"),
             ("Furnished", self.create_furnished_checklist(), "furnished"),
@@ -313,16 +314,9 @@ class LeaseComponents(BaseClass):
                 # The caveat is a footnote, not a heading, so it lives in hover
                 # text rather than spending a permanent line in the sidebar.
                 html.Div(
-                    dmc.SegmentedControl(
-                        id="rent_control_status",
-                        value="any",
-                        data=[
-                            {"label": "Any", "value": "any"},
-                            {"label": "All", "value": "all"},
-                            {"label": "Some", "value": "some"},
-                        ],
-                        fullWidth=True,
-                        size="xs",
+                    build_option_chips(
+                        component_id="rent_control_status",
+                        options=[("All", "all"), ("Some", "some"), ("Unknown", "unknown")],
                     ),
                     title="Rent control status is recorded for LA City only.",
                 ),
@@ -355,7 +349,6 @@ class LeaseComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_bedrooms_filter(self) -> html.Div:
@@ -414,7 +407,6 @@ class LeaseComponents(BaseClass):
             dynamic_id=self.dynamic_output_id("garage_spaces"),
             step=1,
             marks=bounds.marks(),
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_ppsqft_filter(self) -> html.Div:
@@ -436,7 +428,6 @@ class LeaseComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_square_footage_filter(self) -> html.Div:
@@ -458,7 +449,6 @@ class LeaseComponents(BaseClass):
                 target_intervals=3,
             ),
             switch_style={"marginTop": "15px"},
-            container_style={"marginBottom": "10px"},
         )
 
     def _create_deposit_filter(
@@ -495,7 +485,6 @@ class LeaseComponents(BaseClass):
                 include_open_end=False,
                 target_intervals=3,
             ),
-            container_style={"marginBottom": "10px"},
             header_children=[
                 html.H5(
                     title,
@@ -523,11 +512,11 @@ class LeaseComponents(BaseClass):
         return build_subtype_filter(
             values=unique_subtypes,
             dynamic_id=self.dynamic_output_id("subtype"),
-            placeholder="Any type of home",
+            placeholder="Narrow",
         )
 
-    def create_pets_radio_button(self) -> html.Div:
-        """Build the pet-policy radio controls.
+    def create_pets_filter(self) -> html.Div:
+        """Build the pet-policy chips.
 
         Returns:
             A pet-policy filter ``Div``.
@@ -537,20 +526,14 @@ class LeaseComponents(BaseClass):
                 html.Div(
                     [
                         html.Div(
-                            dcc.RadioItems(
-                                id="pets_radio",
-                                options=[
-                                    {"label": "Any", "value": "Both"},
-                                    {"label": "Yes", "value": "yes"},
-                                    {"label": "Maybe", "value": "maybe"},
-                                ],
-                                value="Both",
-                                className="filter-inline-radio",
-                                inline=True,
+                            build_option_chips(
+                                component_id="pets_checklist",
+                                options=[("Yes", "yes"), ("No", "no"), ("Unknown", "unknown")],
                             ),
                             title=(
-                                "Yes: the listing says pets are welcome. "
-                                "Maybe: anything that does not rule them out."
+                                "Yes: the listing says pets are welcome, or charges "
+                                "a pet deposit. No: it rules them out. "
+                                "Unknown: it has not said either way."
                             ),
                         ),
                     ],
@@ -644,15 +627,9 @@ class LeaseComponents(BaseClass):
 
         return html.Div(
             [
-                dcc.Checklist(
-                    id="furnished_checklist",
-                    options=[
-                        {"label": label, "value": label}
-                        for label in furnished_options
-                    ],
-                    value=[],
-                    className="filter-chips",
-                    inline=True,
+                build_option_chips(
+                    component_id="furnished_checklist",
+                    options=furnished_options,
                 ),
             ],
             id="furnished_div",
@@ -675,15 +652,9 @@ class LeaseComponents(BaseClass):
 
         return html.Div(
             [
-                dcc.Checklist(
-                    id="laundry_checklist",
-                    options=[
-                        {"label": category, "value": category}
-                        for category in laundry_options
-                    ],
-                    value=[],
-                    className="filter-chips",
-                    inline=True,
+                build_option_chips(
+                    component_id="laundry_checklist",
+                    options=laundry_options,
                 ),
             ],
             id=self.dynamic_output_id("laundry"),

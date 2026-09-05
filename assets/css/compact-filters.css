@@ -19,12 +19,18 @@
   transition: none !important;
 }
 
-/* The handle grows under the pointer, not after you let go of it. Dash keeps it
- * scaled for as long as it holds focus, so it stayed big after a drag until you
- * clicked something else. Cancel that only when the pointer has left and the
- * focus came from a click; :focus-visible keeps keyboard focus obvious. */
+.filter-section__body .dash-slider-thumb:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+.filter-section__body .dash-slider-thumb:hover,
+.filter-section__body .dash-slider-thumb:active {
+  transform: scale(1.4);
+}
+
 .filter-section__body .dash-slider-thumb:focus:not(:focus-visible):not(:hover):not(:active) {
   transform: none !important;
+  box-shadow: 0 1px 3px 0 var(--Dash-Shading-Weak) !important;
 }
 
 .filter-section__body .dash-slider-tooltip,
@@ -33,12 +39,22 @@
   animation: none !important;
 }
 
-/* A value tooltip is centred on its handle, so a handle parked at either end
-   needs half a tooltip of room or the sidebar's scroll container cuts it. */
+.filter-slider-row {
+  margin-bottom: 10px;
+}
+
 .filter-section__body .range-filter__controls,
 .filter-section__body .isp-speed-filter__range {
   padding-left: 10px;
   padding-right: 10px;
+}
+
+.isp-speed-filter__range .dash-slider-root .dash-slider-track {
+  background-color: var(--Dash-Fill-Interactive-Strong);
+}
+
+.isp-speed-filter__range .dash-slider-root .dash-slider-range {
+  background-color: var(--Dash-Fill-Disabled);
 }
 
 .options-accordion,
@@ -77,7 +93,7 @@
 .mode-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3px;
+  gap: 0;
   margin-top: 0.7rem;
   padding: 0;
   background: none;
@@ -90,7 +106,7 @@
   gap: 0.4rem;
   padding: 0.35rem 0.5rem;
   border: 0;
-  border-radius: 5px;
+  border-radius: 0;
   background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
   box-shadow: none;
   color: var(--wttl-dark-text-muted, inherit);
@@ -98,15 +114,30 @@
   font-weight: 550;
 }
 
-/* Only the outer edges of a segmented control are round; the seams are square,
- * so the group reads as one control instead of loose pills in a tray. */
+.mode-switch__option.btn:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.mode-switch__option.btn:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.mode-switch__option.btn + .mode-switch__option.btn {
+  box-shadow: inset 1px 0 0 var(--wttl-dark-bg, rgba(21, 24, 38, 0.55));
+}
+
 .mode-switch__option.btn:hover {
   background: var(--wttl-dark-input-hover, rgba(128, 128, 128, 0.24));
-  color: var(--wttl-dark-text, inherit);
+  color: var(--wttl-dark-text-muted, inherit);
 }
 
 .mode-switch__option.btn.active {
   background: var(--wttl-dark-accent, #4fc3b4);
+  color: #10201e;
+}
+
+.mode-switch__option.btn.active:hover {
+  background: var(--wttl-dark-accent-strong, #6fd8c9);
   color: #10201e;
 }
 
@@ -193,23 +224,6 @@
 
 .filter-section__body .row {
   --bs-gutter-x: 0.5rem;
-}
-
-/* Short radio sets stay on one line instead of wrapping to a 2x2 grid. */
-.filter-inline-radio {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  gap: 0.2rem 0.5rem;
-}
-
-.filter-inline-radio label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-right: 0;
-  font-size: 0.78rem;
-  white-space: nowrap;
 }
 
 .filter-section--flash {
@@ -353,103 +367,127 @@
   border-color: var(--wttl-dark-accent, #f0a249);
 }
 
-/* Radio sets read as one segmented control rather than loose bullets.
- *
- * Each option carries its own fill and the strip behind them carries none, so
- * the selected option occupies exactly the same footprint as the rest. Filling
- * the whole row and floating a chip on top made the selection look like it sat
- * above the control rather than inside it. */
-.filter-inline-radio {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 3px;
+.filter-options {
+  display: flex;
   padding: 0;
   background: none;
 }
 
-.filter-inline-radio label {
+.filter-options label {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
   margin: 0;
-  padding: 0.25rem 0.2rem;
-  border-radius: 5px;
-  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+  border: 0;
   color: var(--wttl-dark-text-muted, inherit);
   font-size: 0.75rem;
+  line-height: 1.35;
   white-space: nowrap;
   cursor: pointer;
 }
 
+.filter-options label.dash-options-list-option {
+  margin: 0;
+}
 
-
-/* The native dot is redundant once the whole cell lights up. */
-.filter-inline-radio input[type="radio"] {
+.filter-options input[type="radio"],
+.filter-options input[type="checkbox"] {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.filter-inline-radio label:has(input:checked) {
+.filter-options label:has(input:focus-visible) {
+  outline: 2px solid var(--wttl-dark-accent-strong, #ffb865);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.filter-options--single {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+}
+
+.filter-options--single label {
+  padding: 0.25rem 0.2rem;
+  border-radius: 0;
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+}
+
+.filter-options--single label:first-of-type {
+  border-radius: 5px 0 0 5px;
+}
+
+.filter-options--single label:last-of-type {
+  border-radius: 0 5px 5px 0;
+}
+
+.filter-options--single label + label {
+  box-shadow: inset 1px 0 0 var(--wttl-dark-bg, rgba(21, 24, 38, 0.55));
+}
+
+.filter-options--single label.dash-options-list-option:not(:has(input:checked)):hover {
+  background: var(--wttl-dark-input-hover, rgba(128, 128, 128, 0.24));
+  color: var(--wttl-dark-text-muted, inherit);
+}
+
+.filter-options--single label.dash-options-list-option:not(:has(input:checked)):not(:hover):focus-within {
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
+  color: var(--wttl-dark-text-muted, inherit);
+}
+
+.filter-options--single label.dash-options-list-option:has(input:checked),
+.filter-options--single label.dash-options-list-option:has(input:checked):focus-within {
   background: var(--wttl-dark-accent, #f0a249);
   color: #1a1206;
   font-weight: 600;
 }
 
-.filter-inline-radio label:has(input:focus-visible) {
-  outline: 2px solid var(--wttl-dark-accent-strong, #ffb865);
-  outline-offset: 1px;
+.filter-options--single label.dash-options-list-option:has(input:checked):hover {
+  background: var(--wttl-dark-accent-strong, #ffb865);
+  color: #1a1206;
+  font-weight: 600;
 }
 
-/* The two kinds of home most searches start from, in the same segmented shape
- * as the rent/sale switch above. The dropdown below stays for finer picks. */
-.subtype-quick {
-  margin-top: 0;
-  margin-bottom: 0.4rem;
-}
-
-/* ---------- Chip sets ---------- */
-
-/* A short, fixed set of choices reads faster as visible chips than as a
- * searchable dropdown that hides them behind a click. */
-.filter-chips {
-  display: flex;
+.filter-options--multi {
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.filter-chips label {
-  display: inline-flex;
-  align-items: center;
-  margin: 0;
+.filter-options--multi label {
   padding: 0.2rem 0.5rem;
   border: 1px solid var(--wttl-dark-border, rgba(128, 128, 128, 0.2));
   border-radius: 999px;
+  background: none;
+}
+
+.filter-options--multi label.dash-options-list-option:not(:has(input:checked)):hover {
+  border-color: var(--wttl-dark-border-strong, rgba(128, 128, 128, 0.4));
+  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
   color: var(--wttl-dark-text-muted, inherit);
-  font-size: 0.74rem;
-  line-height: 1.3;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
-.filter-chips input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+.filter-options--multi label.dash-options-list-option:not(:has(input:checked)):not(:hover):focus-within {
+  border-color: var(--wttl-dark-border, rgba(128, 128, 128, 0.2));
+  background: none;
+  color: var(--wttl-dark-text-muted, inherit);
 }
 
-.filter-chips label:has(input:checked) {
+.filter-options--multi label.dash-options-list-option:has(input:checked),
+.filter-options--multi label.dash-options-list-option:has(input:checked):focus-within {
   border-color: var(--wttl-dark-accent, #f0a249);
   background: var(--wttl-dark-accent, #f0a249);
   color: #1a1206;
   font-weight: 600;
 }
 
-.filter-chips label:has(input:focus-visible) {
-  outline: 2px solid var(--wttl-dark-accent-strong, #ffb865);
-  outline-offset: 1px;
+.filter-options--multi label.dash-options-list-option:has(input:checked):hover {
+  border-color: var(--wttl-dark-accent-strong, #ffb865);
+  background: var(--wttl-dark-accent-strong, #ffb865);
+  color: #1a1206;
+  font-weight: 600;
 }
 
 .filter-section .range-filter__missing-switch {
@@ -469,36 +507,6 @@
   display: block;
   margin-top: 0.25rem;
   font-size: var(--filter-help);
-}
-
-/* Mantine's segmented control, matched to the radio sets above: the strip is
- * bare, each option is its own filled button, and the active option is filled
- * directly rather than by a floating indicator behind it. */
-.filter-section__body .mantine-SegmentedControl-root {
-  padding: 0;
-  gap: 3px;
-  background: none;
-}
-
-.filter-section__body .mantine-SegmentedControl-label {
-  padding: 0.2rem 0.3rem;
-  border-radius: 5px;
-  background: var(--wttl-dark-input, rgba(128, 128, 128, 0.14));
-  font-size: 0.75rem;
-}
-
-.filter-section__body .mantine-SegmentedControl-indicator {
-  display: none;
-}
-
-.filter-section__body .mantine-SegmentedControl-control::before {
-  display: none;
-}
-
-.filter-section__body .mantine-SegmentedControl-label[data-active] {
-  background: var(--wttl-dark-accent, #f0a249);
-  color: #1a1206;
-  font-weight: 600;
 }
 
 /* Hover readout: the value under the pointer, at one size with no easing, or

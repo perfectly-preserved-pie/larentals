@@ -40,7 +40,7 @@
       priceRange: ["rental_price_slider", "value"],
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
-      pets: ["pets_radio", "value"],
+      pets: ["pets_checklist", "value"],
       sqftRange: ["sqft_slider", "value"],
       ppsqftRange: ["ppsqft_slider", "value"],
       parkingRange: ["garage_spaces_slider", "value"],
@@ -442,7 +442,9 @@
       } else if (group === "bathrooms") {
         text = rangeLabel("Baths", state.bathroomsRange, defaults.bathroomsRange, false);
       } else if (group === "pets") {
-        text = `${state.pets === true ? "Pets allowed" : "No pets"} ×`;
+        const chosen = Array.isArray(state.pets) ? state.pets : [];
+        const names = { yes: "Pets yes", unknown: "Pets unknown", no: "No pets" };
+        text = `${chosen.map((k) => names[k] || k).join(", ") || "Pets"} ×`;
       }
     }
 

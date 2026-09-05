@@ -11,7 +11,7 @@
         rental_price_slider: "monthly_rent",
         bedrooms_slider: "bedrooms",
         bathrooms_slider: "bathrooms",
-        pets_radio: "pet_policy",
+        pets_checklist: "pet_policy",
         sqft_slider: "sqft",
         sqft_missing_switch: "sqft",
         ppsqft_slider: "price_per_sqft",

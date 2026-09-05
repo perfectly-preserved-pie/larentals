@@ -31,7 +31,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} priceRange - [minPrice, maxPrice]
          * @param {[number, number]} bedroomsRange - [minBedrooms, maxBedrooms]
          * @param {[number, number]} bathroomsRange - [minBathrooms, maxBathrooms]
-         * @param {boolean|string} petPolicy - User-selected pet policy (true, false, "Both")
+         * @param {string[]} petPolicy - Selected pet buckets ("yes", "unknown", "no")
          * @param {[number, number]} sqftRange - [minSqft, maxSqft]
          * @param {boolean} sqftIncludeMissing - Whether to include listings with null/undefined sqft
          * @param {[number, number]} ppsqftRange - [minPpsqft, maxPpsqft]
@@ -61,7 +61,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} downloadSpeedRange - [minDownload, maxDownload]
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
          * @param {boolean} speedIncludeMissing - Whether to include listings with missing ISP speeds
-         * @param {string} rentControlStatus - Selected LA City rent-control status
+         * @param {string[]} rentControlStatus - Selected LA City rent-control coverages
          * @param {number} priceUpperBound - Finite display maximum for the rent slider
          * @param {number} bedroomsUpperBound - Slider endpoint that represents bedrooms-or-more
          * @param {number} bathroomsUpperBound - Slider endpoint that represents bathrooms-or-more
@@ -254,37 +254,35 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 1) petPolicyFilter
                 // The feed stores pet rules as a comma list mixing permissions
                 // ("Yes", "Cats OK") with caveats ("Call", "Size Limit"), and
-                // leaves 42% of listings blank. Two answers cover what someone
-                // with a pet actually asks: places that say yes, and places that
-                // have not said no.
+                // leaves 42% blank. Bucketing into yes/no/unknown makes the
+                // chips a partition, so yes + unknown reads as "not ruled out".
+                const wantedPets = Array.isArray(petPolicy)
+                    ? petPolicy
+                    : (petPolicy === null || petPolicy === undefined || petPolicy === 'Both'
+                        ? [] : [petPolicy]);
                 let petPolicyFilter = true;
-                if (petPolicy === 'yes' || petPolicy === 'maybe' || petPolicy === true) {
+                if (wantedPets.length) {
                     const tokens = String(petPolicyValue == null ? '' : petPolicyValue)
                         .split(',')
                         .map(function (part) { return part.trim().toLowerCase(); });
                     const saysNo = tokens.indexOf('no') !== -1;
-                    if (petPolicy === 'yes') {
-                        // A permission token is the clearest signal, but 3,302
-                        // listings charge a pet deposit while leaving the policy
-                        // blank, and a landlord collecting one allows pets.
-                        // Counting the deposit takes "Yes" from 13% of listings
-                        // to 36%. Size/breed/number limits are conditions on
-                        // allowing pets, so they count too.
-                        const saysYes = tokens.indexOf('yes') !== -1 ||
-                            tokens.indexOf('cats ok') !== -1 ||
-                            tokens.indexOf('dogs ok') !== -1 ||
-                            tokens.indexOf('breed restrictions') !== -1 ||
-                            tokens.indexOf('size limit') !== -1 ||
-                            tokens.indexOf('number limit') !== -1;
-                        const deposit = feature.properties.pet_deposit;
-                        const chargesForPets = deposit !== null &&
-                            deposit !== undefined && Number(deposit) > 0;
-                        petPolicyFilter = (saysYes || chargesForPets) && !saysNo;
-                    } else {
-                        petPolicyFilter = !saysNo;
-                    }
-                } else if (petPolicy === false) {
-                    petPolicyFilter = ['No', 'No, Size Limit'].includes(petPolicyValue);
+                    // 3,302 listings charge a pet deposit while leaving the
+                    // policy blank, and collecting one means pets are allowed;
+                    // counting it takes "Yes" from 13% to 36%. Size, breed and
+                    // number limits are conditions on allowing, so they count.
+                    const saysYes = tokens.indexOf('yes') !== -1 ||
+                        tokens.indexOf('cats ok') !== -1 ||
+                        tokens.indexOf('dogs ok') !== -1 ||
+                        tokens.indexOf('breed restrictions') !== -1 ||
+                        tokens.indexOf('size limit') !== -1 ||
+                        tokens.indexOf('number limit') !== -1;
+                    const deposit = feature.properties.pet_deposit;
+                    const chargesForPets = deposit !== null &&
+                        deposit !== undefined && Number(deposit) > 0;
+                    const bucket = saysNo
+                        ? 'no'
+                        : ((saysYes || chargesForPets) ? 'yes' : 'unknown');
+                    petPolicyFilter = wantedPets.indexOf(bucket) !== -1;
                 }
 
                 // 2) sqftFilter
@@ -476,10 +474,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 17) The LAHD inventory is property-level. `some` therefore
                 // means some units are covered, not necessarily this listing.
+                const wantedRso = Array.isArray(rentControlStatus)
+                    ? rentControlStatus
+                    : (!rentControlStatus || rentControlStatus === "any"
+                        ? [] : [rentControlStatus]);
                 const rentControlFilter = (
-                    !rentControlStatus ||
-                    rentControlStatus === "any" ||
-                    rentControlStatusValue === rentControlStatus
+                    !wantedRso.length ||
+                    wantedRso.indexOf(rentControlStatusValue) !== -1
                 );
 
                 // 18) ZIP boundary filter (Census ZCTA)
