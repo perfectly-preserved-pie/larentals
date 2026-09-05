@@ -1088,3 +1088,33 @@
   line-height: 1;
   white-space: nowrap;
 }
+
+/* Hovering a row in the listings panel lights up the thing on the map that
+ * represents it: its own pin, or the cluster bubble still hiding it. */
+.leaflet-marker-icon.is-highlighted {
+  z-index: 1200 !important;
+}
+
+.leaflet-marker-icon.is-highlighted .price-marker {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 3px 10px rgba(12, 28, 36, 0.45);
+  transform: scale(1.22);
+}
+
+.price-marker {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.leaflet-marker-icon.is-highlighted .marker-cluster,
+.marker-cluster.is-highlighted,
+.leaflet-marker-icon.is-highlighted > div[data-cluster-count] {
+  outline: 3px solid rgba(255, 255, 255, 0.92);
+  outline-offset: 1px;
+  border-radius: 50%;
+  box-shadow: 0 3px 12px rgba(12, 28, 36, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-marker {
+    transition: none;
+  }
+}

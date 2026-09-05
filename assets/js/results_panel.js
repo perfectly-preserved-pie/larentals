@@ -61,14 +61,16 @@
      * have no rendered marker, hence the coordinates for the click handler.
      *
      * @param {object} leaf GeoJSON feature from `getLeaves`.
+     * @param {Element} clusterEl Bubble the leaf is currently hidden inside.
      * @returns {object|null} Row descriptor, or `null` for an unusable leaf.
      */
-    function rowFromLeaf(leaf) {
+    function rowFromLeaf(leaf, clusterEl) {
         var props = leaf && leaf.properties;
         var coords = leaf && leaf.geometry && leaf.geometry.coordinates;
         if (!props || !coords) return null;
         return {
             el: null,
+            clusterEl: clusterEl || null,
             latlng: [coords[1], coords[0]],
             price: Number(props.list_price),
             mls: props.mls_number,
@@ -222,7 +224,7 @@
                 leaves = [];
             }
             for (var k = 0; k < leaves.length; k += 1) {
-                var leafRow = rowFromLeaf(leaves[k]);
+                var leafRow = rowFromLeaf(leaves[k], clusters[c]);
                 if (leafRow) rows.push(leafRow);
             }
         }
@@ -301,6 +303,35 @@
         window.setTimeout(function () { openWhenRendered(mls, attempt + 1); }, 150);
     }
 
+    /**
+     * Point the map at whichever row the cursor is on.
+     *
+     * A row backed by a rendered pin highlights that pin. A row still inside a
+     * cluster highlights the bubble hiding it, which is the only thing on screen
+     * that represents it.
+     *
+     * @param {object} entry Row descriptor.
+     * @param {boolean} on Whether to turn the highlight on.
+     * @returns {void}
+     */
+    function highlight(entry, on) {
+        if (!entry) return;
+        var el = entry.el || entry.clusterEl;
+        if (!el) return;
+        var icon = el.closest(".leaflet-marker-icon") || el;
+        icon.classList.toggle("is-highlighted", !!on);
+    }
+
+    /**
+     * Clear every highlight, so a re-render cannot strand one.
+     *
+     * @returns {void}
+     */
+    function clearHighlights() {
+        var lit = document.querySelectorAll(".leaflet-marker-icon.is-highlighted");
+        for (var i = 0; i < lit.length; i += 1) lit[i].classList.remove("is-highlighted");
+    }
+
     var currentRows = [];
 
     /**
@@ -313,6 +344,7 @@
         var count = document.querySelector(".results-panel__count");
         if (!list) return;
 
+        clearHighlights();
         var result = collectVisible();
         currentRows = result.rows.slice(0, MAX_ROWS);
         updateMatchCount(result.inView);
@@ -340,6 +372,19 @@
         window.clearTimeout(refreshTimer);
         refreshTimer = window.setTimeout(refresh, 150);
     }
+
+    document.addEventListener("mouseover", function (event) {
+        var row = event.target && event.target.closest ? event.target.closest(".results-row") : null;
+        if (!row) return;
+        clearHighlights();
+        highlight(currentRows[Number(row.getAttribute("data-results-index"))], true);
+    });
+
+    document.addEventListener("mouseout", function (event) {
+        var row = event.target && event.target.closest ? event.target.closest(".results-row") : null;
+        if (!row) return;
+        highlight(currentRows[Number(row.getAttribute("data-results-index"))], false);
+    });
 
     document.addEventListener("change", function (event) {
         if (event.target && event.target.matches && event.target.matches("[data-results-sort]")) {
