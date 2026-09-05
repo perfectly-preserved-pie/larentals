@@ -809,7 +809,7 @@
 .listing-popup__photo {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
 }
 
@@ -823,7 +823,7 @@
 .listing-popup__media--streetview {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   background: var(--popup-inset);
 }
 
@@ -1117,4 +1117,26 @@
   .price-marker {
     transition: none;
   }
+}
+
+.leaflet-popup--below {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+.leaflet-popup--below .leaflet-popup-tip-container {
+  top: -19px;
+  transform: rotate(180deg);
+}
+
+/* A capped popup scrolls its body, and Leaflet's scroll container is a plain
+ * overflow box: it squares off the rounded corner it sits in and cuts the last
+ * row without saying so. Round it back, and fade the cut edge so the content
+ * reads as continuing rather than as clipped. */
+
+.leaflet-popup-content.leaflet-popup-scrolled:has(.listing-popup) {
+  border-radius: 0 0 12px 12px;
+  scrollbar-width: thin;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
 }

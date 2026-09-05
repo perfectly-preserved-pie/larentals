@@ -71,6 +71,7 @@
         return {
             el: null,
             clusterEl: clusterEl || null,
+            props: props,
             latlng: [coords[1], coords[0]],
             price: Number(props.list_price),
             mls: props.mls_number,
@@ -283,27 +284,6 @@
     }
 
     /**
-     * Click a listing's pin once the map has drawn it.
-     *
-     * Flying to a clustered listing has to finish, and the pin has to render,
-     * before there is anything to open.
-     *
-     * @param {string} mls Listing id to look for.
-     * @param {number} attempt Current retry count.
-     * @returns {void}
-     */
-    function openWhenRendered(mls, attempt) {
-        if (!mls || attempt > 20) return;
-        var pin = document.querySelector('.price-marker[data-mls="' + String(mls).replace(/"/g, "") + '"]');
-        if (pin) {
-            var icon = pin.closest(".leaflet-marker-icon") || pin;
-            icon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-            return;
-        }
-        window.setTimeout(function () { openWhenRendered(mls, attempt + 1); }, 150);
-    }
-
-    /**
      * Point the map at whichever row the cursor is on.
      *
      * A row backed by a rendered pin highlights that pin. A row still inside a
@@ -408,10 +388,8 @@
             target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
             return;
         }
-        var map = (window.larentals || {}).map;
-        if (!map || !entry.latlng) return;
-        map.setView(entry.latlng, Math.max(map.getZoom(), 17));
-        openWhenRendered(entry.mls, 0);
+        var popups = (window.larentals || {}).popups;
+        if (popups && entry.latlng) popups.openAt(entry.latlng, entry.props || {});
     });
 
     document.addEventListener("click", function (event) {

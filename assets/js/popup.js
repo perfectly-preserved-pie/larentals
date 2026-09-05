@@ -896,31 +896,116 @@
         const availH = Math.floor(Math.min(window.innerHeight, rect?.height ?? window.innerHeight));
 
         const padding = isMobile ? 24 : 48;
-        const leaseLikeMaxWidthCap = isMobile ? 225 : 350;
-        const leaseLikeMaxHeightCap = isMobile ? 405 : 650;
+        const leaseLikeMaxWidthCap = isMobile ? 225 : 300;
+        const leaseLikeMaxHeightCap = isMobile ? 380 : 480;
 
         return {
             maxWidth: Math.max(200, Math.min(leaseLikeMaxWidthCap, availW - padding)),
             maxHeight: Math.max(220, Math.min(leaseLikeMaxHeightCap, availH - padding)),
+            autoPan: false,
             keepInView: false,
-            autoPanPadding: [10, 10],
             closeButton: true,
             className: "responsive-popup",
         };
     }
 
+    const POPUP_OFFSET_Y = 7;
+    const POPUP_GAP = 10;
+    const POPUP_PAD = 8;
+    const POPUP_MIN_HEIGHT = 180;
+    const BELOW_CLASS = "leaflet-popup--below";
+
+    /**
+     * Resolve a popup, its map and its pin from a layer or a bare popup.
+     *
+     * A listing hidden inside a cluster has no marker of its own, so its popup
+     * is opened straight on the map. Everything downstream works either way.
+     *
+     * @param {PopupLayer|Object} target Layer with a bound popup, or a popup.
+     * @returns {{popup: Object|null, map: Object|null, pin: Element|null}} Context.
+     */
+    function popupContext(target) {
+        if (target instanceof L.Popup) {
+            return { popup: target, map: target._map, pin: null };
+        }
+        if (target && typeof target.getPopup === "function") {
+            return { popup: target.getPopup(), map: target._map, pin: target.getElement?.() ?? null };
+        }
+        return { popup: target || null, map: target?._map ?? null, pin: null };
+    }
+
+    /**
+     * Place an open popup so it stays inside the map container.
+     *
+     * @param {PopupLayer|Object} target Layer whose popup is open, or a popup.
+     * @returns {void}
+     */
+    function fitPopupInFrame(target) {
+        const { popup, map, pin: pinEl } = popupContext(target);
+        if (!popup || !map || !popup.isOpen?.()) return;
+        const el = popup.getElement?.();
+        const content = el?.querySelector?.(".leaflet-popup-content");
+        if (!el || !content) return;
+
+        if (popup._baseMaxHeight === undefined) popup._baseMaxHeight = popup.options.maxHeight;
+        el.classList.remove(BELOW_CLASS);
+        popup.options.offset = L.point(0, POPUP_OFFSET_Y);
+        popup.options.maxHeight = popup._baseMaxHeight;
+        popup.update();
+
+        const mapRect = map.getContainer().getBoundingClientRect();
+        const pin = pinEl?.getBoundingClientRect?.() ?? null;
+        let rect = el.getBoundingClientRect();
+
+        const above = (pin ? pin.top : rect.bottom) - mapRect.top - POPUP_PAD - POPUP_GAP;
+        const below = mapRect.bottom - (pin ? pin.bottom : rect.bottom) - POPUP_PAD - POPUP_GAP;
+        const flip = rect.height > above && below > above;
+        const room = Math.max(POPUP_MIN_HEIGHT, flip ? below : above);
+
+        const chrome = rect.height - content.clientHeight;
+        if (rect.height > room) {
+            popup.options.maxHeight = Math.max(POPUP_MIN_HEIGHT, Math.round(room - chrome));
+            popup.update();
+            rect = el.getBoundingClientRect();
+        }
+
+        let offsetY = POPUP_OFFSET_Y;
+        if (flip) {
+            el.classList.add(BELOW_CLASS);
+            rect = el.getBoundingClientRect();
+            const wantedTop = (pin ? pin.bottom : rect.top) + POPUP_GAP;
+            offsetY = POPUP_OFFSET_Y + (wantedTop - rect.top);
+            popup.options.offset = L.point(0, offsetY);
+            popup.update();
+            rect = el.getBoundingClientRect();
+        }
+
+        let offsetX = 0;
+        if (rect.left < mapRect.left + POPUP_PAD) {
+            offsetX = mapRect.left + POPUP_PAD - rect.left;
+        } else if (rect.right > mapRect.right - POPUP_PAD) {
+            offsetX = mapRect.right - POPUP_PAD - rect.right;
+        }
+        if (offsetX) {
+            popup.options.offset = L.point(offsetX, offsetY);
+            popup.update();
+        }
+    }
+
     /**
      * Update the popup content and hydrate ISP placeholder content if present.
      *
-     * @param {PopupLayer} layer Leaflet layer whose popup should be updated.
+     * @param {PopupLayer|Object} target Layer whose popup should be updated, or a popup.
      * @param {string} content HTML content for the popup.
      * @returns {void}
      */
-    function setPopupContent(layer, content) {
-        const popup = layer.getPopup?.();
+    function setPopupContent(target, content) {
+        const { popup } = popupContext(target);
         if (!popup || typeof popup.setContent !== "function") return;
 
         popup.setContent(content);
+
+        fitPopupInFrame(target);
 
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
@@ -930,6 +1015,86 @@
 
         ispApi.hydrateIspOptionsInPopup(popupEl);
     }
+
+    /**
+     * Fill a popup with a listing: loading state, then the fetched detail.
+     *
+     * @param {PopupLayer|Object} target Layer whose popup is open, or a popup.
+     * @param {Record<string, unknown>} summaryData Listing properties to render.
+     * @returns {void}
+     */
+    function hydratePopup(target, summaryData) {
+        const { popup } = popupContext(target);
+        if (!popup) return;
+
+        const seq = (popup._listingSeq = (popup._listingSeq || 0) + 1);
+        const path = String(window.location?.pathname || "").toLowerCase();
+        const isBuyPage = path === "/buy" || path.startsWith("/buy");
+        const listingId = normalizeListingId(summaryData.mls_number);
+
+        window.larentals?.analytics?.trackListingOpened();
+        setPopupContent(target, renderPopupLoadingContent(summaryData));
+
+        if (!listingId) {
+            setPopupContent(target, renderPopupErrorContent(summaryData));
+            return;
+        }
+
+        fetchListingDetails(listingId)
+            .then((detailData) => {
+                if (seq !== popup._listingSeq) return;
+                const popupData = Object.assign({}, summaryData, detailData || {});
+                setPopupContent(target, isBuyPage
+                    ? generateBuyPopupContent(popupData)
+                    : generateLeasePopupContent(popupData));
+            })
+            .catch((error) => {
+                if (seq !== popup._listingSeq) return;
+                console.error("Failed to load popup details for listing", listingId, error);
+                setPopupContent(target, renderPopupErrorContent(summaryData));
+            });
+    }
+
+    /**
+     * Keep a popup in frame for as long as it is open.
+     *
+     * @param {PopupLayer|Object} target Layer whose popup is open, or a popup.
+     * @param {Object} closer Emitter that fires once the popup closes.
+     * @param {string} closeEvent Event name that emitter fires on close.
+     * @returns {void}
+     */
+    function trackPopupWhileOpen(target, closer, closeEvent) {
+        const { map } = popupContext(target);
+        if (!map) return;
+        const refit = function () { fitPopupInFrame(target); };
+        fitPopupInFrame(target);
+        map.on("zoomend moveend resize", refit);
+        closer.once(closeEvent, function () { map.off("zoomend moveend resize", refit); });
+    }
+
+    const larentals = window.larentals = window.larentals || {};
+    larentals.popups = Object.assign({}, larentals.popups, {
+        /**
+         * Open a listing popup at a point, without moving the map.
+         *
+         * @param {[number, number]} latlng Listing position.
+         * @param {Record<string, unknown>} summaryData Listing properties.
+         * @returns {Object|null} The popup, or `null` when there is no map.
+         */
+        openAt: function (latlng, summaryData) {
+            const map = larentals.map;
+            if (!map || !latlng) return null;
+
+            const popup = L.popup(buildPopupOptions({ _map: map }))
+                .setLatLng(latlng)
+                .setContent(renderPopupLoadingContent(summaryData || {}))
+                .openOn(map);
+
+            trackPopupWhileOpen(popup, popup, "remove");
+            hydratePopup(popup, summaryData || {});
+            return popup;
+        },
+    });
 
     window.dash_props = Object.assign({}, window.dash_props, {
         module: Object.assign({}, window.dash_props && window.dash_props.module, {
@@ -947,42 +1112,12 @@
                 }
 
                 const summaryData = feature.properties;
-                const path = String(window.location?.pathname || "").toLowerCase();
-                const isBuyPage = path === "/buy" || path.startsWith("/buy");
-                const listingId = normalizeListingId(summaryData.mls_number);
-                let openRequestSeq = 0;
 
                 layer.bindPopup(renderPopupLoadingContent(summaryData), buildPopupOptions(layer));
 
                 layer.on("popupopen", function handlePopupOpen() {
-                    openRequestSeq += 1;
-                    const requestSeq = openRequestSeq;
-
-                    window.larentals?.analytics?.trackListingOpened();
-
-                    setPopupContent(layer, renderPopupLoadingContent(summaryData));
-
-                    if (!listingId) {
-                        setPopupContent(layer, renderPopupErrorContent(summaryData));
-                        return;
-                    }
-
-                    fetchListingDetails(listingId)
-                        .then((detailData) => {
-                            if (requestSeq !== openRequestSeq) return;
-
-                            const popupData = Object.assign({}, summaryData, detailData || {});
-                            const popupContent = isBuyPage
-                                ? generateBuyPopupContent(popupData)
-                                : generateLeasePopupContent(popupData);
-
-                            setPopupContent(layer, popupContent);
-                        })
-                        .catch((error) => {
-                            if (requestSeq !== openRequestSeq) return;
-                            console.error("Failed to load popup details for listing", listingId, error);
-                            setPopupContent(layer, renderPopupErrorContent(summaryData));
-                        });
+                    trackPopupWhileOpen(layer, layer, "popupclose");
+                    hydratePopup(layer, summaryData);
                 });
             },
         }),
