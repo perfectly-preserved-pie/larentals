@@ -63,7 +63,7 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
         )
         tool_name = _target_from_payload(payload) or "-"
         arguments = _arguments_from_payload(payload)
-        result_summary = _result_summary(response)
+        result_summary = _result_summary(response, request_id=payload.get("id"))
 
         logger.info(
             f"MCP tool call tool={tool_name} arguments={arguments} "
@@ -159,16 +159,31 @@ def _arguments_from_payload(payload: dict[str, Any] | None) -> str:
     return serialized
 
 
-def _result_summary(response: Response) -> str:
+def _result_summary(response: Response, *, request_id: Any = None) -> str:
     """Return useful outcome metadata without logging a tool's full response.
 
     Args:
         response: HTTP response being validated or summarized.
+        request_id: JSON-RPC request ID used to select a bundled response.
 
     Returns:
         The result summary text.
     """
     payload = response.get_json(silent=True)
+    if isinstance(payload, list):
+        # Dash bundles discovery notifications with the tool response when
+        # recovering a stale session. Only summarize the matching RPC reply.
+        replies = [
+            message
+            for message in payload
+            if isinstance(message, dict)
+            and "id" in message
+            and ("result" in message or "error" in message)
+            and (request_id is None or message["id"] == request_id)
+        ]
+        if len(replies) != 1:
+            return "missing"
+        payload = replies[0]
     if not isinstance(payload, dict):
         return "unparseable"
 

@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import patch
 
@@ -155,6 +156,42 @@ class McpUsageLoggingTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         log_info.assert_not_called()
+
+    def test_summarizes_stale_session_bundle(self) -> None:
+        messages = [
+            {"jsonrpc": "2.0", "method": "notifications/tools/list_changed"},
+            {"jsonrpc": "2.0", "method": "notifications/resources/list_changed"},
+            {"jsonrpc": "2.0", "id": 7, "result": {"structuredContent": {
+                "result": {"listing_type": "lease", "total_results": 0,
+                           "page": 1, "page_size": 20}
+            }}},
+        ]
+        response = Response(json.dumps(messages), mimetype="application/json")
+        original_body = response.get_data()
+        self.assertEqual(
+            _result_summary(response, request_id=7),
+            "success(listing_type=lease,total_results=0,page=1,page_size=20)",
+        )
+        self.assertEqual(response.get_data(), original_body)
+
+    def test_selects_matching_bundled_reply_and_preserves_errors(self) -> None:
+        for reply, expected in [
+            ({"result": {"isError": True}}, "tool_error"),
+            ({"error": {"code": -32602, "message": "Invalid params"}}, "rpc_error"),
+        ]:
+            with self.subTest(expected=expected):
+                response = Response(json.dumps([
+                    {"id": 1, "result": {}}, {"id": 2, **reply},
+                ]), mimetype="application/json")
+                self.assertEqual(_result_summary(response, request_id=2), expected)
+                self.assertEqual(_result_summary(response, request_id=3), "missing")
+                self.assertEqual(_result_summary(response), "missing")
+
+    def test_notification_only_bundle_has_no_result(self) -> None:
+        response = Response(json.dumps([
+            {"method": "notifications/tools/list_changed"}, None, "invalid",
+        ]), mimetype="application/json")
+        self.assertEqual(_result_summary(response, request_id=1), "missing")
 
 
 if __name__ == "__main__":
