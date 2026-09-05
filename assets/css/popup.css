@@ -791,8 +791,8 @@
   color: var(--wttl-text, #e8eaf4);
 }
 
-:root[data-mantine-color-scheme="dark"] .leaflet-popup:has(.listing-popup) .leaflet-popup-close-button {
-  color: var(--wttl-text-faint, rgba(232, 234, 244, 0.42));
+.leaflet-popup-content-wrapper:has(.listing-popup) {
+  overflow: hidden;
 }
 
 .leaflet-popup-content:has(.listing-popup) {
@@ -817,9 +817,11 @@
  * street instead of collapsing to a gap. Captioned, because a pano of the block
  * is not a photo of the unit. */
 /* Google stacks an address card, a compass and a fullscreen button across the
- * top of the pano, which on a 302px tile covers half the image. Overhang the
- * iframe upward and clip it: the chrome above the fold goes, the Google logo and
- * Terms along the bottom stay put. */
+ * top of the pano, which on a 302px tile covers half the image, and a zoom
+ * +/- up the bottom right. The embed takes no parameter to turn any of it off,
+ * so the iframe is overhung past the top and right edges and clipped: the
+ * chrome goes, and the Google logo bottom left stays, which is the part that
+ * has to. */
 .listing-popup__media--streetview {
   position: relative;
   overflow: hidden;
@@ -832,7 +834,7 @@
   top: calc(-1 * var(--streetview-crop, 68px));
   left: 0;
   display: block;
-  width: 100%;
+  width: calc(100% + var(--streetview-crop-right, 54px));
   height: calc(100% + var(--streetview-crop, 68px));
   border: 0;
 }
@@ -933,39 +935,7 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- More details ---------- */
-
-.listing-popup__more {
-  border-top: 1px solid var(--popup-border);
-}
-
-.listing-popup__more-summary {
-  padding: 8px 13px;
-  color: var(--popup-muted);
-  cursor: pointer;
-  font-size: 0.75rem;
-  list-style: none;
-}
-
-.listing-popup__more-summary::-webkit-details-marker {
-  display: none;
-}
-
-.listing-popup__more-summary::after {
-  content: "  +";
-  font-variant-numeric: tabular-nums;
-}
-
-.listing-popup__more[open] > .listing-popup__more-summary::after {
-  content: "  \2212";
-}
-
-.listing-popup__more-summary:hover,
-.listing-popup__more-summary:focus-visible {
-  color: var(--popup-accent);
-}
-
-.listing-popup__more .listing-popup__row:first-child {
+.listing-popup__rows--more {
   border-top: 1px solid var(--popup-border);
 }
 
@@ -1014,29 +984,19 @@
   text-align: left;
 }
 
-/* A listing with six ISP providers rendered an 800px popup, which on a laptop
- * ran off the top of the map: the photo, address and price were unreachable
- * because a Leaflet popup grows upward from its marker. Cap it against the
- * viewport and scroll the overflow instead. */
-.listing-popup {
-  max-height: min(70vh, 640px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.listing-popup::-webkit-scrollbar {
+.leaflet-popup-content:has(.listing-popup)::-webkit-scrollbar {
   width: 8px;
 }
 
-.listing-popup::-webkit-scrollbar-thumb {
+.leaflet-popup-content:has(.listing-popup)::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: var(--popup-border);
+  background: var(--wttl-border-strong, rgba(30, 36, 62, 0.28));
   background-clip: content-box;
 }
 
-.listing-popup::-webkit-scrollbar-thumb:hover {
-  background: var(--popup-muted);
+.leaflet-popup-content:has(.listing-popup)::-webkit-scrollbar-thumb:hover {
+  background: var(--wttl-text-faint, rgba(25, 29, 46, 0.42));
   background-clip: content-box;
 }
 
@@ -1076,45 +1036,58 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 20px;
-  padding: 0 6px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  border-radius: 10px;
+  height: 24px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 12px;
   box-shadow: 0 1px 4px rgba(12, 28, 36, 0.4);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   white-space: nowrap;
+  transform-origin: 50% 100%;
 }
 
-/* Hovering a row in the listings panel lights up the thing on the map that
- * represents it: its own pin, or the cluster bubble still hiding it. */
-.leaflet-marker-icon.is-highlighted {
+/* A pin has two sizes, not three. It grows for any of the ways a listing can be
+ * the one you mean (the cursor on the pin, the cursor on its row in the panel,
+ * its popup open) and they all grow it the same amount, so moving between them
+ * never resizes anything. Size is the whole signal: no ring, no border. The
+ * only difference between the states is that an open one stays grown once the
+ * cursor has gone. */
+.leaflet-marker-icon.is-highlighted,
+.leaflet-marker-icon.is-open {
   z-index: 1200 !important;
 }
 
-.leaflet-marker-icon.is-highlighted .price-marker {
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 3px 10px rgba(12, 28, 36, 0.45);
-  transform: scale(1.22);
+.price-marker:hover,
+.leaflet-marker-icon.is-highlighted .price-marker,
+.leaflet-marker-icon.is-open .price-marker {
+  transform: scale(1.35);
 }
 
 .price-marker {
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+.marker-cluster,
+.marker-cluster > div[data-cluster-count] {
+  transition: transform 0.12s ease;
+}
+
 .leaflet-marker-icon.is-highlighted .marker-cluster,
 .marker-cluster.is-highlighted,
 .leaflet-marker-icon.is-highlighted > div[data-cluster-count] {
-  outline: 3px solid rgba(255, 255, 255, 0.92);
-  outline-offset: 1px;
   border-radius: 50%;
   box-shadow: 0 3px 12px rgba(12, 28, 36, 0.4);
+  transform: scale(1.12);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .price-marker {
+  .price-marker,
+  .marker-cluster,
+  .marker-cluster > div[data-cluster-count] {
     transition: none;
   }
 }
@@ -1124,19 +1097,17 @@
   margin-bottom: 0;
 }
 
-.leaflet-popup--below .leaflet-popup-tip-container {
-  top: -19px;
-  transform: rotate(180deg);
+.leaflet-popup-tip-container {
+  transform: translateX(var(--tip-shift, 0));
 }
 
-/* A capped popup scrolls its body, and Leaflet's scroll container is a plain
- * overflow box: it squares off the rounded corner it sits in and cuts the last
- * row without saying so. Round it back, and fade the cut edge so the content
- * reads as continuing rather than as clipped. */
+.leaflet-popup--below .leaflet-popup-tip-container {
+  top: -19px;
+  transform: translateX(var(--tip-shift, 0)) rotate(180deg);
+}
 
 .leaflet-popup-content.leaflet-popup-scrolled:has(.listing-popup) {
   border-radius: 0 0 12px 12px;
   scrollbar-width: thin;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+  overscroll-behavior: contain;
 }

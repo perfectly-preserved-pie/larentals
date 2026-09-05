@@ -654,20 +654,20 @@
     }
 
     /**
-     * Collapse the rarely-populated fields behind a disclosure.
+     * Render the rarely-populated fields as a continuation of the main rows.
+     *
+     * These used to sit behind a "More details" disclosure. Opening it grew the
+     * popup past the room measured for it, and the popup is scrollable now, so
+     * there is nothing for the disclosure to save: the rows just carry on and
+     * you reach them by scrolling.
      *
      * @param {string[]} rows Rendered rows.
-     * @returns {string} HTML `<details>` block, or an empty string.
+     * @returns {string} HTML row list, or an empty string.
      */
     function renderMoreDetails(rows) {
         const html = rows.join("");
         if (!html) return "";
-        return `
-            <details class="listing-popup__more">
-                <summary class="listing-popup__more-summary">More details</summary>
-                <dl class="listing-popup__rows">${html}</dl>
-            </details>
-        `;
+        return `<dl class="listing-popup__rows listing-popup__rows--more">${html}</dl>`;
     }
 
     /**
@@ -904,7 +904,7 @@
             maxHeight: Math.max(220, Math.min(leaseLikeMaxHeightCap, availH - padding)),
             autoPan: false,
             keepInView: false,
-            closeButton: true,
+            closeButton: false,
             className: "responsive-popup",
         };
     }
@@ -912,6 +912,8 @@
     const POPUP_OFFSET_Y = 7;
     const POPUP_GAP = 10;
     const POPUP_PAD = 8;
+    const POPUP_TIP_INSET = 22;
+    const POPUP_TIP_HEIGHT = 20;
     const POPUP_MIN_HEIGHT = 180;
     const BELOW_CLASS = "leaflet-popup--below";
 
@@ -949,6 +951,7 @@
 
         if (popup._baseMaxHeight === undefined) popup._baseMaxHeight = popup.options.maxHeight;
         el.classList.remove(BELOW_CLASS);
+        el.style.removeProperty("--tip-shift");
         popup.options.offset = L.point(0, POPUP_OFFSET_Y);
         popup.options.maxHeight = popup._baseMaxHeight;
         popup.update();
@@ -957,8 +960,9 @@
         const pin = pinEl?.getBoundingClientRect?.() ?? null;
         let rect = el.getBoundingClientRect();
 
-        const above = (pin ? pin.top : rect.bottom) - mapRect.top - POPUP_PAD - POPUP_GAP;
-        const below = mapRect.bottom - (pin ? pin.bottom : rect.bottom) - POPUP_PAD - POPUP_GAP;
+        const chromeY = POPUP_PAD + POPUP_GAP + POPUP_TIP_HEIGHT;
+        const above = (pin ? pin.top : rect.bottom) - mapRect.top - chromeY;
+        const below = mapRect.bottom - (pin ? pin.bottom : rect.bottom) - chromeY;
         const flip = rect.height > above && below > above;
         const room = Math.max(POPUP_MIN_HEIGHT, flip ? below : above);
 
@@ -973,7 +977,7 @@
         if (flip) {
             el.classList.add(BELOW_CLASS);
             rect = el.getBoundingClientRect();
-            const wantedTop = (pin ? pin.bottom : rect.top) + POPUP_GAP;
+            const wantedTop = (pin ? pin.bottom : rect.top) + POPUP_GAP + POPUP_TIP_HEIGHT;
             offsetY = POPUP_OFFSET_Y + (wantedTop - rect.top);
             popup.options.offset = L.point(0, offsetY);
             popup.update();
@@ -989,6 +993,11 @@
         if (offsetX) {
             popup.options.offset = L.point(offsetX, offsetY);
             popup.update();
+
+            rect = el.getBoundingClientRect();
+            const limit = Math.max(0, rect.width / 2 - POPUP_TIP_INSET);
+            const shift = Math.max(-limit, Math.min(limit, -offsetX));
+            el.style.setProperty("--tip-shift", shift + "px");
         }
     }
 
@@ -1009,6 +1018,21 @@
 
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
+
+        const photos = popupEl.querySelectorAll("img");
+        for (const photo of photos) {
+            if (photo.complete) continue;
+            photo.addEventListener(
+                "load",
+                function () { fitPopupInFrame(target); },
+                { once: true }
+            );
+            photo.addEventListener(
+                "error",
+                function () { fitPopupInFrame(target); },
+                { once: true }
+            );
+        }
 
         const ispApi = window.larentals?.isp;
         if (!ispApi) return;
@@ -1089,6 +1113,8 @@
                 .setLatLng(latlng)
                 .setContent(renderPopupLoadingContent(summaryData || {}))
                 .openOn(map);
+
+            popup.larentalsMls = (summaryData || {}).mls_number;
 
             trackPopupWhileOpen(popup, popup, "remove");
             hydratePopup(popup, summaryData || {});

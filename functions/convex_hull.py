@@ -17,10 +17,10 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const clusterSize = leaves.length;
 
     // A cluster is priced by what is inside it. The map then speaks one colour
-    // language: green through red means cheap through dear, whether it is a pin
-    // or a bubble standing in for four hundred of them. A third hue here (it was
-    // teal, then violet) only competed with the pins for attention while saying
-    // nothing the size of the bubble did not already say.
+    // language: light blue through navy means cheap through dear, whether it is
+    // a pin or a bubble standing in for four hundred of them. A hue of its own
+    // here (it was teal, then violet) only competed with the pins for attention
+    // while saying nothing the size of the bubble did not already say.
     const prices = leaves
         .map(function (leaf) { return Number(leaf.properties.list_price); })
         .filter(function (price) { return isFinite(price); })

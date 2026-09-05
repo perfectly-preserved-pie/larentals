@@ -124,6 +124,11 @@
     background: var(--wttl-section, rgba(30, 36, 62, 0.05));
   }
 
+  .results-row.is-open {
+    background: var(--wttl-accent-soft, rgba(90, 162, 245, 0.18));
+    box-shadow: inset 3px 0 0 var(--wttl-accent, #5aa2f5);
+  }
+
   .results-row__price {
     font-size: 0.875rem;
     font-weight: 650;

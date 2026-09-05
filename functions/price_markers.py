@@ -39,7 +39,10 @@ build_price_marker = assign(
     const background = scale ? scale.colorFor(price) : '#6b7280';
 
     const label = Number.isFinite(price) ? formatPrice(price) : 'n/a';
-    const width = 14 + label.length * 7;
+    // 1.2x the old size. The pill is sized here rather than in CSS because
+    // Leaflet needs the box up front to place and anchor the icon, so these
+    // numbers and the ones in popup.css have to be changed together.
+    const width = 17 + label.length * 8.4;
 
     // The results panel reads these straight off the DOM, which keeps it
     // independent of any handle on the Leaflet map object.
@@ -63,11 +66,16 @@ build_price_marker = assign(
             className: 'price-marker-icon',
             html: '<span class="price-marker" style="background:' + background + '"'
                 + dataAttrs + '>' + label + '</span>',
-            iconSize: [width, 20],
+            iconSize: [width, 24],
             // Anchor at the bottom centre so the pill sits above the point it
             // describes rather than covering it.
-            iconAnchor: [width / 2, 22],
-            popupAnchor: [0, -22]
+            iconAnchor: [width / 2, 26],
+            // Clears the pin at the size it is while a popup is open, which is
+            // the grown one: a pin is always selected when its popup shows, and
+            // it grows upward from its bottom edge (popup.css), so its top is
+            // well above the 24px box Leaflet measures. Anchoring to the box
+            // instead puts the popup's tip through the pin.
+            popupAnchor: [0, -45]
         })
     });
     // The results panel reads listing data straight off the layers in view, so

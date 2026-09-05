@@ -275,7 +275,8 @@
         if (subtype) meta.push(subtype);
 
         return (
-            '<button type="button" class="results-row" data-results-index="' + index + '">' +
+            '<button type="button" class="results-row" data-results-index="' + index + '"' +
+            ' data-mls="' + escapeHtml(clean(row.mls)) + '">' +
             '<span class="results-row__price">' + escapeHtml(formatPrice(row.price)) + "</span>" +
             '<span class="results-row__address">' + escapeHtml(address) + "</span>" +
             '<span class="results-row__meta">' + escapeHtml(meta.join(" · ")) + "</span>" +
@@ -347,7 +348,84 @@
                 ? MAX_ROWS + " of " + result.rows.length.toLocaleString("en-US")
                 : String(result.rows.length);
         }
+        markOpenRow({ scroll: false });
     }
+
+    var openMls = null;
+
+    /**
+     * Mark the row for the open listing, and bring it into view.
+     *
+     * Scrolling is for when the popup was opened from the map: the row for it
+     * is usually somewhere down a list of a few hundred. It is deliberately not
+     * done on a re-render, which would yank the list out from under someone
+     * scrolling it while a popup happens to be open.
+     *
+     * @param {{scroll: boolean}} options Whether to scroll the row into view.
+     * @returns {void}
+     */
+    function markOpenRow(options) {
+        var previous = document.querySelectorAll(".results-row.is-open, .leaflet-marker-icon.is-open");
+        for (var i = 0; i < previous.length; i += 1) {
+            previous[i].classList.remove("is-open");
+        }
+        if (!openMls) return;
+        var selector = '[data-mls="' + String(openMls).replace(/"/g, "") + '"]';
+
+        var pin = document.querySelector(".price-marker" + selector);
+        var icon = pin && pin.closest ? pin.closest(".leaflet-marker-icon") : null;
+        if (icon) icon.classList.add("is-open");
+
+        var row = document.querySelector(".results-row" + selector);
+        if (!row) return;
+        row.classList.add("is-open");
+        if (options && options.scroll) {
+            row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+    }
+
+    /**
+     * Read the MLS number off whatever a popup was opened from.
+     *
+     * A popup opened by clicking a pin carries its source marker, and the pin's
+     * own element holds the number. One opened for a listing still inside a
+     * cluster has no marker, so the number is passed on the popup itself.
+     *
+     * @param {object} popup The Leaflet popup that opened.
+     * @returns {string} The MLS number, or "".
+     */
+    function mlsForPopup(popup) {
+        if (!popup) return "";
+        if (popup.larentalsMls) return String(popup.larentalsMls);
+        var source = popup._source;
+        var element = source && source.getElement ? source.getElement() : null;
+        var pin = element && element.querySelector
+            ? element.querySelector("[data-mls]")
+            : null;
+        return pin ? String(pin.getAttribute("data-mls") || "") : "";
+    }
+
+    /**
+     * Follow the open popup, so the list always marks the listing being read.
+     *
+     * @returns {void}
+     */
+    function watchPopups() {
+        var map = (window.larentals || {}).map;
+        if (!map || !map.on || map.larentalsResultsPopupWatch) return;
+        map.larentalsResultsPopupWatch = true;
+
+        map.on("popupopen", function (event) {
+            openMls = mlsForPopup(event.popup) || null;
+            markOpenRow({ scroll: true });
+        });
+        map.on("popupclose", function () {
+            openMls = null;
+            markOpenRow({ scroll: false });
+        });
+    }
+
+    window.setInterval(watchPopups, 600);
 
     /**
      * Queue a redraw, collapsing bursts of map events into one.

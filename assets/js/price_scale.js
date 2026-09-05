@@ -1,33 +1,14 @@
-// Colour for the price pins, ranked against what is on screen.
-//
-// An absolute ramp paints most of a expensive neighbourhood red and most of a
-// cheap one green, which tells you what you already knew from the address. The
-// useful question is "cheap for what I am looking at", so the scale is a
-// ranking over the listings currently in view rather than a fixed price band:
-//
-//     cheapest 40%   green
-//     middle 40%     olive through amber
-//     top 20%        amber through red
-//
-// Only the top fifth reaches red, so an expensive market no longer reads as a
-// wall of warnings; the pins say where a listing sits among its neighbours.
-//
-// The bands are separated by a step in hue rather than one continuous sweep, so
-// which band a pin belongs to is legible without a legend.
-
 (function () {
     "use strict";
 
     var root = window.larentals = window.larentals || {};
 
-    // Rank fraction at each band edge, and the hue each band runs between.
     var BANDS = [
-        { upTo: 0.4, from: 130, to: 110 },  // green
-        { upTo: 0.8, from: 80, to: 45 },    // olive to amber
-        { upTo: 1.0, from: 25, to: 0 },     // amber to red
+        { upTo: 0.4, h: [200, 207], s: [70, 72], l: [46, 40] },
+        { upTo: 0.8, h: [207, 216], s: [72, 76], l: [40, 31] },
+        { upTo: 1.0, h: [216, 226], s: [76, 82], l: [31, 21] },
     ];
-    var SATURATION = 62;
-    var LIGHTNESS = 38;
+
     var MISSING_COLOR = "#6b7280";
 
     var MIN_SAMPLE = 5;
@@ -62,9 +43,12 @@
             var band = BANDS[i];
             if (t <= band.upTo || i === BANDS.length - 1) {
                 var span = band.upTo - start;
-                var within = span > 0 ? (t - start) / span : 0;
-                var hue = band.from + Math.max(0, Math.min(1, within)) * (band.to - band.from);
-                return "hsl(" + hue.toFixed(0) + ", " + SATURATION + "%, " + LIGHTNESS + "%)";
+                var within = Math.max(0, Math.min(1, span > 0 ? (t - start) / span : 0));
+                var at = function (pair) {
+                    return pair[0] + within * (pair[1] - pair[0]);
+                };
+                return "hsl(" + at(band.h).toFixed(0) + ", "
+                    + at(band.s).toFixed(0) + "%, " + at(band.l).toFixed(0) + "%)";
             }
             start = band.upTo;
         }
