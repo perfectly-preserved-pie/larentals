@@ -69,13 +69,6 @@
   display: none;
 }
 
-/* RangeSlider tooltips are absolutely positioned and therefore do not add to
-   the slider's layout height. Reserve a row for bottom tooltips before laying
-   out the missing-value switch so its label cannot overlap them. */
-.range-filter__slider-with-switch {
-  padding-bottom: 2.75rem;
-}
-
 .range-filter__exact-inputs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

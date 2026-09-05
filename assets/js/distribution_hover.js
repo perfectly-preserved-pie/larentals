@@ -83,6 +83,25 @@
     }
 
     /**
+     * Say whether a pointer is over the control rather than the room below it.
+     *
+     * The wrap reserves a couple of rows under the marks that belong to the
+     * layout, not to the slider, and a readout that appears down there is
+     * pointing at nothing. The control ends where its labels do.
+     *
+     * @param {HTMLElement} strip - The `.dist` element.
+     * @param {number} clientY - Pointer y position in viewport coordinates.
+     * @returns {boolean} True when the pointer is on the graph, rail or marks.
+     */
+    function onControl(strip, clientY) {
+        const wrap = strip.closest(WRAP);
+        const root = wrap && wrap.querySelector(".dash-slider-root");
+        if (!root) return true;
+        return clientY >= strip.getBoundingClientRect().top
+            && clientY <= root.getBoundingClientRect().bottom;
+    }
+
+    /**
      * Put the cursor on a handle's current rendered position.
      *
      * @param {HTMLElement} strip - The `.dist` element.
@@ -120,7 +139,8 @@
     let lastPointerX = 0;
 
     document.addEventListener("pointerdown", function (event) {
-        draggingStrip = stripFor(event.target);
+        const pressed = stripFor(event.target);
+        draggingStrip = pressed && onControl(pressed, event.clientY) ? pressed : null;
         lastPointerX = event.clientX;
         if (!draggingStrip) return;
         followHandle(draggingStrip);
@@ -138,7 +158,9 @@
         lastPointerX = event.clientX;
         if (draggingStrip) return;
         const strip = stripFor(event.target);
-        if (strip) place(strip, event.clientX);
+        if (!strip) return;
+        if (onControl(strip, event.clientY)) place(strip, event.clientX);
+        else strip.classList.remove("dist--hovered");
     }, true);
 
     /**

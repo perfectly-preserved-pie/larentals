@@ -138,11 +138,18 @@ def register_distribution_callback(
     if span <= 0:
         return
 
+    # `value` only lands on mouseup; `drag_value` reports every position on the
+    # way. Reading whichever moved lets the shading follow the handle live while
+    # the filter still fires once, on release.
     clientside_callback(
         f"""
-        function (value) {{
-            const lo = Array.isArray(value) ? value[0] : {minimum};
-            const hi = Array.isArray(value) ? value[1] : {maximum};
+        function (value, dragValue) {{
+            const ctx = dash_clientside.callback_context;
+            const fired = ctx && ctx.triggered && ctx.triggered.length
+                ? ctx.triggered[0].prop_id : "";
+            const source = fired.endsWith(".drag_value") ? dragValue : value;
+            const lo = Array.isArray(source) ? source[0] : {minimum};
+            const hi = Array.isArray(source) ? source[1] : {maximum};
             const pct = (v) => Math.min(Math.max((v - {minimum}) / {span}, 0), 1) * 100;
             return [
                 {{left: "0%", width: pct(lo) + "%"}},
@@ -153,6 +160,7 @@ def register_distribution_callback(
         Output(f"{slider_id}_dist_lo", "style"),
         Output(f"{slider_id}_dist_hi", "style"),
         Input(slider_id, "value"),
+        Input(slider_id, "drag_value"),
     )
 
 

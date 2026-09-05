@@ -3,6 +3,8 @@
   --filter-gap: 0.85rem;
   --filter-label: 0.8125rem;
   --filter-help: 0.6875rem;
+  --dist-height: 54px;
+  --dist-overlap: 6px;
 }
 
 .filter-section__body .dash-slider-track {
@@ -272,11 +274,24 @@
 .dist {
   position: relative;
   width: calc(100% - 2 * var(--slider-handle-radius, 8px));
-  /* Taller now that the exact-value boxes are gone: the shape of the market is
-     the useful part of this control, and it was the thing being squeezed. */
-  height: 54px;
-  margin: 0 var(--slider-handle-radius, 8px) -6px;
+  height: var(--dist-height);
+  margin: 0 var(--slider-handle-radius, 8px) calc(-1 * var(--dist-overlap));
   pointer-events: none;
+}
+
+/* Pressing the graph should grab the nearest handle the way pressing the rail
+ * does. Rather than synthesize slider events, the slider's own pseudo-element
+ * covers the graph area: it hit-tests as the slider root, so Dash's handling
+ * takes the press from there, drag included. The strip itself stays a drawing
+ * with pointer-events: none. */
+.range-filter__hybrid-slider-wrap .dist ~ * .dash-slider-root::before,
+.range-filter__slider-with-switch .dist ~ * .dash-slider-root::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--dist-overlap) - var(--dist-height));
+  height: var(--dist-height);
 }
 
 .dist__bars {

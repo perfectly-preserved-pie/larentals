@@ -223,12 +223,24 @@ class LeaseComponents(BaseClass):
                 ),
                 "location",
             ),
+            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("Monthly Rent", self._build_rental_price_filter(), "monthly_rent"),
+            ("Type", self.create_subtype_checklist(), "subtypes"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
-            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
-            ("Listed Date", self.create_listed_date_components(), "listed_date"),
-            ("Square Footage", self._build_square_footage_filter(), "square_footage"),
+            (
+                "Square Footage",
+                [
+                    self._build_square_footage_filter(),
+                    # Price per square foot reads as a way to rank listings, not
+                    # to exclude them, and the results panel already sorts by it.
+                    # The control stays mounted but hidden because the filter
+                    # pipeline reads slider ids positionally; parked at its full
+                    # range it never excludes anything.
+                    html.Div(self._build_ppsqft_filter(), style={"display": "none"}),
+                ],
+                "square_footage",
+            ),
             ("Pets", self.create_pets_radio_button(), "pet_policy"),
             ("Laundry", self.create_laundry_checklist(), "laundry"),
             ("Parking Spaces", self._build_parking_spaces_filter(), "parking_spaces"),
@@ -279,7 +291,6 @@ class LeaseComponents(BaseClass):
                 ],
                 "deposits",
             ),
-            ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
             (
                 "Internet speed",
                 build_isp_speed_components(

@@ -197,12 +197,24 @@ class BuyComponents(BaseClass):
                 ),
                 "location",
             ),
+            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("List Price", self._build_list_price_filter(), "list_price"),
+            ("Type", self.create_subtype_checklist(), "subtypes"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
-            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
-            ("Listed Date", self.create_listed_date_components(), "listed_date"),
-            ("Square Footage", self._build_square_footage_filter(), "square_footage"),
+            (
+                "Square Footage",
+                [
+                    self._build_square_footage_filter(),
+                    # Price per square foot reads as a way to rank listings, not
+                    # to exclude them, and the results panel already sorts by it.
+                    # The control stays mounted but hidden because the filter
+                    # pipeline reads slider ids positionally; parked at its full
+                    # range it never excludes anything.
+                    html.Div(self._build_ppsqft_filter(), style={"display": "none"}),
+                ],
+                "square_footage",
+            ),
             ("Lot Size", self.create_lot_size_components(), "lot_size"),
             ("HOA Fees", self.create_hoa_fee_components(), "hoa_fees"),
             (
@@ -210,7 +222,6 @@ class BuyComponents(BaseClass):
                 self.create_hoa_fee_frequency_checklist(),
                 "hoa_fee_frequency",
             ),
-            ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
             ("Year Built", self.create_year_built_components(), "year_built"),
             (
                 "Internet speed",
