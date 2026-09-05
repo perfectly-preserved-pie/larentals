@@ -10,6 +10,13 @@ from functions.layers import (
     LA_COUNTY_PARCEL_TILE_URL,
     MAPBOX_SATELLITE_BASE_LAYER_NAME,
     STREET_BASE_LAYER_NAME,
+    STREET_TILE_DARK_CLASS,
+    STREET_TILE_DARK_LABEL_URL,
+    STREET_TILE_DARK_URL,
+    STREET_TILE_LABEL_URL,
+    STREET_TILE_LABEL_Z_INDEX,
+    STREET_TILE_LIGHT_CLASS,
+    STREET_TILE_MAX_NATIVE_ZOOM,
     STREET_TILE_URL,
     LayersClass,
     build_mapbox_satellite_tile_url,
@@ -163,10 +170,28 @@ def test_layers_control_omits_satellite_without_mapbox_token(
     assert isinstance(street, dl.BaseLayer)
     assert street.name == STREET_BASE_LAYER_NAME
     assert street.checked is True
-    assert street.children.url == "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    assert street.children.url == STREET_TILE_URL
-    assert "openstreetmap.org/fixthemap" in street.children.attribution
-    assert street.children.maxNativeZoom == 19
+
+    # Each theme draws its own basemap rather than one being filtered into the
+    # other, and each is a plate plus a label tile drawn above the listings.
+    light_plate, light_labels, dark_plate, dark_labels = street.children
+    assert light_plate.url == STREET_TILE_URL
+    assert light_labels.url == STREET_TILE_LABEL_URL
+    assert dark_plate.url == STREET_TILE_DARK_URL
+    assert dark_labels.url == STREET_TILE_DARK_LABEL_URL
+
+    assert light_plate.className == STREET_TILE_LIGHT_CLASS
+    assert light_labels.className == STREET_TILE_LIGHT_CLASS
+    assert dark_plate.className == STREET_TILE_DARK_CLASS
+    assert dark_labels.className == STREET_TILE_DARK_CLASS
+
+    # Only the label tiles are lifted; the plates stay under everything.
+    assert light_labels.zIndex == STREET_TILE_LABEL_Z_INDEX
+    assert dark_labels.zIndex == STREET_TILE_LABEL_Z_INDEX
+    assert light_plate.zIndex == 1
+    assert dark_plate.zIndex == 1
+
+    assert light_plate.maxNativeZoom == STREET_TILE_MAX_NATIVE_ZOOM
+    assert "Esri" in light_plate.attribution
 
     assert isinstance(parcels, dl.Overlay)
     assert parcels.name == LA_COUNTY_PARCEL_LAYER_NAME

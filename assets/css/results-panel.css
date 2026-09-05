@@ -69,7 +69,7 @@
   }
 
   .results-panel__count {
-    color: var(--wttl-dark-text-faint, rgba(25, 29, 46, 0.42));
+    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.42));
     font-size: 0.6875rem;
     font-variant-numeric: tabular-nums;
   }
@@ -100,7 +100,7 @@
   .results-panel__empty {
     margin: 0;
     padding: 1rem 0.9rem;
-    color: var(--wttl-dark-text-faint, rgba(25, 29, 46, 0.5));
+    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.5));
     font-size: 0.75rem;
     line-height: 1.45;
   }
@@ -121,7 +121,7 @@
 
   .results-row:hover,
   .results-row:focus-visible {
-    background: var(--wttl-dark-section, rgba(30, 36, 62, 0.05));
+    background: var(--wttl-section, rgba(30, 36, 62, 0.05));
   }
 
   .results-row__price {
@@ -139,7 +139,7 @@
   }
 
   .results-row__meta {
-    color: var(--wttl-dark-text-faint, rgba(25, 29, 46, 0.45));
+    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.45));
     font-size: 0.6875rem;
   }
 

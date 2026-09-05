@@ -131,25 +131,25 @@
 }
 
 :root[data-mantine-color-scheme="dark"] .layers-control-disclosure__button {
-  background: var(--wttl-dark-panel);
-  color: var(--wttl-dark-text);
+  background: var(--wttl-panel);
+  color: var(--wttl-text);
 }
 
 :root[data-mantine-color-scheme="dark"] .layers-control-disclosure__button:hover,
 :root[data-mantine-color-scheme="dark"] .layers-control-disclosure__button:focus-visible {
-  background: var(--wttl-dark-section-active);
-  color: var(--wttl-dark-accent-strong);
+  background: var(--wttl-section-active);
+  color: var(--wttl-accent-strong);
 }
 
 :root[data-mantine-color-scheme="dark"] .layers-control-disclosure--open .layers-control-disclosure__button {
-  border-bottom-color: var(--wttl-dark-border);
+  border-bottom-color: var(--wttl-border);
 }
 
 :root[data-mantine-color-scheme="dark"] .layers-control-discovery {
-  background: var(--wttl-dark-accent);
+  background: var(--wttl-accent);
   color: #10211f;
 }
 
 :root[data-mantine-color-scheme="dark"] .layers-control-discovery::before {
-  border-right-color: var(--wttl-dark-accent);
+  border-right-color: var(--wttl-accent);
 }

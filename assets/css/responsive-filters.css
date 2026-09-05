@@ -652,10 +652,10 @@
 }
 
 :root[data-mantine-color-scheme="dark"] {
-  --filter-panel-surface: var(--wttl-dark-panel, #202427);
-  --filter-panel-border: var(--wttl-dark-border, rgba(232, 238, 241, 0.14));
-  --filter-panel-text: var(--wttl-dark-text, #e7ecef);
-  --filter-panel-accent: var(--wttl-dark-accent, #4fc3b4);
+  --filter-panel-surface: var(--wttl-panel, #202427);
+  --filter-panel-border: var(--wttl-border, rgba(232, 238, 241, 0.14));
+  --filter-panel-text: var(--wttl-text, #e7ecef);
+  --filter-panel-accent: var(--wttl-accent, #4fc3b4);
   --filter-panel-accent-hover: #3db2a4;
 }
 
@@ -665,26 +665,26 @@
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__top,
 :root[data-mantine-color-scheme="dark"] .map-filter-chip {
-  border-color: var(--wttl-dark-border, rgba(232, 238, 241, 0.18));
+  border-color: var(--wttl-border, rgba(232, 238, 241, 0.18));
   background: rgba(32, 36, 39, 0.96);
-  color: var(--wttl-dark-text, #e7ecef);
+  color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__brand {
-  color: var(--wttl-dark-text, #e7ecef);
+  color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__result-count {
-  color: var(--wttl-dark-text-muted, rgba(231, 236, 239, 0.68));
+  color: var(--wttl-text-muted, rgba(231, 236, 239, 0.68));
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode {
-  border-color: var(--wttl-dark-border, rgba(232, 238, 241, 0.18));
+  border-color: var(--wttl-border, rgba(232, 238, 241, 0.18));
   background: rgba(13, 17, 19, 0.5);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button {
-  color: var(--wttl-dark-text, #e7ecef);
+  color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button:hover {
@@ -693,12 +693,12 @@
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button.is-selected,
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button.is-selected:hover {
-  background: var(--wttl-dark-accent, #4fc3b4);
+  background: var(--wttl-accent, #4fc3b4);
   color: #10211f;
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-chip--active {
-  border-color: var(--wttl-dark-accent, #4fc3b4);
+  border-color: var(--wttl-accent, #4fc3b4);
   background: rgba(79, 195, 180, 0.18);
   color: #93e6dc;
 }

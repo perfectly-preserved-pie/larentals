@@ -775,24 +775,24 @@
 }
 
 :root[data-mantine-color-scheme="dark"] .listing-popup {
-  --popup-surface: var(--wttl-dark-panel, #1b1f30);
-  --popup-inset: var(--wttl-dark-section, #212637);
-  --popup-border: var(--wttl-dark-border, rgba(197, 205, 236, 0.13));
-  --popup-text: var(--wttl-dark-text, #e8eaf4);
-  --popup-muted: var(--wttl-dark-text-muted, rgba(232, 234, 244, 0.66));
-  --popup-faint: var(--wttl-dark-text-faint, rgba(232, 234, 244, 0.42));
-  --popup-accent: var(--wttl-dark-accent, #f0a249);
+  --popup-surface: var(--wttl-panel, #1b1f30);
+  --popup-inset: var(--wttl-section, #212637);
+  --popup-border: var(--wttl-border, rgba(197, 205, 236, 0.13));
+  --popup-text: var(--wttl-text, #e8eaf4);
+  --popup-muted: var(--wttl-text-muted, rgba(232, 234, 244, 0.66));
+  --popup-faint: var(--wttl-text-faint, rgba(232, 234, 244, 0.42));
+  --popup-accent: var(--wttl-accent, #5aa2f5);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper:has(.listing-popup),
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-tip:has(.listing-popup),
 :root[data-mantine-color-scheme="dark"] .leaflet-popup:has(.listing-popup) .leaflet-popup-tip {
-  background: var(--wttl-dark-panel, #1b1f30);
-  color: var(--wttl-dark-text, #e8eaf4);
+  background: var(--wttl-panel, #1b1f30);
+  color: var(--wttl-text, #e8eaf4);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup:has(.listing-popup) .leaflet-popup-close-button {
-  color: var(--wttl-dark-text-faint, rgba(232, 234, 244, 0.42));
+  color: var(--wttl-text-faint, rgba(232, 234, 244, 0.42));
 }
 
 .leaflet-popup-content:has(.listing-popup) {

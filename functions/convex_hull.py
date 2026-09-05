@@ -16,9 +16,20 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
     const clusterSize = leaves.length;
 
-    // Single neutral color for all clusters
-    //const color = 'rgba(100, 149, 237, 0.85)';  // Cornflower blue, higher opacity for visibility
-    const color = 'rgba(23, 162, 184, 0.9)';  // Bootstrap info color - crisp, professional
+    // A cluster is priced by what is inside it. The map then speaks one colour
+    // language: green through red means cheap through dear, whether it is a pin
+    // or a bubble standing in for four hundred of them. A third hue here (it was
+    // teal, then violet) only competed with the pins for attention while saying
+    // nothing the size of the bubble did not already say.
+    const prices = leaves
+        .map(function (leaf) { return Number(leaf.properties.list_price); })
+        .filter(function (price) { return isFinite(price); })
+        .sort(function (a, b) { return a - b; });
+    const median = prices.length
+        ? prices[Math.floor((prices.length - 1) / 2)]
+        : NaN;
+    const scale = (window.larentals || {}).priceScale;
+    const color = scale ? scale.colorFor(median) : '#6b7280';
                                
     // Scale marker size based on cluster density instead of color
     // Larger clusters = physically bigger markers
