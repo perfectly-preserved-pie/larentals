@@ -243,7 +243,6 @@ class BuyComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="list_price_div_buy",
             dynamic_id=self.dynamic_output_id("list_price"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
@@ -306,7 +305,6 @@ class BuyComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="ppsqft_div",
             dynamic_id=self.dynamic_output_id("ppsqft"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
@@ -329,7 +327,6 @@ class BuyComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="square_footage_div",
             dynamic_id=self.dynamic_output_id("sqft"),
-            tooltip_transform="formatSqFt",
             marks=bounds.marks(
                 include_open_end=False,
                 target_intervals=3,
@@ -373,7 +370,6 @@ class BuyComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="lot_size_div_buy",
             dynamic_id=self.dynamic_output_id("lot_size"),
-            tooltip_transform="formatSqFt",
             marks=bounds.marks(
                 include_open_end=False,
                 target_intervals=3,
@@ -405,7 +401,6 @@ class BuyComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="hoa_fee_div_buy",
             dynamic_id=self.dynamic_output_id("hoa_fee"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,

@@ -37,7 +37,7 @@
 
   const CONTROL_MAP = Object.freeze({
     lease: Object.freeze({
-      priceRange: exactRangeControl("rental_price"),
+      priceRange: ["rental_price_slider", "value"],
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
       pets: ["pets_radio", "value"],
@@ -1126,7 +1126,7 @@
        * @returns {Array<*>} Draft and applied values for the callback outputs.
        */
       captureLeaseFilterState: function (
-        priceMinimum, priceMaximum, priceUpperBound,
+        priceRange, priceUpperBound,
         bedroomsRange, bedroomsUpperBound,
         bathroomsRange, bathroomsUpperBound, pets,
         sqftRange, sqftUpperBound, ppsqftRange, ppsqftUpperBound, parkingRange, parkingUpperBound, yearRange, terms, furnished, securityRange, securityUpperBound, petDepositRange, petDepositUpperBound, keyDepositRange, keyDepositUpperBound, otherDepositRange, otherDepositUpperBound, laundry, subtypes, listedRange, downloadRange, uploadRange, rentControl,
@@ -1157,7 +1157,6 @@
         const dateMissing = true;
         const ispMissing = true;
 
-        const priceRange = exactRange(priceMinimum, priceMaximum);
         return finalizeCapture("lease", {
           priceRange, priceUpperBound, bedroomsRange, bedroomsUpperBound,
           bathroomsRange, bathroomsUpperBound, pets,

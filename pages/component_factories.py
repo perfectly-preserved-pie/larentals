@@ -213,7 +213,6 @@ def build_range_filter(
     value: Any,
     component_id: str,
     dynamic_id: DashId,
-    tooltip_transform: str | None = None,
     include_missing_switch_id: str | None = None,
     include_missing_switch_label: str | None = None,
     switch_style: Mapping[str, Any] | None = None,
@@ -235,7 +234,6 @@ def build_range_filter(
         value: Initial slider selection.
         component_id: Outer container id.
         dynamic_id: Pattern-matching id for the dynamic content block.
-        tooltip_transform: Optional clientside tooltip formatter.
         include_missing_switch_id: Optional id for the missing-values switch.
         include_missing_switch_label: Label for the missing-values switch.
         switch_style: Optional style override for the missing-values switch.
@@ -258,17 +256,9 @@ def build_range_filter(
             for mark in marks.values()
         )
     )
-    tooltip = {"placement": "bottom"}
-    if not show_exact_inputs:
-        tooltip.update(
-            {
-                "placement": "top" if has_open_upper_bound else "bottom",
-                "always_visible": False,
-            }
-        )
-    if tooltip_transform is not None:
-        tooltip["transform"] = tooltip_transform
-
+    # No value bubble on any slider. Every one of these is labelled by its marks,
+    # and the bubble only appeared on hover, grew itself into view, and covered
+    # the marks underneath it while you dragged.
     slider_kwargs = {
         "id": slider_id,
         "min": min_value,
@@ -277,8 +267,6 @@ def build_range_filter(
         "updatemode": "drag" if show_exact_inputs else "mouseup",
         "allow_direct_input": False,
     }
-    if not show_exact_inputs:
-        slider_kwargs["tooltip"] = tooltip
     if step is not None:
         slider_kwargs["step"] = step
     if marks is not None:
@@ -1384,11 +1372,6 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
                             DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX: "12k",
                         },
                         updatemode="mouseup",
-                        tooltip={
-                            "placement": "bottom",
-                            "always_visible": True,
-                            "transform": "formatStudentCount",
-                        },
                     ),
                 ],
                 className="school-layer-enrollment-control",

@@ -261,7 +261,6 @@ class ComponentsSmokeTest(unittest.TestCase):
             value=[0, 10_000],
             component_id="test-price-filter",
             dynamic_id="test-price-filter-controls",
-            tooltip_transform="formatCurrency",
             marks={0: "$0", 5_000: "$5k", 10_000: "$10k"},
             show_exact_inputs=True,
             input_prefix="$",

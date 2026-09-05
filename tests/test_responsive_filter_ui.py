@@ -186,8 +186,10 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         # Only the money filters keep paired exact-value fields. Square footage,
         # price per sqft and the deposits report their range straight off the
         # slider, like bedrooms and bathrooms do.
+        # Rent reads straight off its slider now; its distribution strip shows
+        # the range instead of a pair of number boxes.
         hybrid_sliders = {
-            "lease": ("rental_price_slider",),
+            "lease": (),
             "buy": ("list_price_slider", "lot_size_slider", "hoa_fee_slider"),
         }
         for page_type, slider_ids in hybrid_sliders.items():
@@ -200,6 +202,7 @@ class ResponsiveFilterUiTest(unittest.TestCase):
 
         plain_sliders = {
             "lease": (
+                "rental_price_slider",
                 "sqft_slider",
                 "ppsqft_slider",
                 "security_deposit_slider",

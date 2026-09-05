@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 FILTER_UI_BREAKPOINT = 1100
 
 _HYBRID_RANGE_SLIDERS = {
-    "lease": ("rental_price_slider",),
+    "lease": (),
     "buy": (
         "list_price_slider",
         "lot_size_slider",
@@ -612,8 +612,7 @@ def _lease_capture_inputs() -> list[Input]:
         A list containing the lease capture inputs.
     """
     return [
-        Input("rental_price_minimum_input", "value"),
-        Input("rental_price_maximum_input", "value"),
+        Input("rental_price_slider", "value"),
         Input("rental_price_slider", "max"),
         Input("bedrooms_slider", "value"),
         Input("bedrooms_slider", "max"),

@@ -10,6 +10,21 @@
   margin-right: var(--slider-handle-radius, 8px);
 }
 
+/* Dash puts `transition: all` on the handle carrier and the filled range, both
+ * positioned with `left`, so they lag the hover line, which snaps. The handle
+ * itself is excluded so it still grows under the pointer. */
+.filter-section__body .dash-slider-root *:not(.dash-slider-thumb) {
+  transition: none !important;
+}
+
+/* The handle grows under the pointer, not after you let go of it. Dash keeps it
+ * scaled for as long as it holds focus, so it stayed big after a drag until you
+ * clicked something else. Cancel that only when the pointer has left and the
+ * focus came from a click; :focus-visible keeps keyboard focus obvious. */
+.filter-section__body .dash-slider-thumb:focus:not(:focus-visible):not(:hover):not(:active) {
+  transform: none !important;
+}
+
 .filter-section__body .dash-slider-tooltip,
 .filter-section__body .dash-slider-tooltip * {
   transition: none !important;
@@ -256,9 +271,11 @@
 
 .dist {
   position: relative;
-  width: calc(100% - 2.5rem);
-  height: 26px;
-  margin: 0 1.25rem -6px;
+  width: calc(100% - 2 * var(--slider-handle-radius, 8px));
+  /* Taller now that the exact-value boxes are gone: the shape of the market is
+     the useful part of this control, and it was the thing being squeezed. */
+  height: 54px;
+  margin: 0 var(--slider-handle-radius, 8px) -6px;
   pointer-events: none;
 }
 
@@ -282,13 +299,6 @@
   top: 0;
   bottom: 0;
   background: var(--wttl-dist-mask, rgba(21, 24, 38, 0.72));
-  transition: left 90ms linear, width 90ms linear, right 90ms linear;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dist__mask {
-    transition: none;
-  }
 }
 
 .filter-section {
@@ -476,12 +486,21 @@
   font-weight: 600;
 }
 
-/* Hover readout: which dollar value is under the pointer. */
+/* Hover readout: the value under the pointer, at one size with no easing, or
+ * the number lags the cursor. The !important is load bearing, since Dash sets
+ * `transition: all` broadly and animated this box up from nothing on every
+ * hover. Same for the mask, or the shaded range trails the handle. */
+.dist__cursor,
+.dist__readout,
+.dist__mask {
+  transition: none !important;
+  animation: none !important;
+}
+
 .dist__cursor,
 .dist__readout {
   position: absolute;
   opacity: 0;
-  transition: opacity 90ms linear;
 }
 
 .dist--hovered .dist__cursor,
@@ -493,6 +512,7 @@
   top: -2px;
   bottom: -8px;
   width: 1px;
+  transform: translateX(-50%);
   background: var(--wttl-dark-text, #e8eaf4);
 }
 
@@ -507,13 +527,6 @@
   font-weight: 600;
   line-height: 14px;
   white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dist__cursor,
-  .dist__readout {
-    transition: none;
-  }
 }
 
 .range-filter__hybrid-slider-wrap {

@@ -339,14 +339,11 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="rental_price_div",
             dynamic_id=self.dynamic_output_id("rental_price"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
             container_style={"marginBottom": "10px"},
         )
 
@@ -423,7 +420,6 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="ppsqft_div",
             dynamic_id=self.dynamic_output_id("ppsqft"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
@@ -446,7 +442,6 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="square_footage_div",
             dynamic_id=self.dynamic_output_id("sqft"),
-            tooltip_transform="formatSqFt",
             marks=bounds.marks(
                 include_open_end=False,
                 target_intervals=3,
@@ -484,7 +479,6 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id=component_id,
             dynamic_id=self.dynamic_output_id(dynamic_index),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
