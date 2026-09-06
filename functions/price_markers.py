@@ -59,7 +59,8 @@ build_price_marker = assign(
         + ' data-sqft="' + esc(props.sqft) + '"'
         + ' data-subtype="' + esc(props.subtype) + '"'
         + ' data-ppsqft="' + esc(props.ppsqft) + '"'
-        + ' data-listed="' + esc(props.listed_date) + '"';
+        + ' data-listed="' + esc(props.listed_date) + '"'
+        + ' data-url="' + esc(props.listing_url) + '"';
 
     const marker = L.marker(latlng, {
         icon: L.divIcon({

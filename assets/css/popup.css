@@ -1046,15 +1046,60 @@
   transform-origin: 50% 100%;
 }
 
-/* A pin has two sizes, not three. It grows for any of the ways a listing can be
- * the one you mean (the cursor on the pin, the cursor on its row in the panel,
- * its popup open) and they all grow it the same amount, so moving between them
- * never resizes anything. Size is the whole signal: no ring, no border. The
- * only difference between the states is that an open one stays grown once the
- * cursor has gone. */
-.leaflet-marker-icon.is-highlighted,
+.listing-spotlight {
+  --spot-glow: rgba(28, 33, 52, 0.14);
+  --spot-r: 70px;
+
+  z-index: 550;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.listing-spotlight::before {
+  content: "";
+  position: absolute;
+  top: var(--spot-y, 50%);
+  left: var(--spot-x, 50%);
+  width: calc(var(--spot-r) * 2);
+  height: calc(var(--spot-r) * 2);
+  margin: calc(var(--spot-r) * -1) 0 0 calc(var(--spot-r) * -1);
+  border-radius: 50%;
+  background: var(--spot-glow);
+}
+
+:root[data-mantine-color-scheme="dark"] .listing-spotlight {
+  --spot-glow: rgba(255, 255, 255, 0.17);
+}
+
+.listing-spotlight.is-on {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-spotlight {
+    transition: none;
+  }
+}
+
+/* A pin has two sizes, not three: it grows the same amount for the cursor, for
+ * its row being hovered, and for its popup being open, so moving between those
+ * never resizes anything.
+ *
+ * Leaflet gives every marker an inline z-index from its layer-point Y, and
+ * those run into the thousands, so a grown pin has to clear that whole range to
+ * come forward. Hovered beats selected. A hovered pin has no class of its own,
+ * since the hover is on the pill and the z-index is on the icon around it. */
 .leaflet-marker-icon.is-open {
-  z-index: 1200 !important;
+  z-index: 100000 !important;
+}
+
+.leaflet-marker-icon.is-highlighted {
+  z-index: 100001 !important;
+}
+
+.leaflet-marker-icon:has(.price-marker:hover) {
+  z-index: 100002 !important;
 }
 
 .price-marker:hover,

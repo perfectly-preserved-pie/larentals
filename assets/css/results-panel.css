@@ -4,6 +4,11 @@
 :root {
   --results-panel-width: clamp(260px, 20vw, 330px);
   --results-detail-max-height: 480px;
+  --results-row-open-hover: rgba(31, 104, 201, 0.26);
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  --results-row-open-hover: rgba(24, 60, 116, 0.72);
 }
 
 .results-panel {
@@ -168,6 +173,10 @@
     line-height: 1.45;
   }
 
+  .results-row-wrap {
+    position: relative;
+  }
+
   .results-row {
     display: grid;
     width: 100%;
@@ -182,14 +191,70 @@
     text-align: left;
   }
 
+  .results-row__link {
+    position: absolute;
+    top: 50%;
+    right: 0.85rem;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 8px;
+    opacity: 0;
+    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.55));
+    font-size: 1.35rem;
+    line-height: 1;
+    text-decoration: none;
+    transform: translateY(-50%);
+    transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+    -webkit-text-stroke: 0.045em currentColor;
+  }
+
+  /* Not :focus-within, which a click leaves set and strands the icon on the
+   * row after the cursor goes. :has(:focus-visible) covers the keyboard. */
+  .results-row-wrap:hover .results-row__link,
+  .results-row-wrap:has(:focus-visible) .results-row__link {
+    opacity: 1;
+  }
+
+  .results-row-wrap:hover:has(.results-row__link) .results-row__address,
+  .results-row-wrap:hover:has(.results-row__link) .results-row__meta,
+  .results-row-wrap:has(:focus-visible):has(.results-row__link) .results-row__address,
+  .results-row-wrap:has(:focus-visible):has(.results-row__link) .results-row__meta {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      #000 calc(100% - 3.1rem),
+      transparent calc(100% - 2.45rem)
+    );
+    mask-image: linear-gradient(
+      to right,
+      #000 calc(100% - 3.1rem),
+      transparent calc(100% - 2.45rem)
+    );
+  }
+
+  .results-row__link:hover,
+  .results-row__link:focus-visible {
+    background: var(--wttl-accent-soft, rgba(31, 104, 201, 0.14));
+    color: var(--wttl-accent, #1f68c9);
+    opacity: 1;
+  }
+
   .results-row:hover,
-  .results-row:focus-visible {
+  .results-row:focus-visible,
+  .results-row-wrap:hover .results-row {
     background: var(--wttl-section, rgba(30, 36, 62, 0.05));
   }
 
   .results-row.is-open {
     background: var(--wttl-accent-soft, rgba(90, 162, 245, 0.18));
     box-shadow: inset 3px 0 0 var(--wttl-accent, #5aa2f5);
+  }
+
+  .results-row-wrap:hover .results-row.is-open,
+  .results-row.is-open:hover,
+  .results-row.is-open:focus-visible {
+    background: var(--results-row-open-hover);
   }
 
   .results-row__price {
@@ -289,6 +354,7 @@
 @media (prefers-reduced-motion: reduce) {
   .listing-page-layout,
   .results-panel__detail.is-swapping .results-panel__detail-body,
+  .results-row__link,
   .column-toggle::after,
   .column-toggle--left,
   .column-toggle--right {

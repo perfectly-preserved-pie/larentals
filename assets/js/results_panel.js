@@ -9,6 +9,7 @@
     "use strict";
 
     var MAX_ROWS = 150;
+    var MARGIN = 12;
     var refreshTimer = null;
 
     /**
@@ -82,6 +83,7 @@
             subtype: props.subtype,
             ppsqft: Number(props.ppsqft),
             listed: props.listed_date,
+            url: props.listing_url,
         };
     }
 
@@ -245,6 +247,7 @@
                 subtype: el.getAttribute("data-subtype"),
                 ppsqft: Number(el.getAttribute("data-ppsqft")),
                 listed: el.getAttribute("data-listed"),
+                url: el.getAttribute("data-url"),
             });
         }
 
@@ -274,13 +277,24 @@
         if (isFinite(sqft) && sqft > 0) meta.push(sqft.toLocaleString("en-US") + " sq ft");
         if (subtype) meta.push(subtype);
 
+        var url = clean(row.url);
+        var link = url
+            ? '<a class="results-row__link" href="' + escapeHtml(url) + '"' +
+              ' target="_blank" rel="noreferrer"' +
+              ' title="Open this listing on its own site"' +
+              ' aria-label="Open ' + escapeHtml(address) + ' on its own site">' +
+              '<i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>'
+            : "";
+
         return (
+            '<div class="results-row-wrap" data-results-index="' + index + '">' +
             '<button type="button" class="results-row" data-results-index="' + index + '"' +
             ' data-mls="' + escapeHtml(clean(row.mls)) + '">' +
             '<span class="results-row__price">' + escapeHtml(formatPrice(row.price)) + "</span>" +
             '<span class="results-row__address">' + escapeHtml(address) + "</span>" +
             '<span class="results-row__meta">' + escapeHtml(meta.join(" · ")) + "</span>" +
-            "</button>"
+            "</button>" + link +
+            "</div>"
         );
     }
 
@@ -381,9 +395,7 @@
         var row = document.querySelector(".results-row" + selector);
         if (!row) return;
         row.classList.add("is-open");
-        if (options && options.scroll && !isRowInView(row)) {
-            row.scrollIntoView({ block: "nearest", behavior: "smooth" });
-        }
+        if (options && options.scroll) scrollRowIntoView(row);
     }
 
     var larentals = window.larentals = window.larentals || {};
@@ -406,17 +418,26 @@
     });
 
     /**
-     * Report whether a row is already visible inside the scrolling list.
+     * Bring a row into the visible part of the list, if it is not already.
      *
      * @param {Element} row Row element.
-     * @returns {boolean} True when the row needs no scrolling.
+     * @returns {void}
      */
-    function isRowInView(row) {
+    function scrollRowIntoView(row) {
         var list = row.closest(".results-panel__list");
-        if (!list) return false;
+        if (!list) return;
         var rowBox = row.getBoundingClientRect();
         var listBox = list.getBoundingClientRect();
-        return rowBox.top >= listBox.top && rowBox.bottom <= listBox.bottom;
+
+        // Moving the box by the overshoot is what block:"nearest" would do,
+        // done here because a smooth scrollIntoView is still animating when the
+        // list is next rebuilt, and the rebuild cancels it and restores the
+        // half-finished position it was passing through.
+        if (rowBox.top < listBox.top + MARGIN) {
+            list.scrollTop += rowBox.top - listBox.top - MARGIN;
+        } else if (rowBox.bottom > listBox.bottom - MARGIN) {
+            list.scrollTop += rowBox.bottom - listBox.bottom + MARGIN;
+        }
     }
 
     /**
@@ -473,15 +494,17 @@
     }
 
     document.addEventListener("mouseover", function (event) {
-        var row = event.target && event.target.closest ? event.target.closest(".results-row") : null;
+        var row = event.target && event.target.closest ? event.target.closest(".results-row-wrap") : null;
         if (!row) return;
         clearHighlights();
         highlight(currentRows[Number(row.getAttribute("data-results-index"))], true);
     });
 
     document.addEventListener("mouseout", function (event) {
-        var row = event.target && event.target.closest ? event.target.closest(".results-row") : null;
+        var row = event.target && event.target.closest ? event.target.closest(".results-row-wrap") : null;
         if (!row) return;
+        var to = event.relatedTarget;
+        if (to && to.closest && to.closest(".results-row-wrap") === row) return;
         highlight(currentRows[Number(row.getAttribute("data-results-index"))], false);
     });
 
@@ -492,7 +515,9 @@
     });
 
     document.addEventListener("click", function (event) {
-        var row = event.target && event.target.closest ? event.target.closest(".results-row") : null;
+        if (!event.target || !event.target.closest) return;
+        if (event.target.closest(".results-row__link")) return;
+        var row = event.target.closest(".results-row");
         if (!row) return;
         var entry = currentRows[Number(row.getAttribute("data-results-index"))];
         if (!entry) return;
@@ -523,10 +548,9 @@
             toggle.setAttribute("data-tooltip", label);
             toggle.setAttribute("aria-label", label);
         }
-        // A listing being read in the column goes with the column.
         var detail = larentals.listingDetail;
-        if (hidden && detail && toggle.getAttribute("data-column-toggle") === "results") {
-            detail.hide();
+        if (detail && toggle.getAttribute("data-column-toggle") === "results") {
+            detail.rehome();
         }
         window.setTimeout(function () {
             window.dispatchEvent(new Event("resize"));

@@ -102,6 +102,10 @@ class LeaseComponents(BaseClass):
         "listed_date",
         "school_district_name",
         "nearest_high_school_mi",
+        # Carried on the map payload rather than fetched per listing, because
+        # the results rows offer a way out to the listing's own page on hover
+        # and a row cannot wait on a request to know whether it has one.
+        "listing_url",
     )
 
     CONFIG = PageConfig(

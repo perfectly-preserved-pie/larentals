@@ -1101,16 +1101,10 @@
         closer.once(closeEvent, function () { map.off("zoomend moveend resize", refit); });
     }
 
-    // ---------- The results column as the place a listing is read ----------
-    //
-    // With the listings column up there is already a panel on screen the width
-    // of a popup, so the listing goes there and the map stays a map: the pins
-    // you were comparing against are not covered by the answer about one of
-    // them. The card carries the same body the popup does, so there is one
-    // renderer and one set of styles, not two that drift.
-    //
-    // Below 1100px, and whenever the column is collapsed, there is no such
-    // panel and the popup is still the only place a listing can go.
+    /** @type {{summaryData: Record<string, unknown>, latlng: [number, number]|null}|null} */
+    let selected = null;
+
+    let handingOver = false;
 
     /**
      * Find the detail slot, but only while it is somewhere a listing can be read.
@@ -1150,11 +1144,16 @@
      * Show a listing in the results column, if that is where listings go now.
      *
      * @param {Record<string, unknown>} summaryData Listing properties.
+     * @param {[number, number]|null} [latlng] Where the listing sits, so the
+     *   selection can be reopened as a popup if the column is collapsed.
      * @returns {boolean} `true` when the listing was handled here.
      */
-    function showListingDetail(summaryData) {
+    function showListingDetail(summaryData, latlng) {
         const slot = detailSlot();
         if (!slot) return false;
+
+        selected = { summaryData: summaryData, latlng: latlng || null };
+        updateSpotlight();
 
         const seq = (slot._listingSeq = (slot._listingSeq || 0) + 1);
         const listingId = normalizeListingId(summaryData.mls_number);
@@ -1166,20 +1165,32 @@
         }
 
         /**
-         * Release the pinned space once the new listing is on screen.
+         * Release the pinned space once the new listing is on screen, then
+         * bring the open row into view.
+         *
+         * The scroll waits for this rather than happening when the listing is
+         * clicked, because the card above the list has not taken its height
+         * yet at that point: a row that looks in frame while the card is a
+         * loading shell is pushed out of it as the card fills, and the scroll
+         * that was skipped as unnecessary turns out to have been needed. The
+         * frame is for the released min-height to reach layout first.
          *
          * @returns {void}
          */
         const settle = function () {
             slot.classList.remove("is-swapping");
             slot.style.removeProperty("min-height");
+            window.requestAnimationFrame(function scrollOpenRowIn() {
+                window.larentals?.results?.setOpenListing?.(
+                    summaryData.mls_number,
+                    { scroll: true }
+                );
+            });
         };
 
         window.larentals?.analytics?.trackListingOpened();
         if (!swapping) setDetailContent(slot, renderPopupLoadingContent(summaryData));
-        // The pin and the row mark themselves off the open listing, and with no
-        // popup open there is no popupopen event for them to read it from.
-        window.larentals?.results?.setOpenListing?.(summaryData.mls_number, { scroll: true });
+        window.larentals?.results?.setOpenListing?.(summaryData.mls_number, { scroll: false });
 
         if (!listingId) {
             setDetailContent(slot, renderPopupErrorContent(summaryData));
@@ -1217,7 +1228,70 @@
         slot.innerHTML = "";
         slot.classList.remove("is-swapping");
         slot.style.removeProperty("min-height");
+        if (handingOver) return;
+        selected = null;
+        updateSpotlight();
         window.larentals?.results?.setOpenListing?.(null, { scroll: false });
+    }
+
+    /**
+     * Open the selected listing as a popup on the map.
+     *
+     * A listing with a pin on screen is opened by clicking that pin, so the
+     * popup is anchored to the marker and placed against it the way any other
+     * popup is. A listing still inside a cluster bubble has no pin to click,
+     * so its popup is opened where the listing sits instead.
+     *
+     * @returns {void}
+     */
+    function openSelectedOnMap() {
+        const map = window.larentals?.map;
+        if (!selected || !map) return;
+
+        const mls = String(selected.summaryData.mls_number ?? "").replace(/"/g, "");
+        const pin = mls ? document.querySelector('.price-marker[data-mls="' + mls + '"]') : null;
+        if (pin) {
+            (pin.closest(".leaflet-marker-icon") || pin).dispatchEvent(
+                new MouseEvent("click", { bubbles: true, cancelable: true, view: window })
+            );
+            return;
+        }
+
+        if (!selected.latlng) return;
+        const popup = L.popup(buildPopupOptions({ _map: map }))
+            .setLatLng(selected.latlng)
+            .setContent(renderPopupLoadingContent(selected.summaryData))
+            .openOn(map);
+        popup.larentalsMls = selected.summaryData.mls_number;
+        trackPopupWhileOpen(popup, popup, "remove");
+        hydratePopup(popup, selected.summaryData);
+    }
+
+    /**
+     * Move the selected listing to whichever surface can now show it.
+     *
+     * Called as the listings column opens and closes.
+     *
+     * @returns {void}
+     */
+    function rehomeSelection() {
+        if (!selected) return;
+        const keep = selected;
+
+        if (detailSlot()) {
+            handingOver = true;
+            window.larentals?.map?.closePopup?.();
+            handingOver = false;
+            selected = keep;
+            showListingDetail(keep.summaryData, keep.latlng);
+            return;
+        }
+
+        handingOver = true;
+        hideListingDetail();
+        handingOver = false;
+        selected = keep;
+        openSelectedOnMap();
     }
 
     document.addEventListener("click", function closeListingDetail(event) {
@@ -1229,11 +1303,92 @@
         if (event.key === "Escape") hideListingDetail();
     });
 
+    const SPOTLIGHT_PANE = "listingSpotlight";
+
+    /**
+     * Read the selected listing's position on screen, in container pixels.
+     *
+     * The rendered pin is preferred over the stored coordinates: a listing
+     * inside a cluster is represented by the bubble covering it, and that is
+     * what the light should be on.
+     *
+     * @param {Object} map The Leaflet map.
+     * @returns {{x: number, y: number}|null} Container point, or `null`.
+     */
+    function spotlightPoint(map) {
+        if (!selected) return null;
+        const mls = String(selected.summaryData.mls_number ?? "").replace(/"/g, "");
+        const el = mls
+            ? document.querySelector('.price-marker[data-mls="' + mls + '"]')
+            : null;
+        const icon = el?.closest?.(".leaflet-marker-icon") || el;
+        if (icon) {
+            const box = icon.getBoundingClientRect();
+            const mapBox = map.getContainer().getBoundingClientRect();
+            return {
+                x: box.left + box.width / 2 - mapBox.left,
+                y: box.top + box.height / 2 - mapBox.top,
+            };
+        }
+        if (!selected.latlng) return null;
+        const point = map.latLngToContainerPoint(selected.latlng);
+        return { x: point.x, y: point.y };
+    }
+
+    /**
+     * Redraw the spotlight for the current selection and viewport.
+     *
+     * @returns {void}
+     */
+    function updateSpotlight() {
+        const map = window.larentals?.map;
+        const pane = map?.getPane?.(SPOTLIGHT_PANE);
+        if (!pane) return;
+
+        const point = detailSlot() ? spotlightPoint(map) : null;
+        if (!point) {
+            pane.classList.remove("is-on");
+            return;
+        }
+
+        const origin = map.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(pane, origin);
+        const size = map.getSize();
+        pane.style.width = size.x + "px";
+        pane.style.height = size.y + "px";
+
+        pane.style.setProperty("--spot-x", point.x + "px");
+        pane.style.setProperty("--spot-y", point.y + "px");
+        pane.classList.add("is-on");
+    }
+
+    /**
+     * Build the spotlight pane and keep it tracking the map.
+     *
+     * @param {Object} map The Leaflet map.
+     * @returns {void}
+     */
+    function bindSpotlight(map) {
+        const pane = map.createPane(SPOTLIGHT_PANE);
+        pane.classList.add("listing-spotlight");
+        map.on("move zoom viewreset resize", updateSpotlight);
+        map.on("zoomanim", function dropLightForZoom() {
+            pane.classList.remove("is-on");
+        });
+        map.on("zoomend moveend", updateSpotlight);
+    }
+
     const detailMapWatch = window.setInterval(function watchMapForDetail() {
         const map = window.larentals?.map;
         if (!map?.on || map.larentalsDetailWatch) return;
         map.larentalsDetailWatch = true;
+        bindSpotlight(map);
         map.on("click", hideListingDetail);
+        map.on("popupclose", function forgetSelection() {
+            if (handingOver) return;
+            selected = null;
+            updateSpotlight();
+        });
         window.clearInterval(detailMapWatch);
     }, 600);
 
@@ -1241,6 +1396,7 @@
     larentals.listingDetail = Object.assign({}, larentals.listingDetail, {
         show: showListingDetail,
         hide: hideListingDetail,
+        rehome: rehomeSelection,
     });
     larentals.popups = Object.assign({}, larentals.popups, {
         /**
@@ -1251,9 +1407,11 @@
          * @returns {Object|null} The popup, or `null` when there is no map.
          */
         openAt: function (latlng, summaryData) {
-            if (showListingDetail(summaryData || {})) return null;
+            if (showListingDetail(summaryData || {}, latlng)) return null;
             const map = larentals.map;
             if (!map || !latlng) return null;
+            selected = { summaryData: summaryData || {}, latlng: latlng };
+            updateSpotlight();
 
             const popup = L.popup(buildPopupOptions({ _map: map }))
                 .setLatLng(latlng)
@@ -1291,7 +1449,11 @@
                 // means no popup is ever built for a listing read in the panel.
                 const openPopupForLayer = layer._openPopup;
                 layer._openPopup = function divertOrOpenPopup(event) {
-                    if (showListingDetail(summaryData)) return;
+                    const at = this.getLatLng?.();
+                    const latlng = at ? [at.lat, at.lng] : null;
+                    if (showListingDetail(summaryData, latlng)) return;
+                    selected = { summaryData: summaryData, latlng: latlng };
+                    updateSpotlight();
                     return openPopupForLayer.call(this, event);
                 };
 
