@@ -147,7 +147,7 @@
 
 :root[data-mantine-color-scheme="dark"] .layers-control-discovery {
   background: var(--wttl-accent);
-  color: #10211f;
+  color: var(--wttl-on-accent);
 }
 
 :root[data-mantine-color-scheme="dark"] .layers-control-discovery::before {

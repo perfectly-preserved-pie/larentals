@@ -4,8 +4,8 @@
   --filter-panel-surface: var(--bs-body-bg, #ffffff);
   --filter-panel-border: var(--bs-border-color, rgba(15, 23, 42, 0.16));
   --filter-panel-text: var(--bs-body-color, #172033);
-  --filter-panel-accent: #176b55;
-  --filter-panel-accent-hover: #0f5945;
+  --filter-panel-accent: var(--wttl-accent, #1f68c9);
+  --filter-panel-accent-hover: var(--wttl-accent-strong, #17529f);
   --filter-panel-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
 }
 
@@ -324,7 +324,7 @@
   .responsive-filter-panel__apply {
     border: 1px solid var(--filter-panel-accent);
     background: var(--filter-panel-accent);
-    color: #ffffff;
+    color: var(--wttl-on-accent, #ffffff);
   }
 
   .responsive-filter-panel__apply:hover,
@@ -464,9 +464,9 @@
 
   .map-filter-toolbar__mode-button.is-selected,
   .map-filter-toolbar__mode-button.is-selected:hover {
-    background: #176b55;
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(23, 107, 85, 0.26);
+    background: var(--wttl-accent, #1f68c9);
+    color: var(--wttl-on-accent, #ffffff);
+    box-shadow: 0 2px 6px var(--wttl-accent-soft, rgba(31, 104, 201, 0.26));
   }
 
   .map-filter-toolbar__mode-button.is-selected .bi-check2 {
@@ -474,7 +474,7 @@
   }
 
   .map-filter-toolbar__mode-button:focus-visible {
-    outline: 3px solid rgba(23, 107, 85, 0.3);
+    outline: 3px solid var(--wttl-accent-soft, rgba(31, 104, 201, 0.3));
     outline-offset: 2px;
   }
 
@@ -483,13 +483,13 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    border: 1px solid #1a6d58;
+    border: 1px solid var(--wttl-accent-strong, #17529f);
     border-radius: 12px;
     padding: 8px 12px;
-    background: #176b55;
-    color: #ffffff;
+    background: var(--wttl-accent, #1f68c9);
+    color: var(--wttl-on-accent, #ffffff);
     font-weight: 750;
-    box-shadow: 0 4px 12px rgba(23, 107, 85, 0.2);
+    box-shadow: 0 4px 12px var(--wttl-accent-soft, rgba(31, 104, 201, 0.2));
   }
 
   .map-filter-toolbar__badge {
@@ -498,8 +498,8 @@
     height: 21px;
     place-items: center;
     border-radius: 999px;
-    background: #ffffff;
-    color: #145442;
+    background: var(--wttl-on-accent, #ffffff);
+    color: var(--wttl-accent-strong, #17529f);
     font-size: 0.72rem;
     font-weight: 850;
   }
@@ -538,9 +538,9 @@
   }
 
   .map-filter-chip--active {
-    border-color: #176b55;
-    background: #e0f4ed;
-    color: #104f3f;
+    border-color: var(--wttl-accent, #1f68c9);
+    background: var(--wttl-accent-soft, rgba(31, 104, 201, 0.14));
+    color: var(--wttl-accent-strong, #17529f);
   }
 
   .listing-map-col .leaflet-top {
@@ -655,12 +655,6 @@
   --filter-panel-surface: var(--wttl-panel, #202427);
   --filter-panel-border: var(--wttl-border, rgba(232, 238, 241, 0.14));
   --filter-panel-text: var(--wttl-text, #e7ecef);
-  --filter-panel-accent: var(--wttl-accent, #4fc3b4);
-  --filter-panel-accent-hover: #3db2a4;
-}
-
-:root[data-mantine-color-scheme="dark"] .responsive-filter-panel__apply {
-  color: #10211f;
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__top,
@@ -693,14 +687,14 @@
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button.is-selected,
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button.is-selected:hover {
-  background: var(--wttl-accent, #4fc3b4);
-  color: #10211f;
+  background: var(--wttl-accent, #5aa2f5);
+  color: var(--wttl-on-accent, #061527);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-chip--active {
-  border-color: var(--wttl-accent, #4fc3b4);
-  background: rgba(79, 195, 180, 0.18);
-  color: #93e6dc;
+  border-color: var(--wttl-accent, #5aa2f5);
+  background: var(--wttl-accent-soft, rgba(90, 162, 245, 0.18));
+  color: var(--wttl-accent-strong, #7db8ff);
 }
 
 .leaflet-control-layers {

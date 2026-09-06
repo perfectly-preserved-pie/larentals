@@ -827,15 +827,20 @@ def build_title_card(
             html.H1(title, className="site-name"),
             dmc.Switch(
                 id="color-scheme-switch",
+                # Filled rather than outlined: inside a switch track these are
+                # drawn at 16px, and a hairline glyph that size reads as a
+                # smudge. Both take the theme's text colour, so each is dark on
+                # the light track and light on the dark one, and the shape is
+                # left to say which is which.
                 offLabel=DashIconify(
-                    icon="radix-icons:sun",
-                    width=15,
-                    color="var(--mantine-color-yellow-8)",
+                    icon="ph:sun-fill",
+                    width=16,
+                    color="var(--wttl-text)",
                 ),
                 onLabel=DashIconify(
-                    icon="radix-icons:moon",
-                    width=15,
-                    color="var(--mantine-color-yellow-6)",
+                    icon="ph:moon-stars-fill",
+                    width=16,
+                    color="var(--wttl-text)",
                 ),
                 className="theme-switch-control",
                 color="gray",
@@ -1003,7 +1008,12 @@ def build_map(
                 "minZoom": 3,
             },
         ),
-        dl.FullScreenControl(),
+        # Bottom left is the one corner nothing else wants: the listings panel
+        # is right, the filter toolbar is top, and a popup opens upward from its
+        # pin. Leaflet's own zoom control is turned off on the map below so this
+        # one can be placed rather than pinned to the top left.
+        dl.ZoomControl(position="bottomleft"),
+        dl.FullScreenControl(position="bottomleft"),
     ]
     if layers_control is None:
         map_children.insert(0, dl.TileLayer(detectRetina=False, maxZoom=21))
@@ -1017,6 +1027,7 @@ def build_map(
         minZoom=9,
         maxZoom=21,
         center={"lat": center_lat, "lng": center_lng},
+        zoomControl=False,
         preferCanvas=True,
         closePopupOnClick=True,
         eventHandlers=map_event_handlers,

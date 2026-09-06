@@ -44,10 +44,10 @@
     --bs-card-bg: var(--wttl-panel, #202427);
     --bs-card-color: var(--wttl-text, #e7ecef);
     --bs-card-border-color: var(--wttl-border, rgba(232, 238, 241, 0.14));
-    --bs-link-color: var(--wttl-accent-strong, #69d8ca);
-    --bs-link-hover-color: #93e6dc;
-    --bs-primary: var(--wttl-accent, #4fc3b4);
-    --bs-primary-rgb: 79, 195, 180;
+    --bs-link-color: var(--wttl-accent, #5aa2f5);
+    --bs-link-hover-color: var(--wttl-accent-strong, #7db8ff);
+    --bs-primary: var(--wttl-accent, #5aa2f5);
+    --bs-primary-rgb: 90, 162, 245;
     --Dash-Stroke-Weak: rgba(255, 255, 255, 0.15);
     --Dash-Fill-Weak: rgba(255, 255, 255, 0.06);
     --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.08);
@@ -87,19 +87,19 @@
 :root[data-mantine-color-scheme="dark"] .dbc .form-control:focus,
 :root[data-mantine-color-scheme="dark"] .dbc .form-select:focus {
     background-color: var(--wttl-input, #2b2f32);
-    border-color: var(--wttl-accent, #4fc3b4);
-    box-shadow: 0 0 0 0.18rem var(--wttl-accent-soft, rgba(79, 195, 180, 0.2));
+    border-color: var(--wttl-accent, #5aa2f5);
+    box-shadow: 0 0 0 0.18rem var(--wttl-accent-soft, rgba(90, 162, 245, 0.2));
     color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .dbc .btn-primary {
-    --bs-btn-bg: var(--wttl-accent, #4fc3b4);
-    --bs-btn-border-color: var(--wttl-accent, #4fc3b4);
-    --bs-btn-hover-bg: #3db2a4;
-    --bs-btn-hover-border-color: #3db2a4;
-    --bs-btn-active-bg: #34998d;
-    --bs-btn-active-border-color: #34998d;
-    --bs-btn-color: #10211f;
-    --bs-btn-hover-color: #10211f;
-    --bs-btn-active-color: #ffffff;
+    --bs-btn-bg: var(--wttl-accent, #5aa2f5);
+    --bs-btn-border-color: var(--wttl-accent, #5aa2f5);
+    --bs-btn-hover-bg: var(--wttl-accent-strong, #7db8ff);
+    --bs-btn-hover-border-color: var(--wttl-accent-strong, #7db8ff);
+    --bs-btn-active-bg: var(--wttl-accent-strong, #7db8ff);
+    --bs-btn-active-border-color: var(--wttl-accent-strong, #7db8ff);
+    --bs-btn-color: var(--wttl-on-accent, #061527);
+    --bs-btn-hover-color: var(--wttl-on-accent, #061527);
+    --bs-btn-active-color: var(--wttl-on-accent, #061527);
 }

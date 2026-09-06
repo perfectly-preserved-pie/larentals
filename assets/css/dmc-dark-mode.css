@@ -490,7 +490,7 @@ body {
 
 :root[data-mantine-color-scheme="dark"] .map-gesture-action-button {
     background: var(--wttl-accent);
-    color: #10211f;
+    color: var(--wttl-on-accent);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-gesture-action-button:hover,

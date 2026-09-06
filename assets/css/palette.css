@@ -112,11 +112,16 @@ html {
   color: var(--wttl-text-faint);
 }
 
-/* Both themes' basemaps are on the map at once (layers.py) and these three
- * rules pick which pair is painted. Each is Esri's own cartography, drawn for
- * its own theme, so there is no filter here and nothing that could survive a
- * theme change: swapping which layers are displayed cannot leave anything
- * behind the way applying and unapplying a filter could. */
+/* Leaflet hardcodes the attribution white. Esri's terms want the credit, so it
+ * takes the theme rather than being switched off. */
+:root[data-mantine-color-scheme="dark"] .leaflet-control-attribution {
+  background: rgba(21, 24, 38, 0.82);
+  color: var(--wttl-text-faint);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-control-attribution a {
+  color: var(--wttl-text-muted);
+}
 
 .street-tiles--dark {
   display: none;

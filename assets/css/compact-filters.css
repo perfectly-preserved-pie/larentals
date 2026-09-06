@@ -132,12 +132,12 @@
 }
 
 .mode-switch__option.btn.active {
-  background: var(--wttl-accent, #4fc3b4);
+  background: var(--wttl-accent, #1f68c9);
   color: var(--wttl-on-accent);
 }
 
 .mode-switch__option.btn.active:hover {
-  background: var(--wttl-accent-strong, #6fd8c9);
+  background: var(--wttl-accent-strong, #17529f);
   color: var(--wttl-on-accent);
 }
 
