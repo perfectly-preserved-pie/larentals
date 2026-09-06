@@ -1052,8 +1052,6 @@
         if (!popup) return;
 
         const seq = (popup._listingSeq = (popup._listingSeq || 0) + 1);
-        const path = String(window.location?.pathname || "").toLowerCase();
-        const isBuyPage = path === "/buy" || path.startsWith("/buy");
         const listingId = normalizeListingId(summaryData.mls_number);
 
         window.larentals?.analytics?.trackListingOpened();
@@ -1068,15 +1066,26 @@
             .then((detailData) => {
                 if (seq !== popup._listingSeq) return;
                 const popupData = Object.assign({}, summaryData, detailData || {});
-                setPopupContent(target, isBuyPage
-                    ? generateBuyPopupContent(popupData)
-                    : generateLeasePopupContent(popupData));
+                setPopupContent(target, renderListingContent(popupData));
             })
             .catch((error) => {
                 if (seq !== popup._listingSeq) return;
                 console.error("Failed to load popup details for listing", listingId, error);
                 setPopupContent(target, renderPopupErrorContent(summaryData));
             });
+    }
+
+    /**
+     * Render the listing body for whichever page is being viewed.
+     *
+     * @param {Record<string, unknown>} popupData Merged summary and detail data.
+     * @returns {string} HTML string for the listing body.
+     */
+    function renderListingContent(popupData) {
+        const path = String(window.location?.pathname || "").toLowerCase();
+        return path === "/buy" || path.startsWith("/buy")
+            ? generateBuyPopupContent(popupData)
+            : generateLeasePopupContent(popupData);
     }
 
     /**
@@ -1096,7 +1105,147 @@
         closer.once(closeEvent, function () { map.off("zoomend moveend resize", refit); });
     }
 
+    // ---------- The results column as the place a listing is read ----------
+    //
+    // With the listings column up there is already a panel on screen the width
+    // of a popup, so the listing goes there and the map stays a map: the pins
+    // you were comparing against are not covered by the answer about one of
+    // them. The card carries the same body the popup does, so there is one
+    // renderer and one set of styles, not two that drift.
+    //
+    // Below 1100px, and whenever the column is collapsed, there is no such
+    // panel and the popup is still the only place a listing can go.
+
+    /**
+     * Find the detail slot, but only while it is somewhere a listing can be read.
+     *
+     * @returns {Element|null} The slot, or `null` when the popup should be used.
+     */
+    function detailSlot() {
+        const slot = document.querySelector("[data-results-detail]");
+        if (!slot) return null;
+        const panel = slot.closest(".results-panel");
+        if (!panel || !panel.offsetParent) return null;
+        const layout = panel.closest(".listing-page-layout");
+        if (layout && layout.classList.contains("is-results-hidden")) return null;
+        return slot;
+    }
+
+    /**
+     * Put content in the detail slot and reveal it.
+     *
+     * @param {Element} slot Detail slot element.
+     * @param {string} content HTML for the listing body.
+     * @returns {void}
+     */
+    function setDetailContent(slot, content) {
+        slot.innerHTML =
+            '<button type="button" class="results-panel__detail-close"' +
+            ' data-results-detail-close aria-label="Close listing details">' +
+            '<i class="bi bi-x-lg" aria-hidden="true"></i></button>' +
+            '<div class="results-panel__detail-body">' + content + "</div>";
+        slot.hidden = false;
+        const body = slot.querySelector(".results-panel__detail-body");
+        if (body) body.scrollTop = 0;
+        window.larentals?.isp?.hydrateIspOptionsInPopup(slot);
+    }
+
+    /**
+     * Show a listing in the results column, if that is where listings go now.
+     *
+     * @param {Record<string, unknown>} summaryData Listing properties.
+     * @returns {boolean} `true` when the listing was handled here.
+     */
+    function showListingDetail(summaryData) {
+        const slot = detailSlot();
+        if (!slot) return false;
+
+        const seq = (slot._listingSeq = (slot._listingSeq || 0) + 1);
+        const listingId = normalizeListingId(summaryData.mls_number);
+
+        const swapping = !slot.hidden;
+        if (swapping) {
+            slot.style.minHeight = slot.getBoundingClientRect().height + "px";
+            slot.classList.add("is-swapping");
+        }
+
+        /**
+         * Release the pinned space once the new listing is on screen.
+         *
+         * @returns {void}
+         */
+        const settle = function () {
+            slot.classList.remove("is-swapping");
+            slot.style.removeProperty("min-height");
+        };
+
+        window.larentals?.analytics?.trackListingOpened();
+        if (!swapping) setDetailContent(slot, renderPopupLoadingContent(summaryData));
+        // The pin and the row mark themselves off the open listing, and with no
+        // popup open there is no popupopen event for them to read it from.
+        window.larentals?.results?.setOpenListing?.(summaryData.mls_number, { scroll: true });
+
+        if (!listingId) {
+            setDetailContent(slot, renderPopupErrorContent(summaryData));
+            settle();
+            return true;
+        }
+
+        fetchListingDetails(listingId)
+            .then((detailData) => {
+                if (seq !== slot._listingSeq) return;
+                setDetailContent(slot, renderListingContent(
+                    Object.assign({}, summaryData, detailData || {})
+                ));
+                settle();
+            })
+            .catch((error) => {
+                if (seq !== slot._listingSeq) return;
+                console.error("Failed to load listing details for listing", listingId, error);
+                setDetailContent(slot, renderPopupErrorContent(summaryData));
+                settle();
+            });
+        return true;
+    }
+
+    /**
+     * Empty and hide the detail slot.
+     *
+     * @returns {void}
+     */
+    function hideListingDetail() {
+        const slot = document.querySelector("[data-results-detail]");
+        if (!slot || slot.hidden) return;
+        slot._listingSeq = (slot._listingSeq || 0) + 1;
+        slot.hidden = true;
+        slot.innerHTML = "";
+        slot.classList.remove("is-swapping");
+        slot.style.removeProperty("min-height");
+        window.larentals?.results?.setOpenListing?.(null, { scroll: false });
+    }
+
+    document.addEventListener("click", function closeListingDetail(event) {
+        const closer = event.target?.closest?.("[data-results-detail-close]");
+        if (closer) hideListingDetail();
+    });
+
+    document.addEventListener("keydown", function escapeListingDetail(event) {
+        if (event.key === "Escape") hideListingDetail();
+    });
+
+    const detailMapWatch = window.setInterval(function watchMapForDetail() {
+        const map = window.larentals?.map;
+        if (!map?.on || map.larentalsDetailWatch) return;
+        map.larentalsDetailWatch = true;
+        map.on("click", hideListingDetail);
+        window.clearInterval(detailMapWatch);
+    }, 600);
+
     const larentals = window.larentals = window.larentals || {};
+    larentals.listingDetail = Object.assign({}, larentals.listingDetail, {
+        show: showListingDetail,
+        hide: hideListingDetail,
+    });
     larentals.popups = Object.assign({}, larentals.popups, {
         /**
          * Open a listing popup at a point, without moving the map.
@@ -1106,6 +1255,7 @@
          * @returns {Object|null} The popup, or `null` when there is no map.
          */
         openAt: function (latlng, summaryData) {
+            if (showListingDetail(summaryData || {})) return null;
             const map = larentals.map;
             if (!map || !latlng) return null;
 
@@ -1138,6 +1288,16 @@
                 }
 
                 const summaryData = feature.properties;
+
+                // bindPopup registers `this._openPopup` as the click handler and
+                // keeps that reference, so the fork has to be installed on the
+                // layer before binding. Diverting here rather than on popupopen
+                // means no popup is ever built for a listing read in the panel.
+                const openPopupForLayer = layer._openPopup;
+                layer._openPopup = function divertOrOpenPopup(event) {
+                    if (showListingDetail(summaryData)) return;
+                    return openPopupForLayer.call(this, event);
+                };
 
                 layer.bindPopup(renderPopupLoadingContent(summaryData), buildPopupOptions(layer));
 

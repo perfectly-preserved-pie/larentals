@@ -348,6 +348,15 @@ def build_responsive_listing_shell(
 
     results_panel = html.Aside(
         [
+            # A listing opened while this column is up is read here rather than
+            # in a popup over the map, so the pins it is being compared against
+            # stay visible. Empty and hidden until something is opened.
+            html.Div(
+                id=f"{page_type}-results-detail",
+                className="results-panel__detail",
+                hidden=True,
+                **{"data-results-detail": page_type},
+            ),
             html.Div(
                 [
                     html.H2("In view", className="results-panel__title"),
@@ -393,7 +402,9 @@ def build_responsive_listing_shell(
     )
 
     # Both toggles sit on the layout rather than inside a column, so a collapsed
-    # column can still be reopened.
+    # column can still be reopened. Two sidebar glyphs a column apart say very
+    # little on their own, hence the hover label; it names the action rather
+    # than the column, so it changes as the column opens and closes.
     column_toggles = [
         html.Button(
             html.I(className="bi bi-layout-sidebar", **{"aria-hidden": "true"}),
@@ -402,7 +413,11 @@ def build_responsive_listing_shell(
             className="column-toggle column-toggle--left",
             **{
                 "data-column-toggle": "filters",
-                "aria-label": "Hide or show the filters column",
+                "data-tooltip": "Hide filters",
+                "data-tooltip-show": "Show filters",
+                "data-tooltip-hide": "Hide filters",
+                "aria-label": "Hide filters",
+                "aria-expanded": "true",
             },
         ),
         html.Button(
@@ -412,7 +427,11 @@ def build_responsive_listing_shell(
             className="column-toggle column-toggle--right",
             **{
                 "data-column-toggle": "results",
-                "aria-label": "Hide or show the listings column",
+                "data-tooltip": "Hide listings",
+                "data-tooltip-show": "Show listings",
+                "data-tooltip-hide": "Hide listings",
+                "aria-label": "Hide listings",
+                "aria-expanded": "true",
             },
         ),
     ]

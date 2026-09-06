@@ -660,7 +660,7 @@
 
 .school-layer-map-prompt__title {
   font-weight: 700;
-  color: #174e3b;
+  color: var(--wttl-accent-strong, #17529f);
 }
 
 .school-layer-map-prompt__copy {

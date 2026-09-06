@@ -342,7 +342,9 @@
             return;
         }
 
+        var scrollTop = list.scrollTop;
         list.innerHTML = currentRows.map(renderRow).join("");
+        list.scrollTop = scrollTop;
         if (count) {
             count.textContent = result.rows.length > MAX_ROWS
                 ? MAX_ROWS + " of " + result.rows.length.toLocaleString("en-US")
@@ -379,9 +381,42 @@
         var row = document.querySelector(".results-row" + selector);
         if (!row) return;
         row.classList.add("is-open");
-        if (options && options.scroll) {
+        if (options && options.scroll && !isRowInView(row)) {
             row.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
+    }
+
+    var larentals = window.larentals = window.larentals || {};
+    larentals.results = Object.assign({}, larentals.results, {
+        /**
+         * Mark a listing as the one being read.
+         *
+         * With the listings column up a listing opens as a card in this panel
+         * rather than as a popup, so there is no popupopen event to read the
+         * open listing from and it is handed over directly instead.
+         *
+         * @param {unknown} mls MLS number, or a falsy value to clear the mark.
+         * @param {{scroll: boolean}} [options] Whether to scroll the row in.
+         * @returns {void}
+         */
+        setOpenListing: function (mls, options) {
+            openMls = mls ? String(mls) : null;
+            markOpenRow(options || { scroll: false });
+        },
+    });
+
+    /**
+     * Report whether a row is already visible inside the scrolling list.
+     *
+     * @param {Element} row Row element.
+     * @returns {boolean} True when the row needs no scrolling.
+     */
+    function isRowInView(row) {
+        var list = row.closest(".results-panel__list");
+        if (!list) return false;
+        var rowBox = row.getBoundingClientRect();
+        var listBox = list.getBoundingClientRect();
+        return rowBox.top >= listBox.top && rowBox.bottom <= listBox.bottom;
     }
 
     /**
@@ -483,6 +518,16 @@
                 : "is-filters-hidden"
         );
         toggle.setAttribute("aria-expanded", hidden ? "false" : "true");
+        var label = toggle.getAttribute(hidden ? "data-tooltip-show" : "data-tooltip-hide");
+        if (label) {
+            toggle.setAttribute("data-tooltip", label);
+            toggle.setAttribute("aria-label", label);
+        }
+        // A listing being read in the column goes with the column.
+        var detail = larentals.listingDetail;
+        if (hidden && detail && toggle.getAttribute("data-column-toggle") === "results") {
+            detail.hide();
+        }
         window.setTimeout(function () {
             window.dispatchEvent(new Event("resize"));
             scheduleRefresh();
