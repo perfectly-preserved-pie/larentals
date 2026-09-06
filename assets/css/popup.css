@@ -813,15 +813,6 @@
   object-fit: cover;
 }
 
-/* No photo is a fact about the listing, not an error, so the slot shows the
- * street instead of collapsing to a gap. Captioned, because a pano of the block
- * is not a photo of the unit. */
-/* Google stacks an address card, a compass and a fullscreen button across the
- * top of the pano, which on a 302px tile covers half the image, and a zoom
- * +/- up the bottom right. The embed takes no parameter to turn any of it off,
- * so the iframe is overhung past the top and right edges and clipped: the
- * chrome goes, and the Google logo bottom left stays, which is the part that
- * has to. */
 .listing-popup__media--streetview {
   position: relative;
   overflow: hidden;
@@ -835,20 +826,30 @@
   left: 0;
   display: block;
   width: calc(100% + var(--streetview-crop-right, 54px));
-  height: calc(100% + var(--streetview-crop, 68px));
+  height: calc(
+    100% + var(--streetview-crop, 68px) + var(--streetview-crop-bottom, 96px)
+  );
   border: 0;
 }
 
-.listing-popup__media-caption {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-  padding: 6px 13px;
-  border-bottom: 1px solid var(--popup-border);
-  background: var(--popup-inset);
-  color: var(--popup-faint);
-  font-size: 0.6875rem;
+.listing-popup .listing-popup__streetview {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(12, 15, 25, 0.6);
+  color: #ffffff;
+  font-size: 0.625rem;
+  line-height: 1.6;
+  text-decoration: none;
+}
+
+.listing-popup .listing-popup__streetview:hover,
+.listing-popup .listing-popup__streetview:focus-visible {
+  background: rgba(12, 15, 25, 0.82);
+  color: #ffffff;
 }
 
 .listing-popup__address {
@@ -961,15 +962,10 @@
   text-underline-offset: 2px;
 }
 
-/* Leaflet paints every anchor inside the map its own link blue, at a
- * specificity (.leaflet-container a) that a single class cannot outrank. */
-.listing-popup .listing-popup__streetview,
 .listing-popup .listing-popup__report {
   color: var(--popup-muted);
 }
 
-.listing-popup .listing-popup__streetview:hover,
-.listing-popup .listing-popup__streetview:focus-visible,
 .listing-popup .listing-popup__report:hover,
 .listing-popup .listing-popup__report:focus-visible {
   color: var(--popup-accent);

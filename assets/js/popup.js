@@ -558,8 +558,6 @@
         const embedUrl = buildStreetViewEmbedUrl(popupData);
         const address = normalizeNullableString(popupData.full_street_address) || "this listing";
 
-        // Labelled, because a pano of the block is not a photo of the unit and
-        // should not be mistaken for one.
         return `
             <div class="listing-popup__media listing-popup__media--streetview">
                 <iframe
@@ -569,10 +567,8 @@
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade"
                     allowfullscreen></iframe>
-            </div>
-            <div class="listing-popup__media-caption">
-                No listing photo${mapsUrl
-                    ? ` &middot; <a class="listing-popup__streetview" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">open in Google Maps</a>`
+                ${mapsUrl
+                    ? `<a class="listing-popup__streetview" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">Google Maps</a>`
                     : ""}
             </div>
         `;
