@@ -64,7 +64,7 @@ def register_report_listing_routes(
         text_report = data.get("text")
         page_path = str(data.get("page_path") or "").strip().lower()
 
-        if option not in ALLOWED_OPTIONS:
+        if not isinstance(option, str) or option not in ALLOWED_OPTIONS:
             abort(400, "Invalid option provided.")
         if not mls_number or len(mls_number) > MAX_MLS_NUMBER_LENGTH:
             abort(400, "Invalid MLS number provided.")
@@ -108,10 +108,4 @@ def register_report_listing_routes(
             raise
         except Exception as exc:
             logger.error(f"Error handling report for MLS {mls_number}: {exc}")
-            return (
-                jsonify(
-                    status="error",
-                    message="Internal error, please try again later.",
-                ),
-                500,
-            )
+            abort(500, "Internal error, please try again later.")

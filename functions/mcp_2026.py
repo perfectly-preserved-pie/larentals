@@ -765,6 +765,29 @@ def register_mcp_2026_transport(
                     tool_call_times.pop(key, None)
         return None
 
+    @server.after_request
+    def correct_legacy_capabilities(response: Response) -> Response:
+        """Omit unsupported resources from the legacy initialize handshake.
+
+        Args:
+            response: Dash's legacy response, before compression.
+
+        Returns:
+            Response preserving the session and all supported capabilities.
+        """
+        if request.path != normalized_path or request.method != "POST":
+            return response
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict) or payload.get("method") != "initialize":
+            return response
+        reply = response.get_json(silent=True)
+        if isinstance(reply, dict) and isinstance(reply.get("result"), dict):
+            capabilities = reply["result"].get("capabilities", {})
+            # configure_listings_mcp disables all layout/page resources.
+            capabilities.pop("resources", None)
+            response.set_data(json.dumps(reply))
+        return response
+
     @server.before_request
     def handle_mcp_2026_request() -> Response | None:
         """Intercept modern MCP traffic and let legacy traffic reach Dash.

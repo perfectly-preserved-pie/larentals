@@ -76,6 +76,9 @@ class McpDocsUiTest(unittest.TestCase):
 
     self.assertIn("/", [link.href for link in links])
     self.assertIn("color-scheme-switch", ids)
+    developer_links = [item for item in self.components if isinstance(item, html.A) and item.href == "/developers"]
+    self.assertEqual(len(developer_links), 1)
+    self.assertEqual(developer_links[0].children, "Developers")
 
 
 if __name__ == "__main__":

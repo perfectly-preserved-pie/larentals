@@ -41,10 +41,13 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest~=9.1.1",
+  "jsonschema>=4.26,<5",
+  "openapi-spec-validator>=0.7,<0.9",
 ]
 
 [project.scripts]
 wheretolive-la = "app:main"
+wheretolive-search = "scripts.search_cli:main"
 buy-dataframe = "pipelines.buy_dataframe:main"
 lease-dataframe = "pipelines.lease_dataframe:main"
 build-breakfast-burritos-geojson = "scripts.build_breakfast_burritos_geojson:main"

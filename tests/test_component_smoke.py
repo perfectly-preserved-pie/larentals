@@ -372,8 +372,8 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(upload_range.className, "isp-speed-filter__range")
         self.assertEqual(missing_switch.id, "isp_speed_missing_switch")
 
-    def test_title_card_links_to_mcp_setup_page(self) -> None:
-        """Verify that title card links to mcp setup page.
+    def test_title_card_groups_developer_resources(self) -> None:
+        """Expose one Developers entry for REST, MCP, and CLI resources.
 
         Returns:
             None.
@@ -389,7 +389,10 @@ class ComponentsSmokeTest(unittest.TestCase):
             for component in _collect_components(title_card)
             if isinstance(component, html.A)
         ]
-        self.assertIn("/mcp", [link.href for link in links])
+        developer_links = [link for link in links if link.href == "/developers"]
+        self.assertEqual(len(developer_links), 1)
+        self.assertIn("Developers", str(developer_links[0].children))
+        self.assertNotIn("/mcp", [link.href for link in links])
 
 
 if __name__ == "__main__":

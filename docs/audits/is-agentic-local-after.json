@@ -1,0 +1,85 @@
+{
+  "target": "https://lip-patches-justice-vehicles.trycloudflare.com",
+  "display_target": "lip-patches-justice-vehicles.trycloudflare.com",
+  "report_url": "https://is-agentic.com/scan/lip-patches-justice-vehicles.trycloudflare.com",
+  "score": 98,
+  "score_label": "Strong technical baseline",
+  "scanned_at": "2026-09-08T20:14:37.915Z",
+  "eligible_checks": 32,
+  "score_breakdown": {
+    "essential": {
+      "earned": 80,
+      "available": 80,
+      "passing": 10,
+      "total": 10
+    },
+    "recommended": {
+      "earned": 15.8,
+      "available": 20,
+      "passing": 15,
+      "total": 22
+    },
+    "bonus": {
+      "points": 2.5,
+      "positive_signals": 11
+    }
+  },
+  "issues": [
+    {
+      "details": "\"WhereToLive.LA\" search returned 10 results but domain did not appear - brand may be too generic or not indexed",
+      "id": "brand-search-accuracy",
+      "name": "Brand name discoverability",
+      "recommendation": "Make sure a clean search for your brand name returns your own domain in the top results. If it does not, your brand may be too generic, conflict with a more established term, or not yet indexed. Strengthen brand-name search by claiming consistent NAP across listings, earning press mentions that link to the canonical domain, and avoiding redirect chains that mask the apex domain in search results.",
+      "result": "failed",
+      "tier": "recommended"
+    },
+    {
+      "details": "No API versioning strategy found - add URL path versioning (/v1/, /v2/) or a versioned header parameter in your OpenAPI spec",
+      "id": "api-versioning-policy",
+      "name": "REST versioning / deprecation policy",
+      "recommendation": "Declare a versioning policy agents can rely on: version your API (in the URL path or a version header) and publish how you signal deprecation (a Sunset/Deprecation header or a documented timeline). Agents avoid integrating against a surface that can change without warning.",
+      "result": "failed",
+      "tier": "recommended"
+    },
+    {
+      "details": "No REST rate-limit headers found on probed endpoints",
+      "id": "rate-limit-headers",
+      "name": "Rate limit response headers",
+      "recommendation": "Return standard rate-limit headers on your API responses (the RFC RateLimit headers, plus Retry-After on a 429) so agents can self-throttle in real time, and document the conventions alongside your API.",
+      "result": "failed",
+      "tier": "recommended"
+    },
+    {
+      "details": "Name search surfaced no pages on lip-patches-justice-vehicles.trycloudflare.com, although developer resources exist on the site (API docs, OpenAPI spec) - weak search indexing or transient search noise",
+      "id": "agentic-search-specific",
+      "name": "Developer resource discoverability",
+      "recommendation": "Make your developer resources (API docs, OpenAPI spec, auth docs, developer portal, MCP server) discoverable by name. Publish them at predictable URLs, list them in llms.txt, and include your product name in page titles and headings so search engines surface them for name-based queries.",
+      "result": "partial",
+      "tier": "recommended"
+    },
+    {
+      "details": "Organization schema found but missing: address",
+      "id": "org-schema-completeness",
+      "name": "Organization schema completeness",
+      "recommendation": "Add Organization JSON-LD that includes both contactPoint (with email/phone and contactType) and address (PostalAddress). This lets AI verify your business legitimacy and answer contact queries.",
+      "result": "partial",
+      "tier": "recommended"
+    },
+    {
+      "details": "API/docs link found on homepage (/developers) but page is thin or unreachable",
+      "id": "public-api-docs",
+      "name": "Public API/docs linked from homepage",
+      "recommendation": "Publish API documentation at a discoverable URL (/docs, /api, /developers). Include authentication, endpoints, and example requests.",
+      "result": "partial",
+      "tier": "recommended"
+    },
+    {
+      "details": "First-party MCP server published by product org (npm, @cloudflare/mcp-server-cloudflare, 16839 score). Add live handshake at /.well-known/mcp for full credit.",
+      "id": "mcp-server",
+      "name": "MCP server / manifest",
+      "recommendation": "Build an MCP (Model Context Protocol) server exposing your API as tools. Use Streamable HTTP transport for full score. This lets Claude, ChatGPT, and other AI agents call your product natively.",
+      "result": "partial",
+      "tier": "recommended"
+    }
+  ]
+}

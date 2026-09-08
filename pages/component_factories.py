@@ -811,13 +811,12 @@ def build_title_card(
                     ),
                     html.A(
                         [
-                            DashIconify(icon="lucide:bot", width=16),
-                            html.Span("MCP"),
+                            DashIconify(icon="lucide:code", width=16),
+                            html.Span("Developers"),
                         ],
-                        href="/mcp",
-                        title="MCP setup instructions",
+                        href="/developers",
+                        title="REST API, MCP, and CLI documentation",
                         className="title-card-link",
-                        **{"aria-label": "MCP setup instructions"},
                     ),
                     html.A(
                         [

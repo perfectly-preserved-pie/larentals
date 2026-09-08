@@ -513,6 +513,7 @@ def test_legacy_initialize_and_get_still_reach_dash(mcp_client: FlaskClient) -> 
     assert "text/event-stream" in get_response.content_type
     assert get_response.headers.get("Mcp-Session-Id")
     assert initialize_response.status_code == 200
+    assert "resources" not in initialize_response.get_json()["result"]["capabilities"]
     assert initialize_response.headers.get("Mcp-Session-Id")
     assert initialize_response.get_json()["result"]["protocolVersion"] == (
         "2025-11-25"

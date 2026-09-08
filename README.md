@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [Public API and agent access](#public-api-and-agent-access)
 - [MCP server](#mcp-server)
 - [What I'm Using](#what-im-using)
 - [A Deeper Dive](#a-deeper-dive)
@@ -33,6 +34,41 @@ You can click the toggle buttons next to the title to switch between For Rent an
 
 
 **⚠ This website is mobile-friendly but I highly recommend using an actual computer or tablet for the best experience**
+
+### Public API and agent access
+
+[Developer guide](https://wheretolive.la/developers) ·
+[OpenAPI specification](https://wheretolive.la/openapi.json) ·
+[Agent instructions](https://wheretolive.la/llms.txt)
+
+Public search uses the same read-only query as MCP and requires no API key:
+
+```bash
+curl 'https://wheretolive.la/api/listings?listing_type=lease&location=Pasadena&max_price=3000&page_size=5'
+uv run wheretolive-search --listing-type lease --location Pasadena --max-price 3000 --page-size 5
+```
+
+Use `listing_type=buy` for homes for sale. Results include source links,
+`data_as_of`, and pagination (at most 20 listings per page). The source CLI
+prints JSON and exits nonzero on errors; it is not yet published separately
+on a package registry. `wheretolive-la` remains the application server command.
+
+Public content pages work without JavaScript and also support
+`Accept: text/markdown`. Unknown page paths return Markdown with HTTP 404;
+API failures return JSON with a stable error code, message, and hint.
+
+To verify a running instance (all checks are read-only, including an invalid
+report body that must be rejected before persistence):
+
+```bash
+uv sync --extra dev
+uv run python -m scripts.verify_agent_endpoints --base-url http://127.0.0.1:8050
+uv run pytest -q
+npx playwright test tests/e2e/agent_readiness.spec.js tests/e2e/responsive_filters.spec.js
+```
+
+See [implementation and rollout notes](docs/agent-readiness.md) for audit
+coverage and the remaining publishing, indexing, and organization decisions.
 
 ### MCP server
 

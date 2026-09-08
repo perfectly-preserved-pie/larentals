@@ -102,6 +102,11 @@ def build_mcp_docs_layout() -> html.Main:
                     ),
                     html.Div(
                         [
+                            html.A(
+                                "Developers",
+                                href="/developers",
+                                className="mcp-docs__brand",
+                            ),
                             dmc.Switch(
                                 id="color-scheme-switch",
                                 offLabel=DashIconify(

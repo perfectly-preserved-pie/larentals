@@ -1,0 +1,16 @@
+.public-content {
+  box-sizing: border-box;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  color: #172421;
+  background: #f7faf9;
+  font: 1rem/1.65 system-ui, sans-serif;
+}
+.public-content h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.15; }
+.public-content h2 { font-size: 1.4rem; margin-top: 2rem; }
+.public-content a { color: #087565; }
+.public-content nav ul { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; list-style: none; padding: 0; }
+.public-content pre { overflow: auto; padding: 1rem; background: #e5f7f2; }
+.public-content input, .public-content select, .public-content button { font: inherit; max-width: 100%; }
+.public-content form { display: flex; flex-wrap: wrap; gap: 1rem; }

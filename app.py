@@ -1,5 +1,8 @@
 from dash import Dash, clientside_callback, ClientsideFunction, Input, Output, dcc
 from api import register_api_routes
+from api.public import register_api_errors, register_public_api
+from functions.public_routes import register_public_pages
+from functions.public_content import PAGES
 from functions.data_paths import LARENTALS_DB_PATH
 from dash_extensions import EventListener
 from flask_compress import Compress
@@ -82,6 +85,7 @@ app.description = "An interactive map of available rental & for-sale properties 
 app.server.config["COMPRESS_MIN_SIZE"] = 1024  # only compress responses >= 1KB
 app.server.config["COMPRESS_MIMETYPES"] = [
   "text/html",
+  "text/markdown",
   "text/css",
   "application/json",
   "application/javascript",
@@ -106,7 +110,7 @@ def sitemap_xml() -> Response:
   Returns:
       An HTTP response containing the sitemap XML.
   """
-  page_paths = get_public_page_paths(dash.page_registry)
+  page_paths = sorted(set(get_public_page_paths(dash.page_registry)) | set(PAGES), key=lambda path: (path != "/", path))
   return Response(
     build_sitemap_xml(CANONICAL_BASE_URL, page_paths),
     mimetype="application/xml",
@@ -139,7 +143,7 @@ def llms_txt() -> Response:
   )
 
 app.index_string = """<!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     {%metas%}
     <title>{%title%}</title>
@@ -237,7 +241,10 @@ clientside_callback(
   Output("theme-switch-store", "data"),
   Input("color-scheme-switch", "checked"),
 )
+register_api_errors(server)
 register_api_routes(server, db_path=str(LARENTALS_DB_PATH))
+register_public_api(server, db_path=str(LARENTALS_DB_PATH), base_url=CANONICAL_BASE_URL)
+register_public_pages(app)
 register_lahd_records_drawer_callback(app)
 prewarm_startup_caches()
 
