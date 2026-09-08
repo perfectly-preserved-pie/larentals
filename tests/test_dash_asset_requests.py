@@ -3,6 +3,7 @@
 import pytest
 from dash import Dash, dcc, html
 from flask import Flask
+from flask.testing import FlaskClient
 
 from functions.dash_asset_requests import register_dash_asset_request_guard
 
@@ -38,6 +39,48 @@ def test_scanned_assets_return_404_without_errors(dash_client, caplog, method, f
     assert not [record for record in caplog.records if record.levelno >= 40]
 
 
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_nested_plotly_asset_returns_404_without_errors(
+    dash_client: FlaskClient, caplog: pytest.LogCaptureFixture, method: str
+) -> None:
+    """The nested Plotly URL from production must not raise a Dash exception.
+
+    Args:
+        dash_client: Isolated Dash application client.
+        caplog: Captured logs used to detect server errors.
+        method: HTTP request method to exercise.
+
+    Returns:
+        None.
+    """
+    response = dash_client.open(
+        "/_dash-component-suites/dash/dash-renderer/build/"
+        "_dash-component-suites/plotly/package_data/plotly.min.js?v=1",
+        method=method,
+    )
+    assert response.status_code == 404
+    assert not [record for record in caplog.records if record.levelno >= 40]
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_valid_plotly_asset_still_loads(dash_client: FlaskClient, method: str) -> None:
+    """Keep the Plotly bundle available at its actual component route.
+
+    Args:
+        dash_client: Isolated Dash application client.
+        method: HTTP request method to exercise.
+
+    Returns:
+        None.
+    """
+    response = dash_client.open(
+        "/_dash-component-suites/plotly/package_data/plotly.min.js", method=method
+    )
+    assert response.status_code == 200
+    if method == "GET":
+        assert response.data
+
+
 @pytest.mark.parametrize(
     "filename",
     [
@@ -64,6 +107,7 @@ def test_valid_dash_assets_still_load(dash_client, filename):
         ("/_dash-component-suites/dash/dcc/737Xasync-slider.js", 200),
         ("/_dash-component-suites/dash/dcc/737.async-sliderXjs", 200),
         ("/assets/737.async-slider.js", 200),
+        ("/assets/_dash-component-suites/plotly/package_data/plotly.min.js", 200),
         ("/api/listings", 200),
     ],
 )
