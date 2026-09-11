@@ -75,12 +75,12 @@
 }
 
 .location-zip-more-button:hover {
-    color: var(--mantine-primary-color-filled, #0ca678);
+    color: var(--wttl-accent, #1f68c9);
 }
 
 .location-zip-more-button:focus-visible {
     border-radius: 3px;
-    outline: 2px solid var(--mantine-primary-color-filled, #0ca678);
+    outline: 2px solid var(--wttl-accent, #1f68c9);
     outline-offset: 2px;
 }
 

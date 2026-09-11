@@ -6,14 +6,30 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         context.currentPolygon = null;
     }
     window.larentals = window.larentals || {};
+    // The supercluster index and the map itself are only handed to this
+    // callback. Everything outside Leaflet (the results panel, view memory)
+    // needs them, and dash-leaflet exposes neither, so stash them here.
+    window.larentals.map = context.map;
+    window.larentals.clusterIndex = index;
 
     // Access all the leaves of the cluster
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
     const clusterSize = leaves.length;
 
-    // Single neutral color for all clusters
-    //const color = 'rgba(100, 149, 237, 0.85)';  // Cornflower blue, higher opacity for visibility
-    const color = 'rgba(23, 162, 184, 0.9)';  // Bootstrap info color - crisp, professional
+    // A cluster is priced by what is inside it. The map then speaks one colour
+    // language: light blue through navy means cheap through dear, whether it is
+    // a pin or a bubble standing in for four hundred of them. A hue of its own
+    // here (it was teal, then violet) only competed with the pins for attention
+    // while saying nothing the size of the bubble did not already say.
+    const prices = leaves
+        .map(function (leaf) { return Number(leaf.properties.list_price); })
+        .filter(function (price) { return isFinite(price); })
+        .sort(function (a, b) { return a - b; });
+    const median = prices.length
+        ? prices[Math.floor((prices.length - 1) / 2)]
+        : NaN;
+    const scale = (window.larentals || {}).priceScale;
+    const color = scale ? scale.colorFor(median) : '#6b7280';
                                
     // Scale marker size based on cluster density instead of color
     // Larger clusters = physically bigger markers
@@ -96,7 +112,7 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const clusterMarker = L.marker(latlng, {
         icon: L.divIcon({
             html: `
-                <div style="position:relative; width:${markerSize}px; height:${markerSize}px; font-family: Arial, sans-serif;">
+                <div data-cluster-count="${clusterSize}" data-cluster-id="${feature.properties.cluster_id}" style="position:relative; width:${markerSize}px; height:${markerSize}px; font-family: Arial, sans-serif;">
                     <div style="background-color:${color}; opacity:${markerOpacity}; 
                                 border-radius:50%; width:${markerSize}px; height:${markerSize}px; 
                                 position:absolute; top:0; left:0;"></div>

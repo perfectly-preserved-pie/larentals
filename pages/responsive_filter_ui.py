@@ -8,19 +8,9 @@ import dash_bootstrap_components as dbc
 FILTER_UI_BREAKPOINT = 1100
 
 _HYBRID_RANGE_SLIDERS = {
-    "lease": (
-        "rental_price_slider",
-        "sqft_slider",
-        "ppsqft_slider",
-        "security_deposit_slider",
-        "pet_deposit_slider",
-        "key_deposit_slider",
-        "other_deposit_slider",
-    ),
+    "lease": (),
     "buy": (
         "list_price_slider",
-        "sqft_slider",
-        "ppsqft_slider",
         "lot_size_slider",
         "hoa_fee_slider",
     ),
@@ -356,6 +346,96 @@ def build_responsive_listing_shell(
         },
     )
 
+    results_panel = html.Aside(
+        [
+            # A listing opened while this column is up is read here rather than
+            # in a popup over the map, so the pins it is being compared against
+            # stay visible. Empty and hidden until something is opened.
+            html.Div(
+                id=f"{page_type}-results-detail",
+                className="results-panel__detail",
+                hidden=True,
+                **{"data-results-detail": page_type},
+            ),
+            html.Div(
+                [
+                    html.H2("In view", className="results-panel__title"),
+                    html.Span(
+                        id=f"{page_type}-results-count",
+                        className="results-panel__count",
+                        **{"aria-live": "polite"},
+                    ),
+                ],
+                className="results-panel__header",
+            ),
+            html.Div(
+                html.Select(
+                    [
+                        html.Option("Price, low to high", value="price-asc"),
+                        html.Option("Price, high to low", value="price-desc"),
+                        html.Option("Beds, most first", value="beds-desc"),
+                        html.Option("Size, largest first", value="sqft-desc"),
+                        html.Option("Price per sq ft, low to high", value="ppsqft-asc"),
+                        html.Option("Newest first", value="newest"),
+                    ],
+                    id=f"{page_type}-results-sort",
+                    className="results-panel__sort",
+                    **{
+                        "data-results-sort": page_type,
+                        "aria-label": "Sort the listings in view",
+                    },
+                ),
+                className="results-panel__sort-row",
+            ),
+            html.Div(
+                id=f"{page_type}-results-list",
+                className="results-panel__list",
+            ),
+        ],
+        id=f"{page_type}-results-panel",
+        className="results-panel",
+        role="complementary",
+        **{
+            "aria-label": f"{listing_label} currently visible on the map",
+            "data-results-panel": page_type,
+        },
+    )
+
+    # Both toggles sit on the layout rather than inside a column, so a collapsed
+    # column can still be reopened. Two sidebar glyphs a column apart say very
+    # little on their own, hence the hover label; it names the action rather
+    # than the column, so it changes as the column opens and closes.
+    column_toggles = [
+        html.Button(
+            html.I(className="bi bi-layout-sidebar", **{"aria-hidden": "true"}),
+            id=f"{page_type}-toggle-filters",
+            type="button",
+            className="column-toggle column-toggle--left",
+            **{
+                "data-column-toggle": "filters",
+                "data-tooltip": "Hide filters",
+                "data-tooltip-show": "Show filters",
+                "data-tooltip-hide": "Hide filters",
+                "aria-label": "Hide filters",
+                "aria-expanded": "true",
+            },
+        ),
+        html.Button(
+            html.I(className="bi bi-layout-sidebar-reverse", **{"aria-hidden": "true"}),
+            id=f"{page_type}-toggle-results",
+            type="button",
+            className="column-toggle column-toggle--right",
+            **{
+                "data-column-toggle": "results",
+                "data-tooltip": "Hide listings",
+                "data-tooltip-show": "Show listings",
+                "data-tooltip-hide": "Hide listings",
+                "aria-label": "Hide listings",
+                "aria-expanded": "true",
+            },
+        ),
+    ]
+
     return html.Div(
         [
             backdrop,
@@ -365,6 +445,8 @@ def build_responsive_listing_shell(
                 id=f"{page_type}-map-main",
                 className="listing-map-col map-col",
             ),
+            results_panel,
+            *column_toggles,
         ],
         className="listing-page-layout",
         **{"data-listing-page": page_type},
@@ -464,14 +546,11 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
         Input(f"{page_type}-geojson-store", "data"),
     )
 
+
     clientside_callback(
-        ClientsideFunction(namespace="clientside", function_name="openFilterAccordionSection"),
-        Output(f"{page_type}-options-accordion", "active_item"),
-        [
-            Input("viewport-listener", "event"),
-            *[Input(f"{page_type}-quick-{key}", "n_clicks") for key in quick_ids],
-        ],
-        State(f"{page_type}-options-accordion", "active_item"),
+        ClientsideFunction(namespace="clientside", function_name="scrollToFilterSection"),
+        Output(f"{page_type}-analytics-section-store", "data"),
+        [Input(f"{page_type}-quick-{key}", "n_clicks") for key in quick_ids],
         prevent_initial_call=True,
     )
 
@@ -485,60 +564,37 @@ def _lease_capture_inputs() -> list[Input]:
         A list containing the lease capture inputs.
     """
     return [
-        Input("rental_price_minimum_input", "value"),
-        Input("rental_price_maximum_input", "value"),
+        Input("rental_price_slider", "value"),
         Input("rental_price_slider", "max"),
         Input("bedrooms_slider", "value"),
         Input("bedrooms_slider", "max"),
         Input("bathrooms_slider", "value"),
         Input("bathrooms_slider", "max"),
-        Input("pets_radio", "value"),
-        Input("sqft_minimum_input", "value"),
-        Input("sqft_maximum_input", "value"),
+        Input("pets_checklist", "value"),
+        Input("sqft_slider", "value"),
         Input("sqft_slider", "max"),
-        Input("sqft_missing_switch", "checked"),
-        Input("ppsqft_minimum_input", "value"),
-        Input("ppsqft_maximum_input", "value"),
+        Input("ppsqft_slider", "value"),
         Input("ppsqft_slider", "max"),
-        Input("ppsqft_missing_switch", "checked"),
         Input("garage_spaces_slider", "value"),
         Input("garage_spaces_slider", "max"),
-        Input("garage_missing_switch", "checked"),
         Input("yrbuilt_slider", "value"),
-        Input("yrbuilt_missing_switch", "checked"),
         Input("terms_checklist", "value"),
-        Input("terms_missing_switch", "checked"),
         Input("furnished_checklist", "value"),
-        Input("furnished_missing_switch", "checked"),
-        Input("security_deposit_minimum_input", "value"),
-        Input("security_deposit_maximum_input", "value"),
+        Input("security_deposit_slider", "value"),
         Input("security_deposit_slider", "max"),
-        Input("security_deposit_missing_switch", "checked"),
-        Input("pet_deposit_minimum_input", "value"),
-        Input("pet_deposit_maximum_input", "value"),
+        Input("pet_deposit_slider", "value"),
         Input("pet_deposit_slider", "max"),
-        Input("pet_deposit_missing_switch", "checked"),
-        Input("key_deposit_minimum_input", "value"),
-        Input("key_deposit_maximum_input", "value"),
+        Input("key_deposit_slider", "value"),
         Input("key_deposit_slider", "max"),
-        Input("key_deposit_missing_switch", "checked"),
-        Input("other_deposit_minimum_input", "value"),
-        Input("other_deposit_maximum_input", "value"),
+        Input("other_deposit_slider", "value"),
         Input("other_deposit_slider", "max"),
-        Input("other_deposit_missing_switch", "checked"),
         Input("laundry_checklist", "value"),
-        Input("laundry_missing_switch", "checked"),
         Input("subtype_checklist", "value"),
         Input("listed_time_range_radio", "value"),
-        Input("listed_date_datepicker_lease", "start_date"),
-        Input("listed_date_datepicker_lease", "end_date"),
-        Input("listed_date_missing_switch", "checked"),
         Input("isp_download_speed_slider", "value"),
         Input("isp_upload_speed_slider", "value"),
-        Input("isp_speed_missing_switch", "checked"),
         Input("rent_control_status", "value"),
         Input("lease-location-input", "value"),
-        Input("lease-nearby-zip-switch", "checked"),
         Input("lease-zip-boundary-store", "data"),
     ]
 
@@ -559,34 +615,22 @@ def _buy_capture_inputs() -> list[Input]:
         Input("bedrooms_slider", "max"),
         Input("bathrooms_slider", "value"),
         Input("bathrooms_slider", "max"),
-        Input("sqft_minimum_input", "value"),
-        Input("sqft_maximum_input", "value"),
+        Input("sqft_slider", "value"),
         Input("sqft_slider", "max"),
-        Input("sqft_missing_switch", "checked"),
-        Input("ppsqft_minimum_input", "value"),
-        Input("ppsqft_maximum_input", "value"),
+        Input("ppsqft_slider", "value"),
         Input("ppsqft_slider", "max"),
-        Input("ppsqft_missing_switch", "checked"),
         Input("lot_size_minimum_input", "value"),
         Input("lot_size_maximum_input", "value"),
         Input("lot_size_slider", "max"),
-        Input("lot_size_missing_switch", "checked"),
         Input("yrbuilt_slider", "value"),
-        Input("yrbuilt_missing_switch", "checked"),
         Input("subtype_checklist", "value"),
         Input("listed_time_range_radio", "value"),
-        Input("listed_date_datepicker_buy", "start_date"),
-        Input("listed_date_datepicker_buy", "end_date"),
-        Input("listed_date_missing_switch", "checked"),
         Input("hoa_fee_minimum_input", "value"),
         Input("hoa_fee_maximum_input", "value"),
         Input("hoa_fee_slider", "max"),
-        Input("hoa_fee_missing_switch", "checked"),
         Input("hoa_fee_frequency_checklist", "value"),
         Input("isp_download_speed_slider", "value"),
         Input("isp_upload_speed_slider", "value"),
-        Input("isp_speed_missing_switch", "checked"),
         Input("buy-location-input", "value"),
-        Input("buy-nearby-zip-switch", "checked"),
         Input("buy-zip-boundary-store", "data"),
     ]

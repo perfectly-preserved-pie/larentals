@@ -104,13 +104,16 @@ def build_mcp_docs_layout() -> html.Main:
                         [
                             dmc.Switch(
                                 id="color-scheme-switch",
+                                # Matches the map page's toggle.
                                 offLabel=DashIconify(
-                                    icon="radix-icons:sun",
-                                    width=14,
+                                    icon="ph:sun-fill",
+                                    width=16,
+                                    color="var(--wttl-text)",
                                 ),
                                 onLabel=DashIconify(
-                                    icon="radix-icons:moon",
-                                    width=14,
+                                    icon="ph:moon-stars-fill",
+                                    width=16,
+                                    color="var(--wttl-text)",
                                 ),
                                 className="mcp-docs__theme-switch",
                                 color="gray",

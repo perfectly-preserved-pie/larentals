@@ -31,10 +31,26 @@ load_dotenv()
 GeoJsonDict: TypeAlias = dict[str, Any]
 
 STREET_BASE_LAYER_NAME = "Street map"
-STREET_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+# Esri's Gray Canvas plates, Light by day and Dark at night. Both pairs are
+# built up front and CSS shows one, so there is no class to toggle and nothing
+# to undo switching back.
+#
+# The plates ship label-free, hence the separate transparent Reference layer for
+# place names. They stop at zoom 16 and serve a "Map data not yet available"
+# placeholder past it, so maxNativeZoom is pinned there and Leaflet upscales.
+_ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/"
+STREET_TILE_URL = _ESRI + "World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+STREET_TILE_LABEL_URL = _ESRI + "World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+STREET_TILE_DARK_URL = _ESRI + "World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+STREET_TILE_DARK_LABEL_URL = _ESRI + "World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+STREET_TILE_LIGHT_CLASS = "street-tiles--light"
+STREET_TILE_DARK_CLASS = "street-tiles--dark"
+STREET_TILE_MAX_NATIVE_ZOOM = 16
+# Above the plate, below the parcel overlay at 500.
+STREET_TILE_LABEL_Z_INDEX = 490
 STREET_TILE_ATTRIBUTION = (
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    ' &middot; <a href="https://www.openstreetmap.org/fixthemap">Report a map issue</a>'
+    'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ'
 )
 
 MAPBOX_SATELLITE_BASE_LAYER_NAME = "Satellite imagery"
@@ -820,8 +836,9 @@ class LayersClass:
     - lazy resolution of layer data when users enable overlays
     """
     DEFAULT_SUPERCLUSTER_OPTIONS: ClassVar[dict[str, int]] = {
-        'radius': 160,
-        'maxClusterRadius': 40,
+        'radius': 110,
+        'maxZoom': 14,
+        'minPoints': 5,
         'minZoom': 3,
     }
     LAYER_CONFIGS: ClassVar[dict[str, LayerConfig]] = {
@@ -913,7 +930,12 @@ class LayersClass:
 
     @staticmethod
     def create_street_base_layer(*, checked: bool = True) -> dl.BaseLayer:
-        """Create the OpenStreetMap base layer used by both listing maps.
+        """Create the Esri Topo base layer used by both listing maps.
+
+        Both themes are built up front, each as a plate plus its place-name
+        overlay, and CSS paints the pair that matches the theme (palette.css).
+        Nothing toggles a class, writes an inline style, or has to remember to
+        undo anything on the way back to light mode.
 
         Args:
             checked: Whether checked behavior is enabled.
@@ -921,14 +943,36 @@ class LayersClass:
         Returns:
             The created street base layer.
         """
-        return dl.BaseLayer(
-            dl.TileLayer(
-                url=STREET_TILE_URL,
+
+        def tiles(url: str, class_name: str, *, labels: bool = False) -> dl.TileLayer:
+            """Build one tile layer of the street basemap.
+
+            Args:
+                url: Tile URL template for this layer.
+                class_name: Theme class deciding which basemap this layer belongs to.
+                labels: Whether this layer carries place names rather than the plate.
+
+            Returns:
+                The configured tile layer.
+            """
+            return dl.TileLayer(
+                url=url,
                 attribution=STREET_TILE_ATTRIBUTION,
+                className=class_name,
                 detectRetina=False,
-                maxNativeZoom=19,
+                maxNativeZoom=STREET_TILE_MAX_NATIVE_ZOOM,
                 maxZoom=21,
-            ),
+                zIndex=STREET_TILE_LABEL_Z_INDEX if labels else 1,
+            )
+
+        light, dark = STREET_TILE_LIGHT_CLASS, STREET_TILE_DARK_CLASS
+        return dl.BaseLayer(
+            [
+                tiles(STREET_TILE_URL, light),
+                tiles(STREET_TILE_LABEL_URL, light, labels=True),
+                tiles(STREET_TILE_DARK_URL, dark),
+                tiles(STREET_TILE_DARK_LABEL_URL, dark, labels=True),
+            ],
             name=STREET_BASE_LAYER_NAME,
             checked=checked,
         )

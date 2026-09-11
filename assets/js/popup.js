@@ -235,29 +235,18 @@
     }
 
     /**
-     * Render the Housing Department issue row for listing popups.
+     * Render the Housing Department issue value for listing popups.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
-     * @returns {string} HTML row.
+     * @returns {string} HTML value markup, or an empty string.
      */
-    function renderLahdIssueRow(popupData) {
+    function renderLahdValue(popupData) {
         const summary = popupData.lahd_property_summary;
-        if (!summary || typeof summary !== "object") {
-            return "";
-        }
-
+        if (!summary || typeof summary !== "object") return "";
         if (summary.jurisdiction_in_scope === false || summary.data_available === false) {
             return "";
         }
-
-        return `
-            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                <span class="label" style="font-weight: bold;">Housing Dept. Issues</span>
-                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
-                    ${formatLahdIssueSummary(summary)}
-                </span>
-            </div>
-        `;
+        return formatLahdIssueSummary(summary);
     }
 
     /**
@@ -285,24 +274,17 @@
     }
 
     /**
-     * Render the LA City Rent Stabilization Ordinance row for rental popups.
+     * Render the LA City Rent Stabilization Ordinance value for rental popups.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
-     * @returns {string} HTML row.
+     * @returns {string} HTML value markup, or an empty string.
      */
-    function renderRsoRow(popupData) {
+    function renderRsoValue(popupData) {
         const summary = popupData.rso_property_summary;
         if (!summary || typeof summary !== "object" || summary.jurisdiction_in_scope === false) {
             return "";
         }
-        return `
-            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                <span class="label" style="font-weight: bold;">Rent Control Status</span>
-                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
-                    ${formatRsoSummary(summary)}
-                </span>
-            </div>
-        `;
+        return formatRsoSummary(summary);
     }
 
     /**
@@ -386,55 +368,329 @@
         return p;
     }
 
-    /**
-     * Render the popup title block, linking the address when a listing URL exists.
-     *
-     * @param {string|number} address Display-ready street address.
-     * @param {string|null} listingUrl Listing detail URL, if available.
-     * @returns {string} HTML string for the popup heading.
-     */
-    function getListingUrlBlock(address, listingUrl) {
-        if (!listingUrl) {
-            return `
-                <div style="text-align: center;">
-                    <h5>${address}</h5>
-                </div>
-            `;
-        }
+    /** Listing hosts we can name, so the link says where it goes. */
+    const LISTING_HOST_NAMES = {
+        "theagencyre.com": "The Agency",
+        "bhhscalifornia.com": "BHHS California",
+    };
 
-        return `
-            <div style="text-align: center;">
-                <h5><a href="${listingUrl}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank">${address}</a></h5>
-            </div>
-        `;
+    /**
+     * Human name for a listing host, falling back to its bare domain.
+     *
+     * @param {string} url Listing detail URL.
+     * @returns {string} Display name for the host.
+     */
+    function listingHostName(url) {
+        try {
+            const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+            return LISTING_HOST_NAMES[host] || host;
+        } catch (error) {
+            return "the listing site";
+        }
     }
 
     /**
-     * Render the property photo row, optionally wrapping the image in the listing URL.
+     * Build a listing URL from an MLS number alone.
      *
-     * @param {string|null} photoUrl Image URL for the listing.
-     * @param {string|null} listingUrl Listing detail URL, if available.
-     * @returns {string} HTML string for the image row.
+     * theagencyre.com resolves any `/<segment>/clr/<mls>/<slug>` URL to the
+     * canonical listing page, so neither the property type nor the address slug
+     * has to be right. Measured: this recovers nothing for listings with no
+     * stored URL (0 of 20 sampled returned 200, the rest are genuinely not
+     * published there), so it is a last resort behind both the stored URL and
+     * the phone number, used only where the popup would otherwise offer nothing.
+     *
+     * @param {unknown} mlsNumber Listing MLS number.
+     * @returns {string|null} Constructed lookup URL, or `null` without an MLS.
      */
-    function buildImageRow(photoUrl, listingUrl) {
-        if (!photoUrl) return "";
+    function buildListingUrlFromMls(mlsNumber) {
+        const id = normalizeListingId(mlsNumber).toLowerCase();
+        if (!id) return null;
+        return `https://www.theagencyre.com/listing/clr/${encodeURIComponent(id)}/x`;
+    }
 
-        const imageTag = `<img src="${photoUrl}" alt="Property Image" style="width:100%;height:auto;">`;
+    /**
+     * Format a phone number as (xxx) xxx-xxxx when it has ten digits.
+     *
+     * The feed mixes "(626) 862-4732" and "310-577-5300", so normalize rather
+     * than print whichever shape the source happened to use.
+     *
+     * @param {unknown} value Raw phone value.
+     * @returns {string|null} Display phone number, or `null` when unusable.
+     */
+    function formatPhone(value) {
+        const raw = normalizeNullableString(value);
+        if (!raw) return null;
+        const digits = raw.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+        if (digits.length !== 10) return raw;
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    /**
+     * Render the "where do I go next" line that sits under the address.
+     *
+     * Around one listing in five is not published on either host. Those used to
+     * show nothing actionable at all, so the fallback promotes the listing
+     * office phone number instead of hiding it in More details.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} HTML string for the source line.
+     */
+    function renderListingSource(popupData) {
+        const listingUrl = normalizeNullableString(popupData.listing_url);
         if (listingUrl) {
             return `
-                <div style="position: relative;">
-                    <a href="${listingUrl}" class="plausible-listing-link" target="_blank" referrerPolicy="noreferrer">
-                        ${imageTag}
+                <div class="listing-popup__source">
+                    <a class="plausible-listing-link" href="${escapeHtml(listingUrl)}" target="_blank" referrerPolicy="noreferrer">
+                        View on ${escapeHtml(listingHostName(listingUrl))}
                     </a>
                 </div>
             `;
         }
 
+        const phone = formatPhone(popupData.phone_number);
+        if (phone) {
+            return `
+                <div class="listing-popup__source listing-popup__source--offline">
+                    <span>Not listed online</span>
+                    <a href="tel:${escapeHtml(phone.replace(/\D/g, ""))}">${escapeHtml(phone)}</a>
+                </div>
+            `;
+        }
+
+        const lookupUrl = buildListingUrlFromMls(popupData.mls_number);
+        if (lookupUrl) {
+            return `
+                <div class="listing-popup__source listing-popup__source--offline">
+                    <span>No listing page or phone</span>
+                    <a href="${escapeHtml(lookupUrl)}" target="_blank" rel="noreferrer">Try MLS lookup</a>
+                </div>
+            `;
+        }
+
         return `
-            <div style="position: relative;">
-                ${imageTag}
+            <div class="listing-popup__source listing-popup__source--offline">
+                <span>Not listed online</span>
             </div>
         `;
+    }
+
+    /**
+     * Render the popup heading, linking the address when a listing URL exists.
+     *
+     * @param {string} address Display-ready street address.
+     * @param {string|null} listingUrl Listing detail URL, if available.
+     * @returns {string} HTML string for the popup heading.
+     */
+    function renderHeader(address, listingUrl) {
+        const safeAddress = escapeHtml(address);
+        const title = listingUrl
+            ? `<a class="plausible-listing-link" href="${escapeHtml(listingUrl)}" referrerPolicy="noreferrer" target="_blank">${safeAddress}</a>`
+            : safeAddress;
+        return `<h5 class="listing-popup__address">${title}</h5>`;
+    }
+
+    /**
+     * Google Maps URL for a listing's address.
+     *
+     * The pano is already embedded above this link, so the link is for going to
+     * the place itself: searching the address drops you on the map with the
+     * usual directions, satellite and nearby options. Coordinates are the
+     * fallback when the address is missing, since they always resolve.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string|null} Google Maps URL, or `null` with nothing to point at.
+     */
+    function buildGoogleMapsUrl(popupData) {
+        const address = normalizeNullableString(popupData?.full_street_address);
+        if (address) {
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        }
+        const lat = Number(popupData?.latitude);
+        const lng = Number(popupData?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    }
+
+    /**
+     * Embeddable Street View pano URL for a listing's coordinates.
+     *
+     * `output=svembed` is Google's long-standing keyless embed endpoint. It
+     * redirects to /maps/embed, which sends no X-Frame-Options and no CSP
+     * frame-ancestors, so it frames without an API key. It is undocumented
+     * though, so the caption keeps a normal link to Google Maps as a way out if
+     * the endpoint ever stops framing.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string|null} Embeddable pano URL, or `null` without coordinates.
+     */
+    function buildStreetViewEmbedUrl(popupData) {
+        const lat = Number(popupData?.latitude);
+        const lng = Number(popupData?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
+    }
+
+    /**
+     * Render the popup's media slot: the MLS photo when there is one, otherwise
+     * a Street View link tile.
+     *
+     * Roughly one listing in eight arrives without a photo. Those popups used to
+     * open with an empty gap above the address, which reads as a broken image
+     * rather than a missing one.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} HTML string for the media slot.
+     */
+    function renderMedia(popupData) {
+        const photoUrl = normalizeNullableString(popupData.mls_photo);
+        const listingUrl = normalizeNullableString(popupData.listing_url);
+
+        if (photoUrl) {
+            const img = `<img class="listing-popup__photo" src="${escapeHtml(photoUrl)}" alt="Listing photo" loading="lazy">`;
+            const inner = listingUrl
+                ? `<a class="plausible-listing-link" href="${escapeHtml(listingUrl)}" target="_blank" referrerPolicy="noreferrer">${img}</a>`
+                : img;
+            return `<div class="listing-popup__media">${inner}</div>`;
+        }
+
+        const mapsUrl = buildGoogleMapsUrl(popupData);
+
+        const embedUrl = buildStreetViewEmbedUrl(popupData);
+        const address = normalizeNullableString(popupData.full_street_address) || "this listing";
+
+        return `
+            <div class="listing-popup__media listing-popup__media--streetview">
+                <iframe
+                    class="listing-popup__streetview-frame"
+                    src="${escapeHtml(embedUrl)}"
+                    title="Street View near ${escapeHtml(address)}"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    allowfullscreen></iframe>
+                ${mapsUrl
+                    ? `<a class="listing-popup__streetview" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noreferrer">Google Maps</a>`
+                    : ""}
+            </div>
+        `;
+    }
+
+    /**
+     * Report whether a value carries no information worth a popup row.
+     *
+     * @param {unknown} value Candidate display value.
+     * @returns {boolean} `true` when the value should be omitted.
+     */
+    function isBlankValue(value) {
+        if (value === null || value === undefined) return true;
+        const normalized = String(value).trim().toLowerCase();
+        return ["", "unknown", "none", "null", "nan", "not available"].includes(normalized);
+    }
+
+    /**
+     * Render one label/value row from trusted HTML.
+     *
+     * @param {string} label Row label.
+     * @param {string} html Pre-rendered value markup.
+     * @param {string} [modifier] Extra class for rows that need a wider value.
+     * @returns {string} HTML row, or an empty string when there is no value.
+     */
+    function rawRow(label, html, modifier) {
+        if (!html) return "";
+        if (!html.includes("<") && isBlankValue(html)) return "";
+        return `
+            <div class="listing-popup__row${modifier ? ` ${modifier}` : ""}">
+                <dt class="listing-popup__label">${escapeHtml(label)}</dt>
+                <dd class="listing-popup__value">${html}</dd>
+            </div>
+        `;
+    }
+
+    /**
+     * Render one label/value row, dropping it when the value says nothing.
+     *
+     * The old popup printed every field it knew about, so a typical listing
+     * showed a column of "Unknown" that buried the handful of facts that were
+     * actually present.
+     *
+     * @param {string} label Row label.
+     * @param {unknown} value Display value.
+     * @returns {string} HTML row, or an empty string when the value is blank.
+     */
+    function row(label, value) {
+        if (isBlankValue(value)) return "";
+        return rawRow(label, escapeHtml(value));
+    }
+
+    /**
+     * Render one figure in the key-stats strip.
+     *
+     * @param {unknown} value Figure to display.
+     * @param {string} label Caption under the figure.
+     * @returns {string} HTML stat cell, or an empty string when blank.
+     */
+    function stat(value, label) {
+        if (isBlankValue(value)) return "";
+        return `
+            <div class="listing-popup__stat">
+                <span class="listing-popup__stat-value">${escapeHtml(value)}</span>
+                <span class="listing-popup__stat-label">${escapeHtml(label)}</span>
+            </div>
+        `;
+    }
+
+    /**
+     * Wrap the populated stat cells in the strip, or render nothing.
+     *
+     * @param {string[]} cells Rendered stat cells.
+     * @returns {string} HTML stats strip.
+     */
+    function renderStats(cells) {
+        const html = cells.join("");
+        return html ? `<div class="listing-popup__stats">${html}</div>` : "";
+    }
+
+    /**
+     * Render the rarely-populated fields as a continuation of the main rows.
+     *
+     * These used to sit behind a "More details" disclosure. Opening it grew the
+     * popup past the room measured for it, and the popup is scrollable now, so
+     * there is nothing for the disclosure to save: the rows just carry on and
+     * you reach them by scrolling.
+     *
+     * @param {string[]} rows Rendered rows.
+     * @returns {string} HTML row list, or an empty string.
+     */
+    function renderMoreDetails(rows) {
+        const html = rows.join("");
+        if (!html) return "";
+        return `<dl class="listing-popup__rows listing-popup__rows--more">${html}</dl>`;
+    }
+
+    /**
+     * Format bedroom and bathroom counts as a single stat figure.
+     *
+     * @param {Record<string, unknown>} popupData Listing detail payload.
+     * @returns {string} Combined bed/bath figure, or an empty string.
+     */
+    function formatBedBath(popupData) {
+        const bedrooms = stripTrailingPointZero(popupData.bedrooms);
+        const bathrooms = stripTrailingPointZero(popupData.total_bathrooms);
+        if (isBlankValue(bedrooms) && isBlankValue(bathrooms)) return "";
+        const bd = isBlankValue(bedrooms) ? "?" : bedrooms;
+        const ba = isBlankValue(bathrooms) ? "?" : bathrooms;
+        return `${bd} / ${ba}`;
+    }
+
+    /**
+     * Format square footage as a stat figure.
+     *
+     * @param {unknown} value Raw square footage.
+     * @returns {string} Localized figure, or an empty string.
+     */
+    function formatSqft(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n) || n <= 0) return "";
+        return n.toLocaleString("en-US");
     }
 
     /**
@@ -461,10 +717,10 @@
     function renderReportLink(listingId) {
         const payload = encodeURIComponent(JSON.stringify({ mls_number: listingId }));
         return `
-            <div style="text-align: center; margin-top: 10px;">
-                <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${payload}"))' style="text-decoration: none; color: #d55e00;">
-                    <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
-                    <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
+            <div class="listing-popup__footer">
+                <a class="listing-popup__report" href="#" title="Report this listing" onclick='reportListing(decodeURIComponent("${payload}"))'>
+                    <i class="fa-solid fa-flag"></i>
+                    <span>Report listing</span>
                 </a>
             </div>
         `;
@@ -473,115 +729,57 @@
     /**
      * Build the lease-page popup body for a single listing.
      *
+     * Ordered by what a renter decides on: the photo, the address, the four
+     * figures that rule a listing in or out, then the qualifying facts. Anything
+     * mostly blank across the dataset sits behind "More details".
+     *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
      */
     function generateLeasePopupContent(popupData) {
         const listingUrl = normalizeNullableString(popupData.listing_url);
-        const mlsPhoto = normalizeNullableString(popupData.mls_photo);
-        const fullStreetAddressRaw = stripTrailingPointZero(
-            normalizeNullableString(popupData.full_street_address),
-        ) || "Unknown Address";
-        const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
-        const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
-        const imageRow = buildImageRow(mlsPhoto, listingUrl);
-        const phoneNumber = normalizeNullableString(popupData.phone_number);
-        const phoneNumberBlock = phoneNumber
-            ? `<a href="tel:${phoneNumber}">${phoneNumber}</a>`
-            : "Unknown";
-        const subtype = (popupData?.subtype ?? "Unknown").toString();
-        const mlsNumberDisplay = stripTrailingPointZero(popupData.mls_number);
-        const reportLink = renderReportLink(normalizeListingId(popupData.mls_number));
+        const address = toTitleCase(
+            stripTrailingPointZero(normalizeNullableString(popupData.full_street_address))
+                || "Unknown Address",
+        );
+        const ispHtml = window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? "";
+
+        const primaryRows = [
+            rawRow("Rent control", renderRsoValue(popupData)),
+            rawRow("Housing Dept. issues", renderLahdValue(popupData)),
+            row("Security deposit", formatCurrency(popupData.security_deposit)),
+            row("Pets", popupData.pet_policy),
+            row("Laundry", popupData.laundry),
+            row("Parking", popupData.parking_spaces),
+            row("Furnished", popupData.furnished),
+            row("Listed", formatDate(popupData.listed_date)),
+        ];
+
+        const moreRows = [
+            row("Rental terms", popupData.terms),
+            row("Property type", popupData.subtype),
+            row("Year built", popupData.year_built),
+            row("Pet deposit", formatCurrency(popupData.pet_deposit)),
+            row("Key deposit", formatCurrency(popupData.key_deposit)),
+            row("Other deposit", formatCurrency(popupData.other_deposit)),
+            row("Listing ID (MLS#)", stripTrailingPointZero(popupData.mls_number)),
+            rawRow("ISP options", ispHtml, "listing-popup__row--stacked"),
+        ];
 
         return `
-            <div>
-                ${imageRow}
-                ${listingUrlBlock}
-                <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listed Date</span>
-                        <span class="value">${formatDate(popupData.listed_date)}</span>
-                    </div>
-                    ${renderLahdIssueRow(popupData)}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
-                        <span class="value">${mlsNumberDisplay}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">List Office Phone</span>
-                        <span class="value">${phoneNumberBlock}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Rental Price</span>
-                        <span class="value">${formatCurrency(popupData.list_price)}</span>
-                    </div>
-                    ${renderRsoRow(popupData)}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Security Deposit</span>
-                        <span class="value">${formatCurrency(popupData.security_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Pet Deposit</span>
-                        <span class="value">${formatCurrency(popupData.pet_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Key Deposit</span>
-                        <span class="value">${formatCurrency(popupData.key_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Other Deposit</span>
-                        <span class="value">${formatCurrency(popupData.other_deposit)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Square Feet</span>
-                        <span class="value">${popupData.sqft ? `${Number(popupData.sqft).toLocaleString()} sq. ft` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
-                        <span class="value">${popupData.ppsqft ? `$${Number(popupData.ppsqft).toLocaleString()}` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
-                        <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Parking Spaces</span>
-                        <span class="value">${popupData.parking_spaces || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Pets Allowed?</span>
-                        <span class="value">${popupData.pet_policy || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Furnished?</span>
-                        <span class="value">${popupData.furnished || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Laundry Features</span>
-                        <span class="value" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
-                            ${popupData.laundry || "Unknown"}
-                        </span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Year Built</span>
-                        <span class="value">${popupData.year_built || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Rental Terms</span>
-                        <span class="value">${popupData.terms || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Physical Sub Type</span>
-                        <span class="value">${subtype || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
-                        <span class="label" style="font-weight:bold;">ISP Options</span>
-                        <div class="value" style="text-align:right;">
-                            ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
-                        </div>
-                    </div>
-                </div>
-                ${reportLink}
+            <div class="listing-popup">
+                ${renderMedia(popupData)}
+                ${renderHeader(address, listingUrl)}
+                ${renderListingSource(popupData)}
+                ${renderStats([
+                    stat(formatCurrency(popupData.list_price), "per month"),
+                    stat(formatBedBath(popupData), "bed / bath"),
+                    stat(formatSqft(popupData.sqft), "sq ft"),
+                    stat(popupData.ppsqft ? formatCurrency(popupData.ppsqft) : "", "per sq ft"),
+                ])}
+                <dl class="listing-popup__rows">${primaryRows.join("")}</dl>
+                ${renderMoreDetails(moreRows)}
+                ${renderReportLink(normalizeListingId(popupData.mls_number))}
             </div>
         `;
     }
@@ -594,100 +792,49 @@
      */
     function generateBuyPopupContent(popupData) {
         const listingUrl = normalizeNullableString(popupData.listing_url);
-        const mlsPhoto = normalizeNullableString(popupData.mls_photo);
-        const fullStreetAddressRaw = stripTrailingPointZero(
-            normalizeNullableString(popupData.full_street_address),
-        ) || "Unknown Address";
-        const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
-        const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
-        const imageRow = buildImageRow(mlsPhoto, listingUrl);
+        const address = toTitleCase(
+            stripTrailingPointZero(normalizeNullableString(popupData.full_street_address))
+                || "Unknown Address",
+        );
+        const subtype = normalizeNullableString(popupData.subtype);
+        const isSfr = Boolean(subtype)
+            && (subtype.includes("SFR") || subtype.includes("Single Family Residence"));
         const lotSizeDisplay = formatLotSize(popupData.lot_size);
-        const mlsNumberDisplay = stripTrailingPointZero(popupData.mls_number);
-        const subtype = (popupData?.subtype ?? "Unknown").toString();
-        const isSfr = subtype.includes("SFR") || subtype.includes("Single Family Residence");
-        const reportLink = renderReportLink(normalizeListingId(popupData.mls_number));
+        const ispHtml = window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? "";
 
-        let parkingContent = "";
-        if (!isSfr) {
-            parkingContent = `
-                <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                    <span class="label" style="font-weight: bold;">Parking Spaces</span>
-                    <span class="value">${popupData.garage_spaces || "Unknown"}</span>
-                </div>
-            `;
-        }
+        const primaryRows = [
+            rawRow("Rent control", renderRsoValue(popupData)),
+            rawRow("Housing Dept. issues", renderLahdValue(popupData)),
+            row("HOA fee", formatCurrency(popupData.hoa_fee)),
+            row("HOA frequency", popupData.hoa_fee_frequency),
+            row("Lot size", lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : ""),
+            isSfr ? "" : row("Parking", popupData.garage_spaces),
+            row("School district", popupData.school_district_name),
+            row("Nearest high school", formatMiles(popupData.nearest_high_school_mi)),
+            row("Listed", formatDate(popupData.listed_date)),
+        ];
+
+        const moreRows = [
+            row("Property type", subtype),
+            row("Year built", popupData.year_built),
+            row("Listing ID (MLS#)", stripTrailingPointZero(popupData.mls_number)),
+            rawRow("ISP options", ispHtml, "listing-popup__row--stacked"),
+        ];
 
         return `
-            <div>
-                ${imageRow}
-                ${listingUrlBlock}
-                <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listed Date</span>
-                        <span class="value">${formatDate(popupData.listed_date)}</span>
-                    </div>
-                    ${renderLahdIssueRow(popupData)}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
-                        <span class="value">${mlsNumberDisplay}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">List Office Phone</span>
-                        <span class="value">Unknown</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">List Price</span>
-                        <span class="value">${formatCurrency(popupData.list_price)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">HOA Fee</span>
-                        <span class="value">${formatCurrency(popupData.hoa_fee)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">HOA Fee Frequency</span>
-                        <span class="value">${popupData.hoa_fee_frequency || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Square Feet</span>
-                        <span class="value">${popupData.sqft ? `${Number(popupData.sqft).toLocaleString()} sq. ft` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Price Per Square Foot</span>
-                        <span class="value">${formatCurrency(popupData.ppsqft)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Lot Size</span>
-                        <span class="value">${lotSizeDisplay ? `${lotSizeDisplay} sq. ft` : "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
-                        <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
-                    </div>
-                    ${parkingContent}
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Year Built</span>
-                        <span class="value">${popupData.year_built || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">School District</span>
-                        <span class="value">${popupData.school_district_name || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Nearest High School</span>
-                        <span class="value">${formatMiles(popupData.nearest_high_school_mi)}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
-                        <span class="label" style="font-weight: bold;">Physical Sub Type</span>
-                        <span class="value">${subtype || "Unknown"}</span>
-                    </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                        <span class="label" style="font-weight: bold;">ISP Options</span>
-                        <div class="value" style="text-align: right;">
-                            ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
-                        </div>
-                    </div>
-                </div>
-                ${reportLink}
+            <div class="listing-popup">
+                ${renderMedia(popupData)}
+                ${renderHeader(address, listingUrl)}
+                ${renderListingSource(popupData)}
+                ${renderStats([
+                    stat(formatCurrency(popupData.list_price), "list price"),
+                    stat(formatBedBath(popupData), "bed / bath"),
+                    stat(formatSqft(popupData.sqft), "sq ft"),
+                    stat(popupData.ppsqft ? formatCurrency(popupData.ppsqft) : "", "per sq ft"),
+                ])}
+                <dl class="listing-popup__rows">${primaryRows.join("")}</dl>
+                ${renderMoreDetails(moreRows)}
+                ${renderReportLink(normalizeListingId(popupData.mls_number))}
             </div>
         `;
     }
@@ -745,40 +892,539 @@
         const availH = Math.floor(Math.min(window.innerHeight, rect?.height ?? window.innerHeight));
 
         const padding = isMobile ? 24 : 48;
-        const leaseLikeMaxWidthCap = isMobile ? 225 : 350;
-        const leaseLikeMaxHeightCap = isMobile ? 405 : 650;
+        const leaseLikeMaxWidthCap = isMobile ? 225 : 300;
+        const leaseLikeMaxHeightCap = isMobile ? 380 : 480;
 
         return {
             maxWidth: Math.max(200, Math.min(leaseLikeMaxWidthCap, availW - padding)),
             maxHeight: Math.max(220, Math.min(leaseLikeMaxHeightCap, availH - padding)),
+            autoPan: false,
             keepInView: false,
-            autoPanPadding: [10, 10],
-            closeButton: true,
+            closeButton: false,
             className: "responsive-popup",
         };
+    }
+
+    const POPUP_OFFSET_Y = 7;
+    const POPUP_GAP = 10;
+    const POPUP_PAD = 8;
+    const POPUP_TIP_INSET = 22;
+    const POPUP_TIP_HEIGHT = 20;
+    const POPUP_MIN_HEIGHT = 180;
+    const BELOW_CLASS = "leaflet-popup--below";
+
+    /**
+     * Resolve a popup, its map and its pin from a layer or a bare popup.
+     *
+     * A listing hidden inside a cluster has no marker of its own, so its popup
+     * is opened straight on the map. Everything downstream works either way.
+     *
+     * @param {PopupLayer|Object} target Layer with a bound popup, or a popup.
+     * @returns {{popup: Object|null, map: Object|null, pin: Element|null}} Context.
+     */
+    function popupContext(target) {
+        if (target instanceof L.Popup) {
+            return { popup: target, map: target._map, pin: null };
+        }
+        if (target && typeof target.getPopup === "function") {
+            return { popup: target.getPopup(), map: target._map, pin: target.getElement?.() ?? null };
+        }
+        return { popup: target || null, map: target?._map ?? null, pin: null };
+    }
+
+    /**
+     * Place an open popup so it stays inside the map container.
+     *
+     * @param {PopupLayer|Object} target Layer whose popup is open, or a popup.
+     * @returns {void}
+     */
+    function fitPopupInFrame(target) {
+        const { popup, map, pin: pinEl } = popupContext(target);
+        if (!popup || !map || !popup.isOpen?.()) return;
+        const el = popup.getElement?.();
+        const content = el?.querySelector?.(".leaflet-popup-content");
+        if (!el || !content) return;
+
+        if (popup._baseMaxHeight === undefined) popup._baseMaxHeight = popup.options.maxHeight;
+        el.classList.remove(BELOW_CLASS);
+        el.style.removeProperty("--tip-shift");
+        popup.options.offset = L.point(0, POPUP_OFFSET_Y);
+        popup.options.maxHeight = popup._baseMaxHeight;
+        popup.update();
+
+        const mapRect = map.getContainer().getBoundingClientRect();
+        const pin = pinEl?.getBoundingClientRect?.() ?? null;
+        let rect = el.getBoundingClientRect();
+
+        const chromeY = POPUP_PAD + POPUP_GAP + POPUP_TIP_HEIGHT;
+        const above = (pin ? pin.top : rect.bottom) - mapRect.top - chromeY;
+        const below = mapRect.bottom - (pin ? pin.bottom : rect.bottom) - chromeY;
+        const flip = rect.height > above && below > above;
+        const room = Math.max(POPUP_MIN_HEIGHT, flip ? below : above);
+
+        const chrome = rect.height - content.clientHeight;
+        if (rect.height > room) {
+            popup.options.maxHeight = Math.max(POPUP_MIN_HEIGHT, Math.round(room - chrome));
+            popup.update();
+            rect = el.getBoundingClientRect();
+        }
+
+        let offsetY = POPUP_OFFSET_Y;
+        if (flip) {
+            el.classList.add(BELOW_CLASS);
+            rect = el.getBoundingClientRect();
+            const wantedTop = (pin ? pin.bottom : rect.top) + POPUP_GAP + POPUP_TIP_HEIGHT;
+            offsetY = POPUP_OFFSET_Y + (wantedTop - rect.top);
+            popup.options.offset = L.point(0, offsetY);
+            popup.update();
+            rect = el.getBoundingClientRect();
+        }
+
+        let offsetX = 0;
+        if (rect.left < mapRect.left + POPUP_PAD) {
+            offsetX = mapRect.left + POPUP_PAD - rect.left;
+        } else if (rect.right > mapRect.right - POPUP_PAD) {
+            offsetX = mapRect.right - POPUP_PAD - rect.right;
+        }
+        if (offsetX) {
+            popup.options.offset = L.point(offsetX, offsetY);
+            popup.update();
+
+            rect = el.getBoundingClientRect();
+            const limit = Math.max(0, rect.width / 2 - POPUP_TIP_INSET);
+            const shift = Math.max(-limit, Math.min(limit, -offsetX));
+            el.style.setProperty("--tip-shift", shift + "px");
+        }
     }
 
     /**
      * Update the popup content and hydrate ISP placeholder content if present.
      *
-     * @param {PopupLayer} layer Leaflet layer whose popup should be updated.
+     * @param {PopupLayer|Object} target Layer whose popup should be updated, or a popup.
      * @param {string} content HTML content for the popup.
      * @returns {void}
      */
-    function setPopupContent(layer, content) {
-        const popup = layer.getPopup?.();
+    function setPopupContent(target, content) {
+        const { popup } = popupContext(target);
         if (!popup || typeof popup.setContent !== "function") return;
 
         popup.setContent(content);
 
+        fitPopupInFrame(target);
+
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
+
+        const photos = popupEl.querySelectorAll("img");
+        for (const photo of photos) {
+            if (photo.complete) continue;
+            photo.addEventListener(
+                "load",
+                function () { fitPopupInFrame(target); },
+                { once: true }
+            );
+            photo.addEventListener(
+                "error",
+                function () { fitPopupInFrame(target); },
+                { once: true }
+            );
+        }
 
         const ispApi = window.larentals?.isp;
         if (!ispApi) return;
 
         ispApi.hydrateIspOptionsInPopup(popupEl);
     }
+
+    /**
+     * Fill a popup with a listing: loading state, then the fetched detail.
+     *
+     * @param {PopupLayer|Object} target Layer whose popup is open, or a popup.
+     * @param {Record<string, unknown>} summaryData Listing properties to render.
+     * @returns {void}
+     */
+    function hydratePopup(target, summaryData) {
+        const { popup } = popupContext(target);
+        if (!popup) return;
+
+        const seq = (popup._listingSeq = (popup._listingSeq || 0) + 1);
+        const listingId = normalizeListingId(summaryData.mls_number);
+
+        window.larentals?.analytics?.trackListingOpened();
+        setPopupContent(target, renderPopupLoadingContent(summaryData));
+
+        if (!listingId) {
+            setPopupContent(target, renderPopupErrorContent(summaryData));
+            return;
+        }
+
+        fetchListingDetails(listingId)
+            .then((detailData) => {
+                if (seq !== popup._listingSeq) return;
+                const popupData = Object.assign({}, summaryData, detailData || {});
+                setPopupContent(target, renderListingContent(popupData));
+            })
+            .catch((error) => {
+                if (seq !== popup._listingSeq) return;
+                console.error("Failed to load popup details for listing", listingId, error);
+                setPopupContent(target, renderPopupErrorContent(summaryData));
+            });
+    }
+
+    /**
+     * Render the listing body for whichever page is being viewed.
+     *
+     * @param {Record<string, unknown>} popupData Merged summary and detail data.
+     * @returns {string} HTML string for the listing body.
+     */
+    function renderListingContent(popupData) {
+        const path = String(window.location?.pathname || "").toLowerCase();
+        return path === "/buy" || path.startsWith("/buy")
+            ? generateBuyPopupContent(popupData)
+            : generateLeasePopupContent(popupData);
+    }
+
+    /**
+     * Keep a popup in frame for as long as it is open.
+     *
+     * @param {PopupLayer|Object} target Layer whose popup is open, or a popup.
+     * @param {Object} closer Emitter that fires once the popup closes.
+     * @param {string} closeEvent Event name that emitter fires on close.
+     * @returns {void}
+     */
+    function trackPopupWhileOpen(target, closer, closeEvent) {
+        const { map } = popupContext(target);
+        if (!map) return;
+        const refit = function () { fitPopupInFrame(target); };
+        fitPopupInFrame(target);
+        map.on("zoomend moveend resize", refit);
+        closer.once(closeEvent, function () { map.off("zoomend moveend resize", refit); });
+    }
+
+    /** @type {{summaryData: Record<string, unknown>, latlng: [number, number]|null}|null} */
+    let selected = null;
+
+    let handingOver = false;
+
+    /**
+     * Find the detail slot, but only while it is somewhere a listing can be read.
+     *
+     * @returns {Element|null} The slot, or `null` when the popup should be used.
+     */
+    function detailSlot() {
+        const slot = document.querySelector("[data-results-detail]");
+        if (!slot) return null;
+        const panel = slot.closest(".results-panel");
+        if (!panel || !panel.offsetParent) return null;
+        const layout = panel.closest(".listing-page-layout");
+        if (layout && layout.classList.contains("is-results-hidden")) return null;
+        return slot;
+    }
+
+    /**
+     * Put content in the detail slot and reveal it.
+     *
+     * @param {Element} slot Detail slot element.
+     * @param {string} content HTML for the listing body.
+     * @returns {void}
+     */
+    function setDetailContent(slot, content) {
+        slot.innerHTML =
+            '<button type="button" class="results-panel__detail-close"' +
+            ' data-results-detail-close aria-label="Close listing details">' +
+            '<i class="bi bi-x-lg" aria-hidden="true"></i></button>' +
+            '<div class="results-panel__detail-body">' + content + "</div>";
+        slot.hidden = false;
+        const body = slot.querySelector(".results-panel__detail-body");
+        if (body) body.scrollTop = 0;
+        window.larentals?.isp?.hydrateIspOptionsInPopup(slot);
+    }
+
+    /**
+     * Show a listing in the results column, if that is where listings go now.
+     *
+     * @param {Record<string, unknown>} summaryData Listing properties.
+     * @param {[number, number]|null} [latlng] Where the listing sits, so the
+     *   selection can be reopened as a popup if the column is collapsed.
+     * @returns {boolean} `true` when the listing was handled here.
+     */
+    function showListingDetail(summaryData, latlng) {
+        const slot = detailSlot();
+        if (!slot) return false;
+
+        selected = { summaryData: summaryData, latlng: latlng || null };
+        updateSpotlight();
+
+        const seq = (slot._listingSeq = (slot._listingSeq || 0) + 1);
+        const listingId = normalizeListingId(summaryData.mls_number);
+
+        const swapping = !slot.hidden;
+        if (swapping) {
+            slot.style.minHeight = slot.getBoundingClientRect().height + "px";
+            slot.classList.add("is-swapping");
+        }
+
+        /**
+         * Release the pinned space once the new listing is on screen, then
+         * bring the open row into view.
+         *
+         * The scroll waits for this rather than happening when the listing is
+         * clicked, because the card above the list has not taken its height
+         * yet at that point: a row that looks in frame while the card is a
+         * loading shell is pushed out of it as the card fills, and the scroll
+         * that was skipped as unnecessary turns out to have been needed. The
+         * frame is for the released min-height to reach layout first.
+         *
+         * @returns {void}
+         */
+        const settle = function () {
+            slot.classList.remove("is-swapping");
+            slot.style.removeProperty("min-height");
+            window.requestAnimationFrame(function scrollOpenRowIn() {
+                window.larentals?.results?.setOpenListing?.(
+                    summaryData.mls_number,
+                    { scroll: true }
+                );
+            });
+        };
+
+        window.larentals?.analytics?.trackListingOpened();
+        if (!swapping) setDetailContent(slot, renderPopupLoadingContent(summaryData));
+        window.larentals?.results?.setOpenListing?.(summaryData.mls_number, { scroll: false });
+
+        if (!listingId) {
+            setDetailContent(slot, renderPopupErrorContent(summaryData));
+            settle();
+            return true;
+        }
+
+        fetchListingDetails(listingId)
+            .then((detailData) => {
+                if (seq !== slot._listingSeq) return;
+                setDetailContent(slot, renderListingContent(
+                    Object.assign({}, summaryData, detailData || {})
+                ));
+                settle();
+            })
+            .catch((error) => {
+                if (seq !== slot._listingSeq) return;
+                console.error("Failed to load listing details for listing", listingId, error);
+                setDetailContent(slot, renderPopupErrorContent(summaryData));
+                settle();
+            });
+        return true;
+    }
+
+    /**
+     * Empty and hide the detail slot.
+     *
+     * @returns {void}
+     */
+    function hideListingDetail() {
+        const slot = document.querySelector("[data-results-detail]");
+        if (!slot || slot.hidden) return;
+        slot._listingSeq = (slot._listingSeq || 0) + 1;
+        slot.hidden = true;
+        slot.innerHTML = "";
+        slot.classList.remove("is-swapping");
+        slot.style.removeProperty("min-height");
+        if (handingOver) return;
+        selected = null;
+        updateSpotlight();
+        window.larentals?.results?.setOpenListing?.(null, { scroll: false });
+    }
+
+    /**
+     * Open the selected listing as a popup on the map.
+     *
+     * A listing with a pin on screen is opened by clicking that pin, so the
+     * popup is anchored to the marker and placed against it the way any other
+     * popup is. A listing still inside a cluster bubble has no pin to click,
+     * so its popup is opened where the listing sits instead.
+     *
+     * @returns {void}
+     */
+    function openSelectedOnMap() {
+        const map = window.larentals?.map;
+        if (!selected || !map) return;
+
+        const mls = String(selected.summaryData.mls_number ?? "").replace(/"/g, "");
+        const pin = mls ? document.querySelector('.price-marker[data-mls="' + mls + '"]') : null;
+        if (pin) {
+            (pin.closest(".leaflet-marker-icon") || pin).dispatchEvent(
+                new MouseEvent("click", { bubbles: true, cancelable: true, view: window })
+            );
+            return;
+        }
+
+        if (!selected.latlng) return;
+        const popup = L.popup(buildPopupOptions({ _map: map }))
+            .setLatLng(selected.latlng)
+            .setContent(renderPopupLoadingContent(selected.summaryData))
+            .openOn(map);
+        popup.larentalsMls = selected.summaryData.mls_number;
+        trackPopupWhileOpen(popup, popup, "remove");
+        hydratePopup(popup, selected.summaryData);
+    }
+
+    /**
+     * Move the selected listing to whichever surface can now show it.
+     *
+     * Called as the listings column opens and closes.
+     *
+     * @returns {void}
+     */
+    function rehomeSelection() {
+        if (!selected) return;
+        const keep = selected;
+
+        if (detailSlot()) {
+            handingOver = true;
+            window.larentals?.map?.closePopup?.();
+            handingOver = false;
+            selected = keep;
+            showListingDetail(keep.summaryData, keep.latlng);
+            return;
+        }
+
+        handingOver = true;
+        hideListingDetail();
+        handingOver = false;
+        selected = keep;
+        openSelectedOnMap();
+    }
+
+    document.addEventListener("click", function closeListingDetail(event) {
+        const closer = event.target?.closest?.("[data-results-detail-close]");
+        if (closer) hideListingDetail();
+    });
+
+    document.addEventListener("keydown", function escapeListingDetail(event) {
+        if (event.key === "Escape") hideListingDetail();
+    });
+
+    const SPOTLIGHT_PANE = "listingSpotlight";
+
+    /**
+     * Read the selected listing's position on screen, in container pixels.
+     *
+     * The rendered pin is preferred over the stored coordinates: a listing
+     * inside a cluster is represented by the bubble covering it, and that is
+     * what the light should be on.
+     *
+     * @param {Object} map The Leaflet map.
+     * @returns {{x: number, y: number}|null} Container point, or `null`.
+     */
+    function spotlightPoint(map) {
+        if (!selected) return null;
+        const mls = String(selected.summaryData.mls_number ?? "").replace(/"/g, "");
+        const el = mls
+            ? document.querySelector('.price-marker[data-mls="' + mls + '"]')
+            : null;
+        const icon = el?.closest?.(".leaflet-marker-icon") || el;
+        if (icon) {
+            const box = icon.getBoundingClientRect();
+            const mapBox = map.getContainer().getBoundingClientRect();
+            return {
+                x: box.left + box.width / 2 - mapBox.left,
+                y: box.top + box.height / 2 - mapBox.top,
+            };
+        }
+        if (!selected.latlng) return null;
+        const point = map.latLngToContainerPoint(selected.latlng);
+        return { x: point.x, y: point.y };
+    }
+
+    /**
+     * Redraw the spotlight for the current selection and viewport.
+     *
+     * @returns {void}
+     */
+    function updateSpotlight() {
+        const map = window.larentals?.map;
+        const pane = map?.getPane?.(SPOTLIGHT_PANE);
+        if (!pane) return;
+
+        const point = detailSlot() ? spotlightPoint(map) : null;
+        if (!point) {
+            pane.classList.remove("is-on");
+            return;
+        }
+
+        const origin = map.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(pane, origin);
+        const size = map.getSize();
+        pane.style.width = size.x + "px";
+        pane.style.height = size.y + "px";
+
+        pane.style.setProperty("--spot-x", point.x + "px");
+        pane.style.setProperty("--spot-y", point.y + "px");
+        pane.classList.add("is-on");
+    }
+
+    /**
+     * Build the spotlight pane and keep it tracking the map.
+     *
+     * @param {Object} map The Leaflet map.
+     * @returns {void}
+     */
+    function bindSpotlight(map) {
+        const pane = map.createPane(SPOTLIGHT_PANE);
+        pane.classList.add("listing-spotlight");
+        map.on("move zoom viewreset resize", updateSpotlight);
+        map.on("zoomanim", function dropLightForZoom() {
+            pane.classList.remove("is-on");
+        });
+        map.on("zoomend moveend", updateSpotlight);
+    }
+
+    const detailMapWatch = window.setInterval(function watchMapForDetail() {
+        const map = window.larentals?.map;
+        if (!map?.on || map.larentalsDetailWatch) return;
+        map.larentalsDetailWatch = true;
+        bindSpotlight(map);
+        map.on("click", hideListingDetail);
+        map.on("popupclose", function forgetSelection() {
+            if (handingOver) return;
+            selected = null;
+            updateSpotlight();
+        });
+        window.clearInterval(detailMapWatch);
+    }, 600);
+
+    const larentals = window.larentals = window.larentals || {};
+    larentals.listingDetail = Object.assign({}, larentals.listingDetail, {
+        show: showListingDetail,
+        hide: hideListingDetail,
+        rehome: rehomeSelection,
+    });
+    larentals.popups = Object.assign({}, larentals.popups, {
+        /**
+         * Open a listing popup at a point, without moving the map.
+         *
+         * @param {[number, number]} latlng Listing position.
+         * @param {Record<string, unknown>} summaryData Listing properties.
+         * @returns {Object|null} The popup, or `null` when there is no map.
+         */
+        openAt: function (latlng, summaryData) {
+            if (showListingDetail(summaryData || {}, latlng)) return null;
+            const map = larentals.map;
+            if (!map || !latlng) return null;
+            selected = { summaryData: summaryData || {}, latlng: latlng };
+            updateSpotlight();
+
+            const popup = L.popup(buildPopupOptions({ _map: map }))
+                .setLatLng(latlng)
+                .setContent(renderPopupLoadingContent(summaryData || {}))
+                .openOn(map);
+
+            popup.larentalsMls = (summaryData || {}).mls_number;
+
+            trackPopupWhileOpen(popup, popup, "remove");
+            hydratePopup(popup, summaryData || {});
+            return popup;
+        },
+    });
 
     window.dash_props = Object.assign({}, window.dash_props, {
         module: Object.assign({}, window.dash_props && window.dash_props.module, {
@@ -796,42 +1442,26 @@
                 }
 
                 const summaryData = feature.properties;
-                const path = String(window.location?.pathname || "").toLowerCase();
-                const isBuyPage = path === "/buy" || path.startsWith("/buy");
-                const listingId = normalizeListingId(summaryData.mls_number);
-                let openRequestSeq = 0;
+
+                // bindPopup registers `this._openPopup` as the click handler and
+                // keeps that reference, so the fork has to be installed on the
+                // layer before binding. Diverting here rather than on popupopen
+                // means no popup is ever built for a listing read in the panel.
+                const openPopupForLayer = layer._openPopup;
+                layer._openPopup = function divertOrOpenPopup(event) {
+                    const at = this.getLatLng?.();
+                    const latlng = at ? [at.lat, at.lng] : null;
+                    if (showListingDetail(summaryData, latlng)) return;
+                    selected = { summaryData: summaryData, latlng: latlng };
+                    updateSpotlight();
+                    return openPopupForLayer.call(this, event);
+                };
 
                 layer.bindPopup(renderPopupLoadingContent(summaryData), buildPopupOptions(layer));
 
                 layer.on("popupopen", function handlePopupOpen() {
-                    openRequestSeq += 1;
-                    const requestSeq = openRequestSeq;
-
-                    window.larentals?.analytics?.trackListingOpened();
-
-                    setPopupContent(layer, renderPopupLoadingContent(summaryData));
-
-                    if (!listingId) {
-                        setPopupContent(layer, renderPopupErrorContent(summaryData));
-                        return;
-                    }
-
-                    fetchListingDetails(listingId)
-                        .then((detailData) => {
-                            if (requestSeq !== openRequestSeq) return;
-
-                            const popupData = Object.assign({}, summaryData, detailData || {});
-                            const popupContent = isBuyPage
-                                ? generateBuyPopupContent(popupData)
-                                : generateLeasePopupContent(popupData);
-
-                            setPopupContent(layer, popupContent);
-                        })
-                        .catch((error) => {
-                            if (requestSeq !== openRequestSeq) return;
-                            console.error("Failed to load popup details for listing", listingId, error);
-                            setPopupContent(layer, renderPopupErrorContent(summaryData));
-                        });
+                    trackPopupWhileOpen(layer, layer, "popupclose");
+                    hydratePopup(layer, summaryData);
                 });
             },
         }),
