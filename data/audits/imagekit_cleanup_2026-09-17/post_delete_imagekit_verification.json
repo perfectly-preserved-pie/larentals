@@ -1,0 +1,12 @@
+{
+  "expected_current": 12934,
+  "historical_version_bytes": 12644555,
+  "historical_versions": 142,
+  "live_current": 12934,
+  "live_current_bytes": 1299565348,
+  "missing_expected": 0,
+  "missing_ids": [],
+  "path_mismatches": 0,
+  "unexpected_current": 0,
+  "unexpected_ids": []
+}

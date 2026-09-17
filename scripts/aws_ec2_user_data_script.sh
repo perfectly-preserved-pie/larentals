@@ -205,6 +205,15 @@ with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as connection:
         print(f"Validated {table}: {row_count} rows")
 PY
 
+echo "----- RECONCILE IMAGEKIT WITH ACTIVE LISTINGS -----"
+uv run reconcile-imagekit-assets \
+  --apply \
+  --db-path "$DB_PATH" \
+  --buy-checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
+  --lease-checkpoint-path "$CHECKPOINT_DIR/lease.sqlite" \
+  --checkpoint-s3-bucket "$S3_BUCKET" \
+  --checkpoint-s3-prefix "$CHECKPOINT_S3_PREFIX"
+
 echo "----- UPLOAD DB -----"
 uv run python - "$DB_PATH" "$S3_BUCKET" "$S3_KEY" <<'PY'
 import sys

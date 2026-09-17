@@ -1,0 +1,24 @@
+{
+  "checkpoints": {
+    "buy": {
+      "literal_nulls_normalized": 0,
+      "stale_refs_cleared": 0
+    },
+    "lease": {
+      "literal_nulls_normalized": 0,
+      "stale_refs_cleared": 0
+    }
+  },
+  "runtime": {
+    "buy": {
+      "broken_active_refs_cleared": 22,
+      "inactive_rows_cleared": 0,
+      "literal_nulls_normalized": 92
+    },
+    "lease": {
+      "broken_active_refs_cleared": 0,
+      "inactive_rows_cleared": 2164,
+      "literal_nulls_normalized": 0
+    }
+  }
+}

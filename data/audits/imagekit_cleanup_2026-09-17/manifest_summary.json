@@ -1,0 +1,15 @@
+{
+  "active_database_rows": 15990,
+  "active_reference_paths": 12956,
+  "all_historical_version_bytes": 2220653080,
+  "all_historical_versions": 20613,
+  "broken_active_references": 22,
+  "current_assets": 65735,
+  "delete_current_bytes": 5655649300,
+  "delete_current_count": 52801,
+  "inactive_database_rows": 2164,
+  "keep_current_bytes": 1299565348,
+  "keep_current_count": 12934,
+  "retained_path_versions_to_delete_bytes": 75617886,
+  "retained_path_versions_to_delete_count": 766
+}
