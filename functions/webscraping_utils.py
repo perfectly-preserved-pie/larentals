@@ -118,7 +118,7 @@ def _raise_if_circuit_open(host: str) -> None:
     if remaining > 0:
         raise HostCircuitOpen(
             f"Requests to {host} are paused for another {remaining:.0f}s "
-            "after repeated connection failures"
+            "after repeated host failures"
         )
 
 
@@ -170,10 +170,11 @@ def _record_request_success(host: str) -> None:
 def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> requests.Response:
     """Perform a safe GET with host pacing and bounded retries.
 
-    A 429 honors ``Retry-After`` (seconds or an HTTP date).  Otherwise retries
+    A 429 honors ``Retry-After`` (seconds or an HTTP date). Otherwise retries
     use exponential backoff with jitter, avoiding synchronized retry bursts.
-    The final response is returned to preserve existing callers' ``raise_for_status``
-    behavior and error handling.
+    Persistent rate limiting opens the host circuit so subsequent rows can use
+    a fallback immediately. The final response is returned to preserve existing
+    callers' ``raise_for_status`` behavior and error handling.
 
     Args:
         url: URL requested, validated, or downloaded by the function.
@@ -181,7 +182,7 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
         timeout: HTTP request timeout in seconds.
 
     Returns:
-        The successful HTTP response received after any retries.
+        The final HTTP response received after any retries.
     """
     host = urlparse(url).netloc.lower()
     response: Optional[requests.Response] = None
@@ -207,7 +208,20 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
             continue
 
         _record_request_success(host)
-        if response.status_code not in RETRYABLE_STATUS_CODES or attempt == MAX_RETRY_ATTEMPTS - 1:
+        if response.status_code not in RETRYABLE_STATUS_CODES:
+            return response
+
+        if attempt == MAX_RETRY_ATTEMPTS - 1:
+            if response.status_code == 429:
+                with _rate_limit_lock:
+                    _circuit_open_until[host] = (
+                        time.monotonic() + HOST_CIRCUIT_OPEN_SECONDS
+                    )
+                logger.warning(
+                    f"Pausing requests to {host} for "
+                    f"{HOST_CIRCUIT_OPEN_SECONDS:.0f}s after persistent HTTP 429 "
+                    "responses; callers should use a fallback."
+                )
             return response
 
         retry_after = _retry_after_seconds(response)

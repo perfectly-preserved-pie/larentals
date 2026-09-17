@@ -291,7 +291,7 @@ def update_dataframe_with_listing_data(
     checkpoint_store: ListingCheckpointStore | None = None,
     source_file_hash: str = "ad-hoc",
 ) -> pd.DataFrame:
-    """Updates the DataFrame with listing date, MLS photo, and listing URL by scraping BHHS and using The Agency's API.
+    """Update listing fields from The Agency, with BHHS as a fallback.
 
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
@@ -313,7 +313,7 @@ def update_dataframe_with_listing_data(
     started_at = time.monotonic()
     logger.info(
         f"Enriching {total_rows} {listing_type} listings "
-        "(BHHS primary; The Agency fills missing fields)."
+        "(The Agency primary; BHHS fills missing fields)."
     )
 
     _ensure_object_columns(
@@ -382,38 +382,38 @@ def update_dataframe_with_listing_data(
                 checked_sources = "checkpoint"
                 selected_sources: set[str] = set()
             else:
-                listing_path = "for-sale" if listing_type == "buy" else "for-lease"
-                bhhs_data = webscrape_bhhs(
-                    url=f"https://www.bhhscalifornia.com/{listing_path}/{mls_number}-t_q;/",
+                agency_data = fetch_the_agency_data(
+                    mls_number,
                     row_index=position - 1,
-                    mls_number=mls_number,
                     total_rows=total_rows,
                 )
-                agency_data = (None, None, None)
-                agency_was_checked = not all(usable(value) for value in bhhs_data)
-                if agency_was_checked:
-                    agency_data = fetch_the_agency_data(
-                        mls_number,
+                bhhs_data = (None, None, None)
+                bhhs_was_checked = not all(usable(value) for value in agency_data)
+                if bhhs_was_checked:
+                    listing_path = "for-sale" if listing_type == "buy" else "for-lease"
+                    bhhs_data = webscrape_bhhs(
+                        url=f"https://www.bhhscalifornia.com/{listing_path}/{mls_number}-t_q;/",
                         row_index=position - 1,
+                        mls_number=mls_number,
                         total_rows=total_rows,
                     )
 
                 # BHHS tuple: date, photo, URL. Agency tuple: date, URL, photo.
-                listed_date = first_usable(bhhs_data[0], agency_data[0])
-                source_photo_url = first_usable(bhhs_data[1], agency_data[2])
-                listing_url = first_usable(bhhs_data[2], agency_data[1])
+                listed_date = first_usable(agency_data[0], bhhs_data[0])
+                source_photo_url = first_usable(agency_data[2], bhhs_data[1])
+                listing_url = first_usable(agency_data[1], bhhs_data[2])
                 selected_sources = set()
-                for bhhs_value, agency_value in (
-                    (bhhs_data[0], agency_data[0]),
-                    (bhhs_data[1], agency_data[2]),
-                    (bhhs_data[2], agency_data[1]),
+                for agency_value, bhhs_value in (
+                    (agency_data[0], bhhs_data[0]),
+                    (agency_data[2], bhhs_data[1]),
+                    (agency_data[1], bhhs_data[2]),
                 ):
-                    if usable(bhhs_value):
-                        selected_sources.add("BHHS")
-                    elif usable(agency_value):
+                    if usable(agency_value):
                         selected_sources.add("The Agency")
+                    elif usable(bhhs_value):
+                        selected_sources.add("BHHS")
                 checked_sources = (
-                    "BHHS→The Agency" if agency_was_checked else "BHHS"
+                    "The Agency→BHHS" if bhhs_was_checked else "The Agency"
                 )
                 scrape_status = (
                     "success"

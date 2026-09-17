@@ -142,6 +142,44 @@ def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(
     assert sleeps == [1.5, 3.5]
 
 
+def test_persistent_rate_limit_opens_host_circuit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Persistent 429s should make later rows fail fast to their fallback."""
+    scraping._next_request_at.clear()
+    scraping._cooldown_until.clear()
+    scraping._transport_failures.clear()
+    scraping._circuit_open_until.clear()
+    clock = [0.0]
+    request_count = [0]
+
+    def sleep(seconds: float) -> None:
+        clock[0] += seconds
+
+    def rate_limited(*args: object, **kwargs: object) -> FakeResponse:
+        request_count[0] += 1
+        return FakeResponse(429)
+
+    monkeypatch.setattr(scraping.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(scraping.time, "sleep", sleep)
+    monkeypatch.setattr(scraping.random, "uniform", lambda *_: 1.0)
+    monkeypatch.setattr(scraping.requests, "get", rate_limited)
+
+    response = scraping.get_with_backoff(
+        "https://www.bhhscalifornia.com/listing",
+        headers={},
+    )
+    assert response.status_code == 429
+    assert request_count[0] == scraping.MAX_RETRY_ATTEMPTS
+
+    with pytest.raises(scraping.HostCircuitOpen):
+        scraping.get_with_backoff(
+            "https://www.bhhscalifornia.com/another",
+            headers={},
+        )
+    assert request_count[0] == scraping.MAX_RETRY_ATTEMPTS
+
+
 def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
