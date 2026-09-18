@@ -1,0 +1,11 @@
+{
+  "by_market": {
+    "buy": 595,
+    "lease": 425
+  },
+  "live_current_assets": 12787,
+  "missing_active_references": 1020,
+  "recent_since_2026_09_03": 883,
+  "with_source_photo_url": 998,
+  "without_source_photo_url": 22
+}

@@ -1,0 +1,167 @@
+{
+  "active_reference_paths": 12619,
+  "active_refs_missing": 22,
+  "active_refs_present": 12597,
+  "historical_versions": 0,
+  "live_current_assets": 13785,
+  "missing_rows": [
+    {
+      "has_source": false,
+      "listed_date": "2024-12-02 00:00:00",
+      "market": "buy",
+      "mls_number": "AR24242830MR",
+      "path": "/AR24242830MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-01 00:00:00",
+      "market": "buy",
+      "mls_number": "OC24243967MR",
+      "path": "/OC24243967MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-12 00:00:00",
+      "market": "buy",
+      "mls_number": "OC24248877MR",
+      "path": "/OC24248877MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-06-28 00:00:00",
+      "market": "buy",
+      "mls_number": "PW24132444",
+      "path": "/PW24132444"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-18 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24221941MR",
+      "path": "/TR24221941MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-11-07 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24229515MR",
+      "path": "/TR24229515MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-11-25 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24241336MR",
+      "path": "/TR24241336MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-11-27 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24241436MR",
+      "path": "/TR24241436MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-11-30 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24241544MR",
+      "path": "/TR24241544MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-05 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24245161MR",
+      "path": "/TR24245161MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-11 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24245999MR",
+      "path": "/TR24245999MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-22 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24253233MR",
+      "path": "/TR24253233MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-29 00:00:00",
+      "market": "buy",
+      "mls_number": "TR24255038MR",
+      "path": "/TR24255038MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2025-01-02 00:00:00",
+      "market": "buy",
+      "mls_number": "TR25001137MR",
+      "path": "/TR25001137MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-11-11 00:00:00",
+      "market": "buy",
+      "mls_number": "WS24229033MR",
+      "path": "/WS24229033MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-12 00:00:00",
+      "market": "buy",
+      "mls_number": "WS24241440MR",
+      "path": "/WS24241440MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-12 00:00:00",
+      "market": "buy",
+      "mls_number": "WS24248419MR",
+      "path": "/WS24248419MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2024-12-13 00:00:00",
+      "market": "buy",
+      "mls_number": "WS24249375MR",
+      "path": "/WS24249375MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2025-01-04 00:00:00",
+      "market": "buy",
+      "mls_number": "WS25000197MR",
+      "path": "/WS25000197MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2025-01-04 00:00:00",
+      "market": "buy",
+      "mls_number": "WS25001947MR",
+      "path": "/WS25001947MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2025-01-06 00:00:00",
+      "market": "buy",
+      "mls_number": "WS25002948MR",
+      "path": "/WS25002948MR"
+    },
+    {
+      "has_source": false,
+      "listed_date": "2025-01-08 00:00:00",
+      "market": "buy",
+      "mls_number": "WS25006550MR",
+      "path": "/WS25006550MR"
+    }
+  ],
+  "missing_with_source": 0,
+  "missing_without_source": 22,
+  "recent_missing_since_2026_09_03": 0,
+  "unreferenced_live_assets": 1188
+}
