@@ -142,23 +142,15 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         self.assertEqual(
             LeaseComponents.CONFIG.active_filter_items,
             (
-                "listed_date",
                 "location",
-                "subtypes",
                 "monthly_rent",
-                "bedrooms",
-                "bathrooms",
             ),
         )
         self.assertEqual(
             BuyComponents.CONFIG.active_filter_items,
             (
-                "listed_date",
                 "location",
-                "subtypes",
                 "list_price",
-                "bedrooms",
-                "bathrooms",
             ),
         )
         self.assertEqual(FILTER_UI_BREAKPOINT, 1100)
@@ -191,7 +183,24 @@ class ResponsiveFilterUiTest(unittest.TestCase):
         ):
             self.assertIn((slider_id, "max"), buy_inputs)
 
+        # Only the money filters keep paired exact-value fields. Square footage,
+        # price per sqft and the deposits report their range straight off the
+        # slider, like bedrooms and bathrooms do.
+        # Rent reads straight off its slider now; its distribution strip shows
+        # the range instead of a pair of number boxes.
         hybrid_sliders = {
+            "lease": (),
+            "buy": ("list_price_slider", "lot_size_slider", "hoa_fee_slider"),
+        }
+        for page_type, slider_ids in hybrid_sliders.items():
+            inputs = lease_inputs if page_type == "lease" else buy_inputs
+            for slider_id in slider_ids:
+                stem = slider_id.removesuffix("_slider")
+                self.assertIn((f"{stem}_minimum_input", "value"), inputs)
+                self.assertIn((f"{stem}_maximum_input", "value"), inputs)
+                self.assertIn((slider_id, "max"), inputs)
+
+        plain_sliders = {
             "lease": (
                 "rental_price_slider",
                 "sqft_slider",
@@ -201,21 +210,15 @@ class ResponsiveFilterUiTest(unittest.TestCase):
                 "key_deposit_slider",
                 "other_deposit_slider",
             ),
-            "buy": (
-                "list_price_slider",
-                "sqft_slider",
-                "ppsqft_slider",
-                "lot_size_slider",
-                "hoa_fee_slider",
-            ),
+            "buy": ("sqft_slider", "ppsqft_slider"),
         }
-        for page_type, slider_ids in hybrid_sliders.items():
+        for page_type, slider_ids in plain_sliders.items():
             inputs = lease_inputs if page_type == "lease" else buy_inputs
             for slider_id in slider_ids:
                 stem = slider_id.removesuffix("_slider")
-                self.assertIn((f"{stem}_minimum_input", "value"), inputs)
-                self.assertIn((f"{stem}_maximum_input", "value"), inputs)
-                self.assertIn((slider_id, "max"), inputs)
+                self.assertIn((slider_id, "value"), inputs)
+                self.assertNotIn((f"{stem}_minimum_input", "value"), inputs)
+                self.assertNotIn((f"{stem}_maximum_input", "value"), inputs)
 
 
 if __name__ == "__main__":

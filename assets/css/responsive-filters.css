@@ -1,10 +1,11 @@
 :root {
+  --slider-handle-radius: 8px;
   --filter-panel-width: clamp(320px, 25vw, 400px);
   --filter-panel-surface: var(--bs-body-bg, #ffffff);
   --filter-panel-border: var(--bs-border-color, rgba(15, 23, 42, 0.16));
   --filter-panel-text: var(--bs-body-color, #172033);
-  --filter-panel-accent: #176b55;
-  --filter-panel-accent-hover: #0f5945;
+  --filter-panel-accent: var(--wttl-accent, #1f68c9);
+  --filter-panel-accent-hover: var(--wttl-accent-strong, #17529f);
   --filter-panel-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
 }
 
@@ -42,74 +43,6 @@
   overscroll-behavior: contain;
 }
 
-/* Keep the calendar in the scrollable filter flow. A floating two-month
-   popup can extend behind the map or the mobile sheet footer. */
-.listed-date-filter {
-  font-size: 16px;
-}
-
-.accordion-body:has(.listed-date-filter) {
-  padding-inline: 8px;
-}
-
-.listed-date-filter .dash-datepicker-controls {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 32px;
-  width: 100%;
-  justify-items: center;
-}
-
-.listed-date-filter .dash-datepicker-controls > .dash-input {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.listed-date-filter .dash-datepicker-month-nav {
-  width: 32px;
-  height: 40px;
-}
-
-.listed-date-filter .dash-datepicker-month-nav:last-child {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.listed-date-filter .dash-dropdown-focus-target {
-  /* Dash's invisible focus input otherwise adds its default width to the
-     calendar's scroll area on narrow screens. */
-  width: 1px;
-}
-
-.listed-date-filter .dash-datepicker > [data-radix-popper-content-wrapper] {
-  position: relative !important;
-  transform: none !important;
-  min-width: 0 !important;
-  width: 100%;
-  margin-top: 5px;
-}
-
-.listed-date-filter .dash-datepicker-content {
-  width: 100%;
-  max-width: 100%;
-  box-shadow: none;
-}
-
-.listed-date-filter .dash-datepicker-input-wrapper {
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
-  gap: 6px;
-  padding-inline: 8px;
-}
-
-.listed-date-filter .dash-datepicker-input {
-  min-width: 0;
-  width: 100% !important;
-}
-
-.listed-date-filter .dash-datepicker-input-wrapper > div {
-  min-width: 0;
-  width: 100%;
-}
-
 .responsive-filter-panel__body > .card,
 .responsive-filter-panel__body > div > .card {
   border-right: 0;
@@ -134,13 +67,6 @@
 .filter-panel-backdrop,
 .map-filter-toolbar {
   display: none;
-}
-
-/* RangeSlider tooltips are absolutely positioned and therefore do not add to
-   the slider's layout height. Reserve a row for bottom tooltips before laying
-   out the missing-value switch so its label cannot overlap them. */
-.range-filter__slider-with-switch {
-  padding-bottom: 2.75rem;
 }
 
 .range-filter__exact-inputs {
@@ -185,21 +111,9 @@
   white-space: nowrap;
 }
 
-.range-filter__controls .dash-slider-mark:first-of-type {
-  transform: translateX(0) !important;
-  text-align: left;
-}
-
 .range-filter__open-ended-slider .dash-slider-mark:nth-last-of-type(2) {
   transform: translateX(calc(-100% - 0.25rem)) !important;
   text-align: right;
-}
-
-.range-filter__controls .dash-slider-mark:last-of-type {
-  transform: translateX(-100%) !important;
-  text-align: right;
-  color: var(--filter-panel-accent);
-  font-weight: 600;
 }
 
 .range-filter__hybrid-slider .dash-slider-mark:first-of-type,
@@ -245,7 +159,17 @@
 /* The ISP control has two stacked sliders and does not use build_range_filter.
    Give both bottom tooltip rows space so they clear the next heading/switch. */
 .isp-speed-filter__range {
-  padding-bottom: 2.75rem;
+  padding-bottom: 1.25rem;
+}
+
+.isp-speed-filter__range .dash-slider-mark {
+  white-space: nowrap;
+  color: var(--filter-panel-text);
+}
+
+.isp-speed-filter__range .dash-slider-mark.dash-slider-mark-outside-selection {
+  color: var(--filter-panel-text);
+  opacity: 1;
 }
 
 @media (max-width: 1099.98px) {
@@ -400,7 +324,7 @@
   .responsive-filter-panel__apply {
     border: 1px solid var(--filter-panel-accent);
     background: var(--filter-panel-accent);
-    color: #ffffff;
+    color: var(--wttl-on-accent, #ffffff);
   }
 
   .responsive-filter-panel__apply:hover,
@@ -540,9 +464,9 @@
 
   .map-filter-toolbar__mode-button.is-selected,
   .map-filter-toolbar__mode-button.is-selected:hover {
-    background: #176b55;
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(23, 107, 85, 0.26);
+    background: var(--wttl-accent, #1f68c9);
+    color: var(--wttl-on-accent, #ffffff);
+    box-shadow: 0 2px 6px var(--wttl-accent-soft, rgba(31, 104, 201, 0.26));
   }
 
   .map-filter-toolbar__mode-button.is-selected .bi-check2 {
@@ -550,7 +474,7 @@
   }
 
   .map-filter-toolbar__mode-button:focus-visible {
-    outline: 3px solid rgba(23, 107, 85, 0.3);
+    outline: 3px solid var(--wttl-accent-soft, rgba(31, 104, 201, 0.3));
     outline-offset: 2px;
   }
 
@@ -559,13 +483,13 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    border: 1px solid #1a6d58;
+    border: 1px solid var(--wttl-accent-strong, #17529f);
     border-radius: 12px;
     padding: 8px 12px;
-    background: #176b55;
-    color: #ffffff;
+    background: var(--wttl-accent, #1f68c9);
+    color: var(--wttl-on-accent, #ffffff);
     font-weight: 750;
-    box-shadow: 0 4px 12px rgba(23, 107, 85, 0.2);
+    box-shadow: 0 4px 12px var(--wttl-accent-soft, rgba(31, 104, 201, 0.2));
   }
 
   .map-filter-toolbar__badge {
@@ -574,8 +498,8 @@
     height: 21px;
     place-items: center;
     border-radius: 999px;
-    background: #ffffff;
-    color: #145442;
+    background: var(--wttl-on-accent, #ffffff);
+    color: var(--wttl-accent-strong, #17529f);
     font-size: 0.72rem;
     font-weight: 850;
   }
@@ -614,9 +538,9 @@
   }
 
   .map-filter-chip--active {
-    border-color: #176b55;
-    background: #e0f4ed;
-    color: #104f3f;
+    border-color: var(--wttl-accent, #1f68c9);
+    background: var(--wttl-accent-soft, rgba(31, 104, 201, 0.14));
+    color: var(--wttl-accent-strong, #17529f);
   }
 
   .listing-map-col .leaflet-top {
@@ -728,39 +652,33 @@
 }
 
 :root[data-mantine-color-scheme="dark"] {
-  --filter-panel-surface: var(--wttl-dark-panel, #202427);
-  --filter-panel-border: var(--wttl-dark-border, rgba(232, 238, 241, 0.14));
-  --filter-panel-text: var(--wttl-dark-text, #e7ecef);
-  --filter-panel-accent: var(--wttl-dark-accent, #4fc3b4);
-  --filter-panel-accent-hover: #3db2a4;
-}
-
-:root[data-mantine-color-scheme="dark"] .responsive-filter-panel__apply {
-  color: #10211f;
+  --filter-panel-surface: var(--wttl-panel, #202427);
+  --filter-panel-border: var(--wttl-border, rgba(232, 238, 241, 0.14));
+  --filter-panel-text: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__top,
 :root[data-mantine-color-scheme="dark"] .map-filter-chip {
-  border-color: var(--wttl-dark-border, rgba(232, 238, 241, 0.18));
+  border-color: var(--wttl-border, rgba(232, 238, 241, 0.18));
   background: rgba(32, 36, 39, 0.96);
-  color: var(--wttl-dark-text, #e7ecef);
+  color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__brand {
-  color: var(--wttl-dark-text, #e7ecef);
+  color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__result-count {
-  color: var(--wttl-dark-text-muted, rgba(231, 236, 239, 0.68));
+  color: var(--wttl-text-muted, rgba(231, 236, 239, 0.68));
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode {
-  border-color: var(--wttl-dark-border, rgba(232, 238, 241, 0.18));
+  border-color: var(--wttl-border, rgba(232, 238, 241, 0.18));
   background: rgba(13, 17, 19, 0.5);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button {
-  color: var(--wttl-dark-text, #e7ecef);
+  color: var(--wttl-text, #e7ecef);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button:hover {
@@ -769,12 +687,16 @@
 
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button.is-selected,
 :root[data-mantine-color-scheme="dark"] .map-filter-toolbar__mode-button.is-selected:hover {
-  background: var(--wttl-dark-accent, #4fc3b4);
-  color: #10211f;
+  background: var(--wttl-accent, #5aa2f5);
+  color: var(--wttl-on-accent, #061527);
 }
 
 :root[data-mantine-color-scheme="dark"] .map-filter-chip--active {
-  border-color: var(--wttl-dark-accent, #4fc3b4);
-  background: rgba(79, 195, 180, 0.18);
-  color: #93e6dc;
+  border-color: var(--wttl-accent, #5aa2f5);
+  background: var(--wttl-accent-soft, rgba(90, 162, 245, 0.18));
+  color: var(--wttl-accent-strong, #7db8ff);
+}
+
+.leaflet-control-layers {
+  display: none !important;
 }

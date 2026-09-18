@@ -521,6 +521,32 @@ class BaseClass:
 
         self.df = self.df.merge(enrichment_df, on="mls_number", how="left")
 
+    def _speed_tiers(self, column: str) -> list[float]:
+        """Return the distinct advertised speeds present in a column.
+
+        ISP speeds are not a continuous range, they are a short ladder of
+        marketed tiers: 52% of listings advertise exactly 1 Gbps and only 2% sit
+        below 500 Mbps. On a linear 0 to 10,000 track that squeezes almost every
+        listing into the first tenth of the slider, so the control steps through
+        the tiers themselves and each step is worth the same amount of travel.
+
+        Args:
+            column: Dataframe column to inspect.
+
+        Returns:
+            Sorted distinct speeds, always starting at zero.
+        """
+        if column not in self.df.columns:
+            return [0.0, DEFAULT_SPEED_MAX]
+
+        values = pd.to_numeric(self.df[column], errors="coerce")
+        tiers = sorted({float(v) for v in values.dropna().unique() if np.isfinite(v) and v >= 0})
+        if not tiers:
+            return [0.0, DEFAULT_SPEED_MAX]
+        if tiers[0] != 0.0:
+            tiers.insert(0, 0.0)
+        return tiers if len(tiers) > 1 else [0.0, DEFAULT_SPEED_MAX]
+
     def _safe_speed_max(self, column: str) -> float:
         """Return a safe slider maximum for an ISP speed column.
 

@@ -165,14 +165,6 @@ clientside_callback(
 )
 
 clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),
-  Output('buy-analytics-section-store', 'data'),
-  Input('buy-options-accordion', 'active_item'),
-  State('buy-analytics-section-store', 'data'),
-  prevent_initial_call=True,
-)
-
-clientside_callback(
   ClientsideFunction(namespace='clientside', function_name='trackLayerToggled'),
   Output('buy-analytics-layer-store', 'data'),
   Input(LayersClass.layers_control_id("buy"), 'overlays'),
@@ -464,11 +456,9 @@ def update_buy_school_layer(
   Output("buy-zip-boundary-store", "data"),
   Output("buy-location-status", "children"),
   Input("buy-location-input", "value"),
-  Input("buy-nearby-zip-switch", "checked"),
 )
 def update_buy_zip_boundary(
   locations: list[str] | None,
-  include_nearby: bool | None,
 ) -> tuple[dict, str | list[object]]:
   """Update the ZIP boundary store based on the user-entered locations.
 
@@ -481,8 +471,10 @@ def update_buy_zip_boundary(
 
   Args:
       locations: Location queries submitted by the user.
-      include_nearby: Whether ZIP codes adjacent to each resolved location are included.
   """
+  # Nearby ZIPs are always included. Searching one ZIP and being shown only
+  # that ZIP was never what anyone wanted from a map.
+  include_nearby = True
   payload, status = resolve_locations_to_zip_boundaries(
     locations,
     ZIP_PLACE_CROSSWALK,
@@ -537,12 +529,3 @@ clientside_callback(
   prevent_initial_call=True,
 )
 
-clientside_callback(
-  ClientsideFunction(
-    namespace='clientside',
-    function_name='updateDatePicker'
-  ),
-  Output('listed_date_datepicker_buy', 'start_date'),
-  Input('listed_time_range_radio', 'value'),
-  State('earliest_date_store', 'data'),
-)

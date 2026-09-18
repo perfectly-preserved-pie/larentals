@@ -12,10 +12,10 @@ from .component_base import (
 from .component_factories import (
     build_isp_speed_components,
     build_listed_date_filter,
+    build_option_chips,
     build_location_filter_components,
     build_location_suggestions,
     build_map,
-    build_map_gesture_control,
     build_page_parts,
     build_range_filter,
     build_school_layer_filter_panel,
@@ -26,6 +26,7 @@ from .component_factories import (
 )
 from .component_models import FilterSection, PageConfig, PageParts
 from .responsive_filter_ui import build_map_filter_toolbar
+from functions.distribution import attach_distribution
 from functions.rso import add_rso_status_to_listing_geojson
 
 
@@ -101,6 +102,10 @@ class LeaseComponents(BaseClass):
         "listed_date",
         "school_district_name",
         "nearest_high_school_mi",
+        # Carried on the map payload rather than fetched per listing, because
+        # the results rows offer a way out to the listing's own page on hover
+        # and a row cannot wait on a request to know whether it has one.
+        "listing_url",
     )
 
     CONFIG = PageConfig(
@@ -118,12 +123,8 @@ class LeaseComponents(BaseClass):
             "display": "block",
         },
         active_filter_items=(
-            "listed_date",
             "location",
-            "subtypes",
             "monthly_rent",
-            "bedrooms",
-            "bathrooms",
         ),
         accordion_class_name="options-accordion dmc",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -179,7 +180,6 @@ class LeaseComponents(BaseClass):
             map_component=self._build_map_component(),
             map_overlay_children=[
                 build_map_filter_toolbar(self.page_type),
-                build_map_gesture_control(),
                 build_school_layer_map_prompt(self.page_type),
             ],
         )
@@ -217,7 +217,6 @@ class LeaseComponents(BaseClass):
             Ordered filter-section tuples for the lease page.
         """
         return [
-            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             (
                 "Location",
                 build_location_filter_components(
@@ -229,68 +228,82 @@ class LeaseComponents(BaseClass):
                 ),
                 "location",
             ),
-            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
+            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("Monthly Rent", self._build_rental_price_filter(), "monthly_rent"),
+            ("Type", self.create_subtype_checklist(), "subtypes"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
-            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
-            ("Pet Policy", self.create_pets_radio_button(), "pet_policy"),
             (
-                "Deposits",
+                "Square Footage",
+                [
+                    self._build_square_footage_filter(),
+                    # Price per square foot reads as a way to rank listings, not
+                    # to exclude them, and the results panel already sorts by it.
+                    # The control stays mounted but hidden because the filter
+                    # pipeline reads slider ids positionally; parked at its full
+                    # range it never excludes anything.
+                    html.Div(self._build_ppsqft_filter(), style={"display": "none"}),
+                ],
+                "square_footage",
+            ),
+            ("Pets", self.create_pets_filter(), "pet_policy"),
+            ("Laundry", self.create_laundry_checklist(), "laundry"),
+            ("Parking Spaces", self._build_parking_spaces_filter(), "parking_spaces"),
+            ("Furnished", self.create_furnished_checklist(), "furnished"),
+            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
+            ("Rental Terms", self.create_rental_terms_checklist(), "rental_terms"),
+            (
+                "Security deposit",
                 [
                     self._create_deposit_filter(
-                        title="Key Deposit",
-                        column="key_deposit",
-                        slider_id="key_deposit_slider",
-                        switch_id="key_deposit_missing_switch",
-                        switch_label="Include properties with an unknown key deposit",
-                        dynamic_index="key_deposit",
-                        component_id="key_deposit_div",
-                    ),
-                    self._create_deposit_filter(
-                        title="Other Deposit",
-                        column="other_deposit",
-                        slider_id="other_deposit_slider",
-                        switch_id="other_deposit_missing_switch",
-                        switch_label="Include properties with an unknown misc/other deposit",
-                        dynamic_index="other_deposit",
-                        component_id="other_deposit_div",
-                    ),
-                    self._create_deposit_filter(
-                        title="Pet Deposit",
-                        column="pet_deposit",
-                        slider_id="pet_deposit_slider",
-                        switch_id="pet_deposit_missing_switch",
-                        switch_label="Include properties with an unknown pet deposit",
-                        dynamic_index="pet_deposit",
-                        component_id="pet_deposit_div",
-                    ),
-                    self._create_deposit_filter(
-                        title="Security Deposit",
+                        title="",
                         column="security_deposit",
                         slider_id="security_deposit_slider",
-                        switch_id="security_deposit_missing_switch",
-                        switch_label="Include properties with an unknown security deposit",
                         dynamic_index="security_deposit",
                         component_id="security_deposit_div",
+                    ),
+                    # Key (19.5% coverage), other (5.6%) and pet (73.5%)
+                    # deposits are too sparse to filter on without dropping most
+                    # of the map. Still shown on the popup. Kept mounted and
+                    # hidden at full range because the filter pipeline reads
+                    # these ids positionally.
+                    html.Div(
+                        [
+                            self._create_deposit_filter(
+                                title="Key Deposit",
+                                column="key_deposit",
+                                slider_id="key_deposit_slider",
+                                dynamic_index="key_deposit",
+                                component_id="key_deposit_div",
+                            ),
+                            self._create_deposit_filter(
+                                title="Other Deposit",
+                                column="other_deposit",
+                                slider_id="other_deposit_slider",
+                                dynamic_index="other_deposit",
+                                component_id="other_deposit_div",
+                            ),
+                            self._create_deposit_filter(
+                                title="Pet Deposit",
+                                column="pet_deposit",
+                                slider_id="pet_deposit_slider",
+                                dynamic_index="pet_deposit",
+                                component_id="pet_deposit_div",
+                            ),
+                        ],
+                        style={"display": "none"},
                     ),
                 ],
                 "deposits",
             ),
-            ("Furnished", self.create_furnished_checklist(), "furnished"),
-            ("Parking Spaces", self._build_parking_spaces_filter(), "parking_spaces"),
             (
-                "Internet Service Provider (ISP) Speed",
+                "Internet speed",
                 build_isp_speed_components(
-                    max_download=self._safe_speed_max("best_dn"),
-                    max_upload=self._safe_speed_max("best_up"),
+                    download_tiers=self._speed_tiers("best_dn"),
+                    upload_tiers=self._speed_tiers("best_up"),
                 ),
                 "isp_speed",
             ),
-            ("Laundry", self.create_laundry_checklist(), "laundry"),
-            ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
-            ("Rental Terms", self.create_rental_terms_checklist(), "rental_terms"),
-            ("Square Footage", self._build_square_footage_filter(), "square_footage"),
             ("Year Built", self.create_year_built_components(), "year_built"),
         ]
 
@@ -302,23 +315,14 @@ class LeaseComponents(BaseClass):
         """
         return html.Div(
             [
-                dmc.Text(
-                    "Only applies to rentals in the City of Los Angeles.",
-                    size="sm",
-                    c="dimmed",
-                    mb="xs",
-                ),
-                dmc.SegmentedControl(
-                    id="rent_control_status",
-                    value="any",
-                    data=[
-                        {"label": "Any", "value": "any"},
-                        {"label": "All units covered", "value": "all"},
-                        {"label": "Some units covered", "value": "some"},
-                        {"label": "Unknown", "value": "unknown"},
-                    ],
-                    orientation="vertical",
-                    fullWidth=True,
+                # The caveat is a footnote, not a heading, so it lives in hover
+                # text rather than spending a permanent line in the sidebar.
+                html.Div(
+                    build_option_chips(
+                        component_id="rent_control_status",
+                        options=[("All", "all"), ("Some", "some"), ("Unknown", "unknown")],
+                    ),
+                    title="Rent control status is recorded for LA City only.",
                 ),
             ]
         )
@@ -331,21 +335,24 @@ class LeaseComponents(BaseClass):
         """
         bounds = iqr_capped_range_bounds(self.df["list_price"], minimum=0, step=1)
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="rental_price_slider",
+                series=self.df["list_price"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                prefix="$",
+            ),
             slider_id="rental_price_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,
             value=[bounds.minimum, bounds.display_maximum],
             component_id="rental_price_div",
             dynamic_id=self.dynamic_output_id("rental_price"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_bedrooms_filter(self) -> html.Div:
@@ -404,9 +411,6 @@ class LeaseComponents(BaseClass):
             dynamic_id=self.dynamic_output_id("garage_spaces"),
             step=1,
             marks=bounds.marks(),
-            include_missing_switch_id="garage_missing_switch",
-            include_missing_switch_label="Include properties with an unknown number of garage spaces",
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_ppsqft_filter(self) -> html.Div:
@@ -423,17 +427,11 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="ppsqft_div",
             dynamic_id=self.dynamic_output_id("ppsqft"),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
-            include_missing_switch_id="ppsqft_missing_switch",
-            include_missing_switch_label="Include properties with an unknown price per square foot",
-            container_style={"marginBottom": "10px"},
         )
 
     def _build_square_footage_filter(self) -> html.Div:
@@ -450,17 +448,11 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id="square_footage_div",
             dynamic_id=self.dynamic_output_id("sqft"),
-            tooltip_transform="formatSqFt",
             marks=bounds.marks(
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_suffix=" sq ft",
-            include_missing_switch_id="sqft_missing_switch",
-            include_missing_switch_label="Include properties with an unknown square footage",
             switch_style={"marginTop": "15px"},
-            container_style={"marginBottom": "10px"},
         )
 
     def _create_deposit_filter(
@@ -469,8 +461,6 @@ class LeaseComponents(BaseClass):
         title: str,
         column: str,
         slider_id: str,
-        switch_id: str,
-        switch_label: str,
         dynamic_index: str,
         component_id: str,
     ) -> html.Div:
@@ -480,8 +470,6 @@ class LeaseComponents(BaseClass):
             title: Visible section title.
             column: Dataframe column to inspect.
             slider_id: Dash id for the slider.
-            switch_id: Dash id for the missing-values switch.
-            switch_label: Label for the missing-values switch.
             dynamic_index: Pattern-matching id suffix for the content block.
             component_id: Outer container id.
 
@@ -496,17 +484,11 @@ class LeaseComponents(BaseClass):
             value=[bounds.minimum, bounds.display_maximum],
             component_id=component_id,
             dynamic_id=self.dynamic_output_id(dynamic_index),
-            tooltip_transform="formatCurrency",
             marks=bounds.marks(
                 currency=True,
                 include_open_end=False,
                 target_intervals=3,
             ),
-            show_exact_inputs=True,
-            input_prefix="$",
-            include_missing_switch_id=switch_id,
-            include_missing_switch_label=switch_label,
-            container_style={"marginBottom": "10px"},
             header_children=[
                 html.H5(
                     title,
@@ -534,11 +516,11 @@ class LeaseComponents(BaseClass):
         return build_subtype_filter(
             values=unique_subtypes,
             dynamic_id=self.dynamic_output_id("subtype"),
-            placeholder="Type of home (e.g. Apartment, Single Family Residence, Townhouse)",
+            placeholder="Narrow",
         )
 
-    def create_pets_radio_button(self) -> html.Div:
-        """Build the pet-policy radio controls.
+    def create_pets_filter(self) -> html.Div:
+        """Build the pet-policy chips.
 
         Returns:
             A pet-policy filter ``Div``.
@@ -547,17 +529,16 @@ class LeaseComponents(BaseClass):
             [
                 html.Div(
                     [
-                        dcc.RadioItems(
-                            id="pets_radio",
-                            options=[
-                                {"label": "Pets Allowed", "value": True},
-                                {"label": "Pets NOT Allowed", "value": False},
-                                {"label": "Both", "value": "Both"},
-                            ],
-                            value="Both",
-                            inputStyle={"marginRight": "4px", "marginLeft": "0px"},
-                            className="d-flex flex-wrap align-items-center gap-3 mb-1",
-                            inline=True,
+                        html.Div(
+                            build_option_chips(
+                                component_id="pets_checklist",
+                                options=[("Yes", "yes"), ("No", "no"), ("Unknown", "unknown")],
+                            ),
+                            title=(
+                                "Yes: the listing says pets are welcome, or charges "
+                                "a pet deposit. No: it rules them out. "
+                                "Unknown: it has not said either way."
+                            ),
                         ),
                     ],
                     id=self.dynamic_output_id("pets"),
@@ -635,14 +616,6 @@ class LeaseComponents(BaseClass):
         return html.Div(
             [
                 rental_terms_checklist,
-                dmc.Switch(
-                    id="terms_missing_switch",
-                    label="Include properties with an unknown rental term",
-                    checked=True,
-                    size="sm",
-                    color="teal",
-                    style={"marginTop": "10px"},
-                ),
             ],
             id="rental_terms_wrapper",
             style={"marginBottom": "10px"},
@@ -654,45 +627,13 @@ class LeaseComponents(BaseClass):
         Returns:
             A furnished filter ``Div``.
         """
-        furnished_options = [
-            "Furnished Or Unfurnished",
-            "Furnished",
-            "Negotiable",
-            "Partially",
-            "Unfurnished",
-        ]
+        furnished_options = ["Furnished", "Unfurnished"]
 
         return html.Div(
             [
-                dcc.Dropdown(
-                    id="furnished_checklist",
-                    multi=True,
-                    options=[
-                        {"label": label, "value": label}
-                        for label in furnished_options
-                    ],
-                    value=[],
-                    placeholder="Any furnished status",
-                    searchable=True,
-                    clearable=True,
-                    closeOnSelect=False,
-                    maxHeight=300,
-                    labels={
-                        "selected_count": "{num_selected} furnished statuses selected",
-                        "select_all": "Select all",
-                        "deselect_all": "Clear all",
-                        "search": "Search furnished status",
-                        "clear_selection": "Clear selected furnished statuses",
-                        "no_options_found": "No furnished statuses found",
-                    },
-                ),
-                dmc.Switch(
-                    id="furnished_missing_switch",
-                    label="Include properties with an unknown furnished status",
-                    checked=True,
-                    size="sm",
-                    color="teal",
-                    style={"marginTop": "10px"},
+                build_option_chips(
+                    component_id="furnished_checklist",
+                    options=furnished_options,
                 ),
             ],
             id="furnished_div",
@@ -704,43 +645,20 @@ class LeaseComponents(BaseClass):
         Returns:
             A laundry filter ``Div``.
         """
+        # Only the setups people actually search for. The full raw value still
+        # shows on a listing's popup, so nothing is hidden, it is just not a
+        # filter that would quietly drop most of the map.
+        searchable = ("In Unit", "Shared", "Hookups")
+        present = set(self.df["laundry"].fillna("Unknown").unique())
         laundry_options = [
-            category
-            for category in sorted(self.df["laundry"].fillna("Unknown").unique())
-            if category != "Unknown"
+            category for category in searchable if category in present
         ]
 
         return html.Div(
             [
-                dcc.Dropdown(
-                    id="laundry_checklist",
-                    multi=True,
-                    options=[
-                        {"label": category, "value": category}
-                        for category in laundry_options
-                    ],
-                    value=[],
-                    placeholder="Any laundry setup",
-                    searchable=True,
-                    clearable=True,
-                    closeOnSelect=False,
-                    maxHeight=320,
-                    labels={
-                        "selected_count": "{num_selected} laundry types selected",
-                        "select_all": "Select all",
-                        "deselect_all": "Clear all",
-                        "search": "Search laundry",
-                        "clear_selection": "Clear selected laundry types",
-                        "no_options_found": "No laundry types found",
-                    },
-                ),
-                dmc.Switch(
-                    id="laundry_missing_switch",
-                    label="Include properties with unknown laundry information",
-                    checked=True,
-                    size="sm",
-                    color="teal",
-                    style={"marginTop": "10px"},
+                build_option_chips(
+                    component_id="laundry_checklist",
+                    options=laundry_options,
                 ),
             ],
             id=self.dynamic_output_id("laundry"),
@@ -755,7 +673,6 @@ class LeaseComponents(BaseClass):
         return build_listed_date_filter(
             earliest_date=self.earliest_date,
             dynamic_id=self.dynamic_output_id("listed_date"),
-            datepicker_id="listed_date_datepicker_lease",
             component_id="listed_date_div_lease",
         )
 

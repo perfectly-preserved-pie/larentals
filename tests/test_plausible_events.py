@@ -39,7 +39,9 @@ def test_listing_links_use_delegated_analytics_class() -> None:
     Returns:
         None.
     """
-    assert POPUP_SOURCE.count('class="plausible-listing-link"') == 2
+    # Three listing links per popup: the photo, the address heading, and the
+    # "View on <host>" source line.
+    assert POPUP_SOURCE.count('class="plausible-listing-link"') == 3
     assert 'closest(".plausible-listing-link")' in POPUP_SOURCE
     assert "trackListingLinkClicked()" in POPUP_SOURCE
 

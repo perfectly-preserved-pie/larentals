@@ -37,112 +37,84 @@
 
   const CONTROL_MAP = Object.freeze({
     lease: Object.freeze({
-      priceRange: exactRangeControl("rental_price"),
+      priceRange: ["rental_price_slider", "value"],
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
-      pets: ["pets_radio", "value"],
-      sqftRange: exactRangeControl("sqft"),
-      sqftMissing: ["sqft_missing_switch", "checked"],
-      ppsqftRange: exactRangeControl("ppsqft"),
-      ppsqftMissing: ["ppsqft_missing_switch", "checked"],
+      pets: ["pets_checklist", "value"],
+      sqftRange: ["sqft_slider", "value"],
+      ppsqftRange: ["ppsqft_slider", "value"],
       parkingRange: ["garage_spaces_slider", "value"],
-      parkingMissing: ["garage_missing_switch", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
-      yearMissing: ["yrbuilt_missing_switch", "checked"],
       terms: ["terms_checklist", "value"],
-      termsMissing: ["terms_missing_switch", "checked"],
       furnished: ["furnished_checklist", "value"],
-      furnishedMissing: ["furnished_missing_switch", "checked"],
-      securityRange: exactRangeControl("security_deposit"),
-      securityMissing: ["security_deposit_missing_switch", "checked"],
-      petDepositRange: exactRangeControl("pet_deposit"),
-      petDepositMissing: ["pet_deposit_missing_switch", "checked"],
-      keyDepositRange: exactRangeControl("key_deposit"),
-      keyDepositMissing: ["key_deposit_missing_switch", "checked"],
-      otherDepositRange: exactRangeControl("other_deposit"),
-      otherDepositMissing: ["other_deposit_missing_switch", "checked"],
+      securityRange: ["security_deposit_slider", "value"],
+      petDepositRange: ["pet_deposit_slider", "value"],
+      keyDepositRange: ["key_deposit_slider", "value"],
+      otherDepositRange: ["other_deposit_slider", "value"],
       laundry: ["laundry_checklist", "value"],
-      laundryMissing: ["laundry_missing_switch", "checked"],
       subtypes: ["subtype_checklist", "value"],
       listedRange: ["listed_time_range_radio", "value"],
-      dateStart: ["listed_date_datepicker_lease", "start_date"],
-      dateEnd: ["listed_date_datepicker_lease", "end_date"],
-      dateMissing: ["listed_date_missing_switch", "checked"],
       downloadRange: ["isp_download_speed_slider", "value"],
       uploadRange: ["isp_upload_speed_slider", "value"],
-      ispMissing: ["isp_speed_missing_switch", "checked"],
       rentControl: ["rent_control_status", "value"],
       locationText: ["lease-location-input", "value"],
-      nearbyZip: ["lease-nearby-zip-switch", "checked"],
       zipBoundary: ["lease-zip-boundary-store", "data"],
     }),
     buy: Object.freeze({
       priceRange: exactRangeControl("list_price"),
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
-      sqftRange: exactRangeControl("sqft"),
-      sqftMissing: ["sqft_missing_switch", "checked"],
-      ppsqftRange: exactRangeControl("ppsqft"),
-      ppsqftMissing: ["ppsqft_missing_switch", "checked"],
+      sqftRange: ["sqft_slider", "value"],
+      ppsqftRange: ["ppsqft_slider", "value"],
       lotSizeRange: exactRangeControl("lot_size"),
-      lotSizeMissing: ["lot_size_missing_switch", "checked"],
       yearRange: ["yrbuilt_slider", "value"],
-      yearMissing: ["yrbuilt_missing_switch", "checked"],
       subtypes: ["subtype_checklist", "value"],
       listedRange: ["listed_time_range_radio", "value"],
-      dateStart: ["listed_date_datepicker_buy", "start_date"],
-      dateEnd: ["listed_date_datepicker_buy", "end_date"],
-      dateMissing: ["listed_date_missing_switch", "checked"],
       hoaRange: exactRangeControl("hoa_fee"),
-      hoaMissing: ["hoa_fee_missing_switch", "checked"],
       hoaFrequency: ["hoa_fee_frequency_checklist", "value"],
       downloadRange: ["isp_download_speed_slider", "value"],
       uploadRange: ["isp_upload_speed_slider", "value"],
-      ispMissing: ["isp_speed_missing_switch", "checked"],
       locationText: ["buy-location-input", "value"],
-      nearbyZip: ["buy-nearby-zip-switch", "checked"],
       zipBoundary: ["buy-zip-boundary-store", "data"],
     }),
   });
 
   const GROUPS = Object.freeze({
     lease: Object.freeze({
-      location: ["locationText", "nearbyZip"],
+      location: ["locationText"],
       price: ["priceRange"],
       bedrooms: ["bedroomsRange"],
       bathrooms: ["bathroomsRange"],
       pets: ["pets"],
-      sqft: ["sqftRange", "sqftMissing"],
-      ppsqft: ["ppsqftRange", "ppsqftMissing"],
-      parking: ["parkingRange", "parkingMissing"],
-      year: ["yearRange", "yearMissing"],
-      terms: ["terms", "termsMissing"],
-      furnished: ["furnished", "furnishedMissing"],
+      sqft: ["sqftRange"],
+      ppsqft: ["ppsqftRange"],
+      parking: ["parkingRange"],
+      year: ["yearRange"],
+      terms: ["terms"],
+      furnished: ["furnished"],
       deposits: [
-        "securityRange", "securityMissing", "petDepositRange",
-        "petDepositMissing", "keyDepositRange", "keyDepositMissing",
-        "otherDepositRange", "otherDepositMissing",
-      ],
-      laundry: ["laundry", "laundryMissing"],
+        "securityRange", "petDepositRange",
+        "keyDepositRange", "otherDepositRange", ],
+      laundry: ["laundry"],
       subtypes: ["subtypes"],
-      listedDate: ["listedRange", "dateStart", "dateEnd", "dateMissing"],
-      isp: ["downloadRange", "uploadRange", "ispMissing"],
+      listedDate: ["listedRange"],
+      isp: ["downloadRange", "uploadRange"],
       rentControl: ["rentControl"],
     }),
     buy: Object.freeze({
-      location: ["locationText", "nearbyZip"],
+      location: ["locationText"],
       price: ["priceRange"],
       bedrooms: ["bedroomsRange"],
       bathrooms: ["bathroomsRange"],
-      sqft: ["sqftRange", "sqftMissing"],
-      ppsqft: ["ppsqftRange", "ppsqftMissing"],
-      lotSize: ["lotSizeRange", "lotSizeMissing"],
-      year: ["yearRange", "yearMissing"],
+      sqft: ["sqftRange"],
+      ppsqft: ["ppsqftRange"],
+      lotSize: ["lotSizeRange"],
+      year: ["yearRange"],
       subtypes: ["subtypes"],
-      listedDate: ["listedRange", "dateStart", "dateEnd", "dateMissing"],
-      hoa: ["hoaRange", "hoaMissing"],
+      listedDate: ["listedRange"],
+      hoa: ["hoaRange"],
       hoaFrequency: ["hoaFrequency"],
-      isp: ["downloadRange", "uploadRange", "ispMissing"],
+      isp: ["downloadRange", "uploadRange"],
     }),
   });
 
@@ -470,7 +442,9 @@
       } else if (group === "bathrooms") {
         text = rangeLabel("Baths", state.bathroomsRange, defaults.bathroomsRange, false);
       } else if (group === "pets") {
-        text = `${state.pets === true ? "Pets allowed" : "No pets"} ×`;
+        const chosen = Array.isArray(state.pets) ? state.pets : [];
+        const names = { yes: "Pets yes", unknown: "Pets unknown", no: "No pets" };
+        text = `${chosen.map((k) => names[k] || k).join(", ") || "Pets"} ×`;
       }
     }
 
@@ -783,21 +757,6 @@
     bedrooms: "Bedrooms",
     bathrooms: "Bathrooms",
     pet_policy: "Pet Policy",
-  });
-
-  const ACCORDION_DEFAULTS = Object.freeze({
-    lease: Object.freeze({
-      desktop: Object.freeze([
-        "listed_date", "location", "subtypes", "monthly_rent", "bedrooms", "bathrooms",
-      ]),
-      compact: Object.freeze(["location", "monthly_rent", "bedrooms"]),
-    }),
-    buy: Object.freeze({
-      desktop: Object.freeze([
-        "listed_date", "location", "subtypes", "list_price", "bedrooms", "bathrooms",
-      ]),
-      compact: Object.freeze(["location", "list_price", "bedrooms"]),
-    }),
   });
 
   /**
@@ -1169,28 +1128,37 @@
        * @returns {Array<*>} Draft and applied values for the callback outputs.
        */
       captureLeaseFilterState: function (
-        priceMinimum, priceMaximum, priceUpperBound,
+        priceRange, priceUpperBound,
         bedroomsRange, bedroomsUpperBound,
         bathroomsRange, bathroomsUpperBound, pets,
-        sqftMinimum, sqftMaximum, sqftUpperBound, sqftMissing,
-        ppsqftMinimum, ppsqftMaximum, ppsqftUpperBound, ppsqftMissing,
-        parkingRange, parkingUpperBound, parkingMissing, yearRange, yearMissing,
-        terms, termsMissing, furnished, furnishedMissing,
-        securityMinimum, securityMaximum, securityUpperBound, securityMissing,
-        petDepositMinimum, petDepositMaximum, petDepositUpperBound, petDepositMissing,
-        keyDepositMinimum, keyDepositMaximum, keyDepositUpperBound, keyDepositMissing,
-        otherDepositMinimum, otherDepositMaximum, otherDepositUpperBound, otherDepositMissing,
-        laundry, laundryMissing, subtypes, listedRange, dateStart, dateEnd,
-        dateMissing, downloadRange, uploadRange, ispMissing, rentControl,
-        locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
+        sqftRange, sqftUpperBound, ppsqftRange, ppsqftUpperBound, parkingRange, parkingUpperBound, yearRange, terms, furnished, securityRange, securityUpperBound, petDepositRange, petDepositUpperBound, keyDepositRange, keyDepositUpperBound, otherDepositRange, otherDepositUpperBound, laundry, subtypes, listedRange, downloadRange, uploadRange, rentControl,
+        locationText, zipBoundary, _applyClicks, _viewport, currentApplied
       ) {
-        const priceRange = exactRange(priceMinimum, priceMaximum);
-        const sqftRange = exactRange(sqftMinimum, sqftMaximum);
-        const ppsqftRange = exactRange(ppsqftMinimum, ppsqftMaximum);
-        const securityRange = exactRange(securityMinimum, securityMaximum);
-        const petDepositRange = exactRange(petDepositMinimum, petDepositMaximum);
-        const keyDepositRange = exactRange(keyDepositMinimum, keyDepositMaximum);
-        const otherDepositRange = exactRange(otherDepositMinimum, otherDepositMaximum);
+        const dateStart = (function () {
+          const days = Number(listedRange);
+          if (!Number.isFinite(days) || days <= 0) return null;
+          const from = new Date();
+          from.setDate(from.getDate() - days);
+          return from.toISOString().slice(0, 10);
+        }());
+        const dateEnd = new Date().toISOString().slice(0, 10);
+
+        const nearbyZip = true;
+
+        const sqftMissing = true;
+        const ppsqftMissing = true;
+        const parkingMissing = true;
+        const yearMissing = true;
+        const termsMissing = true;
+        const furnishedMissing = true;
+        const securityMissing = true;
+        const petDepositMissing = true;
+        const keyDepositMissing = true;
+        const otherDepositMissing = true;
+        const laundryMissing = true;
+        const dateMissing = true;
+        const ispMissing = true;
+
         return finalizeCapture("lease", {
           priceRange, priceUpperBound, bedroomsRange, bedroomsUpperBound,
           bathroomsRange, bathroomsUpperBound, pets,
@@ -1216,18 +1184,29 @@
         priceMinimum, priceMaximum, priceUpperBound,
         bedroomsRange, bedroomsUpperBound,
         bathroomsRange, bathroomsUpperBound,
-        sqftMinimum, sqftMaximum, sqftUpperBound, sqftMissing,
-        ppsqftMinimum, ppsqftMaximum, ppsqftUpperBound, ppsqftMissing,
-        lotSizeMinimum, lotSizeMaximum, lotSizeUpperBound, lotSizeMissing,
-        yearRange, yearMissing,
-        subtypes, listedRange, dateStart, dateEnd, dateMissing,
-        hoaMinimum, hoaMaximum, hoaUpperBound, hoaMissing, hoaFrequency,
-        downloadRange, uploadRange, ispMissing,
-        locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
+        sqftRange, sqftUpperBound, ppsqftRange, ppsqftUpperBound, lotSizeMinimum, lotSizeMaximum, lotSizeUpperBound, yearRange, subtypes, listedRange, hoaMinimum, hoaMaximum, hoaUpperBound, hoaFrequency,
+        downloadRange, uploadRange, locationText, zipBoundary, _applyClicks, _viewport, currentApplied
       ) {
+        const dateStart = (function () {
+          const days = Number(listedRange);
+          if (!Number.isFinite(days) || days <= 0) return null;
+          const from = new Date();
+          from.setDate(from.getDate() - days);
+          return from.toISOString().slice(0, 10);
+        }());
+        const dateEnd = new Date().toISOString().slice(0, 10);
+
+        const nearbyZip = true;
+
+        const sqftMissing = true;
+        const ppsqftMissing = true;
+        const yearMissing = true;
+        const dateMissing = true;
+        const ispMissing = true;
+        const lotSizeMissing = true;
+        const hoaMissing = true;
+
         const priceRange = exactRange(priceMinimum, priceMaximum);
-        const sqftRange = exactRange(sqftMinimum, sqftMaximum);
-        const ppsqftRange = exactRange(ppsqftMinimum, ppsqftMaximum);
         const lotSizeRange = exactRange(lotSizeMinimum, lotSizeMaximum);
         const hoaRange = exactRange(hoaMinimum, hoaMaximum);
         return finalizeCapture("buy", {
@@ -1281,33 +1260,31 @@
       },
 
       /**
-       * Apply viewport-specific defaults or add a quick-filter target to the
-       * accordion's expanded sections.
-       * @returns {string[] | *} Expanded section keys or Dash's no-update value.
+       * Scroll the sidebar to the section a quick-filter chip targets.
+       *
+       * Sections are always expanded now, so a chip jumps to its filter rather
+       * than opening it.
+       * @returns {*} Dash's no-update value; the scroll is the side effect.
        */
-      openFilterAccordionSection: function () {
-        const args = Array.prototype.slice.call(arguments);
-        const current = Array.isArray(args[args.length - 1]) ? args[args.length - 1] : [];
+      scrollToFilterSection: function () {
         const id = triggeredIds()[0] || "";
-        const page = id.startsWith("buy-") ? "buy" : id.startsWith("lease-") ? "lease" : currentPage();
-        if (id === "viewport-listener") {
-          const viewportEvent = args[0];
-          const isCompact = viewportEvent && typeof viewportEvent["detail.isMobile"] === "boolean"
-            ? viewportEvent["detail.isMobile"]
-            : window.innerWidth < DESKTOP_BREAKPOINT;
-          const mode = isCompact ? "compact" : "desktop";
-          ui.accordionModes = ui.accordionModes || {};
-          if (ui.accordionModes[page] === mode) return window.dash_clientside.no_update;
-          ui.accordionModes[page] = mode;
-          return ACCORDION_DEFAULTS[page][mode].slice();
-        }
+        if (!id || id === "viewport-listener") return window.dash_clientside.no_update;
         const button = document.getElementById(id);
         if (button?.classList.contains("map-filter-chip--active")) {
           return window.dash_clientside.no_update;
         }
         const section = button?.dataset.filterSection;
         if (!section) return window.dash_clientside.no_update;
-        return current.includes(section) ? current : current.concat(section);
+        const page = id.startsWith("buy-") ? "buy" : id.startsWith("lease-") ? "lease" : currentPage();
+        const target = document.getElementById(page + "-section-" + section);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          target.classList.add("filter-section--flash");
+          window.setTimeout(function () {
+            target.classList.remove("filter-section--flash");
+          }, 1200);
+        }
+        return window.dash_clientside.no_update;
       },
     }),
   });

@@ -1,3 +1,28 @@
+/**
+ * Expand grouped subtype selections into the raw subtypes they cover.
+ *
+ * The filter offers macro groups ("Condo or townhouse") whose option value is a
+ * JSON array of the raw MLS subtypes it stands for. Carrying the membership in
+ * the value keeps this in step with the options built in Python.
+ *
+ * @param {string[]} selection - Raw values from the subtype dropdown.
+ * @returns {string[]} The raw subtypes the selection covers.
+ */
+function expandSubtypeSelection(selection) {
+    if (!Array.isArray(selection)) return [];
+    const out = [];
+    for (const entry of selection) {
+        if (typeof entry === "string" && entry.charAt(0) === "[") {
+            try {
+                const members = JSON.parse(entry);
+                if (Array.isArray(members)) { out.push(...members); continue; }
+            } catch (err) { /* fall through to literal */ }
+        }
+        out.push(entry);
+    }
+    return out;
+}
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
@@ -96,12 +121,23 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const [minLotSize, maxLotSize]        = lotSizeRange;
             const [minYearBuilt, maxYearBuilt]    = yearBuiltRange;
             const [minHOA, maxHOA]                = hoaFeeRange;
+            const speedForIndex = function (value, sliderId) {
+                const slider = document.getElementById(sliderId);
+                const holder = slider && slider.closest ? slider.closest("[data-speed-tiers]") : null;
+                const raw = holder ? holder.getAttribute("data-speed-tiers") : "";
+                const tiers = raw ? raw.split(",").map(Number).filter(Number.isFinite) : [];
+                const index = Number(value);
+                if (!tiers.length || !Number.isFinite(index)) return Number.isFinite(index) ? index : 0;
+                const clamped = Math.max(0, Math.min(tiers.length - 1, Math.round(index)));
+                return tiers[clamped];
+            };
+
             const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
                 ? downloadSpeedRange
-                : [downloadSpeedRange, downloadSpeedRange];
+                : [speedForIndex(downloadSpeedRange, "isp_download_speed_slider"), Infinity];
             const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
                 ? uploadSpeedRange
-                : [uploadSpeedRange, uploadSpeedRange];
+                : [speedForIndex(uploadSpeedRange, "isp_upload_speed_slider"), Infinity];
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
             const speedIncludeMissingBool = Boolean(speedIncludeMissing);
@@ -183,9 +219,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 8) Subtype Filter
                 let subtypeFilter = true;
-                const normalizedSubtypeSelection = Array.isArray(subtypeSelection)
-                    ? subtypeSelection
-                    : [];
+                const normalizedSubtypeSelection = expandSubtypeSelection(subtypeSelection);
                 const propertySubtype = (props.subtype || '').toUpperCase();
                 if (normalizedSubtypeSelection.length > 0) {
                     if (propertySubtype === '' && normalizedSubtypeSelection.includes('Unknown')) {

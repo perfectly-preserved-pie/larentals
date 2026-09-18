@@ -1,3 +1,28 @@
+/**
+ * Expand grouped subtype selections into the raw subtypes they cover.
+ *
+ * The filter offers macro groups ("Condo or townhouse") whose option value is a
+ * JSON array of the raw MLS subtypes it stands for. Carrying the membership in
+ * the value keeps this in step with the options built in Python.
+ *
+ * @param {string[]} selection - Raw values from the subtype dropdown.
+ * @returns {string[]} The raw subtypes the selection covers.
+ */
+function expandSubtypeSelection(selection) {
+    if (!Array.isArray(selection)) return [];
+    const out = [];
+    for (const entry of selection) {
+        if (typeof entry === "string" && entry.charAt(0) === "[") {
+            try {
+                const members = JSON.parse(entry);
+                if (Array.isArray(members)) { out.push(...members); continue; }
+            } catch (err) { /* fall through to literal */ }
+        }
+        out.push(entry);
+    }
+    return out;
+}
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
@@ -6,7 +31,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} priceRange - [minPrice, maxPrice]
          * @param {[number, number]} bedroomsRange - [minBedrooms, maxBedrooms]
          * @param {[number, number]} bathroomsRange - [minBathrooms, maxBathrooms]
-         * @param {boolean|string} petPolicy - User-selected pet policy (true, false, "Both")
+         * @param {string[]} petPolicy - Selected pet buckets ("yes", "unknown", "no")
          * @param {[number, number]} sqftRange - [minSqft, maxSqft]
          * @param {boolean} sqftIncludeMissing - Whether to include listings with null/undefined sqft
          * @param {[number, number]} ppsqftRange - [minPpsqft, maxPpsqft]
@@ -36,7 +61,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {[number, number]} downloadSpeedRange - [minDownload, maxDownload]
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
          * @param {boolean} speedIncludeMissing - Whether to include listings with missing ISP speeds
-         * @param {string} rentControlStatus - Selected LA City rent-control status
+         * @param {string[]} rentControlStatus - Selected LA City rent-control coverages
          * @param {number} priceUpperBound - Finite display maximum for the rent slider
          * @param {number} bedroomsUpperBound - Slider endpoint that represents bedrooms-or-more
          * @param {number} bathroomsUpperBound - Slider endpoint that represents bathrooms-or-more
@@ -141,12 +166,23 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const keyDepositUpperIsOpen = exactUpperIsOpen(maxKeyDeposit);
             const otherDepositUpperIsOpen = exactUpperIsOpen(maxOtherDeposit);
 
+            const speedForIndex = function (value, sliderId) {
+                const slider = document.getElementById(sliderId);
+                const holder = slider && slider.closest ? slider.closest("[data-speed-tiers]") : null;
+                const raw = holder ? holder.getAttribute("data-speed-tiers") : "";
+                const tiers = raw ? raw.split(",").map(Number).filter(Number.isFinite) : [];
+                const index = Number(value);
+                if (!tiers.length || !Number.isFinite(index)) return Number.isFinite(index) ? index : 0;
+                const clamped = Math.max(0, Math.min(tiers.length - 1, Math.round(index)));
+                return tiers[clamped];
+            };
+
             const normalizedDownloadSpeedRange = Array.isArray(downloadSpeedRange)
                 ? downloadSpeedRange
-                : [downloadSpeedRange, downloadSpeedRange];
+                : [speedForIndex(downloadSpeedRange, "isp_download_speed_slider"), Infinity];
             const normalizedUploadSpeedRange = Array.isArray(uploadSpeedRange)
                 ? uploadSpeedRange
-                : [uploadSpeedRange, uploadSpeedRange];
+                : [speedForIndex(uploadSpeedRange, "isp_upload_speed_slider"), Infinity];
             const [minDownloadSpeed, maxDownloadSpeed] = normalizedDownloadSpeedRange;
             const [minUploadSpeed, maxUploadSpeed] = normalizedUploadSpeedRange;
 
@@ -216,13 +252,37 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const otherDeposit = feature.properties.other_deposit;
 
                 // 1) petPolicyFilter
+                // The feed stores pet rules as a comma list mixing permissions
+                // ("Yes", "Cats OK") with caveats ("Call", "Size Limit"), and
+                // leaves 42% blank. Bucketing into yes/no/unknown makes the
+                // chips a partition, so yes + unknown reads as "not ruled out".
+                const wantedPets = Array.isArray(petPolicy)
+                    ? petPolicy
+                    : (petPolicy === null || petPolicy === undefined || petPolicy === 'Both'
+                        ? [] : [petPolicy]);
                 let petPolicyFilter = true;
-                if (petPolicy === true) {
-                    petPolicyFilter = !['No', 'No, Size Limit'].includes(petPolicyValue);
-                } else if (petPolicy === false) {
-                    petPolicyFilter = ['No', 'No, Size Limit'].includes(petPolicyValue);
-                } else if (petPolicy === 'Both') {
-                    petPolicyFilter = true;
+                if (wantedPets.length) {
+                    const tokens = String(petPolicyValue == null ? '' : petPolicyValue)
+                        .split(',')
+                        .map(function (part) { return part.trim().toLowerCase(); });
+                    const saysNo = tokens.indexOf('no') !== -1;
+                    // 3,302 listings charge a pet deposit while leaving the
+                    // policy blank, and collecting one means pets are allowed;
+                    // counting it takes "Yes" from 13% to 36%. Size, breed and
+                    // number limits are conditions on allowing, so they count.
+                    const saysYes = tokens.indexOf('yes') !== -1 ||
+                        tokens.indexOf('cats ok') !== -1 ||
+                        tokens.indexOf('dogs ok') !== -1 ||
+                        tokens.indexOf('breed restrictions') !== -1 ||
+                        tokens.indexOf('size limit') !== -1 ||
+                        tokens.indexOf('number limit') !== -1;
+                    const deposit = feature.properties.pet_deposit;
+                    const chargesForPets = deposit !== null &&
+                        deposit !== undefined && Number(deposit) > 0;
+                    const bucket = saysNo
+                        ? 'no'
+                        : ((saysYes || chargesForPets) ? 'yes' : 'unknown');
+                    petPolicyFilter = wantedPets.indexOf(bucket) !== -1;
                 }
 
                 // 2) sqftFilter
@@ -376,7 +436,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 // 13) subtypeFilter
                 let subtypeFilter = true;
                 if (subtypeSelection && subtypeSelection.length > 0) {
-                    subtypeFilter = subtypeSelection.includes(subtype);
+                    subtypeFilter = expandSubtypeSelection(subtypeSelection).includes(subtype);
                 }
 
                 // 14) priceFilter, bedroomsFilter, bathroomsFilter
@@ -414,10 +474,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 // 17) The LAHD inventory is property-level. `some` therefore
                 // means some units are covered, not necessarily this listing.
+                const wantedRso = Array.isArray(rentControlStatus)
+                    ? rentControlStatus
+                    : (!rentControlStatus || rentControlStatus === "any"
+                        ? [] : [rentControlStatus]);
                 const rentControlFilter = (
-                    !rentControlStatus ||
-                    rentControlStatus === "any" ||
-                    rentControlStatusValue === rentControlStatus
+                    !wantedRso.length ||
+                    wantedRso.indexOf(rentControlStatusValue) !== -1
                 );
 
                 // 18) ZIP boundary filter (Census ZCTA)

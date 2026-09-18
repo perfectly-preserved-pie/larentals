@@ -660,7 +660,7 @@
 
 .school-layer-map-prompt__title {
   font-weight: 700;
-  color: #174e3b;
+  color: var(--wttl-accent-strong, #17529f);
 }
 
 .school-layer-map-prompt__copy {
@@ -749,4 +749,406 @@
   .map-col {
     height: 100vh;
   }
+}
+
+/* ---------- Listing popup ----------
+ *
+ * Scoped with :has() so the eight other popup types on this map keep the light
+ * Leaflet chrome their styles already assume.
+ */
+
+.listing-popup {
+  --popup-surface: #ffffff;
+  --popup-inset: #f5f6fa;
+  --popup-border: rgba(30, 36, 62, 0.14);
+  --popup-text: #191d2e;
+  --popup-muted: rgba(25, 29, 46, 0.66);
+  --popup-faint: rgba(25, 29, 46, 0.42);
+  --popup-accent: #b86a12;
+
+  box-sizing: border-box;
+  width: 302px;
+  max-width: 100%;
+  color: var(--popup-text);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+:root[data-mantine-color-scheme="dark"] .listing-popup {
+  --popup-surface: var(--wttl-panel, #1b1f30);
+  --popup-inset: var(--wttl-section, #212637);
+  --popup-border: var(--wttl-border, rgba(197, 205, 236, 0.13));
+  --popup-text: var(--wttl-text, #e8eaf4);
+  --popup-muted: var(--wttl-text-muted, rgba(232, 234, 244, 0.66));
+  --popup-faint: var(--wttl-text-faint, rgba(232, 234, 244, 0.42));
+  --popup-accent: var(--wttl-accent, #5aa2f5);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper:has(.listing-popup),
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-tip:has(.listing-popup),
+:root[data-mantine-color-scheme="dark"] .leaflet-popup:has(.listing-popup) .leaflet-popup-tip {
+  background: var(--wttl-panel, #1b1f30);
+  color: var(--wttl-text, #e8eaf4);
+}
+
+.leaflet-popup-content-wrapper:has(.listing-popup) {
+  overflow: hidden;
+}
+
+.leaflet-popup-content:has(.listing-popup) {
+  margin: 0;
+  width: auto !important;
+}
+
+.listing-popup__media {
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+  background: var(--popup-inset);
+}
+
+.listing-popup__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.listing-popup__media--streetview {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--popup-inset);
+}
+
+.listing-popup__streetview-frame {
+  position: absolute;
+  top: calc(-1 * var(--streetview-crop, 68px));
+  left: 0;
+  display: block;
+  width: calc(100% + var(--streetview-crop-right, 54px));
+  height: calc(
+    100% + var(--streetview-crop, 68px) + var(--streetview-crop-bottom, 96px)
+  );
+  border: 0;
+}
+
+.listing-popup .listing-popup__streetview {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(12, 15, 25, 0.6);
+  color: #ffffff;
+  font-size: 0.625rem;
+  line-height: 1.6;
+  text-decoration: none;
+}
+
+.listing-popup .listing-popup__streetview:hover,
+.listing-popup .listing-popup__streetview:focus-visible {
+  background: rgba(12, 15, 25, 0.82);
+  color: #ffffff;
+}
+
+.listing-popup__address {
+  margin: 0;
+  padding: 11px 13px 9px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.listing-popup__address a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.listing-popup__address a:hover,
+.listing-popup__address a:focus-visible {
+  color: var(--popup-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listing-popup__stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  border-top: 1px solid var(--popup-border);
+  border-bottom: 1px solid var(--popup-border);
+}
+
+.listing-popup__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 9px 4px;
+  text-align: center;
+}
+
+.listing-popup__stat + .listing-popup__stat {
+  border-left: 1px solid var(--popup-border);
+}
+
+.listing-popup__stat-value {
+  font-size: 0.95rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.listing-popup__stat-label {
+  color: var(--popup-faint);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+}
+
+.listing-popup__rows {
+  margin: 0;
+  padding: 0;
+}
+
+.listing-popup__row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 7px 13px;
+}
+
+.listing-popup__row + .listing-popup__row {
+  border-top: 1px solid var(--popup-border);
+}
+
+.listing-popup__label {
+  color: var(--popup-muted);
+  font-weight: 400;
+}
+
+.listing-popup__value {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.listing-popup__rows--more {
+  border-top: 1px solid var(--popup-border);
+}
+
+.listing-popup__footer {
+  padding: 9px 13px 11px;
+  border-top: 1px solid var(--popup-border);
+  text-align: center;
+}
+
+.listing-popup__report {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--popup-faint);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.listing-popup__report:hover,
+.listing-popup__report:focus-visible {
+  color: var(--popup-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listing-popup .listing-popup__report {
+  color: var(--popup-muted);
+}
+
+.listing-popup .listing-popup__report:hover,
+.listing-popup .listing-popup__report:focus-visible {
+  color: var(--popup-accent);
+}
+
+.listing-popup__row--stacked {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.listing-popup__row--stacked .listing-popup__value {
+  text-align: left;
+}
+
+.leaflet-popup-content:has(.listing-popup)::-webkit-scrollbar {
+  width: 8px;
+}
+
+.leaflet-popup-content:has(.listing-popup)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--wttl-border-strong, rgba(30, 36, 62, 0.28));
+  background-clip: content-box;
+}
+
+.leaflet-popup-content:has(.listing-popup)::-webkit-scrollbar-thumb:hover {
+  background: var(--wttl-text-faint, rgba(25, 29, 46, 0.42));
+  background-clip: content-box;
+}
+
+.listing-popup__source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  justify-content: center;
+  padding: 0 13px 10px;
+  font-size: 0.75rem;
+}
+
+.listing-popup .listing-popup__source a {
+  color: var(--popup-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.listing-popup .listing-popup__source a:hover,
+.listing-popup .listing-popup__source a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listing-popup__source--offline span {
+  color: var(--popup-faint);
+}
+
+.price-marker-icon {
+  background: transparent;
+  border: 0;
+}
+
+.price-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 24px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(12, 28, 36, 0.4);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  transform-origin: 50% 100%;
+}
+
+.listing-spotlight {
+  --spot-glow: rgba(28, 33, 52, 0.14);
+  --spot-r: 70px;
+
+  z-index: 550;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.listing-spotlight::before {
+  content: "";
+  position: absolute;
+  top: var(--spot-y, 50%);
+  left: var(--spot-x, 50%);
+  width: calc(var(--spot-r) * 2);
+  height: calc(var(--spot-r) * 2);
+  margin: calc(var(--spot-r) * -1) 0 0 calc(var(--spot-r) * -1);
+  border-radius: 50%;
+  background: var(--spot-glow);
+}
+
+:root[data-mantine-color-scheme="dark"] .listing-spotlight {
+  --spot-glow: rgba(255, 255, 255, 0.17);
+}
+
+.listing-spotlight.is-on {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listing-spotlight {
+    transition: none;
+  }
+}
+
+/* A pin has two sizes, not three: it grows the same amount for the cursor, for
+ * its row being hovered, and for its popup being open, so moving between those
+ * never resizes anything.
+ *
+ * Leaflet gives every marker an inline z-index from its layer-point Y, and
+ * those run into the thousands, so a grown pin has to clear that whole range to
+ * come forward. Hovered beats selected. A hovered pin has no class of its own,
+ * since the hover is on the pill and the z-index is on the icon around it. */
+.leaflet-marker-icon.is-open {
+  z-index: 100000 !important;
+}
+
+.leaflet-marker-icon.is-highlighted {
+  z-index: 100001 !important;
+}
+
+.leaflet-marker-icon:has(.price-marker:hover) {
+  z-index: 100002 !important;
+}
+
+.price-marker:hover,
+.leaflet-marker-icon.is-highlighted .price-marker,
+.leaflet-marker-icon.is-open .price-marker {
+  transform: scale(1.35);
+}
+
+.price-marker {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.marker-cluster,
+.marker-cluster > div[data-cluster-count] {
+  transition: transform 0.12s ease;
+}
+
+.leaflet-marker-icon.is-highlighted .marker-cluster,
+.marker-cluster.is-highlighted,
+.leaflet-marker-icon.is-highlighted > div[data-cluster-count] {
+  border-radius: 50%;
+  box-shadow: 0 3px 12px rgba(12, 28, 36, 0.4);
+  transform: scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-marker,
+  .marker-cluster,
+  .marker-cluster > div[data-cluster-count] {
+    transition: none;
+  }
+}
+
+.leaflet-popup--below {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+.leaflet-popup-tip-container {
+  transform: translateX(var(--tip-shift, 0));
+}
+
+.leaflet-popup--below .leaflet-popup-tip-container {
+  top: -19px;
+  transform: translateX(var(--tip-shift, 0)) rotate(180deg);
+}
+
+.leaflet-popup-content.leaflet-popup-scrolled:has(.listing-popup) {
+  border-radius: 0 0 12px 12px;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
 }

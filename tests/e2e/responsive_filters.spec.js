@@ -312,7 +312,7 @@ test("hybrid ranges keep exact and unbounded outlier filtering", async ({ page }
   const leaseResult = await page.evaluate(() => {
     const defaults = structuredClone(window.larentals.responsiveFilters.defaults.lease);
     Object.assign(defaults, {
-      pets: "Both",
+      pets: [],
       sqftMissing: true,
       ppsqftMissing: true,
       parkingMissing: true,
@@ -330,7 +330,7 @@ test("hybrid ranges keep exact and unbounded outlier filtering", async ({ page }
       subtypes: [],
       dateMissing: true,
       ispMissing: true,
-      rentControl: "any",
+      rentControl: [],
       zipBoundary: {},
     });
     const feature = {

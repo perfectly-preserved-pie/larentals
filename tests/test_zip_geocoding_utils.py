@@ -235,7 +235,11 @@ def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
 
 
 def test_resolve_locations_expands_obvious_comma_separated_list() -> None:
-    """Treat three unqualified comma-separated places as separate locations."""
+    """Treat three unqualified comma-separated places as separate locations.
+
+    Returns:
+        None.
+    """
     crosswalk = {
         "SILVER LAKE": {"90026"},
         "LOS FELIZ": {"90027"},
@@ -261,10 +265,22 @@ def test_resolve_locations_expands_obvious_comma_separated_list() -> None:
 
 
 def test_resolve_locations_preserves_qualified_place_and_address_commas() -> None:
-    """Do not reinterpret state-qualified places or addresses as lists."""
+    """Do not reinterpret state-qualified places or addresses as lists.
+
+    Returns:
+        None.
+    """
     geocode_calls: list[str] = []
 
     def fake_geocode(location: str) -> None:
+        """Record a geocode call without hitting the network.
+
+        Args:
+            location: Location string passed to the geocoder.
+
+        Returns:
+            None.
+        """
         geocode_calls.append(location)
         return None
 

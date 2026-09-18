@@ -1,0 +1,605 @@
+
+:root {
+  --filter-gap: 0.85rem;
+  --filter-label: 0.8125rem;
+  --filter-help: 0.6875rem;
+  --dist-height: 54px;
+  --dist-overlap: 6px;
+}
+
+.filter-section__body .dash-slider-track {
+  margin-left: var(--slider-handle-radius, 8px);
+  margin-right: var(--slider-handle-radius, 8px);
+}
+
+/* Dash puts `transition: all` on the handle carrier and the filled range, both
+ * positioned with `left`, so they lag the hover line, which snaps. The handle
+ * itself is excluded so it still grows under the pointer. */
+.filter-section__body .dash-slider-root *:not(.dash-slider-thumb) {
+  transition: none !important;
+}
+
+.filter-section__body .dash-slider-thumb:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+.filter-section__body .dash-slider-thumb:hover,
+.filter-section__body .dash-slider-thumb:active {
+  transform: scale(1.4);
+}
+
+.filter-section__body .dash-slider-thumb:focus:not(:focus-visible):not(:hover):not(:active) {
+  transform: none !important;
+  box-shadow: 0 1px 3px 0 var(--Dash-Shading-Weak) !important;
+}
+
+.filter-section__body .dash-slider-tooltip,
+.filter-section__body .dash-slider-tooltip * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.filter-slider-row {
+  margin-bottom: 10px;
+}
+
+.filter-section__body .range-filter__controls,
+.filter-section__body .isp-speed-filter__range {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.isp-speed-filter__range .dash-slider-root .dash-slider-track {
+  background-color: var(--Dash-Fill-Interactive-Strong);
+}
+
+.isp-speed-filter__range .dash-slider-root .dash-slider-range {
+  background-color: var(--Dash-Fill-Disabled);
+}
+
+.options-accordion,
+.options-accordion .accordion-item {
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.title-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.title-card > .card-body {
+  padding: 0.9rem 0.9rem 0.75rem;
+}
+
+.site-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.site-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-top: 0.7rem;
+  padding: 0;
+  background: none;
+}
+
+.mode-switch__option.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--wttl-input, rgba(128, 128, 128, 0.14));
+  box-shadow: none;
+  color: var(--wttl-text-muted, inherit);
+  font-size: 0.82rem;
+  font-weight: 550;
+}
+
+.mode-switch__option.btn:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.mode-switch__option.btn:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.mode-switch__option.btn + .mode-switch__option.btn {
+  box-shadow: inset 1px 0 0 var(--wttl-bg, rgba(21, 24, 38, 0.55));
+}
+
+.mode-switch__option.btn:hover {
+  background: var(--wttl-input-hover, rgba(128, 128, 128, 0.24));
+  color: var(--wttl-text-muted, inherit);
+}
+
+.mode-switch__option.btn.active {
+  background: var(--wttl-accent, #1f68c9);
+  color: var(--wttl-on-accent);
+}
+
+.mode-switch__option.btn.active:hover {
+  background: var(--wttl-accent-strong, #17529f);
+  color: var(--wttl-on-accent);
+}
+
+.mode-switch__option.btn i {
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.site-updated {
+  margin: 0.6rem 0 0;
+  color: var(--wttl-text-faint, rgba(120, 120, 120, 0.8));
+  font-size: var(--filter-help);
+}
+
+.title-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.85rem;
+  margin-top: 0.45rem;
+}
+
+.dbc .title-card-link {
+  font-size: var(--filter-help);
+}
+
+.filter-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.filter-card > .card-body {
+  padding: 0 0.9rem 1.5rem;
+}
+
+.filter-section {
+  padding: var(--filter-gap) 0;
+  border-top: 1px solid var(--wttl-border, rgba(128, 128, 128, 0.16));
+}
+
+.filter-section:first-child {
+  border-top: 0;
+  padding-top: 0.35rem;
+}
+
+.filter-section__title {
+  margin: 0 0 0.45rem;
+  color: var(--wttl-text, inherit);
+  font-size: var(--filter-label);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.filter-section__body > div {
+  margin-bottom: 0 !important;
+}
+
+.filter-section__body label,
+.filter-section__body .mantine-Switch-label {
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.filter-section__body .location-entry-help--desktop,
+.filter-section__body .location-entry-help--touch {
+  font-size: var(--filter-help);
+  opacity: 0.62;
+}
+
+.filter-section__body .mantine-Switch-root {
+  margin-top: 0.5rem !important;
+}
+
+.filter-section__body .mantine-Switch-label {
+  color: var(--wttl-text-muted, inherit);
+}
+
+.filter-section__body .rc-slider {
+  margin-top: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.filter-section__body .row {
+  --bs-gutter-x: 0.5rem;
+}
+
+.filter-section--flash {
+  animation: filter-section-flash 1.1s ease-out;
+}
+
+@keyframes filter-section-flash {
+  from {
+    background-color: var(--wttl-accent-soft, rgba(79, 195, 180, 0.2));
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-section--flash {
+    animation: none;
+  }
+}
+
+/* Min and max on one line above the slider they drive. minmax(0,1fr) rather
+ * than 1fr, which refuses to go below the input's intrinsic width. */
+.range-filter__exact-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.15rem;
+}
+
+.range-filter__exact-input,
+.range-filter__exact-input .mantine-NumberInput-wrapper {
+  min-width: 0;
+}
+
+.range-filter__exact-input input {
+  height: 28px;
+  min-height: 28px;
+  min-width: 0;
+  padding: 0 26px 0 7px;
+  font-size: 0.78rem;
+}
+
+.range-filter__minimum-clear-button,
+.range-filter__unlimited-button {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+}
+
+.range-filter__missing-switch {
+  margin-top: 0.45rem;
+}
+
+.range-filter__missing-switch .mantine-Switch-label {
+  color: var(--wttl-text-faint, inherit);
+  font-size: var(--filter-help);
+}
+
+.dist {
+  position: relative;
+  width: calc(100% - 2 * var(--slider-handle-radius, 8px));
+  height: var(--dist-height);
+  margin: 0 var(--slider-handle-radius, 8px) calc(-1 * var(--dist-overlap));
+  pointer-events: none;
+}
+
+/* Pressing the graph should grab the nearest handle the way pressing the rail
+ * does. Rather than synthesize slider events, the slider's own pseudo-element
+ * covers the graph area: it hit-tests as the slider root, so Dash's handling
+ * takes the press from there, drag included. The strip itself stays a drawing
+ * with pointer-events: none. */
+.range-filter__hybrid-slider-wrap .dist ~ * .dash-slider-root::before,
+.range-filter__slider-with-switch .dist ~ * .dash-slider-root::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--dist-overlap) - var(--dist-height));
+  height: var(--dist-height);
+}
+
+.dist__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 100%;
+}
+
+.dist__bar {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 1px 1px 0 0;
+  background: var(--wttl-dist-in, #5aa2f5);
+  opacity: 0.85;
+}
+
+.dist__mask {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--wttl-dist-mask, rgba(21, 24, 38, 0.72));
+}
+
+.filter-section {
+  position: relative;
+}
+
+.filter-section > .filter-section__body > div > .mantine-Switch-root:last-child,
+.filter-section .range-filter__missing-switch:not(.range-filter__missing-switch--inline) {
+  position: absolute;
+  top: var(--filter-gap);
+  right: 0;
+  margin-top: 0 !important;
+  line-height: 1;
+}
+
+.filter-section .mantine-Switch-root[class*="missing"] .mantine-Switch-label,
+.filter-section > .filter-section__body > div > .mantine-Switch-root:last-child .mantine-Switch-label {
+  color: var(--wttl-text-faint, inherit);
+  font-size: var(--filter-help);
+  padding-left: 0.3rem;
+}
+
+.filter-subtitle {
+  margin: 0.75rem 0 0.25rem;
+  color: var(--wttl-text-muted, inherit);
+  font-size: var(--filter-help);
+  font-weight: 600;
+}
+
+.filter-section__body > div > div:first-child > .filter-subtitle {
+  margin-top: 0;
+}
+
+.filter-section .mantine-Switch-input:checked + .mantine-Switch-track,
+.filter-section .mantine-Switch-input:checked + * {
+  background-color: var(--wttl-accent, #5aa2f5);
+  border-color: var(--wttl-accent, #5aa2f5);
+}
+
+.filter-options {
+  display: flex;
+  padding: 0;
+  background: none;
+}
+
+.filter-options label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border: 0;
+  color: var(--wttl-text-muted, inherit);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filter-options label.dash-options-list-option {
+  margin: 0;
+}
+
+.filter-options input[type="radio"],
+.filter-options input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-options label:has(input:focus-visible) {
+  outline: 2px solid var(--wttl-accent-strong, #7db8ff);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.filter-options--single {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+}
+
+.filter-options--single label {
+  padding: 0.25rem 0.2rem;
+  border-radius: 0;
+  background: var(--wttl-input, rgba(128, 128, 128, 0.14));
+}
+
+.filter-options--single label:first-of-type {
+  border-radius: 5px 0 0 5px;
+}
+
+.filter-options--single label:last-of-type {
+  border-radius: 0 5px 5px 0;
+}
+
+.filter-options--single label + label {
+  box-shadow: inset 1px 0 0 var(--wttl-bg, rgba(21, 24, 38, 0.55));
+}
+
+.filter-options--single label.dash-options-list-option:not(:has(input:checked)):hover {
+  background: var(--wttl-input-hover, rgba(128, 128, 128, 0.24));
+  color: var(--wttl-text-muted, inherit);
+}
+
+.filter-options--single label.dash-options-list-option:not(:has(input:checked)):not(:hover):focus-within {
+  background: var(--wttl-input, rgba(128, 128, 128, 0.14));
+  color: var(--wttl-text-muted, inherit);
+}
+
+.filter-options--single label.dash-options-list-option:has(input:checked),
+.filter-options--single label.dash-options-list-option:has(input:checked):focus-within {
+  background: var(--wttl-accent, #5aa2f5);
+  color: var(--wttl-on-accent);
+  font-weight: 600;
+}
+
+.filter-options--single label.dash-options-list-option:has(input:checked):hover {
+  background: var(--wttl-accent-strong, #7db8ff);
+  color: var(--wttl-on-accent);
+  font-weight: 600;
+}
+
+.filter-options--multi {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.filter-options--multi label {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--wttl-border, rgba(128, 128, 128, 0.2));
+  border-radius: 999px;
+  background: none;
+}
+
+.filter-options--multi label.dash-options-list-option:not(:has(input:checked)):hover {
+  border-color: var(--wttl-border-strong, rgba(128, 128, 128, 0.4));
+  background: var(--wttl-input, rgba(128, 128, 128, 0.14));
+  color: var(--wttl-text-muted, inherit);
+}
+
+.filter-options--multi label.dash-options-list-option:not(:has(input:checked)):not(:hover):focus-within {
+  border-color: var(--wttl-border, rgba(128, 128, 128, 0.2));
+  background: none;
+  color: var(--wttl-text-muted, inherit);
+}
+
+.filter-options--multi label.dash-options-list-option:has(input:checked),
+.filter-options--multi label.dash-options-list-option:has(input:checked):focus-within {
+  border-color: var(--wttl-accent, #5aa2f5);
+  background: var(--wttl-accent, #5aa2f5);
+  color: var(--wttl-on-accent);
+  font-weight: 600;
+}
+
+.filter-options--multi label.dash-options-list-option:has(input:checked):hover {
+  border-color: var(--wttl-accent-strong, #7db8ff);
+  background: var(--wttl-accent-strong, #7db8ff);
+  color: var(--wttl-on-accent);
+  font-weight: 600;
+}
+
+.filter-section .range-filter__missing-switch {
+  display: none !important;
+}
+
+.filter-include-missing {
+  margin: 0 0 0.5rem;
+}
+
+.filter-include-missing .mantine-Switch-label {
+  color: var(--wttl-text-muted, inherit);
+  font-size: var(--filter-help);
+}
+
+.filter-note {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--filter-help);
+}
+
+/* Hover readout: the value under the pointer, at one size with no easing, or
+ * the number lags the cursor. The !important is load bearing, since Dash sets
+ * `transition: all` broadly and animated this box up from nothing on every
+ * hover. Same for the mask, or the shaded range trails the handle. */
+.dist__cursor,
+.dist__readout,
+.dist__mask {
+  transition: none !important;
+  animation: none !important;
+}
+
+.dist__cursor,
+.dist__readout {
+  position: absolute;
+  opacity: 0;
+}
+
+.dist--hovered .dist__cursor,
+.dist--hovered .dist__readout {
+  opacity: 1;
+}
+
+.dist__cursor {
+  top: -2px;
+  bottom: -8px;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--wttl-text, #e8eaf4);
+}
+
+.dist__readout {
+  top: -15px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--wttl-text, #e8eaf4);
+  color: var(--wttl-bg, #151826);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.range-filter__hybrid-slider-wrap {
+  padding: 0 0 0.85rem !important;
+}
+
+.filter-section__body .range-filter__controls > div:first-child {
+  margin-top: 0;
+}
+
+.filter-section__body .mantine-InputWrapper-root,
+.filter-section__body .mantine-NumberInput-root {
+  margin-bottom: 0;
+}
+
+.filter-section__body .mantine-InputWrapper-description:empty,
+.filter-section__body .mantine-InputWrapper-error:empty,
+.filter-section__body .mantine-InputWrapper-label:empty {
+  display: none;
+}
+
+.range-filter__header:empty,
+.filter-section__body div:empty:not(.dist__bar):not(.dist__mask):not(.dist__cursor):not(.dist__readout) {
+  display: none;
+}
+
+.filter-section__body .dash-slider-mark {
+  font-size: 0.66rem;
+}
+
+.match-count {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 4px 11px;
+  border: 1px solid var(--wttl-border, rgba(128, 128, 128, 0.2));
+  border-radius: 999px;
+  background: var(--wttl-panel, #1b1f30);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  color: var(--wttl-text, #e8eaf4);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.match-count:empty {
+  display: none;
+}
