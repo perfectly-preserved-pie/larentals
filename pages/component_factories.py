@@ -219,6 +219,7 @@ def build_range_filter(
     show_exact_inputs: bool = False,
     input_prefix: str = "",
     input_suffix: str = "",
+    distribution: Any = None,
 ) -> html.Div:
     """Build a standard slider-based filter section.
 
@@ -240,6 +241,7 @@ def build_range_filter(
         show_exact_inputs: Show synchronized minimum and maximum number fields.
         input_prefix: Prefix displayed inside both exact-value fields.
         input_suffix: Suffix displayed inside both exact-value fields.
+        distribution: Optional histogram strip drawn above the slider.
 
     Returns:
         A fully assembled filter ``Div``.
@@ -267,7 +269,13 @@ def build_range_filter(
         "min": min_value,
         "max": max_value,
         "value": value,
-        "updatemode": "drag" if show_exact_inputs else "mouseup",
+        # Histogram sliders can shade during drag via ``drag_value``; commit
+        # the actual value on release so the map filters only once per gesture.
+        "updatemode": (
+            "mouseup"
+            if distribution is not None or not show_exact_inputs
+            else "drag"
+        ),
         "allow_direct_input": False,
     }
     if not show_exact_inputs:
@@ -365,7 +373,10 @@ def build_range_filter(
             )
         )
         body_children.append(
-            html.Div(slider, className="range-filter__hybrid-slider-wrap")
+            html.Div(
+                [distribution, slider] if distribution is not None else slider,
+                className="range-filter__hybrid-slider-wrap",
+            )
         )
     else:
         body_children.append(

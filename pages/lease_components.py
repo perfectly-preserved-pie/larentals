@@ -26,6 +26,7 @@ from .component_factories import (
 )
 from .component_models import FilterSection, PageConfig, PageParts
 from .responsive_filter_ui import build_map_filter_toolbar
+from functions.distribution import attach_distribution
 from functions.rso import add_rso_status_to_listing_geojson
 
 
@@ -331,6 +332,13 @@ class LeaseComponents(BaseClass):
         """
         bounds = iqr_capped_range_bounds(self.df["list_price"], minimum=0, step=1)
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="rental_price_slider",
+                series=self.df["list_price"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                prefix="$",
+            ),
             slider_id="rental_price_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,
