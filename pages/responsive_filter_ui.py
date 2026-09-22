@@ -356,6 +356,68 @@ def build_responsive_listing_shell(
         },
     )
 
+    results_panel = html.Aside(
+        [
+            html.Div(
+                [
+                    html.H2("Listings in view", className="results-panel__title"),
+                    html.Span(id=f"{page_type}-results-count", className="results-panel__count match-count", **{"aria-live": "polite"}),
+                    html.Span(className="results-panel__count", **{"aria-hidden": "true"}),
+                ],
+                className="results-panel__header",
+            ),
+            html.Div(
+                html.Select(
+                    [
+                        html.Option("Price: low to high", value="price-asc"),
+                        html.Option("Price: high to low", value="price-desc"),
+                        html.Option("Bedrooms", value="beds-desc"),
+                        html.Option("Largest first", value="sqft-desc"),
+                        html.Option("Newest first", value="newest"),
+                    ],
+                    id=f"{page_type}-results-sort",
+                    className="results-panel__sort",
+                    **{"data-results-sort": page_type, "aria-label": "Sort visible listings"},
+                ),
+                className="results-panel__sort-row",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [html.Span(className=f"price-legend__swatch price-legend__swatch--{index + 1}") for index in range(5)],
+                        className="price-legend__swatches",
+                        **{"aria-hidden": "true"},
+                    ),
+                    html.Div(
+                        [html.Span("Lower price"), html.Span("Higher price")],
+                        className="price-legend__labels",
+                    ),
+                ],
+                className="price-legend",
+                role="img",
+                **{"aria-label": "Price colors range from lower to higher, relative to listings currently in view"},
+            ),
+            html.Div(id=f"{page_type}-results-list", className="results-panel__list"),
+        ],
+        className="results-panel",
+        role="complementary",
+        **{"aria-label": f"{listing_label} visible on the map", "data-results-panel": page_type},
+    )
+    column_toggle = html.Button(
+        html.I(className="bi bi-layout-sidebar-reverse", **{"aria-hidden": "true"}),
+        id=f"{page_type}-toggle-results",
+        type="button",
+        className="column-toggle column-toggle--right",
+        **{
+            "data-column-toggle": "results",
+            "data-tooltip": "Hide listings",
+            "data-tooltip-show": "Show listings",
+            "data-tooltip-hide": "Hide listings",
+            "aria-label": "Hide listings",
+            "aria-expanded": "true",
+        },
+    )
+
     return html.Div(
         [
             backdrop,
@@ -365,6 +427,8 @@ def build_responsive_listing_shell(
                 id=f"{page_type}-map-main",
                 className="listing-map-col map-col",
             ),
+            results_panel,
+            column_toggle,
         ],
         className="listing-page-layout",
         **{"data-listing-page": page_type},

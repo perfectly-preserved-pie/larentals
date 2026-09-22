@@ -416,25 +416,22 @@
      * @param {string|null} listingUrl Listing detail URL, if available.
      * @returns {string} HTML string for the image row.
      */
-    function buildImageRow(photoUrl, listingUrl) {
-        if (!photoUrl) return "";
-
-        const imageTag = `<img src="${photoUrl}" alt="Property Image" style="width:100%;height:auto;">`;
-        if (listingUrl) {
-            return `
-                <div style="position: relative;">
-                    <a href="${listingUrl}" class="plausible-listing-link" target="_blank" referrerPolicy="noreferrer">
-                        ${imageTag}
-                    </a>
-                </div>
-            `;
+    function buildImageRow(photoUrl, listingUrl, popupData) {
+        if (photoUrl) {
+            const imageTag = `<img src="${escapeHtml(photoUrl)}" alt="Property photo" loading="lazy" style="width:100%;height:auto;">`;
+            return listingUrl
+                ? `<div class="listing-popup__media"><a href="${escapeHtml(listingUrl)}" class="plausible-listing-link" target="_blank" rel="noreferrer">${imageTag}</a></div>`
+                : `<div class="listing-popup__media">${imageTag}</div>`;
         }
 
-        return `
-            <div style="position: relative;">
-                ${imageTag}
-            </div>
-        `;
+        const latitude = Number(popupData?.latitude);
+        const longitude = Number(popupData?.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return "";
+        const address = normalizeNullableString(popupData.full_street_address) || "this listing";
+        const streetViewUrl = `https://maps.google.com/maps?q=&layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0&output=svembed`;
+        return `<div class="listing-popup__media listing-popup__media--streetview">
+            <iframe src="${streetViewUrl}" title="Street View near ${escapeHtml(address)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen style="display:block;width:100%;height:180px;border:0;border-radius:8px;"></iframe>
+        </div>`;
     }
 
     /**
@@ -484,7 +481,7 @@
         ) || "Unknown Address";
         const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
         const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
-        const imageRow = buildImageRow(mlsPhoto, listingUrl);
+        const imageRow = buildImageRow(mlsPhoto, listingUrl, popupData);
         const phoneNumber = normalizeNullableString(popupData.phone_number);
         const phoneNumberBlock = phoneNumber
             ? `<a href="tel:${phoneNumber}">${phoneNumber}</a>`
@@ -600,7 +597,7 @@
         ) || "Unknown Address";
         const fullStreetAddress = toTitleCase(fullStreetAddressRaw);
         const listingUrlBlock = getListingUrlBlock(fullStreetAddress, listingUrl);
-        const imageRow = buildImageRow(mlsPhoto, listingUrl);
+        const imageRow = buildImageRow(mlsPhoto, listingUrl, popupData);
         const lotSizeDisplay = formatLotSize(popupData.lot_size);
         const mlsNumberDisplay = stripTrailingPointZero(popupData.mls_number);
         const subtype = (popupData?.subtype ?? "Unknown").toString();
@@ -779,6 +776,39 @@
 
         ispApi.hydrateIspOptionsInPopup(popupEl);
     }
+
+    const larentals = window.larentals = window.larentals || {};
+    larentals.popups = Object.assign({}, larentals.popups, {
+        openAt: function (latlng, summaryData) {
+            const map = larentals.map;
+            if (!map || !latlng) return null;
+            const data = summaryData || {};
+            const popup = L.popup(buildPopupOptions({ _map: map }))
+                .setLatLng(latlng)
+                .setContent(renderPopupLoadingContent(data))
+                .openOn(map);
+            popup.larentalsMls = data.mls_number;
+            const target = { getPopup: () => popup };
+            const listingId = normalizeListingId(data.mls_number);
+            if (!listingId) {
+                setPopupContent(target, renderPopupErrorContent(data));
+                return popup;
+            }
+            fetchListingDetails(listingId)
+                .then((details) => {
+                    if (!map.hasLayer(popup)) return;
+                    const popupData = Object.assign({}, data, details || {});
+                    const isBuyPage = String(window.location?.pathname || "").toLowerCase().startsWith("/buy");
+                    setPopupContent(target, isBuyPage ? generateBuyPopupContent(popupData) : generateLeasePopupContent(popupData));
+                })
+                .catch((error) => {
+                    console.error("Failed to load listing details", listingId, error);
+                    if (map.hasLayer(popup)) setPopupContent(target, renderPopupErrorContent(data));
+                });
+            window.larentals?.analytics?.trackListingOpened();
+            return popup;
+        },
+    });
 
     window.dash_props = Object.assign({}, window.dash_props, {
         module: Object.assign({}, window.dash_props && window.dash_props.module, {

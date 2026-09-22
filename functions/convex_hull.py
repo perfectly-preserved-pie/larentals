@@ -6,14 +6,20 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         context.currentPolygon = null;
     }
     window.larentals = window.larentals || {};
+    window.larentals.map = context.map;
+    window.larentals.clusterIndex = index;
 
     // Access all the leaves of the cluster
     const leaves = index.getLeaves(feature.properties.cluster_id, Infinity); // Retrieve all children
     const clusterSize = leaves.length;
 
-    // Single neutral color for all clusters
-    //const color = 'rgba(100, 149, 237, 0.85)';  // Cornflower blue, higher opacity for visibility
-    const color = 'rgba(23, 162, 184, 0.9)';  // Bootstrap info color - crisp, professional
+    const prices = leaves
+        .map(function (leaf) { return Number(leaf.properties.list_price); })
+        .filter(function (price) { return isFinite(price); })
+        .sort(function (a, b) { return a - b; });
+    const medianPrice = prices.length ? prices[Math.floor((prices.length - 1) / 2)] : NaN;
+    const scale = (window.larentals || {}).priceScale;
+    const color = scale ? scale.colorFor(medianPrice) : 'rgba(23, 162, 184, 0.9)';
                                
     // Scale marker size based on cluster density instead of color
     // Larger clusters = physically bigger markers
@@ -96,11 +102,11 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
     const clusterMarker = L.marker(latlng, {
         icon: L.divIcon({
             html: `
-                <div style="position:relative; width:${markerSize}px; height:${markerSize}px; font-family: Arial, sans-serif;">
-                    <div style="background-color:${color}; opacity:${markerOpacity}; 
+                <div data-cluster-count="${clusterSize}" data-cluster-id="${feature.properties.cluster_id}" data-cluster-price="${Number.isFinite(medianPrice) ? medianPrice : ''}" style="position:relative; width:${markerSize}px; height:${markerSize}px; font-family: Arial, sans-serif;">
+                    <div class="cluster-price-ring" style="background-color:${color}; opacity:${markerOpacity}; 
                                 border-radius:50%; width:${markerSize}px; height:${markerSize}px; 
                                 position:absolute; top:0; left:0;"></div>
-                    <div style="background-color:${color}; 
+                    <div class="cluster-price-core" style="background-color:${color}; 
                                 border-radius:50%; width:${innerSize}px; height:${innerSize}px; 
                                 position:absolute; top:${(markerSize - innerSize) / 2}px; left:${(markerSize - innerSize) / 2}px; 
                                 display:flex; align-items:center; justify-content:center; 
