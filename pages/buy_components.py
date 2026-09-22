@@ -79,7 +79,9 @@ class BuyComponents(BaseClass):
         "hoa_fee_frequency",
         "school_district_name",
         "nearest_high_school_mi",
+        "full_street_address",
         "listed_date",
+        "listing_url",
     )
 
     CONFIG = PageConfig(
