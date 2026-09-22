@@ -394,7 +394,8 @@
      * @returns {string} HTML string for the popup heading.
      */
     function getListingUrlBlock(address, listingUrl) {
-        if (!listingUrl) {
+        const safeUrl = normalizeNullableString(listingUrl);
+        if (!safeUrl) {
             return `
                 <div style="text-align: center;">
                     <h5>${address}</h5>
@@ -402,11 +403,50 @@
             `;
         }
 
-        return `
-            <div style="text-align: center;">
-                <h5><a href="${listingUrl}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank">${address}</a></h5>
-            </div>
-        `;
+        let sourceName = "listing site";
+        try {
+            const parsedUrl = new URL(safeUrl);
+            if (!["http:", "https:"].includes(parsedUrl.protocol)) throw new Error("Unsupported listing URL protocol");
+            const host = parsedUrl.hostname.toLowerCase().replace(/^www\./, "");
+            sourceName = {
+                "theagencyre.com": "The Agency",
+                "bhhscalifornia.com": "BHHS California",
+            }[host] || host;
+            return `
+                <div class="listing-popup__heading">
+                    <a href="${escapeHtml(parsedUrl.href)}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank" rel="noreferrer">
+                        <h5>${address}</h5>
+                        <span class="listing-popup__source-label">View listing on ${escapeHtml(sourceName)}</span>
+                    </a>
+                </div>
+            `;
+        } catch (error) {
+            return `
+                <div style="text-align: center;">
+                    <h5>${address}</h5>
+                </div>
+            `;
+        }
+    }
+
+    function formatPhoneNumber(value) {
+        const raw = normalizeNullableString(value);
+        if (!raw) return null;
+        const digits = raw.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+        if (digits.length === 10) {
+            return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+        return raw;
+    }
+
+    function renderListingSource(popupData) {
+        const phone = normalizeNullableString(popupData?.phone_number);
+        if (!phone) return "";
+        const digits = phone.replace(/\D/g, "");
+        if (digits.length < 7) return "";
+        const telNumber = phone.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+        const displayPhone = formatPhoneNumber(phone);
+        return `<div class="listing-popup__source--phone"><a href="tel:${escapeHtml(telNumber)}">Call listing office · ${escapeHtml(displayPhone)}</a></div>`;
     }
 
     /**
@@ -494,6 +534,7 @@
             <div>
                 ${imageRow}
                 ${listingUrlBlock}
+                ${renderListingSource(popupData)}
                 <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listed Date</span>
@@ -618,6 +659,7 @@
             <div>
                 ${imageRow}
                 ${listingUrlBlock}
+                ${renderListingSource(popupData)}
                 <div class="property-card" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listed Date</span>

@@ -750,3 +750,43 @@
     height: 100vh;
   }
 }
+
+
+.listing-popup__heading {
+  margin: 0.35rem 0 0.5rem;
+  text-align: center;
+}
+
+.listing-popup__heading h5 {
+  margin: 0;
+}
+
+.listing-popup__heading > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.listing-popup__heading > a:hover h5,
+.listing-popup__heading > a:focus-visible h5 {
+  text-decoration: underline;
+}
+
+.listing-popup__source-label {
+  display: block;
+  margin-top: 2px;
+  color: var(--bs-link-color, #176b55);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.listing-popup__source--phone {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: 0.25rem 0 0.65rem;
+  font-size: 0.78rem;
+}
+
+.listing-popup__source--phone a {
+  font-weight: 650;
+}
