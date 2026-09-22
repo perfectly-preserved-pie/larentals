@@ -908,7 +908,7 @@ def build_map(
             onEachFeature=ns("on_each_feature"),
             zoomToBoundsOnClick=True,
             superClusterOptions={
-                "radius": 160,
+                "radius": 110,
                 "minZoom": 3,
             },
         ),
