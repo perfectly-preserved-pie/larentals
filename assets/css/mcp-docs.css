@@ -1,3 +1,7 @@
+/* MCP documentation page, scoped to .mcp-docs.
+ * All --mcp-* tokens below are <color> values. Dark mode replaces them
+ * on the component root, so descendants inherit the selected palette.
+ */
 .mcp-docs {
   --mcp-accent: #0f9f88;
   --mcp-accent-dark: #087565;

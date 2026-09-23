@@ -1,5 +1,8 @@
-/* See https://www.dash-mantine-components.com/dash4-components#dark-mode-support
-*/
+/* Mantine page shell and dark theme. The root data-mantine-color-scheme
+ * attribute selects dark overrides; .dmc bridges Mantine colors to Dash.
+ * --wttl-dark-* are <color> tokens shared with other stylesheets.
+ */
+/* See https://www.dash-mantine-components.com/dash4-components#dark-mode-support */
 html,
 body {
     margin: 0;

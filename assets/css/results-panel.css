@@ -1,9 +1,13 @@
-/* Loads after responsive-filters.css (alphabetical) so it can widen that
- * file's two-column grid into three without editing it. */
+/* Desktop listing results, column toggles, map price pins, and legend.
+ * Loads after responsive-filters.css (alphabetical) to widen its grid
+ * from two columns to three. Dark mode changes the open-row color.
+ */
 
 :root {
+  /* <length>: results column width and expanded-row height cap. */
   --results-panel-width: clamp(260px, 20vw, 330px);
   --results-detail-max-height: 480px;
+  /* <color>: hover overlay for the open result row. */
   --results-row-open-hover: rgba(31, 104, 201, 0.26);
 }
 

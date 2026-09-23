@@ -1,3 +1,7 @@
+/* Leaflet map gesture control and its popover panel.
+ * .is-active marks the selected action; .is-starting and :disabled show a
+ * waiting state. The control is hidden below the tablet breakpoint.
+ */
 .map-gesture-control {
   clear: both;
   float: left;

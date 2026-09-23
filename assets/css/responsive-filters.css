@@ -1,10 +1,17 @@
+/* Listing page layout and filter controls across desktop and mobile.
+ * Root tokens are also consumed by results-panel.css. Dark mode replaces
+ * surface, border, text, and accent tokens near the end of this file.
+ */
 :root {
+  /* <length>: desktop filter column width. */
   --filter-panel-width: clamp(320px, 25vw, 400px);
+  /* <color>: panel surfaces, text, and action accents. */
   --filter-panel-surface: var(--bs-body-bg, #ffffff);
   --filter-panel-border: var(--bs-border-color, rgba(15, 23, 42, 0.16));
   --filter-panel-text: var(--bs-body-color, #172033);
   --filter-panel-accent: #176b55;
   --filter-panel-accent-hover: #0f5945;
+  /* <shadow>: drawer elevation. */
   --filter-panel-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
 }
 

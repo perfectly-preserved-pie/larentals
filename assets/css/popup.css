@@ -1,3 +1,7 @@
+/* Map popups, overlay markers, and supplemental layer panels.
+ * Leaflet mounts popups outside the Dash component tree, so dark overrides
+ * target the root color-scheme attribute and Leaflet popup classes.
+ */
 /* Default (mobile): let content size naturally, no forced height/scroll */
 .options-col {
   height: auto;
@@ -406,6 +410,7 @@
 }
 
 .lahd-records-grid {
+  /* AG Grid tokens: font family, font size, and corner radii. */
   --ag-font-family: inherit;
   --ag-font-size: 13px;
   --ag-border-radius: 8px;

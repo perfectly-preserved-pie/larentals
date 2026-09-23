@@ -1,3 +1,6 @@
+/* Location filter entry, geocoding status, and ZIP overflow popover.
+ * Coarse-pointer devices show the add button and touch-specific help.
+ */
 .location-add-button,
 .location-entry-help--touch {
     display: none;

@@ -1,4 +1,9 @@
+/* Histogram overlay for the hybrid range slider.
+ * .dist--hovered reveals the cursor and readout. Pointer events pass
+ * through the overlay to the slider.
+ */
 :root {
+  /* <length>: histogram height and overlap with the slider rail. */
   --dist-height: 54px;
   --dist-overlap: 6px;
 }

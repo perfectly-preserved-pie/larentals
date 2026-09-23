@@ -1,3 +1,7 @@
+/* Leaflet layer disclosure and discovery hint.
+ * .layers-control-disclosure--open expands the list and rotates the chevron.
+ * Dark colors follow the root Mantine color-scheme attribute.
+ */
 .leaflet-control-layers.layers-control-disclosure {
   overflow: visible;
   padding: 0;

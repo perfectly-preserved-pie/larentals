@@ -1,3 +1,7 @@
+/* Bootstrap-based pages and Dash token bridge. Scope: .dbc.
+ * The root Mantine color-scheme attribute selects dark overrides.
+ * --Dash-* values map Bootstrap colors into Dash components.
+ */
 .dbc {
     --Dash-Stroke-Strong: var(--bs-border-color);
     --Dash-Fill-Interactive-Strong: var(--bs-primary);
