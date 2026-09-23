@@ -798,6 +798,27 @@
     }
 
     /**
+     * Center a focused listing popup in the map's visible area.
+     *
+     * @param {object} popup Leaflet popup to center.
+     * @returns {void}
+     */
+    function centerFocusedPopup(popup) {
+        const map = popup?._map;
+        if (!popup?.larentalsCenterInMap || !map || !map.hasLayer(popup)) return;
+        const mapEl = map.getContainer?.();
+        const popupEl = popup.getElement?.();
+        if (!mapEl || !popupEl) return;
+        const mapRect = mapEl.getBoundingClientRect();
+        const popupRect = popupEl.getBoundingClientRect();
+        const x = popupRect.left + popupRect.width / 2 - (mapRect.left + mapRect.width / 2);
+        const y = popupRect.top + popupRect.height / 2 - (mapRect.top + mapRect.height / 2);
+        if (Math.abs(x) > 2 || Math.abs(y) > 2) {
+            map.panBy([x, y], { animate: true, duration: 0.2 });
+        }
+    }
+
+    /**
      * Update the popup content and hydrate ISP placeholder content if present.
      *
      * @param {PopupLayer} layer Leaflet layer whose popup should be updated.
@@ -812,6 +833,16 @@
 
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
+        if (popup.larentalsCenterInMap) {
+            if (typeof ResizeObserver === "function" && !popup.larentalsCenterObserver) {
+                popup.larentalsCenterObserver = new ResizeObserver(() => {
+                    window.requestAnimationFrame(() => centerFocusedPopup(popup));
+                });
+                popup.larentalsCenterObserver.observe(popupEl);
+                popup.once("remove", () => popup.larentalsCenterObserver?.disconnect());
+            }
+            window.requestAnimationFrame(() => centerFocusedPopup(popup));
+        }
 
         const ispApi = window.larentals?.isp;
         if (!ispApi) return;
@@ -821,7 +852,7 @@
 
     const larentals = window.larentals = window.larentals || {};
     larentals.popups = Object.assign({}, larentals.popups, {
-        openAt: function (latlng, summaryData) {
+        openAt: function (latlng, summaryData, options) {
             const map = larentals.map;
             if (!map || !latlng) return null;
             const data = summaryData || {};
@@ -830,6 +861,7 @@
                 .setContent(renderPopupLoadingContent(data))
                 .openOn(map);
             popup.larentalsMls = data.mls_number;
+            popup.larentalsCenterInMap = options?.centerInMap === true;
             const target = { getPopup: () => popup };
             const listingId = normalizeListingId(data.mls_number);
             if (!listingId) {

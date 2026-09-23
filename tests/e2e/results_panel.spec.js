@@ -24,7 +24,17 @@ for (const listingPage of pages) {
         map.getZoom() >= 16 &&
         map.distance(map.getCenter(), popup.getLatLng()) < 3000;
     }, mls, { timeout: 15_000 });
-    await expect(page.locator(".leaflet-popup")).toBeVisible();
+    const popup = page.locator(".leaflet-popup");
+    await expect(popup).toBeVisible();
+    await page.waitForFunction(() => {
+      const mapEl = document.querySelector(".leaflet-container");
+      const popupEl = document.querySelector(".leaflet-popup");
+      if (!mapEl || !popupEl || popupEl.innerText.includes("Loading listing details")) return false;
+      const map = mapEl.getBoundingClientRect();
+      const card = popupEl.getBoundingClientRect();
+      return Math.abs((card.left + card.width / 2) - (map.left + map.width / 2)) < 8 &&
+        Math.abs((card.top + card.height / 2) - (map.top + map.height / 2)) < 8;
+    }, null, { timeout: 15_000 });
   });
 
   test(`${listingPage.name} rapid result clicks leave the final listing focused`, async ({ page }) => {

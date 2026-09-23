@@ -515,7 +515,10 @@
         }
     });
 
+    var focusRequest = 0;
+
     function focusListing(entry) {
+        var request = ++focusRequest;
         var api = window.larentals || {};
         var map = api.map;
         if (!map || !entry || !entry.latlng || !isFinite(entry.latlng[0]) || !isFinite(entry.latlng[1])) return;
@@ -532,23 +535,40 @@
 
         var maxZoom = typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 21;
         var targetZoom = Math.min(maxZoom, Math.max(map.getZoom(), 16));
+        var openPopup = function () {
+            if (request !== focusRequest) return;
+            if (api.popups && typeof api.popups.openAt === "function") {
+                api.popups.openAt(entry.latlng, summary, { centerInMap: true });
+                return;
+            }
+            if (entry.el) {
+                var icon = entry.el.closest(".leaflet-marker-icon") || entry.el;
+                icon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+            }
+        };
+
+        var currentCenter = typeof map.getCenter === "function" ? map.getCenter() : null;
+        var alreadyFocused = currentCenter && map.getZoom() === targetZoom &&
+            Math.abs(currentCenter.lat - entry.latlng[0]) < 0.000001 &&
+            Math.abs(currentCenter.lng - entry.latlng[1]) < 0.000001;
+        if (alreadyFocused) {
+            openPopup();
+            return;
+        }
+
+        if (typeof map.once === "function") map.once("moveend", openPopup);
         if (typeof map.flyTo === "function") {
             map.flyTo(entry.latlng, targetZoom, { animate: true, duration: 0.55 });
         } else if (typeof map.setView === "function") {
             map.setView(entry.latlng, targetZoom, { animate: true });
         } else if (typeof map.panTo === "function") {
             map.panTo(entry.latlng, { animate: true });
-        }
-
-        if (api.popups && typeof api.popups.openAt === "function") {
-            api.popups.openAt(entry.latlng, summary);
+        } else {
+            openPopup();
             return;
         }
-
-        if (entry.el) {
-            var icon = entry.el.closest(".leaflet-marker-icon") || entry.el;
-            icon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-        }
+        // Keep the click reliable if a map implementation does not emit moveend.
+        window.setTimeout(openPopup, 1800);
     }
 
     document.addEventListener("click", function (event) {
