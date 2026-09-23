@@ -143,6 +143,10 @@
   display: none;
 }
 
+.mobile-price-legend {
+  display: none;
+}
+
 /* RangeSlider tooltips are absolutely positioned and therefore do not add to
    the slider's layout height. Reserve a row for bottom tooltips before laying
    out the missing-value switch so its label cannot overlap them. */
@@ -632,6 +636,37 @@
 
   .listing-map-col .school-layer-map-prompt {
     bottom: max(14px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 1099.98px) {
+  .mobile-price-legend {
+    position: absolute;
+    bottom: max(38px, calc(env(safe-area-inset-bottom) + 28px));
+    left: 10px;
+    z-index: 1300;
+    display: block;
+    width: 142px;
+    padding: 7px 9px 6px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.17);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+  }
+
+  :root[data-mantine-color-scheme="dark"] .mobile-price-legend {
+    border-color: rgba(231, 236, 239, 0.22);
+    background: rgba(30, 35, 44, 0.94);
+  }
+
+  :root[data-mantine-color-scheme="dark"] .mobile-price-legend .price-legend__labels {
+    color: rgba(231, 236, 239, 0.82);
+  }
+
+  .school-layer-map-prompt--visible ~ .mobile-price-legend {
+    display: none;
   }
 }
 

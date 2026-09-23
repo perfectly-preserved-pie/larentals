@@ -252,6 +252,40 @@ def build_map_filter_toolbar(page_type: str) -> html.Div:
     )
 
 
+def build_mobile_price_legend() -> html.Div:
+    """Show map pin colors where the results sidebar is hidden.
+
+    The five swatches reuse the marker palette; because the scale ranks visible
+    listings, endpoint labels describe order instead of dollar amounts.
+
+    Returns:
+        An accessible price-color legend positioned over the mobile map.
+    """
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Span(
+                        className=f"price-legend__swatch price-legend__swatch--{index + 1}"
+                    )
+                    for index in range(5)
+                ],
+                className="price-legend__swatches",
+                **{"aria-hidden": "true"},
+            ),
+            html.Div(
+                [html.Span("Lower price"), html.Span("Higher price")],
+                className="price-legend__labels",
+            ),
+        ],
+        className="mobile-price-legend",
+        role="img",
+        **{
+            "aria-label": "Price colors range from lower to higher, relative to listings currently in view"
+        },
+    )
+
+
 def build_responsive_listing_shell(
     *,
     page_type: str,

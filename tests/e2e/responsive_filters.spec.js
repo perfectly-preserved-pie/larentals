@@ -152,6 +152,60 @@ for (const entry of [
   });
 }
 
+test("mobile map shows the price legend clear of controls and the school prompt", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await collectPageErrors(page);
+
+  for (const entry of [
+    { pageType: "lease", path: BASE_URL },
+    { pageType: "buy", path: `${BASE_URL}/buy` },
+  ]) {
+    await page.goto(entry.path, { waitUntil: "domcontentloaded" });
+    await waitForFilterState(page, entry.pageType);
+
+    const legend = page.locator(".mobile-price-legend");
+    await expect(legend).toBeVisible();
+    await expect(legend).toHaveAttribute("role", "img");
+    await expect(legend).toHaveAttribute("aria-label", /lower to higher/);
+    await page.evaluate(() => document.documentElement.setAttribute("data-mantine-color-scheme", "dark"));
+    const darkLabelColor = await legend.locator(".price-legend__labels").evaluate((element) => getComputedStyle(element).color);
+    expect(darkLabelColor).toBe("rgba(231, 236, 239, 0.82)");
+    await page.evaluate(() => document.documentElement.removeAttribute("data-mantine-color-scheme"));
+
+    const geometry = await page.evaluate((key) => {
+      const rect = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const box = element.getBoundingClientRect();
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
+      };
+      return {
+        legend: rect(".mobile-price-legend"),
+        map: rect("#map"),
+        attribution: rect(".leaflet-control-attribution"),
+        toolbar: rect(`[data-filter-toolbar='${key}']`),
+        zoom: rect(".leaflet-top.leaflet-left"),
+      };
+    }, entry.pageType);
+    expect(geometry.legend.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.legend.right).toBeLessThanOrEqual(geometry.map.right);
+    expect(geometry.legend.bottom).toBeLessThan(geometry.attribution.top);
+    expect(geometry.legend.top).toBeGreaterThan(geometry.zoom.bottom);
+    expect(geometry.legend.bottom).toBeLessThan(geometry.map.bottom);
+    expect(geometry.legend.top).toBeGreaterThan(geometry.toolbar.bottom);
+
+    if (entry.pageType === "lease") {
+      await page.evaluate(() => {
+        window.dash_clientside.set_props("lease-layers-control", { overlays: ["Schools"] });
+      });
+      await expect(page.locator("#lease-school-layer-map-prompt")).toHaveClass(/school-layer-map-prompt--visible/);
+      await expect(legend).toBeHidden();
+    }
+  }
+
+  expect(errors).toEqual([]);
+});
+
 test("tablet uses a right drawer and desktop keeps a persistent sidebar", async ({ page }) => {
   const errors = await collectPageErrors(page);
   await page.setViewportSize({ width: 900, height: 1000 });
@@ -168,6 +222,7 @@ test("tablet uses a right drawer and desktop keeps a persistent sidebar", async 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(250);
   await expect(page.locator("[data-filter-toolbar='lease']")).toBeHidden();
+  await expect(page.locator(".mobile-price-legend")).toBeHidden();
   const desktopPanel = await page.locator("[data-filter-panel='lease']").boundingBox();
   expect(desktopPanel.width).toBeGreaterThanOrEqual(320);
   expect(desktopPanel.width).toBeLessThanOrEqual(400);

@@ -20,7 +20,7 @@ from .component_factories import (
     iqr_capped_range_bounds,
 )
 from .component_models import FilterSection, PageConfig, PageParts
-from .responsive_filter_ui import build_map_filter_toolbar
+from .responsive_filter_ui import build_map_filter_toolbar, build_mobile_price_legend
 from functions.distribution import attach_distribution
 
 
@@ -164,6 +164,7 @@ class BuyComponents(BaseClass):
                 build_map_filter_toolbar(self.page_type),
                 build_map_gesture_control(),
                 build_school_layer_map_prompt(self.page_type),
+                build_mobile_price_legend(),
             ],
         )
         return PageParts(
