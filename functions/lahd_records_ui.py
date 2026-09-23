@@ -327,12 +327,8 @@ def _build_summary(summary: dict[str, Any]) -> html.Div:
         The constructed summary.
     """
     metrics = [
-        ("Documented Issues", summary.get("documented_issue_count"), "cases + citations"),
-        ("Unresolved Est.", summary.get("unresolved_issue_count"), "open cases + uncleared citations"),
-        ("Cases Filed", summary.get("case_count"), "case records"),
-        ("Open Cases Est.", summary.get("open_case_count"), "no close date"),
-        ("Citations Cited", summary.get("violations_cited"), "violation citation count"),
-        ("Citations Uncleared", summary.get("unresolved_violation_count"), "cited - cleared"),
+        ("Records found", summary.get("documented_issue_count"), "cases and citations"),
+        ("May need attention", summary.get("unresolved_issue_count"), "estimate from open cases and uncleared citations"),
     ]
 
     return html.Div(

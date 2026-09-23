@@ -726,10 +726,6 @@
 
 /* Desktop (lg ≥ 992px): retain previous fixed heights/scroll */
 @media (min-width: 992px) {
-  .lahd-records-summary {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
   .school-layer-map-prompt {
     left: 18px;
     right: auto;

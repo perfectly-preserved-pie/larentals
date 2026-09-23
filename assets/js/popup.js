@@ -198,7 +198,7 @@
                 data-lahd-address="${escapeHtml(address)}"
                 data-lahd-source="listing-popup"
             >
-                view records
+                View records
             </button>
         `;
     }
@@ -219,19 +219,19 @@
         }
 
         if (!summary.matched) {
-            return "No matching housing cases found";
+            return "No records found";
         }
 
         const documented = formatWholeNumber(summary.documented_issue_count);
         const unresolved = formatWholeNumber(summary.unresolved_issue_count);
         const latestCaseDate = normalizeNullableString(summary.latest_case_date);
         const latestCaseLabel = latestCaseDate
-            ? `; latest ${escapeHtml(latestCaseDate.split("T")[0])}`
+            ? `; latest record ${escapeHtml(latestCaseDate.split("T")[0])}`
             : "";
         const recordsTrigger = renderLahdRecordsTrigger(summary);
         const recordsTriggerLabel = recordsTrigger ? `<br>${recordsTrigger}` : "";
 
-        return `${documented} documented / ${unresolved} unresolved est.${latestCaseLabel}${recordsTriggerLabel}`;
+        return `${documented} records found · ${unresolved} may need attention (estimate)${latestCaseLabel}${recordsTriggerLabel}`;
     }
 
     /**
@@ -252,7 +252,7 @@
 
         return `
             <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                <span class="label" style="font-weight: bold;">Housing Dept. Issues</span>
+                <span class="label" style="font-weight: bold;">Housing records</span>
                 <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
                     ${formatLahdIssueSummary(summary)}
                 </span>
