@@ -14,10 +14,13 @@ from collections.abc import Collection
 from copy import deepcopy
 import importlib.metadata
 import json
+import logging
 from threading import Lock
 import time
 from typing import Any
 from urllib.parse import urlsplit
+
+logger = logging.getLogger(__name__)
 
 from dash.mcp._server import _process_mcp_message
 from flask import Flask, Response, request
@@ -477,8 +480,9 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
     try:
         decoded_method = _decode_mcp_header_value(method_header)
     except ValueError as exc:
+        logger.warning("Invalid Mcp-Method header value: %s", exc)
         return _header_mismatch(
-            request_id, f"Header mismatch: invalid Mcp-Method header ({exc})"
+            request_id, "Header mismatch: invalid Mcp-Method header"
         )
     if decoded_method != method_header or decoded_method != method:
         return _header_mismatch(
@@ -494,8 +498,9 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
         try:
             decoded_name = _decode_mcp_header_value(name_header)
         except ValueError as exc:
+            logger.warning("Invalid Mcp-Name header value: %s", exc)
             return _header_mismatch(
-                request_id, f"Header mismatch: invalid Mcp-Name header ({exc})"
+                request_id, "Header mismatch: invalid Mcp-Name header"
             )
         body_name = payload["params"].get("name", payload["params"].get("uri"))
         if decoded_name != body_name:
