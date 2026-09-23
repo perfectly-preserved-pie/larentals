@@ -520,75 +520,35 @@
         var map = api.map;
         if (!map || !entry || !entry.latlng || !isFinite(entry.latlng[0]) || !isFinite(entry.latlng[1])) return;
 
-        var openPin = function () {
-            if (entry.el) {
-                var icon = entry.el.closest(".leaflet-marker-icon") || entry.el;
-                icon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-            } else if (api.popups && entry.latlng) {
-                api.popups.openAt(entry.latlng, entry.props || {});
-            }
-        };
+        // Open from the listing data directly instead of waiting for Leaflet to
+        // dissolve every enclosing cluster and render a clickable marker. Those
+        // layers can change during a pan, filter refresh, or a second click, which
+        // made the old multi-step reveal occasionally lose the selected listing.
+        var summary = Object.assign({}, entry.props || {}, {
+            mls_number: entry.mls || (entry.props || {}).mls_number,
+            latitude: entry.latlng[0],
+            longitude: entry.latlng[1],
+        });
 
-        if (!entry.clusterEl) {
+        var maxZoom = typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 21;
+        var targetZoom = Math.min(maxZoom, Math.max(map.getZoom(), 16));
+        if (typeof map.flyTo === "function") {
+            map.flyTo(entry.latlng, targetZoom, { animate: true, duration: 0.55 });
+        } else if (typeof map.setView === "function") {
+            map.setView(entry.latlng, targetZoom, { animate: true });
+        } else if (typeof map.panTo === "function") {
             map.panTo(entry.latlng, { animate: true });
-            openPin();
+        }
+
+        if (api.popups && typeof api.popups.openAt === "function") {
+            api.popups.openAt(entry.latlng, summary);
             return;
         }
 
-        var index = api.clusterIndex;
-        if (!index || typeof index.getClusterExpansionZoom !== "function") {
-            map.panTo(entry.latlng, { animate: true });
-            openPin();
-            return;
+        if (entry.el) {
+            var icon = entry.el.closest(".leaflet-marker-icon") || entry.el;
+            icon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
         }
-
-        var listingId = String(entry.mls || "");
-        var expansions = 0;
-        var reveal = function () {
-            var renderedPins = document.querySelectorAll(".price-marker[data-mls]");
-            for (var i = 0; i < renderedPins.length; i += 1) {
-                if (renderedPins[i].getAttribute("data-mls") === listingId) {
-                    entry.el = renderedPins[i];
-                    entry.clusterEl = null;
-                    map.panTo(entry.latlng, { animate: true });
-                    openPin();
-                    return;
-                }
-            }
-
-            var clusters = document.querySelectorAll("[data-cluster-id]");
-            var matchingCluster = null;
-            for (var c = 0; c < clusters.length && !matchingCluster; c += 1) {
-                var clusterId = Number(clusters[c].getAttribute("data-cluster-id"));
-                if (!isFinite(clusterId)) continue;
-                var leaves = [];
-                try { leaves = index.getLeaves(clusterId, Infinity); } catch (error) { leaves = []; }
-                for (var j = 0; j < leaves.length; j += 1) {
-                    if (String(leaves[j]?.properties?.mls_number || "") === listingId) {
-                        matchingCluster = clusterId;
-                        break;
-                    }
-                }
-            }
-
-            var maxZoom = typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 21;
-            if (matchingCluster === null || expansions >= 8 || map.getZoom() >= maxZoom) {
-                map.panTo(entry.latlng, { animate: true });
-                openPin();
-                return;
-            }
-            var expansionZoom = index.getClusterExpansionZoom(matchingCluster);
-            var nextZoom = Math.min(maxZoom, Math.max(map.getZoom() + 1, expansionZoom));
-            if (nextZoom <= map.getZoom()) {
-                map.panTo(entry.latlng, { animate: true });
-                openPin();
-                return;
-            }
-            expansions += 1;
-            map.once("moveend", reveal);
-            map.setView(entry.latlng, nextZoom, { animate: true });
-        };
-        reveal();
     }
 
     document.addEventListener("click", function (event) {
