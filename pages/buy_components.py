@@ -21,6 +21,7 @@ from .component_factories import (
 )
 from .component_models import FilterSection, PageConfig, PageParts
 from .responsive_filter_ui import build_map_filter_toolbar
+from functions.distribution import attach_distribution
 
 
 class BuyComponents(BaseClass):
@@ -237,6 +238,13 @@ class BuyComponents(BaseClass):
         """
         bounds = iqr_capped_range_bounds(self.df["list_price"], minimum=0, step=1)
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="list_price_slider",
+                series=self.df["list_price"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                prefix="$",
+            ),
             slider_id="list_price_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,
@@ -327,6 +335,14 @@ class BuyComponents(BaseClass):
         """
         bounds = iqr_capped_range_bounds(self.df["sqft"], minimum=0, step=1)
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="sqft_slider",
+                series=self.df["sqft"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                suffix=" sq ft",
+                distribution_id="sqft_buy",
+            ),
             slider_id="sqft_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,
@@ -375,6 +391,13 @@ class BuyComponents(BaseClass):
         bounds = iqr_capped_range_bounds(self.df["lot_size"], minimum=0, step=1)
 
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="lot_size_slider",
+                series=self.df["lot_size"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                suffix=" sq ft",
+            ),
             slider_id="lot_size_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,

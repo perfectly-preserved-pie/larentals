@@ -1,5 +1,8 @@
 import unittest
 from collections.abc import Iterator
+from unittest.mock import patch
+
+import pandas as pd
 
 import dash_mantine_components as dmc
 from dash import dcc, html
@@ -15,6 +18,7 @@ from pages.component_factories import (
     iqr_capped_range_bounds,
 )
 from pages.components import BuyComponents, LeaseComponents
+from functions.distribution import attach_distribution
 
 
 def _collect_components(component: object) -> Iterator[object]:
@@ -38,6 +42,49 @@ def _collect_components(component: object) -> Iterator[object]:
 
 
 class ComponentsSmokeTest(unittest.TestCase):
+    def test_distribution_callbacks_can_share_slider_id_with_unique_outputs(self) -> None:
+        """Keep page-specific histogram outputs unique for shared slider IDs.
+
+        Returns:
+            None.
+        """
+        with patch("functions.distribution.clientside_callback") as register_callback:
+            buy_strip = attach_distribution(
+                slider_id="sqft_slider",
+                series=pd.Series([500, 1000, 1500]),
+                minimum=0,
+                maximum=2000,
+                suffix=" sq ft",
+                distribution_id="sqft_buy",
+            )
+            lease_strip = attach_distribution(
+                slider_id="sqft_slider",
+                series=pd.Series([600, 1100, 1600]),
+                minimum=0,
+                maximum=2000,
+                suffix=" sq ft",
+                distribution_id="sqft_lease",
+            )
+
+        self.assertEqual(buy_strip.children[1].id, "sqft_buy_dist_lo")
+        self.assertEqual(buy_strip.children[2].id, "sqft_buy_dist_hi")
+        self.assertEqual(lease_strip.children[1].id, "sqft_lease_dist_lo")
+        self.assertEqual(lease_strip.children[2].id, "sqft_lease_dist_hi")
+        outputs = [
+            call.args[index].component_id
+            for call in register_callback.call_args_list
+            for index in (1, 2)
+        ]
+        self.assertEqual(
+            outputs,
+            [
+                "sqft_buy_dist_lo",
+                "sqft_buy_dist_hi",
+                "sqft_lease_dist_lo",
+                "sqft_lease_dist_hi",
+            ],
+        )
+
     def test_location_inputs_use_associated_labels(self) -> None:
         """Verify that location inputs use associated labels.
 

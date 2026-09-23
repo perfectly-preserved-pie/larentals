@@ -72,10 +72,25 @@ def attach_distribution(
     maximum: float,
     prefix: str = "",
     suffix: str = "",
+    distribution_id: str | None = None,
 ) -> html.Div | None:
-    """Build a distribution strip and register live selection shading."""
+    """Build a distribution strip and register live selection shading.
+
+    Args:
+        slider_id: ID of the range slider that drives the selection shading.
+        series: Listing values used to calculate histogram bin counts.
+        minimum: Lower bound of the displayed range.
+        maximum: Upper bound of the displayed range.
+        prefix: Optional text shown before values in the readout.
+        suffix: Optional text shown after values in the readout.
+        distribution_id: Optional unique ID for histogram elements and outputs.
+
+    Returns:
+        The histogram strip, or ``None`` when no distribution can be shown.
+    """
+    strip_id = distribution_id or slider_id
     strip = build_distribution_strip(
-        slider_id=slider_id,
+        slider_id=strip_id,
         counts=compute_distribution(series, minimum=minimum, maximum=maximum),
         minimum=minimum,
         maximum=maximum,
@@ -95,8 +110,8 @@ def attach_distribution(
             const pct = v => Math.min(Math.max((v - {minimum}) / {span}, 0), 1) * 100;
             return [{{left:'0%', width:pct(lo)+'%'}}, {{left:pct(hi)+'%', right:'0%'}}];
         }}""",
-        Output(f"{slider_id}_dist_lo", "style"),
-        Output(f"{slider_id}_dist_hi", "style"),
+        Output(f"{strip_id}_dist_lo", "style"),
+        Output(f"{strip_id}_dist_hi", "style"),
         Input(slider_id, "value"), Input(slider_id, "drag_value"),
     )
     return strip

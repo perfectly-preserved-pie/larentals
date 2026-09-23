@@ -452,6 +452,14 @@ class LeaseComponents(BaseClass):
         """
         bounds = iqr_capped_range_bounds(self.df["sqft"], minimum=0, step=1)
         return build_range_filter(
+            distribution=attach_distribution(
+                slider_id="sqft_slider",
+                series=self.df["sqft"],
+                minimum=bounds.minimum,
+                maximum=bounds.display_maximum,
+                suffix=" sq ft",
+                distribution_id="sqft_lease",
+            ),
             slider_id="sqft_slider",
             min_value=bounds.minimum,
             max_value=bounds.display_maximum,
