@@ -9,7 +9,10 @@ import dash_ag_grid as dag
 import dash_mantine_components as dmc
 from loguru import logger
 
-from functions.lahd import fetch_lahd_property_record_details
+from functions.lahd import (
+    fetch_lahd_property_record_details,
+    lookup_lahd_property_for_listing,
+)
 
 
 LAHD_RECORD_EVENT_NAME = "lahdrecordrequest"
@@ -106,13 +109,27 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
         address = _event_value(event, "detail.address")
 
         try:
-            details = fetch_lahd_property_record_details(str(apn))
+            requested_apn = str(apn)
+            if address:
+                address_match = lookup_lahd_property_for_listing(
+                    address=address,
+                    latitude=None,
+                    longitude=None,
+                )
+                canonical_apn = address_match.get("apn") if address_match.get("matched") else None
+                if canonical_apn:
+                    requested_apn = str(canonical_apn)
+
+            details = fetch_lahd_property_record_details(requested_apn)
         except Exception as exc:  # pragma: no cover - exercised manually against live data
             logger.exception(f"Failed fetching Housing Department records for APN {apn}.")
             title = _build_drawer_title(apn, address)
             return True, title, _build_error_content(apn, exc)
 
-        title = _build_drawer_title(apn, address or _primary_address_from_summary(details.get("summary")))
+        title = _build_drawer_title(
+            details.get("apn") or apn,
+            address or _primary_address_from_summary(details.get("summary")),
+        )
         return True, title, build_lahd_records_drawer_content(details)
 
 
