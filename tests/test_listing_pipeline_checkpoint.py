@@ -501,6 +501,39 @@ def test_inactive_check_falls_back_from_bhhs_to_agency(
     assert deleted_images == ["MLS-4"]
 
 
+def test_inactive_check_ignores_spoofed_bhhs_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A spoofed hostname should not trigger the BHHS provider path."""
+    checks: list[str] = []
+
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_bhhs",
+        lambda url, mls: checks.append("BHHS"),
+    )
+    monkeypatch.setattr(
+        "functions.dataframe_utils.check_expired_listing_theagency",
+        lambda url, mls: checks.append("The Agency") or False,
+    )
+
+    result = remove_inactive_listings(
+        pd.DataFrame(
+            [
+                {
+                    "mls_number": "MLS-6",
+                    "listing_url": (
+                        "https://www.bhhscalifornia.com.attacker.test/listing/MLS-6"
+                    ),
+                }
+            ]
+        ),
+        table_name="buy",
+    )
+
+    assert result["mls_number"].tolist() == ["MLS-6"]
+    assert checks == ["The Agency"]
+
+
 def test_inactive_check_uses_rentcast_for_missing_listing_url(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
