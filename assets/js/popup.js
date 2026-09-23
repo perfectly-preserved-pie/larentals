@@ -66,6 +66,26 @@
     }
 
     /**
+     * Parse a listing URL and reject non-http(s) values.
+     *
+     * @param {unknown} value Raw listing URL value.
+     * @returns {URL|null} Parsed URL or `null` when unusable.
+     */
+    function parseListingUrl(value) {
+        const safeUrl = normalizeNullableString(value);
+        if (!safeUrl) return null;
+        try {
+            const parsedUrl = new URL(safeUrl);
+            if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+                return null;
+            }
+            return parsedUrl;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    /**
      * Normalize a listing identifier while preserving leading zeroes.
      *
      * @param {unknown} value Listing id / MLS value.
@@ -390,12 +410,11 @@
      * Render the popup title block, linking the address when a listing URL exists.
      *
      * @param {string|number} address Display-ready street address.
-     * @param {string|null} listingUrl Listing detail URL, if available.
+     * @param {URL|null} listingUrl Parsed listing detail URL, if available.
      * @returns {string} HTML string for the popup heading.
      */
     function getListingUrlBlock(address, listingUrl) {
-        const safeUrl = normalizeNullableString(listingUrl);
-        if (!safeUrl) {
+        if (!listingUrl) {
             return `
                 <div style="text-align: center;">
                     <h5>${address}</h5>
@@ -403,30 +422,19 @@
             `;
         }
 
-        let sourceName = "listing site";
-        try {
-            const parsedUrl = new URL(safeUrl);
-            if (!["http:", "https:"].includes(parsedUrl.protocol)) throw new Error("Unsupported listing URL protocol");
-            const host = parsedUrl.hostname.toLowerCase().replace(/^www\./, "");
-            sourceName = {
-                "theagencyre.com": "The Agency",
-                "bhhscalifornia.com": "BHHS California",
-            }[host] || host;
-            return `
-                <div class="listing-popup__heading">
-                    <a href="${escapeHtml(parsedUrl.href)}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank" rel="noreferrer">
-                        <h5>${address}</h5>
-                        <span class="listing-popup__source-label">View listing on ${escapeHtml(sourceName)}</span>
-                    </a>
-                </div>
-            `;
-        } catch (error) {
-            return `
-                <div style="text-align: center;">
+        const host = listingUrl.hostname.toLowerCase().replace(/^www\./, "");
+        const sourceName = {
+            "theagencyre.com": "The Agency",
+            "bhhscalifornia.com": "BHHS California",
+        }[host] || host;
+        return `
+            <div class="listing-popup__heading">
+                <a href="${escapeHtml(listingUrl.href)}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank" rel="noreferrer">
                     <h5>${address}</h5>
-                </div>
-            `;
-        }
+                    <span class="listing-popup__source-label">View listing on ${escapeHtml(sourceName)}</span>
+                </a>
+            </div>
+        `;
     }
 
     function formatPhoneNumber(value) {
@@ -453,14 +461,14 @@
      * Render the property photo row, optionally wrapping the image in the listing URL.
      *
      * @param {string|null} photoUrl Image URL for the listing.
-     * @param {string|null} listingUrl Listing detail URL, if available.
+     * @param {URL|null} listingUrl Parsed listing detail URL, if available.
      * @returns {string} HTML string for the image row.
      */
     function buildImageRow(photoUrl, listingUrl, popupData) {
         if (photoUrl) {
             const imageTag = `<img src="${escapeHtml(photoUrl)}" alt="Property photo" loading="lazy" style="width:100%;height:auto;">`;
             return listingUrl
-                ? `<div class="listing-popup__media"><a href="${escapeHtml(listingUrl)}" class="plausible-listing-link" target="_blank" rel="noreferrer">${imageTag}</a></div>`
+                ? `<div class="listing-popup__media"><a href="${escapeHtml(listingUrl.href)}" class="plausible-listing-link" target="_blank" rel="noreferrer">${imageTag}</a></div>`
                 : `<div class="listing-popup__media">${imageTag}</div>`;
         }
 
@@ -514,7 +522,7 @@
      * @returns {string} HTML string bound to the Leaflet popup.
      */
     function generateLeasePopupContent(popupData) {
-        const listingUrl = normalizeNullableString(popupData.listing_url);
+        const listingUrl = parseListingUrl(popupData.listing_url);
         const mlsPhoto = normalizeNullableString(popupData.mls_photo);
         const fullStreetAddressRaw = stripTrailingPointZero(
             normalizeNullableString(popupData.full_street_address),
@@ -631,7 +639,7 @@
      * @returns {string} HTML string bound to the Leaflet popup.
      */
     function generateBuyPopupContent(popupData) {
-        const listingUrl = normalizeNullableString(popupData.listing_url);
+        const listingUrl = parseListingUrl(popupData.listing_url);
         const mlsPhoto = normalizeNullableString(popupData.mls_photo);
         const fullStreetAddressRaw = stripTrailingPointZero(
             normalizeNullableString(popupData.full_street_address),

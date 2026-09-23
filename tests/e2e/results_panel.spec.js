@@ -67,4 +67,33 @@ for (const listingPage of pages) {
     }, expectedMls, { timeout: 15_000 });
     await expect(page.locator(".leaflet-popup")).toBeVisible();
   });
+
 }
+
+test("lease popup listing links stay on canonical http(s) URLs", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const rows = page.locator('[data-results-panel="lease"] .results-row');
+  await expect(rows.first()).toBeVisible({ timeout: 30_000 });
+  const mls = await rows.first().getAttribute("data-mls");
+  expect(mls).toBeTruthy();
+
+  await rows.first().click();
+  await page.waitForFunction((expectedMls) => {
+    const map = window.larentals?.map;
+    return map?._popup &&
+      String(map._popup.larentalsMls) === String(expectedMls) &&
+      !document.querySelector(".leaflet-popup")?.innerText.includes("Loading listing details");
+  }, mls, { timeout: 15_000 });
+
+  const popupLinks = page.locator(".leaflet-popup .plausible-listing-link");
+  await expect(popupLinks.first()).toBeVisible();
+  const popupHrefs = await popupLinks.evaluateAll((elements) =>
+    [...new Set(elements.map((element) => element.getAttribute("href")).filter(Boolean))],
+  );
+  expect(popupHrefs.length).toBeGreaterThan(0);
+  for (const href of popupHrefs) {
+    expect(href).toMatch(/^https?:\/\//);
+  }
+});
