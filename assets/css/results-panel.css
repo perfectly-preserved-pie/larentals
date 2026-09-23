@@ -430,3 +430,9 @@
   color: var(--wttl-text-faint, rgba(25, 29, 46, 0.55));
   font-size: 0.65rem;
 }
+
+/* Keep the selected price pin visible at the popup tip instead of letting the
+ * popup pane cover the listing it describes. */
+.leaflet-marker-icon.is-open {
+  z-index: 710 !important;
+}

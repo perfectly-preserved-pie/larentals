@@ -551,7 +551,7 @@ def _fetch_property_violation_records(apn: str, limit: int) -> list[JsonDict]:
         LAHD_VIOLATION_DATASET_URL,
         {
             "apn": apn,
-            "$select": "apn, address, violationtype, violations_cited, violations_cleared",
+            "$select": "apn, address, violationtype, violations_cited, violations_cleared, countviolationtypespercase",
             "$order": "violations_cited DESC",
             "$limit": limit,
         },
@@ -600,14 +600,13 @@ def _normalize_violation_record(row: JsonDict) -> JsonDict:
     Returns:
         The normalized violation record.
     """
-    cited = _parse_int(row.get("violations_cited"))
-    cleared = min(cited, _parse_int(row.get("violations_cleared")))
+    cited_date = _coerce_date_string(row.get("violations_cited")) or ""
 
     return {
         "violation_type": _normalize_lahd_record_text(row.get("violationtype")) or "Unknown",
-        "violations_cited": cited,
-        "violations_cleared": cleared,
-        "uncleared_estimate": max(0, cited - cleared),
+        "cited_date": cited_date,
+        "violations_cleared": _parse_int(row.get("violations_cleared")),
+        "violation_types_per_case": _parse_int(row.get("countviolationtypespercase")),
         "address": _normalize_lahd_record_text(row.get("address")),
     }
 
@@ -630,9 +629,11 @@ def _summarize_lahd_property_records(cases: list[JsonDict], violations: list[Jso
             if str(row.get("address") or "").strip()
         }
     )
-    violations_cited = sum(_parse_int(row.get("violations_cited")) for row in violations)
+    # The live dataset stores ``violations_cited`` as a date. Each returned row
+    # represents one violation type record, so count rows rather than parsing the date.
+    violations_cited = len(violations)
     violations_cleared = sum(_parse_int(row.get("violations_cleared")) for row in violations)
-    unresolved_violations = sum(_parse_int(row.get("uncleared_estimate")) for row in violations)
+    unresolved_violations = max(0, violations_cited - violations_cleared)
     open_cases = sum(1 for row in cases if not row.get("closed_date"))
 
     return {

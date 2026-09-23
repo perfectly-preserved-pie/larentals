@@ -522,6 +522,7 @@
         var api = window.larentals || {};
         var map = api.map;
         if (!map || !entry || !entry.latlng || !isFinite(entry.latlng[0]) || !isFinite(entry.latlng[1])) return;
+        watchPopups();
 
         // Open from the listing data directly instead of waiting for Leaflet to
         // dissolve every enclosing cluster and render a clickable marker. Those
@@ -534,11 +535,16 @@
         });
 
         var maxZoom = typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 21;
-        var targetZoom = Math.min(maxZoom, Math.max(map.getZoom(), 16));
+        var targetZoom = Math.min(maxZoom, Math.max(map.getZoom(), 19));
+        var popupOpened = false;
         var openPopup = function () {
-            if (request !== focusRequest) return;
+            if (request !== focusRequest || popupOpened) return;
+            popupOpened = true;
             if (api.popups && typeof api.popups.openAt === "function") {
+                openMls = summary.mls_number ? String(summary.mls_number) : null;
+                markOpenRow({ scroll: false });
                 api.popups.openAt(entry.latlng, summary, { centerInMap: true });
+                markOpenRow({ scroll: false });
                 return;
             }
             if (entry.el) {

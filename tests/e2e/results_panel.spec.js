@@ -35,6 +35,13 @@ for (const listingPage of pages) {
       return Math.abs((card.left + card.width / 2) - (map.left + map.width / 2)) < 8 &&
         Math.abs((card.top + card.height / 2) - (map.top + map.height / 2)) < 8;
     }, null, { timeout: 15_000 });
+    await page.waitForFunction((expectedMls) => {
+      const pin = [...document.querySelectorAll(".price-marker[data-mls]")]
+        .find((element) => element.getAttribute("data-mls") === expectedMls);
+      const icon = pin?.closest(".leaflet-marker-icon");
+      return icon?.classList.contains("is-open") && Number.parseInt(getComputedStyle(icon).zIndex, 10) > 700;
+    }, mls, { timeout: 10_000 });
+    await expect(rows.first()).toHaveClass(/is-open/);
   });
 
   test(`${listingPage.name} rapid result clicks leave the final listing focused`, async ({ page }) => {

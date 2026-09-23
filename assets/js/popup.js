@@ -857,11 +857,10 @@
             if (!map || !latlng) return null;
             const data = summaryData || {};
             const popup = L.popup(buildPopupOptions({ _map: map }))
-                .setLatLng(latlng)
-                .setContent(renderPopupLoadingContent(data))
-                .openOn(map);
+                .setLatLng(latlng);
             popup.larentalsMls = data.mls_number;
             popup.larentalsCenterInMap = options?.centerInMap === true;
+            popup.setContent(renderPopupLoadingContent(data)).openOn(map);
             const target = { getPopup: () => popup };
             const listingId = normalizeListingId(data.mls_number);
             if (!listingId) {

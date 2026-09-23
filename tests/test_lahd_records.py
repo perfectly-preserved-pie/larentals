@@ -58,14 +58,16 @@ def test_fetch_lahd_property_record_details_normalizes_rows(
                 {
                     "address": "4616 W RODEO ROAD, Los Angeles, CA 90016",
                     "violationtype": "CAULKING",
-                    "violations_cited": "5",
+                    "violations_cited": "2025-01-02T00:00:00.000",
                     "violations_cleared": "2",
+                    "countviolationtypespercase": "5",
                 },
                 {
                     "address": "4616 W RODEO ROAD, Los Angeles, CA 90016",
                     "violationtype": "EXPOSED WIRING",
-                    "violations_cited": "3",
+                    "violations_cited": "2024-06-01T00:00:00.000",
                     "violations_cleared": "3",
+                    "countviolationtypespercase": "3",
                 },
             ]
         raise AssertionError(f"Unexpected URL: {url}")
@@ -88,9 +90,11 @@ def test_fetch_lahd_property_record_details_normalizes_rows(
             "address": "4616 W RODEO ROAD, Los Angeles, CA 90016",
         }
     ]
-    assert payload["violations"][0]["uncleared_estimate"] == 3
-    assert payload["summary"]["documented_issue_count"] == 6
-    assert payload["summary"]["unresolved_issue_count"] == 4
+    assert payload["violations"][0]["cited_date"] == "2025-01-02"
+    assert payload["violations"][0]["violations_cleared"] == 2
+    assert payload["violations"][0]["violation_types_per_case"] == 5
+    assert payload["summary"]["documented_issue_count"] == 2
+    assert payload["summary"]["unresolved_issue_count"] == 1
     assert payload["truncated"]["cases"] is True
     assert payload["truncated"]["violations"] is True
 

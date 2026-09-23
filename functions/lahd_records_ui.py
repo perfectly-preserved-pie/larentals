@@ -196,9 +196,9 @@ CASE_COLUMN_DEFS: list[dict[str, Any]] = [
 
 VIOLATION_COLUMN_DEFS: list[dict[str, Any]] = [
     {"field": "violation_type", "headerName": "Violation Type", "minWidth": 220, "flex": 1},
-    {"field": "violations_cited", "headerName": "Cited", "type": "rightAligned", "width": 110},
+    {"field": "cited_date", "headerName": "Cited Date", "width": 130},
     {"field": "violations_cleared", "headerName": "Cleared", "type": "rightAligned", "width": 115},
-    {"field": "uncleared_estimate", "headerName": "Uncleared Est.", "type": "rightAligned", "width": 145},
+    {"field": "violation_types_per_case", "headerName": "Types in Case", "type": "rightAligned", "width": 125},
 ]
 
 DEFAULT_COL_DEF = {
