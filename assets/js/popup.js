@@ -422,28 +422,19 @@
             `;
         }
 
-        let sourceName = "listing site";
-        try {
-            const host = listingUrl.hostname.toLowerCase().replace(/^www\./, "");
-            sourceName = {
-                "theagencyre.com": "The Agency",
-                "bhhscalifornia.com": "BHHS California",
-            }[host] || host;
-            return `
-                <div class="listing-popup__heading">
-                    <a href="${escapeHtml(listingUrl.href)}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank" rel="noreferrer">
-                        <h5>${address}</h5>
-                        <span class="listing-popup__source-label">View listing on ${escapeHtml(sourceName)}</span>
-                    </a>
-                </div>
-            `;
-        } catch (error) {
-            return `
-                <div style="text-align: center;">
+        const host = listingUrl.hostname.toLowerCase().replace(/^www\./, "");
+        const sourceName = {
+            "theagencyre.com": "The Agency",
+            "bhhscalifornia.com": "BHHS California",
+        }[host] || host;
+        return `
+            <div class="listing-popup__heading">
+                <a href="${escapeHtml(listingUrl.href)}" class="plausible-listing-link" referrerPolicy="noreferrer" target="_blank" rel="noreferrer">
                     <h5>${address}</h5>
-                </div>
-            `;
-        }
+                    <span class="listing-popup__source-label">View listing on ${escapeHtml(sourceName)}</span>
+                </a>
+            </div>
+        `;
     }
 
     function formatPhoneNumber(value) {
