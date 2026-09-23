@@ -14,16 +14,14 @@ from collections.abc import Collection
 from copy import deepcopy
 import importlib.metadata
 import json
-import logging
 from threading import Lock
 import time
 from typing import Any
 from urllib.parse import urlsplit
 
-logger = logging.getLogger(__name__)
-
 from dash.mcp._server import _process_mcp_message
 from flask import Flask, Response, request
+from loguru import logger
 
 
 MODERN_PROTOCOL_VERSION = "2026-07-28"
