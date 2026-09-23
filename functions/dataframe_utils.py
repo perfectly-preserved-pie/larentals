@@ -26,6 +26,7 @@ import re
 import requests
 import sys
 import time
+from urllib.parse import urlsplit
 
 # Initialize logging
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -62,6 +63,22 @@ def _source_label(sources: set[str]) -> str:
     return "+".join(
         source for source in ("BHHS", "The Agency") if source in sources
     ) or "none"
+
+
+def _url_hostname_matches(url: str, expected_domain: str) -> bool:
+    """Return whether a URL belongs to the expected domain or its subdomains."""
+    try:
+        hostname = urlsplit(url).hostname
+    except ValueError:
+        return False
+    if not hostname:
+        return False
+    normalized_host = hostname.lower().rstrip(".")
+    normalized_domain = expected_domain.lower().rstrip(".")
+    return (
+        normalized_host == normalized_domain
+        or normalized_host.endswith(f".{normalized_domain}")
+    )
 
 
 def _ensure_object_columns(
@@ -151,10 +168,10 @@ def _check_listing_inactive_sources(
     checked: list[str] = []
     result: bool | None = None
 
-    if "bhhscalifornia.com" in url:
+    if _url_hostname_matches(url, "bhhscalifornia.com"):
         checked.append("BHHS")
         result = check_expired_listing_bhhs(url, mls_number)
-    elif "theagencyre.com" in url:
+    elif _url_hostname_matches(url, "theagencyre.com"):
         checked.append("The Agency")
         result = check_expired_listing_theagency(url, mls_number)
 
