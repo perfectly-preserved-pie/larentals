@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 
 from dash.mcp._server import _process_mcp_message
 from flask import Flask, Response, request
+from loguru import logger
 
 
 MODERN_PROTOCOL_VERSION = "2026-07-28"
@@ -477,8 +478,9 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
     try:
         decoded_method = _decode_mcp_header_value(method_header)
     except ValueError as exc:
+        logger.warning("Invalid Mcp-Method header value: %s", exc)
         return _header_mismatch(
-            request_id, f"Header mismatch: invalid Mcp-Method header ({exc})"
+            request_id, "Header mismatch: invalid Mcp-Method header"
         )
     if decoded_method != method_header or decoded_method != method:
         return _header_mismatch(
@@ -494,8 +496,9 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
         try:
             decoded_name = _decode_mcp_header_value(name_header)
         except ValueError as exc:
+            logger.warning("Invalid Mcp-Name header value: %s", exc)
             return _header_mismatch(
-                request_id, f"Header mismatch: invalid Mcp-Name header ({exc})"
+                request_id, "Header mismatch: invalid Mcp-Name header"
             )
         body_name = payload["params"].get("name", payload["params"].get("uri"))
         if decoded_name != body_name:
