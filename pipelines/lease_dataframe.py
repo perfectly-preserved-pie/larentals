@@ -9,6 +9,7 @@ from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
 from functions.data_paths import CHECKPOINT_DIR, LARENTALS_DB_PATH
 from functions.geocoding_utils import *
+from functions.listing_location_overrides import apply_reviewed_location_overrides
 from functions.listing_pipeline_checkpoint import (
   ListingCheckpointStore,
   file_fingerprint,
@@ -168,11 +169,15 @@ def main() -> None:
     df['street_name'] = df['street_name'].str.replace(r'^\d+\s*', '', regex=True)
 
     # Drop all rows with misc/irrelevant data
-    df.dropna(subset=['street_name'], inplace=True)
 
     # Remove all cells in mls_number that have more than 20 characters
     # To get rid of garbage data
     df = df[df['mls_number'].astype(str).str.len() <= 20]
+
+    # Normalize Excel/CSV numeric ZIPs before building geocoder queries.
+    df["zip_code"] = df["zip_code"].astype("string").str.replace(r"\.0$", "", regex=True)
+    df = apply_reviewed_location_overrides(df, "lease")
+    df.dropna(subset=["street_name"], inplace=True)
 
     # Columns to clean
     cols = ['key_deposit', 'other_deposit', 'security_deposit', 'list_price', 'pet_deposit', 'lot_size', 'sqft', 'year_built']

@@ -1,0 +1,72 @@
+[
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25020807MR",
+    "old_address": "3112 W  Avenue #F, PALMDALE 93551",
+    "new_address": " W Avenue N  #F, None None",
+    "old_latitude": 34.7474904,
+    "old_longitude": -118.2546396,
+    "new_latitude": 34.6307202,
+    "new_longitude": -118.1859314
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "TR26201512MR",
+    "old_address": "5931   5th, LOS ANGELES 90043.0",
+    "new_address": "5931 5th Ave, LOS ANGELES 90043.0",
+    "old_latitude": 34.065322,
+    "old_longitude": -118.3292274,
+    "new_latitude": 33.9863793,
+    "new_longitude": -118.3228054
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "DW26193178MR",
+    "old_address": "5939   5th, LOS ANGELES 90043.0",
+    "new_address": "5939 5th Ave, LOS ANGELES 90043.0",
+    "old_latitude": 34.065322,
+    "old_longitude": -118.3292274,
+    "new_latitude": 33.9861562,
+    "new_longitude": -118.3227993
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "PW26143877MR",
+    "old_address": "3923 S South  Normandie AVE, LOS ANGELES 90037",
+    "new_address": "3923 S Normandie Ave, LOS ANGELES 90037",
+    "old_latitude": 33.9293965,
+    "old_longitude": -118.3003363,
+    "new_latitude": 34.0142832,
+    "new_longitude": -118.3004053
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26177383MR",
+    "old_address": "44338 23rd ST, LANCASTER 93536",
+    "new_address": "44338 23rd St W, LANCASTER 93536",
+    "old_latitude": 34.6957009,
+    "old_longitude": -118.0880814,
+    "new_latitude": 34.6886163,
+    "new_longitude": -118.1719306
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SB25183879MR",
+    "old_address": "1053 W Ave #J14, LANCASTER 93534",
+    "new_address": "1053 W Avenue J-14, LANCASTER 93534",
+    "old_latitude": 34.6768837,
+    "old_longitude": -118.2392873,
+    "new_latitude": 34.6768064,
+    "new_longitude": -118.1498172
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25144888MR",
+    "old_address": "3112 W  Avenue #F, PALMDALE 93551",
+    "new_address": "3112 W Avenue N  #F, PALMDALE 93551",
+    "old_latitude": 34.7474904,
+    "old_longitude": -118.2546396,
+    "new_latitude": 34.6307202,
+    "new_longitude": -118.1859314
+  }
+]

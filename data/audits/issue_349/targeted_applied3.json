@@ -1,0 +1,145 @@
+[
+  {
+    "listing_type": "buy",
+    "mls_number": "SR26074697MR",
+    "old_address": "2718  E  Avenue, PALMDALE 93550.0",
+    "new_address": "2718 E Avenue S, PALMDALE 93550.0",
+    "old_latitude": 34.6233004,
+    "old_longitude": -117.8944705,
+    "new_latitude": 34.557599,
+    "new_longitude": -118.0801807,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "CV26155023MR",
+    "old_address": "7040   3rd, LOS ANGELES 90043.0",
+    "new_address": "7040 3rd Ave, LOS ANGELES 90043.0",
+    "old_latitude": 34.0090301,
+    "old_longitude": -118.4881876,
+    "new_latitude": 33.9752912,
+    "new_longitude": -118.320429,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "DW26193684MR",
+    "old_address": "6534   4th, LOS ANGELES 90043.0",
+    "new_address": "6534 4th Ave, LOS ANGELES 90043.0",
+    "old_latitude": 34.0343847,
+    "old_longitude": -118.1974516,
+    "new_latitude": 33.9805815,
+    "new_longitude": -118.321391,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "PW26100150MR",
+    "old_address": "6502   4th, LOS ANGELES 90043.0",
+    "new_address": "6502 4th Ave, LOS ANGELES 90043.0",
+    "old_latitude": 34.0343847,
+    "old_longitude": -118.1974516,
+    "new_latitude": 33.9815106,
+    "new_longitude": -118.3213483,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SR26191008MR",
+    "old_address": "2928   Virginia, LOS ANGELES 90016.0",
+    "new_address": "2928 Virginia Rd, LOS ANGELES 90016.0",
+    "old_latitude": 33.9235977,
+    "old_longitude": -118.419513,
+    "new_latitude": 34.0284834,
+    "new_longitude": -118.3392314,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "PW26171272MR",
+    "old_address": "3020 Virginia  #1/2, LOS ANGELES 90016",
+    "new_address": "3020 Virginia Rd  #1/2, LOS ANGELES 90016",
+    "old_latitude": 33.9308988,
+    "old_longitude": -118.3962571,
+    "new_latitude": 34.0269532,
+    "new_longitude": -118.3392506,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SR26145166MR",
+    "old_address": "42307   61st st w, QUARTZ HILL 93535.0",
+    "new_address": "42307 61st st w, QUARTZ HILL 93536",
+    "old_latitude": 34.6505261,
+    "old_longitude": -118.238647,
+    "new_latitude": 34.6505261,
+    "new_longitude": -118.238647,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "TR26127636MR",
+    "old_address": "435 Mullberry, MONTEBELLO 90604",
+    "new_address": "435 Mullberry Pl, MONTEBELLO 90640",
+    "old_latitude": 34.0289457,
+    "old_longitude": -118.0987731,
+    "new_latitude": 34.0286251,
+    "new_longitude": -118.0988217,
+    "google_precision": "RANGE_INTERPOLATED"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26178157MR",
+    "old_address": "43334 32nd  #34, LANCASTER 93536",
+    "new_address": "43334 32nd St W  #34, LANCASTER 93536",
+    "old_latitude": 34.6680835,
+    "old_longitude": -118.0724051,
+    "new_latitude": 34.6696651,
+    "new_longitude": -118.1866838,
+    "google_precision": "GEOMETRIC_CENTER"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26140541MR",
+    "old_address": "44036 25th, LANCASTER 93536",
+    "new_address": "44036 25th St W, LANCASTER 93536",
+    "old_latitude": 34.6914183,
+    "old_longitude": -118.0858516,
+    "new_latitude": 34.6835357,
+    "new_longitude": -118.1740983,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26096168MR",
+    "old_address": "44150 30th, LANCASTER 93536",
+    "new_address": "44150 30th St W, LANCASTER 93536",
+    "old_latitude": 34.6898482,
+    "old_longitude": -118.0769062,
+    "new_latitude": 34.6853966,
+    "new_longitude": -118.1834757,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26192406MR",
+    "old_address": "44266 27th, LANCASTER 93536",
+    "new_address": "44266 27th St W, LANCASTER 93536",
+    "old_latitude": 34.6897995,
+    "old_longitude": -118.0813806,
+    "new_latitude": 34.6876656,
+    "new_longitude": -118.1789871,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25256235MR",
+    "old_address": "44036 25th  #B7, LANCASTER 93536",
+    "new_address": "44036 25th St W  #B7, LANCASTER 93536",
+    "old_latitude": 34.6914183,
+    "old_longitude": -118.0858516,
+    "new_latitude": 34.6835357,
+    "new_longitude": -118.1740983,
+    "google_precision": "ROOFTOP"
+  }
+]

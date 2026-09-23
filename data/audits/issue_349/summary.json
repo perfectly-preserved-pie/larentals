@@ -1,0 +1,109 @@
+{
+  "google_requests_logged": 529,
+  "initial_flag_count": 524,
+  "final_flag_count": 13,
+  "initial_status_counts": {
+    "outside_zip": 438,
+    "zip_polygon_unavailable": 69,
+    "missing_zip": 11,
+    "missing_or_invalid_coordinates": 6
+  },
+  "final_status_counts": {
+    "outside_zip": 7,
+    "zip_polygon_unavailable": 4,
+    "missing_or_invalid_coordinates": 2
+  },
+  "remaining": [
+    {
+      "listing_type": "buy",
+      "mls_number": "26867245",
+      "status": "outside_zip",
+      "address": "7042   Jon Allan Dr, Los Angeles 91605.0",
+      "reason": "Google returned only a city-level result for the confirmed Jon Allan Dr address"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "OC26121587MR",
+      "status": "outside_zip",
+      "address": "318  E William WAY, LA HABRA 90631.0",
+      "reason": "New construction; source MLS has no coordinates and Google returned only La Habra center"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "OC26176616MR",
+      "status": "outside_zip",
+      "address": "1492  W Badillo, SAN DIMAS 91773.0",
+      "reason": "Google and listing sources disagree on the ZIP/location of 1492 W Badillo"
+    },
+    {
+      "listing_type": "lease",
+      "mls_number": "IV22247260",
+      "status": "outside_zip",
+      "address": "26650 Timberline DR, Wrightwood 93544",
+      "reason": "Address and ZIP confirmed, but coordinate is outside available ZIP polygon"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "CV26174139MR",
+      "status": "outside_zip",
+      "address": "1161 6624 W 67 street, LOS ANGELES 90044.0",
+      "reason": "Source address combines two street numbers and cannot identify one property"
+    },
+    {
+      "listing_type": "lease",
+      "mls_number": "26866611",
+      "status": "outside_zip",
+      "address": "20212 W Gault St, Winnetka 91306",
+      "reason": "Google and listing sources disagree on the ZIP for W Gault St"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "SR26165278MR",
+      "status": "outside_zip",
+      "address": "42165   Silver Puffs, LANCASTER 93536.0",
+      "reason": "Google returned only Lancaster center for Silver Puffs Dr"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "226003892VC",
+      "status": "zip_polygon_unavailable",
+      "address": "12815   Umtali RD, TEHACHAPI 93561.0",
+      "reason": "ZIP polygon unavailable"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "226004247VC",
+      "status": "missing_or_invalid_coordinates",
+      "address": "639  N O ST, TULARE 93274.0",
+      "reason": "Listing is outside service area and has no coordinates"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "82060944ML",
+      "status": "missing_or_invalid_coordinates",
+      "address": "253   Catalina AVE, Pacifica 94044.0",
+      "reason": "Listing is outside service area and has no coordinates"
+    },
+    {
+      "listing_type": "buy",
+      "mls_number": "SR26167278MR",
+      "status": "zip_polygon_unavailable",
+      "address": "43037   Sachs Dr, LANCASTER 93556.0",
+      "reason": "ZIP polygon unavailable"
+    },
+    {
+      "listing_type": "lease",
+      "mls_number": "41080135CC",
+      "status": "zip_polygon_unavailable",
+      "address": "555 Ygnacio Valley Rd, WALNUT CREEK 94596",
+      "reason": "ZIP polygon unavailable"
+    },
+    {
+      "listing_type": "lease",
+      "mls_number": "PW23217874",
+      "status": "zip_polygon_unavailable",
+      "address": "4058 Green Ave, LOS ALAMITOS 90720",
+      "reason": "ZIP polygon unavailable"
+    }
+  ]
+}

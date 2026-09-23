@@ -1,0 +1,122 @@
+[
+  {
+    "listing_type": "lease",
+    "mls_number": "SB26201369MR",
+    "old_address": "11124 Burbank Street #108, NORTH HOLLYWOOD 91601",
+    "new_address": "11124 Burbank Blvd #108, NORTH HOLLYWOOD 91601",
+    "old_latitude": 34.1841718,
+    "old_longitude": -118.3208912,
+    "new_latitude": 34.1717498,
+    "new_longitude": -118.3734293,
+    "precision": "ROOFTOP",
+    "partial": true
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "P1-27317PF",
+    "old_address": "2707 Montrose AVE #10, GLENDALE 91201",
+    "new_address": "2707 Montrose Ave #10, GLENDALE 91020",
+    "old_latitude": 34.2183658,
+    "old_longitude": -118.2438144,
+    "new_latitude": 34.2152723,
+    "new_longitude": -118.2379631,
+    "precision": "ROOFTOP",
+    "partial": false
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26055342MR",
+    "old_address": "5036 W L-8 AVE #20, LANCASTER 93536",
+    "new_address": "5036 W Avenue L-8 #20, LANCASTER 93536",
+    "old_latitude": 34.6531277,
+    "old_longitude": -118.1295389,
+    "new_latitude": 34.6525733,
+    "new_longitude": -118.2200414,
+    "precision": "RANGE_INTERPOLATED",
+    "partial": false
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SR26194160MR",
+    "old_address": "45115   18th Street, LANCASTER 93534.0",
+    "new_address": "45115 18th St W, LANCASTER 93534.0",
+    "old_latitude": 34.7026989,
+    "old_longitude": -118.0977224,
+    "new_latitude": 34.7030093,
+    "new_longitude": -118.1637041,
+    "precision": "ROOFTOP",
+    "partial": false
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SR26167962MR",
+    "old_address": "44632   17th, LANCASTER 93534.0",
+    "new_address": "44632 17th St W, LANCASTER 93534.0",
+    "old_latitude": 34.6947348,
+    "old_longitude": -118.0995391,
+    "new_latitude": 34.6939386,
+    "new_longitude": -118.161093,
+    "precision": "ROOFTOP",
+    "partial": false
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "PW26156617MR",
+    "old_address": "210   Grand  #102, LONG BEACH 90803.0",
+    "new_address": "210 Grand Ave #102, LONG BEACH 90803.0",
+    "old_latitude": 33.7700504,
+    "old_longitude": -118.1937395,
+    "new_latitude": 33.7631283,
+    "new_longitude": -118.1477786,
+    "precision": "ROOFTOP",
+    "partial": false
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "DW26140100MR",
+    "old_address": "1947  E 74th st, LOS ANGELES 90003.0",
+    "new_address": "1947 E 74th St, LOS ANGELES 90001",
+    "old_latitude": 33.9734733,
+    "old_longitude": -118.2373999,
+    "new_latitude": 33.9730226,
+    "new_longitude": -118.2564099,
+    "precision": "RANGE_INTERPOLATED",
+    "partial": false
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "26881059",
+    "old_address": "1812 W Glenoaks Blvd #D, Glendale 91206",
+    "new_address": "1812 W Glenoaks Blvd #D, Glendale 91201",
+    "old_latitude": 34.1640021,
+    "old_longitude": -118.2797683,
+    "new_latitude": 34.1726653,
+    "new_longitude": -118.2923788,
+    "precision": "ROOFTOP",
+    "partial": false
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "PW26127420MR",
+    "old_address": "7033   Stewart and Gray RD #24, DOWNEY 90240.0",
+    "new_address": "7033 Stewart and Gray Rd #24, DOWNEY 90241",
+    "old_latitude": 33.9442498,
+    "old_longitude": -118.1606788,
+    "new_latitude": 33.9442108,
+    "new_longitude": -118.1607241,
+    "precision": "GEOMETRIC_CENTER",
+    "partial": false
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "PW26137202MR",
+    "old_address": "2805  E East 3rd Street #6, LONG BEACH 90814.0",
+    "new_address": "2805 E 3rd St #6, LONG BEACH 90814.0",
+    "old_latitude": 33.770301,
+    "old_longitude": -118.1920299,
+    "new_latitude": 33.7683589,
+    "new_longitude": -118.1584958,
+    "precision": "ROOFTOP",
+    "partial": false
+  }
+]

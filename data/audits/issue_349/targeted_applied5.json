@@ -1,0 +1,154 @@
+[
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25220571MR",
+    "old_address": "5145 Yarmouth, ENCINO 91436",
+    "new_address": "5145 Yarmouth Ave, ENCINO 91316",
+    "old_latitude": 34.1716381,
+    "old_longitude": -118.5203063,
+    "new_latitude": 34.1640566,
+    "new_longitude": -118.5205669
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25232661MR",
+    "old_address": "5145 Yarmouth, ENCINO 91436",
+    "new_address": "5145 Yarmouth Ave, ENCINO 91316",
+    "old_latitude": 34.1716381,
+    "old_longitude": -118.5203063,
+    "new_latitude": 34.1640566,
+    "new_longitude": -118.5205669
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25104175MR",
+    "old_address": "5501 Beckford, TARZANA 91436",
+    "new_address": " Beckford Ave, None 91356",
+    "old_latitude": 34.1741347,
+    "old_longitude": -118.55148330000002,
+    "new_latitude": 34.1709519,
+    "new_longitude": -118.5514188
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25161250MR",
+    "old_address": "5501 Beckford, TARZANA 91436",
+    "new_address": "5501 Beckford Ave, TARZANA 91356",
+    "old_latitude": 34.1741347,
+    "old_longitude": -118.5514833,
+    "new_latitude": 34.1709519,
+    "new_longitude": -118.5514188
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "26870213",
+    "old_address": "5614 Western  #2, Los Angeles 90062",
+    "new_address": "5614 Western Ave  #2, Los Angeles 90062",
+    "old_latitude": 34.071297,
+    "old_longitude": -118.309265,
+    "new_latitude": 33.9909698,
+    "new_longitude": -118.3086023
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "DW26174427MR",
+    "old_address": "7828   Bell, LOS ANGELES 90001.0",
+    "new_address": "7828 Bell Ave, LOS ANGELES 90001.0",
+    "old_latitude": 33.9775142,
+    "old_longitude": -118.1870156,
+    "new_latitude": 33.9677548,
+    "new_longitude": -118.2387517
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "PW26196814MR",
+    "old_address": "800 Pacific  #109, LONG BEACH 90813",
+    "new_address": "800 Pacific Ave  #109, LONG BEACH 90813",
+    "old_latitude": 33.8195729,
+    "old_longitude": -118.2202013,
+    "new_latitude": 33.7768624,
+    "new_longitude": -118.193435
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "DW26168124MR",
+    "old_address": "815   Pacific, LONG BEACH 90813.0",
+    "new_address": "815 Pacific Ave, LONG BEACH 90813.0",
+    "old_latitude": 33.8195729,
+    "old_longitude": -118.2202013,
+    "new_latitude": 33.776871,
+    "new_longitude": -118.1941288
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26154406MR",
+    "old_address": "2054  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2054  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26155342MR",
+    "old_address": "2046  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2046  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26155366MR",
+    "old_address": "2047  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2047  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26155402MR",
+    "old_address": "2055  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2055  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26170206MR",
+    "old_address": "2110  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2110  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26170246MR",
+    "old_address": "2106  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2106  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26184020MR",
+    "old_address": "2111  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2111  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SW26192618MR",
+    "old_address": "2017  E Norberry DR, LANCASTER 93534.0",
+    "new_address": "2017  E Norberry DR, LANCASTER 93535",
+    "old_zip": "93534.0",
+    "new_zip": "93535",
+    "evidence_url": "https://www.compass.com/homedetails/2111-E-Norberry-St-Lancaster-CA-93535/2FEAA8_pid/"
+  }
+]

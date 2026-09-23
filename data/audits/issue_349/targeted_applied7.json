@@ -1,0 +1,62 @@
+[
+  {
+    "listing_type": "lease",
+    "mls_number": "SB25089948MR",
+    "old_address": "1018 W 104 ST, LOS ANGELES 90044",
+    "new_address": " W 104th St, None 90044",
+    "old_latitude": 33.9418427,
+    "old_longitude": -118.326434,
+    "new_latitude": 33.9420374,
+    "new_longitude": -118.2926084
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "PW26200312MR",
+    "old_address": "2844 E 3rd  #201, LONG BEACH 90814",
+    "new_address": "2844 E 3rd St  #201, LONG BEACH 90814",
+    "old_latitude": 33.7705003,
+    "old_longitude": -118.1905867,
+    "new_latitude": 33.7677909,
+    "new_longitude": -118.1580324
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SB25232990MR",
+    "old_address": "3374 unit A  Fashion, LONG BEACH 90810",
+    "new_address": "3374 Fashion Ave  #A, LONG BEACH 90810",
+    "old_latitude": 33.7788612,
+    "old_longitude": -118.1896702,
+    "new_latitude": 33.8183996,
+    "new_longitude": -118.2086398
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SB25268657MR",
+    "old_address": "3374 unit A  Fashion, LONG BEACH 90810",
+    "new_address": "3374 Fashion Ave  #A, LONG BEACH 90810",
+    "old_latitude": 33.7788612,
+    "old_longitude": -118.1896702,
+    "new_latitude": 33.8183996,
+    "new_longitude": -118.2086398
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26024788MR",
+    "old_address": "28114 Seco Canyon  #156, SAUGUS 91390",
+    "new_address": "28114 Seco Canyon Rd  #156, SAUGUS 91390",
+    "old_latitude": 34.4444813,
+    "old_longitude": -118.5344978,
+    "new_latitude": 34.46139429999999,
+    "new_longitude": -118.5336655
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SW25256907MR",
+    "old_address": "928 W Angeleno  #C, BURBANK 91501",
+    "new_address": "928 W Angeleno Ave  #C, BURBANK 91506",
+    "old_latitude": 34.1709141,
+    "old_longitude": -118.3173429,
+    "new_latitude": 34.1712594,
+    "new_longitude": -118.3165826
+  }
+]

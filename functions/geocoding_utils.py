@@ -9,6 +9,8 @@ from functions.listing_pipeline_checkpoint import (
 from functions.listing_report_utils import normalize_mls_number
 from loguru import logger
 from typing import Tuple, Optional
+from difflib import SequenceMatcher
+import re
 import pandas as pd
 import sys
 
@@ -38,6 +40,44 @@ def _ensure_object_columns(
             df[column] = df[column].astype("object")
         else:
             df[column] = pd.Series(index=df.index, dtype="object")
+
+
+
+def _google_street_key(value: str) -> str:
+    """Normalize common street suffixes before comparing geocoder routes."""
+    normalized = re.sub(r"[^a-z0-9]", "", value.casefold())
+    for suffix in ("boulevard", "blvd", "avenue", "ave", "street", "st", "road", "rd"):
+        if normalized.endswith(suffix):
+            return normalized[: -len(suffix)]
+    return normalized
+
+
+def _google_result_matches_address(address: str, raw: dict) -> bool:
+    """Reject broad Google results using data returned in the same paid lookup."""
+    if raw.get("partial_match"):
+        return False
+    location_type = raw.get("geometry", {}).get("location_type")
+    if location_type not in {"ROOFTOP", "RANGE_INTERPOLATED", "GEOMETRIC_CENTER"}:
+        return False
+    expected_number = re.match(r"\s*(\d+)", address)
+    expected_zip = re.search(r"(?<!\d)(\d{5})(?:\.0)?\s*$", address)
+    actual_number = _google_address_component(raw, ("street_number",))
+    actual_zip = _google_address_component(raw, ("postal_code",))
+    actual_route = _google_address_component(raw, ("route",))
+    if expected_number and actual_number != expected_number.group(1):
+        return False
+    if expected_zip and actual_zip != expected_zip.group(1):
+        return False
+    street_line = address.split(",", 1)[0]
+    street_line = re.sub(r"^\s*\d+(?:\s+1/2)?\s*", "", street_line)
+    street_line = re.split(r"\s+(?:#{1,2}|apt\b|unit\b|ste\b)", street_line, maxsplit=1, flags=re.I)[0]
+    if street_line.strip():
+        score = SequenceMatcher(
+            None, _google_street_key(street_line), _google_street_key(actual_route or "")
+        ).ratio()
+        if score < 0.65:
+            return False
+    return True
 
 
 def return_coordinates(
@@ -85,9 +125,17 @@ def return_coordinates(
 
     # default: GoogleV3
     try:
-        loc = geolocator.geocode(address, timeout=10, components={'administrative_area': 'CA', 'country': 'US'})
+        zip_match = re.search(r"(?<!\d)(\d{5})(?:\.0)?\s*$", address)
+        components = {'administrative_area': 'CA', 'country': 'US'}
+        if zip_match:
+            components['postal_code'] = zip_match.group(1)
+        normalized_address = re.sub(r"(\d{5})\.0\s*$", r"\1", address)
+        loc = geolocator.geocode(normalized_address, timeout=10, components=components)
         if loc:
-            return loc.latitude, loc.longitude
+            if _google_result_matches_address(normalized_address, loc.raw):
+                return loc.latitude, loc.longitude
+            logger.warning(f"[{row_index}/{total_rows}] GoogleV3: rejected imprecise result for '{address}'")
+            return None, None
         logger.warning(f"[{row_index}/{total_rows}] GoogleV3: no result for '{address}'")
     except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
         logger.warning(f"[{row_index}/{total_rows}] GoogleV3 error: {e}")

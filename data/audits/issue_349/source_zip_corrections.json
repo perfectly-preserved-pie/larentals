@@ -1,0 +1,59 @@
+[
+  {
+    "listing_type": "buy",
+    "mls_number": "TR26010924MR",
+    "old_zip": "90732",
+    "new_zip": "91732",
+    "old_address": "11547   LOWER AZUSA  #C, EL MONTE 90732",
+    "new_address": "11547   LOWER AZUSA  #C, EL MONTE 91732",
+    "latitude": 34.0916168,
+    "longitude": -118.0160678,
+    "evidence_url": "https://www.mlslistings.com/Property/CRTR26010924/11547-lower-azusa-c-el-monte-ca-91732?view=md"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SR26018258MR",
+    "old_zip": "91606.0",
+    "new_zip": "91706",
+    "old_address": "4306   baldwin park BLVD, BALDWIN PARK 91606.0",
+    "new_address": "4306   baldwin park BLVD, BALDWIN PARK 91706",
+    "latitude": 34.0907631,
+    "longitude": -117.9645996,
+    "evidence_url": "https://www.redfin.com/CA/Baldwin-Park/4306-Baldwin-Park-Blvd-91706/home/7982346"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "WS26121911MR",
+    "old_zip": "91750",
+    "new_zip": "91755",
+    "old_address": "130 New Ave #5, MONTEREY PARK 91750",
+    "new_address": "130 New Ave #5, MONTEREY PARK 91755",
+    "latitude": 34.0628173,
+    "longitude": -118.1083079,
+    "evidence_url": "https://www.redfin.com/CA/Monterey-Park/130-New-Ave-91755/unit-5/apartment/202146900"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "WS26115741MR",
+    "old_zip": "91750",
+    "new_zip": "91755",
+    "old_address": "130 New Ave #6, MONTEREY PARK 91750",
+    "new_address": "130 New Ave #6, MONTEREY PARK 91755",
+    "latitude": 34.0625225,
+    "longitude": -118.1081209,
+    "evidence_url": "https://www.apartments.com/130-new-ave-monterey-park-ca/2d9re58/"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25037140MR",
+    "old_zip": "None",
+    "new_zip": "91403",
+    "old_address": "4383 Sepulveda BLVD #401, SHERMAN OAKS 91403",
+    "new_address": "4383 Sepulveda BLVD #401, SHERMAN OAKS 91403",
+    "latitude": 34.14981,
+    "longitude": -118.46782,
+    "evidence_url": "https://www.rentseeker.com/rent/apartment/california/los-angeles/154774/4383-sepulveda-blvd",
+    "old_city": "None",
+    "new_city": "SHERMAN OAKS"
+  }
+]

@@ -9,6 +9,7 @@ from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
 from functions.data_paths import CHECKPOINT_DIR, LARENTALS_DB_PATH
 from functions.geocoding_utils import *
+from functions.listing_location_overrides import apply_reviewed_location_overrides
 from functions.listing_pipeline_checkpoint import (
   ListingCheckpointStore,
   file_fingerprint,
@@ -187,7 +188,8 @@ def main() -> None:
     df = pd.concat(renamed_sheets_corrected.values(), ignore_index=True)
 
     # Drop all rows with misc/irrelevant data
-    df.dropna(subset=['mls_number'], inplace=True)
+    df.dropna(subset=['mls_number', 'street_address'], inplace=True)
+    df = df[df['street_address'].astype(str).str.strip().ne('')]
 
     # Remove all cells in mls_number that have more than 20 characters
     # To get rid of garbage data
@@ -196,6 +198,10 @@ def main() -> None:
     if SAMPLE_N:
       df = df.sample(SAMPLE_N, random_state=1)
       logger.info(f"[buy] TEST MODE: sampled {SAMPLE_N} new rows")
+
+    # Normalize Excel/CSV numeric ZIPs before building geocoder queries.
+    df["zip_code"] = df["zip_code"].astype("string").str.replace(r"\.0$", "", regex=True)
+    df = apply_reviewed_location_overrides(df, "buy")
 
     # Define columns to remove all non-numeric characters from
     cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']

@@ -1,0 +1,108 @@
+[
+  {
+    "listing_type": "buy",
+    "mls_number": "23280735",
+    "old_address": "28711 Pacific Coast HWY   #18, Malibu 90265",
+    "new_address": "28711 Pacific Coast HWY   #18, Malibu 90265",
+    "old_latitude": null,
+    "old_longitude": null,
+    "new_latitude": 34.0208673,
+    "new_longitude": -118.7975875,
+    "google_precision": "GEOMETRIC_CENTER"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "26874937",
+    "old_address": "11750  W Sunset Blvd #301, Los Angeles 90049.0",
+    "new_address": "11750  W Sunset Blvd #301, Los Angeles 90049.0",
+    "old_latitude": 34.0731902,
+    "old_longitude": -118.2514331,
+    "new_latitude": 34.0637334,
+    "new_longitude": -118.4709763,
+    "google_precision": "GEOMETRIC_CENTER"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "IG26164136MR",
+    "old_address": "10251   Angel, LOS ANGELES 91331.0",
+    "new_address": "10251 Angel Ln, PACOIMA 91331.0",
+    "old_latitude": 34.0549076,
+    "old_longitude": -118.242643,
+    "new_latitude": 34.2568172,
+    "new_longitude": -118.4047032,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "OC26161534MR",
+    "old_address": "1507   Mission, LOS ANGELES 90047.0",
+    "new_address": "1507 Mission Ln, LOS ANGELES 90047.0",
+    "old_latitude": 34.1157111,
+    "old_longitude": -118.1513546,
+    "new_latitude": 33.9242612,
+    "new_longitude": -118.3026553,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SB26132216MR",
+    "old_address": "4265 Marina City DR #805, MARINA DEL REY 90292",
+    "new_address": "4265 Marina City DR #805, MARINA DEL REY 90292",
+    "old_latitude": null,
+    "old_longitude": null,
+    "new_latitude": 33.9843794,
+    "new_longitude": -118.455379,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR25215088MR",
+    "old_address": "17000 Burbank BLVD #216, ENCINO 91316",
+    "new_address": "17000 Burbank BLVD #216, ENCINO 91316",
+    "old_latitude": null,
+    "old_longitude": null,
+    "new_latitude": 34.1718683,
+    "new_longitude": -118.5034734,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26163104MR",
+    "old_address": "15425 Sherman  #101, VAN NUYS 91406",
+    "new_address": "15425 Sherman Way, VAN NUYS 91406",
+    "old_latitude": null,
+    "old_longitude": null,
+    "new_latitude": 34.20174799999999,
+    "new_longitude": -118.469425,
+    "google_precision": "GEOMETRIC_CENTER"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "TR25271617MR",
+    "old_address": "320 A S Lincoln Avenue, MORNINGSIDE PARK 91755",
+    "new_address": "320 A S Lincoln Avenue , MONTEREY PARK 91755",
+    "old_latitude": 33.9599876,
+    "old_longitude": -118.3265074,
+    "new_latitude": 34.0591419,
+    "new_longitude": -118.1208826,
+    "google_precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26008965MR",
+    "old_zip": "91384",
+    "new_zip": "91342",
+    "old_address": "12867 1/2  Norris AVE, SYLMAR 91384",
+    "new_address": "12867 1/2  Norris AVE, SYLMAR 91342",
+    "evidence_url": "https://hotpads.com/12867-12-norris-ave-sylmar-ca-91342-24wpkx2/pad"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26049795MR",
+    "old_zip": "90717",
+    "new_zip": "90044",
+    "old_address": "932 W 74th ST, LOS ANGELES 90717",
+    "new_address": "932 W 74th ST, LOS ANGELES 90044",
+    "evidence_url": "https://www.zillow.com/homedetails/932-W-74th-St-Los-Angeles-CA-90044/2065434335_zpid/"
+  }
+]

@@ -1,0 +1,191 @@
+[
+  {
+    "group_key": "22533 s vermont ave, torrance, ca 90502|90502",
+    "query": "22533 S Vermont AVE, TORRANCE, CA 90502",
+    "returned_address": "22533 S Vermont Ave, Torrance, CA 90502, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "16169 w sunset blvd, los angeles, ca 90272|90272",
+    "query": "16169 W Sunset Blvd, Los Angeles, CA 90272",
+    "returned_address": "16169 Sunset Blvd, Pacific Palisades, CA 90272, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "18307 burbank blvd, los angeles, ca 91356|91356",
+    "query": "18307 Burbank Blvd, Los Angeles, CA 91356",
+    "returned_address": "18307 Burbank Blvd, Tarzana, CA 91356, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "11730 w sunset blvd, los angeles, ca 90049|90049",
+    "query": "11730 W Sunset Blvd, Los Angeles, CA 90049",
+    "returned_address": "11730 Sunset Blvd, Los Angeles, CA 90049, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "3635 e avenue q14, palmdale, ca 93550|93550",
+    "query": "3635 E Avenue Q14, PALMDALE, CA 93550",
+    "returned_address": "3635 Ave Q-14, Palmdale, CA 93550, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "11370 w sunset blvd, los angeles, ca 90049|90049",
+    "query": "11370 W Sunset BLVD, LOS ANGELES, CA 90049",
+    "returned_address": "11370 Sunset Blvd, Los Angeles, CA 90049, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "15351 orange ave, paramount, ca 90723|90723",
+    "query": "15351 Orange AVE, PARAMOUNT, CA 90723",
+    "returned_address": "15351 Orange Ave, Paramount, CA 90723, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "1326 west ave h10, lancaster, ca 93534|93534",
+    "query": "1326 West Ave H10, LANCASTER, CA 93534",
+    "returned_address": "1326 W Ave H-10, Lancaster, CA 93534, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "2502 manhattan beach blvd, gardena, ca 90249|90249",
+    "query": "2502 Manhattan Beach BLVD, GARDENA, CA 90249",
+    "returned_address": "2502 Manhattan Beach Blvd, Gardena, CA 90249, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "10375 washington blvd, culver city, ca 90232|90232",
+    "query": "10375 Washington Blvd, Culver City, CA 90232",
+    "returned_address": "10375 Washington Blvd, Culver City, CA 90232, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 3
+  },
+  {
+    "group_key": "4125 s figueroa st, los angeles, ca 90037|90037",
+    "query": "4125 S Figueroa ST, LOS ANGELES, CA 90037",
+    "returned_address": "4125 S Figueroa St, Los Angeles, CA 90037, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 3
+  },
+  {
+    "group_key": "16133 s vermont ave, gardena, ca 90247|90247",
+    "query": "16133 S Vermont AVE, GARDENA, CA 90247",
+    "returned_address": "16133 S Vermont Ave, Gardena, CA 90247, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "10375 w washington blvd blvd, culver city, ca 90232|90232",
+    "query": "10375 W Washington Blvd Blvd, Culver City, CA 90232",
+    "returned_address": "10375 Washington Blvd, Culver City, CA 90232, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "850 crenshaw blvd, los angeles, ca 90005|90005",
+    "query": "850 Crenshaw Blvd, Los Angeles, CA 90005",
+    "returned_address": "850 S Crenshaw Blvd, Los Angeles, CA 90005, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "3166 s s sepulveda blvd, los angeles, ca 90034|90034",
+    "query": "3166 S S Sepulveda Blvd, Los Angeles, CA 90034",
+    "returned_address": "3166 S Sepulveda Blvd, Los Angeles, CA 90034, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "4633 marine ave, lawndale, ca 90260|90260",
+    "query": "4633 Marine AVE, LAWNDALE, CA 90260",
+    "returned_address": "4633 Marine Ave, Lawndale, CA 90260, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "400 s broadway, los angeles, ca 90013|90013",
+    "query": "400 S Broadway, LOS ANGELES, CA 90013",
+    "returned_address": "400 S Broadway, Los Angeles, CA 90013, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 6
+  },
+  {
+    "group_key": "4242 w avenue l, lancaster, ca 93536|93536",
+    "query": "4242 W Avenue L, LANCASTER, CA 93536",
+    "returned_address": "4242 W Ave L, Lancaster, CA 93536, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "6716 clybourn ave, los angeles, ca 91606|91606",
+    "query": "6716 Clybourn AVE, LOS ANGELES, CA 91606",
+    "returned_address": "6716 N Clybourn Ave, North Hollywood, CA 91606, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "11970 montana, brentwood, ca 90049|90049",
+    "query": "11970 Montana, BRENTWOOD, CA 90049",
+    "returned_address": "11970 Montana Ave, Los Angeles, CA 90049, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "3810 wilshire blvd, los angeles, ca 90010|90010",
+    "query": "3810 Wilshire Blvd, Los Angeles, CA 90010",
+    "returned_address": "3810 Wilshire Blvd, Los Angeles, CA 90010, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 2
+  },
+  {
+    "group_key": "1135 w pillsbury st, lancaster, ca 93534|93534",
+    "query": "1135 W Pillsbury ST, LANCASTER, CA 93534",
+    "returned_address": "1135 Pillsbury St, Lancaster, CA 93534, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "348 s hauser blvd, los angeles, ca 90036|90036",
+    "query": "348 S Hauser Blvd, Los Angeles, CA 90036",
+    "returned_address": "348 Hauser Blvd, Los Angeles, CA 90036, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  },
+  {
+    "group_key": "28924 raintree ln, saugus, ca 91390|91390",
+    "query": "28924 Raintree LN, SAUGUS, CA 91390",
+    "returned_address": "28924 Raintree Ln, Santa Clarita, CA 91390, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "29053 raintree, saugus, ca 91390|91390",
+    "query": "29053 Raintree, SAUGUS, CA 91390",
+    "returned_address": "29053 Raintree Ln, Santa Clarita, CA 91390, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "28523 red cedar, saugus, ca 91390|91390",
+    "query": "28523 Red Cedar, SAUGUS, CA 91390",
+    "returned_address": "28523 Red Cedar Pl, Santa Clarita, CA 91390, USA",
+    "reason": "matching_rooftop_partial",
+    "member_count": 1
+  },
+  {
+    "group_key": "1724 n highland ave ave, los angeles, ca 90028|90028",
+    "query": "1724 N Highland Ave Ave, Los Angeles, CA 90028",
+    "returned_address": "1724 Highland Ave, Los Angeles, CA 90028, USA",
+    "reason": "exact_geometric_center",
+    "member_count": 1
+  }
+]

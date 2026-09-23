@@ -1,0 +1,57 @@
+[
+  {
+    "listing_type": "buy",
+    "mls_number": "PW26177832MR",
+    "old_address": "10400   Mary, LOS ANGELES 90002.0",
+    "new_address": "10400 Mary Ave, LOS ANGELES 90002.0",
+    "old_latitude": 33.9904085,
+    "old_longitude": -118.0998615,
+    "new_latitude": 33.9425828,
+    "new_longitude": -118.2495385,
+    "precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "SB26167203MR",
+    "old_address": "8832   Prince, LOS ANGELES 90002.0",
+    "new_address": "8832 Prince Ave, LOS ANGELES 90002.0",
+    "old_latitude": 34.0729945,
+    "old_longitude": -118.1986623,
+    "new_latitude": 33.956308,
+    "new_longitude": -118.2479749,
+    "precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "26655135",
+    "old_address": "18558 Roscoe Blvd #319, Northridge 91325",
+    "new_address": "18558 Roscoe Blvd #319, Northridge 91324",
+    "old_latitude": 34.2227013,
+    "old_longitude": -118.3556328,
+    "new_latitude": 34.2201023,
+    "new_longitude": -118.5381981,
+    "precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26022546MR",
+    "old_address": "14458 Brand AVE, SAN FERNANDO 91340",
+    "new_address": "14458 Brand Blvd, SAN FERNANDO 91340",
+    "old_latitude": 34.1345332,
+    "old_longitude": -118.2550156,
+    "new_latitude": 34.2753511,
+    "new_longitude": -118.4478656,
+    "precision": "ROOFTOP"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "TR26138619MR",
+    "old_address": "4339 Normal  #6, LOS ANGELES 90029",
+    "new_address": "4339 Normal Ave  #6, LOS ANGELES 90029",
+    "old_latitude": 33.9892787,
+    "old_longitude": -118.1640088,
+    "new_latitude": 34.0871014,
+    "new_longitude": -118.2906654,
+    "precision": "ROOFTOP"
+  }
+]

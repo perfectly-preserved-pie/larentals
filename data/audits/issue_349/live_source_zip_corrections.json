@@ -1,0 +1,101 @@
+[
+  {
+    "listing_type": "lease",
+    "mls_number": "SR26114937MR",
+    "old_zip": "91352",
+    "new_zip": "91351",
+    "old_address": "26844 Albion Way, CANYON COUNTRY 91352",
+    "new_address": "26844 Albion Way, CANYON COUNTRY 91351",
+    "latitude": 34.4153953,
+    "longitude": -118.4810757,
+    "evidence_url": "https://www.redfin.com/CA/Canyon-Country/26844-Albion-Way-91351/home/108609855"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SB25209687MR",
+    "old_zip": "90025",
+    "new_zip": "90250",
+    "old_address": "11708 Menlo AVE, HAWTHORNE 90025",
+    "new_address": "11708 Menlo AVE, HAWTHORNE 90250",
+    "latitude": 33.9236861,
+    "longitude": -118.3471599,
+    "evidence_url": "https://www.redfin.com/CA/Hawthorne/11708-Menlo-Ave-90250/home/6502621"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "BB26036504MR",
+    "old_zip": "91402",
+    "new_zip": "91042",
+    "old_address": "10256 McClemont Avenue, TUJUNGA 91402",
+    "new_address": "10256 McClemont Avenue, TUJUNGA 91042",
+    "latitude": 34.2577361,
+    "longitude": -118.2950995,
+    "evidence_url": "https://www.apartments.com/10256-mcclemont-ave-los-angeles-ca/4nh9s6h/"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "BB26036751MR",
+    "old_zip": "91402",
+    "new_zip": "91042",
+    "old_address": "10256 McClemont Avenue, TUJUNGA 91402",
+    "new_address": "10256 McClemont Avenue, TUJUNGA 91042",
+    "latitude": 34.2577361,
+    "longitude": -118.2950995,
+    "evidence_url": "https://www.apartments.com/10256-mcclemont-ave-los-angeles-ca/4nh9s6h/"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "26873517",
+    "old_zip": "90026",
+    "new_zip": "90036",
+    "old_address": "105 S Fairfax Ave #305, Los Angeles 90026",
+    "new_address": "105 S Fairfax Ave #305, Los Angeles 90036",
+    "latitude": 34.0714593,
+    "longitude": -118.3614301,
+    "evidence_url": "https://www.thefairfaxla.com/mapsanddirections"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "CV26175754MR",
+    "old_zip": "91502",
+    "new_zip": "91204",
+    "old_address": "211 Magnolia AVE #106, GLENDALE 91502",
+    "new_address": "211 Magnolia AVE #106, GLENDALE 91204",
+    "latitude": 34.1310775,
+    "longitude": -118.2551088,
+    "evidence_url": "https://www.realtor.com/realestateandhomes-detail/211-Magnolia-Ave_Glendale_CA_91204_M16192-25978"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "SB26090596MR",
+    "old_zip": "90240",
+    "new_zip": "90242",
+    "old_address": "8235 Alameda St, DOWNEY 90240",
+    "new_address": "8235 Alameda St, DOWNEY 90242",
+    "latitude": 33.9269226,
+    "longitude": -118.1400023,
+    "evidence_url": "https://www.realtor.com/realestateandhomes-detail/8235-Alameda-St_Downey_CA_90242_M22469-40606"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "CV26196389MR",
+    "old_zip": "91768.0",
+    "new_zip": "91767",
+    "old_address": "217   Fanshaw AVE, POMONA 91768.0",
+    "new_address": "217   Fanshaw AVE, POMONA 91767",
+    "latitude": 34.1042044,
+    "longitude": -117.7463875,
+    "evidence_url": "https://www.redfin.com/CA/Pomona/217-Fanshaw-Ave-91767/home/7909932"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "P1-28190PF",
+    "old_zip": "91350.0",
+    "new_zip": "91355",
+    "old_address": "24412   Hampton DR #A, SANTA CLARITA 91350.0",
+    "new_address": "24412   Hampton DR #A, SANTA CLARITA 91355",
+    "latitude": 34.4046261,
+    "longitude": -118.5627378,
+    "evidence_url": "https://www.zillow.com/homedetails/24412-Hampton-Dr-UNIT-C-Santa-Clarita-CA-91355/20228459_zpid/"
+  }
+]

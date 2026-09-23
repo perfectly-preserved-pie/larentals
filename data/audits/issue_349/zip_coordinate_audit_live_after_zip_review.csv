@@ -1,0 +1,114 @@
+mls_number,full_street_address,city,zip_code,latitude,longitude,geocode_status,listing_type,zip_source,audit_status,distance_outside_zip_miles
+IG26164136MR,"10251   Angel, LOS ANGELES 91331.0",LOS ANGELES,91331,34.0549076,-118.242643,cached,buy,source_column,outside_zip,15.537859010637048
+SR26022546MR,"14458 Brand AVE, SAN FERNANDO 91340",SAN FERNANDO,91340,34.1345332,-118.2550156,,lease,source_column,outside_zip,13.772297144082534
+TR25271617MR,"320 A S Lincoln Avenue, MORNINGSIDE PARK 91755",MORNINGSIDE PARK,91755,33.9599876,-118.3265074,,lease,source_column,outside_zip,12.363402328146645
+OC26161534MR,"1507   Mission, LOS ANGELES 90047.0",LOS ANGELES,90047,34.1157111,-118.1513546,cached,buy,source_column,outside_zip,12.197501563514153
+SR26008965MR,"12867 1/2  Norris AVE, SYLMAR 91384",SYLMAR,91384,34.3027012,-118.4533138,,lease,source_column,outside_zip,11.430939810000925
+SR26049795MR,"932 W 74th ST, LOS ANGELES 90717",LOS ANGELES,90717,33.9727735,-118.3035326,,lease,source_column,outside_zip,11.38498799139147
+26874937,"11750  W Sunset Blvd #301, Los Angeles 90049.0",Los Angeles,90049,34.0731902,-118.2514331,success,buy,source_column,outside_zip,11.312468452653055
+TR26138619MR,"4339 Normal  #6, LOS ANGELES 90029",LOS ANGELES,90029,33.9892787,-118.1640088,,lease,source_column,outside_zip,9.464634091612886
+SR26074697MR,"2718  E  Avenue, PALMDALE 93550.0",PALMDALE,93550,34.6233004,-117.8944705,,buy,source_column,outside_zip,8.84978091499487
+AR26128316MR,"1421 S Valencia ST, LOS ANGELES 90015",LOS ANGELES,90015,34.0844673,-118.1131919,,lease,source_column,outside_zip,8.465547846015111
+26655135,"18558 Roscoe Blvd #319, Northridge 91325",Northridge,91325,34.2227013,-118.3556328,,lease,source_column,outside_zip,8.321652679918992
+26867245,"7042   Jon Allan Dr, Los Angeles 91605.0",Los Angeles,91605,34.0752676,-118.3803387,success,buy,source_column,outside_zip,8.121845787347084
+SB26167203MR,"8832   Prince, LOS ANGELES 90002.0",LOS ANGELES,90002,34.0729945,-118.1986623,success,buy,source_column,outside_zip,7.981792535783432
+PW26177832MR,"10400   Mary, LOS ANGELES 90002.0",LOS ANGELES,90002,33.9904085,-118.0998615,success,buy,source_column,outside_zip,7.845722276634255
+OC26121587MR,"318  E William WAY, LA HABRA 90631.0",LA HABRA,90631,34.010644,-118.1046303,,buy,source_column,outside_zip,7.625057239424309
+CV26155023MR,"7040   3rd, LOS ANGELES 90043.0",LOS ANGELES,90043,34.0090301,-118.4881876,success,buy,source_column,outside_zip,7.490157285070925
+PW26100150MR,"6502   4th, LOS ANGELES 90043.0",LOS ANGELES,90043,34.0343847,-118.1974516,,buy,source_column,outside_zip,7.213785804457164
+DW26193684MR,"6534   4th, LOS ANGELES 90043.0",LOS ANGELES,90043,34.0343847,-118.1974516,success,buy,source_column,outside_zip,7.213785804457164
+SR25144888MR,"3112 W  Avenue #F, PALMDALE 93551",PALMDALE,93551,34.7474904,-118.2546396,,lease,source_column,outside_zip,7.024033012678849
+SR25020807MR,"3112 W  Avenue #F, PALMDALE 93551",None,93551,34.7474904,-118.2546396,,lease,address_suffix,outside_zip,7.024033012678849
+TR26127636MR,"435 Mullberry, MONTEBELLO 90604",MONTEBELLO,90604,34.0289457,-118.0987731,,lease,source_column,outside_zip,6.924540067489909
+SR26191008MR,"2928   Virginia, LOS ANGELES 90016.0",LOS ANGELES,90016,33.9235977,-118.419513,success,buy,source_column,outside_zip,6.850125253946295
+PW26171272MR,"3020 Virginia  #1/2, LOS ANGELES 90016",LOS ANGELES,90016,33.9308988,-118.3962571,cached,lease,source_column,outside_zip,6.061642804102372
+SR26145166MR,"42307   61st st w, QUARTZ HILL 93535.0",QUARTZ HILL,93535,34.6505261,-118.238647,,buy,source_column,outside_zip,5.998308989039518
+SR26178157MR,"43334 32nd  #34, LANCASTER 93536",LANCASTER,93536,34.6680835,-118.0724051,success,lease,source_column,outside_zip,5.3043352387725875
+SR26096168MR,"44150 30th, LANCASTER 93536",LANCASTER,93536,34.6898482,-118.0769062,,lease,source_column,outside_zip,5.045086820422511
+SR26192406MR,"44266 27th, LANCASTER 93536",LANCASTER,93536,34.6897995,-118.0813806,success,lease,source_column,outside_zip,4.790470603387774
+OC26176616MR,"1492  W Badillo, SAN DIMAS 91773.0",SAN DIMAS,91773,34.0861195,-117.9360251,success,buy,source_column,outside_zip,4.703646321860232
+SR26140541MR,"44036 25th, LANCASTER 93536",LANCASTER,93536,34.6914183,-118.0858516,,lease,source_column,outside_zip,4.537666448064586
+SR25256235MR,"44036 25th  #B7, LANCASTER 93536",LANCASTER,93536,34.6914183,-118.0858516,,lease,source_column,outside_zip,4.537666448064586
+SR26177383MR,"44338 23rd ST, LANCASTER 93536",LANCASTER,93536,34.6957009,-118.0880814,reused,lease,source_column,outside_zip,4.42146462272256
+DW26193178MR,"5939   5th, LOS ANGELES 90043.0",LOS ANGELES,90043,34.065322,-118.3292274,success,buy,source_column,outside_zip,4.251190525471563
+TR26201512MR,"5931   5th, LOS ANGELES 90043.0",LOS ANGELES,90043,34.065322,-118.3292274,success,buy,source_column,outside_zip,4.251190525471563
+PW26143877MR,"3923 S South  Normandie AVE, LOS ANGELES 90037",LOS ANGELES,90037,33.9293965,-118.3003363,,lease,source_column,outside_zip,4.115444100836299
+SB25183879MR,"1053 W Ave #J14, LANCASTER 93534",LANCASTER,93534,34.6768837,-118.2392873,,lease,source_column,outside_zip,4.045135641960464
+26870213,"5614 Western  #2, Los Angeles 90062",Los Angeles,90062,34.071297,-118.309265,success,lease,source_column,outside_zip,3.6577719146591368
+SR25104175MR,"5501 Beckford, TARZANA 91436",None,91436,34.1741347,-118.55148330000002,,lease,address_suffix,outside_zip,2.8250156369052366
+SR25161250MR,"5501 Beckford, TARZANA 91436",TARZANA,91436,34.1741347,-118.5514833,,lease,source_column,outside_zip,2.8250156369052366
+DW26174427MR,"7828   Bell, LOS ANGELES 90001.0",LOS ANGELES,90001,33.9775142,-118.1870156,success,buy,source_column,outside_zip,2.685904804847626
+IV22247260,"26650 Timberline DR, Wrightwood 93544",None,93544,34.3609311,-117.65441639999999,,lease,address_suffix,outside_zip,2.5016509422103477
+SW26184020MR,"2111  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6943515,-118.0878724,success,buy,source_column,outside_zip,2.4167820225142256
+SW26170246MR,"2106  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6938984,-118.0879344,success,buy,source_column,outside_zip,2.4129928794911635
+SW26170206MR,"2110  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6938984,-118.0879344,success,buy,source_column,outside_zip,2.4129928794911635
+SB26201369MR,"11124 Burbank Street #108, NORTH HOLLYWOOD 91601",NORTH HOLLYWOOD,91601,34.1841718,-118.3208912,success,lease,source_column,outside_zip,2.198569151885306
+P1-27317PF,"2707 Montrose AVE #10, GLENDALE 91201",GLENDALE,91201,34.2183658,-118.2438144,,lease,source_column,outside_zip,2.178259099112555
+SR26055342MR,"5036 W L-8 AVE #20, LANCASTER 93536",LANCASTER,93536,34.6531277,-118.1295389,,lease,source_column,outside_zip,2.0523728898440603
+DW26168124MR,"815   Pacific, LONG BEACH 90813.0",LONG BEACH,90813,33.8195729,-118.2202013,success,buy,source_column,outside_zip,2.049232011413343
+PW26196814MR,"800 Pacific  #109, LONG BEACH 90813",LONG BEACH,90813,33.8195729,-118.2202013,success,lease,source_column,outside_zip,2.049232011413343
+SW26154406MR,"2054  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6936026,-118.0955847,,buy,source_column,outside_zip,1.977562127498843
+SW26155342MR,"2046  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6936026,-118.0955847,success,buy,source_column,outside_zip,1.977562127498843
+SW26155366MR,"2047  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6936084,-118.0955963,success,buy,source_column,outside_zip,1.976904703195729
+SW26192618MR,"2017  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6936084,-118.0955963,success,buy,source_column,outside_zip,1.976904703195729
+SW26155402MR,"2055  E Norberry DR, LANCASTER 93534.0",LANCASTER,93534,34.6936084,-118.0955963,success,buy,source_column,outside_zip,1.976904703195729
+CV26174139MR,"1161 6624 W 67 street, LOS ANGELES 90044.0",LOS ANGELES,90044,33.978116,-118.3352236,success,buy,source_column,outside_zip,1.9686645028583412
+SR26194160MR,"45115   18th Street, LANCASTER 93534.0",LANCASTER,93534,34.7026989,-118.0977224,success,buy,source_column,outside_zip,1.8642395895881603
+26866611,"20212 W Gault St, Winnetka 91306",Winnetka,91306,34.1997742,-118.619081,cached,lease,source_column,outside_zip,1.7535096243439403
+SR26167962MR,"44632   17th, LANCASTER 93534.0",LANCASTER,93534,34.6947348,-118.0995391,success,buy,source_column,outside_zip,1.7527330846853788
+PW26156617MR,"210   Grand  #102, LONG BEACH 90803.0",LONG BEACH,90803,33.7700504,-118.1937395,cached,buy,source_column,outside_zip,1.4812565562198572
+DW26140100MR,"1947  E 74th st, LOS ANGELES 90003.0",LOS ANGELES,90003,33.9734733,-118.2373999,,buy,source_column,outside_zip,1.4708995160994645
+26881059,"1812 W Glenoaks Blvd #D, Glendale 91206",Glendale,91206,34.1640021,-118.2797683,success,lease,source_column,outside_zip,1.4702445107094309
+PW26127420MR,"7033   Stewart and Gray RD #24, DOWNEY 90240.0",DOWNEY,90240,33.9442498,-118.1606788,,buy,source_column,outside_zip,1.4045117562498175
+PW26137202MR,"2805  E East 3rd Street #6, LONG BEACH 90814.0",LONG BEACH,90814,33.770301,-118.1920299,,buy,source_column,outside_zip,1.4041322333171167
+SB25089948MR,"1018 W 104 ST, LOS ANGELES 90044",None,90044,33.9418427,-118.326434,,lease,address_suffix,outside_zip,1.3266923071242698
+PW26200312MR,"2844 E 3rd  #201, LONG BEACH 90814",LONG BEACH,90814,33.7705003,-118.1905867,success,lease,source_column,outside_zip,1.3210592832080363
+SB25268657MR,"3374 unit A  Fashion, LONG BEACH 90810",LONG BEACH,90810,33.7788612,-118.1896702,,lease,source_column,outside_zip,1.204319509274005
+SB25232990MR,"3374 unit A  Fashion, LONG BEACH 90810",LONG BEACH,90810,33.7788612,-118.1896702,,lease,source_column,outside_zip,1.204319509274005
+SR25220571MR,"5145 Yarmouth, ENCINO 91436",ENCINO,91436,34.1716381,-118.5203063,,lease,source_column,outside_zip,1.101032658006753
+SR25232661MR,"5145 Yarmouth, ENCINO 91436",ENCINO,91436,34.1716381,-118.5203063,,lease,source_column,outside_zip,1.101032658006753
+SR26024788MR,"28114 Seco Canyon  #156, SAUGUS 91390",SAUGUS,91390,34.4444813,-118.5344978,,lease,source_column,outside_zip,1.0683478157661417
+SW25256907MR,"928 W Angeleno  #C, BURBANK 91501",BURBANK,91501,34.1709141,-118.3173429,,lease,source_column,outside_zip,1.0551885301786217
+SR26165278MR,"42165   Silver Puffs, LANCASTER 93536.0",LANCASTER,93536,34.703947,-118.1481016,success,buy,source_column,outside_zip,1.0158814903416293
+226003892VC,"12815   Umtali RD, TEHACHAPI 93561.0",TEHACHAPI,93561,35.1753507,-118.3561102,success,buy,source_column,zip_polygon_unavailable,
+226004247VC,"639  N O ST, TULARE 93274.0",TULARE,93274,,,failed,buy,source_column,missing_or_invalid_coordinates,
+23280735,"28711 Pacific Coast HWY   #18, Malibu 90265",Malibu,90265,,,,buy,source_column,missing_or_invalid_coordinates,
+82060944ML,"253   Catalina AVE, Pacifica 94044.0",Pacifica,94044,,,failed,buy,source_column,missing_or_invalid_coordinates,
+A -- Attached,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+B -- Builder,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+D -- Detached,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+E -- Estimated,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+P - Public Record,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+S -- Seller,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+SR26167278MR,"43037   Sachs Dr, LANCASTER 93556.0",LANCASTER,93556,34.6654098,-118.1887788,success,buy,source_column,zip_polygon_unavailable,
+SR26200295MR,"40546   172nd Street East, LAKE LOS ANGELES 93525.0",LAKE LOS ANGELES,93525,34.6188639,-117.82339,success,buy,source_column,zip_polygon_unavailable,
+Sub Type,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+Zelle : 323-875-9044,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+“Beds/Baths”,,,,36.778261,-119.4179324,failed,buy,missing,missing_zip,
+41080135CC,"555 Ygnacio Valley Rd, WALNUT <NA>",None,,37.9065147,-122.0623913,failed,lease,missing,missing_zip,
+CV23042565,"3420 Falcon ST   #102, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23079669,"3420 Falcon ST   #109, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23081475,"3420 Falcon ST   #217, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23162640,"3420 Falcon ST   #108, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23167483,"3420 Falcon ST   #208, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23181488,"3420 Falcon ST   #221, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23204338,"3420 Falcon ST   #222, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV23204950,"3420 Falcon ST   #212, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV24002830,"3420 Falcon ST   #212, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV24002964,"3420 Falcon ST   #117, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV24015078,"3420 Falcon ST   #207, Pomona 91762",None,91762,34.1080537,-117.7530477,,lease,address_suffix,zip_polygon_unavailable,
+CV24132011,"3420 Falcon ST   #217, Pomona 91762",None,91762,34.1083806,-117.75381910000002,,lease,address_suffix,zip_polygon_unavailable,
+CV24140332,"3420 Falcon ST   #217, Pomona 91762",None,91762,34.1083806,-117.75381910000002,,lease,address_suffix,zip_polygon_unavailable,
+DW26178487MR,"11521 Mines AVE, WHITTIER 90609",WHITTIER,90609,33.9904074,-118.0870316,success,lease,source_column,zip_polygon_unavailable,
+P1-28339PF,,PASADENA,,34.1419744,-118.1116746,success,lease,missing,missing_zip,
+PW22234596,"13823 Christine Ave. Apt D, Whittier 90600",None,90600,33.9791793,-118.032844,,lease,address_suffix,zip_polygon_unavailable,
+PW23217874,"4058 Green Ave, Long Beach 90720",None,90720,33.8015354,-118.0620278,,lease,address_suffix,zip_polygon_unavailable,
+SB25002589MR,"440 Chestnut AVE #2D, LONG BEACH 80802",None,80802,33.7724763,-118.1960064,,lease,address_suffix,zip_polygon_unavailable,
+SB25052003MR,"440 Chestnut AVE #2D, LONG BEACH 80802",None,80802,33.7801821,-118.19638610000001,,lease,address_suffix,zip_polygon_unavailable,
+SB25264812MR,"1943 Loma Dr, HERMOSA BEACH 90366",HERMOSA BEACH,90366,33.8640351,-118.3979772,,lease,source_column,zip_polygon_unavailable,
+SB26132216MR,"4265 Marina City DR #805, MARINA DEL REY 90292",MARINA DEL REY,90292,,,failed,lease,source_column,missing_or_invalid_coordinates,
+SB26179373MR,"25441 Pine Creek Ln, WILMINGTON 90441",WILMINGTON,90441,33.7921123,-118.2850733,success,lease,source_column,zip_polygon_unavailable,
+SR25215088MR,"17000 Burbank BLVD #216, ENCINO 91316",ENCINO,91316,,,,lease,source_column,missing_or_invalid_coordinates,
+SR25273029MR,"323 S Francisca, REDONDO BEACH 60277",REDONDO BEACH,60277,33.8374827,-118.384131,,lease,source_column,zip_polygon_unavailable,
+SR26163104MR,"15425 Sherman  #101, VAN NUYS 91406",VAN NUYS,91406,,,failed,lease,source_column,missing_or_invalid_coordinates,
+TR26055123MR,"2826 Cogswell RD #A, EL MONTE 97322",EL MONTE,97322,34.0736758,-118.0135561,,lease,source_column,zip_polygon_unavailable,

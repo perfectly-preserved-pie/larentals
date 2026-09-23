@@ -1,0 +1,14 @@
+mls_number,full_street_address,city,zip_code,latitude,longitude,geocode_status,listing_type,zip_source,audit_status,distance_outside_zip_miles
+26867245,"7042   Jon Allan Dr, Los Angeles 91605.0",Los Angeles,91605,34.0752676,-118.3803387,success,buy,source_column,outside_zip,8.121845787347084
+OC26121587MR,"318  E William WAY, LA HABRA 90631.0",LA HABRA,90631,34.010644,-118.1046303,,buy,source_column,outside_zip,7.625057239424309
+OC26176616MR,"1492  W Badillo, SAN DIMAS 91773.0",SAN DIMAS,91773,34.0861195,-117.9360251,success,buy,source_column,outside_zip,4.703646321860232
+IV22247260,"26650 Timberline DR, Wrightwood 93544",None,93544,34.3609311,-117.65441639999999,,lease,address_suffix,outside_zip,2.5016509422103477
+CV26174139MR,"1161 6624 W 67 street, LOS ANGELES 90044.0",LOS ANGELES,90044,33.978116,-118.3352236,success,buy,source_column,outside_zip,1.9686645028583412
+26866611,"20212 W Gault St, Winnetka 91306",Winnetka,91306,34.1997742,-118.619081,cached,lease,source_column,outside_zip,1.7535096243439403
+SR26165278MR,"42165   Silver Puffs, LANCASTER 93536.0",LANCASTER,93536,34.703947,-118.1481016,success,buy,source_column,outside_zip,1.0158814903416293
+226003892VC,"12815   Umtali RD, TEHACHAPI 93561.0",TEHACHAPI,93561,35.1753507,-118.3561102,success,buy,source_column,zip_polygon_unavailable,
+226004247VC,"639  N O ST, TULARE 93274.0",TULARE,93274,,,failed,buy,source_column,missing_or_invalid_coordinates,
+82060944ML,"253   Catalina AVE, Pacifica 94044.0",Pacifica,94044,,,failed,buy,source_column,missing_or_invalid_coordinates,
+SR26167278MR,"43037   Sachs Dr, LANCASTER 93556.0",LANCASTER,93556,34.6654098,-118.1887788,success,buy,source_column,zip_polygon_unavailable,
+41080135CC,"555 Ygnacio Valley Rd, WALNUT CREEK 94596",WALNUT CREEK,94596,37.9065147,-122.0623913,success,lease,source_column,zip_polygon_unavailable,
+PW23217874,"4058 Green Ave, LOS ALAMITOS 90720",LOS ALAMITOS,90720,33.8015354,-118.0620278,,lease,address_suffix,zip_polygon_unavailable,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
+import re
 import sqlite3
 
 import pandas as pd
@@ -16,6 +17,7 @@ from functions.dataframe_utils import (
     update_dataframe_with_listing_data,
 )
 from functions.geocoding_utils import (
+    _google_result_matches_address,
     fill_missing_location_fields_with_checkpoint,
     re_geocode_above_lat_threshold,
     update_dataframe_with_geocoding,
@@ -76,12 +78,19 @@ class RecordingS3Client:
 class FakeLocation:
     latitude = 34.05
     longitude = -118.25
-    raw = {
-        "address_components": [
-            {"long_name": "Los Angeles", "types": ["locality"]},
-            {"long_name": "90002", "types": ["postal_code"]},
-        ]
-    }
+
+    def __init__(self, query: str) -> None:
+        number = re.search(r"\b(\d+)\s+Main St", query)
+        zip_code = re.search(r"(?<!\d)(\d{5})\s*$", query)
+        self.raw = {
+            "geometry": {"location_type": "ROOFTOP"},
+            "address_components": [
+                {"long_name": number.group(1) if number else "200", "types": ["street_number"]},
+                {"long_name": "Main St", "types": ["route"]},
+                {"long_name": "Los Angeles", "types": ["locality"]},
+                {"long_name": zip_code.group(1) if zip_code else "90002", "types": ["postal_code"]},
+            ],
+        }
 
 
 class FakeGeolocator:
@@ -104,7 +113,7 @@ class FakeGeolocator:
             A fixed fake geocoder result for Los Angeles.
         """
         self.calls += 1
-        return FakeLocation()
+        return FakeLocation(str(args[0]) if args else "")
 
 
 def test_checkpoint_is_committed_and_uploaded_as_valid_sqlite(tmp_path: Path) -> None:
@@ -679,6 +688,21 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
     assert deleted_images == ["MLS-INACTIVE", "MLS-INACTIVE", "MLS-INACTIVE"]
     assert store.get("MLS-ACTIVE")["inactive_check_status"] == "success"
     assert store.get("MLS-INACTIVE")["inactive_check_is_inactive"] == 1
+
+
+def test_google_result_requires_matching_street_and_zip() -> None:
+    address = "200 Main St, Los Angeles 90002"
+    exact = FakeLocation(address).raw
+    assert _google_result_matches_address(address, exact)
+    assert not _google_result_matches_address(address, {**exact, "partial_match": True})
+    assert not _google_result_matches_address(
+        address, {**exact, "geometry": {"location_type": "APPROXIMATE"}}
+    )
+    wrong_number = {**exact, "address_components": [
+        {**part, "long_name": "201"} if "street_number" in part["types"] else part
+        for part in exact["address_components"]
+    ]}
+    assert not _google_result_matches_address(address, wrong_number)
 
 
 def test_geocode_is_reused_for_the_same_address(
