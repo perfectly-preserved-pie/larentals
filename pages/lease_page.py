@@ -50,6 +50,8 @@ ZIP_PLACE_CROSSWALK = load_zip_place_crosswalk(str(ZIP_PLACE_CROSSWALK_PATH))
 def get_lease_components() -> LeaseComponents:
   """Build and cache the lease-page component tree for the process lifetime.
 
+  Process-level caching avoids rebuilding the same static Dash component tree for each layout request.
+
   Returns:
     The initialized lease-page component collection.
 
@@ -172,6 +174,8 @@ register_responsive_filter_callbacks("lease")
 def load_lease_geojson(_: int) -> dict:
   """Load the full lease GeoJSON into the browser store once, after the page renders.
 
+  Deferring the large payload until page render avoids sending rental data before it is needed.
+
   Returns:
     A GeoJSON dict suitable for dl.GeoJSON(data=...).
 
@@ -192,6 +196,8 @@ def load_lease_optional_layers(
   current_data: list[dict] | None,
 ) -> list[dict]:
   """Lazy-load optional map layers only after the user enables them.
+
+  Lazy loading keeps optional overlay files out of the initial map response.
 
   Args:
       selected_overlays: Names of map overlays currently selected by the user.
@@ -215,6 +221,8 @@ def load_lease_optional_layers(
 )
 def toggle_lease_school_layer_controls(selected_overlays: list[str] | None) -> bool:
   """Show the map-only school filter panel when the Schools overlay is enabled.
+
+  These controls matter only while the school overlay is active, so the map-only panel follows that state.
 
   Args:
       selected_overlays: Names of map overlays currently selected by the user.
@@ -240,6 +248,8 @@ def update_lease_school_layer_prompt_state(
   prompt_state: dict | None,
 ) -> dict[str, bool]:
   """Keep the school-layer prompt visible until the user dismisses it.
+
+  The prompt remains available until the user explicitly dismisses it.
 
   Args:
       selected_overlays: Names of map overlays currently selected by the user.
@@ -282,6 +292,8 @@ def update_lease_school_layer_prompt_class(
 ) -> str:
   """Reveal the map prompt only while the school overlay is active and undisposed.
 
+  The class reflects both overlay selection and dismissal state without altering filter values.
+
   Args:
       selected_overlays: Names of map overlays currently selected by the user.
       prompt_state: Stored state tracking whether the map prompt is active or dismissed.
@@ -307,6 +319,8 @@ def update_lease_school_layer_controls_card_class(
   selected_overlays: list[str] | None,
 ) -> str:
   """Add an accent state so the school control card reads as newly available.
+
+  The accent calls attention to controls that became relevant after enabling the school overlay.
 
   Args:
       selected_overlays: Names of map overlays currently selected by the user.
@@ -355,6 +369,10 @@ def update_lease_school_layer(
   recently_opened_only: bool | None,
 ) -> dict | object:
   """Filter the school overlay from the cached raw GeoJSON payload.
+
+  School controls change only the overlay, not the rental listings. Refilter
+  the original school collection so clearing a control can restore previously
+  hidden schools.
 
   Args:
       selected_overlays: Names of map overlays currently selected by the user.

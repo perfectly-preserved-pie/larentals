@@ -32,6 +32,8 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
     def start_mcp_usage_timer() -> None:
         """Record the start time for a tool-call request.
 
+        Timing starts before dispatch so logs include the full tool processing interval.
+
         Returns:
             None.
         """
@@ -41,6 +43,8 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
     @server.after_request
     def log_mcp_usage(response: Response) -> Response:
         """Emit a compact usage record after a tool-call response completes.
+
+        The compact record captures request outcome and duration after the response is known.
 
         Args:
             response: HTTP response being validated or summarized.
@@ -76,6 +80,8 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
 def _normalize_mcp_path(mcp_path: str) -> str:
     """Handle normalize mcp path.
 
+    Removing query strings and normalizing slashes groups requests by endpoint rather than URL variant.
+
     Args:
         mcp_path: Filesystem path for the mcp.
 
@@ -89,6 +95,8 @@ def _normalize_mcp_path(mcp_path: str) -> str:
 def _get_json_payload() -> dict[str, Any] | None:
     """Handle get json payload.
 
+    Malformed or absent JSON should leave usage logging best-effort rather than break request handling.
+
     Returns:
         A mapping containing the requested JSON payload.
     """
@@ -98,6 +106,8 @@ def _get_json_payload() -> dict[str, Any] | None:
 
 def _rpc_method_from_payload(payload: dict[str, Any] | None) -> str | None:
     """Handle rpc method from payload.
+
+    Method extraction supports both single JSON-RPC messages and batches.
 
     Args:
         payload: Structured request, listing, or artifact payload to validate or summarize.
@@ -112,6 +122,8 @@ def _rpc_method_from_payload(payload: dict[str, Any] | None) -> str | None:
 
 def _target_from_payload(payload: dict[str, Any] | None) -> str | None:
     """Handle target from payload.
+
+    Target names identify which tool or resource should be attributed in usage records.
 
     Args:
         payload: Structured request, listing, or artifact payload to validate or summarize.
@@ -135,6 +147,8 @@ def _target_from_payload(payload: dict[str, Any] | None) -> str | None:
 
 def _arguments_from_payload(payload: dict[str, Any] | None) -> str:
     """Handle arguments from payload.
+
+    Arguments are captured for safe summaries without assuming every MCP method has tool inputs.
 
     Args:
         payload: Structured request, listing, or artifact payload to validate or summarize.
@@ -161,6 +175,10 @@ def _arguments_from_payload(payload: dict[str, Any] | None) -> str:
 
 def _result_summary(response: Response, *, request_id: Any = None) -> str:
     """Return useful outcome metadata without logging a tool's full response.
+
+    A stale session can bundle notifications with the actual JSON-RPC reply.
+    Select the matching request ID, then log only status and small result
+    fields rather than listing data.
 
     Args:
         response: HTTP response being validated or summarized.
@@ -215,6 +233,8 @@ def _result_summary(response: Response, *, request_id: Any = None) -> str:
 
 def _clean_log_value(value: Any) -> str | None:
     """Handle clean log value.
+
+    Recursive redaction and truncation keep logs useful without retaining oversized or sensitive values.
 
     Args:
         value: Arbitrary tool argument or result value to sanitize for logs.

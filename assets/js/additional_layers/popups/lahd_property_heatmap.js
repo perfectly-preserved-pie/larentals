@@ -21,25 +21,26 @@
 
     /**
      * @typedef {{
-     *   address?: unknown,
-     *   apn?: unknown,
-     *   problem_score?: unknown,
-     *   documented_issue_count?: unknown,
-     *   unresolved_issue_count?: unknown,
-     *   investigation_case_count?: unknown,
-     *   open_case_count?: unknown,
-     *   violations_cited?: unknown,
-     *   unresolved_violation_count?: unknown,
-     *   violation_row_count?: unknown,
-     *   closed_case_count?: unknown,
-     *   violations_cleared?: unknown,
-     *   first_case_date?: unknown,
-     *   latest_case_date?: unknown,
+     * address?: unknown,
+     * apn?: unknown,
+     * problem_score?: unknown,
+     * documented_issue_count?: unknown,
+     * unresolved_issue_count?: unknown,
+     * investigation_case_count?: unknown,
+     * open_case_count?: unknown,
+     * violations_cited?: unknown,
+     * unresolved_violation_count?: unknown,
+     * violation_row_count?: unknown,
+     * closed_case_count?: unknown,
+     * violations_cleared?: unknown,
+     * first_case_date?: unknown,
+     * latest_case_date?: unknown,
      * }} LahdPropertyProperties
      */
 
     /**
      * Format a numeric value as a localized integer.
+     * Missing or invalid counts remain `N/A`, and valid counts are escaped for popup HTML.
      *
      * @param {unknown} value Raw numeric value.
      * @returns {string} Localized integer string or `N/A`.
@@ -55,6 +56,7 @@
 
     /**
      * Render the Dash drawer trigger for a property APN.
+     * The parcel number is the required lookup key; address is included as display context.
      *
      * @param {LahdPropertyProperties} properties Feature properties for the hotspot.
      * @returns {string} HTML drawer trigger or `N/A`.
@@ -82,11 +84,14 @@
 
     /**
      * Build a compact count pair for popup display.
+     * Labels and numeric values are escaped independently before they are joined.
      *
      * @param {unknown} primary Primary count.
      * @param {string} primaryLabel Label for the primary count.
+     *
      * @param {unknown} secondary Secondary count.
      * @param {string} secondaryLabel Label for the secondary count.
+     *
      * @returns {string} Escaped count-pair label.
      */
     function formatCountPair(primary, primaryLabel, secondary, secondaryLabel) {
@@ -103,6 +108,7 @@
 
     /**
      * Build the ordered rows rendered in a Housing Department property popup.
+     * Counts, APN, source-record action, and date range keep enforcement context together in the popup.
      *
      * @param {LahdPropertyProperties} properties Feature properties for the hotspot.
      * @returns {{label: string, value: string}[]} Popup rows for the feature.
@@ -160,6 +166,7 @@
 
     /**
      * Build the popup title for an LAHD hotspot.
+     * The address is preferred, with issue-count and generic property labels as fallbacks.
      *
      * @param {LahdPropertyProperties} properties Feature properties for the hotspot.
      * @returns {string} Popup title.
@@ -180,6 +187,7 @@
 
     /**
      * Build the complete Housing Department property popup markup.
+     * The banner clarifies that displayed totals combine investigation/enforcement cases and violation citations.
      *
      * @param {LahdPropertyProperties} properties Feature properties for the hotspot.
      * @returns {string} HTML string bound to the Leaflet popup.

@@ -17,6 +17,8 @@ from functions.alpr_cameras import (
 def parse_args(argv: list[str] | None = None) -> AlprCameraDatasetConfig:
     """Parse command-line arguments for the local ALPR camera artifact builder.
 
+    Fetch options are parsed once into the typed configuration shared by refresh helpers.
+
     Args:
         argv: Optional argument list for tests or programmatic use. When omitted,
             argparse reads from ``sys.argv``.
@@ -51,6 +53,8 @@ def parse_args(argv: list[str] | None = None) -> AlprCameraDatasetConfig:
 
 def main() -> None:
     """CLI entry point for ``uv run fetch-alpr-cameras``.
+
+    Keeping the CLI thin reuses the same refresh path used by application maintenance jobs.
 
     Raises:
         SystemExit: Exits with status ``1`` when the artifact refresh fails.

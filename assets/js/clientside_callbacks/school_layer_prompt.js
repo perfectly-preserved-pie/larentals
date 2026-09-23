@@ -8,6 +8,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
        *
        * @param {number | null | undefined} nClicks
        * @param {string | null | undefined} targetId
+       *
        * @returns {Object | undefined}
        */
       focusSchoolLayerControls: function(nClicks, targetId) {

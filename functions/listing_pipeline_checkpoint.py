@@ -104,6 +104,8 @@ class S3CheckpointClient(Protocol):
     def get_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:
         """Download the current version of a checkpoint object.
 
+        The checkpoint is optional, so callers handle a missing remote object as a fresh run.
+
         Args:
             Bucket: S3 bucket receiving or containing the object.
             Key: S3 object key identifying the uploaded or requested object.
@@ -123,6 +125,8 @@ class S3CheckpointClient(Protocol):
     ) -> dict[str, Any]:
         """Upload the latest complete checkpoint database.
 
+        Only a complete committed database is uploaded, avoiding partial remote checkpoints.
+
         Args:
             Bucket: S3 bucket receiving or containing the object.
             Key: S3 object key identifying the uploaded or requested object.
@@ -138,6 +142,8 @@ class S3CheckpointClient(Protocol):
 def _utc_now() -> str:
     """Return the current UTC time in a format SQLite can store as text.
 
+    UTC avoids comparing checkpoint times across machines with different local zones.
+
     Returns:
         The UTC now text.
     """
@@ -146,6 +152,8 @@ def _utc_now() -> str:
 
 def _json_scalar(value: object) -> JsonScalar:
     """Turn common pandas values into plain values SQLite and JSON understand.
+
+    Native scalar values serialize consistently in both SQLite columns and JSON checkpoints.
 
     Args:
         value: Scalar value being prepared for deterministic JSON serialization.
@@ -255,6 +263,8 @@ def listing_input_fingerprint(
 def address_fingerprint(address: object) -> str | None:
     """Identify an address so coordinates are reused only while it is unchanged.
 
+    Coordinates are reused only when the listing address still matches the address that produced them.
+
     Args:
         address: Street address used to identify or geocode the property.
 
@@ -271,6 +281,8 @@ def address_fingerprint(address: object) -> str | None:
 
 def photo_fingerprint(source_photo_url: object) -> str | None:
     """Identify the source photo so ImageKit is called only when it changes.
+
+    Unchanged source photos can reuse ImageKit work instead of being uploaded again.
 
     Args:
         source_photo_url: Original listing-photo URL.
@@ -376,6 +388,8 @@ class ListingCheckpointStore:
     def remote_enabled(self) -> bool:
         """Report whether completed steps will also be saved to S3.
 
+        Local development can run without S3 credentials while production can persist recovery state.
+
         Returns:
             Whether the remote enabled condition is satisfied.
         """
@@ -383,6 +397,8 @@ class ListingCheckpointStore:
 
     def _connect(self) -> sqlite3.Connection:
         """Open SQLite with settings that favor durable commits over speed.
+
+        Durable commit settings protect checkpoint progress from abrupt process exit.
 
         Returns:
             An open SQLite connection configured for checkpoint access.
@@ -434,6 +450,8 @@ class ListingCheckpointStore:
     def _ensure_schema(self) -> None:
         """Create the checkpoint table and add columns introduced by upgrades.
 
+        Schema upgrades add new fields without discarding prior per-listing progress.
+
         Returns:
             None.
         """
@@ -464,6 +482,8 @@ class ListingCheckpointStore:
 
     def get(self, mls_number: object) -> dict[str, Any] | None:
         """Return the saved work for one MLS number, if it has been processed.
+
+        Returning no saved row signals that this listing still needs its pipeline work.
 
         Args:
             mls_number: MLS identifier for the listing.
@@ -534,6 +554,8 @@ class ListingCheckpointStore:
 
     def sync_remote(self) -> None:
         """Upload the complete, committed SQLite file as the latest checkpoint.
+
+        Uploading the committed file keeps remote recovery aligned with the local transaction state.
 
         Returns:
             None.

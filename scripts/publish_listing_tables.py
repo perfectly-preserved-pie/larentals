@@ -12,6 +12,8 @@ from functions.data_paths import LARENTALS_DB_PATH
 def _read_table_schema(stage_path: Path, table_name: str) -> str:
     """Return a staged table's CREATE TABLE statement after validating it.
 
+    Schema validation prevents publishing a staged table that does not match the live contract.
+
     Args:
         stage_path: Filesystem path to the staged SQLite database.
         table_name: SQLite table to inspect or modify.
@@ -58,6 +60,10 @@ def publish_listing_tables(
 ) -> None:
     """Replace buy and lease together, leaving other canonical tables intact.
 
+    Attach both staged databases and replace their tables in one transaction. A
+    failed publish rolls back both markets rather than exposing different
+    refresh dates.
+
     Args:
         db_path: Filesystem path to the SQLite database.
         buy_stage_path: Filesystem path for the buy stage.
@@ -98,6 +104,8 @@ def publish_listing_tables(
 
 def main() -> None:
     """Validate staged listing tables and publish them atomically to SQLite.
+
+    The swap is performed atomically so readers never observe a half-published listing database.
 
     Returns:
         None.

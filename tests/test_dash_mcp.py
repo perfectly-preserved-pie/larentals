@@ -10,6 +10,8 @@ class DashMcpTest(unittest.TestCase):
     def test_app_constructor_opts_into_dash_mcp(self) -> None:
         """Verify that app constructor opts into dash mcp.
 
+        App construction must keep the MCP integration enabled for the deployed server.
+
         Returns:
             None.
         """
@@ -36,6 +38,8 @@ class DashMcpTest(unittest.TestCase):
 
     def test_dash_mcp_endpoint_initializes_over_http(self) -> None:
         """Verify that dash mcp endpoint initializes over http.
+
+        The endpoint must complete Dash MCP initialization through the actual HTTP route.
 
         Returns:
             None.

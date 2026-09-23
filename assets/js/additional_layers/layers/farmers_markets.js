@@ -13,9 +13,11 @@
 
     /**
      * Create the farmers market marker and bind its popup content.
+     * The shared helper supplies consistent popup sizing and event behavior.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the farmers market.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawFarmersMarketIcon(feature, latlng) {

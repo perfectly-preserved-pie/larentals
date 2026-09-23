@@ -53,6 +53,9 @@ DEFAULT_SCHOOL_COLUMNS: tuple[str, ...] = (
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments for the schools-layer build pipeline.
 
+    Paths and download options let the builder reuse a local GeoPackage or
+    refresh the source before writing the public map artifact.
+
     Returns:
         Parsed CLI arguments.
 
@@ -114,6 +117,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def download_file(url: str, destination: Path) -> Path:
     """Download a remote file to disk.
 
+    Remote downloads are a fallback for missing source files; existing local artifacts remain reusable.
+
     Args:
         url: Remote HTTP(S) URL.
         destination: Local file path.
@@ -141,6 +146,8 @@ def download_file(url: str, destination: Path) -> Path:
 def resolve_local_source_path(args: argparse.Namespace) -> Path:
     """Resolve the on-disk GeoPackage path to read from.
 
+    The default path is preferred so routine builds do not depend on network access.
+
     Args:
         args: Parsed CLI arguments.
 
@@ -165,6 +172,8 @@ def resolve_local_source_path(args: argparse.Namespace) -> Path:
 
 def build_school_layer(args: argparse.Namespace) -> tuple[Path, Path, int]:
     """Build the final school-layer GeoJSON artifact.
+
+    The builder enriches and normalizes source schools before writing the map schema.
 
     Args:
         args: Parsed CLI arguments.
@@ -193,6 +202,8 @@ def build_school_layer(args: argparse.Namespace) -> tuple[Path, Path, int]:
 
 def main() -> None:
     """Build the school-layer GeoJSON artifact from the selected source.
+
+    The selected source is converted into the baked artifact consumed by the optional school overlay.
 
     Returns:
         None.

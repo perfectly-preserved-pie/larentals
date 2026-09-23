@@ -53,6 +53,7 @@
 
     /**
      * Format problem counts for compact legend labels.
+     * Null or invalid counts use zero so legend thresholds stay readable.
      *
      * @param {unknown} value Candidate count.
      * @returns {string} Localized count label.
@@ -68,6 +69,7 @@
 
     /**
      * Return a sanitized ascending threshold list.
+     * The marker legend needs four ordered breaks even when artifact metadata is incomplete.
      *
      * @param {unknown} rawBreaks Raw threshold payload.
      * @returns {number[]} Four ascending marker thresholds.
@@ -92,6 +94,7 @@
 
     /**
      * Create the invisible anchor marker used to mount the LAHD heat layer.
+     * The marker owns the heat layer and popup lifecycle without adding another visible point.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON anchor feature.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
@@ -210,6 +213,7 @@
 
         /**
          * Lazily create the Leaflet legend control owned by this overlay instance.
+         * Reusing one control prevents duplicate legends as visibility changes.
          *
          * @returns {L.Control} Legend control for the LAHD layer.
          */
@@ -247,6 +251,7 @@
 
         /**
          * Rebuild legend contents to match the current zoom presentation.
+         * Heat and point-marker guides appear only when their corresponding display is enabled.
          *
          * @param {LahdLegendOptions | null | undefined} options Current legend visibility state.
          * @returns {void}
@@ -338,6 +343,7 @@
 
         /**
          * Ensure the legend control is mounted and refreshed.
+         * The visibility options determine which heat and point-marker guides are shown.
          *
          * @param {L.Map} map Active Leaflet map.
          * @param {LahdLegendOptions} options Current legend visibility state.
@@ -359,6 +365,7 @@
 
         /**
          * Remove the LAHD legend when the overlay is unmounted.
+         * Clearing the saved control reference allows a later mount to create a fresh legend.
          *
          * @param {L.Map | null | undefined} map Active Leaflet map.
          * @returns {void}
@@ -378,6 +385,7 @@
 
         /**
          * Ensure the marker pane exists above listing markers.
+         * A dedicated pane gives property points a stable stacking order over listing pins.
          *
          * @param {L.Map} map Active Leaflet map.
          * @returns {void}
@@ -391,6 +399,7 @@
 
         /**
          * Build circle marker style by score tier.
+         * Higher combined issue scores receive stronger visual emphasis on the map.
          *
          * @param {number} problemScore Combined LAHD score.
          * @returns {L.CircleMarkerOptions} Marker style.
@@ -428,6 +437,7 @@
 
         /**
          * Create or return the marker layer group.
+         * Reusing the group lets updates replace point contents without mounting duplicates.
          *
          * @param {L.Map} map Active Leaflet map.
          * @returns {L.LayerGroup} Marker layer group.
@@ -444,6 +454,7 @@
 
         /**
          * Refresh visible zoomed-in property markers.
+         * Rebuilding from the current bounds keeps detailed points limited to the area the viewer is exploring.
          *
          * @param {L.Map} map Active Leaflet map.
          * @returns {void}
@@ -495,6 +506,7 @@
 
         /**
          * Hide and clear the marker layer.
+         * Removing stale points keeps the map consistent when the overlay is disabled or refreshed.
          *
          * @param {L.Map} map Active Leaflet map.
          * @returns {void}
@@ -512,6 +524,7 @@
 
         /**
          * Sync heat and marker presentation to the current zoom.
+         * Heat intensity is used at broader views while individual scored markers appear at closer zooms.
          *
          * @returns {void}
          */

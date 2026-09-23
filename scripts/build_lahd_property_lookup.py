@@ -19,6 +19,8 @@ from functions.lahd import (
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the LAHD listing lookup artifact builder.
 
+    CLI options let operators choose the artifact path without changing application defaults.
+
     Returns:
         The parsed command-line arguments.
     """
@@ -55,6 +57,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     """Build the LAHD lookup artifact or print its default output path.
+
+    This entry point builds the snapshot used by request-time listing lookups.
 
     Returns:
         The process exit status.

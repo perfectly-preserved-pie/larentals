@@ -21,6 +21,8 @@ from functions.lahd import (
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the LAHD heatmap artifact builder.
 
+    The CLI exposes artifact output and refresh options while retaining application defaults.
+
     Returns:
         The parsed command-line arguments.
     """
@@ -70,6 +72,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     """Build the LAHD heatmap artifact or print its default output path.
+
+    The standalone builder keeps heavy source aggregation outside normal map requests.
 
     Returns:
         The process exit status.

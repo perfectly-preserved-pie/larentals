@@ -9,6 +9,8 @@ from .report_listing import register_report_listing_routes
 def register_api_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
     """Register all Flask routes used by the app's API surface.
 
+    Central registration keeps the Flask route set attached to the same app instance.
+
     Args:
         server: Flask application receiving the registered API routes.
         db_path: Filesystem path to the SQLite database.

@@ -33,6 +33,8 @@ class RecordingS3Client:
     def __init__(self) -> None:
         """Initialize the instance.
 
+        The fake checkpoint store starts with isolated state for each test instance.
+
         Returns:
             None.
         """
@@ -49,6 +51,8 @@ class RecordingS3Client:
     ) -> dict[str, object]:
         """Handle put object.
 
+        The fake remote write captures a database snapshot so upload integrity can be checked.
+
         Args:
             Bucket: S3 bucket receiving or containing the object.
             Key: S3 object key identifying the uploaded or requested object.
@@ -64,6 +68,8 @@ class RecordingS3Client:
 
     def get_object(self, *, Bucket: str, Key: str) -> dict[str, BytesIO]:
         """Handle get object.
+
+        The fake remote read restores the saved snapshot into the requested local path.
 
         Args:
             Bucket: S3 bucket receiving or containing the object.
@@ -97,6 +103,8 @@ class FakeGeolocator:
     def __init__(self) -> None:
         """Initialize the instance.
 
+        The fake checkpoint store starts with isolated state for each test instance.
+
         Returns:
             None.
         """
@@ -104,6 +112,8 @@ class FakeGeolocator:
 
     def geocode(self, *args: object, **kwargs: object) -> FakeLocation:
         """Handle geocode.
+
+        The stub records calls so tests can assert when address-cache reuse occurs.
 
         Args:
             *args: Additional positional arguments forwarded to the dependency.
@@ -118,6 +128,8 @@ class FakeGeolocator:
 
 def test_checkpoint_is_committed_and_uploaded_as_valid_sqlite(tmp_path: Path) -> None:
     """Verify that checkpoint is committed and uploaded as valid sqlite.
+
+    A remote checkpoint must contain a closed, committed SQLite database that can be reopened independently.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -171,6 +183,8 @@ def test_checkpoint_store_upgrades_an_existing_older_schema(
     tmp_path: Path,
 ) -> None:
     """Verify that checkpoint store upgrades an existing older schema.
+
+    Upgrades must add current fields without discarding checkpoints written by older runs.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -228,6 +242,8 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
 ) -> None:
     """Verify that listing scrape and image are reused from checkpoint.
 
+    Unchanged listings should skip both provider scraping and image upload work on a resumed run.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
         tmp_path: Temporary directory supplied by pytest.
@@ -239,6 +255,8 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
 
     def fake_scrape(**kwargs: object) -> tuple[pd.Timestamp, str, str]:
         """Handle fake scrape.
+
+        The scrape stub provides deterministic listing fields without contacting a provider.
 
         Args:
             **kwargs: Additional keyword arguments forwarded to the dependency.
@@ -260,6 +278,8 @@ def test_listing_scrape_and_image_are_reused_from_checkpoint(
         folder: str | None = None,
     ) -> str:
         """Handle fake image.
+
+        The image stub makes repeat and invalidation behavior observable without uploading files.
 
         Args:
             source_url: URL for the source.
@@ -327,6 +347,8 @@ def test_listing_progress_log_identifies_type_fallback_source_and_eta(
 ) -> None:
     """Verify that listing progress log identifies type fallback source and eta.
 
+    Progress output is the operator’s only live indication of source choice and remaining work.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -375,7 +397,11 @@ def test_listing_progress_log_identifies_type_fallback_source_and_eta(
 def test_complete_agency_result_skips_bhhs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A complete primary response should avoid a BHHS request entirely."""
+    """A complete primary response should avoid a BHHS request entirely.
+
+    This protects the pipeline from adding needless latency or replacing a
+    usable provider result with secondary-provider data.
+    """
     bhhs_calls: list[dict[str, object]] = []
 
     monkeypatch.setattr(
@@ -411,6 +437,8 @@ def test_inactive_check_log_identifies_type_provider_result_and_eta(
 ) -> None:
     """Verify that inactive check log identifies type provider result and eta.
 
+    Inactive-check logs need the provider result and timing context for support investigations.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -422,6 +450,8 @@ def test_inactive_check_log_identifies_type_provider_result_and_eta(
 
     def fake_agency_check(url: str, mls: str) -> bool:
         """Handle fake agency check.
+
+        The provider stub isolates checkpoint behavior from live Agency responses.
 
         Args:
             url: URL requested, validated, or downloaded by the function.
@@ -470,6 +500,8 @@ def test_inactive_check_falls_back_from_bhhs_to_agency(
 ) -> None:
     """An unavailable BHHS page should fall back to the Agency index.
 
+    An unavailable primary provider should not make a valid public listing look inactive.
+
     Args:
         monkeypatch: Pytest fixture used to replace status providers.
 
@@ -513,7 +545,11 @@ def test_inactive_check_falls_back_from_bhhs_to_agency(
 def test_inactive_check_ignores_spoofed_bhhs_host(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A spoofed hostname should not trigger the BHHS provider path."""
+    """A spoofed hostname should not trigger the BHHS provider path.
+
+    Provider routing must use the parsed hostname so lookalike domains cannot
+    receive BHHS-specific handling.
+    """
     checks: list[str] = []
 
     monkeypatch.setattr(
@@ -548,6 +584,8 @@ def test_inactive_check_uses_rentcast_for_missing_listing_url(
 ) -> None:
     """The public-data fallback should cover listings with no brokerage URL.
 
+    The fallback must still work when no agency URL was stored with the listing.
+
     Args:
         monkeypatch: Pytest fixture used to replace status providers.
 
@@ -563,6 +601,8 @@ def test_inactive_check_uses_rentcast_for_missing_listing_url(
 
     def fake_rentcast(address: str, mls: str, listing_type: str) -> bool:
         """Record and satisfy one RentCast fallback lookup.
+
+        Recording each fallback request verifies both call count and provider selection.
 
         Args:
             address: Property address submitted to RentCast.
@@ -609,6 +649,8 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
 ) -> None:
     """Verify that inactive checks resume from checkpoint until source changes.
 
+    A completed check is reusable only until its identifying source data changes.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
         tmp_path: Temporary directory supplied by pytest.
@@ -621,6 +663,8 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
 
     def fake_agency_check(url: str, mls: str) -> bool:
         """Handle fake agency check.
+
+        The provider stub isolates checkpoint behavior from live Agency responses.
 
         Args:
             url: URL requested, validated, or downloaded by the function.
@@ -710,6 +754,8 @@ def test_geocode_is_reused_for_the_same_address(
 ) -> None:
     """Verify that geocode is reused for the same address.
 
+    Repeated runs should not spend another geocoding request on an unchanged address.
+
     Args:
         tmp_path: Temporary directory supplied by pytest.
 
@@ -756,6 +802,8 @@ def test_missing_location_fields_and_coordinates_share_one_lookup(
     tmp_path: Path,
 ) -> None:
     """Verify that missing location fields and coordinates share one lookup.
+
+    One successful lookup should fill every missing location field and coordinates together.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -823,6 +871,8 @@ def test_missing_location_fields_and_coordinates_share_one_lookup(
 def test_missing_location_fields_accept_text_in_float_inferred_columns() -> None:
     """Verify that missing location fields accept text in float inferred columns.
 
+    Legacy pandas inference can make text destinations float-typed, so assignment must still preserve the resolved strings.
+
     Returns:
         None.
     """
@@ -863,6 +913,8 @@ def test_missing_location_fields_accept_text_in_float_inferred_columns() -> None
 def test_re_geocode_assigns_text_metadata_into_numeric_columns() -> None:
     """Verify that re geocode assigns text metadata into numeric columns.
 
+    A changed address must refresh both coordinates and textual geocoder metadata safely.
+
     Returns:
         None.
     """
@@ -893,6 +945,8 @@ def test_re_geocode_assigns_text_metadata_into_numeric_columns() -> None:
 def test_address_reconstruction_handles_empty_arrow_string_selection() -> None:
     """Verify that address reconstruction handles empty arrow string selection.
 
+    Pandas nullable string comparisons can yield missing booleans that must not break row selection.
+
     Returns:
         None.
     """
@@ -917,6 +971,8 @@ def test_address_reconstruction_handles_empty_arrow_string_selection() -> None:
 
 def test_address_reconstruction_assigns_text_into_numeric_columns() -> None:
     """Verify that address reconstruction assigns text into numeric columns.
+
+    Reconstructed addresses must remain assignable even when old database columns inferred numeric types.
 
     Returns:
         None.
@@ -948,6 +1004,8 @@ def test_address_reconstruction_assigns_text_into_numeric_columns() -> None:
 def test_reported_inactive_flags_normalize_sqlite_and_string_values() -> None:
     """Verify that reported inactive flags normalize sqlite and string values.
 
+    SQLite and scraped inputs encode booleans differently, but the pipeline must treat equivalent flags alike.
+
     Returns:
         None.
     """
@@ -976,6 +1034,8 @@ def test_reported_inactive_flags_normalize_sqlite_and_string_values() -> None:
 def test_remove_trailing_zero_handles_pandas_3_string_dtype() -> None:
     """Verify that remove trailing zero handles pandas 3 string dtype.
 
+    Pandas 3 string columns should follow the same identifier cleanup path as older object columns.
+
     Returns:
         None.
     """
@@ -997,6 +1057,8 @@ def test_remove_trailing_zero_handles_pandas_3_string_dtype() -> None:
 
 def test_column_merge_preserves_old_enrichment_after_failed_refresh() -> None:
     """Verify that column merge preserves old enrichment after failed refresh.
+
+    A failed refresh must not erase valid enrichment already stored for the listing.
 
     Returns:
         None.
@@ -1048,6 +1110,8 @@ def test_column_merge_preserves_old_enrichment_after_failed_refresh() -> None:
 
 def test_merge_accepts_legacy_object_dtypes_and_pandas_3_strings() -> None:
     """Verify that merge accepts legacy object dtypes and pandas 3 strings.
+
+    The merge path supports both historical object columns and current pandas string dtypes.
 
     Returns:
         None.
@@ -1115,6 +1179,8 @@ def test_merge_accepts_legacy_object_dtypes_and_pandas_3_strings() -> None:
 
 def test_changed_address_and_photo_invalidate_failed_enrichment() -> None:
     """Verify that changed address and photo invalidate failed enrichment.
+
+    Changed address or photo fingerprints must allow previously failed work to retry.
 
     Returns:
         None.

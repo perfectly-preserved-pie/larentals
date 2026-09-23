@@ -41,16 +41,16 @@
 
     /**
      * @typedef {{
-     *   layer_role?: unknown,
-     *   heat_points?: unknown,
-     *   marker_points?: unknown,
-     *   heat_max_intensity?: unknown,
-     *   max_citation_count?: unknown,
-     *   marker_frequency_breaks?: unknown,
-     *   marker_zoom_min?: unknown,
-     *   heat_zoom_max?: unknown,
-     *   window_start?: unknown,
-     *   window_end?: unknown,
+     * layer_role?: unknown,
+     * heat_points?: unknown,
+     * marker_points?: unknown,
+     * heat_max_intensity?: unknown,
+     * max_citation_count?: unknown,
+     * marker_frequency_breaks?: unknown,
+     * marker_zoom_min?: unknown,
+     * heat_zoom_max?: unknown,
+     * window_start?: unknown,
+     * window_end?: unknown,
      * } & Record<string, unknown>} ParkingHeatPointProperties
      */
 
@@ -59,13 +59,13 @@
      */
 
     /**
-    * @typedef {[number, number, number, number, number, string, number?]} MarkerPointTuple
+     * @typedef {[number, number, number, number, number, string, number?]} MarkerPointTuple
      */
 
     /**
      * @typedef {{
-     *   showHeat: boolean,
-     *   showMarkers: boolean,
+     * showHeat: boolean,
+     * showMarkers: boolean,
      * }} ParkingLegendOptions
      */
 
@@ -75,6 +75,7 @@
 
     /**
      * Return the inclusive upper percentile threshold from a sorted count distribution.
+     * The selected index is clamped to the array bounds so small datasets still produce a valid tier.
      *
      * @param {number[]} counts Sorted positive citation counts.
      * @param {number} fraction Percentile fraction in the inclusive `(0, 1]` range.
@@ -95,6 +96,7 @@
 
     /**
      * Round a citation count up to a label-friendly threshold.
+     * Familiar thresholds make hotspot intensity easier to compare at a glance.
      *
      * @param {number} value Candidate citation-count threshold.
      * @returns {number} Rounded-up threshold suitable for a legend label.
@@ -266,6 +268,7 @@
 
         /**
          * Format citation counts for compact, readable legend labels.
+         * Invalid counts use zero so the legend never displays `NaN`.
          *
          * @param {unknown} value Candidate citation count.
          * @returns {string} Localized citation-count label.
@@ -281,6 +284,8 @@
 
         /**
          * Lazily create the Leaflet legend control owned by this overlay instance.
+         * Reusing one control prevents duplicate legends as layer visibility changes.
+         * Reusing the control avoids duplicate legends as the overlay is toggled.
          *
          * @param {L.Map} map Active Leaflet map.
          * @returns {L.Control} Legend control for the parking citations layer.
@@ -321,18 +326,19 @@
 
         /**
          * Rebuild the legend contents to match the current zoom presentation.
+         * Separate guides explain heat intensity and marker frequency when those layers are enabled.
          *
          * @param {ParkingLegendOptions | null | undefined} options Current legend visibility state.
          * @returns {void}
          */
         /**
          * Renders a parking citations legend in the marker's container.
-         * 
+         *
          * The legend displays:
          * - Heat intensity gradient: visual representation of ticket density (lower to higher)
          * - Street-level citations: five frequency tiers from occasional to extreme hotspots
          * - Time window: applicable date range for the citation data
-         * 
+         *
          * @param {Object} options - Configuration options
          * @param {boolean} [options.showHeat] - Whether to display the heat map intensity guide
          * @param {boolean} [options.showMarkers] - Whether to display the hotspot frequency tiers
@@ -426,6 +432,7 @@
 
         /**
          * Ensure the legend control is mounted and refreshed for the active zoom state.
+         * Visibility options determine which heat and hotspot marker guides are rendered.
          *
          * @param {L.Map} map Active Leaflet map.
          * @param {ParkingLegendOptions} options Current legend visibility state.
@@ -451,6 +458,8 @@
 
         /**
          * Remove the parking legend when the overlay is unmounted.
+         * Clearing its mounted state lets a later overlay mount attach the control again.
+         * Clearing the mounted state lets a later overlay mount attach the control again.
          *
          * @param {L.Map | null | undefined} map Active Leaflet map, when still attached.
          * @returns {void}

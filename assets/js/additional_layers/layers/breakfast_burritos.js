@@ -22,9 +22,11 @@
 
     /**
      * Create the breakfast burrito marker and bind its popup content.
+     * The shared marker helper applies common popup sizing and the registered burrito builder.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the breakfast burrito location.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawBreakfastBurritoIcon(feature, latlng) {

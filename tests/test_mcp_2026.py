@@ -26,6 +26,8 @@ CLIENT_INFO = {"name": "mcp-2026-test", "version": "1.0.0"}
 def mcp_client() -> Iterator[FlaskClient]:
     """Create a Dash MCP endpoint supporting both protocol eras.
 
+    The fixture mounts the real route against a small Dash app to test transport behavior end to end.
+
     Yields:
         A Flask test client connected to the dual-era MCP endpoint.
     """
@@ -47,6 +49,8 @@ def _payload(
     version: str = MODERN_PROTOCOL_VERSION,
 ) -> dict[str, Any]:
     """Build one modern MCP request with its required per-request metadata.
+
+    Every modern request carries the body metadata used by the protocol validation checks.
 
     Args:
         method: MCP RPC method to place in the request.
@@ -84,6 +88,8 @@ def _post(
 ) -> TestResponse:
     """POST a modern MCP request with configurable mirrored headers.
 
+    Mirrored headers can be varied independently to exercise mismatch and negotiation paths.
+
     Args:
         client: Flask test client used to send the request.
         payload: JSON-RPC request body to post.
@@ -117,6 +123,8 @@ def test_server_discover_advertises_dual_era_stateless_server(
 ) -> None:
     """Return all mandatory discovery, identity, and caching fields.
 
+    Discovery is the contract modern clients use before sending stateless tool requests.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -144,6 +152,8 @@ def test_tools_list_is_stateless_deterministic_and_cacheable(
     mcp_client: FlaskClient,
 ) -> None:
     """List the curated tool without initialization or a session header.
+
+    Tool discovery should not create sessions and should return stable cacheable output.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
@@ -192,6 +202,8 @@ def test_discovery_rejects_mismatched_standard_headers(
 ) -> None:
     """Return HeaderMismatch when mirrored values disagree with the body.
 
+    Conflicting body and header values must be rejected instead of choosing one silently.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
         header_name: Mirrored standard header to override.
@@ -217,6 +229,8 @@ def test_modern_request_requires_all_standard_headers(
 ) -> None:
     """Reject a modern request that omits the mirrored method header.
 
+    The endpoint requires the standard mirrored headers before dispatching modern requests.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -237,6 +251,8 @@ def test_method_header_does_not_allow_base64_encoding(
     mcp_client: FlaskClient,
 ) -> None:
     """Restrict Base64 sentinel encoding to headers that permit it.
+
+    The method header is plain protocol text and must not accept the special sentinel encoding.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
@@ -259,6 +275,8 @@ def test_modern_request_requires_per_request_metadata(
 ) -> None:
     """Reject requests that omit mandatory client capabilities metadata.
 
+    Capability metadata is required on each stateless request, not inherited from a session.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -277,6 +295,8 @@ def test_modern_request_requires_per_request_metadata(
 
 def test_unsupported_version_lists_server_versions(mcp_client: FlaskClient) -> None:
     """Return the protocol-defined version-negotiation error and data.
+
+    Version negotiation errors must advertise versions the server actually supports.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
@@ -305,6 +325,8 @@ def test_unknown_modern_method_uses_jsonrpc_and_http_errors(
 ) -> None:
     """Return Method not found with the modern transport's HTTP 404.
 
+    Unknown methods need both a JSON-RPC error body and the modern HTTP status.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -319,6 +341,8 @@ def test_unknown_modern_method_uses_jsonrpc_and_http_errors(
 
 def test_tools_call_requires_matching_name_header(mcp_client: FlaskClient) -> None:
     """Validate Mcp-Name before dispatching a tool call.
+
+    The name header must agree with the requested tool before any tool executes.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
@@ -341,6 +365,8 @@ def test_unknown_tool_is_invalid_params_not_unknown_rpc(
 ) -> None:
     """Map Dash's ToolNotFound error to modern CallTool semantics.
 
+    A known tools/call method with an unknown tool is a parameter error, not an RPC method error.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -358,6 +384,8 @@ def test_unknown_tool_is_invalid_params_not_unknown_rpc(
 
 def test_tool_calls_are_rate_limited() -> None:
     """Enforce a per-peer limit without affecting discovery or tool listing.
+
+    Rate limiting protects dispatch while discovery remains available to clients.
 
     Returns:
         None.
@@ -390,6 +418,8 @@ def test_tool_calls_are_rate_limited() -> None:
 def test_invalid_origin_is_forbidden(mcp_client: FlaskClient) -> None:
     """Reject an Origin outside the endpoint's explicit allow list.
 
+    Browser origins outside the allow list must not reach the MCP handler.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -411,6 +441,8 @@ def test_modern_get_and_delete_do_not_open_or_destroy_sessions(
 ) -> None:
     """Reject session-era verbs when a request identifies as modern.
 
+    Modern requests cannot accidentally enter legacy session lifecycle behavior.
+
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
 
@@ -429,6 +461,8 @@ def test_modern_notification_is_acknowledged_without_body(
     mcp_client: FlaskClient,
 ) -> None:
     """Use HTTP 202 and no JSON-RPC response for a notification.
+
+    JSON-RPC notifications intentionally receive HTTP 202 with no response envelope.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
@@ -449,6 +483,8 @@ def test_subscription_acknowledges_no_unsupported_notifications(
     mcp_client: FlaskClient,
 ) -> None:
     """Acknowledge an empty filter first and gracefully close the SSE stream.
+
+    Unsupported subscriptions close cleanly after the acknowledgement event.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.
@@ -490,6 +526,8 @@ def test_subscription_acknowledges_no_unsupported_notifications(
 
 def test_legacy_initialize_and_get_still_reach_dash(mcp_client: FlaskClient) -> None:
     """Preserve Dash's native 2025-11-25 behavior for existing clients.
+
+    The modern adapter must preserve existing Dash behavior for legacy clients.
 
     Args:
         mcp_client: Dual-era MCP test client supplied by the fixture.

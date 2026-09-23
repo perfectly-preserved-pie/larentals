@@ -36,6 +36,7 @@
 
     /**
      * Normalize a direction value into a compass bearing.
+     * Modulo wrapping maps negative and over-360 values back into the 0–359 degree range.
      *
      * @param {unknown} value Direction value from feature properties.
      * @returns {number|null} Bearing in degrees clockwise from north.
@@ -50,6 +51,7 @@
 
     /**
      * Resolve all usable bearings for a camera feature.
+     * Direction fields are normalized and deduplicated before drawing field-of-view cones.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature.
      * @returns {number[]} Unique bearings.
@@ -88,9 +90,11 @@
 
     /**
      * Project a point by bearing and distance using a spherical-earth model.
+     * This turns camera direction metadata into the map coordinate used by the FOV overlay.
      *
      * @param {L.LatLng} origin Camera location.
      * @param {number} bearingDegrees Bearing in degrees clockwise from north.
+     *
      * @param {number} distanceMeters Distance to project.
      * @returns {[number, number]} Leaflet `[lat, lng]` coordinate.
      */
@@ -114,7 +118,6 @@
 
     /**
      * Interpolate the FOV distance for the current map zoom.
-     *
      * The cone is intentionally exaggerated at lower zooms so direction remains
      * visible at neighborhood scale, then shrinks to a local-scale indicator
      * once individual streets and parcels are legible.
@@ -142,9 +145,11 @@
 
     /**
      * Build approximate field-of-view layers for a camera bearing.
+     * Non-interactive styling keeps the preview from intercepting clicks on its camera marker.
      *
      * @param {L.LatLng} latlng Camera location.
      * @param {number} bearing Bearing in degrees clockwise from north.
+     *
      * @param {number} distanceMeters FOV cone length in meters.
      * @returns {L.Layer[]} Non-interactive cone polygon and center bearing line.
      */
@@ -186,9 +191,11 @@
 
     /**
      * Bind hover/click FOV behavior to a camera marker.
+     * The cone stays visible while its popup is open and is rebuilt when map zoom changes.
      *
      * @param {L.Marker} marker Marker returned for the camera point.
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature.
+     *
      * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
      * @returns {void}
      */
@@ -205,6 +212,7 @@
 
         /**
          * Remove the FOV cone layer regardless of popup state.
+         * Central cleanup prevents stale cones when a popup closes or the camera overlay is removed.
          *
          * @returns {void}
          */
@@ -218,6 +226,7 @@
 
         /**
          * Add the camera FOV cone layer to the map when possible.
+         * Existing cones are removed first so repeated hover events do not stack copies.
          *
          * @returns {void}
          */
@@ -247,6 +256,7 @@
 
         /**
          * Remove the FOV cone unless the marker popup is still open.
+         * Keeping it for an open popup preserves context after the pointer leaves the marker.
          *
          * @returns {void}
          */
@@ -259,6 +269,8 @@
 
         /**
          * Rebuild the FOV cone when the map zoom changes while it is visible.
+         * Cone length changes with zoom so the preview remains legible at different map scales.
+         * The cone length is zoom-dependent so it remains legible at neighborhood and street scales.
          *
          * @returns {void}
          */
@@ -297,9 +309,11 @@
 
     /**
      * Build a subtle convex hull around ALPR cluster leaves.
+     * The hull shows the grouped cameras’ footprint during hover or keyboard focus.
      *
      * @param {{ properties?: Record<string, unknown> }} clusterFeature Cluster feature from Supercluster.
      * @param {any} index Cluster index passed by Dash Leaflet.
+     *
      * @returns {L.GeoJSON|null} Convex hull layer or `null`.
      */
     function buildAlprClusterHull(clusterFeature, index) {
@@ -347,11 +361,14 @@
 
     /**
      * Render clustered ALPR cameras with a compact count marker.
+     * The marker reveals the cluster footprint during pointer and keyboard interaction.
      *
      * @param {{ properties?: Record<string, unknown> }} feature Cluster feature.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
+     *
      * @param {any} index Supercluster index passed by Dash Leaflet.
      * @param {Record<string, unknown>} context Dash Leaflet runtime context.
+     *
      * @returns {L.Marker} Cluster marker configured for ALPR camera points.
      */
     function drawAlprCameraCluster(feature, latlng, index, context) {
@@ -385,6 +402,7 @@
 
         /**
          * Add the cluster hull layer for the hovered/focused cluster.
+         * The guard avoids adding the same footprint twice during overlapping pointer events.
          *
          * @returns {void}
          */
@@ -402,6 +420,7 @@
 
         /**
          * Remove the active cluster hull layer.
+         * Clearing the active reference keeps later cluster transitions from removing a stale layer.
          *
          * @returns {void}
          */
@@ -425,9 +444,11 @@
 
     /**
      * Create an ALPR camera marker and bind popup content.
+     * Directional field-of-view behavior is attached only when usable bearing data is present.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the camera.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawAlprCameraIcon(feature, latlng) {

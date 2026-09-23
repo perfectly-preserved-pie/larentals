@@ -14,6 +14,8 @@ RESPONSIVE_FILTERS_SOURCE = Path(
 def test_all_plausible_product_events_are_instrumented() -> None:
     """Verify that all plausible product events are instrumented.
 
+    The product event catalog should include every event emitted by UI and server code.
+
     Returns:
         None.
     """
@@ -36,6 +38,8 @@ def test_all_plausible_product_events_are_instrumented() -> None:
 def test_listing_links_use_delegated_analytics_class() -> None:
     """Verify that listing links use delegated analytics class.
 
+    Delegation supports links rendered later inside map popups.
+
     Returns:
         None.
     """
@@ -46,6 +50,8 @@ def test_listing_links_use_delegated_analytics_class() -> None:
 
 def test_report_submission_tracks_only_after_success() -> None:
     """Verify that report submission tracks only after success.
+
+    Failed submissions must not inflate completed-report analytics.
 
     Returns:
         None.
@@ -59,6 +65,8 @@ def test_report_submission_tracks_only_after_success() -> None:
 
 def test_analytics_payloads_do_not_reference_sensitive_listing_fields() -> None:
     """Verify that analytics payloads do not reference sensitive listing fields.
+
+    Analytics should describe behavior without transmitting private listing data.
 
     Returns:
         None.
@@ -79,6 +87,8 @@ def test_analytics_payloads_do_not_reference_sensitive_listing_fields() -> None:
 
 def test_filter_maps_use_only_semantic_categories() -> None:
     """Verify that filter maps use only semantic categories.
+
+    Filter event values should be stable categories rather than user-entered data.
 
     Returns:
         None.

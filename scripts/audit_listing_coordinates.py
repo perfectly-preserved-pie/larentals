@@ -18,7 +18,21 @@ def audit_coordinates(
     *,
     tolerance_miles: float = 1.0,
 ) -> pd.DataFrame:
-    """Return listings whose pin lies beyond the tolerance of their ZIP polygon."""
+    """Measure each listing pin against its source ZIP polygon.
+
+    County polygons can clip ZIPs at the border, so available service-area
+    shapes are merged in before measuring. The audit retains every listing and
+    labels missing coordinates, missing ZIPs, unavailable polygons, and pins
+    outside the allowed distance for review.
+
+    Args:
+        db_path: SQLite listing database, opened read-only.
+        zip_path: County ZIP polygon dataset.
+        tolerance_miles: Allowed distance beyond a ZIP boundary.
+
+    Returns:
+        Listing rows with audit status and distance outside the ZIP in miles.
+    """
     zip_areas = gpd.read_file(zip_path)[["ZIPCODE", "geometry"]]
     if SOCAL_SERVICE_AREA_ZIP_CODES_PATH.exists():
         # The county layer clips border ZIPs such as 90631. The service-area

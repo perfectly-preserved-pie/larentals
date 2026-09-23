@@ -14,6 +14,8 @@ from functions.listing_enrichment_utils import (
 def parse_args() -> argparse.Namespace:
     """Parse command-line options for initializing enrichment tables.
 
+    CLI paths let initialization target the same database used by a deployment or a local review.
+
     Returns:
         Parsed command-line arguments.
 
@@ -45,6 +47,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Create or upgrade the local listing-enrichment tables.
+
+    Schema setup is repeatable so upgrades can add canonical fields without losing stored enrichment.
 
     Side Effects:
         Opens the configured SQLite database and changes its schema.

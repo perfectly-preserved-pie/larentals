@@ -40,6 +40,10 @@ LOGFILE = "~/larentals/buy_dataframe.log"
 def main() -> None:
   """Build the normalized buy-listings dataframe and publish its artifacts.
 
+  The job combines source rows with saved enrichment work before writing the
+  sale table. A sample run exits before publication so changes can be checked
+  without replacing the live dataset.
+
   Returns:
     ``None`` after the pipeline completes.
 

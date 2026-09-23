@@ -35,6 +35,8 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 def _format_duration(seconds: float) -> str:
     """Format a duration for compact progress logs.
 
+    Human-readable elapsed time keeps progress logs compact for long-running imports.
+
     Args:
         seconds: Elapsed duration in seconds.
 
@@ -54,6 +56,8 @@ def _format_duration(seconds: float) -> str:
 def _source_label(sources: set[str]) -> str:
     """Return listing sources in their preferred lookup order.
 
+    Preferred ordering keeps a stable source label when several listing aliases are present.
+
     Args:
         sources: Source metadata or source labels to combine.
 
@@ -66,7 +70,18 @@ def _source_label(sources: set[str]) -> str:
 
 
 def _url_hostname_matches(url: str, expected_domain: str) -> bool:
-    """Return whether a URL belongs to the expected domain or its subdomains."""
+    """Check the parsed hostname before selecting a listing provider.
+
+    A substring check would also trust lookalike hosts such as
+    expected.example.evil.test. Malformed URLs are treated as unmatched.
+
+    Args:
+        url: Listing URL to inspect.
+        expected_domain: Provider domain, without a URL scheme.
+
+    Returns:
+        Whether the host is the provider domain or one of its subdomains.
+    """
     try:
         hostname = urlsplit(url).hostname
     except ValueError:
@@ -122,6 +137,8 @@ def normalize_reported_inactive_flags(series: pd.Series) -> pd.Series:
 
     def is_reported(value: object) -> bool:
         """Handle is reported.
+
+        Explicit reported flags are checked before inferred values to preserve source intent.
 
         Args:
             value: Raw reported-inactive flag from pandas or SQLite.
@@ -310,6 +327,10 @@ def update_dataframe_with_listing_data(
 ) -> pd.DataFrame:
     """Update listing fields from The Agency, with BHHS as a fallback.
 
+    Reuse checkpointed scrape and image results when their inputs still match.
+    BHHS fills fields The Agency did not supply, avoiding repeat requests and
+    image uploads for listings already processed.
+
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
     imagekit_instance: The ImageKit instance for image transformations.
@@ -350,6 +371,8 @@ def update_dataframe_with_listing_data(
     def usable(value: Any) -> bool:
         """Handle usable.
 
+        The helper filters blank and null-like cells before selecting fallback columns.
+
         Args:
             value: Candidate enrichment field to check for meaningful content.
 
@@ -365,6 +388,8 @@ def update_dataframe_with_listing_data(
 
     def first_usable(*values: Any) -> Any:
         """Handle first usable.
+
+        Returning the first populated alias preserves source priority without leaking missing markers.
 
         Args:
             *values: Candidate values ordered by preference.
@@ -742,6 +767,8 @@ def reconstruct_missing_address_components(df: pd.DataFrame) -> pd.DataFrame:
 def categorize_laundry_features(feature: object) -> str:
     """Map raw laundry text or values to the application's laundry category.
 
+    Collapsing provider wording gives page filters a stable set of laundry categories.
+
     Args:
         feature: GeoJSON feature being inspected or rendered.
 
@@ -942,6 +969,8 @@ def reduce_geojson_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def remove_trailing_zero(df: pd.DataFrame) -> pd.DataFrame:
     """Remove trailing '.0' from all columns except hoa_fee and space_rent in the given DataFrame. Convert to string if necessary.
+
+    CSV numeric coercion can append `.0` to identifiers and labels, but deposit fields keep meaningful decimal values.
 
     Args:
         df: Dataframe to remove trailing zero.

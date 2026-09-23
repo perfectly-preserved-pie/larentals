@@ -52,6 +52,8 @@ _LEGACY_PROTOCOL_VERSIONS = frozenset(
 def _server_version() -> str:
     """Return the installed application version for MCP server metadata.
 
+    A stable version string lets MCP clients identify the server without importing the application entrypoint.
+
     Returns:
         The installed project version, or ``development`` outside a package.
     """
@@ -64,6 +66,8 @@ def _server_version() -> str:
 def _server_info() -> dict[str, str]:
     """Build the server identity included in modern MCP results.
 
+    Keeping identity metadata in one builder avoids inconsistent fields across results and errors.
+
     Returns:
         An MCP Implementation mapping containing the server name and version.
     """
@@ -72,6 +76,8 @@ def _server_info() -> dict[str, str]:
 
 def _json_response(payload: dict[str, Any], status: int = 200) -> Response:
     """Create a compact JSON response without legacy session headers.
+
+    The modern endpoint returns stateless JSON and does not require the legacy session header.
 
     Args:
         payload: JSON-serializable response object to send to the MCP client.
@@ -97,6 +103,8 @@ def _jsonrpc_error(
 ) -> Response:
     """Return one MCP JSON-RPC error with the required HTTP status.
 
+    Centralizing the envelope ensures protocol errors and HTTP status codes stay paired.
+
     Args:
         request_id: Request identifier to echo, or ``None`` if unavailable.
         code: Integer JSON-RPC or MCP error code.
@@ -118,6 +126,8 @@ def _jsonrpc_error(
 def _request_id(payload: Any) -> str | int | None:
     """Read a valid JSON-RPC request ID without accepting booleans.
 
+    JSON-RPC IDs may be strings, numbers, or null, but booleans are invalid despite being Python integers.
+
     Args:
         payload: Parsed request body whose identifier should be inspected.
 
@@ -134,6 +144,8 @@ def _request_id(payload: Any) -> str | int | None:
 
 def _normalize_origin(origin: str) -> str | None:
     """Normalize an HTTP Origin value for exact allow-list comparison.
+
+    Exact normalized origins make allow-list checks independent of harmless host casing and default ports.
 
     Args:
         origin: Origin header or configured origin URL to normalize.
@@ -167,6 +179,8 @@ def _normalize_origin(origin: str) -> str | None:
 def _origin_is_allowed(origin: str, allowed_origins: frozenset[str]) -> bool:
     """Return whether an Origin header is valid for this MCP endpoint.
 
+    Requests without an Origin can come from non-browser clients, while browser origins must match the allow-list.
+
     Args:
         origin: Incoming Origin header supplied by the HTTP client.
         allowed_origins: Canonical origins accepted by the endpoint.
@@ -180,6 +194,8 @@ def _origin_is_allowed(origin: str, allowed_origins: frozenset[str]) -> bool:
 
 def _decode_mcp_header_value(value: str) -> str:
     """Decode the MCP Base64 sentinel form or validate a plain header value.
+
+    The sentinel format carries null bytes through HTTP headers without accepting malformed encodings.
 
     Args:
         value: Raw mirrored MCP header value to validate and decode.
@@ -213,6 +229,8 @@ def _decode_mcp_header_value(value: str) -> str:
 def _modern_request_signal(payload: Any, protocol_header: str | None) -> bool:
     """Distinguish a modern request from traffic intended for Dash's handler.
 
+    This avoids claiming Dash form traffic that should continue through the legacy route.
+
     Args:
         payload: Parsed HTTP request body to classify by wire-protocol era.
         protocol_header: Optional MCP protocol version header value.
@@ -235,6 +253,8 @@ def _modern_request_signal(payload: Any, protocol_header: str | None) -> bool:
 
 def _validate_jsonrpc_request(payload: Any) -> Response | None:
     """Validate the common JSON-RPC request envelope.
+
+    Shared envelope validation keeps individual MCP methods focused on their own parameters.
 
     Args:
         payload: Parsed JSON request body to validate.
@@ -272,6 +292,10 @@ def _validate_jsonrpc_request(payload: Any) -> Response | None:
 
 def _validate_request_meta(payload: dict[str, Any]) -> Response | None:
     """Validate metadata required on every MCP 2026-07-28 request.
+
+    The modern transport requires a protocol version and client identity in
+    request metadata. Check them before method dispatch so malformed requests
+    fail consistently.
 
     Args:
         payload: Structurally valid JSON-RPC request containing parameters.
@@ -321,6 +345,9 @@ def _validate_request_meta(payload: dict[str, Any]) -> Response | None:
 
 def _validate_method_params(payload: dict[str, Any]) -> Response | None:
     """Validate fields used by the modern methods this server supports.
+
+    Reject malformed method-specific parameters before dispatch so clients get
+    a JSON-RPC Invalid params response rather than an error deeper in a tool.
 
     Args:
         payload: Structurally valid modern MCP request to inspect.
@@ -401,6 +428,8 @@ def _validate_method_params(payload: dict[str, Any]) -> Response | None:
 def _header_mismatch(request_id: str | int | None, message: str) -> Response:
     """Return the protocol-defined HeaderMismatch error.
 
+    Returning the protocol error lets clients retry with the negotiated session header.
+
     Args:
         request_id: Request identifier to echo in the error response.
         message: Explanation of the missing, malformed, or mismatched header.
@@ -413,6 +442,10 @@ def _header_mismatch(request_id: str | int | None, message: str) -> Response:
 
 def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
     """Validate mirrored MCP HTTP headers against the JSON-RPC body.
+
+    The headers identify the same protocol version, method, and target as the
+    body. Reject disagreement before dispatch so intermediaries and clients
+    cannot make the server act on two different requests.
 
     Args:
         payload: Modern MCP request whose standard headers should be checked.
@@ -475,6 +508,8 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
 def _unsupported_version(payload: dict[str, Any]) -> Response | None:
     """Reject protocol revisions the dual-era endpoint does not implement.
 
+    Rejecting unknown revisions avoids silently handling a wire format with different semantics.
+
     Args:
         payload: Validated modern MCP request carrying a protocol version.
 
@@ -495,6 +530,8 @@ def _unsupported_version(payload: dict[str, Any]) -> Response | None:
 
 def _result_meta(result: dict[str, Any]) -> None:
     """Attach the server identity recommended on every modern result.
+
+    Attaching identity metadata makes every successful response self-describing.
 
     Args:
         result: Mutable MCP result object that will receive server metadata.
@@ -527,6 +564,8 @@ def _normalize_json_schema(schema: dict[str, Any]) -> None:
     def collect_nested_definitions(value: Any, *, is_root: bool = False) -> None:
         """Move nested definition maps to the schema document root.
 
+        JSON Schema expects shared definitions at the document root so nested references can resolve.
+
         Args:
             value: Current JSON Schema node or collection being traversed.
             is_root: Whether the current mapping is the schema document root.
@@ -555,6 +594,8 @@ def _normalize_json_schema(schema: dict[str, Any]) -> None:
 def _normalize_tool_definition(tool: dict[str, Any]) -> None:
     """Normalize one Dash tool definition for the modern MCP wire format.
 
+    Dash definitions are adapted at the boundary so tools/list emits MCP-compatible JSON schemas.
+
     Args:
         tool: Mutable tool definition returned by Dash's MCP provider.
 
@@ -573,6 +614,8 @@ def _normalize_tool_definition(tool: dict[str, Any]) -> None:
 
 def _discover_response(payload: dict[str, Any]) -> Response:
     """Return the mandatory stateless server capability discovery result.
+
+    Stateless clients use discovery to learn supported protocol features before sending tools requests.
 
     Args:
         payload: Validated ``server/discover`` JSON-RPC request.
@@ -641,6 +684,8 @@ def _subscriptions_response(payload: dict[str, Any]) -> Response:
 
 def _dash_tools_response(payload: dict[str, Any]) -> Response:
     """Dispatch a modern tools request through Dash and normalize its result.
+
+    Tool dispatch remains delegated to Dash, with its result adapted to the modern stateless envelope.
 
     Args:
         payload: Validated modern ``tools/list`` or ``tools/call`` request.
@@ -725,6 +770,9 @@ def register_mcp_2026_transport(
     def tool_rate_limit_response(payload: dict[str, Any]) -> Response | None:
         """Apply a bounded per-peer sliding-window limit to tool calls.
 
+        Old timestamps and idle peers are removed as requests arrive. The peer
+        map is capped so many one-off addresses cannot grow it without bound.
+
         Args:
             payload: Validated ``tools/call`` request being rate limited.
 
@@ -768,6 +816,10 @@ def register_mcp_2026_transport(
     @server.before_request
     def handle_mcp_2026_request() -> Response | None:
         """Intercept modern MCP traffic and let legacy traffic reach Dash.
+
+        Both protocol generations share this endpoint. Only requests signaling
+        the modern version are handled here; legacy requests continue through
+        the existing Flask route.
 
         Returns:
             A completed modern response, or ``None`` to continue Flask routing.

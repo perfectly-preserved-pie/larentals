@@ -17,6 +17,8 @@ SITE_DESCRIPTION = (
 def get_public_page_paths(page_registry: Mapping[str, Mapping[str, Any]]) -> list[str]:
   """Return crawlable public paths from Dash's page registry.
 
+  Only registered public pages belong in crawler output; internal routes are excluded.
+
   Args:
       page_registry: Dash page registry used to discover public routes.
 
@@ -37,6 +39,8 @@ def get_public_page_paths(page_registry: Mapping[str, Mapping[str, Any]]) -> lis
 
 def build_sitemap_xml(base_url: str, page_paths: list[str]) -> bytes:
   """Build a sitemap XML document for the supplied page paths.
+
+  XML escaping keeps page paths safe inside the generated sitemap document.
 
   Args:
       base_url: Canonical public base URL without a trailing slash.
@@ -60,6 +64,8 @@ def build_sitemap_xml(base_url: str, page_paths: list[str]) -> bytes:
 def build_robots_txt(base_url: str) -> str:
   """Build a minimal robots.txt that advertises the sitemap.
 
+  A small robots file exposes the sitemap without restricting public pages.
+
   Args:
       base_url: Canonical public base URL without a trailing slash.
 
@@ -77,6 +83,9 @@ def build_robots_txt(base_url: str) -> str:
 
 def build_llms_txt(base_url: str) -> str:
   """Build a concise site guide for AI answer engines and LLM retrieval.
+
+  List stable public pages and data-access paths in one small text document so
+  an automated reader can find the listing maps and MCP setup.
 
   Args:
       base_url: Canonical public base URL without a trailing slash.
@@ -120,6 +129,9 @@ def build_llms_txt(base_url: str) -> str:
 
 def build_structured_data_script(base_url: str) -> str:
   """Build JSON-LD structured data for the public app shell.
+
+  Publish the site and app as linked schema.org entities so crawlers can
+  associate the two public listing pages with the same service.
 
   Args:
       base_url: Canonical public base URL without a trailing slash.

@@ -6,7 +6,11 @@ import geopandas as gpd
 # 2025 Eaton Fire: https://gis.data.ca.gov/datasets/CALFIRE-Forestry::dins-2025-eaton-public-view/about
 
 def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, lease_geojson_path: str, buy_geojson_path: str, buffer_distance: float = 10) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    """Checks for fire damage in lease and buy properties based on Palisades and Eaton fire datasets.
+    """Mark listings near recorded Palisades or Eaton fire damage.
+
+    Flag listings whose geometry intersects a small buffer around records
+    marked as damaged. The buffer is measured in projected meters before
+    returning both listing layers in WGS84.
 
     Parameters:
         palisades_geojson_path (str): Path to the Palisades fire GeoJSON file.
@@ -83,6 +87,8 @@ def check_fire_damage(palisades_geojson_path: str, eaton_geojson_path: str, leas
 
 def main() -> None:
     """Run the wildfire-damage analysis from the configured input datasets.
+
+    The entry point loads configured datasets, runs the analysis, and writes its derived output.
 
     Returns:
         None.

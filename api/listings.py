@@ -74,6 +74,8 @@ BUY_LISTING_DETAIL_SQL = """
 def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | None:
     """Convert a single SQLite row into the popup-detail JSON payload.
 
+    Normalizing at the API boundary keeps popup clients independent from SQLite column naming.
+
     Args:
         row: SQLite row returned from a page-specific listing detail query.
 
@@ -87,7 +89,10 @@ def build_listing_detail_payload(row: sqlite3.Row | None) -> dict[str, Any] | No
 
 
 def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
-    """Register on-demand listing-detail routes used by lazy-loaded popups.
+    """Register the detail routes fetched when a map popup opens.
+
+    The map initially carries summary fields only. Loading full rows on demand
+    keeps the map payload smaller while still giving popups current details.
 
     Args:
         server: The Flask server instance (typically `app.server` in Dash).
@@ -100,7 +105,10 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
     @bp.get("/api/lease/listing-details/<listing_id>")
     def get_lease_listing_details(listing_id: str) -> Response:
-        """Return lease listing details and related LAHD/RSO summaries.
+        """Load a rental listing and its city-specific property summaries.
+
+        A missing MLS number returns 404 so the popup can show its fallback
+        state. LAHD and RSO lookups run only after the listing row exists.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -125,7 +133,10 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
     @bp.get("/api/buy/listing-details/<listing_id>")
     def get_buy_listing_details(listing_id: str) -> Response:
-        """Return buy listing details and the related LAHD summary.
+        """Load a sale listing and its Housing Department summary.
+
+        Sale popups do not need the rental-only RSO lookup. A missing MLS number
+        returns 404 for the popup's fallback state.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -151,13 +162,16 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
 
 def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
-    """Return a Housing Department summary only for listings in LA City scope.
+    """Resolve Housing Department context for a listing popup.
+
+    Listings confirmed outside LA City get an out-of-scope result. If the live
+    dataset is unavailable, report that separately instead of implying no match.
 
     Args:
-        payload: Structured request, listing, or artifact payload to validate or summarize.
+        payload: Listing city, coordinates, and street address from the detail row.
 
     Returns:
-        A mapping containing the constructed LAHD listing summary.
+        LAHD lookup result with scope and availability information.
     """
     in_scope = is_listing_in_los_angeles_city(
         city=payload.get("city"),
@@ -178,13 +192,17 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_rso_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
-    """Return a conservative LA City RSO summary for a rental listing popup.
+    """Resolve rent-stabilization context for a rental listing.
+
+    A listing confirmed outside LA City is not eligible for an RSO match.
+    Otherwise the address lookup supplies the result, including when city scope
+    cannot be determined from the listing alone.
 
     Args:
-        payload: Structured request, listing, or artifact payload to validate or summarize.
+        payload: Rental listing city, coordinates, and street address.
 
     Returns:
-        A mapping containing the constructed RSO listing summary.
+        RSO lookup result with a jurisdiction flag.
     """
     in_scope = is_listing_in_los_angeles_city(
         city=payload.get("city"),

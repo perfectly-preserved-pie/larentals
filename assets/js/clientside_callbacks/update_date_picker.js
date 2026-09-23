@@ -5,6 +5,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
      *
      * @param {number} selectedDays - Number of days to look back (14, 30, 90, or 0 for all time).
      * @param {string} earliestDate - The earliest available date (ISO string) from the store.
+     *
      * @returns {string} The computed start date as a YYYY-MM-DD string.
      */
     updateDatePicker: function(selectedDays, earliestDate) {

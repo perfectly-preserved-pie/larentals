@@ -34,6 +34,8 @@ class McpDocsUiTest(unittest.TestCase):
   def setUp(self) -> None:
     """Build one documentation layout for each isolated test case.
 
+    Each test gets a fresh docs layout so IDs and callback state do not leak between cases.
+
     Returns:
         None.
     """
@@ -42,6 +44,8 @@ class McpDocsUiTest(unittest.TestCase):
 
   def test_layout_exposes_copyable_public_endpoint(self) -> None:
     """Keep the displayed and copied endpoint consistent.
+
+    The endpoint shown to users must match the value copied by the setup control.
 
     Returns:
         None.
@@ -57,6 +61,8 @@ class McpDocsUiTest(unittest.TestCase):
   def test_layout_covers_supported_clients_and_listing_modes(self) -> None:
     """Ensure essential setup and capability copy remains present.
 
+    The setup page must explain both protocol clients and listing modes the tool supports.
+
     Returns:
         None.
     """
@@ -67,6 +73,8 @@ class McpDocsUiTest(unittest.TestCase):
 
   def test_layout_has_navigation_and_theme_control(self) -> None:
     """Verify that users can return home and use the shared theme callback.
+
+    The docs page should remain reachable and use the application-wide theme behavior.
 
     Returns:
         None.

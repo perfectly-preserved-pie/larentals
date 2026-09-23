@@ -13,9 +13,11 @@
 
     /**
      * Build a subtle convex hull around oil-well cluster leaves.
+     * A hull is returned only when the cluster index provides at least three usable leaf points.
      *
      * @param {{ properties?: Record<string, unknown> }} clusterFeature Cluster feature from Supercluster.
      * @param {any} index Cluster index passed by Dash Leaflet.
+     *
      * @returns {L.GeoJSON|null} Convex hull layer or `null`.
      */
     function buildOilClusterHull(clusterFeature, index) {
@@ -63,11 +65,14 @@
 
     /**
      * Render oil-well clusters with a custom marker and hover hull.
+     * Hover and keyboard focus reveal the footprint of the grouped wells.
      *
      * @param {{ properties?: Record<string, unknown> }} feature Cluster feature.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
+     *
      * @param {any} index Supercluster index.
      * @param {Record<string, unknown>} context Dash Leaflet runtime context.
+     *
      * @returns {L.Marker} Cluster marker configured for oil-well points.
      */
     function drawOilCluster(feature, latlng, index, context) {
@@ -129,9 +134,11 @@
 
     /**
      * Create the oil/gas well marker and bind its popup content.
+     * The registered popup builder supplies the well details and status.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the oil/gas well.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawOilIcon(feature, latlng) {

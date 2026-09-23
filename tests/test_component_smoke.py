@@ -24,6 +24,8 @@ from functions.distribution import attach_distribution
 def _collect_components(component: object) -> Iterator[object]:
     """Handle collect components.
 
+    Recursive collection lets smoke checks inspect controls nested inside cards and accordions.
+
     Args:
         component: Dash component or nested component collection to traverse.
 
@@ -44,6 +46,8 @@ def _collect_components(component: object) -> Iterator[object]:
 class ComponentsSmokeTest(unittest.TestCase):
     def test_distribution_callbacks_can_share_slider_id_with_unique_outputs(self) -> None:
         """Keep page-specific histogram outputs unique for shared slider IDs.
+
+        Shared input IDs are valid when each page callback writes to separate outputs.
 
         Returns:
             None.
@@ -87,6 +91,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_location_inputs_use_associated_labels(self) -> None:
         """Verify that location inputs use associated labels.
+
+        Visible location fields need programmatic labels for screen-reader and browser autofill support.
 
         Returns:
             None.
@@ -141,7 +147,11 @@ class ComponentsSmokeTest(unittest.TestCase):
                 self.assertEqual(status_props["aria-atomic"], "true")
 
     def test_location_suggestions_include_listing_places_and_zip_codes(self) -> None:
-        """Build canonical suggestions from local listing values."""
+        """Build canonical suggestions from local listing values.
+
+    Suggestions should reflect actual listing cities and ZIP codes, with
+    duplicates and formatting differences normalized for the filter UI.
+    """
         suggestions = build_location_suggestions(
             ["SILVER LAKE", "Pasadena", "#302, LONG BEACH", "BDPK", None],
             ["90026", "91030-1234", None],
@@ -157,6 +167,8 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_short_location_status_stays_plain_text(self) -> None:
         """Verify that short location status stays plain text.
 
+        Short status text should not create a popover that adds unnecessary interaction.
+
         Returns:
             None.
         """
@@ -171,6 +183,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_long_location_status_puts_additional_zips_in_popover(self) -> None:
         """Verify that long location status puts additional zips in popover.
+
+        Long ZIP lists are moved into a popover to keep the map toolbar compact.
 
         Returns:
             None.
@@ -209,6 +223,8 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_buy_components_build_core_cards(self) -> None:
         """Verify that buy components build core cards.
 
+        The buy layout must include the main listing, filter, map, and results components.
+
         Returns:
             None.
         """
@@ -222,6 +238,8 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_lease_components_build_core_cards(self) -> None:
         """Verify that lease components build core cards.
 
+        The lease layout must preserve its core cards after responsive-shell integration.
+
         Returns:
             None.
         """
@@ -234,6 +252,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_subtype_filter_defaults_to_include_all_state(self) -> None:
         """Verify that subtype filter defaults to include all state.
+
+        The default checklist state should not narrow listings before user input.
 
         Returns:
             None.
@@ -253,6 +273,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_range_filter_reserves_tooltip_space_before_switch(self) -> None:
         """Verify that range filter reserves tooltip space before switch.
+
+        The tooltip area must not overlap the missing-value control at narrow widths.
 
         Returns:
             None.
@@ -281,6 +303,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_hybrid_range_filter_has_exact_fields_and_finite_slider(self) -> None:
         """Verify that hybrid range filter has exact fields and finite slider.
+
+        The exact bounds must coexist with a finite slider suitable for visual interaction.
 
         Returns:
             None.
@@ -337,6 +361,8 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_iqr_slider_cap_buckets_outliers_without_discarding_them(self) -> None:
         """Verify that iqr slider cap buckets outliers without discarding them.
 
+        Visual caps should group extreme values while leaving those listings in the filtered result.
+
         Returns:
             None.
         """
@@ -361,6 +387,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_iqr_slider_cap_rounds_currency_to_a_readable_endpoint(self) -> None:
         """Verify that iqr slider cap rounds currency to a readable endpoint.
+
+        Currency slider endpoints should remain easy to scan and set.
 
         Returns:
             None.
@@ -389,6 +417,8 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_iqr_slider_uses_observed_max_when_data_has_no_high_outlier(self) -> None:
         """Verify that iqr slider uses observed max when data has no high outlier.
 
+        Without an outlier, users should retain access to the observed maximum.
+
         Returns:
             None.
         """
@@ -407,6 +437,8 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_isp_speed_filter_reserves_space_below_both_sliders(self) -> None:
         """Verify that isp speed filter reserves space below both sliders.
 
+        Helper text and missing-value controls must fit below both speed sliders.
+
         Returns:
             None.
         """
@@ -421,6 +453,8 @@ class ComponentsSmokeTest(unittest.TestCase):
 
     def test_title_card_links_to_mcp_setup_page(self) -> None:
         """Verify that title card links to mcp setup page.
+
+        The title card is the discoverable path to configure the app’s listing tool.
 
         Returns:
             None.

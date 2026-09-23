@@ -9,6 +9,8 @@ from scripts.publish_listing_tables import publish_listing_tables
 def _create_table(db_path: Path, table_name: str, rows: list[tuple[str, int]]) -> None:
     """Handle create table.
 
+    Small staged tables make schema and atomic-swap behavior easy to inspect.
+
     Args:
         db_path: Filesystem path to the SQLite database.
         table_name: SQLite table to inspect or modify.
@@ -31,6 +33,8 @@ def test_publish_replaces_both_listing_tables_and_preserves_other_tables(
     tmp_path: Path,
 ) -> None:
     """Verify that publish replaces both listing tables and preserves other tables.
+
+    Publishing must swap both listing tables together without damaging unrelated SQLite data.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -65,6 +69,8 @@ def test_publish_does_not_change_destination_when_a_stage_is_invalid(
     tmp_path: Path,
 ) -> None:
     """Verify that publish does not change destination when a stage is invalid.
+
+    Validation failure must happen before any destination table is replaced.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.

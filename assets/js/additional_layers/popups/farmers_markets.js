@@ -23,9 +23,11 @@
 
     /**
      * Format a farmers market property value for popup display.
+     * URL, email, and county fields get appropriate link or Yes/No treatment; other text is escaped.
      *
      * @param {string} key Property key being rendered.
      * @param {unknown} value Raw property value.
+     *
      * @returns {string} Escaped HTML string for the property value.
      */
     function formatFarmersMarketValue(key, value) {
@@ -53,6 +55,7 @@
 
     /**
      * Build the formatted address line for a farmers market popup.
+     * Street and city/state/ZIP fragments are joined independently so either partial address can display.
      *
      * @param {Record<string, unknown>} properties Feature properties for the farmers market.
      * @returns {string} Escaped address string, or `N/A` when unavailable.
@@ -78,6 +81,7 @@
 
     /**
      * Build the website block for a farmers market popup.
+     * Duplicate URL and link fields are shown once; distinct sources are listed on separate lines.
      *
      * @param {Record<string, unknown>} properties Feature properties for the farmers market.
      * @returns {string} HTML link block, or `N/A` when no site is available.
@@ -108,6 +112,7 @@
 
     /**
      * Build the ordered rows rendered in a farmers market popup.
+     * Hours, website, and county status use shared formatting and link rules.
      *
      * @param {Record<string, unknown>} properties Feature properties for the farmers market.
      * @returns {{ label: string, value: string }[]} Popup rows for the feature.
@@ -135,6 +140,7 @@
 
     /**
      * Build the popup title for a farmers market feature.
+     * The CFM abbreviation is expanded and the market suffix is added only when missing.
      *
      * @param {Record<string, unknown>} properties Feature properties for the farmers market.
      * @returns {string} Display title.
@@ -156,6 +162,7 @@
 
     /**
      * Build the complete farmers market popup markup.
+     * The shared card shell renders the normalized title and ordered market details.
      *
      * @param {Record<string, unknown>} properties Feature properties for the farmers market.
      * @returns {string} HTML string bound to the Leaflet popup.

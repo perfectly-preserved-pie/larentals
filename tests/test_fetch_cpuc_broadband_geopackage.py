@@ -10,6 +10,8 @@ from scripts.fetch_cpuc_broadband_geopackage import (
 def test_source_matches_metadata_when_output_and_headers_match(tmp_path: Path) -> None:
     """Verify that source matches metadata when output and headers match.
 
+    Matching output and validators should reuse the cached geopackage instead of downloading it again.
+
     Args:
         tmp_path: Temporary directory supplied by pytest.
 
@@ -36,6 +38,8 @@ def test_source_matches_metadata_when_output_and_headers_match(tmp_path: Path) -
 
 def test_source_metadata_mismatch_forces_rebuild(tmp_path: Path) -> None:
     """Verify that source metadata mismatch forces rebuild.
+
+    A changed validator or missing output invalidates the cached source artifact.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.

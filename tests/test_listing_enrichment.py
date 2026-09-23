@@ -30,6 +30,8 @@ from scripts.enrich_schools import (
 def test_extract_grade_span_and_band_classification() -> None:
     """Verify that extract grade span and band classification.
 
+    Grade parsing must support school source formats and map them to consistent bands.
+
     Returns:
         None.
     """
@@ -42,6 +44,8 @@ def test_extract_grade_span_and_band_classification() -> None:
 
 def test_school_parse_args_use_official_defaults() -> None:
     """Verify that school parse args use official defaults.
+
+    The scheduled builder should use the official source and local artifact paths by default.
 
     Returns:
         None.
@@ -59,6 +63,8 @@ def test_resolve_local_dataset_path_downloads_missing_default_artifact(
 ) -> None:
     """Verify that resolve local dataset path downloads missing default artifact.
 
+    Only the configured default source should be downloaded automatically when absent.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
         tmp_path: Temporary directory supplied by pytest.
@@ -71,6 +77,8 @@ def test_resolve_local_dataset_path_downloads_missing_default_artifact(
 
     def fake_download(url: str, destination: Path) -> Path:
         """Handle fake download.
+
+        The stub captures download behavior without network access.
 
         Args:
             url: URL requested, validated, or downloaded by the function.
@@ -102,6 +110,8 @@ def test_resolve_local_dataset_path_raises_for_missing_non_default_artifact(
 ) -> None:
     """Verify that resolve local dataset path raises for missing non default artifact.
 
+    A user-specified missing path should fail instead of silently switching datasets.
+
     Args:
         tmp_path: Temporary directory supplied by pytest.
 
@@ -122,6 +132,8 @@ def test_resolve_local_dataset_path_raises_for_missing_non_default_artifact(
 def test_resolve_region_bbox_for_southern_california() -> None:
     """Verify that resolve region bbox for southern california.
 
+    The configured regional scope must return WGS84 bounds for source filtering.
+
     Returns:
         None.
     """
@@ -131,6 +143,8 @@ def test_resolve_region_bbox_for_southern_california() -> None:
 
 def test_filter_gdf_to_bbox_keeps_only_southern_california_points() -> None:
     """Verify that filter gdf to bbox keeps only southern california points.
+
+    Rows outside the service region should not be included in local enrichment.
 
     Returns:
         None.
@@ -148,6 +162,8 @@ def test_filter_gdf_to_bbox_keeps_only_southern_california_points() -> None:
 
 def test_read_local_geospatial_dataset_reprojects_bbox_to_dataset_crs() -> None:
     """Verify that read local geospatial dataset reprojects bbox to dataset crs.
+
+    Spatial filters must be transformed to the coordinate system expected by each source file.
 
     Returns:
         None.
@@ -173,6 +189,8 @@ def test_read_local_geospatial_dataset_reprojects_bbox_to_dataset_crs() -> None:
 def test_build_source_version_keeps_remote_urls() -> None:
     """Verify that build source version keeps remote urls.
 
+    Remote source identity must remain part of the cache version key.
+
     Returns:
         None.
     """
@@ -188,6 +206,8 @@ def test_build_source_version_keeps_remote_urls() -> None:
 
 def test_rebuild_enrichment_table_drops_legacy_columns_and_rows() -> None:
     """Verify that rebuild enrichment table drops legacy columns and rows.
+
+    A deliberate rebuild should return the table to the canonical schema, including row removal.
 
     Returns:
         None.
@@ -225,6 +245,8 @@ def test_rebuild_enrichment_table_drops_legacy_columns_and_rows() -> None:
 
 def test_upsert_listing_enrichment_rows_updates_existing_records() -> None:
     """Verify that upsert listing enrichment rows updates existing records.
+
+    Repeated enrichment runs should update the existing MLS row instead of duplicating it.
 
     Returns:
         None.
@@ -272,6 +294,8 @@ def test_upsert_listing_enrichment_rows_updates_existing_records() -> None:
 
 def test_upsert_listing_enrichment_rows_skips_missing_mls_numbers() -> None:
     """Verify that upsert listing enrichment rows skips missing mls numbers.
+
+    Rows without a stable listing key cannot be safely upserted.
 
     Returns:
         None.

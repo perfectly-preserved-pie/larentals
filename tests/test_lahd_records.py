@@ -15,6 +15,8 @@ def test_fetch_lahd_property_record_details_normalizes_rows(
 ) -> None:
     """Verify that fetch lahd property record details normalizes rows.
 
+    Both investigation and violation sources must be reduced to the common drawer row shape.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -26,6 +28,8 @@ def test_fetch_lahd_property_record_details_normalizes_rows(
         params: dict[str, object],
     ) -> list[dict[str, object]]:
         """Handle fake request.
+
+        The fake captures Socrata query parameters so filters and limits can be asserted.
 
         Args:
             url: URL requested, validated, or downloaded by the function.
@@ -104,6 +108,8 @@ def test_fetch_lahd_property_record_details_falls_back_to_snapshot(
 ) -> None:
     """Verify that fetch lahd property record details falls back to snapshot.
 
+    A failed live request should still show the locally prepared property snapshot.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -120,6 +126,8 @@ def test_fetch_lahd_property_record_details_falls_back_to_snapshot(
         limit: int,
     ) -> list[dict[str, object]]:
         """Handle fake investigation records.
+
+        The fixture supplies stable case rows for aggregation and drawer rendering.
 
         Args:
             apn: Assessor Parcel Number identifying the property.
@@ -138,6 +146,8 @@ def test_fetch_lahd_property_record_details_falls_back_to_snapshot(
         limit: int,
     ) -> list[dict[str, object]]:
         """Handle fake violation records.
+
+        The fixture isolates violation normalization from live source schemas.
 
         Args:
             apn: Assessor Parcel Number identifying the property.
@@ -190,6 +200,8 @@ def test_live_lahd_dataset_status_reports_non_200(
 ) -> None:
     """Verify that live lahd dataset status reports non 200.
 
+    Non-200 responses make the corresponding live dataset unavailable.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -198,6 +210,8 @@ def test_live_lahd_dataset_status_reports_non_200(
     """
     def fake_get(url: str, **kwargs: object) -> requests.Response:
         """Handle fake get.
+
+        The HTTP stub exercises status and fallback branches without contacting Socrata.
 
         Args:
             url: URL requested, validated, or downloaded by the function.
@@ -230,6 +244,8 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(
 ) -> None:
     """Verify that listing lahd summary hidden when live datasets unavailable.
 
+    The popup should not imply zero records when source data could not be checked.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -245,6 +261,8 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(
 
     def fail_lookup(**_kwargs: object) -> None:
         """Handle fail lookup.
+
+        A deterministic failure drives the snapshot fallback path.
 
         Args:
             **_kwargs: Ignored keyword arguments accepted by the test double.
@@ -274,6 +292,8 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(
 
 def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path: Path) -> None:
     """Verify that lahd listing lookup uses spatial candidates.
+
+    Nearby listings need spatial candidates when their normalized addresses differ.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -327,6 +347,8 @@ def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path: Path) -> None:
 def test_lahd_records_grids_do_not_repeat_property_address() -> None:
     """Verify that lahd records grids do not repeat property address.
 
+    The drawer title already identifies the property, so table rows should not repeat that address.
+
     Returns:
         None.
     """
@@ -336,6 +358,8 @@ def test_lahd_records_grids_do_not_repeat_property_address() -> None:
 
 def test_lahd_scope_uses_official_la_city_boundary() -> None:
     """Verify that lahd scope uses official la city boundary.
+
+    The jurisdiction check must follow the official boundary rather than a rough rectangle.
 
     Returns:
         None.

@@ -87,7 +87,11 @@ DEFAULT_USER_AGENT = "WhereToLive.LA/1.0 school enrichment downloader"
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """Handle parse args.
+    """Parse source, region, and schema options for school enrichment.
+
+    Accept source paths and column overrides because school datasets do not use
+    one stable schema. The options also select which listing table receives
+    enrichment.
 
     Args:
         argv: Optional command-line argument sequence; defaults to ``sys.argv``.
@@ -158,6 +162,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def download_file(url: str, destination: Path) -> Path:
     """Download a remote file to disk.
 
+    Downloads are used only for configured source artifacts that are not already available locally.
+
     Args:
         url: URL requested, validated, or downloaded by the function.
         destination: Filesystem path where the downloaded file is written.
@@ -188,6 +194,8 @@ def resolve_local_dataset_path(
     dataset_label: str,
 ) -> str:
     """Resolve a dataset path, auto-downloading only when the default local artifact is missing.
+
+    Local cached inputs are preferred so routine builds do not depend on remote availability.
 
     Args:
         path_value: User-supplied local path or remote dataset URL.
@@ -221,6 +229,8 @@ def resolve_local_dataset_path(
 def resolve_input_dataset_paths(args: argparse.Namespace) -> argparse.Namespace:
     """Resolve local/default dataset paths before reading any geospatial inputs.
 
+    Resolving every path first gives the enrichment run one consistent view of its inputs.
+
     Args:
         args: Parsed command-line options identifying the input datasets and tables.
 
@@ -246,6 +256,8 @@ def resolve_input_dataset_paths(args: argparse.Namespace) -> argparse.Namespace:
 def resolve_listing_tables(selection: str) -> list[ListingTable]:
     """Handle resolve listing tables.
 
+    The listing source table can vary by database, so available tables are selected before joins.
+
     Args:
         selection: Requested listing-table selection: buy, lease, or both.
 
@@ -259,6 +271,8 @@ def resolve_listing_tables(selection: str) -> list[ListingTable]:
 
 def choose_column(columns: pd.Index, override: str | None, candidates: tuple[str, ...]) -> str | None:
     """Handle choose column.
+
+    Alias matching adapts source schema differences without hard-coding one vendor’s column spelling.
 
     Args:
         columns: Column names to read or process.
@@ -280,6 +294,8 @@ def choose_column(columns: pd.Index, override: str | None, candidates: tuple[str
 
 def dataset_columns_for_path(path: str, *, layer: str | None) -> pd.Index | None:
     """Return lightweight dataset column metadata for local files when available.
+
+    Metadata inspection helps choose fields without loading the full spatial dataset.
 
     Args:
         path: Filesystem path to the source file, dataset, database, or artifact.
@@ -309,6 +325,8 @@ def dataset_columns_for_path(path: str, *, layer: str | None) -> pd.Index | None
 def parse_grade_token(value: object) -> int | None:
     """Normalize a single grade token such as `K`, `TK`, `5`, or `12`.
 
+    Normalized tokens make kindergarten labels comparable to numeric grade values.
+
     Args:
         value: Raw grade label such as ``TK``, ``K``, or ``12``.
 
@@ -330,6 +348,8 @@ def parse_grade_token(value: object) -> int | None:
 
 def extract_grade_span(value: object) -> tuple[int, int] | None:
     """Parse a grade-span string like `K-5`, `6-8`, or `9/12`.
+
+    The parser accepts source formats that use hyphens or slashes for grade ranges.
 
     Args:
         value: Source grade-span label to parse.
@@ -367,6 +387,8 @@ def extract_grade_span_from_row(
 ) -> tuple[int, int] | None:
     """Handle extract grade span from row.
 
+    Row fields are combined because source datasets may split or abbreviate grade endpoints.
+
     Args:
         row: School record containing the configured grade fields.
         grade_span_col: Optional source column containing a complete grade span.
@@ -393,6 +415,8 @@ def extract_grade_span_from_row(
 def grade_span_bands(span: tuple[int, int] | None) -> set[str]:
     """Return the school bands touched by a grade span.
 
+    Band labels summarize elementary, middle, and high school coverage for popup filters.
+
     Args:
         span: Inclusive low and high grade indices.
 
@@ -418,7 +442,10 @@ def prepare_school_points(
     *,
     bbox: tuple[float, float, float, float],
 ) -> tuple[gpd.GeoDataFrame, str]:
-    """Handle prepare school points.
+    """Prepare school points with names and usable grade bands.
+
+    Resolve name and grade columns from the source schema, then discard rows
+    that cannot be assigned a school band for nearest-school matching.
 
     Args:
         args: Parsed command-line options identifying school source columns and filters.
@@ -490,6 +517,8 @@ def compute_nearest_school_band(
 ) -> pd.DataFrame:
     """Handle compute nearest school band.
 
+    Distance and grade compatibility together identify a plausible school for a listing.
+
     Args:
         listings: Dataframe to compute nearest school band.
         schools: Dataframe to compute nearest school band.
@@ -526,7 +555,11 @@ def prepare_district_polygons(
     *,
     bbox: tuple[float, float, float, float],
 ) -> tuple[gpd.GeoDataFrame, str, str | None] | None:
-    """Handle prepare district polygons.
+    """Prepare district polygons for listing-to-district matching.
+
+    Select the district name and optional type fields from the available
+    schema. Return no district layer when the source is disabled or empty,
+    leaving nearest-school enrichment usable.
 
     Args:
         args: Parsed command-line options identifying district source columns and filters.
@@ -576,6 +609,8 @@ def compute_district_join(
 ) -> pd.DataFrame:
     """Handle compute district join.
 
+    Spatial matching attaches district context when source rows do not carry a reliable district key.
+
     Args:
         listings: Dataframe to compute district join.
         districts: Dataframe to compute district join.
@@ -605,7 +640,11 @@ def compute_district_join(
 
 
 def enrich_table(listing_table: ListingTable, args: argparse.Namespace) -> int:
-    """Handle enrich table.
+    """Write district and nearest-school data for one listing table.
+
+    Join district polygons and nearest schools to listing points, then save
+    source-versioned results in the enrichment table rather than replacing
+    listing rows.
 
     Args:
         listing_table: Listing table, either ``buy`` or ``lease``.
@@ -669,6 +708,8 @@ def enrich_table(listing_table: ListingTable, args: argparse.Namespace) -> int:
 
 def main() -> None:
     """Handle main.
+
+    The script joins school, district, and listing context into the local layer artifact.
 
     Returns:
         None.

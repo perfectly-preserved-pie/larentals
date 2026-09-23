@@ -13,6 +13,7 @@
 
     /**
      * Resolve a marker color chip class from the school level.
+     * Unknown levels use a neutral style so every school remains visible.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} CSS class for the marker chip.
@@ -34,9 +35,11 @@
 
     /**
      * Build a subtle convex hull around school-cluster leaves.
+     * The footprint appears during hover or keyboard focus to show which schools are grouped.
      *
      * @param {{ properties?: Record<string, unknown> }} clusterFeature Cluster feature from Supercluster.
      * @param {any} index Cluster index passed by Dash Leaflet.
+     *
      * @returns {L.GeoJSON|null} Convex hull layer or `null`.
      */
     function buildSchoolClusterHull(clusterFeature, index) {
@@ -84,11 +87,14 @@
 
     /**
      * Render school clusters with a distinct pill-shaped icon and hover hull.
+     * The count marker reveals the grouped schools’ footprint during interaction.
      *
      * @param {{ properties?: Record<string, unknown> }} feature Cluster feature.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by Dash Leaflet.
+     *
      * @param {any} index Supercluster index.
      * @param {Record<string, unknown>} context Dash Leaflet runtime context.
+     *
      * @returns {L.Marker} Cluster marker configured for school points.
      */
     function drawSchoolCluster(feature, latlng, index, context) {
@@ -151,9 +157,11 @@
 
     /**
      * Create the school marker and bind popup content.
+     * The level sets its color chip class and the shared helper attaches school details.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the school.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawSchoolIcon(feature, latlng) {

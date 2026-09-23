@@ -23,6 +23,10 @@ def imagekit_transform(
     ) -> Optional[str]:
     """Uploads and transforms an image using ImageKit.
 
+    Store a provider photo under the listing's MLS identity, then return its
+    transformed delivery URL. A failed upload or transformation leaves the
+    listing without a new photo URL.
+
     Args:
         bhhs_mls_photo_url: URL for the bhhs MLS photo.
         mls: MLS identifier for the listing.
@@ -79,6 +83,8 @@ def imagekit_transform(
 def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
     """Yields successive n-sized chunks from lst.
 
+Bounded groups keep remote image operations within service request limits.
+
     Parameters:
     lst (List): The list to be chunked.
     chunk_size (int): The maximum size of each chunk.
@@ -90,7 +96,11 @@ def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
         yield lst[i:i + chunk_size]
 
 def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> None:
-    """This function reclaims space in ImageKit by deleting images in bulk that are not referenced in the GeoJSON.
+    """Delete ImageKit files absent from the active listing GeoJSON.
+
+    Use the GeoJSON's MLS numbers as the keep set and delete account files
+    whose listing number is absent. The input must represent the intended
+    active listings because this operation removes remote assets.
 
     Parameters:
     geojson_path (str): The path to the GeoJSON file.
@@ -121,6 +131,8 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     def delete_in_chunks(file_ids: List[str], imagekit_instance: ImageKit) -> None:
         """Deletes files in chunks of 100 to avoid overloading the API requests.
 
+        The service accepts at most 100 file IDs per delete request.
+
         Args:
             file_ids: ImageKit file identifiers to delete in one or more batches.
             imagekit_instance: Configured ImageKit client used for image operations.
@@ -149,6 +161,8 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
 
 def delete_single_mls_image(mls_number: str) -> None:
     """Deletes all images associated with a single MLS number from ImageKit.
+
+Grouping by listing identifier prevents assets from other listings being included in cleanup.
 
     Parameters:
     mls_number (str): The MLS number associated with the images.

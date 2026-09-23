@@ -51,6 +51,9 @@ _CALIFORNIA_BOUNDS = {
 def _query_looks_like_street_address(query: str) -> bool:
     """Heuristically detect whether the user entered a street-style address.
 
+    A number alone also appears in ZIP codes and place names. Require a street
+    token before preferring address-shaped geocoder results.
+
     Args:
         query: Raw or normalized user-entered place text.
 
@@ -94,6 +97,8 @@ def _query_looks_like_street_address(query: str) -> bool:
 def _query_has_location_context(query: str) -> bool:
     """Check whether a free-form query already includes a California/LA qualifier.
 
+    Adding a second California qualifier to an already qualified query can bias Nominatim toward the wrong place.
+
     Args:
         query: Raw or normalized user-entered place text.
 
@@ -116,6 +121,8 @@ def _query_has_location_context(query: str) -> bool:
 def _normalize_comparison_text(value: str) -> str:
     """Normalize place names for lightweight candidate comparisons.
 
+    Loose normalization supports name comparison without requiring an exact source spelling match.
+
     Args:
         value: Raw query or Nominatim-provided place text.
 
@@ -127,6 +134,8 @@ def _normalize_comparison_text(value: str) -> str:
 
 def _query_place_name(query: str) -> str:
     """Extract the place-name portion of a free-form location query.
+
+    Removing state and country suffixes leaves the locality text used for candidate ranking.
 
     Args:
         query: Raw or normalized user-entered place text.
@@ -143,6 +152,8 @@ def _query_place_name(query: str) -> str:
 
 def _query_requested_locality(query: str) -> str | None:
     """Extract an explicit city or neighborhood qualifier from an address.
+
+    An explicit city or neighborhood in an address can disambiguate otherwise similar geocoder results.
 
     Args:
         query: User-entered place query being parsed or resolved.
@@ -181,6 +192,8 @@ def _query_requested_locality(query: str) -> str | None:
 def _normalize_locality_name(value: object) -> str:
     """Normalize Nominatim locality labels for exact comparisons.
 
+    Consistent locality labels make source aliases comparable without changing their displayed spelling.
+
     Args:
         value: Raw city or locality label returned by the geocoder.
 
@@ -199,6 +212,10 @@ def _candidate_matches_requested_locality(
     requested_locality: str,
 ) -> bool:
     """Check that a geocoder candidate contains the requested locality.
+
+    A broad geocoder result may match the search text while landing in another
+    city. Compare normalized address fields and display parts before accepting
+    it.
 
     Args:
         result: Geocoder candidate result whose locality should be validated.
@@ -241,6 +258,8 @@ def _candidate_matches_requested_locality(
 def _normalize_place_query(query: str) -> str:
     """Normalize a user-entered place query before sending it to Nominatim.
 
+    The outgoing query keeps user intent while adding the app’s California context when needed.
+
     Args:
         query: Raw place text entered by the user.
 
@@ -259,6 +278,8 @@ def _normalize_place_query(query: str) -> str:
 def _coordinates_look_like_california(lat: float, lon: float) -> bool:
     """Check whether a latitude/longitude pair falls within a California bbox.
 
+    The geographic guard rejects distant geocoder results before they can move the map.
+
     Args:
         lat: Latitude in decimal degrees.
         lon: Longitude in decimal degrees.
@@ -275,6 +296,8 @@ def _coordinates_look_like_california(lat: float, lon: float) -> bool:
 
 def _result_is_california_match(result: dict[str, Any]) -> bool:
     """Decide whether a Nominatim candidate should be treated as a California hit.
+
+    Candidate labels and coordinates are both considered because geocoder address fields vary by result type.
 
     Args:
         result: Raw Nominatim response object for a single candidate.
@@ -313,6 +336,8 @@ def _result_is_california_match(result: dict[str, Any]) -> bool:
 def _service_area_priority(result: dict[str, Any]) -> int:
     """Rank candidates by this app's local service area.
 
+    Local city and county matches rank ahead of broader or out-of-area candidates.
+
     Args:
         result: Raw Nominatim response object for a single candidate.
 
@@ -342,6 +367,8 @@ def _service_area_priority(result: dict[str, Any]) -> int:
 
 def _candidate_name_priority(result: dict[str, Any], query: str) -> int:
     """Rank how closely a candidate's place name matches the query name.
+
+    Name relevance breaks ties after geographic scope has been considered.
 
     Args:
         result: Raw Nominatim response object for a single candidate.
@@ -384,6 +411,10 @@ def _candidate_name_priority(result: dict[str, Any], query: str) -> int:
 
 def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, float, float, float, int]:
     """Rank California Nominatim candidates for the current place query.
+
+    Street queries favor house-number results, while place queries favor
+    matching names and service-area coverage. The tuple keeps those priorities
+    stable when several candidates look plausible.
 
     Args:
         result: Raw Nominatim response object for a single candidate.
@@ -429,6 +460,8 @@ def _candidate_sort_key(result: dict[str, Any], query: str) -> tuple[float, floa
 def _load_place_cache(cache_path: Path) -> PlaceCache:
     """Load the on-disk place geocoding cache.
 
+    A missing or unreadable cache should not prevent fresh geocoding from proceeding.
+
     Args:
         cache_path: File path where cached geocode results are stored.
 
@@ -450,6 +483,8 @@ def _load_place_cache(cache_path: Path) -> PlaceCache:
 def _save_place_cache(cache_path: Path, cache: PlaceCache) -> None:
     """Persist the place geocoding cache to disk.
 
+    Persisting successful lookups avoids repeating external requests for the same place.
+
     Args:
         cache_path: Destination file path for the cache JSON.
         cache: Mapping of normalized queries to cached geocode payloads.
@@ -467,6 +502,8 @@ def _save_place_cache(cache_path: Path, cache: PlaceCache) -> None:
 
 def sanitize_location_input(user_input: str) -> str:
     """Sanitize free-form location text before geocoding.
+
+    This keeps malformed or oversized user text from reaching the geocoder query path.
 
     Args:
         user_input: The raw input string from the user.
@@ -488,6 +525,10 @@ def geocode_place_cached(
     cache_path: Path | None = None,
 ) -> PlaceGeocodeResult | None:
     """Geocode a place name with Nominatim and a small local JSON cache.
+
+    Normalize the query before cache lookup and discard cached hits outside
+    California. This avoids repeated public geocoder calls while keeping a
+    stale or broad result from changing the location filter.
 
     Args:
         query: User-entered place string to geocode.
@@ -609,6 +650,8 @@ def geocode_place_cached(
 def load_zip_polygons(geojson_path: str | Path) -> list[GeoJSONFeature]:
     """Load ZIP code polygons from a GeoJSON file.
 
+    The cached polygon collection is shared by point lookup and selected-place expansion.
+
     Args:
         geojson_path: Path to a GeoJSON file with a top-level FeatureCollection.
 
@@ -626,6 +669,8 @@ def get_zip_feature_for_point(
     zip_polygons: list[GeoJSONFeature],
 ) -> GeoJSONFeature | None:
     """Find the ZIP code feature that contains the given point.
+
+    Containment provides a direct ZIP assignment for listings with coordinates.
 
     Args:
         lat: Latitude in decimal degrees.
@@ -652,6 +697,8 @@ def load_zip_place_crosswalk(
     state: str | None = "CA",
 ) -> dict[str, set[str]]:
     """Load a city-to-ZIP lookup from the HUD ZIP crosswalk CSV.
+
+    The HUD crosswalk supplies a local city-to-ZIP mapping without a network lookup per query.
 
     Args:
         csv_path: Path to the HUD ZIP-COUNTY crosswalk CSV.
@@ -687,6 +734,8 @@ def get_zip_codes_for_place(
 ) -> set[str]:
     """Return ZIP codes belonging to a place using the HUD crosswalk.
 
+    A place can map to multiple ZIPs, so callers receive all matching codes.
+
     Args:
         place_name: User-entered place name (e.g. "Santa Monica").
         zip_place_crosswalk: Mapping from uppercase city → set of ZIP strings.
@@ -709,6 +758,8 @@ def get_zip_features_for_place(
     zip_polygons: list[GeoJSONFeature],
 ) -> list[GeoJSONFeature]:
     """Return all ZIP polygon features belonging to a place using the HUD crosswalk.
+
+    Returning polygon features lets location filters include the full named place footprint.
 
     Args:
         place_name: User-entered place name (e.g. "Santa Monica").
@@ -735,6 +786,8 @@ def get_zip_features_by_code(
     zip_polygons: list[GeoJSONFeature],
 ) -> list[GeoJSONFeature]:
     """Return available ZIP polygon features for the requested ZIP codes.
+
+    Missing ZIP shapes are skipped so a partial boundary dataset can still serve available areas.
 
     Args:
         zip_codes: ZIP codes whose GeoJSON features should be returned.
@@ -804,6 +857,8 @@ def get_adjacent_zip_features(
 
 def _explicit_zip_code(location: str) -> str | None:
     """Return a standalone ZIP, optionally qualified with a CA suffix.
+
+    Recognizing a standalone ZIP avoids sending it through locality-name geocoding.
 
     Args:
         location: Place, address, or geocoder result being resolved.
@@ -913,6 +968,8 @@ def resolve_locations_to_zip_boundaries(
     def add_features(features: Sequence[GeoJSONFeature]) -> None:
         """Add features and their ZIP codes to the combined result.
 
+        Deduplicating by feature identity prevents overlapping place matches from repeating a ZIP polygon.
+
         Args:
             features: GeoJSON features to merge into the resolved result set.
 
@@ -930,6 +987,8 @@ def resolve_locations_to_zip_boundaries(
 
     def add_base_features(features: Sequence[GeoJSONFeature]) -> None:
         """Add resolved base features and retain them for nearby expansion.
+
+        Base matches are retained separately so nearby expansion can add context without losing the original selection.
 
         Args:
             features: GeoJSON features to merge into the resolved result set.

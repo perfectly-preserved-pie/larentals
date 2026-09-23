@@ -10,6 +10,8 @@ class FakeNominatimResponse:
     def __init__(self, payload: list[dict]) -> None:
         """Initialize the instance.
 
+        The fake response starts with isolated request state for each test.
+
         Args:
             payload: Structured request, listing, or artifact payload to validate or summarize.
 
@@ -21,6 +23,8 @@ class FakeNominatimResponse:
     def raise_for_status(self) -> None:
         """Handle raise for status.
 
+        The stub matches requests behavior so production retry code sees the expected exception path.
+
         Returns:
             None.
         """
@@ -28,6 +32,8 @@ class FakeNominatimResponse:
 
     def json(self) -> list[dict]:
         """Handle json.
+
+        The configured payload lets tests vary geocoder and crosswalk response shapes.
 
         Returns:
             The stored JSON payload.
@@ -44,6 +50,8 @@ def _zip_feature(
     north: float,
 ) -> dict:
     """Build a rectangular ZIP polygon fixture.
+
+    The fixture keeps polygon containment tests independent from external ZIP boundary files.
 
     Args:
         zip_code: Five-digit ZIP code identifying the service area.
@@ -73,6 +81,8 @@ def _zip_feature(
 
 def test_normalize_place_query_defaults_unqualified_places_to_california() -> None:
     """Verify that normalize place query defaults unqualified places to california.
+
+    The app serves one region, so unqualified place names should not resolve across the country.
 
     Returns:
         None.
@@ -104,6 +114,8 @@ def test_query_requested_locality_extracts_address_qualifier(
 ) -> None:
     """Verify that query requested locality extracts address qualifier.
 
+    Address locality must be retained to prevent a nearby city from winning a place match.
+
     Args:
         query: User-entered place query being parsed or resolved.
         expected: Expected normalized output for the parametrized test case.
@@ -116,6 +128,8 @@ def test_query_requested_locality_extracts_address_qualifier(
 
 def test_service_area_priority_includes_direct_la_neighboring_counties() -> None:
     """Verify that service area priority includes direct la neighboring counties.
+
+    Neighboring counties are valid service areas even when a query names Los Angeles broadly.
 
     Returns:
         None.
@@ -133,6 +147,8 @@ def test_service_area_priority_includes_direct_la_neighboring_counties() -> None
 
 def test_get_zip_codes_for_place_returns_crosswalk_zips_without_polygons() -> None:
     """Verify that get zip codes for place returns crosswalk zips without polygons.
+
+    A missing polygon should not erase a valid city-to-ZIP crosswalk result.
 
     Returns:
         None.
@@ -168,6 +184,8 @@ def test_explicit_zip_code_accepts_only_standalone_zip_queries(
 ) -> None:
     """Verify that explicit zip code accepts only standalone zip queries.
 
+    ZIP extraction must not reinterpret a street address containing digits as a ZIP search.
+
     Args:
         location: Place, address, or geocoder result being resolved.
         expected: Expected normalized output for the parametrized test case.
@@ -180,6 +198,8 @@ def test_explicit_zip_code_accepts_only_standalone_zip_queries(
 
 def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
     """Verify that resolve locations combines tags without splitting commas.
+
+    Tag boundaries are preserved because commas may belong inside a qualified place or address.
 
     Returns:
         None.
@@ -209,6 +229,8 @@ def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
     def fake_geocode(location: str) -> None:
         """Handle fake geocode.
 
+        Call recording verifies candidate ordering without making real geocoder requests.
+
         Args:
             location: Place, address, or geocoder result being resolved.
 
@@ -235,7 +257,11 @@ def test_resolve_locations_combines_tags_without_splitting_commas() -> None:
 
 
 def test_resolve_locations_expands_obvious_comma_separated_list() -> None:
-    """Treat three unqualified comma-separated places as separate locations."""
+    """Treat three unqualified comma-separated places as separate locations.
+
+    This preserves the user-facing shorthand for entering several places in
+    one field when none of the commas belongs to a qualified address.
+    """
     crosswalk = {
         "SILVER LAKE": {"90026"},
         "LOS FELIZ": {"90027"},
@@ -261,7 +287,11 @@ def test_resolve_locations_expands_obvious_comma_separated_list() -> None:
 
 
 def test_resolve_locations_preserves_qualified_place_and_address_commas() -> None:
-    """Do not reinterpret state-qualified places or addresses as lists."""
+    """Do not reinterpret state-qualified places or addresses as lists.
+
+    Their commas are part of a single location, so splitting them would send
+    geocoding requests for incomplete fragments.
+    """
     geocode_calls: list[str] = []
 
     def fake_geocode(location: str) -> None:
@@ -280,6 +310,8 @@ def test_resolve_locations_preserves_qualified_place_and_address_commas() -> Non
 
 def test_resolve_locations_reports_partial_failures_without_dropping_matches() -> None:
     """Verify that resolve locations reports partial failures without dropping matches.
+
+    One failed tag should be reported without discarding successfully resolved locations.
 
     Returns:
         None.
@@ -312,6 +344,8 @@ def test_resolve_locations_reports_partial_failures_without_dropping_matches() -
 
 def test_resolve_locations_expands_nearby_zips_for_each_tag() -> None:
     """Verify that resolve locations expands nearby zips for each tag.
+
+    Nearby expansion is applied per selected tag so each location contributes its adjacent areas.
 
     Returns:
         None.
@@ -364,6 +398,8 @@ def test_resolve_locations_expands_nearby_zips_for_each_tag() -> None:
 def test_get_adjacent_zip_features_returns_only_one_touching_ring() -> None:
     """Verify that get adjacent zip features returns only one touching ring.
 
+    Only the immediately touching ZIP ring is added to avoid unbounded geographic expansion.
+
     Returns:
         None.
     """
@@ -383,6 +419,8 @@ def test_get_adjacent_zip_features_returns_only_one_touching_ring() -> None:
 
 def test_nearby_zip_adjacency_is_consistent_across_location_types() -> None:
     """Verify that nearby zip adjacency is consistent across location types.
+
+    Place polygons and direct ZIP selections should use the same adjacency rule.
 
     Returns:
         None.
@@ -454,6 +492,8 @@ def test_load_zip_place_crosswalk_skips_pandas_string_missing_values(
 ) -> None:
     """Verify that load zip place crosswalk skips pandas string missing values.
 
+    Pandas nullable strings can produce missing sentinels that must not become place keys.
+
     Args:
         tmp_path: Temporary directory supplied by pytest.
 
@@ -491,6 +531,8 @@ def test_geocode_place_cached_prefers_la_county_for_ambiguous_california_place(
     tmp_path: Path,
 ) -> None:
     """Verify that geocode place cached prefers la county for ambiguous california place.
+
+    Ambiguous names should favor the app’s primary county when the address has no stronger locality.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
@@ -545,6 +587,8 @@ def test_geocode_place_cached_prefers_la_county_for_ambiguous_california_place(
     def fake_get(url: str, params: dict, timeout: int, headers: dict) -> FakeNominatimResponse:
         """Handle fake get.
 
+        The stub makes network inputs deterministic for cache and ZIP resolution tests.
+
         Args:
             url: URL requested, validated, or downloaded by the function.
             params: Query parameters included with the HTTP request.
@@ -573,6 +617,8 @@ def test_geocode_place_cached_keeps_exact_orange_county_address_ahead_of_la_coun
     tmp_path: Path,
 ) -> None:
     """Verify that geocode place cached keeps exact orange county address ahead of la county.
+
+    An explicit exact Orange County address outranks the default Los Angeles preference.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
@@ -628,6 +674,8 @@ def test_geocode_place_cached_keeps_exact_orange_county_address_ahead_of_la_coun
     def fake_get(url: str, params: dict, timeout: int, headers: dict) -> FakeNominatimResponse:
         """Handle fake get.
 
+        The stub makes network inputs deterministic for cache and ZIP resolution tests.
+
         Args:
             url: URL requested, validated, or downloaded by the function.
             params: Query parameters included with the HTTP request.
@@ -662,6 +710,8 @@ def test_geocode_place_cached_enforces_requested_city_for_la_county_address(
     tmp_path: Path,
 ) -> None:
     """Verify that geocode place cached enforces requested city for la county address.
+
+    The requested city must agree with an address candidate before it is accepted.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
@@ -751,6 +801,8 @@ def test_geocode_place_cached_rejects_candidates_from_wrong_requested_city(
     tmp_path: Path,
 ) -> None:
     """Verify that geocode place cached rejects candidates from wrong requested city.
+
+    A geographically close result is still wrong when it belongs to another requested city.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.

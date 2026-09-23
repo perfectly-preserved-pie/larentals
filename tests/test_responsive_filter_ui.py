@@ -43,6 +43,8 @@ class ResponsiveFilterUiTest(unittest.TestCase):
     def test_filter_shell_keeps_one_filter_tree_and_map_main(self) -> None:
         """Verify the responsive shell does not duplicate the filter controls.
 
+        The responsive shell should move the existing filters rather than duplicating controls.
+
         Returns:
             None.
         """
@@ -74,6 +76,8 @@ class ResponsiveFilterUiTest(unittest.TestCase):
 
     def test_toolbar_has_accessible_open_trigger_and_quick_filters(self) -> None:
         """Verify the compact toolbar exposes its controls and current mode.
+
+        Compact map controls need accessible names and visible state for keyboard users.
 
         Returns:
             None.
@@ -119,6 +123,8 @@ class ResponsiveFilterUiTest(unittest.TestCase):
     def test_page_filter_stores_are_scoped(self) -> None:
         """Verify each listing page receives its own filter state stores.
 
+        Lease and buy filter state must not overwrite each other in the browser.
+
         Returns:
             None.
         """
@@ -135,6 +141,8 @@ class ResponsiveFilterUiTest(unittest.TestCase):
 
     def test_desktop_sections_are_expanded_initially(self) -> None:
         """Verify the persistent desktop sidebar opens its primary filter sections.
+
+        Desktop users need the primary filter groups immediately available in the persistent sidebar.
 
         Returns:
             None.
@@ -165,6 +173,8 @@ class ResponsiveFilterUiTest(unittest.TestCase):
 
     def test_hybrid_ranges_capture_exact_fields_and_slider_display_bounds(self) -> None:
         """Verify that hybrid ranges capture exact fields and slider display bounds.
+
+        Exact inputs retain user-selected values while the slider stays within finite display limits.
 
         Returns:
             None.

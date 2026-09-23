@@ -16,6 +16,8 @@ _NESTED_COMPONENT_ASSET = re.compile(
 def register_dash_asset_request_guard(server: Flask) -> None:
     """Return 404 for malformed asset paths before Dash raises an exception.
 
+    Installing once avoids duplicate Flask before-request hooks during app setup.
+
     Args:
         server: Flask application serving Dash component assets.
 
@@ -26,6 +28,8 @@ def register_dash_asset_request_guard(server: Flask) -> None:
     @server.before_request
     def reject_malformed_component_asset() -> None:
         """Reject invalid asset GET/HEAD requests; leave other routing to Dash.
+
+        Only suspicious asset requests are intercepted; valid Dash routes continue through the framework.
 
         Returns:
             None when the request can proceed through normal routing.

@@ -5,50 +5,73 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          *
          * @param {[number, number]} priceRange - [minPrice, maxPrice]
          * @param {[number, number]} bedroomsRange - [minBedrooms, maxBedrooms]
+         *
          * @param {[number, number]} bathroomsRange - [minBathrooms, maxBathrooms]
          * @param {boolean|string} petPolicy - User-selected pet policy (true, false, "Both")
+         *
          * @param {[number, number]} sqftRange - [minSqft, maxSqft]
          * @param {boolean} sqftIncludeMissing - Whether to include listings with null/undefined sqft
+         *
          * @param {[number, number]} ppsqftRange - [minPpsqft, maxPpsqft]
          * @param {boolean} ppsqftIncludeMissing - Whether to include listings with null/undefined ppsqft
+         *
          * @param {[number, number]} parkingSpacesRange - [minParking, maxParking]
          * @param {boolean} parkingSpacesIncludeMissing - Whether to include listings with null/undefined parking
+         *
          * @param {[number, number]} yearBuiltRange - [minYear, maxYear]
          * @param {boolean} yearBuiltIncludeMissing - Whether to include listings with null/undefined year_built
+         *
          * @param {string[]} rentalTerms - Array of user-selected rental terms
          * @param {boolean} termsIncludeMissing - Include listings with null/undefined terms?
+         *
          * @param {string[]} furnishedChoices - Array of furnished options
          * @param {boolean} furnishedIncludeMissing - Include listings with unknown furnished status?
+         *
          * @param {[number, number]} securityDepositRange - [minSecurityDeposit, maxSecurityDeposit]
          * @param {boolean} securityDepositIncludeMissing - Include listings with null/undefined deposit?
+         *
          * @param {[number, number]} petDepositRange - [minPetDeposit, maxPetDeposit]
          * @param {boolean} petDepositIncludeMissing - Include listings with null/undefined pet deposit?
+         *
          * @param {[number, number]} keyDepositRange - [minKeyDeposit, maxKeyDeposit]
          * @param {boolean} keyDepositIncludeMissing - Include listings with null/undefined key deposit?
+         *
          * @param {[number, number]} otherDepositRange - [minOtherDeposit, maxOtherDeposit]
          * @param {boolean} otherDepositIncludeMissing - Include listings with null/undefined other deposit?
+         *
          * @param {string[]} laundryChoices - Array of selected laundry categories
          * @param {boolean} laundryIncludeMissing - Include listings with unknown laundry category?
+         *
          * @param {string[]} subtypeSelection - List of selected property subtypes
          * @param {string|null} dateStart - Start date (YYYY-MM-DD) for listed_date range
+         *
          * @param {string|null} dateEnd - End date (YYYY-MM-DD) for listed_date range
          * @param {boolean} dateIncludeMissing - Whether to include properties with missing listed_date
+         *
          * @param {[number, number]} downloadSpeedRange - [minDownload, maxDownload]
          * @param {[number, number]} uploadSpeedRange - [minUpload, maxUpload]
+         *
          * @param {boolean} speedIncludeMissing - Whether to include listings with missing ISP speeds
          * @param {string} rentControlStatus - Selected LA City rent-control status
+         *
          * @param {number} priceUpperBound - Finite display maximum for the rent slider
          * @param {number} bedroomsUpperBound - Slider endpoint that represents bedrooms-or-more
+         *
          * @param {number} bathroomsUpperBound - Slider endpoint that represents bathrooms-or-more
          * @param {number} sqftUpperBound - Finite display maximum for square footage
+         *
          * @param {number} ppsqftUpperBound - Finite display maximum for price per square foot
          * @param {number} parkingUpperBound - Slider endpoint that represents parking-spaces-or-more
+         *
          * @param {number} securityUpperBound - Finite display maximum for security deposits
          * @param {number} petDepositUpperBound - Finite display maximum for pet deposits
+         *
          * @param {number} keyDepositUpperBound - Finite display maximum for key deposits
          * @param {number} otherDepositUpperBound - Finite display maximum for other deposits
+         *
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload
          * @param {Object} fullGeojson - GeoJSON data with .features array
+         *
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
         filterAndClusterLease: function(
@@ -499,8 +522,11 @@ window.larentals = window.larentals || {};
 window.larentals.filters = window.larentals.filters || {};
 /**
  * Adapt the responsive Rent filter-state object to the existing filter engine.
+ * Reusing the existing filter path keeps drawer results consistent with desktop controls.
+ *
  * @param {Object<string, *>} state Applied rental filter values.
  * @param {{type: string, features: Array<Object>}} fullGeojson Source listings.
+ *
  * @returns {{type: string, features: Array<Object>}} Filtered rental listings.
  */
 window.larentals.filters.filterLeaseState = function(state, fullGeojson) {

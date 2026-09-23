@@ -9,6 +9,8 @@ from functions import rso
 def test_decode_powerbi_rows_expands_dictionaries_and_repeated_values() -> None:
     """Verify that decode powerbi rows expands dictionaries and repeated values.
 
+    Power BI can compress repeated values by dictionary index, which must be expanded before parsing.
+
     Returns:
         None.
     """
@@ -61,6 +63,8 @@ def test_decode_powerbi_rows_expands_dictionaries_and_repeated_values() -> None:
 
 def test_lookup_reports_all_or_some_coverage_conservatively(tmp_path: Path) -> None:
     """Verify that lookup reports all or some coverage conservatively.
+
+    Property-level counts must not claim every unit is covered when inventory evidence is partial.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.

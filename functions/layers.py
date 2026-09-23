@@ -100,6 +100,8 @@ SCHOOL_LAYER_LEVEL_OPTIONS: tuple[str, ...] = (
 def get_mapbox_access_token() -> str | None:
     """Return the configured public Mapbox token, if one is available.
 
+    Keeping this optional lets non-satellite map styles work when deployments have no public token configured.
+
     Returns:
         The requested mapbox access token text, or ``None`` when unavailable.
     """
@@ -109,6 +111,8 @@ def get_mapbox_access_token() -> str | None:
 
 def build_mapbox_satellite_tile_url(access_token: str) -> str:
     """Build the browser-facing Mapbox Satellite Raster Tiles API template.
+
+    The template uses the public raster endpoint so the browser can request tiles directly.
 
     Args:
         access_token: Mapbox access token used to authorize tile requests.
@@ -181,6 +185,8 @@ class LayerConfig:
 def _normalize_school_text(value: object) -> str | None:
     """Return a trimmed text value, or ``None`` when the source is blank.
 
+    Blank and null-like source values should not become literal labels in school popups.
+
     Args:
         value: Raw school attribute to normalize as display text.
 
@@ -198,6 +204,8 @@ def _normalize_school_text(value: object) -> str | None:
 
 def _normalize_school_flag(value: object) -> int | None:
     """Normalize common `Y`/`N` flag values into integers for GeoJSON properties.
+
+    GeoJSON stores these booleans as integers so clientside filters can compare them consistently.
 
     Args:
         value: Raw boolean-like school attribute.
@@ -231,6 +239,8 @@ def _normalize_school_flag(value: object) -> int | None:
 def _school_flag_label(value: object) -> str:
     """Return a popup-friendly label for a normalized school flag.
 
+    Unknown source flags stay distinct from explicit yes/no values.
+
     Args:
         value: Raw boolean-like school attribute to display as Yes or No.
 
@@ -247,6 +257,8 @@ def _school_flag_label(value: object) -> str:
 
 def _parse_school_grade_token(value: object) -> int | None:
     """Convert a grade token like `TK`, `K`, `06`, or `12` into a sortable integer.
+
+    A sortable numeric form lets mixed labels such as TK and K participate in grade-span calculations.
 
     Args:
         value: Raw grade label such as ``TK``, ``K``, or ``12``.
@@ -271,6 +283,8 @@ def _parse_school_grade_token(value: object) -> int | None:
 def _format_school_grade_value(value: int | None) -> str | None:
     """Convert a numeric grade token back into a display label.
 
+    The display form preserves familiar labels such as TK and K instead of exposing internal numbers.
+
     Args:
         value: Numeric grade index to convert to a display label.
 
@@ -288,6 +302,8 @@ def _format_school_grade_value(value: int | None) -> str | None:
 
 def _build_school_grade_bands(low_grade: object, high_grade: object) -> list[str]:
     """Return the canonical grade-band labels touched by a school.
+
+    Band labels provide a compact summary when a dataset includes individual grade offerings.
 
     Args:
         low_grade: Lowest grade offered by the school.
@@ -315,6 +331,8 @@ def _build_school_grade_bands(low_grade: object, high_grade: object) -> list[str
 def _build_school_grade_span_display(low_grade: object, high_grade: object) -> str | None:
     """Build a compact popup display value like `K-5` or `6-12`.
 
+    A continuous span is easier to scan in a popup than a list of every grade.
+
     Args:
         low_grade: Lowest grade offered by the school.
         high_grade: Highest grade offered by the school.
@@ -339,6 +357,8 @@ def _build_school_grade_span_display(low_grade: object, high_grade: object) -> s
 def _normalize_school_url(value: object) -> str | None:
     """Normalize a school website into a browser-usable URL when possible.
 
+    Relative or malformed source links should not be emitted as browser navigation targets.
+
     Args:
         value: Raw school website field, with or without a URL scheme.
 
@@ -355,6 +375,8 @@ def _normalize_school_url(value: object) -> str | None:
 
 def _normalize_school_date(value: object) -> str | None:
     """Normalize source dates into a compact YYYY-MM-DD display string.
+
+    Compact date labels keep the popup readable across source date formats.
 
     Args:
         value: Raw school opening-date field.
@@ -376,6 +398,8 @@ def _normalize_school_date(value: object) -> str | None:
 
 def _school_grade_offered(value: object) -> bool:
     """Determine whether a grade-specific source field indicates the grade is offered.
+
+    Only explicit source indicators should count as a grade offering.
 
     Args:
         value: Raw boolean-like flag indicating whether a grade is offered.
@@ -403,6 +427,8 @@ def _school_grade_offered(value: object) -> bool:
 def _school_is_recently_opened(value: object) -> bool:
     """Flag schools with a source open date on or after 2018-01-01.
 
+    The 2018 cutoff supports the school popup’s recent-campus summary.
+
     Args:
         value: Raw recently-opened flag or opening date.
 
@@ -421,6 +447,8 @@ def _school_is_recently_opened(value: object) -> bool:
 
 def build_school_preview_url(longitude: float | None, latitude: float | None) -> str | None:
     """Build a public ArcGIS World Imagery preview around a school point.
+
+    The preview uses campus coordinates and a public imagery service without requiring a stored image per school.
 
     Args:
         longitude: Property longitude in decimal degrees.
@@ -452,6 +480,10 @@ def build_school_preview_url(longitude: float | None, latitude: float | None) ->
 
 def build_school_layer_geojson_from_gdf(schools: gpd.GeoDataFrame) -> GeoJsonDict:
     """Normalize a public-schools GeoDataFrame into the final map-layer GeoJSON payload.
+
+    School source files use mixed field types and coordinate systems. Convert
+    them to WGS84 and the map's fixed property set so the popup and filter
+    controls receive consistent values.
 
     Args:
         schools: Dataframe to build school layer geojson from gdf.
@@ -627,6 +659,8 @@ def load_school_layer_geojson_artifact(
 ) -> GeoJsonDict:
     """Load the baked school-layer GeoJSON artifact from disk.
 
+    Loading the baked file avoids rebuilding the enriched school layer during a web request.
+
     Args:
         path: Filesystem path to the source file, dataset, database, or artifact.
 
@@ -665,6 +699,10 @@ def filter_school_layer_geojson(
     recently_opened_only: bool = False,
 ) -> GeoJsonDict:
     """Filter the cached school layer payload for the map-only school controls.
+
+    Filter the cached feature collection without reloading it from disk. Every
+    selected control narrows the same collection, keeping map markers and the
+    visible school count aligned.
 
     Args:
         geojson_data: School-layer GeoJSON feature collection to filter.
@@ -915,6 +953,8 @@ class LayersClass:
     def create_street_base_layer(*, checked: bool = True) -> dl.BaseLayer:
         """Create the OpenStreetMap base layer used by both listing maps.
 
+        Both listing pages share this base layer so map navigation starts with a familiar street map.
+
         Args:
             checked: Whether checked behavior is enabled.
 
@@ -941,6 +981,8 @@ class LayersClass:
     ) -> dl.BaseLayer:
         """Create the token-authenticated Mapbox Satellite base layer.
 
+        This layer is optional because it depends on a deployment-provided Mapbox token.
+
         Args:
             access_token: Mapbox access token used to authorize tile requests.
             checked: Whether checked behavior is enabled.
@@ -963,6 +1005,8 @@ class LayersClass:
     @staticmethod
     def create_parcel_tile_overlay(*, checked: bool = False) -> dl.Overlay:
         """Create the cached LA County Assessor parcel-boundary overlay.
+
+        Parcel boundaries are requested as tiles so the browser need not load a full county dataset.
 
         Args:
             checked: Whether checked behavior is enabled.
@@ -987,6 +1031,8 @@ class LayersClass:
     def get_layer_config(cls, layer_key: str) -> LayerConfig:
         """Return the registered layer configuration for a given layer key.
 
+        A missing key should fail as a configuration lookup rather than silently selecting another overlay.
+
         Args:
             layer_key: Internal layer identifier, such as `"farmers_markets"`.
 
@@ -1006,6 +1052,8 @@ class LayersClass:
     @classmethod
     def load_layer_data(cls, layer_key: str) -> GeoJsonDict:
         """Load a registered layer payload with simple per-process caching.
+
+        The process cache avoids repeating disk reads for the same registered layer payload.
 
         Args:
             layer_key: Internal layer identifier, such as `"farmers_markets"`.
@@ -1048,6 +1096,8 @@ class LayersClass:
     def get_layer_config_by_dataset(cls, dataset: str) -> LayerConfig | None:
         """Return the first registered layer config matching a dataset cache key.
 
+        Dataset keys connect API requests to the overlay configuration that owns their payload.
+
         Args:
             dataset: Dataset/cache identifier, such as `"oil_well"`.
 
@@ -1066,6 +1116,10 @@ class LayersClass:
         bounds: tuple[float, float, float, float],
     ) -> GeoJsonDict:
         """Filter point features to a valid lon/lat bounding box.
+
+        Preserve non-point features because their shapes cannot be judged by
+        one coordinate pair. Drop only point features outside the requested map
+        area.
 
         Args:
             geojson_data: GeoJSON FeatureCollection payload to filter.
@@ -1113,6 +1167,8 @@ class LayersClass:
     ) -> dl.GeoJSON:
         """Build a `dl.GeoJSON` component from a registered layer config.
 
+        Using registered configuration keeps component IDs and renderer names aligned with the layer catalog.
+
         Args:
             layer_key: Internal key identifying which layer config to use.
             component_id: Optional Dash component id. When omitted, a UUID is generated.
@@ -1143,6 +1199,8 @@ class LayersClass:
     def lazy_layer_geojson_id(cls, page_key: str, layer_key: str) -> LazyLayerGeoJsonId:
         """Build a pattern-matching id for a lazy-loaded GeoJSON layer component.
 
+        Pattern IDs let one callback manage separately loaded overlay payloads.
+
         Args:
             page_key: Page identifier, such as `"lease"` or `"buy"`.
             layer_key: Internal layer identifier.
@@ -1159,6 +1217,8 @@ class LayersClass:
     @classmethod
     def layers_control_id(cls, page_key: str) -> str:
         """Return the Dash id used by a page's `dl.LayersControl`.
+
+        Page-scoped IDs keep the buy and lease map controls independent.
 
         Args:
             page_key: Page identifier, such as `"lease"` or `"buy"`.
@@ -1210,6 +1270,8 @@ class LayersClass:
         checked_layer_keys: Sequence[str] = (),
     ) -> dl.LayersControl:
         """Create a `dl.LayersControl` with shared base layers and optional overlays.
+
+        The shared control ensures base layers and optional overlays behave consistently across listing pages.
 
         Args:
             page_key: Page identifier owning the control.
@@ -1314,6 +1376,8 @@ class LayersClass:
     ) -> bool:
         """Return whether a named overlay is currently enabled in the map control.
 
+        The helper treats absent control state as disabled rather than assuming an overlay is visible.
+
         Args:
             selected_overlays: Names of map overlays currently selected by the user.
             layer_key: Internal key identifying the overlay configuration.
@@ -1328,6 +1392,8 @@ class LayersClass:
     def create_oil_well_geojson_layer(cls) -> dl.GeoJSON:
         """Create an eagerly loaded oil and gas wells GeoJSON layer.
 
+        This overlay is small enough to mount directly instead of waiting for a lazy-load callback.
+
         Returns:
             A configured `dl.GeoJSON` component for oil well data.
         """
@@ -1340,6 +1406,8 @@ class LayersClass:
     @classmethod
     def create_farmers_markets_layer(cls) -> dl.GeoJSON:
         """Create an eagerly loaded farmers markets GeoJSON layer.
+
+        The component keeps the source layer’s renderer and popup registered through the shared catalog.
 
         Returns:
             A configured `dl.GeoJSON` component for farmers market data.
@@ -1354,6 +1422,8 @@ class LayersClass:
     def create_supermarkets_grocery_layer(cls) -> dl.GeoJSON:
         """Create an eagerly loaded supermarkets and grocery stores GeoJSON layer.
 
+        The registered config supplies the payload and renderer used by the grocery overlay.
+
         Returns:
             A configured `dl.GeoJSON` component for supermarket and grocery store data.
         """
@@ -1367,6 +1437,8 @@ class LayersClass:
     def create_breakfast_burritos_layer(cls) -> dl.GeoJSON:
         """Create an eagerly loaded breakfast burritos GeoJSON layer.
 
+        The overlay uses its registered popup renderer so imported review fields share common presentation.
+
         Returns:
             A configured `dl.GeoJSON` component for breakfast burrito data.
         """
@@ -1379,6 +1451,8 @@ class LayersClass:
     @classmethod
     def create_crime_layer(cls) -> dl.GeoJSON:
         """Create an eagerly loaded crime GeoJSON layer.
+
+            The layer uses the registered renderer so crime details follow the shared popup and formatting rules.
 
         Returns:
             A configured `dl.GeoJSON` component for crime data.

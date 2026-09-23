@@ -13,9 +13,11 @@
 
     /**
      * Create the crime marker and bind its popup content.
+     * The shared popup builder applies safe text and date formatting to crime details.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the crime record.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawCrimeIcon(feature, latlng) {

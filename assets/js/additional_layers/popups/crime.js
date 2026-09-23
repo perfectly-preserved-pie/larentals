@@ -21,6 +21,7 @@
 
     /**
      * Build the detail rows rendered in a crime popup.
+     * Shared formatters normalize dates, times, and missing source values before display.
      *
      * @param {Record<string, unknown>} properties Feature properties for the crime record.
      * @returns {{ label: string, value: string }[]} Popup rows for the feature.
@@ -68,6 +69,7 @@
 
     /**
      * Build the complete crime popup markup.
+     * Dates, occurrence times, and source text use shared formatters before the rows enter the card shell.
      *
      * @param {Record<string, unknown>} properties Feature properties for the crime record.
      * @returns {string} HTML string bound to the Leaflet popup.

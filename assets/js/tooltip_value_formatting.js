@@ -3,6 +3,7 @@
 /**
  * Formats a number as a currency string with a dollar sign and thousands separators.
  * Assumes the default locale is 'en-US' for currency formatting.
+ *
  * @param {number} value - The numeric value to format as currency.
  * @returns {string} The formatted currency string.
  */
@@ -23,7 +24,7 @@ window.dccFunctions.formatCurrency = function(value) {
 
 /**
  * Formats a number as a square footage string with "sq. ft" appended.
- * 
+ *
  * @param {number} value - The numerical value to format.
  * @returns {string} The formatted square footage string with "sq. ft" appended.
  */

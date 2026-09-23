@@ -22,6 +22,7 @@
 
     /**
      * Format a percentage value for popup display.
+     * Percentages retain one decimal place, while unavailable source values display as `N/A`.
      *
      * @param {unknown} value Raw percentage value.
      * @returns {string} Percent label or `N/A`.
@@ -36,6 +37,7 @@
 
     /**
      * Format an enrollment value for popup display.
+     * Valid counts are rounded and localized; unavailable counts remain `N/A`.
      *
      * @param {unknown} value Raw enrollment count.
      * @returns {string} Formatted count or `N/A`.
@@ -57,6 +59,7 @@
 
     /**
      * Build a concise early-grades summary from derived TK / kindergarten flags.
+     * Only grades the campus explicitly offers are listed.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} Joined label or `N/A`.
@@ -75,6 +78,7 @@
 
     /**
      * Build a friendlier campus-age summary from the derived recent-open flag.
+     * The derived flag adds context for campuses opened since 2018.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} Summary label or `N/A`.
@@ -94,6 +98,7 @@
 
     /**
      * Build chip-style campus descriptors from the grade span and grade bands.
+     * Duplicate descriptors are collapsed before labels are escaped into chips.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} HTML chip list or `N/A`.
@@ -131,6 +136,7 @@
 
     /**
      * Build a friendlier support-profile summary from the student-support metrics.
+     * Threshold signals summarize the metrics without presenting them as a school quality rating.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} Profile label or `N/A`.
@@ -164,6 +170,7 @@
 
     /**
      * Build translated support metrics for popup display.
+     * Missing percentages are omitted, and source values are displayed with one decimal place.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} HTML markup or `N/A`.
@@ -196,6 +203,7 @@
 
     /**
      * Build a chip for the high-level support summary.
+     * No chip is emitted when none of the source metrics can support a summary.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} HTML chip markup or `N/A`.
@@ -217,6 +225,7 @@
 
     /**
      * Build the preview banner shown above the popup rows.
+     * The image is linked only when a school website exists and loads lazily to limit map overhead.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} HTML banner markup, or an empty string when unavailable.
@@ -251,6 +260,7 @@
 
     /**
      * Build the ordered rows rendered inside a school popup.
+     * Dataset classifications move later in the list when derived grade-span information is available.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {{ label: string, value: string }[]} Popup rows for the feature.
@@ -341,6 +351,7 @@
 
     /**
      * Build the full school popup markup.
+     * The card pairs the school summary with its optional aerial preview and expanded detail layout.
      *
      * @param {Record<string, unknown>} properties School feature properties.
      * @returns {string} HTML string bound to the Leaflet popup.

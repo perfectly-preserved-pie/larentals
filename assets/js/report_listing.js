@@ -1,5 +1,6 @@
 /**
  * Open the listing-report dialog and submit the selected report details.
+ * Invalid serialized input exits before opening the dialog, and submission analytics fire only after a successful response.
  *
  * @param {Record<string, unknown>|string} listingProps Listing data or JSON.
  * @returns {void}

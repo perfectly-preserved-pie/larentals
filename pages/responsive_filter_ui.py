@@ -31,6 +31,8 @@ _registered_hybrid_range_sliders: set[str] = set()
 def _hybrid_range_input_id(slider_id: str, bound: str) -> str:
     """Return the exact-value field id paired with a range slider.
 
+    Explicit IDs let the numeric fields and visual slider be updated by the same page callback.
+
     Args:
         slider_id: Dash identifier of the hybrid range slider.
         bound: Range endpoint, either ``minimum`` or ``maximum``.
@@ -43,6 +45,8 @@ def _hybrid_range_input_id(slider_id: str, bound: str) -> str:
 
 def _register_hybrid_range_callbacks(page_type: str) -> None:
     """Keep exact-value fields and their finite display slider synchronized.
+
+    The slider stays finite for interaction while exact fields preserve user-entered and open-ended bounds.
 
     Args:
         page_type: Listing page type, either ``buy`` or ``lease``.

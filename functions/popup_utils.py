@@ -8,7 +8,11 @@ from string import Formatter
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def _format_template_value(value: Any, template: str | None = None) -> str:
-  """Handle format template value.
+  """Format one popup value with a restricted template.
+
+  Allow only one positional field in popup templates. Reject named or repeated
+  fields so source-controlled formatting cannot read arbitrary attributes from
+  a listing value.
 
   Args:
       value: Listing field substituted into the popup template.
@@ -52,7 +56,10 @@ def _format_template_value(value: Any, template: str | None = None) -> str:
   return "".join(formatted_parts)
 
 def format_value_lease(value: Any, template: str | None = None) -> str:
-  """Formats the given value based on its type and value.
+  """Formats a lease popup value according to its source type.
+
+  A supplied template is applied only to numeric values; missing values remain
+  ``Unknown`` so lease-specific fields do not display as fabricated numbers.
 
   Parameters:
   value (Any): The value to be formatted.
@@ -74,7 +81,10 @@ def format_value_lease(value: Any, template: str | None = None) -> str:
     raise
 
 def format_value_buy(value: Any, template: str | None = None) -> str:
-  """Formats the given value based on its type and value.
+  """Formats a buy popup value according to its source type.
+
+  The purchase formatter uses the same numeric template path while treating
+  pandas ``NaT`` as missing for date-like fields.
 
   Parameters:
   value (Any): The value to be formatted.

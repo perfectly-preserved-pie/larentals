@@ -15,6 +15,8 @@ class DashComponentSourceMapErrorFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         """Handle filter.
 
+        Only known missing-source-map messages are suppressed; unrelated browser errors remain visible.
+
         Args:
             record: Log record being checked for a suppressible source-map error.
 
@@ -32,6 +34,8 @@ class DashComponentSourceMapErrorFilter(logging.Filter):
 
 def register_source_map_error_filter(server: Any) -> None:
     """Install a log filter that suppresses expected browser source-map errors.
+
+    The filter is installed once so expected browser noise is suppressed without hiding other log messages.
 
     Args:
         server: Flask application receiving the registered API routes.

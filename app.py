@@ -103,6 +103,8 @@ register_dash_asset_request_guard(server)
 def sitemap_xml() -> Response:
   """Render the canonical sitemap for all public Dash pages.
 
+  Using the registered public pages keeps crawler output aligned with Dash routing.
+
   Returns:
       An HTTP response containing the sitemap XML.
   """
@@ -117,6 +119,8 @@ def sitemap_xml() -> Response:
 def robots_txt() -> Response:
   """Render crawler directives with the canonical sitemap location.
 
+  The sitemap link gives crawlers the canonical source for discovering public pages.
+
   Returns:
       An HTTP response containing the robots text.
   """
@@ -129,6 +133,8 @@ def robots_txt() -> Response:
 @server.route("/llms.txt")
 def llms_txt() -> Response:
   """Render the machine-readable site description for language-model clients.
+
+  This response describes the site separately from conventional search-engine directives.
 
   Returns:
       An HTTP response containing the llms text.
@@ -161,6 +167,8 @@ app.index_string = """<!DOCTYPE html>
 def create_initial_viewport_sync() -> dcc.Interval:
   """Create a one-shot interval used to seed responsive clientside state.
 
+  The one-shot interval seeds state after the clientside callback registry is ready.
+
   Returns:
     A short-lived interval that fires once after the app mounts.
   """
@@ -168,6 +176,8 @@ def create_initial_viewport_sync() -> dcc.Interval:
 
 def create_viewport_listener() -> EventListener:
   """Create the hidden event bridge for viewport-aware Dash callbacks.
+
+  A hidden Dash component carries browser viewport events into callback inputs.
 
   Returns:
     An `EventListener` configured to forward browser `viewportchange` events.
@@ -180,6 +190,8 @@ def create_viewport_listener() -> EventListener:
 
 def prewarm_startup_caches() -> None:
   """Populate expensive local caches before the first browser/API request.
+
+  Loading local snapshots during startup avoids expensive first-request work.
 
   Returns:
       None.
@@ -243,6 +255,8 @@ prewarm_startup_caches()
 
 def main() -> None:
   """Start the Dash development server when invoked as a console script.
+
+  The entry point is limited to local development; deployment servers import the configured app object.
 
   Side Effects:
     Binds the configured local web server and blocks while serving requests.

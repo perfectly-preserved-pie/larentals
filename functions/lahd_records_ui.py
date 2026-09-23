@@ -27,6 +27,8 @@ LAHD_RECORD_EVENT_PROPS = [
 def create_lahd_records_listener() -> EventListener:
     """Create the hidden browser-event bridge used by Leaflet popup buttons.
 
+    The event bridge lets popup button clicks reach Dash without embedding app callbacks in map HTML.
+
     Returns:
         The created LAHD records listener.
     """
@@ -39,6 +41,8 @@ def create_lahd_records_listener() -> EventListener:
 
 def create_lahd_records_drawer() -> dmc.Drawer:
     """Create the global Housing Department records drawer shared by lease and buy pages.
+
+    A shared drawer keeps record details available from both listing pages in one place.
 
     Returns:
         The created LAHD records drawer.
@@ -73,6 +77,10 @@ def create_lahd_records_drawer() -> dmc.Drawer:
 def register_lahd_records_drawer_callback(app: Any) -> None:
     """Register callbacks that load and display LAHD records in the drawer.
 
+    The popup asks for a parcel by APN, then the callback loads details only
+    when the drawer opens. Failed lookups produce drawer content rather than
+    breaking the map interaction.
+
     Args:
         app: Dash application on which the callback is registered.
 
@@ -91,7 +99,11 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
         prevent_initial_call=True,
     )
     def open_lahd_records_drawer(event: dict[str, Any] | None) -> tuple[bool, Any, Any]:
-        """Handle open lahd records drawer.
+        """Open the LAHD records drawer for a popup parcel request.
+
+        Resolve a canonical APN from the popup address when possible before
+        fetching records. Missing APNs leave the drawer untouched; fetch errors
+        become readable drawer content.
 
         Args:
             event: Dash or browser event payload being handled.
@@ -135,6 +147,10 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
 
 def build_lahd_records_drawer_content(details: dict[str, Any]) -> Any:
     """Build the drawer body for one APN's Housing Department records.
+
+    Keep investigations and violations in separate tabs while showing the
+    shared parcel summary and source links once. The layout works even when a
+    section has no records.
 
     Args:
         details: Normalized LAHD detail payload containing summary and record rows.
@@ -239,6 +255,8 @@ GRID_OPTIONS = {
 def _event_value(event: dict[str, Any] | None, key: str) -> str | None:
     """Read an EventListener value from either flattened or nested event shapes.
 
+    Dash event payloads vary by component version, so both shapes are accepted.
+
     Args:
         event: Dash or browser event payload being handled.
         key: Lookup, component, or object key identifying the requested item.
@@ -265,6 +283,8 @@ def _event_value(event: dict[str, Any] | None, key: str) -> str | None:
 def _as_list(value: Any) -> list[dict[str, Any]]:
     """Return a list of record dictionaries.
 
+    Unexpected response shapes become an empty table instead of breaking the drawer render.
+
     Args:
         value: Optional scalar or collection to normalize into a list.
 
@@ -278,6 +298,8 @@ def _as_list(value: Any) -> list[dict[str, Any]]:
 
 def _format_count(value: Any) -> str:
     """Format a summary count for display.
+
+    Consistent count formatting keeps summary metrics compact and comparable.
 
     Args:
         value: Numeric-like issue count to format for display.
@@ -293,6 +315,8 @@ def _format_count(value: Any) -> str:
 
 def _primary_address_from_summary(summary: Any) -> str | None:
     """Return the first Housing Department address for drawer-title fallback.
+
+    The first available source address is a practical title when the event has no display address.
 
     Args:
         summary: Normalized property summary used to build the UI content.
@@ -315,6 +339,8 @@ def _primary_address_from_summary(summary: Any) -> str | None:
 def _build_drawer_title(apn: Any, address: Any) -> Any:
     """Build the drawer title block.
 
+    The title distinguishes the requested parcel from a generic records panel.
+
     Args:
         apn: Assessor Parcel Number identifying the property.
         address: Street address used to identify or geocode the property.
@@ -336,6 +362,8 @@ def _build_drawer_title(apn: Any, address: Any) -> Any:
 
 def _build_summary(summary: dict[str, Any]) -> html.Div:
     """Build the compact summary metrics above the tables.
+
+    Small summary metrics orient users before they inspect the underlying case rows.
 
     Args:
         summary: Normalized property summary used to build the UI content.
@@ -367,6 +395,8 @@ def _build_summary(summary: dict[str, Any]) -> html.Div:
 def _build_truncation_notice(truncated: dict[str, Any]) -> Any:
     """Render a small notice if the row limit was reached.
 
+    The notice prevents the display row limit from implying the source has no further records.
+
     Args:
         truncated: Flags indicating which record collections were truncated.
 
@@ -393,6 +423,8 @@ def _build_truncation_notice(truncated: dict[str, Any]) -> Any:
 
 def _build_detail_status_notice(detail_status: dict[str, Any]) -> Any:
     """Render a small notice when the drawer is showing aggregate snapshot data.
+
+    Snapshot-only data is labeled so users know it may not represent current live records.
 
     Args:
         detail_status: Availability and error metadata for the live record details.
@@ -422,6 +454,8 @@ def _build_grid(
 ) -> Any:
     """Build a Dash AG Grid table for Housing Department records.
 
+    AG Grid keeps large source tables scrollable without expanding the whole drawer vertically.
+
     Args:
         grid_id: Dash component identifier for the records grid.
         rows: Records to write, summarize, or display.
@@ -449,6 +483,8 @@ def _build_grid(
 
 def _build_source_links(sources: dict[str, Any]) -> html.Div:
     """Render source links under the grids.
+
+    Direct source links let users verify records in the publishing system.
 
     Args:
         sources: Source metadata or source labels to combine.
@@ -478,6 +514,8 @@ def _build_source_links(sources: dict[str, Any]) -> html.Div:
 
 def _build_error_content(apn: Any, exc: Exception) -> html.Div:
     """Render a recoverable load error inside the drawer.
+
+    A recoverable error leaves the drawer structure intact and gives users a clear retry state.
 
     Args:
         apn: Assessor Parcel Number identifying the property.

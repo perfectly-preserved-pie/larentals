@@ -23,6 +23,7 @@
 
     /**
      * Build the address row value for a breakfast burrito popup.
+     * A Maps link remains available when the source has coordinates but no street address.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} Escaped address or linked map destination.
@@ -40,6 +41,7 @@
 
     /**
      * Build the rating row value for a breakfast burrito popup.
+     * The source rating is shown on its ten-point scale and escaped before markup insertion.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} Rating display string, or `N/A`.
@@ -51,6 +53,7 @@
 
     /**
      * Build the photo row value for a breakfast burrito popup.
+     * The shared link helper handles missing URLs and safe external-link attributes.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} HTML link to the photo, or `N/A`.
@@ -61,6 +64,7 @@
 
     /**
      * Build the review/source row value for a breakfast burrito popup.
+     * It prefers the original review, then the source page, then the rankings sheet.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} HTML link to the best available review/source page, or `N/A`.
@@ -83,6 +87,7 @@
 
     /**
      * Build the attribution source links for a breakfast burrito popup.
+     * Each available provenance URL is included so the displayed review can be traced back to its source.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} Joined attribution links, or `N/A`.
@@ -107,6 +112,7 @@
 
     /**
      * Build the attribution banner displayed above breakfast burrito popup rows.
+     * No banner is rendered when the feature has no source links to cite.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} HTML banner, or an empty string when no attribution links exist.
@@ -132,6 +138,7 @@
 
     /**
      * Build the detail rows rendered inside a breakfast burrito popup.
+     * The review row label changes to `Source` when there is no original review URL.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {{ label: string, value: string }[]} Popup rows for the feature.
@@ -183,6 +190,7 @@
 
     /**
      * Build the complete breakfast burrito popup markup.
+     * The wide, tall card variant accommodates the review details and source attribution.
      *
      * @param {Record<string, unknown>} properties Feature properties for the breakfast burrito entry.
      * @returns {string} HTML string bound to the Leaflet popup.

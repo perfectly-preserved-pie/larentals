@@ -147,7 +147,19 @@ STREET_NUMBER_OVERRIDES = {
 
 
 def apply_reviewed_location_overrides(df: pd.DataFrame, listing_type: str) -> pd.DataFrame:
-    """Apply reviewed source ZIP, city, street, and number corrections."""
+    """Apply listing-specific address corrections before location processing.
+
+    These maps hold manually reviewed fixes for bad source fields. Only rows
+    whose normalized MLS number and listing type match an override are changed;
+    the input dataframe is updated in place and returned for pipeline use.
+
+    Args:
+        df: Listing rows containing MLS numbers and address fields.
+        listing_type: buy or lease; each has its own street column.
+
+    Returns:
+        The same dataframe with matching corrections applied.
+    """
     corrections = {
         mls: zip_code
         for (kind, mls), zip_code in ZIP_OVERRIDES.items()

@@ -20,6 +20,8 @@ DEFAULT_GEOPACKAGE_LAYER = "ca_broadband_availability_aggregate"
 def parse_args() -> argparse.Namespace:
     """Parse command-line options for the broadband merge job.
 
+    Typed CLI options make input and output selection explicit for scheduled and manual runs.
+
     Returns:
         Parsed command-line arguments.
 
@@ -55,6 +57,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Execute the broadband spatial merge using the selected inputs.
+
+    The command delegates the spatial join to the shared merge path and writes the requested output.
 
     Side Effects:
         Reads geospatial source files and writes the merged output artifact.

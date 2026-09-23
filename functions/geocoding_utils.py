@@ -44,7 +44,17 @@ def _ensure_object_columns(
 
 
 def _google_street_key(value: str) -> str:
-    """Normalize common street suffixes before comparing geocoder routes."""
+    """Make a street name comparable with Google's route component.
+
+    Punctuation and common suffix spellings should not make a matching address
+    look different. This key is only used for the route similarity check.
+
+    Args:
+        value: Street name from the listing or geocoder response.
+
+    Returns:
+        Lowercase alphanumeric street key without a common suffix.
+    """
     normalized = re.sub(r"[^a-z0-9]", "", value.casefold())
     for suffix in ("boulevard", "blvd", "avenue", "ave", "street", "st", "road", "rd"):
         if normalized.endswith(suffix):
@@ -53,7 +63,18 @@ def _google_street_key(value: str) -> str:
 
 
 def _google_result_matches_address(address: str, raw: dict) -> bool:
-    """Reject broad Google results using data returned in the same paid lookup."""
+    """Accept a Google result only when it still describes the listing address.
+
+    A geocoder can return a plausible point for the wrong street or ZIP. Check
+    the response we already paid for before allowing it to move a listing pin.
+
+    Args:
+        address: Address sent to the geocoder.
+        raw: Google's response fields for the candidate result.
+
+    Returns:
+        Whether the precision, number, ZIP, and route pass the checks.
+    """
     if raw.get("partial_match"):
         return False
     location_type = raw.get("geometry", {}).get("location_type")
@@ -89,7 +110,11 @@ def return_coordinates(
     nominatim_user_agent: str = "larentals-geocoder",
     nominatim_timeout: int = 10
 ) -> Tuple[Optional[float], Optional[float]]:
-    """Fetches the latitude and longitude of a given address using geocoding. Uses Nominatim if flagged, otherwise defaults to GoogleV3.
+    """Geocode one listing address with the selected provider.
+
+    Google results pass an address-match check before moving a listing pin; a
+    plausible nearby coordinate can still be the wrong property. Lookup
+    failures return empty coordinates for the pipeline to handle.
 
     Parameters:
     address (str): The full street address.
@@ -144,6 +169,8 @@ def return_coordinates(
 def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
     """Fetches the city name for a given address using geocoding.
 
+The lookup is needed only when the source address lacks a usable city value.
+
     Parameters:
     address (str): The full street address.
     geolocator (GoogleV3): An instance of a GoogleV3 geocoding class.
@@ -173,6 +200,8 @@ def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
 
 def return_zip_code(address: str, geolocator: GoogleV3) -> Optional[str]:
     """Fetches the postal code for a given address using geocoding.
+
+Postal components are taken from the geocoder response rather than inferred from partial address text.
 
     Parameters:
     address (str): The full street address.
@@ -235,6 +264,8 @@ def fetch_missing_zip_codes(df: pd.DataFrame, geolocator: GoogleV3) -> pd.DataFr
 def _has_text(value: object) -> bool:
     """Handle has text.
 
+    Null-like values are treated as absent before address component selection.
+
     Args:
         value: Candidate city, ZIP, or address field to validate.
 
@@ -253,6 +284,8 @@ def _has_text(value: object) -> bool:
 
 def _google_address_component(raw: dict, component_types: tuple[str, ...]) -> str | None:
     """Handle google address component.
+
+    Address components are selected by Google’s type labels because their array order is not stable.
 
     Args:
         raw: Raw Google geocoder response containing address components.
@@ -401,6 +434,8 @@ def _usable_coordinates(
     max_valid_latitude: float | None = None,
 ) -> bool:
     """Handle usable coordinates.
+
+    Only finite coordinates inside the configured region are safe to attach to a listing.
 
     Args:
         latitude: Property latitude in decimal degrees.

@@ -11,6 +11,8 @@ class BaseClassEnrichmentTest(unittest.TestCase):
     def setUp(self) -> None:
         """Handle setUp.
 
+        Each test uses a temporary listing database to isolate cache and schema behavior.
+
         Returns:
             None.
         """
@@ -20,6 +22,8 @@ class BaseClassEnrichmentTest(unittest.TestCase):
     def tearDown(self) -> None:
         """Handle tearDown.
 
+        Temporary database state is removed so later tests cannot observe stale rows.
+
         Returns:
             None.
         """
@@ -27,6 +31,8 @@ class BaseClassEnrichmentTest(unittest.TestCase):
 
     def _write_db(self, schema_sql: str) -> None:
         """Handle write db.
+
+        The helper creates a small SQLite fixture with only the columns required by the query.
 
         Args:
             schema_sql: SQL column definitions used to create the test table.
@@ -39,6 +45,8 @@ class BaseClassEnrichmentTest(unittest.TestCase):
 
     def test_select_columns_can_include_enrichment_fields(self) -> None:
         """Verify that select columns can include enrichment fields.
+
+        Optional enrichment columns should be selectable without changing the base listing fields.
 
         Returns:
             None.
@@ -115,6 +123,8 @@ class BaseClassEnrichmentTest(unittest.TestCase):
 
     def test_missing_enrichment_table_is_ignored(self) -> None:
         """Verify that missing enrichment table is ignored.
+
+        Pages must still load when enrichment has not been initialized yet.
 
         Returns:
             None.

@@ -101,6 +101,8 @@ _ARCGIS_LAYER_URL_RE = re.compile(r"https?://.+/(FeatureServer|MapServer)/\d+/?$
 def require_safe_identifier(name: str, *, field_name: str) -> str:
     """Validate a SQL identifier used for a table or column name.
 
+    Restricting identifiers prevents callers from injecting SQL syntax into dynamically built statements.
+
     Args:
         name: Candidate SQL identifier.
         field_name: Friendly field label for error messages.
@@ -118,6 +120,8 @@ def require_safe_identifier(name: str, *, field_name: str) -> str:
 
 def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
     """Return whether a SQLite table exists.
+
+    Checking sqlite_master lets initialization remain idempotent across new and existing databases.
 
     Args:
         conn: Open SQLite database connection.
@@ -142,6 +146,8 @@ def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
 def existing_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
     """Return the declared column names for a SQLite table.
 
+    Column introspection allows migrations to add fields without rebuilding a populated table.
+
     Args:
         conn: Open SQLite database connection.
         table_name: SQLite table to inspect or modify.
@@ -156,6 +162,8 @@ def existing_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
 
 def create_enrichment_table(conn: sqlite3.Connection, table_name: str) -> None:
     """Create an enrichment table from the canonical schema.
+
+    The canonical schema keeps new enrichment databases aligned with the pipeline’s expected columns.
 
     Args:
         conn: Open SQLite database connection.
@@ -180,6 +188,8 @@ def create_enrichment_table(conn: sqlite3.Connection, table_name: str) -> None:
 
 def add_missing_enrichment_columns(conn: sqlite3.Connection, table_name: str) -> int:
     """Add any canonical enrichment columns missing from an existing table.
+
+    Incremental ALTERs preserve existing listing enrichment rows during schema upgrades.
 
     Args:
         conn: Open SQLite database connection.
@@ -215,6 +225,8 @@ def add_missing_enrichment_columns(conn: sqlite3.Connection, table_name: str) ->
 def ensure_indexes(conn: sqlite3.Connection, table_name: str) -> int:
     """Ensure the standard enrichment indexes exist.
 
+    Indexes support the lookup paths used repeatedly during listing imports and API reads.
+
     Args:
         conn: Open SQLite database connection.
         table_name: SQLite table to inspect or modify.
@@ -240,6 +252,8 @@ def ensure_indexes(conn: sqlite3.Connection, table_name: str) -> int:
 def ensure_enrichment_table(conn: sqlite3.Connection, table_name: str) -> tuple[int, int]:
     """Create or evolve a canonical enrichment table and its indexes.
 
+    Combining schema evolution and index creation gives callers one safe database setup step.
+
     Args:
         conn: Open SQLite database connection.
         table_name: SQLite table to inspect or modify.
@@ -260,6 +274,8 @@ def ensure_enrichment_table(conn: sqlite3.Connection, table_name: str) -> tuple[
 
 def rebuild_enrichment_table(conn: sqlite3.Connection, table_name: str) -> tuple[int, int]:
     """Drop and recreate an enrichment table from the canonical schema.
+
+    This destructive path is reserved for deliberate resets when incremental migration is insufficient.
 
     Returns:
         Tuple of `(dropped_row_count, created_index_count)`.
@@ -284,6 +300,8 @@ def rebuild_enrichment_table(conn: sqlite3.Connection, table_name: str) -> tuple
 def normalize_columns_key(value: str) -> str:
     """Collapse a column name to a comparison-friendly lookup key.
 
+    Normalization tolerates punctuation and casing differences across provider-specific column labels.
+
     Args:
         value: Column selector supplied as text, a sequence, or ``None``.
 
@@ -298,6 +316,8 @@ def guess_column_name(
     candidates: Sequence[str],
 ) -> str | None:
     """Return the first matching column name using normalized-name comparison.
+
+    Choosing the first recognized alias lets one pipeline read files with different source headers.
 
     Args:
         columns: Column names to read or process.
@@ -325,6 +345,10 @@ def read_geospatial_dataset(
     columns: Sequence[str] | None = None,
 ) -> gpd.GeoDataFrame:
     """Read a local or remote geospatial source and normalize it to WGS84.
+
+    Dispatch ArcGIS services, local files, and downloads through their suitable
+    readers. Normalize the result once so downstream spatial joins see one
+    coordinate system.
 
     Args:
         path: Filesystem path to the source file, dataset, database, or artifact.
@@ -370,6 +394,8 @@ def read_geospatial_dataset(
 def resolve_region_bbox(region_name: str) -> tuple[float, float, float, float] | None:
     """Resolve a named geographic scope into a WGS84 bounding box.
 
+    The returned bounds use WGS84 because that is the common coordinate system for downloaded source data.
+
     Args:
         region_name: Configured geographic region whose bounds should be resolved.
 
@@ -392,6 +418,8 @@ def filter_gdf_to_bbox(
 ) -> gpd.GeoDataFrame:
     """Return only rows whose geometry falls within a WGS84 bounding box.
 
+    Spatial filtering keeps enrichment limited to the selected region before expensive joins run.
+
     Args:
         gdf: GeoDataFrame containing the source geometries and attributes.
         bbox: Geographic bounding box ordered as minimum longitude, minimum latitude, maximum longitude, and maximum latitude.
@@ -410,6 +438,8 @@ def filter_gdf_to_bbox(
 def is_remote_url(value: str) -> bool:
     """Return whether a string looks like an HTTP(S) URL.
 
+    Only HTTP(S) sources should be fetched over the network; local paths use file readers instead.
+
     Args:
         value: Candidate dataset location to classify as local or remote.
 
@@ -426,6 +456,8 @@ def expanded_total_bounds(
     pad_degrees: float = 0.05,
 ) -> tuple[float, float, float, float]:
     """Return an expanded WGS84 bounding box for a GeoDataFrame.
+
+    A small margin prevents clipping features that touch the source dataset boundary.
 
     Args:
         gdf: GeoDataFrame containing the source geometries and attributes.
@@ -452,6 +484,8 @@ def expanded_total_bounds(
 def _download_remote_file(url: str, target_path: Path) -> Path:
     """Download a remote file to a local path.
 
+    A local copy lets downstream geospatial readers use the same path-based flow as cached inputs.
+
     Args:
         url: URL requested, validated, or downloaded by the function.
         target_path: Filesystem path where the resolved dataset should exist.
@@ -475,6 +509,8 @@ def _download_remote_file(url: str, target_path: Path) -> Path:
 
 def _resolve_zip_dataset_path(extract_dir: Path) -> Path:
     """Resolve the first usable geospatial dataset inside an extracted ZIP directory.
+
+    ZIP archives can contain nested folders or several files, so the first usable dataset is selected explicitly.
 
     Args:
         extract_dir: Directory where an archive is extracted.
@@ -510,6 +546,8 @@ def _resolve_zip_dataset_path(extract_dir: Path) -> Path:
 
 def _guess_default_layer_name(path: str | Path) -> str | None:
     """Pick a default layer when a container dataset exposes multiple layers.
+
+    Selecting a non-empty layer avoids attempting reads from metadata-only entries in multi-layer containers.
 
     Args:
         path: Filesystem path to the source file, dataset, database, or artifact.
@@ -552,6 +590,8 @@ def _dataset_info(
 ) -> dict[str, object] | None:
     """Return lightweight driver/CRS metadata for a local dataset when available.
 
+    Lightweight metadata enables validation without loading the full geospatial table.
+
     Args:
         path: Filesystem path to the source file, dataset, database, or artifact.
         layer: Named geospatial layer to read from the dataset.
@@ -571,6 +611,8 @@ def _project_bbox_to_dataset_crs(
     dataset_crs: object | None,
 ) -> tuple[float, float, float, float] | None:
     """Reproject a WGS84 bbox into the dataset CRS expected by local readers.
+
+    Readers need the query bounds in the same CRS as the stored dataset.
 
     Args:
         bbox: Geographic bounding box ordered as minimum longitude, minimum latitude, maximum longitude, and maximum latitude.
@@ -606,6 +648,8 @@ def _temporary_gdal_config(
 ) -> Iterator[None]:
     """Temporarily apply GDAL config options for a single read.
 
+    Restoring prior GDAL settings prevents one read from changing behavior for later operations.
+
     Args:
         options: Temporary GDAL configuration options to apply.
 
@@ -635,6 +679,10 @@ def read_local_geospatial_dataset(
     columns: Sequence[str] | None = None,
 ) -> gpd.GeoDataFrame:
     """Read a local geospatial dataset, including ZIP archives.
+
+    Archives are extracted into a temporary directory before reading their GIS
+    layer. This lets the same caller work with zipped and unpacked source
+    files.
 
     Args:
         path: Filesystem path to the source file, dataset, database, or artifact.
@@ -691,6 +739,10 @@ def read_remote_geospatial_dataset(
 ) -> gpd.GeoDataFrame:
     """Read a remote geospatial file by downloading it to a temporary directory first.
 
+    Some GIS drivers need a local path or companion files. Downloading first
+    gives the local reader a stable file while keeping temporary artifacts
+    contained.
+
     Args:
         url: URL requested, validated, or downloaded by the function.
         layer: Named geospatial layer to read from the dataset.
@@ -737,6 +789,8 @@ def _build_arcgis_query_params(
 ) -> dict[str, object]:
     """Handle build arcgis query params.
 
+    Centralizing pagination and output fields keeps ArcGIS requests consistent across chunks.
+
     Args:
         bbox: Geographic bounding box ordered as minimum longitude, minimum latitude, maximum longitude, and maximum latitude.
         extra: Additional ArcGIS query parameters merged into the request.
@@ -766,6 +820,9 @@ def read_arcgis_layer(
     bbox: tuple[float, float, float, float] | None = None,
 ) -> gpd.GeoDataFrame:
     """Read an ArcGIS FeatureServer/MapServer layer URL into a GeoDataFrame.
+
+    Fetch object IDs first, then request features in chunks. ArcGIS services
+    can limit rows per response, so a single query could silently omit records.
 
     Args:
         layer_url: URL for the layer.
@@ -800,6 +857,8 @@ def read_arcgis_layer(
 
     def fetch_feature_chunk(chunk: list[object]) -> list[dict[str, object]]:
         """Handle fetch feature chunk.
+
+        Chunked retrieval respects ArcGIS response limits while collecting the requested feature page.
 
         Args:
             chunk: One page of ArcGIS features returned by the service.
@@ -851,6 +910,10 @@ def load_listing_points(
     bbox: tuple[float, float, float, float] | None = None,
 ) -> gpd.GeoDataFrame:
     """Load listing points from SQLite as a WGS84 GeoDataFrame.
+
+    Drop rows without usable coordinates or MLS numbers before spatial
+    matching. Deduplicate by MLS number so one listing cannot receive
+    enrichment twice.
 
     Args:
         db_path: Filesystem path to the SQLite database.
@@ -910,6 +973,8 @@ def load_listing_points(
 def now_utc_iso() -> str:
     """Return the current UTC timestamp as an ISO-8601 string.
 
+    UTC timestamps make artifact metadata comparable across machines and deployment time zones.
+
     Returns:
         The now UTC ISO text.
     """
@@ -918,6 +983,8 @@ def now_utc_iso() -> str:
 
 def build_source_version(paths: Sequence[str | Path]) -> str:
     """Build a compact source-version string from input path mtimes.
+
+    Input modification times give cached artifacts a compact signal for source freshness.
 
     Args:
         paths: Source paths or URLs included in the version fingerprint.
@@ -943,6 +1010,8 @@ def build_source_version(paths: Sequence[str | Path]) -> str:
 def _python_value(value: object) -> object:
     """Convert pandas/numpy scalar values into SQLite-friendly Python values.
 
+    SQLite bindings need native Python scalars rather than pandas or NumPy wrapper values.
+
     Args:
         value: NumPy, pandas, or Python scalar being prepared for SQLite.
 
@@ -965,6 +1034,10 @@ def upsert_listing_enrichment_rows(
     rows_df: pd.DataFrame,
 ) -> int:
     """Upsert listing enrichment rows into ``<listing_table>_enrichment``.
+
+    Normalize MLS keys and discard duplicate input rows before writing. The
+    upsert lets a later run refresh enrichment without requiring a full
+    listing-table rebuild.
 
     Args:
         db_path: Filesystem path to the SQLite database.

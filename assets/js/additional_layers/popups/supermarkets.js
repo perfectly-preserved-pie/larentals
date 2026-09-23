@@ -24,6 +24,7 @@
 
     /**
      * Build the popup title for a supermarket feature.
+     * The doing-business-as name takes precedence over the registered business name.
      *
      * @param {Record<string, unknown>} properties Feature properties for the supermarket.
      * @returns {string} Title for the popup header.
@@ -36,6 +37,7 @@
 
     /**
      * Build the formatted address string for a supermarket popup.
+     * A complete source address takes precedence over joining street, city, and ZIP fields.
      *
      * @param {Record<string, unknown>} properties Feature properties for the supermarket.
      * @returns {string} Escaped address string, or `N/A` when unavailable.
@@ -56,6 +58,7 @@
 
     /**
      * Build the category row for a supermarket popup.
+     * NAICS metadata takes precedence over business type, and absent categories omit the row.
      *
      * @param {Record<string, unknown>} properties Feature properties for the supermarket.
      * @returns {{ label: string, value: string }|null} Category row, or `null` when no category metadata exists.
@@ -85,6 +88,7 @@
 
     /**
      * Build the complete supermarket popup markup.
+     * Optional category and opening-date rows are filtered by the shared row renderer.
      *
      * @param {Record<string, unknown>} properties Feature properties for the supermarket.
      * @returns {string} HTML string bound to the Leaflet popup.

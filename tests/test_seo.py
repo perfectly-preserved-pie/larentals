@@ -14,6 +14,8 @@ class SeoTest(unittest.TestCase):
   def test_get_public_page_paths_uses_dash_registry_paths(self) -> None:
     """Verify that get public page paths uses dash registry paths.
 
+    The sitemap should reflect registered routes rather than a separately maintained path list.
+
     Returns:
         None.
     """
@@ -28,6 +30,8 @@ class SeoTest(unittest.TestCase):
 
   def test_build_sitemap_xml_contains_canonical_public_urls(self) -> None:
     """Verify that build sitemap xml contains canonical public urls.
+
+    Canonical origins and public paths are required for crawler indexing.
 
     Returns:
         None.
@@ -55,6 +59,8 @@ class SeoTest(unittest.TestCase):
   def test_build_robots_txt_points_to_sitemap(self) -> None:
     """Verify that build robots txt points to sitemap.
 
+    Search crawlers need the generated sitemap location advertised in robots.txt.
+
     Returns:
         None.
     """
@@ -66,6 +72,8 @@ class SeoTest(unittest.TestCase):
 
   def test_build_llms_txt_describes_primary_ai_search_context(self) -> None:
     """Verify that build llms txt describes primary ai search context.
+
+    The AI-facing summary should identify the app’s purpose and primary public pages.
 
     Returns:
         None.
@@ -82,6 +90,8 @@ class SeoTest(unittest.TestCase):
 
   def test_build_structured_data_script_contains_web_app_schema(self) -> None:
     """Verify that build structured data script contains web app schema.
+
+    Structured data helps clients identify the site as a web application.
 
     Returns:
         None.

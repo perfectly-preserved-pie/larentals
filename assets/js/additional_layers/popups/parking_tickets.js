@@ -21,13 +21,13 @@
 
     /**
      * @typedef {{
-     *   location?: unknown,
-     *   citation_count?: unknown,
-     *   total_fine_amount?: unknown,
-     *   average_fine_amount?: unknown,
-     *   window_start?: unknown,
-     *   window_end?: unknown,
-     *   merged_geocode_count?: unknown,
+     * location?: unknown,
+     * citation_count?: unknown,
+     * total_fine_amount?: unknown,
+     * average_fine_amount?: unknown,
+     * window_start?: unknown,
+     * window_end?: unknown,
+     * merged_geocode_count?: unknown,
      * }} ParkingDensityProperties
      */
 
@@ -37,6 +37,7 @@
 
     /**
      * Format a numeric value as a localized integer.
+     * Invalid values remain `N/A` rather than being shown as zero citations.
      *
      * @param {unknown} value Raw numeric value.
      * @returns {string} Localized integer string or `N/A`.
@@ -52,6 +53,7 @@
 
     /**
      * Format a numeric value as USD for popup display.
+     * Fine amounts are rounded to whole dollars; invalid source amounts remain `N/A`.
      *
      * @param {unknown} value Raw numeric value.
      * @returns {string} Currency string or `N/A`.
@@ -73,6 +75,7 @@
 
     /**
      * Build the ordered rows rendered in a parking-hotspot popup.
+     * A merged-geocode count is included only when multiple source points were combined.
      *
      * @param {ParkingDensityProperties} properties Feature properties for the hotspot.
      * @returns {PopupRow[]} Popup rows for the feature.
@@ -110,6 +113,7 @@
 
     /**
      * Build the popup title for a parking hotspot.
+     * The source location is preferred, with ticket totals used when no location label exists.
      *
      * @param {ParkingDensityProperties} properties Feature properties for the hotspot.
      * @returns {string} Popup title.
@@ -130,6 +134,7 @@
 
     /**
      * Build the complete parking-hotspot popup markup.
+     * The shared card shell renders the location/count title and the citation and fine summary.
      *
      * @param {ParkingDensityProperties} properties Feature properties for the hotspot.
      * @returns {string} HTML string bound to the Leaflet popup.

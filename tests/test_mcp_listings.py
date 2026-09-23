@@ -241,6 +241,8 @@ def _post_modern_mcp(
 ) -> TestResponse:
     """Post a stateless MCP 2026-07-28 request with mirrored HTTP headers.
 
+    The helper adds the required stateless protocol headers to each listing-tool request.
+
     Args:
         client: Flask test client used to send the modern request.
         payload: JSON-RPC request body to enrich with required metadata.
@@ -271,6 +273,8 @@ def _post_modern_mcp(
 
 def test_searches_and_paginates_lease_listings(listing_db: Path) -> None:
     """Verify that searches and paginates lease listings.
+
+    Search results must honor filters and return stable next-page information.
 
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.
@@ -309,6 +313,8 @@ def test_searches_buy_listings_with_numeric_and_buy_specific_filters(
     listing_db: Path,
 ) -> None:
     """Verify that searches buy listings with numeric and buy specific filters.
+
+    Buy queries need numeric bounds and purchase-only filters applied together.
 
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.
@@ -350,6 +356,8 @@ def test_searches_buy_listings_with_numeric_and_buy_specific_filters(
 def test_search_uses_parameterized_location_filter(listing_db: Path) -> None:
     """Verify that search uses parameterized location filter.
 
+    Location text must be bound as data rather than interpolated into SQL.
+
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.
 
@@ -388,6 +396,8 @@ def test_search_rejects_invalid_filters(
 ) -> None:
     """Verify that search rejects invalid filters.
 
+    Malformed or unsupported filters should fail validation before querying listings.
+
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.
         arguments: Tool arguments submitted in the MCP request.
@@ -402,6 +412,8 @@ def test_search_rejects_invalid_filters(
 
 def test_mcp_exposes_one_tool_supporting_lease_and_buy(listing_db: Path) -> None:
     """Verify that mcp exposes one tool supporting lease and buy.
+
+    One public tool keeps client setup simple while allowing both listing modes.
 
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.
@@ -511,6 +523,8 @@ def test_mcp_exposes_one_tool_supporting_lease_and_buy(listing_db: Path) -> None
 def test_modern_mcp_calls_listing_tool_without_a_session(listing_db: Path) -> None:
     """Invoke the real listing tool over the stateless 2026-07-28 transport.
 
+    A modern request should search listings through stateless dispatch.
+
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.
 
@@ -558,6 +572,8 @@ def test_modern_mcp_calls_listing_tool_without_a_session(listing_db: Path) -> No
 
 def test_mcp_validation_error_does_not_destabilize_session(listing_db: Path) -> None:
     """Verify that mcp validation error does not destabilize session.
+
+    Invalid input must not corrupt an existing legacy Dash MCP session.
 
     Args:
         listing_db: Temporary listing database supplied by the pytest fixture.

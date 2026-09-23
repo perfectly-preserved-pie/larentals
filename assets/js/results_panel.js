@@ -14,6 +14,7 @@
 
     /**
      * Escape text for safe HTML interpolation.
+     * This protects listing fields that are inserted into the panel markup.
      *
      * @param {unknown} value Raw text value.
      * @returns {string} Escaped string.
@@ -29,6 +30,7 @@
 
     /**
      * Convert a value to a trimmed string, or null when it says nothing.
+     * Common serialized null markers are treated as missing to keep source artifacts out of the UI.
      *
      * @param {unknown} value Raw value.
      * @returns {string|null} Cleaned string or `null`.
@@ -44,6 +46,7 @@
 
     /**
      * Parse an external listing URL and reject non-http(s) values.
+     * Only web links are rendered, so unsupported schemes cannot become action links.
      *
      * @param {unknown} value Raw URL value.
      * @returns {URL|null} Parsed URL or `null`.
@@ -62,6 +65,7 @@
 
     /**
      * Format a price for a list row.
+     * Invalid source values display as `n/a` instead of a fabricated price.
      *
      * @param {unknown} value Raw list price.
      * @returns {string} Display price.
@@ -74,13 +78,13 @@
 
     /**
      * Build a row from a supercluster leaf.
-     *
      * A cluster bubble hides its listings, but the panel should still name them,
      * so each visible cluster is expanded through the supercluster index. Leaves
      * have no rendered marker, hence the coordinates for the click handler.
      *
      * @param {object} leaf GeoJSON feature from `getLeaves`.
      * @param {Element} clusterEl Bubble the leaf is currently hidden inside.
+     *
      * @returns {object|null} Row descriptor, or `null` for an unusable leaf.
      */
     function rowFromLeaf(leaf, clusterEl) {
@@ -107,7 +111,6 @@
 
     /**
      * Count every listing inside the viewport, clustered ones included.
-     *
      * A cluster bubble stands for many listings, so the headline count adds its
      * size rather than counting the bubble as one. Its on-screen label is
      * abbreviated ("3k"), hence the exact size travelling as a data attribute.
@@ -134,9 +137,12 @@
 
     /**
      * Report whether an element's centre sits inside a rectangle.
+     * Testing the centre keeps a partly clipped marker from counting as a listing
+     * in view.
      *
      * @param {Element} el Element to test.
      * @param {DOMRect} box Rectangle to test against.
+     *
      * @returns {boolean} True when the element's centre is inside.
      */
     function inside(el, box) {
@@ -149,6 +155,7 @@
 
     /**
      * Update the headline count to describe what is in frame.
+     * The page path selects whether the count is labeled as homes or rentals.
      *
      * @param {number} total Listings visible in frame.
      * @returns {void}
@@ -165,6 +172,7 @@
 
     /**
      * Read the selected sort order.
+     * The default keeps the initial panel ordered from lowest to highest price.
      *
      * @returns {string} Sort key, defaulting to cheapest first.
      */
@@ -175,12 +183,12 @@
 
     /**
      * Order two rows by a numeric field, always sinking missing values.
-     *
      * A listing with no square footage should not win "largest first", so blanks
      * go last whichever direction is chosen.
      *
      * @param {string} field Row property to compare.
      * @param {number} direction 1 for ascending, -1 for descending.
+     *
      * @returns {function(object, object): number} Comparator.
      */
     function byNumber(field, direction) {
@@ -198,6 +206,8 @@
 
     /**
      * Build the comparator for a sort key.
+     * Missing numeric and date values belong at the end, regardless of the chosen
+     * direction.
      *
      * @param {string} key Sort key from the select.
      * @returns {function(object, object): number} Comparator.
@@ -222,9 +232,10 @@
 
     /**
      * Collect the price markers whose centre falls inside the map viewport.
+     * Cluster bubbles are expanded to leaves so each listing gets a selectable row.
      *
      * @returns {{rows: object[], clustered: boolean}} Visible rows, and whether
-     *   cluster bubbles are covering the view.
+     * cluster bubbles are covering the view.
      */
     function collectVisible() {
         var container = document.querySelector(".leaflet-container");
@@ -280,9 +291,12 @@
 
     /**
      * Render one listing row.
+     * Escape listing text before insertion and expose a separate external link only
+     * for usable URLs.
      *
      * @param {object} row Row descriptor from `collectVisible`.
      * @param {number} index Row position, used to reconnect the click handler.
+     *
      * @returns {string} HTML for the row.
      */
     function renderRow(row, index) {
@@ -319,13 +333,13 @@
 
     /**
      * Point the map at whichever row the cursor is on.
-     *
      * A row backed by a rendered pin highlights that pin. A row still inside a
      * cluster highlights the bubble hiding it, which is the only thing on screen
      * that represents it.
      *
      * @param {object} entry Row descriptor.
      * @param {boolean} on Whether to turn the highlight on.
+     *
      * @returns {void}
      */
     function highlight(entry, on) {
@@ -338,6 +352,7 @@
 
     /**
      * Clear every highlight, so a re-render cannot strand one.
+     * Highlights are applied to rendered Leaflet icons and may outlive replaced list rows.
      *
      * @returns {void}
      */
@@ -350,6 +365,8 @@
 
     /**
      * Redraw the panel for the current viewport.
+     * The list and pin colors use the same visible sample, so a refresh must update
+     * both from one collection.
      *
      * @returns {void}
      */
@@ -390,7 +407,6 @@
 
     /**
      * Mark the row for the open listing, and bring it into view.
-     *
      * Scrolling is for when the popup was opened from the map: the row for it
      * is usually somewhere down a list of a few hundred. It is deliberately not
      * done on a re-render, which would yank the list out from under someone
@@ -421,13 +437,13 @@
     larentals.results = Object.assign({}, larentals.results, {
         /**
          * Mark a listing as the one being read.
-         *
          * With the listings column up a listing opens as a card in this panel
          * rather than as a popup, so there is no popupopen event to read the
          * open listing from and it is handed over directly instead.
          *
          * @param {unknown} mls MLS number, or a falsy value to clear the mark.
          * @param {{scroll: boolean}} [options] Whether to scroll the row in.
+         *
          * @returns {void}
          */
         setOpenListing: function (mls, options) {
@@ -438,6 +454,7 @@
 
     /**
      * Bring a row into the visible part of the list, if it is not already.
+     * Manual overshoot scrolling avoids restoring a half-finished smooth-scroll position during panel refresh.
      *
      * @param {Element} row Row element.
      * @returns {void}
@@ -461,7 +478,6 @@
 
     /**
      * Read the MLS number off whatever a popup was opened from.
-     *
      * A popup opened by clicking a pin carries its source marker, and the pin's
      * own element holds the number. One opened for a listing still inside a
      * cluster has no marker, so the number is passed on the popup itself.
@@ -482,6 +498,8 @@
 
     /**
      * Follow the open popup, so the list always marks the listing being read.
+     * The map may mount after this script, so attach its handlers once it becomes
+     * available.
      *
      * @returns {void}
      */
@@ -504,6 +522,7 @@
 
     /**
      * Queue a redraw, collapsing bursts of map events into one.
+     * A short debounce avoids rebuilding the panel repeatedly during a single map update.
      *
      * @returns {void}
      */
@@ -638,6 +657,7 @@
 
     /**
      * Start observing the Leaflet marker pane once it exists.
+     * The map is mounted asynchronously, so repeated calls wait until the pane can be observed and then bind only once.
      *
      * @returns {void}
      */

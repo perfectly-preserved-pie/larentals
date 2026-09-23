@@ -18,6 +18,8 @@ from functions.parking_tickets import (
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the parking heatmap artifact builder.
 
+    The CLI supports scheduled builds and local artifact inspection with the same defaults.
+
     Returns:
         Parsed CLI arguments.
     """
@@ -43,6 +45,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     """Build the parking heatmap artifact or print its default output path.
+
+    The artifact is built separately so map requests can read local data without waiting on Socrata.
 
     Returns:
         Exit status code where `0` means success.

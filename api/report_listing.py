@@ -28,7 +28,10 @@ def register_report_listing_routes(
     server: Any,
     db_path: str = str(LARENTALS_DB_PATH),
 ) -> None:
-    """Register the user-facing listing report endpoint.
+    """Prepare storage and register the listing report endpoint.
+
+    Creating the table at registration time lets the first user report be
+    written without a separate database migration step.
 
     Args:
         server: The Flask server instance (typically `app.server` in Dash).
@@ -44,6 +47,10 @@ def register_report_listing_routes(
     @server.route("/report_listing", methods=["POST"])
     def report_listing() -> tuple[Response, int]:
         """Validate and persist a user-submitted listing report.
+
+        Reject unknown report categories and oversized input before writing.
+        Strip markup from free text so the stored report and server log contain
+        plain text.
 
         Returns:
             A JSON response and HTTP status code confirming persistence.

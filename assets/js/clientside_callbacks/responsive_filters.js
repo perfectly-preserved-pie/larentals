@@ -25,6 +25,7 @@
 
   /**
    * Describe the pair of exact-value controls backing one hybrid range.
+   * The slider stays visual while exact fields can represent an unbounded maximum.
    * @param {string} stem Component id prefix shared by both fields.
    * @returns {{minimum: string[], maximum: string[]}} Control mapping.
    */
@@ -148,6 +149,7 @@
 
   /**
    * Copy a JSON-compatible value without retaining mutable references.
+   * Filter drafts and committed state can then change independently.
    * @template T
    * @param {T} value Value to copy.
    * @returns {T} Independent copy of the value.
@@ -159,6 +161,7 @@
 
   /**
    * Compare two JSON-compatible values by content.
+   * This detects filter edits even when Dash supplies new object references.
    * @param {*} left First value.
    * @param {*} right Second value.
    * @returns {boolean} Whether both values serialize identically.
@@ -169,6 +172,7 @@
 
   /**
    * Convert a formatted numeric field value to a finite number.
+   * Commas are removed before parsing, while blank and invalid entries stay unset.
    * @param {*} value Candidate field value.
    * @returns {number | null} Parsed number, or null for a blank/invalid value.
    */
@@ -192,6 +196,7 @@
 
   /**
    * Format the location control's string or tag-array value consistently.
+   * Tags are joined for display; comparison keys preserve their original boundaries.
    * @param {*} value Current location control value.
    * @returns {string} Human-readable location list.
    */
@@ -206,6 +211,7 @@
 
   /**
    * Serialize a location value without collapsing tag boundaries.
+   * Distinct tag arrays must remain distinct while an asynchronous ZIP lookup is pending.
    * @param {*} value Current location control value.
    * @returns {string} Stable comparison key for pending location updates.
    */
@@ -215,6 +221,7 @@
 
   /**
    * Identify the listing mode represented by the current URL.
+   * Buy routes map to `buy`; supported lease routes use `lease`.
    * @returns {ListingPage} Current Rent or Buy page key.
    */
   function currentPage() {
@@ -224,6 +231,7 @@
 
   /**
    * Read the component IDs that triggered the active Dash callback.
+   * Removing the property suffix makes trigger checks independent of which prop changed.
    * @returns {string[]} Triggering component IDs without property suffixes.
    */
   function triggeredIds() {
@@ -236,6 +244,7 @@
 
   /**
    * Find filter groups whose values differ from the page defaults.
+   * A group can include several controls, such as a range and its missing-value switch.
    * @param {ListingPage} page Listing mode to inspect.
    * @param {FilterState} state Filter values to compare.
    * @returns {string[]} Names of active filter groups.
@@ -252,6 +261,7 @@
 
   /**
    * Decide whether captured controls remain a draft or update the map.
+   * Mobile edits wait for Apply except initial state and a completed location lookup.
    * @param {ListingPage} page Listing mode being updated.
    * @param {FilterState} state Newly captured control values.
    * @param {FilterState | null} currentApplied Last committed filter values.
@@ -324,6 +334,7 @@
 
   /**
    * Run the page-specific filter engine against the source listings.
+   * Incomplete inputs or an unavailable page engine return `null` so callers can wait safely.
    * @param {ListingPage} page Listing mode being filtered.
    * @param {FilterState} state Filter values to apply.
    * @param {FeatureCollection} fullGeojson Unfiltered listing features.
@@ -344,6 +355,7 @@
 
   /**
    * Calculate and store the result count for uncommitted filter values.
+   * Previewing updates the drawer count without changing applied map results.
    * @param {ListingPage} page Listing mode being previewed.
    * @param {FilterState} state Draft filter values.
    * @param {FeatureCollection} fullGeojson Unfiltered listing features.
@@ -360,6 +372,7 @@
 
   /**
    * Apply committed filter values and update result-count analytics.
+   * The analytics event is emitted only when a user initiated Apply is pending.
    * @param {ListingPage} page Listing mode being filtered.
    * @param {FilterState} state Committed filter values.
    * @param {FeatureCollection} fullGeojson Unfiltered listing features.
@@ -389,6 +402,7 @@
 
   /**
    * Reduce an exact result count to a low-cardinality analytics label.
+   * Stable ranges avoid sending exact listing counts as analytics dimensions.
    * @param {number} count Number of matching listings.
    * @returns {string} Analytics bucket for the count.
    */
@@ -402,6 +416,7 @@
 
   /**
    * Format a numeric value for compact interface copy.
+   * Counts use US separators consistently across the toolbar and drawer.
    * @param {*} value Value that can be converted to a number.
    * @returns {string} Locale-formatted number.
    */
@@ -411,6 +426,7 @@
 
   /**
    * Format a price using compact US-dollar notation when appropriate.
+   * Smaller values stay exact while larger values use compact notation to fit the chip.
    * @param {*} value Value that can be converted to a number.
    * @returns {string} Human-readable dollar amount.
    */
@@ -427,6 +443,7 @@
 
   /**
    * Describe an active numeric range in a quick-filter chip.
+   * Open-ended and single-sided ranges get labels that match the applied filter rule.
    * @param {string} label Short filter name.
    * @param {number[]} value Current lower and upper bounds.
    * @param {number[]} defaults Default lower and upper bounds.
@@ -445,6 +462,7 @@
 
   /**
    * Update one quick-filter chip to reflect its applied value.
+   * Labels and accessibility text use committed state so draft edits are not shown as active.
    * @param {ListingPage} page Listing mode being rendered.
    * @param {string} group Filter group represented by the chip.
    * @param {FilterState} state Applied filter values.
@@ -484,6 +502,7 @@
 
   /**
    * Keep location-entry instructions aligned with the device and tag state.
+   * Removal buttons receive location-specific accessible names after the tag UI renders.
    * @param {ListingPage} page Listing mode to update.
    * @returns {void}
    */
@@ -509,6 +528,7 @@
 
   /**
    * Synchronize toolbar labels, counts, and chips with filter state.
+   * Draft errors are reported once per distinct input/error pair to avoid duplicate analytics.
    * @param {ListingPage} page Listing mode to render.
    * @returns {void}
    */
@@ -582,6 +602,7 @@
 
   /**
    * Schedule a toolbar refresh on the browser's next paint.
+   * Deferring DOM work lets related state updates settle before labels are recomputed.
    * @param {ListingPage} page Listing mode to render.
    * @returns {void}
    */
@@ -591,6 +612,7 @@
 
   /**
    * Write selected filter-state fields back to their Dash controls.
+   * Hybrid ranges update both exact-value inputs, while unrelated controls can be left untouched.
    * @param {ListingPage} page Listing mode whose controls should change.
    * @param {FilterState} state Values to restore.
    * @param {string[]} [keys] State fields to write; defaults to every field.
@@ -622,6 +644,7 @@
 
   /**
    * Reset one active filter group and immediately update the map.
+   * A short forced-apply window keeps mobile chip actions from becoming uncommitted drafts.
    * @param {ListingPage} page Listing mode being changed.
    * @param {string} group Filter group to reset.
    * @returns {void}
@@ -638,6 +661,7 @@
 
   /**
    * Restore every changed filter control to its page default.
+   * Only changed fields are written so clearing filters does not trigger needless callbacks.
    * @param {ListingPage} page Listing mode being cleared.
    * @returns {void}
    */
@@ -655,6 +679,7 @@
 
   /**
    * Find the responsive filter panel for a listing page.
+   * Panels are page-scoped so buy and lease controls can coexist without ambiguous lookups.
    * @param {ListingPage} page Listing mode to locate.
    * @returns {HTMLElement | null} Matching panel, when mounted.
    */
@@ -664,6 +689,7 @@
 
   /**
    * Find every control that can open a page's filter panel.
+   * This includes toolbar chips and other entry points such as prompts.
    * @param {ListingPage} page Listing mode to locate.
    * @returns {NodeListOf<HTMLElement>} Matching toolbar and prompt controls.
    */
@@ -673,6 +699,7 @@
 
   /**
    * Open the responsive panel and optionally focus a filter section.
+   * Mobile mode makes the map inert and moves keyboard focus into the modal drawer.
    * @param {ListingPage} page Listing mode to open.
    * @param {HTMLElement | null} trigger Control that requested the panel.
    * @param {string} [section] Accordion section to reveal.
@@ -724,6 +751,7 @@
 
   /**
    * Close the responsive panel and optionally discard draft edits.
+   * Location controls are restored only when changed because they trigger geocoding callbacks.
    * @param {ListingPage} page Listing mode to close.
    * @param {string} source Interaction used to close the panel.
    * @param {boolean} restore Whether applied values should replace the draft.
@@ -802,6 +830,7 @@
 
   /**
    * Scroll to and focus a named filter accordion section.
+   * Delayed focus allows the drawer animation to start without stealing a control the user reached.
    * @param {ListingPage} page Listing mode containing the accordion.
    * @param {string} [section] Section key to focus.
    * @param {boolean} [preserveUserFocus=false] Avoid overriding a control the
@@ -855,6 +884,7 @@
 
   /**
    * Route delegated clicks to open, close, apply, clear, or remove actions.
+   * Delegation handles dynamically rendered controls and records location interactions in one place.
    * @param {MouseEvent} event Captured document click.
    * @returns {void}
    */
@@ -932,6 +962,7 @@
 
   /**
    * Collect visible controls that participate in the panel's focus trap.
+   * Hidden controls are excluded so Tab wrapping follows the visible drawer UI.
    * @param {HTMLElement} panel Open filter panel.
    * @returns {HTMLElement[]} Visible keyboard-focusable descendants.
    */
@@ -946,6 +977,7 @@
 
   /**
    * Handle Escape dismissal and Tab wrapping inside an open panel.
+   * Escape first belongs to an expanded location combobox, and otherwise closes the drawer.
    * @param {KeyboardEvent} event Document keyboard event.
    * @returns {void}
    */
@@ -1001,6 +1033,7 @@
 
   /**
    * Reset modal-only state when the viewport enters desktop mode.
+   * A resize clears the backdrop, dialog semantics, and map inert state left by mobile mode.
    * @returns {void}
    */
   function syncBreakpoint() {
@@ -1023,6 +1056,7 @@
 
   /**
    * Attach one-time analytics after the Leaflet map becomes available.
+   * Bounded polling handles late map mounting, and a map flag prevents duplicate event listeners.
    * @returns {void}
    */
   function attachFirstMapInteraction() {

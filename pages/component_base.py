@@ -26,6 +26,8 @@ _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 def categorize_laundry_features(feature: object) -> str:
     """Collapse raw laundry text into a smaller set of filter buckets.
 
+    Source feeds use many phrases for the same laundry setup, so filters need a stable shared vocabulary.
+
     Args:
         feature: Raw laundry text from the listing row.
 
@@ -71,6 +73,8 @@ def _normalize_unknown_text(
 ) -> pd.Series:
     """Replace missing-like values with ``Unknown`` and optionally decode HTML.
 
+    Converting common missing markers keeps unavailable source values from appearing as literal text.
+
     Args:
         series: Series to normalize.
         decode_html: Whether to unescape HTML entities after normalization.
@@ -87,6 +91,8 @@ def _normalize_unknown_text(
 def _db_cache_token(db_path: str = DB_PATH) -> int:
     """Return a cheap cache-busting token derived from the backing SQLite file.
 
+    File metadata invalidates the process cache when the underlying listing database is replaced.
+
     Args:
         db_path: Filesystem path to the SQLite database.
 
@@ -101,6 +107,8 @@ def _db_cache_token(db_path: str = DB_PATH) -> int:
 
 def _require_safe_identifier(name: str, *, field_name: str) -> str:
     """Validate a SQL identifier (table/column/index name).
+
+    SQLite parameters cannot bind table names, so identifiers are validated before interpolation.
 
     Args:
         name: The identifier to validate.
@@ -119,6 +127,8 @@ def _require_safe_identifier(name: str, *, field_name: str) -> str:
 
 def _sqlite_table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
     """Return whether a SQLite table or view exists.
+
+    Supporting both tables and views lets pages use either materialized or query-backed sources.
 
     Args:
         conn: Open SQLite connection.
@@ -146,6 +156,8 @@ def _sqlite_table_columns(
 ) -> set[str]:
     """Return the column names declared on a SQLite table or view.
 
+    Column inspection allows callers to adapt to older database schemas without failing at query time.
+
     Args:
         conn: Open SQLite connection.
         table_name: Table/view name to inspect.
@@ -167,6 +179,8 @@ def _build_cached_geojson_payload(
     categorize_lease_laundry: bool = False,
 ) -> dict:
     """Build and cache a GeoJSON payload without constructing any Dash UI components.
+
+    Separating payload construction from Dash components lets callbacks reuse it without rendering UI.
 
     Args:
         table_name: Source table name.
@@ -207,6 +221,10 @@ class BaseClass:
         include_last_updated: bool = True,
     ) -> None:
         """Load a table/view from SQLite and prepare the DataFrame.
+
+        Join optional ISP and enrichment columns before normalizing fields used
+        by filters. Selecting only requested columns keeps each page's initial
+        payload smaller.
 
         Args:
             table_name: SQLite table/view name (e.g. "lease" or "buy").
@@ -333,6 +351,8 @@ class BaseClass:
     def dynamic_output_id(self, index: str) -> dict[str, str]:
         """Build the pattern-matching output id used by dynamic filter sections.
 
+        Pattern-matching IDs let repeated filter sections share callbacks.
+
         Args:
             index: Logical filter name.
 
@@ -344,6 +364,8 @@ class BaseClass:
     def map_center(self) -> tuple[float, float]:
         """Compute the average map center from the current geometry column.
 
+        The mean geometry center gives the map a data-driven starting point when no explicit center is configured.
+
         Returns:
             A ``(lat, lng)`` tuple for the initial map center.
         """
@@ -351,6 +373,8 @@ class BaseClass:
 
     def create_optional_layers_control(self) -> Optional[dl.LayersControl]:
         """Build the optional layers control when a page enables extra overlays.
+
+        Pages can opt into extra overlays without duplicating the shared control setup.
 
         Returns:
             A configured ``LayersControl`` or ``None`` when unused.
@@ -407,6 +431,10 @@ class BaseClass:
 
     def _attach_isp_speeds(self, conn: sqlite3.Connection, table_name: str) -> None:
         """Join best available ISP speeds onto the listing dataframe.
+
+        Use the provider-options table for the current market and retain
+        listings with no provider match. Missing ISP data stays empty so
+        filters can handle unknown coverage.
 
         Args:
             conn: Open SQLite connection.
@@ -523,6 +551,8 @@ class BaseClass:
 
     def _safe_speed_max(self, column: str) -> float:
         """Return a safe slider maximum for an ISP speed column.
+
+        A finite positive maximum prevents ISP sliders from receiving invalid bounds or collapsing to zero.
 
         Args:
             column: Dataframe column to inspect.

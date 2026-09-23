@@ -13,9 +13,11 @@
 
     /**
      * Create the supermarket marker and bind its popup content.
+     * The shared marker helper binds the registered supermarket popup.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the supermarket.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @returns {L.Marker} Marker configured for the feature.
      */
     function drawSupermarketIcon(feature, latlng) {

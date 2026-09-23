@@ -12,6 +12,8 @@ _REGISTERED = False
 def register_filter_exclusion_devtool() -> None:
     """Register the custom devtools panel once per process.
 
+    One registration per process prevents duplicate panels during app reloads.
+
     Returns:
         None.
     """

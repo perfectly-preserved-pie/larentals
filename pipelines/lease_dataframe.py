@@ -36,6 +36,9 @@ import sys
 def main() -> None:
   """Build the normalized lease-listings dataframe and publish its artifacts.
 
+  The job resumes saved enrichment work where possible, then writes the rental
+  table. A sample run stops before publication for local inspection.
+
   Returns:
     ``None`` after the pipeline completes.
 

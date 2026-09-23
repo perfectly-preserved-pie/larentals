@@ -38,6 +38,8 @@ class DatabasePhotoState:
 def _usable(value: object) -> bool:
     """Return whether a database value contains a real URL.
 
+    Placeholder database values are ignored so only real delivery URLs enter the cleanup set.
+
     Args:
         value: Candidate value read from a photo URL column.
 
@@ -49,6 +51,8 @@ def _usable(value: object) -> bool:
 
 def _asset_path(url: object, *, endpoint_prefix: str) -> str:
     """Convert an ImageKit delivery URL into its Media Library path.
+
+    The Media Library path is needed because delivery URLs include transformation and host details.
 
     Args:
         url: ImageKit delivery URL stored in the listings database.
@@ -69,6 +73,10 @@ def load_database_photo_state(
     endpoint_prefix: str,
 ) -> DatabasePhotoState:
     """Load the exact allowlist of photo paths used by unflagged listings.
+
+    Only active listing references protect remote assets from deletion. Count
+    inactive rows separately so the reconciliation manifest explains what was
+    excluded.
 
     Args:
         db_path: SQLite database containing the canonical buy and lease tables.
@@ -114,6 +122,8 @@ class ImageKitMediaClient:
     def __init__(self, private_key: str) -> None:
         """Create an authenticated persistent HTTP session.
 
+        Persistent authentication and connection settings are shared across paginated API requests.
+
         Args:
             private_key: Server-side ImageKit API credential.
 
@@ -126,6 +136,8 @@ class ImageKitMediaClient:
 
     def _request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         """Send a request with bounded retries for transport and rate failures.
+
+        Bounded retries handle transient transport and rate failures without hanging the reconciliation job.
 
         Args:
             method: HTTP method accepted by ``requests.Session.request``.
@@ -153,6 +165,8 @@ class ImageKitMediaClient:
 
     def list_assets(self, asset_type: str) -> list[dict[str, Any]]:
         """Return every current file or historical version, with de-duplication.
+
+        De-duplication prevents current files and their historical versions from being processed twice.
 
         Args:
             asset_type: ImageKit asset type, either ``file`` or ``file-version``.
@@ -186,6 +200,8 @@ class ImageKitMediaClient:
     def list_version_page(self) -> list[dict[str, Any]]:
         """Return the first version page so deletions cannot shift later offsets.
 
+        Fetching a page before deletion avoids offset shifts that could skip later versions.
+
         Returns:
             Up to one thousand non-current file version objects.
         """
@@ -199,6 +215,8 @@ class ImageKitMediaClient:
 
     def delete_files(self, file_ids: Iterable[str]) -> int:
         """Delete current files in ImageKit's maximum batch size of 100.
+
+        The API caps batch size at 100, so larger cleanup sets are split into valid requests.
 
         Args:
             file_ids: Current ImageKit file identifiers selected for deletion.
@@ -239,6 +257,8 @@ class ImageKitMediaClient:
     def delete_file_version(self, file_id: str, version_id: str) -> None:
         """Permanently delete one non-current file version.
 
+        Historical versions are removed only when they are not the active file.
+
         Args:
             file_id: Parent ImageKit file identifier.
             version_id: Unique identifier for the non-current version.
@@ -256,6 +276,8 @@ class ImageKitMediaClient:
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     """Write a deterministic audit manifest.
+
+    Stable ordering makes the audit manifest easy to diff and review before cleanup.
 
     Args:
         path: Destination CSV path.
@@ -280,6 +302,9 @@ def _reconcile_database(
     endpoint_prefix: str,
 ) -> dict[str, dict[str, int]]:
     """Clear inactive, placeholder, and missing ImageKit references atomically.
+
+    Use one SQLite transaction for both listing tables so the database cannot
+    be left with only half the photo references repaired.
 
     Args:
         db_path: Canonical SQLite listings database to update.
@@ -350,6 +375,9 @@ def _clear_stale_checkpoint_urls(
 ) -> int:
     """Prevent a future run from reusing a URL whose asset was deleted.
 
+    A pipeline checkpoint can outlive its ImageKit photo. Clear stale photo
+    URLs there after cleanup so the next pipeline run uploads a valid asset.
+
     Args:
         checkpoint_path: Local pipeline checkpoint SQLite database.
         listing_type: Listing market stored in the checkpoint.
@@ -397,6 +425,8 @@ def _sync_checkpoint(
 ) -> None:
     """Replace the remote checkpoint after stale URL cleanup.
 
+    Replacing the remote checkpoint after cleanup keeps future imports from restoring stale URLs.
+
     Args:
         path: Local checkpoint database to upload.
         bucket: Optional S3 bucket holding durable checkpoints.
@@ -426,6 +456,10 @@ def reconcile(
     checkpoint_s3_prefix: str | None = None,
 ) -> dict[str, Any]:
     """Reconcile ImageKit with active SQLite listing photo references.
+
+    Write a deletion manifest before any mutation and refuse a suspiciously
+    large cleanup unless forced. After applying changes, re-list assets to
+    catch items missed by paginated results.
 
     Args:
         db_path: Canonical SQLite database containing listing tables.
@@ -572,6 +606,9 @@ def reconcile(
 
 def main() -> None:
     """Run a dry-run audit or apply a guarded ImageKit reconciliation.
+
+    The command writes a manifest before deletion and requires explicit apply
+    flags for mutation, making the proposed cleanup reviewable.
 
     Returns:
         None.

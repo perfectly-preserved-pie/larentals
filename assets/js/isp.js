@@ -17,28 +17,29 @@
 
   /**
    * @typedef {{
-   *   dba: string,
-   *   service_type: string,
-   *   max_dn_mbps: number,
-   *   max_up_mbps: number,
-   *   bucket: IspBucket,
+   * dba: string,
+   * service_type: string,
+   * max_dn_mbps: number,
+   * max_up_mbps: number,
+   * bucket: IspBucket,
    * }} NormalizedIspOption
    */
 
   /**
    * @typedef {{
-   *   key: string,
-   *   dba: string,
-   *   service_type: string,
-   *   best_dn: number,
-   *   best_up: number,
-   *   bucket: IspBucket,
-   *   tiers: IspTier[],
+   * key: string,
+   * dba: string,
+   * service_type: string,
+   * best_dn: number,
+   * best_up: number,
+   * bucket: IspBucket,
+   * tiers: IspTier[],
    * }} IspGroup
    */
 
   /**
    * Escape text for safe HTML injection.
+   * Provider fields are inserted into popup markup and must not be interpreted as HTML.
    *
    * @param {unknown} value Raw text value to escape.
    * @returns {string} HTML-safe string.
@@ -55,6 +56,7 @@
 
   /**
    * Normalize nullable strings.
+   * Blank values stay missing so provider labels do not render as empty text.
    *
    * @param {unknown} v Raw value to normalize.
    * @returns {string|null} Trimmed string, or `null` when blank.
@@ -67,6 +69,7 @@
 
   /**
    * Coerce unknown input into an array of objects.
+   * Unexpected API shapes become an empty list, while primitive array entries are discarded.
    *
    * @param {unknown} raw Unknown payload returned by the ISP API.
    * @returns {Array<Record<string, unknown>>} Array of ISP option-like objects.
@@ -113,6 +116,8 @@
 
   /**
    * Convert ALL CAPS text to Title Case.
+   * Mixed-case names are preserved, while common provider acronyms keep their capitalization.
+   * Existing mixed-case names are preserved, while common provider acronyms keep their capitalization.
    *
    * @param {string} text Provider display name to normalize.
    * @returns {string} Title-cased provider name.
@@ -142,6 +147,7 @@
 
   /**
    * Resolve the page-specific ISP API base path.
+   * The buy page and lease pages use separate listing datasets and endpoints.
    *
    * @returns {string} Lease or buy ISP API prefix for the current page.
    */
@@ -154,6 +160,7 @@
 
   /**
    * Fetch ISP options for a single listing and cache the in-flight request.
+   * Concurrent popup opens share the request, and failures are evicted so a later open can retry.
    *
    * @param {string|number} listingId Listing identifier used by the ISP tables.
    * @returns {Promise<Array<Record<string, unknown>>>} Promise resolving to ISP option rows.
@@ -189,6 +196,7 @@
 
   /**
    * Format Mbps into a human-friendly string.
+   * Speeds at or above 1000 Mbps switch to Gbps; missing or nonpositive values use an em dash.
    *
    * @param {number} mbps Download or upload speed expressed in Mbps.
    * @returns {string} Human-readable speed string.
@@ -205,6 +213,7 @@
 
   /**
    * Return a rank for comparing buckets (higher is better).
+   * Unknown bucket values share the fallback rank so sorting remains deterministic.
    *
    * @param {IspBucket} b ISP quality bucket.
    * @returns {number} Numeric rank used for sorting.
@@ -223,6 +232,7 @@
 
   /**
    * Normalize a raw option row coming from the API / SQL.
+   * Both API-style and SQL-style column names are accepted, with invalid speeds and buckets given safe defaults.
    *
    * @param {Record<string, unknown>} row Raw ISP row returned by the API / SQL layer.
    * @returns {NormalizedIspOption} Normalized ISP option used by the popup renderer.
@@ -253,6 +263,7 @@
 
   /**
    * Sort tiers best-to-worst.
+   * Faster download tiers lead, with upload speed breaking ties.
    *
    * @param {IspTier[]} tiers ISP plan tiers for a provider/service pair.
    * @returns {IspTier[]} Sorted copy with the fastest tiers first.
@@ -353,6 +364,7 @@
 
   /**
    * Normalize a grouped ISP record to a valid render bucket.
+   * Unknown source labels use the fallback bucket so every group has a stable section.
    *
    * @param {{ bucket?: IspBucket | null }} g Grouped ISP record.
    * @returns {IspBucket} Safe bucket value for rendering.
@@ -365,6 +377,7 @@
 
   /**
    * Render ISP options as opinionated buckets + expandable tiers.
+   * Grouping providers first prevents each advertised speed tier from appearing as a separate ISP.
    *
    * @param {unknown} rawOptions Raw ISP API response data.
    * @returns {string} HTML string for the ISP options row.
@@ -386,6 +399,7 @@
 
     /**
      * Render one ISP bucket section.
+     * Empty buckets are omitted so the popup does not show headings without options.
      *
      * @param {string} title Bucket heading shown in the popup.
      * @param {IspGroup[]} items ISP groups that belong in the bucket.
@@ -462,6 +476,7 @@
 
   /**
    * Render placeholder HTML to be inserted into the popup.
+   * The placeholder lets the popup open immediately while the separate ISP request is pending.
    *
    * @param {unknown} listingIdRaw Listing id pulled from popup properties.
    * @returns {string} Placeholder HTML rendered before the API request completes.
@@ -480,6 +495,7 @@
 
   /**
    * Hydrate the ISP placeholder within an opened popup.
+   * It checks that the popup still contains the target after the async request before replacing its content.
    *
    * @param {HTMLElement} popupRootEl Root popup element created by Leaflet.
    * @returns {void} Does not return a value; mutates the placeholder container in place.

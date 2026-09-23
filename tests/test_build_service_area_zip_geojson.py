@@ -10,6 +10,8 @@ class FakeResponse:
     def __init__(self, payload: dict) -> None:
         """Initialize the instance.
 
+        The fake response records one controlled status and payload for each request.
+
         Args:
             payload: Structured request, listing, or artifact payload to validate or summarize.
 
@@ -21,6 +23,8 @@ class FakeResponse:
     def raise_for_status(self) -> None:
         """Handle raise for status.
 
+        The stub follows requests behavior so HTTP failure handling is exercised accurately.
+
         Returns:
             None.
         """
@@ -28,6 +32,8 @@ class FakeResponse:
 
     def json(self) -> dict:
         """Handle json.
+
+        Returning the configured payload makes ArcGIS parsing deterministic.
 
         Returns:
             The stored JSON payload.
@@ -37,6 +43,8 @@ class FakeResponse:
 
 def test_normalize_zip_code_handles_listing_values() -> None:
     """Verify that normalize zip code handles listing values.
+
+    ZIPs from SQLite may be numeric, ZIP+4, or missing, but filtering needs five-digit strings.
 
     Returns:
         None.
@@ -51,6 +59,8 @@ def test_normalize_zip_code_handles_listing_values() -> None:
 
 def test_read_listing_zip_codes_uses_configured_tables(tmp_path: Path) -> None:
     """Verify that read listing zip codes uses configured tables.
+
+    Configured table names determine which buy and lease rows contribute to the service area.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -80,6 +90,8 @@ def test_read_listing_zip_codes_uses_configured_tables(tmp_path: Path) -> None:
 def test_fallback_fetch_queries_only_california_zip_areas(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify that fallback fetch queries only california zip areas.
 
+    The fallback path must not widen a failed local lookup to ZIPs outside California.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -90,6 +102,8 @@ def test_fallback_fetch_queries_only_california_zip_areas(monkeypatch: pytest.Mo
 
     def fake_post(url: str, data: dict, headers: dict, timeout: int) -> FakeResponse:
         """Handle fake post.
+
+        Recorded query parameters verify the ZIP filter without contacting ArcGIS.
 
         Args:
             url: URL requested, validated, or downloaded by the function.

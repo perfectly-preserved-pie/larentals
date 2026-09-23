@@ -10,6 +10,8 @@ load_dotenv(find_dotenv())
 def get_howloud_score(lat: float, lon: float) -> dict[str, Any] | None:
     """Fetch the HowLoud score for one latitude/longitude pair.
 
+    The lookup is keyed by coordinates because the service scores locations rather than listing IDs.
+
     Args:
         lat: Latitude of the location.
         lon: Longitude of the location.
@@ -44,6 +46,8 @@ def get_howloud_score(lat: float, lon: float) -> dict[str, Any] | None:
 def get_score_for_row(row: pd.Series, existing_howloud_columns: list[str]) -> dict[str, Any]:
   """Fetch missing HowLoud data for a dataframe row when needed.
 
+  Existing row values are reused so unchanged listings do not trigger another external request.
+
   Args:
     row: Listing row containing ``Latitude`` and ``Longitude`` values.
     existing_howloud_columns: Columns whose missing values trigger a refresh.
@@ -59,6 +63,8 @@ def update_existing_howloud_columns(
     df: pd.DataFrame, existing_howloud_columns: list[str]
 ) -> pd.DataFrame:
   """Fill existing HowLoud columns with values returned by the API.
+
+  Updating only present columns preserves compatibility with older listing schemas.
 
   Args:
     df: Listings dataframe to update.
@@ -80,6 +86,8 @@ def update_existing_howloud_columns(
 def cast_howloud_columns(df: pd.DataFrame) -> pd.DataFrame:
   """Cast HowLoud columns to nullable integer or string dtypes.
 
+  Nullable dtypes keep unknown scores missing instead of coercing them to zero.
+
   Args:
     df: Listings dataframe containing HowLoud columns.
 
@@ -99,6 +107,8 @@ def cast_howloud_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def update_howloud_scores(df: pd.DataFrame) -> pd.DataFrame:
   """Refresh and normalize HowLoud score columns in a listings dataframe.
+
+  Refresh and casting are grouped so downstream filters receive consistent HowLoud fields.
 
   Args:
     df: Listings dataframe to enrich.

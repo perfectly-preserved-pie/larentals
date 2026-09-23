@@ -5,6 +5,7 @@
    * Replace the maximum handle's internal sentinel value with its user-facing
    * meaning. Dash tooltip transforms receive only the number, so this small DOM
    * adapter supplies the missing per-slider context.
+   *
    * @returns {void}
    */
   function syncOpenEndedTooltips() {

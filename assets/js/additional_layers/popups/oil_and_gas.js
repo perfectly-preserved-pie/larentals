@@ -41,6 +41,7 @@
 
     /**
      * Build the status row value for an oil/gas well popup.
+     * Known source codes get readable labels and color classes; unfamiliar codes remain visible as text.
      *
      * @param {Record<string, unknown>} properties Feature properties for the well.
      * @returns {string} Styled status value.
@@ -59,6 +60,7 @@
 
     /**
      * Build the popup title for an oil/gas well feature.
+     * Field and well identifiers are preferred; the API number is the fallback identifier.
      *
      * @param {Record<string, unknown>} properties Feature properties for the well.
      * @returns {string} Popup title.
@@ -81,6 +83,7 @@
 
     /**
      * Build the detail rows rendered in an oil/gas well popup.
+     * An abandoned-date row appears only when that source field is present.
      *
      * @param {Record<string, unknown>} properties Feature properties for the well.
      * @returns {{ label: string, value: string }[]} Popup rows for the feature.
@@ -129,6 +132,7 @@
 
     /**
      * Build the complete oil/gas well popup markup.
+     * Title and ordered detail rows share the standard additional-layer popup shell.
      *
      * @param {Record<string, unknown>} properties Feature properties for the well.
      * @returns {string} HTML string bound to the Leaflet popup.

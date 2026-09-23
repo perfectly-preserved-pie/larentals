@@ -11,6 +11,8 @@ class McpUsageLoggingTest(unittest.TestCase):
     def setUp(self) -> None:
         """Handle setUp.
 
+        Each request runs through a fresh Flask app to isolate logging hooks.
+
         Returns:
             None.
         """
@@ -20,6 +22,8 @@ class McpUsageLoggingTest(unittest.TestCase):
         @app.route("/_mcp", methods=["GET", "POST"])
         def mcp_endpoint() -> Response:
             """Handle mcp endpoint.
+
+            The fixture endpoint exercises request hooks without constructing the full production app.
 
             Returns:
                 An HTTP response containing the MCP endpoint.
@@ -31,6 +35,8 @@ class McpUsageLoggingTest(unittest.TestCase):
         def health() -> str:
             """Handle health.
 
+            A simple health route verifies non-MCP requests remain routable under the test app.
+
             Returns:
                 The health text.
             """
@@ -40,6 +46,8 @@ class McpUsageLoggingTest(unittest.TestCase):
 
     def test_logs_tool_invocation_with_search_filters_and_result_summary(self) -> None:
         """Verify that logs tool invocation with search filters and result summary.
+
+        The log should capture useful tool context while keeping the result summary compact.
 
         Returns:
             None.
@@ -82,6 +90,8 @@ class McpUsageLoggingTest(unittest.TestCase):
     def test_suppresses_non_tool_mcp_requests(self) -> None:
         """Verify that suppresses non tool mcp requests.
 
+        Discovery and other protocol traffic should not be mislabeled as tool usage.
+
         Returns:
             None.
         """
@@ -96,6 +106,8 @@ class McpUsageLoggingTest(unittest.TestCase):
     def test_suppresses_failed_non_tool_mcp_requests(self) -> None:
         """Verify that suppresses failed non tool mcp requests.
 
+        Non-tool failures should not create misleading tool failure records.
+
         Returns:
             None.
         """
@@ -107,6 +119,8 @@ class McpUsageLoggingTest(unittest.TestCase):
 
     def test_logs_missing_result_payload(self) -> None:
         """Verify that logs missing result payload.
+
+        A missing response body still needs a completed request record.
 
         Returns:
             None.
@@ -126,6 +140,8 @@ class McpUsageLoggingTest(unittest.TestCase):
 
     def test_summarizes_structured_tool_result_without_listing_data(self) -> None:
         """Verify that summarizes structured tool result without listing data.
+
+        Structured summaries must not retain individual listing records.
 
         Returns:
             None.
@@ -147,6 +163,8 @@ class McpUsageLoggingTest(unittest.TestCase):
 
     def test_ignores_non_mcp_paths(self) -> None:
         """Verify that ignores non mcp paths.
+
+        The logging hook is limited to the MCP endpoint and must leave normal API traffic alone.
 
         Returns:
             None.

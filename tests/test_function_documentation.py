@@ -12,6 +12,8 @@ EXCLUDED_DIRECTORIES = {".git", ".venv", "venv"}
 def test_all_python_functions_are_typed_and_documented() -> None:
     """Require complete type hints and applicable docstring sections.
 
+    This catches newly added Python functions that lack type hints or required doc sections.
+
     Returns:
         None.
     """

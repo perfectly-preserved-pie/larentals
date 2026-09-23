@@ -116,6 +116,8 @@ class BuyComponents(BaseClass):
     def get_cached_geojson_payload(cls) -> dict:
         """Return the cached buy GeoJSON payload for the current database version.
 
+        The cache key includes the database version so rebuilt listing data is not hidden behind an old payload.
+
         Returns:
             A GeoJSON feature collection for the buy map store.
         """
@@ -128,6 +130,8 @@ class BuyComponents(BaseClass):
 
     def __init__(self) -> None:
         """Load buy data and assemble the top-level page cards.
+
+        Building the page tree once keeps data loading and Dash component construction out of each request.
 
         Returns:
             None.
@@ -145,6 +149,8 @@ class BuyComponents(BaseClass):
 
     def _build_page_parts(self) -> PageParts:
         """Build the title, sidebar, and map cards for the buy page.
+
+        Keeping the title, sidebar, and map together preserves the shared page layout contract.
 
         Returns:
             The assembled ``PageParts`` bundle.
@@ -174,6 +180,8 @@ class BuyComponents(BaseClass):
     def _build_map_component(self) -> object:
         """Build the buy map component with shared overlays and styles.
 
+        The shared map helpers keep page-specific markers aligned with common overlays and styles.
+
         Returns:
             The configured buy map component.
         """
@@ -189,6 +197,8 @@ class BuyComponents(BaseClass):
 
     def _build_filter_sections(self) -> list[FilterSection]:
         """Build the accordion sections shown on the buy sidebar.
+
+        Accordion sections group related controls so the sidebar remains scannable.
 
         Returns:
             Ordered filter-section tuples for the buy page.
@@ -233,6 +243,8 @@ class BuyComponents(BaseClass):
     def _build_list_price_filter(self) -> html.Div:
         """Build the list-price slider section.
 
+        List price is the main purchase constraint, with exact bounds kept separately from the visual slider.
+
         Returns:
             A list-price filter ``Div``.
         """
@@ -265,6 +277,8 @@ class BuyComponents(BaseClass):
     def _build_bedrooms_filter(self) -> html.Div:
         """Build the bedrooms slider section.
 
+        The slider exposes a quick numeric range while its defaults retain the full source range.
+
         Returns:
             A bedrooms filter ``Div``.
         """
@@ -282,6 +296,8 @@ class BuyComponents(BaseClass):
 
     def _build_bathrooms_filter(self) -> html.Div:
         """Build the bathrooms slider section.
+
+        The slider uses the same range interaction as bedrooms for consistent page filtering.
 
         Returns:
             A bathrooms filter ``Div``.
@@ -302,6 +318,8 @@ class BuyComponents(BaseClass):
 
     def _build_ppsqft_filter(self) -> html.Div:
         """Build the price-per-square-foot slider section.
+
+        A separate price-per-area range supports comparing value independently from total price.
 
         Returns:
             A price-per-square-foot filter ``Div``.
@@ -329,6 +347,8 @@ class BuyComponents(BaseClass):
 
     def _build_square_footage_filter(self) -> html.Div:
         """Build the square-footage slider section.
+
+        The missing-value switch lets users include listings whose source omits area.
 
         Returns:
             A square-footage filter ``Div``.
@@ -364,6 +384,8 @@ class BuyComponents(BaseClass):
     def create_subtype_checklist(self) -> html.Div:
         """Build the subtype dropdown for buy listings.
 
+        A checklist lets users select multiple listing categories without losing other active filters.
+
         Returns:
             A subtype filter ``Div``.
         """
@@ -384,6 +406,8 @@ class BuyComponents(BaseClass):
 
     def create_lot_size_components(self) -> html.Div:
         """Build the lot-size slider section.
+
+        Lot-size bounds let buyers narrow land area while the missing switch preserves listings without lot data.
 
         Returns:
             A lot-size filter ``Div``.
@@ -418,6 +442,8 @@ class BuyComponents(BaseClass):
 
     def create_hoa_fee_components(self) -> html.Div:
         """Build the HOA-fee slider section.
+
+        The HOA amount is useful only with missing values and fee frequency represented separately.
 
         Returns:
             An HOA-fee filter ``Div``.
@@ -461,6 +487,8 @@ class BuyComponents(BaseClass):
     def create_hoa_fee_frequency_checklist(self) -> html.Div:
         """Build the HOA-frequency filter.
 
+        Frequency is a separate filter because equal HOA amounts mean different costs when billed on different schedules.
+
         Returns:
             An HOA-frequency filter ``Div``.
         """
@@ -490,6 +518,8 @@ class BuyComponents(BaseClass):
     def create_listed_date_components(self) -> html.Div:
         """Build the listed-date filter section for the buy page.
 
+        The date controls keep a range and missing-date option available together.
+
         Returns:
             A listed-date filter ``Div``.
         """
@@ -502,6 +532,8 @@ class BuyComponents(BaseClass):
 
     def create_year_built_components(self) -> html.Div:
         """Build the year-built filter section for the buy page.
+
+        A missing-value option prevents unknown construction years from disappearing by default.
 
         Returns:
             A year-built filter ``Div``.

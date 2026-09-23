@@ -244,6 +244,8 @@ def backfill_lease_terms(db_path: str) -> None:
 def main() -> None:
     """Normalize lease terms in the local lease database.
 
+    This migration standardizes stored terms so filters see consistent values across source feeds.
+
     Returns:
         None.
     """

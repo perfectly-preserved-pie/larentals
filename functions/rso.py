@@ -64,6 +64,8 @@ class RsoListingLookupResult(TypedDict):
 def _normalize_address(value: object) -> str:
     """Normalize an address for property-level RSO matching.
 
+    Parcel-level matching must ignore common unit and punctuation differences in listing addresses.
+
     Args:
         value: Raw property address used as an RSO lookup key.
 
@@ -85,6 +87,8 @@ def _normalize_address(value: object) -> str:
 def _parse_int(value: object) -> int | None:
     """Convert a non-negative numeric value to an integer.
 
+    Invalid or negative inventory values should not become misleading coverage counts.
+
     Args:
         value: Numeric-like Power BI field to parse, defaulting invalid input to zero.
 
@@ -100,6 +104,8 @@ def _parse_int(value: object) -> int | None:
 
 def _coverage_from_counts(rso_units: int, unit_range: str) -> str:
     """Derive a conservative coverage status from LAHD's public fields.
+
+    The result stays conservative when property-level totals cannot prove an individual unit is covered.
 
     Args:
         rso_units: Number of rent-stabilized units reported for the property.
@@ -118,6 +124,8 @@ def _coverage_from_counts(rso_units: int, unit_range: str) -> str:
 
 def _empty_result(*, data_available: bool) -> RsoListingLookupResult:
     """Return the default result for an unavailable or unmatched lookup.
+
+    A stable empty shape lets the popup distinguish unavailable and unmatched source data.
 
     Args:
         data_available: Whether the backing dataset was available for the lookup.
@@ -139,6 +147,8 @@ def _empty_result(*, data_available: bool) -> RsoListingLookupResult:
 
 def _result_from_record(record: dict[str, Any]) -> RsoListingLookupResult:
     """Convert an RSO inventory record into a popup-safe result.
+
+    The popup receives normalized values rather than LAHD-specific raw column names.
 
     Args:
         record: RSO property record matched to the listing.
@@ -163,6 +173,8 @@ def _result_from_record(record: dict[str, Any]) -> RsoListingLookupResult:
 @lru_cache(maxsize=4)
 def _load_lookup(artifact_path: str, artifact_mtime_ns: int) -> dict[str, Any]:
     """Load and index the local RSO inventory by normalized address.
+
+    Address indexing lets listing popups query the local inventory without a live report request.
 
     Args:
         artifact_path: Filesystem path to the local data artifact.
@@ -205,6 +217,8 @@ def lookup_rso_property_for_listing(
 ) -> RsoListingLookupResult:
     """Look up a listing's property in the local LAHD RSO inventory.
 
+    The local snapshot keeps property-level coverage lookups fast and deterministic.
+
     Args:
         address: Street address used to identify or geocode the property.
         artifact_path: Filesystem path to the local data artifact.
@@ -229,6 +243,8 @@ def prewarm_rso_property_lookup_cache(
     artifact_path: Path = RSO_PROPERTY_LOOKUP_PATH,
 ) -> None:
     """Load the local RSO inventory before the first listing popup.
+
+    Startup loading avoids making the first renter wait for index construction.
 
     Args:
         artifact_path: Filesystem path to the local data artifact.
@@ -284,6 +300,8 @@ def add_rso_status_to_listing_geojson(payload: dict[str, Any]) -> dict[str, Any]
 def _powerbi_headers(request_id: str) -> dict[str, str]:
     """Build the headers required by the public Power BI report endpoint.
 
+    The report endpoint expects browser-like request headers for its public query interface.
+
     Args:
         request_id: Power BI request identifier included in tracing headers.
 
@@ -301,9 +319,12 @@ def _powerbi_headers(request_id: str) -> dict[str, str]:
 def _build_query(apn_min: int, apn_max: int) -> dict[str, Any]:
     """Build a public-dashboard query for one half-open APN range.
 
+    The dashboard truncates large responses, so callers partition the APN
+    space. An exclusive upper bound keeps adjacent partitions from overlapping.
+
     Args:
         apn_min: Inclusive lower APN bound for the query.
-        apn_max: Inclusive upper APN bound for the query.
+        apn_max: Exclusive upper APN bound for the query.
 
     Returns:
         A mapping containing the constructed query.
@@ -347,6 +368,8 @@ def _build_query(apn_min: int, apn_max: int) -> dict[str, Any]:
 def _decode_powerbi_rows(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     """Decode the compact row representation returned by Power BI.
 
+    Power BI responses encode columns separately, so rows must be reconstructed before use.
+
     Args:
         dataset: Decoded Power BI dataset containing dictionaries and compressed rows.
 
@@ -388,6 +411,10 @@ def _decode_powerbi_rows(dataset: dict[str, Any]) -> list[dict[str, Any]]:
 def fetch_current_rso_records() -> tuple[list[dict[str, Any]], str]:
     """Fetch the complete current public LAHD RSO inventory.
 
+    Partition the APN range and split any response that reaches the dashboard's
+    row limit. This avoids silently accepting a truncated inventory as
+    complete.
+
     Returns:
         A tuple containing the fetched current RSO records.
 
@@ -400,9 +427,11 @@ def fetch_current_rso_records() -> tuple[list[dict[str, Any]], str]:
     def fetch_partition(apn_min: int, apn_max: int) -> None:
         """Fetch one APN range, splitting it if Power BI truncates the result.
 
+        Splitting truncated APN ranges recovers rows that exceed the report’s response limit.
+
         Args:
             apn_min: Inclusive lower APN bound for the query.
-            apn_max: Inclusive upper APN bound for the query.
+            apn_max: Exclusive upper APN bound for the query.
 
         Returns:
             None.
@@ -449,6 +478,8 @@ def fetch_current_rso_records() -> tuple[list[dict[str, Any]], str]:
 
 def refresh_local_rso_property_lookup(output_path: Path = RSO_PROPERTY_LOOKUP_PATH) -> Path:
     """Fetch LAHD's public RSO inventory and write the local lookup artifact.
+
+    The refresh updates the local artifact used by request-time listing lookups.
 
     Args:
         output_path: Filesystem path where the generated artifact is written.

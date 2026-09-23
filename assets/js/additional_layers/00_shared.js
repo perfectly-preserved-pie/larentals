@@ -3,7 +3,6 @@
 
     /**
      * Shared popup/runtime helpers for the optional map overlays.
-     *
      * Folder layout:
      * - `additional_layers/popups/*.js` registers popup HTML builders.
      * - `additional_layers/layers/*.js` registers Dash Leaflet point-to-layer hooks.
@@ -21,6 +20,7 @@
 
     /**
      * Check whether a popup value should be treated as blank.
+     * Common serialized null markers are handled alongside actual null and undefined values.
      *
      * @param {unknown} value Raw property value.
      * @returns {boolean} `true` when the value is empty or null-like.
@@ -40,6 +40,7 @@
 
     /**
      * Convert a value into a trimmed string when it is usable.
+     * Null-like strings are filtered by the shared blank-value check before conversion.
      *
      * @param {unknown} value Raw property value.
      * @returns {string|null} Trimmed string or `null`.
@@ -54,6 +55,7 @@
 
     /**
      * Escape text for safe HTML interpolation inside popup content.
+     * Use it for untrusted labels and values before inserting them into markup.
      *
      * @param {unknown} value Raw text value to escape.
      * @returns {string} HTML-safe string.
@@ -70,6 +72,7 @@
 
     /**
      * Format a plain text value for popup display.
+     * Missing values use the common `N/A` label so rows stay readable.
      *
      * @param {unknown} value Raw property value.
      * @returns {string} Escaped text or `N/A`.
@@ -81,6 +84,7 @@
 
     /**
      * Convert a military-style time value into a 12-hour display string.
+     * Non-digit input is normalized to four digits, then invalid hours or minutes are rejected.
      *
      * @param {unknown} time Raw time value, typically in `HHMM` form.
      * @returns {string} Formatted 12-hour time string or `N/A`.
@@ -113,6 +117,7 @@
 
     /**
      * Format a popup date value for display.
+     * ISO timestamps are reduced to their date portion to avoid showing time-zone details.
      *
      * @param {unknown} value Raw date-like value from a feature property.
      * @returns {string} Escaped date string, or `N/A` when the value is blank.
@@ -132,6 +137,7 @@
 
     /**
      * Join address fragments while filtering blank values.
+     * Missing unit or city fields therefore do not leave extra commas in the displayed address.
      *
      * @param {unknown[]} parts Address fragments in display order.
      * @returns {string} Comma-separated address string.
@@ -145,6 +151,7 @@
 
     /**
      * Normalize text into title case when the source is all upper or all lower case.
+     * Mixed-case source names are preserved to avoid rewriting intentional capitalization.
      *
      * @param {unknown} value Raw text value to normalize.
      * @returns {string|null} Title-cased string, or `null` when blank.
@@ -173,9 +180,11 @@
 
     /**
      * Build a safe external link for popup display.
+     * The link opens separately with `noopener noreferrer` to isolate the source page.
      *
      * @param {unknown} url URL value to render.
      * @param {unknown} label Link text.
+     *
      * @returns {string} HTML anchor tag or `N/A`.
      */
     function buildExternalLink(url, label) {
@@ -192,6 +201,7 @@
 
     /**
      * Render the shared popup row layout.
+     * Empty row lists get a clear empty-state message instead of a blank popup body.
      *
      * @param {PopupRow[]} rows Popup rows to render.
      * @returns {string} HTML string for the popup rows.
@@ -222,14 +232,16 @@
 
     /**
      * Render the shared popup card shell used by additional layers.
+     * Optional banner, width, and height variants let layer-specific content reuse one layout.
      *
      * @param {{
-     *   title: unknown,
-     *   rows: PopupRow[],
-     *   banner?: string,
-     *   sizeVariant?: "standard"|"wide",
-     *   heightVariant?: "standard"|"tall",
+     * title: unknown,
+     * rows: PopupRow[],
+     * banner?: string,
+     * sizeVariant?: "standard"|"wide",
+     * heightVariant?: "standard"|"tall",
      * }} config Popup shell configuration.
+     *
      * @returns {string} HTML string bound to a Leaflet popup.
      */
     function renderPopupCard(config) {
@@ -257,9 +269,11 @@
 
     /**
      * Compute the same responsive popup sizing constraints used by listing popups.
+     * Available map dimensions cap popup size, while caller options and extra classes are retained.
      *
      * @param {L.Layer|L.Map|null|undefined} popupSource Layer or map used to infer map bounds.
      * @param {L.PopupOptions=} popupOptions Optional Leaflet popup options to preserve.
+     *
      * @returns {L.PopupOptions} Leaflet popup options with listing-equivalent sizing.
      */
     function buildResponsivePopupOptions(popupSource, popupOptions) {
@@ -296,6 +310,7 @@
 
     /**
      * Resolve a popup builder lazily so folder load order does not break marker registration.
+     * The lookup happens at use time because popup scripts can register after layer scripts load.
      *
      * @param {string} builderName Popup builder name.
      * @returns {((properties: Record<string, unknown>) => string)|null} Popup builder function or `null`.
@@ -314,9 +329,11 @@
 
     /**
      * Register a popup content builder on the shared popup namespace.
+     * Merging the namespace preserves builders registered by other layer scripts.
      *
      * @param {string} builderName Stable builder name used by layer renderers.
      * @param {(properties: Record<string, unknown>) => string} builder Popup content builder.
+     *
      * @returns {void}
      */
     function registerPopupBuilder(builderName, builder) {
@@ -329,9 +346,11 @@
 
     /**
      * Register a Dash Leaflet point-to-layer renderer under the shared namespace.
+     * Python layer declarations can reference the stable name without depending on script order.
      *
      * @param {string} rendererName Stable renderer name referenced from Python.
      * @param {(feature: Record<string, unknown>, latlng: unknown) => L.Layer} renderer Renderer function.
+     *
      * @returns {void}
      */
     function registerLayerRenderer(rendererName, renderer) {
@@ -344,11 +363,14 @@
 
     /**
      * Create a marker and bind popup content when properties are present.
+     * Popup construction is delegated to the registered builder so marker setup stays consistent.
      *
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the marker.
      * @param {unknown} latlng Leaflet lat/lng argument supplied by the layer renderer.
+     *
      * @param {L.Icon|L.DivIcon} icon Marker icon to use.
      * @param {string} builderName Popup content builder name registered on `window.additionalLayerPopups.builders`.
+     *
      * @param {L.PopupOptions=} popupOptions Optional Leaflet popup options.
      * @returns {L.Marker} Marker configured for the feature.
      */
@@ -362,11 +384,14 @@
 
     /**
      * Bind popup content to an additional-layer marker/path when possible.
+     * Missing feature properties or builder registration leave the layer usable without a popup.
      *
      * @param {L.Layer} layer Leaflet layer to receive the popup.
      * @param {{ properties?: Record<string, unknown> }} feature GeoJSON feature for the layer.
+     *
      * @param {string} builderName Popup content builder name.
      * @param {L.PopupOptions=} popupOptions Optional Leaflet popup options.
+     *
      * @returns {void}
      */
     function bindAdditionalLayerPopup(layer, feature, builderName, popupOptions) {
@@ -385,7 +410,6 @@
 
     /**
      * Ensure the Leaflet heatmap plugin is available before mounting the layer.
-     *
      * This avoids depending on global script load order, which is brittle with
      * Dash component bundles and external CDN scripts.
      *

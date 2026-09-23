@@ -45,6 +45,8 @@ class BroadbandGeopackageConfig:
     def metadata_path(self) -> Path:
         """Handle metadata path.
 
+        A deterministic sidecar filename keeps the download and refresh paths in sync.
+
         Returns:
             The filesystem path for the metadata.
         """
@@ -53,6 +55,8 @@ class BroadbandGeopackageConfig:
 
 def parse_args(argv: list[str] | None = None) -> BroadbandGeopackageConfig:
     """Parse command-line arguments into a typed fetch configuration.
+
+    Central parsing keeps command-line overrides aligned with the typed fetch configuration.
 
     Args:
         argv: Optional argument list for tests or programmatic use. When omitted,
@@ -112,6 +116,8 @@ def require_command(command: str) -> None:
 def _interesting_headers(headers: object) -> dict[str, str]:
     """Handle interesting headers.
 
+    Only cache validators needed for freshness comparisons are persisted.
+
     Args:
         headers: HTTP headers included with the request.
 
@@ -150,6 +156,8 @@ def probe_source(url: str) -> dict[str, str]:
 def load_metadata(path: Path) -> dict[str, object] | None:
     """Load cached source metadata, returning None for absent or invalid files.
 
+    Invalid metadata is treated as a cache miss so a new source fetch can recover.
+
     Args:
         path: Metadata JSON path to read.
 
@@ -175,6 +183,8 @@ def source_matches_metadata(
 ) -> bool:
     """Check whether cached output metadata still matches the remote source.
 
+    A cached geopackage is reused only while its remote validators still match.
+
     Args:
         config: Source and output paths for the broadband artifact.
         source_headers: Headers observed for the current remote source.
@@ -199,6 +209,8 @@ def write_metadata(
     archive_sha256: str,
 ) -> None:
     """Persist source headers and archive identity beside the output artifact.
+
+    Sidecar metadata lets future runs decide freshness without downloading the full archive.
 
     Args:
         config: Source and output paths for the broadband artifact.

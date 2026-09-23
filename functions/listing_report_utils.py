@@ -28,6 +28,8 @@ ON {REPORT_TABLE_NAME} (listing_type, report_option, mls_number)
 def infer_listing_type_from_page_path(page_path: str) -> str:
     """Infer the listing type from the current browser path.
 
+    The page path identifies which listing family the report belongs to when payload data is incomplete.
+
     Args:
         page_path: Browser pathname submitted by the popup UI.
 
@@ -48,6 +50,8 @@ def infer_listing_type_from_page_path(page_path: str) -> str:
 def normalize_mls_number(value: object) -> str:
     """Normalize an MLS number into a trimmed string without a trailing `.0`.
 
+    Removing a trailing numeric `.0` keeps CSV-parsed identifiers aligned with stored MLS strings.
+
     Args:
         value: Raw MLS identifier from a request or database row.
 
@@ -62,6 +66,8 @@ def normalize_mls_number(value: object) -> str:
 
 def ensure_listing_reports_schema(conn: sqlite3.Connection) -> None:
     """Create the append-only listing reports table and lookup index if needed.
+
+    Creating the append-only table and index is safe to repeat at app startup.
 
     Args:
         conn: Open SQLite database connection.
@@ -83,6 +89,9 @@ def insert_listing_report(
     page_path: str,
 ) -> None:
     """Insert a single user-submitted listing report.
+
+    Normalize the MLS key before inserting so later checks can match reports to
+    listings even when source IDs carry spreadsheet-style trailing decimals.
 
     Args:
         conn: Open SQLite connection.
@@ -124,6 +133,9 @@ def get_reported_inactive_mls_numbers(
     listing_type: str,
 ) -> set[str]:
     """Return MLS numbers that users have reported as inactive for a listing type.
+
+    Restrict the query to the inactive category and normalize IDs before
+    building the set used to flag listings.
 
     Args:
         conn: Open SQLite connection.

@@ -22,6 +22,7 @@
 
   /**
    * Return the best available viewport width for responsive map controls.
+   * Document and body measurements are fallbacks for embedded layouts with no window width.
    *
    * @returns {number} Viewport width in CSS pixels, or zero when unavailable.
    */
@@ -46,7 +47,11 @@
     /** @type {ViewportDetail | null} */
     let lastViewportState = null;
 
-    /** @returns {void} */
+    /**
+     * Publish the current viewport state to clientside filter listeners.
+     * Equivalent states are skipped so map movement does not trigger redundant callbacks.
+     * @returns {void}
+     */
     function dispatchViewportChange() {
       const width = getViewportWidth();
       /** @type {ViewportDetail} */
@@ -64,7 +69,11 @@
       document.dispatchEvent(new CustomEvent(VIEWPORT_EVENT_NAME, { detail }));
     }
 
-    /** @returns {void} */
+    /**
+     * Debounce viewport notifications while the map is moving or resizing.
+     * This avoids firing filter callbacks for every intermediate pixel change.
+     * @returns {void}
+     */
     function scheduleViewportChange() {
       if (resizeTimer !== null) window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(dispatchViewportChange, 100);
@@ -84,6 +93,7 @@
 
   /**
    * Determine whether this browser has already received the discovery hint.
+   * Storage errors fall back to showing the hint because persistence is optional.
    *
    * @returns {boolean} Whether the hint was recorded in local storage.
    */
@@ -149,7 +159,11 @@
     /** @type {number | null} */
     let timeoutId = null;
 
-    /** @returns {void} */
+    /**
+     * Remove the layer-discovery hint and cancel its pending dismissal timer.
+     * Close-button, timeout, and teardown paths can safely call this more than once.
+     * @returns {void}
+     */
     function dismissHint() {
       if (dismissed) return;
       dismissed = true;
@@ -157,7 +171,11 @@
       hint.remove();
     }
 
-    /** @returns {void} */
+    /**
+     * Wait until the discovery hint is neither hovered nor focused before dismissing it.
+     * Retrying lets pointer and keyboard users finish reading the hint.
+     * @returns {void}
+     */
     function dismissWhenIdle() {
       if (hint.matches(":hover") || hint.contains(document.activeElement)) {
         timeoutId = window.setTimeout(dismissWhenIdle, 1000);
@@ -231,6 +249,7 @@
 
     /**
      * Synchronize the visual and accessible expanded state.
+     * Leaflet panel visibility and the disclosure button’s ARIA state must always agree.
      *
      * @param {boolean} nextExpanded Whether the layer choices should be shown.
      * @param {ExpansionOptions=} options Optional focus-restoration behavior.
@@ -278,6 +297,7 @@
 
   /**
    * Enhance all layers controls currently mounted in the document.
+   * The control enhancer is idempotent, so repeated scans can safely handle React replacements.
    *
    * @returns {void}
    */
@@ -289,6 +309,7 @@
 
   /**
    * Enhance existing controls and observe Dash/React mounts for new controls.
+   * The observer applies disclosure behavior to controls created after initial page setup.
    *
    * @returns {void}
    */

@@ -38,6 +38,8 @@ class CappedRangeBounds:
     def display_maximum(self) -> int | float:
         """Return the largest numeric value shown on a finite slider scale.
 
+        The slider needs a finite visual endpoint even when the filter’s exact upper bound is open.
+
         Returns:
             The largest value displayed on the finite slider.
         """
@@ -55,6 +57,10 @@ class CappedRangeBounds:
     ) -> Mapping[int | float, str] | None:
         """Return readable marks, optionally followed by an ``Unlimited`` stop.
 
+        Choose compact labels for large values and reserve the last mark for an
+        open upper bound when the slider is capped. That mark means the filter
+        should include values above the display maximum.
+
         Args:
             currency: Whether currency behavior is enabled.
             suffix: Unit suffix appended to each generated slider label.
@@ -71,6 +77,8 @@ class CappedRangeBounds:
 
         def format_value(value: int | float) -> str:
             """Handle format value.
+
+            Keeping formatting at the factory boundary gives slider labels one consistent display convention.
 
             Args:
                 value: Numeric slider mark to format for display.
@@ -124,6 +132,8 @@ class CappedRangeBounds:
 
 def _readable_ceiling(value: float, *, minimum_step: float) -> float:
     """Round a positive value up to a readable slider endpoint.
+
+    Rounded endpoints are easier to set on a slider than arbitrary observed maxima.
 
     Args:
         value: Raw upper bound that should be rounded for display.
@@ -223,6 +233,10 @@ def build_range_filter(
     distribution: Any = None,
 ) -> html.Div:
     """Build a standard slider-based filter section.
+
+    Exact number fields can represent limits beyond the slider's finite display
+    range. Histogram sliders commit on release so dragging the selection does
+    not repeatedly rerun map filtering.
 
     Args:
         slider_id: Dash id for the slider.
@@ -411,6 +425,9 @@ def build_range_filter(
 def build_isp_speed_components(max_download: float, max_upload: float) -> html.Div:
     """Build download and upload speed controls.
 
+    Both speed ranges use the same ISP enrichment fields, while the unknown-
+    data switch lets listings without measured service remain visible.
+
     Args:
         max_download: Upper bound for download speed.
         max_upload: Upper bound for upload speed.
@@ -504,6 +521,8 @@ def build_location_suggestions(
 ) -> list[str]:
     """Build locally sourced suggestions for the location tags input.
 
+    Using local listing values keeps suggestions relevant and avoids a geocoder request for every keystroke.
+
     Args:
         city_values: City or neighborhood labels present in listing data.
         zip_values: ZIP codes present in listing data.
@@ -541,8 +560,13 @@ def build_location_filter_components(
 ) -> html.Div:
     """Build the shared location filter controls.
 
+    The control accepts several places as tags, while the nearby switch changes
+    how their ZIP boundaries are combined. Shared IDs let the same callbacks
+    serve both listing pages.
+
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
+        suggestions: Optional place and ZIP suggestions for the tag input.
 
     Returns:
         A location input block with status text and nearby switch.
@@ -658,6 +682,9 @@ def build_location_filter_status(
 ) -> str | list[Any]:
     """Render a compact ZIP summary with additional ZIPs in a popover.
 
+    A resolved neighborhood can cover dozens of ZIPs. Keep the status readable
+    at a glance while preserving the full list for inspection.
+
     Args:
         boundary_payload: Resolved boundary data used to build the location status.
         status: Current status text to render for the user.
@@ -736,6 +763,9 @@ def build_title_card(
     last_updated: str | None,
 ) -> dbc.Card:
     """Build the shared page title card.
+
+    Place the page switch, update date, and theme control beside the title so
+    lease and sale pages share the same navigation and status layout.
 
     Args:
         title: Heading shown at the top of the sidebar.
@@ -882,6 +912,10 @@ def build_map(
 ) -> dl.Map:
     """Build the shared Dash Leaflet map shell.
 
+    The map starts with no listing GeoJSON because callbacks supply the current
+    filtered layer. Gesture handlers are attached on load and layer changes so
+    a remounted map remains interactive.
+
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
         geojson_id: Id of the main listing GeoJSON layer.
@@ -935,6 +969,10 @@ def build_map(
 
 def build_map_gesture_control() -> html.Div:
     """Build the webcam gesture-control panel for the shared map.
+
+    The panel starts hidden and opens only when gesture control is requested.
+    Keeping its camera instructions on the map gives users a place to stop the
+    interaction.
 
     Returns:
         A map overlay that is docked into the Leaflet controls stack.
@@ -1017,6 +1055,9 @@ def build_map_card(
 ) -> dbc.Card:
     """Wrap a map component in the standard loading-card layout.
 
+    The loading overlay belongs inside the card so it covers the map while
+    callbacks prepare listing data without blocking the surrounding filters.
+
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
         map_component: Prebuilt map component to render.
@@ -1076,6 +1117,8 @@ def build_filter_card(
 ) -> dbc.Card:
     """Build the accordion card used for page filters.
 
+    A shared accordion shell keeps labels, spacing, and accessibility consistent across filter groups.
+
     Args:
         items: Accordion sections as ``(title, children, item_id)`` tuples.
         active_item: Section ids to expand by default.
@@ -1111,6 +1154,9 @@ def build_filter_card(
 
 def build_school_layer_map_prompt(page_type: str) -> html.Div:
     """Build the floating map prompt that points users to school-layer controls.
+
+    Show a small status prompt near the map when the school overlay needs
+    filter attention, without taking space in the listing sidebar.
 
     Args:
         page_type: Page key such as ``buy`` or ``lease``.
@@ -1170,6 +1216,10 @@ def build_school_layer_map_prompt(page_type: str) -> html.Div:
 
 def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
     """Build the conditional, map-only filter panel for the schools overlay.
+
+    These controls filter school markers rather than listing results. The panel
+    stays collapsed until the Schools overlay is active, keeping the listing
+    sidebar focused on homes.
 
     Args:
         page_type: Page key such as ``buy`` or ``lease``.
@@ -1384,6 +1434,8 @@ def build_subtype_filter(
 ) -> html.Div:
     """Build the shared subtype dropdown section.
 
+    The factory standardizes subtype options and callback IDs across buy and lease pages.
+
     Args:
         values: Sorted subtype labels to offer.
         dynamic_id: Pattern-matching id for the dropdown wrapper.
@@ -1431,6 +1483,9 @@ def build_listed_date_filter(
     component_id: str,
 ) -> html.Div:
     """Build the shared listed-date filter section.
+
+    Pair the date picker with a clear action and page-specific IDs so both
+    listing pages can use the same callback pattern.
 
     Args:
         earliest_date: Earliest date available in the dataset.
@@ -1507,6 +1562,8 @@ def build_year_built_filter(
 ) -> html.Div:
     """Build the shared year-built slider section.
 
+    The shared control gives both pages the same range and missing-year behavior.
+
     Args:
         min_year: Minimum year in the dataset.
         max_year: Maximum year in the dataset.
@@ -1541,6 +1598,8 @@ def build_page_parts(
     map_overlay_children: Sequence[Any] | None = None,
 ) -> PageParts:
     """Assemble the top-level cards consumed by a page layout.
+
+    Central assembly preserves the same page structure while allowing page-specific content.
 
     Args:
         config: Static page configuration.

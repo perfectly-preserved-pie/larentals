@@ -12,7 +12,21 @@ BIN_COUNT = 44
 def compute_distribution(
     series: pd.Series, *, minimum: float, maximum: float, bins: int = BIN_COUNT
 ) -> list[int]:
-    """Return listing counts for equal-width bins across a slider range."""
+    """Count usable values in the slider's equal-width histogram bins.
+
+    Values below the displayed minimum are omitted. Values at or above the
+    maximum land in the last bin so the strip still represents an open-ended
+    slider limit. Invalid ranges and empty samples produce no bins.
+
+    Args:
+        series: Listing values shown by the filter.
+        minimum: First displayed slider value.
+        maximum: Last displayed slider value.
+        bins: Number of equal-width bars to produce.
+
+    Returns:
+        Counts ordered from low to high, or an empty list.
+    """
     if maximum <= minimum or bins < 1:
         return []
     values = pd.to_numeric(series, errors="coerce").dropna().to_numpy()
@@ -34,7 +48,23 @@ def build_distribution_strip(
     prefix: str = "",
     suffix: str = "",
 ) -> html.Div | None:
-    """Render count bars and masks synchronized with a range slider."""
+    """Build the histogram markup that sits behind a range slider.
+
+    Mask and readout elements carry predictable IDs for the client-side
+    selection callback. Bar heights use a square-root scale so a few dense
+    bins do not flatten the rest of the distribution.
+
+    Args:
+        slider_id: Base ID shared with the slider callback.
+        counts: Listing count for each histogram bin.
+        minimum: First displayed slider value.
+        maximum: Last displayed slider value.
+        prefix: Text placed before values in the readout.
+        suffix: Text placed after values in the readout.
+
+    Returns:
+        Histogram markup, or None when every bin is empty.
+    """
     if not counts or not any(counts):
         return None
     peak = max(counts)
@@ -75,6 +105,10 @@ def attach_distribution(
     distribution_id: str | None = None,
 ) -> html.Div | None:
     """Build a distribution strip and register live selection shading.
+
+    The server renders the histogram once; a client-side callback then moves
+    only the masks while the slider is dragged. This keeps the visual response
+    quick without rerunning the listing filter on every movement.
 
     Args:
         slider_id: ID of the range slider that drives the selection shading.

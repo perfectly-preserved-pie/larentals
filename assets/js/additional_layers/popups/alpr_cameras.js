@@ -24,6 +24,7 @@
 
     /**
      * Build the popup title for an ALPR feature.
+     * Brand or operator supplies the label when available; otherwise a generic camera title is used.
      *
      * @param {Record<string, unknown>} properties Feature properties.
      * @returns {string} Popup title.
@@ -45,6 +46,7 @@
 
     /**
      * Format one or more camera bearings.
+     * A cardinal direction is preferred; numeric multi-bearing data and a single bearing are fallbacks.
      *
      * @param {Record<string, unknown>} properties Feature properties.
      * @returns {string} Direction label or `N/A`.
@@ -74,6 +76,7 @@
 
     /**
      * Build compact attribution text for the popup body.
+     * The feature’s OpenStreetMap record is linked alongside the named feed sources.
      *
      * @param {Record<string, unknown>} properties Feature properties.
      * @returns {string} Attribution banner HTML.
@@ -96,6 +99,7 @@
 
     /**
      * Build the complete popup markup.
+     * Optional source fields are omitted, and the attribution banner identifies the upstream camera sources.
      *
      * @param {Record<string, unknown>} properties Feature properties.
      * @returns {string} HTML string bound to the Leaflet popup.

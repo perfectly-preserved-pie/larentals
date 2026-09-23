@@ -13,6 +13,8 @@ class FakeResponse:
     ) -> None:
         """Initialize the instance.
 
+        The fake HTTP response stores one controlled payload and status for each request.
+
         Args:
             status_code: HTTP status code exposed by the fake response.
             headers: HTTP headers included with the request.
@@ -29,6 +31,8 @@ class FakeResponse:
     def close(self) -> None:
         """Handle close.
 
+        The stub accepts session cleanup without introducing real network state.
+
         Returns:
             None.
         """
@@ -37,6 +41,8 @@ class FakeResponse:
     def json(self) -> object:
         """Return the configured JSON response payload.
 
+        Returning the configured payload makes provider responses deterministic.
+
         Returns:
             The configured decoded response body.
         """
@@ -44,6 +50,8 @@ class FakeResponse:
 
     def raise_for_status(self) -> None:
         """Raise the same exception family as ``requests.Response``.
+
+        Matching requests exceptions lets retry logic be exercised without a live response.
 
         Returns:
             None.
@@ -63,6 +71,8 @@ def test_get_with_backoff_honors_retry_after_and_retries(
 ) -> None:
     """Verify that get with backoff honors retry after and retries.
 
+    The server-provided delay takes precedence so a throttled host is not retried early.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -79,6 +89,8 @@ def test_get_with_backoff_honors_retry_after_and_retries(
 
     def sleep(seconds: float) -> None:
         """Handle sleep.
+
+        The stub captures wait durations so backoff behavior is tested without delaying the suite.
 
         Args:
             seconds: Simulated sleep duration in seconds.
@@ -104,6 +116,8 @@ def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(
 ) -> None:
     """Verify that get with backoff uses jittered backoff when retry after is missing.
 
+    Jitter prevents multiple workers from retrying a failing host in lockstep.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -120,6 +134,8 @@ def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(
 
     def sleep(seconds: float) -> None:
         """Handle sleep.
+
+        The stub captures wait durations so backoff behavior is tested without delaying the suite.
 
         Args:
             seconds: Simulated sleep duration in seconds.
@@ -145,7 +161,11 @@ def test_get_with_backoff_uses_jittered_backoff_when_retry_after_is_missing(
 def test_persistent_rate_limit_opens_host_circuit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Persistent 429s should make later rows fail fast to their fallback."""
+    """Persistent 429s should make later rows fail fast to their fallback.
+
+    Once a host is rate limited, retrying every row only wastes time and can
+    prolong the scrape without improving its result.
+    """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
     scraping._transport_failures.clear()
@@ -185,6 +205,8 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(
 ) -> None:
     """Verify that get with backoff opens circuit after repeated connection failures.
 
+    Repeated transport failures should stop new requests until the host cooldown expires.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -201,6 +223,8 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(
     def sleep(seconds: float) -> None:
         """Handle sleep.
 
+        The stub captures wait durations so backoff behavior is tested without delaying the suite.
+
         Args:
             seconds: Simulated sleep duration in seconds.
 
@@ -211,6 +235,8 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(
 
     def fail_request(*args: object, **kwargs: object) -> None:
         """Handle fail request.
+
+        A deterministic transport failure drives circuit-breaker state transitions.
 
         Args:
             *args: Additional positional arguments forwarded to the dependency.
@@ -245,6 +271,8 @@ def test_get_with_backoff_opens_circuit_after_repeated_connection_failures(
 def test_transport_failure_count_is_exposed_before_circuit_opens() -> None:
     """Verify that transport failure count is exposed before circuit opens.
 
+    Intermediate counts make the circuit decision observable before the threshold is reached.
+
     Returns:
         None.
     """
@@ -264,6 +292,8 @@ def test_get_with_backoff_recovers_after_circuit_cooldown(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify that get with backoff recovers after circuit cooldown.
+
+    The circuit should permit a fresh request after its cooldown instead of remaining permanently open.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
@@ -301,6 +331,8 @@ def test_get_with_backoff_recovers_after_circuit_cooldown(
 def test_host_circuits_are_isolated(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify that host circuits are isolated.
 
+    A failing provider must not block requests to a different host.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -317,6 +349,8 @@ def test_host_circuits_are_isolated(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def successful_request(*args: object, **kwargs: object) -> FakeResponse:
         """Handle successful request.
+
+        A successful stub response verifies recovery and host-state reset behavior.
 
         Args:
             *args: Additional positional arguments forwarded to the dependency.
@@ -351,6 +385,8 @@ def test_agency_active_index_reports_active_listing(
 ) -> None:
     """An active Agency record should finish the lookup without a second call.
 
+    An active indexed record should be conclusive without consulting the secondary source.
+
     Args:
         monkeypatch: Pytest fixture used to replace the HTTP dependency.
 
@@ -361,6 +397,8 @@ def test_agency_active_index_reports_active_listing(
 
     def fake_get(url: str, *, headers: dict[str, str]) -> FakeResponse:
         """Return one active Agency response.
+
+        The fake provider sequence makes active/inactive lookup ordering observable.
 
         Args:
             url: Requested Agency endpoint.
@@ -389,6 +427,8 @@ def test_agency_off_market_index_recognizes_expired_listing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The off-market payload uses Status/IsOffMarket rather than IsSold.
+
+    The provider status fields define off-market state even when no sold flag exists.
 
     Args:
         monkeypatch: Pytest fixture used to replace the HTTP dependency.
@@ -420,6 +460,8 @@ def test_agency_missing_from_both_indexes_is_unknown(
 ) -> None:
     """Two missing records must not be treated as proof of an active listing.
 
+    Missing records are lack of evidence, not proof that a listing is active or inactive.
+
     Args:
         monkeypatch: Pytest fixture used to replace the HTTP dependency.
 
@@ -441,6 +483,8 @@ def test_rentcast_matches_exact_mls_across_active_and_inactive_indexes(
 ) -> None:
     """A relisted address must not hide the inactive status of the old MLS ID.
 
+    MLS identity distinguishes an old inactive listing from a relisted address.
+
     Args:
         monkeypatch: Pytest fixture used to replace the HTTP dependency.
 
@@ -455,6 +499,8 @@ def test_rentcast_matches_exact_mls_across_active_and_inactive_indexes(
 
     def fake_get(url: str, *, headers: dict[str, str]) -> FakeResponse:
         """Return each configured RentCast response in order.
+
+        The fake provider sequence makes active/inactive lookup ordering observable.
 
         Args:
             url: Requested RentCast endpoint and query string.
@@ -489,6 +535,8 @@ def test_rentcast_missing_exact_mls_is_unknown(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Coverage gaps or another listing at the address are not inactive proof.
+
+    A response for another MLS at the same address cannot establish this listing’s status.
 
     Args:
         monkeypatch: Pytest fixture used to replace the HTTP dependency.

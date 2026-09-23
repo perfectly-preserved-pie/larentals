@@ -1,40 +1,54 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
-        * Filters and clusters the GeoJSON data for buying properties based on various criteria.
-        * The order of parameters matches the Dash callback's Input order.
-        *
-        * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by `list_price`.
-        * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by `bedrooms`.
-        * @param {Array<number>} bathroomsRange - [minBaths, maxBaths] for filtering by `bathrooms`.
-        * @param {Array<number>} sqftRange - [minSqft, maxSqft] for filtering by `sqft`.
-        * @param {boolean} sqftIncludeMissing - Whether to include properties with missing `sqft`.
-        * @param {Array<number>} ppsqftRange - [minPpsqft, maxPpsqft] for filtering by `ppsqft`.
-        * @param {boolean} ppsqftIncludeMissing - Whether to include properties with missing `ppsqft`.
-        * @param {Array<number>} lotSizeRange - [minLotSize, maxLotSize] for filtering by `lot_size`.
-        * @param {boolean} lotSizeIncludeMissing - Whether to include properties with missing `lot_size`.
-        * @param {Array<number>} yearBuiltRange - [minYearBuilt, maxYearBuilt] for filtering by `year_built`.
-        * @param {boolean} yearBuiltIncludeMissing - Whether to include properties with missing `year_built`.
-        * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
-        * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
-        * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
+         * Filters and clusters the GeoJSON data for buying properties based on various criteria.
+         * The order of parameters matches the Dash callback's Input order.
+         *
+         * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by `list_price`.
+         * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by `bedrooms`.
+         *
+         * @param {Array<number>} bathroomsRange - [minBaths, maxBaths] for filtering by `bathrooms`.
+         * @param {Array<number>} sqftRange - [minSqft, maxSqft] for filtering by `sqft`.
+         *
+         * @param {boolean} sqftIncludeMissing - Whether to include properties with missing `sqft`.
+         * @param {Array<number>} ppsqftRange - [minPpsqft, maxPpsqft] for filtering by `ppsqft`.
+         *
+         * @param {boolean} ppsqftIncludeMissing - Whether to include properties with missing `ppsqft`.
+         * @param {Array<number>} lotSizeRange - [minLotSize, maxLotSize] for filtering by `lot_size`.
+         *
+         * @param {boolean} lotSizeIncludeMissing - Whether to include properties with missing `lot_size`.
+         * @param {Array<number>} yearBuiltRange - [minYearBuilt, maxYearBuilt] for filtering by `year_built`.
+         *
+         * @param {boolean} yearBuiltIncludeMissing - Whether to include properties with missing `year_built`.
+         * @param {Array<string>} subtypeSelection - List of selected property `subtype`s.
+         *
+         * @param {string|null} dateStart - Start date (YYYY-MM-DD) for `listed_date` range.
+         * @param {string|null} dateEnd - End date (YYYY-MM-DD) for `listed_date` range.
+         *
          * @param {boolean} dateIncludeMissing - Whether to include properties with missing `listed_date`.
          * @param {Array<number>} hoaFeeRange - [minHOA, maxHOA] for filtering by `hoa_fee`.
+         *
          * @param {boolean} hoaFeeIncludeMissing - Whether to include properties with missing `hoa_fee`.
          * @param {Array<string>} hoaFeeFrequencyChecklist - Selected options for `hoa_fee_frequency` (e.g., ["N/A", "Monthly"]).
+         *
          * @param {Array<number>} downloadSpeedRange - [minDownload, maxDownload] for filtering by `best_dn`.
          * @param {Array<number>} uploadSpeedRange - [minUpload, maxUpload] for filtering by `best_up`.
+         *
          * @param {number} priceUpperBound - Finite display maximum for the price slider.
          * @param {number} bedroomsUpperBound - Slider endpoint that represents bedrooms-or-more.
+         *
          * @param {number} bathroomsUpperBound - Slider endpoint that represents bathrooms-or-more.
          * @param {number} sqftUpperBound - Finite display maximum for square footage.
+         *
          * @param {number} ppsqftUpperBound - Finite display maximum for price per square foot.
          * @param {number} lotSizeUpperBound - Finite display maximum for lot size.
+         *
          * @param {number} hoaUpperBound - Finite display maximum for HOA fees.
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
+         *
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
-        * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
-        */
+         * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
+         */
         filterAndClusterBuy: function(
             priceRange,
             bedroomsRange,
@@ -313,8 +327,11 @@ window.larentals = window.larentals || {};
 window.larentals.filters = window.larentals.filters || {};
 /**
  * Adapt the responsive Buy filter-state object to the existing filter engine.
+ * This keeps the mobile drawer on the established listing filter path instead of duplicating its rules.
+ *
  * @param {Object<string, *>} state Applied for-sale filter values.
  * @param {{type: string, features: Array<Object>}} fullGeojson Source listings.
+ *
  * @returns {{type: string, features: Array<Object>}} Filtered Buy listings.
  */
 window.larentals.filters.filterBuyState = function(state, fullGeojson) {

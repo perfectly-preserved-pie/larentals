@@ -11,6 +11,8 @@ from functions.rso import refresh_local_rso_property_lookup
 def main() -> None:
     """Build the local RSO lookup artifact from LAHD's public dashboard.
 
+    The downloaded inventory is normalized into the local snapshot queried by listing popups.
+
     Returns:
         None.
     """

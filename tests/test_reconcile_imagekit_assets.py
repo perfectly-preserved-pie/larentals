@@ -12,6 +12,8 @@ from scripts.reconcile_imagekit_assets import (
 def _create_listing_database(path: Path) -> None:
     """Create minimal buy and lease tables used by reconciliation tests.
 
+    The fixture includes only the listing fields needed to decide whether ImageKit URLs are still referenced.
+
     Args:
         path: Temporary SQLite database destination.
 
@@ -57,6 +59,8 @@ def test_load_database_photo_state_excludes_inactive_and_placeholders(
 ) -> None:
     """Build an exact allowlist from usable photo URLs on unflagged rows.
 
+    Only active rows with usable photos may keep an asset in the allowlist.
+
     Args:
         tmp_path: Pytest-managed temporary directory.
 
@@ -77,6 +81,8 @@ def test_reconcile_database_clears_inactive_missing_and_placeholder_urls(
     tmp_path: Path,
 ) -> None:
     """Repair database references after the ImageKit deletion is verified.
+
+    Stale database URLs are cleared only after the corresponding remote deletion has succeeded.
 
     Args:
         tmp_path: Pytest-managed temporary directory.

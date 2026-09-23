@@ -17,6 +17,8 @@ from scripts.fetch_alpr_cameras import parse_args
 def test_fetch_alpr_cameras_parse_args_uses_socal_defaults() -> None:
     """Verify the ALPR fetch CLI defaults to the live endpoint and SoCal bounds.
 
+    The command must stay scoped to the intended Southern California feed by default.
+
     Returns:
         None.
     """
@@ -31,6 +33,8 @@ def test_fetch_alpr_cameras_parse_args_uses_socal_defaults() -> None:
 
 def test_build_alpr_camera_feature_collection_keeps_all_alpr_brands_inside_socal() -> None:
     """Verify the builder clips to SoCal without filtering non-Flock ALPR brands.
+
+    Geographic filtering should retain other ALPR brands instead of limiting data to one vendor.
 
     Returns:
         None.
@@ -85,6 +89,8 @@ def test_build_alpr_camera_feature_collection_keeps_all_alpr_brands_inside_socal
 def test_build_alpr_camera_feature_collection_rejects_legacy_flat_array() -> None:
     """Verify the builder accepts only the live endpoint's GeoJSON shape.
 
+    The source contract is GeoJSON, so legacy list payloads should not be misread as features.
+
     Returns:
         None.
     """
@@ -105,6 +111,8 @@ def test_build_alpr_camera_feature_collection_rejects_legacy_flat_array() -> Non
 
 def test_write_and_load_local_alpr_camera_geojson_round_trips_gzip(tmp_path: Path) -> None:
     """Verify the local artifact writer and loader round-trip gzipped GeoJSON.
+
+    The compressed artifact must round-trip through the same loader used by the map layer.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.

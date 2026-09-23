@@ -25,6 +25,8 @@ from scripts.build_school_layer_geojson import parse_args as parse_school_layer_
 def test_school_layer_builder_parse_args_use_geopackage_defaults() -> None:
     """Verify that school layer builder parse args use geopackage defaults.
 
+    The CLI should point at the official local GeoPackage without requiring manual path overrides.
+
     Returns:
         None.
     """
@@ -39,6 +41,8 @@ def test_school_layer_builder_parse_args_use_geopackage_defaults() -> None:
 
 def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normalizes_fields() -> None:
     """Verify that build school layer geojson from gdf filters closed schools and normalizes fields.
+
+    Closed campuses are removed and source fields are normalized before map publication.
 
     Returns:
         None.
@@ -94,6 +98,8 @@ def test_build_school_layer_geojson_from_gdf_filters_closed_schools_and_normaliz
 def test_build_school_layer_geojson_from_gdf_reprojects_coordinates_to_wgs84() -> None:
     """Verify that build school layer geojson from gdf reprojects coordinates to wgs84.
 
+    Leaflet consumes WGS84 coordinates, so source CRS differences must be handled during build.
+
     Returns:
         None.
     """
@@ -128,6 +134,8 @@ def test_build_school_layer_geojson_from_gdf_reprojects_coordinates_to_wgs84() -
 def test_build_school_preview_url_points_to_world_imagery_export() -> None:
     """Verify that build school preview url points to world imagery export.
 
+    The preview URL must target the public imagery export at the school’s location.
+
     Returns:
         None.
     """
@@ -148,6 +156,8 @@ def test_layers_control_omits_satellite_without_mapbox_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify that layers control omits satellite without mapbox token.
+
+    Satellite tiles must not be offered when the browser cannot authenticate to Mapbox.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
@@ -185,6 +195,8 @@ def test_layers_control_includes_mapbox_satellite_when_configured(
 ) -> None:
     """Verify that layers control includes mapbox satellite when configured.
 
+    A configured token should enable the satellite option without changing other basemaps.
+
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
 
@@ -216,6 +228,8 @@ def test_layers_control_includes_mapbox_satellite_when_configured(
 def test_build_mapbox_satellite_tile_url_rejects_blank_token() -> None:
     """Verify that build mapbox satellite tile url rejects blank token.
 
+    Blank credentials must fail early rather than producing a broken tile template.
+
     Returns:
         None.
     """
@@ -227,6 +241,8 @@ def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify that build map uses controlled basemaps and supports detail zoom.
+
+    The map keeps basemap selection explicit while permitting close school inspection.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
@@ -252,6 +268,8 @@ def test_build_map_uses_controlled_basemaps_and_supports_detail_zoom(
 
 def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment() -> None:
     """Verify that filter school layer geojson respects search bands flags and enrollment.
+
+    Multiple school filters must compose without one filter resetting another.
 
     Returns:
         None.
@@ -344,6 +362,8 @@ def test_filter_school_layer_geojson_respects_search_bands_flags_and_enrollment(
 def test_build_school_layer_geojson_from_gdf_derives_early_grades_and_recent_open_flag() -> None:
     """Verify that build school layer geojson from gdf derives early grades and recent open flag.
 
+    Derived popup flags must be based on source grade and opening-date fields.
+
     Returns:
         None.
     """
@@ -378,6 +398,8 @@ def test_build_school_layer_geojson_from_gdf_derives_early_grades_and_recent_ope
 
 def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened() -> None:
     """Verify that filter school layer geojson respects early grades and recently opened.
+
+    New school-specific flags must participate in the same clientside filter path.
 
     Returns:
         None.
@@ -434,6 +456,8 @@ def test_filter_school_layer_geojson_respects_early_grades_and_recently_opened()
 def test_filter_school_layer_geojson_accepts_numeric_flag_values() -> None:
     """Verify that filter school layer geojson accepts numeric flag values.
 
+    Serialized integer flags are common in GeoJSON and should match their boolean meaning.
+
     Returns:
         None.
     """
@@ -471,6 +495,8 @@ def test_filter_school_layer_geojson_accepts_numeric_flag_values() -> None:
 
 def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range() -> None:
     """Verify that filter school layer geojson keeps unknown enrollment at default range.
+
+    Missing enrollment stays included when the user has not narrowed the enrollment range.
 
     Returns:
         None.
@@ -512,6 +538,8 @@ def test_filter_school_layer_geojson_keeps_unknown_enrollment_at_default_range()
 
 def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> None:
     """Verify that filter school layer geojson treats all grade bands as unfiltered.
+
+    Selecting every grade band should be equivalent to no grade-band restriction.
 
     Returns:
         None.
@@ -584,6 +612,8 @@ def test_filter_school_layer_geojson_treats_all_grade_bands_as_unfiltered() -> N
 
 def test_filter_school_layer_geojson_respects_campus_configuration() -> None:
     """Verify that filter school layer geojson respects campus configuration.
+
+    Campus configuration must keep school filtering consistent with the map layer contract.
 
     Returns:
         None.

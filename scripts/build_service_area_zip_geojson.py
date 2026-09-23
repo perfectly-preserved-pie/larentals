@@ -30,6 +30,9 @@ SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments for the service-area ZIP/ZCTA builder.
 
+    Source URLs, batch size, and timeout are options because the ArcGIS
+    services and local listing database can vary between builds.
+
     Returns:
         Parsed CLI arguments.
 
@@ -100,6 +103,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def normalize_zip_code(value: object) -> str | None:
     """Normalize a raw DB ZIP value to a five-digit ZIP string.
 
+    ZIP normalization prevents decimal-like database values and ZIP+4 values from creating bad keys.
+
     Args:
         value: Raw value from SQLite, often a string like "90001.0".
 
@@ -123,6 +128,8 @@ def normalize_zip_code(value: object) -> str | None:
 def require_safe_identifier(value: str) -> str:
     """Validate a SQLite identifier used in generated SQL.
 
+    Identifiers are interpolated into generated SQL, so they must pass a strict allow-list check.
+
     Args:
         value: Candidate table name.
 
@@ -139,6 +146,8 @@ def require_safe_identifier(value: str) -> str:
 
 def iter_chunks(values: Sequence[str], chunk_size: int) -> Iterable[list[str]]:
     """Yield ``values`` in fixed-size chunks.
+
+    Fixed-size batches keep API and SQL parameter lists within practical limits.
 
     Args:
         values: Ordered values to chunk.
@@ -162,6 +171,8 @@ def read_listing_zip_codes(
     table_names: Sequence[str] = DEFAULT_TABLES,
 ) -> tuple[list[str], list[str]]:
     """Read and normalize ZIP codes from listing tables.
+
+    Only normalized ZIPs are retained so both listing tables contribute comparable service-area codes.
 
     Args:
         db_path: SQLite database path.
@@ -189,6 +200,8 @@ def read_listing_zip_codes(
 
 def arcgis_where_for_zips(zip_codes: Sequence[str], field_name: str = "GEOID") -> str:
     """Build a safe ArcGIS SQL where clause for five-digit ZIP codes.
+
+    Values are normalized before quoting so the remote query contains only five-digit ZIP strings.
 
     Args:
         zip_codes: Normalized ZIP codes.
@@ -221,6 +234,10 @@ def fetch_zcta_features(
     timeout: int = 120,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Fetch California ZCTA polygons for ZIP codes from ArcGIS.
+
+    Query ZIPs in chunks to stay within the service's request limits. Return
+    missing codes alongside features so the caller can try the alternate ZIP
+    layer.
 
     Args:
         zip_codes: Normalized ZIP codes to fetch.
@@ -286,6 +303,9 @@ def fetch_ca_zip_area_features(
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Fetch California ZIP area polygons for ZIPs missing from Census ZCTAs.
 
+    This second source fills geographic gaps left by the primary Census layer;
+    unresolved ZIPs remain explicit rather than silently disappearing.
+
     Args:
         zip_codes: Normalized ZIP codes to fetch.
         source_url: ArcGIS FeatureServer layer URL.
@@ -341,6 +361,10 @@ def fetch_ca_zip_area_features(
 
 def build_service_area_geojson(args: argparse.Namespace) -> tuple[dict[str, Any], list[str], list[str]]:
     """Build the final service-area ZIP/ZCTA GeoJSON payload.
+
+    Start with ZIPs actually present in listing tables. Missing Census ZCTAs
+    can be filled from the California ZIP layer, and unresolved codes stay in
+    metadata for review.
 
     Args:
         args: Parsed CLI arguments.
@@ -409,6 +433,8 @@ def build_service_area_geojson(args: argparse.Namespace) -> tuple[dict[str, Any]
 def write_geojson(payload: dict[str, Any], output_path: Path) -> None:
     """Write a compact ASCII GeoJSON payload.
 
+    Compact ASCII output reduces artifact size and avoids encoding surprises in deployment.
+
     Args:
         payload: FeatureCollection payload.
         output_path: Destination path.
@@ -425,6 +451,8 @@ def write_geojson(payload: dict[str, Any], output_path: Path) -> None:
 
 def main() -> None:
     """Build the service-area ZIP GeoJSON artifact from configured sources.
+
+    The builder derives the service boundary set from configured listing tables and writes one reusable artifact.
 
     Returns:
         None.

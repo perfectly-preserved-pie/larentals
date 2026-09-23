@@ -19,6 +19,8 @@
 
     /**
      * Read the price anchors for the page being viewed.
+     * The fallback scale changes with the buy or lease page when there are too few
+     * visible prices to rank.
      *
      * @returns {{low: number, high: number}} Fallback anchors.
      */
@@ -29,6 +31,8 @@
 
     /**
      * Turn a rank fraction into a colour.
+     * Clamp out-of-range fractions so marker styling stays stable at the ends of
+     * the scale.
      *
      * @param {number} fraction Position in the visible range, 0 to 1.
      * @returns {string} One of the ordered price-band colors.
@@ -51,7 +55,6 @@
 
     /**
      * Report what share of the visible listings cost less than a price.
-     *
      * Equal prices share a rank, so two identical listings are never painted
      * different colours.
      *
@@ -73,6 +76,8 @@
 
     /**
      * Replace the sample the ranking is measured against.
+     * A handful of listings makes percentile colors jump around, so small samples
+     * use page-specific price anchors instead.
      *
      * @param {number[]} prices Prices of every listing currently in view.
      * @returns {void}
@@ -88,10 +93,12 @@
     };
 
     /**
-     * Colour one listing.
+     * Find one listing's position on the price scale.
+     * Use a visible-listing percentile when the sample is large enough; otherwise
+     * use the page's fixed anchors.
      *
      * @param {number} price Listing price.
-     * @returns {string} A CSS colour.
+     * @returns {number|null} Scale fraction, or null for an invalid price.
      */
     scale.fractionFor = function (price) {
         var value = Number(price);
@@ -116,7 +123,6 @@
 
     /**
      * Repaint every rendered pin for the current sample.
-     *
      * Writes only where the colour actually changed. The results panel watches
      * the marker pane for style mutations to know when to redraw, and repainting
      * unconditionally would keep waking it with its own work.

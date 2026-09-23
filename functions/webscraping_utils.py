@@ -41,6 +41,8 @@ class HostCircuitOpen(requests.ConnectionError):
 def _retry_after_seconds(response: requests.Response) -> Optional[float]:
     """Return a non-negative Retry-After value, if the server supplied one.
 
+    Invalid or negative header values are ignored so cooldowns remain safe to schedule.
+
     Args:
         response: HTTP response being validated or summarized.
 
@@ -67,6 +69,8 @@ def _retry_after_seconds(response: requests.Response) -> Optional[float]:
 def _wait_for_request_slot(host: str) -> None:
     """Reserve the next request slot while honoring any shared cooldown.
 
+    A shared slot prevents concurrent workers from exceeding the host request cadence.
+
     Args:
         host: Network host whose request or circuit-breaker state is being managed.
 
@@ -87,6 +91,8 @@ def _wait_for_request_slot(host: str) -> None:
 def _set_cooldown(host: str, delay: float) -> None:
     """Handle set cooldown.
 
+    Persisting the host-wide delay prevents other rows from immediately repeating a throttled request.
+
     Args:
         host: Network host whose request or circuit-breaker state is being managed.
         delay: Cooldown duration in seconds.
@@ -102,6 +108,8 @@ def _set_cooldown(host: str, delay: float) -> None:
 
 def _raise_if_circuit_open(host: str) -> None:
     """Handle raise if circuit open.
+
+    Fail-fast behavior avoids repeated requests while the host circuit is known to be unavailable.
 
     Args:
         host: Network host whose request or circuit-breaker state is being managed.
@@ -124,6 +132,8 @@ def _raise_if_circuit_open(host: str) -> None:
 
 def _record_transport_failure(host: str, error: requests.RequestException) -> int:
     """Track a transport failure, returning its consecutive host failure count.
+
+    Consecutive failures are tracked per host to decide when its circuit should open.
 
     Args:
         host: Network host whose request or circuit-breaker state is being managed.
@@ -155,6 +165,8 @@ def _record_transport_failure(host: str, error: requests.RequestException) -> in
 
 def _record_request_success(host: str) -> None:
     """Handle record request success.
+
+    A successful response resets host failure state for later requests.
 
     Args:
         host: Network host whose request or circuit-breaker state is being managed.
@@ -248,12 +260,17 @@ def get_with_backoff(url: str, *, headers: dict, timeout: float = 5.0) -> reques
 def check_expired_listing_bhhs(url: str, mls_number: str) -> bool | None:
     """Checks if a BHHS listing has expired by looking for a specific message on the page.
 
+    Only the provider's explicit inactive message marks a listing expired. A
+    timeout or blocked host returns an unknown result so the pipeline can retry
+    later.
+
     Parameters:
     url (str): The URL of the listing to check.
     mls_number: The MLS number of the listing.
 
     Returns:
-    bool: True if the listing has expired, False otherwise.
+    bool | None: True for the provider's inactive notice, False when absent,
+    or None when the provider could not be checked.
     """
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
@@ -295,6 +312,8 @@ def check_expired_listing_bhhs(url: str, mls_number: str) -> bool | None:
 def _agency_board_code(listing_url: str, default: str) -> str:
     """Extract The Agency's board code from one of its public listing URLs.
 
+    The board code is derived from supported URL paths rather than guessed from the listing identifier.
+
     Args:
         listing_url: Saved The Agency listing URL.
         default: Board code used when the URL does not include one.
@@ -313,6 +332,8 @@ def _agency_board_code(listing_url: str, default: str) -> str:
 def _agency_headers() -> dict[str, str]:
     """Return headers used by The Agency's public listing search client.
 
+    Consistent headers let The Agency client share the same request behavior across endpoints.
+
     Returns:
         HTTP headers for an Agency listing request.
     """
@@ -330,6 +351,8 @@ def _agency_headers() -> dict[str, str]:
 
 def _agency_result_is_inactive(data: object) -> bool | None:
     """Interpret active and off-market records returned by The Agency.
+
+    Off-market statuses are filtered before provider results are merged into current listings.
 
     Args:
         data: Decoded Agency JSON response.
@@ -429,6 +452,8 @@ def check_expired_listing_theagency(
 def _rentcast_address(full_street_address: str) -> str:
     """Add California to the project's ``street, city ZIP`` address format.
 
+    California is added because the downstream address endpoint expects a state-qualified query.
+
     Args:
         full_street_address: Property address from the listing dataframe.
 
@@ -447,6 +472,8 @@ def _rentcast_address(full_street_address: str) -> str:
 
 def _rentcast_has_mls(records: object, mls_number: str) -> bool:
     """Return whether a RentCast response contains the exact MLS identifier.
+
+    Exact MLS equality avoids treating a nearby or related response as the requested listing.
 
     Args:
         records: Decoded list of RentCast listing records.
@@ -534,6 +561,10 @@ def check_expired_listing_rentcast(
 
 def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
     """Scrapes the BHHS website for listing details.
+
+    The provider page is a fallback when the primary source lacks fields.
+    Network failures and an open host circuit return empty values so one bad
+    provider response does not stop the listing pipeline.
 
     Parameters:
     url (str): The URL of the listing to scrape.
@@ -660,6 +691,9 @@ def fetch_the_agency_data(
     total_rows: int,
 ) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
     """Fetches property data for a given MLS number from The Agency API.
+
+    This is the primary detail source for the listing pipeline. Missing records
+    or transport errors return empty fields so BHHS can fill what is available.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.

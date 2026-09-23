@@ -115,6 +115,8 @@ def tech_code_to_label(tech_code: int) -> str:
 def _to_float_or_none(value: Any) -> Optional[float]:
     """Convert a JSON value to float, returning None if missing/unparseable.
 
+    Missing and malformed provider values remain nullable instead of becoming zero Mbps.
+
     Args:
         value: Numeric-like broadband attribute to convert.
 
@@ -145,6 +147,8 @@ def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
     def norm_busconsm(v: Optional[str]) -> str:
         """Handle norm busconsm.
 
+        Normalizing source technology labels makes broadband records comparable across provider spellings.
+
         Args:
             v: Raw broadband business/residential code to normalize.
 
@@ -170,6 +174,8 @@ def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
 
     def tech_priority(label: str) -> int:
         """Handle tech priority.
+
+        Stable technology ranking resolves ties when providers advertise similar speed tiers.
 
         Args:
             label: User-facing label displayed for the component.
@@ -197,6 +203,9 @@ def dedupe_best_options(options: Iterable[ISPOption]) -> List[ISPOption]:
 
 def parse_cpuc_response(payload: Dict[str, Any]) -> List[ISPOption]:
     """Parse the CPUC ArcGIS response JSON into a normalized list of ISPOption.
+
+    Skip malformed feature records, translate technology codes, and deduplicate
+    provider options so downstream popup sorting sees one consistent shape.
 
     Args:
         payload: The JSON response from the ArcGIS endpoint.

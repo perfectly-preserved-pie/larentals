@@ -6,6 +6,7 @@
 
     /**
      * Normalize a nullable DOM attribute value.
+     * Trimming here keeps empty button attributes from becoming meaningful request fields.
      *
      * @param {unknown} value Raw attribute value.
      * @returns {string|null} Trimmed string or null.
@@ -18,6 +19,7 @@
 
     /**
      * Dispatch a Dash-visible LAHD record request event.
+     * An APN is required to identify the parcel; optional context and a timestamp travel with the event.
      *
      * @param {Record<string, unknown>} detail Request detail.
      * @returns {void}
@@ -40,6 +42,7 @@
 
     /**
      * Handle clicks from Leaflet popup record buttons.
+     * Delegation supports popup markup created after page load and prevents the map from also handling the click.
      *
      * @param {MouseEvent} event Browser click event.
      * @returns {void}

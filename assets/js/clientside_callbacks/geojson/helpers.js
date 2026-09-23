@@ -12,6 +12,7 @@
 
 /**
  * Convert a value to a finite number when possible.
+ * Blank and non-numeric inputs stay unset so filters do not mistake missing data for zero.
  *
  * @param {*} value - Candidate numeric value from Dash or GeoJSON properties.
  * @returns {number|null} Parsed number, or null for blank/non-numeric input.
@@ -24,7 +25,6 @@ function safeNumber(value) {
 
 /**
  * Normalize a coordinate pair to GeoJSON order: [longitude, latitude].
- *
  * Listing points may arrive as either [lat, lon] or [lon, lat]. This function
  * uses valid latitude/longitude ranges to detect and correct obvious swaps.
  *
@@ -43,11 +43,15 @@ function normalizeCoordinatePair(coords) {
 
 /**
  * Test whether a speed value falls inside an inclusive numeric range.
+ * A missing or nonnumeric speed follows the explicit unknown-data switch instead of
+ * being treated as zero service.
  *
  * @param {*} value - Candidate speed value.
  * @param {number} minValue - Inclusive lower bound.
+ *
  * @param {number} maxValue - Inclusive upper bound.
  * @param {boolean} includeMissing - Whether blank/non-numeric values should pass.
+ *
  * @returns {boolean} True when the value passes the range/missing-value rule.
  */
 function speedRangeFilter(value, minValue, maxValue, includeMissing) {
@@ -61,6 +65,7 @@ function speedRangeFilter(value, minValue, maxValue, includeMissing) {
 
 /**
  * Extract a five-digit ZIP code from common listing/crosswalk formats.
+ * Returning an empty string for missing values lets callers skip ZIP matching safely.
  *
  * @param {*} value - Raw ZIP value such as "92805", "92805.0", or "92805-1234".
  * @returns {string} Five-digit ZIP code, or an empty string when unavailable.
@@ -73,12 +78,12 @@ function normalizeZipCode(value) {
 
 /**
  * Check whether a listing feature's ZIP code matches any selected ZIP code.
- *
  * This is the fallback for cases where a ZIP is valid for filtering but no
  * polygon is available in the boundary dataset.
  *
  * @param {GeoJSONFeature|null|undefined} feature - Listing point feature.
  * @param {Array<*>} zipCodes - ZIP codes selected by the server-side callback.
+ *
  * @returns {boolean} True when the feature's normalized ZIP matches a selected ZIP.
  */
 function featureMatchesAnyZip(feature, zipCodes) {
@@ -94,9 +99,12 @@ function featureMatchesAnyZip(feature, zipCodes) {
 
 /**
  * Check whether a listing point is contained by any selected ZIP polygon.
+ * Only test usable point coordinates when Turf is loaded. Other location checks can
+ * still use the listing ZIP when no polygon match is possible.
  *
  * @param {GeoJSONFeature|null|undefined} feature - Listing point feature.
  * @param {Array<GeoJSONFeature>} polygonFeatures - ZIP/ZCTA polygon features.
+ *
  * @returns {boolean} True when Turf is available and the point is inside a polygon.
  */
 function featureWithinAnyPolygon(feature, polygonFeatures) {

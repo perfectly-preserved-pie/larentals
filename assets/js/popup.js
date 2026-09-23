@@ -8,13 +8,13 @@
 
 /**
  * @typedef {{
- *   bindPopup: (content: string, options?: Record<string, unknown>) => unknown,
- *   on: (eventName: string, handler: () => void) => unknown,
- *   getPopup?: () => ({
- *     getElement?: () => HTMLElement | null,
- *     setContent?: (content: string) => unknown,
- *   } | null),
- *   _map?: { getContainer?: () => HTMLElement | null } | null,
+ * bindPopup: (content: string, options?: Record<string, unknown>) => unknown,
+ * on: (eventName: string, handler: () => void) => unknown,
+ * getPopup?: () => ({
+ * getElement?: () => HTMLElement | null,
+ * setContent?: (content: string) => unknown,
+ * } | null),
+ * _map?: { getContainer?: () => HTMLElement | null } | null,
  * }} PopupLayer
  */
 
@@ -36,6 +36,7 @@
 
     /**
      * Escape text for safe HTML interpolation.
+     * This protects listing and provider values inserted into popup markup.
      *
      * @param {unknown} value Raw text value.
      * @returns {string} Escaped string.
@@ -52,6 +53,7 @@
 
     /**
      * Normalize nullable strings.
+     * Empty text and common serialized null markers are treated as missing values.
      *
      * @param {unknown} value Raw string-like value.
      * @returns {string|null} Trimmed string or `null`.
@@ -67,6 +69,7 @@
 
     /**
      * Parse a listing URL and reject non-http(s) values.
+     * Restricting schemes prevents unsafe protocols from becoming clickable popup links.
      *
      * @param {unknown} value Raw listing URL value.
      * @returns {URL|null} Parsed URL or `null` when unusable.
@@ -87,6 +90,7 @@
 
     /**
      * Normalize a listing identifier while preserving leading zeroes.
+     * Only the trailing decimal artifact from numeric CSV values is removed.
      *
      * @param {unknown} value Listing id / MLS value.
      * @returns {string} Normalized identifier string.
@@ -98,6 +102,7 @@
 
     /**
      * Strip a terminal `.0` without disturbing meaningful decimals.
+     * Numeric inputs are converted back to numbers so downstream formatting stays numeric.
      *
      * @param {string|number|null|undefined} value String or numeric display value.
      * @returns {string|number|null|undefined} Cleaned display value.
@@ -114,6 +119,7 @@
 
     /**
      * Format lot size with separators while preserving up to two decimals.
+     * Blank and null-like source strings return no value instead of a misleading zero.
      *
      * @param {unknown} value Raw lot size value.
      * @returns {string|null} Human-readable lot size or `null`.
@@ -143,6 +149,7 @@
 
     /**
      * Format a numeric value as US currency without decimals.
+     * Missing or non-finite source values display as `Unknown`.
      *
      * @param {unknown} value Raw currency-like value.
      * @returns {string} Currency string or `"Unknown"`.
@@ -158,6 +165,7 @@
 
     /**
      * Format a 0/1-like flag as Yes / No / Unknown.
+     * Unrecognized values remain `Unknown` so malformed source data is not presented as a choice.
      *
      * @param {unknown} value Raw boolean-like value.
      * @returns {string} Human-readable flag label.
@@ -173,6 +181,7 @@
 
     /**
      * Format a miles distance for popup display.
+     * Distances use two decimal places, while absent or invalid values show `Unknown`.
      *
      * @param {unknown} value Raw miles value.
      * @returns {string} Formatted miles or `Unknown`.
@@ -187,6 +196,7 @@
 
     /**
      * Format a numeric value as a localized integer.
+     * Invalid values fall back to zero because popup count fields need a stable display.
      *
      * @param {unknown} value Raw numeric value.
      * @returns {string} Localized integer string.
@@ -199,6 +209,7 @@
 
     /**
      * Render the Dash drawer trigger for a matched Housing Department property.
+     * A usable APN is required because the drawer request is keyed by parcel number.
      *
      * @param {Record<string, unknown>} summary Housing Department property summary.
      * @returns {string} HTML drawer trigger or empty string.
@@ -225,6 +236,7 @@
 
     /**
      * Build the compact Housing Department summary shown in listing popups.
+     * Unavailable data and a successful no-match have distinct messages for the renter.
      *
      * @param {unknown} summary Raw `lahd_property_summary` payload.
      * @returns {string} Human-readable housing issue summary.
@@ -256,6 +268,7 @@
 
     /**
      * Render the Housing Department issue row for listing popups.
+     * Out-of-jurisdiction and unavailable summaries are omitted rather than implying zero records.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
      * @returns {string} HTML row.
@@ -306,6 +319,7 @@
 
     /**
      * Render the LA City Rent Stabilization Ordinance row for rental popups.
+     * Properties outside the covered jurisdiction have no row in this listing popup.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
      * @returns {string} HTML row.
@@ -327,6 +341,7 @@
 
     /**
      * Convert a street address string into title case for popup display.
+     * The transformation is presentation-only; normalized address keys are handled separately.
      *
      * @param {string} value Address string to normalize.
      * @returns {string} Title-cased address string.
@@ -339,6 +354,7 @@
 
     /**
      * Return Dash's requests pathname prefix without a trailing slash.
+     * Root deployments use an empty prefix so same-origin requests do not gain a duplicate slash.
      *
      * @returns {string} Prefix or an empty string for root apps.
      */
@@ -351,6 +367,7 @@
 
     /**
      * Build a same-origin URL that respects Dash's pathname prefix.
+     * Requests include the app prefix when Dash is mounted below the site root.
      *
      * @param {string} path App-relative path.
      * @returns {string} Absolute same-origin URL for `fetch`.
@@ -362,6 +379,7 @@
 
     /**
      * Resolve the page-specific listing-detail API base path.
+     * Buy pages use their own endpoint; every other listing page uses the lease endpoint.
      *
      * @returns {string} Lease or buy listing-detail API prefix.
      */
@@ -374,6 +392,7 @@
 
     /**
      * Fetch listing details for a single popup and cache the in-flight request.
+     * Concurrent popup opens share the promise, while a failure clears it so a later open can retry.
      *
      * @param {string} listingId Listing identifier used by the API.
      * @returns {Promise<Record<string, unknown>>} Promise resolving to popup detail data.
@@ -408,6 +427,7 @@
 
     /**
      * Render the popup title block, linking the address when a listing URL exists.
+     * The source label is derived from the URL hostname, with `www` removed for display.
      *
      * @param {string|number} address Display-ready street address.
      * @param {URL|null} listingUrl Parsed listing detail URL, if available.
@@ -459,6 +479,7 @@
 
     /**
      * Render the property photo row, optionally wrapping the image in the listing URL.
+     * When a photo is missing, valid coordinates provide a Street View fallback.
      *
      * @param {string|null} photoUrl Image URL for the listing.
      * @param {URL|null} listingUrl Parsed listing detail URL, if available.
@@ -484,6 +505,7 @@
 
     /**
      * Format a date-like value as `YYYY-MM-DD`.
+     * Unparseable values retain their original date portion instead of disappearing.
      *
      * @param {unknown} dateString Date value pulled from the listing payload.
      * @returns {string} ISO-style date string or `"Unknown"`.
@@ -499,6 +521,7 @@
 
     /**
      * Render the report-listing footer link for a popup.
+     * The listing identifier is encoded into the report dialog payload before interpolation.
      *
      * @param {string} listingId Listing identifier / MLS number.
      * @returns {string} HTML string for the report link.
@@ -517,6 +540,7 @@
 
     /**
      * Build the lease-page popup body for a single listing.
+     * Rental-specific rows and asynchronously loaded ISP options are added alongside shared listing details.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -634,6 +658,7 @@
 
     /**
      * Build the buy-page popup body for a single listing.
+     * Purchase details use the buy API payload while keeping the shared listing summary layout.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -741,6 +766,7 @@
 
     /**
      * Render a lightweight loading shell while popup details are fetched.
+     * The initial marker summary keeps the popup useful before the detail request finishes.
      *
      * @param {Record<string, unknown>} summaryData Initial marker data.
      * @returns {string} HTML string for the loading state.
@@ -762,6 +788,7 @@
 
     /**
      * Render a fallback error state when popup details fail to load.
+     * Marker summary data remains visible so a transient API failure does not leave a blank popup.
      *
      * @param {Record<string, unknown>} summaryData Initial marker data.
      * @returns {string} HTML string for the error state.
@@ -779,6 +806,7 @@
 
     /**
      * Compute the responsive popup sizing constraints for a map layer.
+     * The map container and viewport cap the popup dimensions across mobile and desktop layouts.
      *
      * @param {PopupLayer} layer Leaflet layer bound to the popup.
      * @returns {Record<string, unknown>} Leaflet popup options.
@@ -807,6 +835,7 @@
 
     /**
      * Center a focused listing popup in the map's visible area.
+     * This keeps list-selected popups from being clipped behind the results panel or map edge.
      *
      * @param {object} popup Leaflet popup to center.
      * @returns {void}
@@ -828,6 +857,7 @@
 
     /**
      * Update the popup content and hydrate ISP placeholder content if present.
+     * Hydration runs after markup replacement so the new placeholder can be found in the popup DOM.
      *
      * @param {PopupLayer} layer Leaflet layer whose popup should be updated.
      * @param {string} content HTML content for the popup.

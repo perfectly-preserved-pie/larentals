@@ -12,6 +12,7 @@ const LAZY_LAYER_NAMES = {
 
 /**
  * Return the hidden style used after lazy-layer loading completes.
+ * Keeping the overlay mounted but hidden avoids changing its layout between loads.
  *
  * @returns {Record<string, string>} CSS properties for a hidden overlay.
  */
@@ -29,9 +30,12 @@ function hiddenMapSpinner() {
 
 /**
  * Determine whether a selected lazy layer still lacks its payload.
+ * Only selected, recognized overlays can keep the loading indicator visible.
+ * Only recognized, currently selected overlays can keep the loading indicator visible.
  *
  * @param {string[]} selectedOverlays Visible overlay labels.
  * @param {unknown[]} currentData Loaded payloads in layer order.
+ *
  * @param {{layer?: string}[]} layerIds Lazy-layer descriptors.
  * @returns {boolean} Whether a selected layer is still loading.
  */
@@ -79,6 +83,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
      *
      * @param {string[]} selectedOverlays Visible overlay labels.
      * @param {{layer?: string}[]} layerIds Lazy-layer descriptors.
+     *
      * @param {unknown[]} currentData Loaded payloads in layer order.
      * @returns {Record<string, string>|unknown} Spinner style or Dash sentinel.
      */
@@ -94,6 +99,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
      *
      * @param {unknown[]} currentData Loaded payloads in layer order.
      * @param {string[]} selectedOverlays Visible overlay labels.
+     *
      * @param {{layer?: string}[]} layerIds Lazy-layer descriptors.
      * @returns {Record<string, string>|unknown} Spinner style or Dash sentinel.
      */
@@ -113,6 +119,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
      *
      * @param {{features?: unknown[]}|null} geojsonData Main map payload.
      * @param {{features?: unknown[]}|null} layerData Active layer payload.
+     *
      * @returns {Record<string, string>} CSS properties for the overlay.
      */
     loadingMapSpinner: function(geojsonData, layerData) {
