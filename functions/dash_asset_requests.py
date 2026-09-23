@@ -1,16 +1,58 @@
 """Reject known malformed Dash component asset requests before routing."""
 
-import re
-
 from flask import Flask, abort, request
 
 
-_NUMERIC_ASYNC_ASSET = re.compile(
-    r"/_dash-component-suites/(?:[^/]+/)+[0-9]+\.async-[^/]+\.js"
-)
-_NESTED_COMPONENT_ASSET = re.compile(
-    r"/_dash-component-suites/(?:[^/]+/)+_dash-component-suites/.+"
-)
+_COMPONENT_SUITES_PREFIX = "/_dash-component-suites/"
+
+
+def _is_numeric_async_asset(path: str) -> bool:
+    """Return True when *path* looks like a Dash numeric async asset URL.
+
+    Validates the prefix and the final filename segment using only string
+    operations (``endswith``, ``find``, ``isdigit``) to avoid any regex
+    backtracking.  The expected filename shape is ``DIGITS.async-NAME.js``.
+
+    Args:
+        path: URL path from the incoming request.
+
+    Returns:
+        True when the path has the component-suites prefix, at least one
+        package directory segment, and a final filename matching the
+        ``DIGITS.async-NAME.js`` shape.
+    """
+    if not path.startswith(_COMPONENT_SUITES_PREFIX):
+        return False
+    parts = path.split("/")
+    # Expected structure: ['', '_dash-component-suites', pkg, ..., filename]
+    if len(parts) < 4:
+        return False
+    name = parts[-1]
+    if not name.endswith(".js"):
+        return False
+    async_idx = name.find(".async-")
+    if async_idx == -1:
+        return False
+    return name[:async_idx].isdigit()
+
+
+def _is_nested_component_asset(path: str) -> bool:
+    """Return True when *path* embeds a second ``_dash-component-suites`` segment.
+
+    Uses a plain substring search rather than a regex so there is no
+    backtracking risk.
+
+    Args:
+        path: URL path from the incoming request.
+
+    Returns:
+        True when the path starts with the component-suites prefix and the
+        prefix appears again within the remainder of the path.
+    """
+    if not path.startswith(_COMPONENT_SUITES_PREFIX):
+        return False
+    rest = path[len(_COMPONENT_SUITES_PREFIX):]
+    return _COMPONENT_SUITES_PREFIX in rest
 
 
 def register_dash_asset_request_guard(server: Flask) -> None:
@@ -35,7 +77,7 @@ def register_dash_asset_request_guard(server: Flask) -> None:
             None when the request can proceed through normal routing.
         """
         if request.method in {"GET", "HEAD"} and (
-            _NUMERIC_ASYNC_ASSET.fullmatch(request.path)
-            or _NESTED_COMPONENT_ASSET.fullmatch(request.path)
+            _is_numeric_async_asset(request.path)
+            or _is_nested_component_asset(request.path)
         ):
             abort(404)
