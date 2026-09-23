@@ -46,15 +46,15 @@
      * Parse an external listing URL and reject non-http(s) values.
      *
      * @param {unknown} value Raw URL value.
-     * @returns {string|null} Canonical URL string or `null`.
+     * @returns {URL|null} Parsed URL or `null`.
      */
-    function safeExternalUrl(value) {
+    function parseListingUrl(value) {
         var text = clean(value);
         if (!text) return null;
         try {
             var parsed = new URL(text);
             if (!/^https?:$/.test(parsed.protocol)) return null;
-            return parsed.href;
+            return parsed;
         } catch (error) {
             return null;
         }
@@ -296,9 +296,9 @@
         if (isFinite(sqft) && sqft > 0) meta.push(sqft.toLocaleString("en-US") + " sq ft");
         if (subtype) meta.push(subtype);
 
-        var url = safeExternalUrl(row.url);
+        var url = parseListingUrl(row.url);
         var link = url
-            ? '<a class="results-row__link" href="' + escapeHtml(url) + '"' +
+            ? '<a class="results-row__link" href="' + escapeHtml(url.href) + '"' +
               ' target="_blank" rel="noreferrer"' +
               ' title="Open this listing on its own site"' +
               ' aria-label="Open ' + escapeHtml(address) + ' on its own site">' +
