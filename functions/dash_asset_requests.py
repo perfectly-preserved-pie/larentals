@@ -34,8 +34,9 @@ def register_dash_asset_request_guard(server: Flask) -> None:
         Returns:
             None when the request can proceed through normal routing.
         """
-        if request.method in {"GET", "HEAD"} and (
-            _NUMERIC_ASYNC_ASSET.fullmatch(request.path)
-            or _NESTED_COMPONENT_ASSET.fullmatch(request.path)
+        path = request.path
+        if request.method in {"GET", "HEAD"} and len(path) <= 1000 and (
+            _NUMERIC_ASYNC_ASSET.fullmatch(path)
+            or _NESTED_COMPONENT_ASSET.fullmatch(path)
         ):
             abort(404)
