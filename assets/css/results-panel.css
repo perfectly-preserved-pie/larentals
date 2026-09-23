@@ -440,6 +440,12 @@
   font-size: 0.65rem;
 }
 
+.leaflet-marker-icon.is-open.marker-cluster,
+.leaflet-marker-icon.is-open .marker-cluster {
+  outline: 3px solid var(--wttl-accent, #1f68c9);
+  outline-offset: 2px;
+}
+
 /* Keep the selected price pin visible at the popup tip instead of letting the
  * popup pane cover the listing it describes. */
 .leaflet-marker-icon.is-open {

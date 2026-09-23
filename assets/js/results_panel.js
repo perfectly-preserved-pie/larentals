@@ -408,9 +408,9 @@
     /**
      * Mark the row for the open listing, and bring it into view.
      * Scrolling is for when the popup was opened from the map: the row for it
-     * is usually somewhere down a list of a few hundred. It is deliberately not
-     * done on a re-render, which would yank the list out from under someone
-     * scrolling it while a popup happens to be open.
+     * is usually somewhere down a list of a few hundred. A clustered listing
+     * marks its visible cluster because it has no individual pin at this zoom.
+     * Re-renders do not scroll, avoiding jumps while someone browses the list.
      *
      * @param {{scroll: boolean}} options Whether to scroll the row into view.
      * @returns {void}
@@ -425,6 +425,12 @@
 
         var pin = document.querySelector(".price-marker" + selector);
         var icon = pin && pin.closest ? pin.closest(".leaflet-marker-icon") : null;
+        if (!icon) {
+            var clustered = currentRows.find(function (entry) {
+                return String(entry.mls) === openMls && entry.clusterEl;
+            });
+            icon = clustered && (clustered.clusterEl.closest(".leaflet-marker-icon") || clustered.clusterEl);
+        }
         if (icon) icon.classList.add("is-open");
 
         var row = document.querySelector(".results-row" + selector);
@@ -554,6 +560,14 @@
 
     var focusRequest = 0;
 
+    /**
+     * Open a result while preserving the area the user chose to compare.
+     * Cluster rows may refer to a point just outside the viewport; pan to those
+     * points only when needed, without changing the map zoom.
+     *
+     * @param {object} entry Row descriptor from `collectVisible`.
+     * @returns {void}
+     */
     function focusListing(entry) {
         var request = ++focusRequest;
         var api = window.larentals || {};
@@ -571,8 +585,6 @@
             longitude: entry.latlng[1],
         });
 
-        var maxZoom = typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 21;
-        var targetZoom = Math.min(maxZoom, Math.max(map.getZoom(), 19));
         var popupOpened = false;
         var openPopup = function () {
             if (request !== focusRequest || popupOpened) return;
@@ -580,7 +592,7 @@
             if (api.popups && typeof api.popups.openAt === "function") {
                 openMls = summary.mls_number ? String(summary.mls_number) : null;
                 markOpenRow({ scroll: false });
-                api.popups.openAt(entry.latlng, summary, { centerInMap: true });
+                api.popups.openAt(entry.latlng, summary);
                 markOpenRow({ scroll: false });
                 return;
             }
@@ -590,22 +602,15 @@
             }
         };
 
-        var currentCenter = typeof map.getCenter === "function" ? map.getCenter() : null;
-        var alreadyFocused = currentCenter && map.getZoom() === targetZoom &&
-            Math.abs(currentCenter.lat - entry.latlng[0]) < 0.000001 &&
-            Math.abs(currentCenter.lng - entry.latlng[1]) < 0.000001;
-        if (alreadyFocused) {
+        var bounds = typeof map.getBounds === "function" ? map.getBounds() : null;
+        if (!bounds || bounds.contains(entry.latlng)) {
             openPopup();
             return;
         }
 
         if (typeof map.once === "function") map.once("moveend", openPopup);
-        if (typeof map.flyTo === "function") {
-            map.flyTo(entry.latlng, targetZoom, { animate: true, duration: 0.55 });
-        } else if (typeof map.setView === "function") {
-            map.setView(entry.latlng, targetZoom, { animate: true });
-        } else if (typeof map.panTo === "function") {
-            map.panTo(entry.latlng, { animate: true });
+        if (typeof map.panTo === "function") {
+            map.panTo(entry.latlng, { animate: true, duration: 0.35 });
         } else {
             openPopup();
             return;

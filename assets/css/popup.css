@@ -2,6 +2,17 @@
  * Leaflet mounts popups outside the Dash component tree, so dark overrides
  * target the root color-scheme attribute and Leaflet popup classes.
  */
+
+/* The map pane is its own stacking context, so its popup cannot rise above controls at z-index 1000. */
+.leaflet-container:has(.leaflet-popup) .leaflet-top,
+.leaflet-container:has(.leaflet-popup) .leaflet-bottom {
+  z-index: 350 !important;
+}
+
+.leaflet-container .leaflet-popup-pane {
+  z-index: 1200 !important;
+}
+
 /* Default (mobile): let content size naturally, no forced height/scroll */
 .options-col {
   height: auto;
