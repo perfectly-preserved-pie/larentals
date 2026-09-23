@@ -11,6 +11,11 @@
   --results-row-open-hover: rgba(24, 60, 116, 0.72);
 }
 
+:root[data-mantine-color-scheme="dark"] .results-panel__count,
+:root[data-mantine-color-scheme="dark"] .results-row__meta {
+  color: rgba(231, 236, 239, 0.72);
+}
+
 .results-panel {
   display: none;
 }
