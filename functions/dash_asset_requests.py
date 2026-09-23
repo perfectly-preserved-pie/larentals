@@ -1,14 +1,7 @@
 """Reject known malformed Dash component asset requests before routing."""
 
-import re
-
 from flask import Flask, abort, request
 
-
-# Matches only the final path segment of a numeric async asset, e.g.
-# "12345.async-abc123.js".  Applied to a single segment so no
-# multi-segment backtracking is possible.
-_NUMERIC_ASYNC_FILENAME = re.compile(r"[0-9]+\.async-[^/]+\.js")
 
 _COMPONENT_SUITES_PREFIX = "/_dash-component-suites/"
 
@@ -16,23 +9,31 @@ _COMPONENT_SUITES_PREFIX = "/_dash-component-suites/"
 def _is_numeric_async_asset(path: str) -> bool:
     """Return True when *path* looks like a Dash numeric async asset URL.
 
-    Splits on ``/`` and validates only the final filename segment with a
-    simple anchored regex instead of applying a multi-segment pattern to
-    the whole path, which avoids polynomial backtracking.
+    Validates the prefix and the final filename segment using only string
+    operations (``endswith``, ``find``, ``isdigit``) to avoid any regex
+    backtracking.  The expected filename shape is ``DIGITS.async-NAME.js``.
 
     Args:
         path: URL path from the incoming request.
 
     Returns:
-        True when the path starts with the component-suites prefix, has at
-        least one package directory between the prefix and the filename, and
-        the filename matches the ``DIGITS.async-NAME.js`` pattern.
+        True when the path has the component-suites prefix, at least one
+        package directory segment, and a final filename matching the
+        ``DIGITS.async-NAME.js`` shape.
     """
     if not path.startswith(_COMPONENT_SUITES_PREFIX):
         return False
     parts = path.split("/")
     # Expected structure: ['', '_dash-component-suites', pkg, ..., filename]
-    return len(parts) >= 4 and bool(_NUMERIC_ASYNC_FILENAME.fullmatch(parts[-1]))
+    if len(parts) < 4:
+        return False
+    name = parts[-1]
+    if not name.endswith(".js"):
+        return False
+    async_idx = name.find(".async-")
+    if async_idx == -1:
+        return False
+    return name[:async_idx].isdigit()
 
 
 def _is_nested_component_asset(path: str) -> bool:
