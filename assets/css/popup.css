@@ -786,3 +786,108 @@
 .listing-popup__source--phone a {
   font-weight: 650;
 }
+
+/* Leaflet popups are rendered outside the Dash component tree, so theme them
+   directly from the document color-scheme attribute. */
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-tip {
+  background: #202427;
+  color: #e7ecef;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content {
+  color: #e7ecef;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content h1,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content h2,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content h3,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content h4,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content h5,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content h6 {
+  color: #f2f5f6;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .property-row {
+  border-color: rgba(232, 238, 241, 0.16) !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__secondary-value,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__metric-label,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__empty,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .listing-popup__source-label {
+  color: rgba(231, 236, 239, 0.68);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__metric-value,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__status--unknown {
+  color: #e7ecef;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__metric-item {
+  border-color: rgba(232, 238, 241, 0.18);
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__chip {
+  background: #263944;
+  border-color: #3d5d70;
+  color: #c9e7f5;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__chip--support {
+  background: #263b2d;
+  border-color: #42684b;
+  color: #ccebd2;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__attribution {
+  background: #3b3220;
+  border-color: #76613a;
+  color: #f1dfb5;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__media {
+  border-color: rgba(232, 238, 241, 0.18);
+  background: #252a2d;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__media-caption {
+  background: rgba(32, 36, 39, 0.94);
+  color: #d3dadd;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content a,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .lahd-records-trigger {
+  color: #69d8ca;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content a:hover,
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content .lahd-records-trigger:hover {
+  color: #93e6dc;
+}
+
+/* ISP option cards include inline light-theme text colors. Override those in
+   dark mode so speeds and plan details keep enough contrast on the dark card. */
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color:#222"],
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color: #222"] {
+  color: #e7ecef !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color:#666"],
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color: #666"] {
+  color: rgba(231, 236, 239, 0.72) !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color:#0072B2"],
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color: #0072B2"] {
+  color: #7fd3f2 !important;
+}
+
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color:#d55e00"],
+:root[data-mantine-color-scheme="dark"] .leaflet-popup-content [style*="color: #d55e00"] {
+  color: #ff9b6a !important;
+}
