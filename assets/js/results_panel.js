@@ -43,6 +43,24 @@
     }
 
     /**
+     * Parse an external listing URL and reject non-http(s) values.
+     *
+     * @param {unknown} value Raw URL value.
+     * @returns {string|null} Canonical URL string or `null`.
+     */
+    function safeExternalUrl(value) {
+        var text = clean(value);
+        if (!text) return null;
+        try {
+            var parsed = new URL(text);
+            if (!/^https?:$/.test(parsed.protocol)) return null;
+            return parsed.href;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    /**
      * Format a price for a list row.
      *
      * @param {unknown} value Raw list price.
@@ -278,7 +296,7 @@
         if (isFinite(sqft) && sqft > 0) meta.push(sqft.toLocaleString("en-US") + " sq ft");
         if (subtype) meta.push(subtype);
 
-        var url = clean(row.url);
+        var url = safeExternalUrl(row.url);
         var link = url
             ? '<a class="results-row__link" href="' + escapeHtml(url) + '"' +
               ' target="_blank" rel="noreferrer"' +
