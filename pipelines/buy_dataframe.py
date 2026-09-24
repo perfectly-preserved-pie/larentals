@@ -20,7 +20,7 @@ from functions.listing_report_utils import (
 )
 from functions.mls_image_processing_utils import *
 from functions.noise_level_utils import *
-from functions.normalization_utils import normalize_subtype
+from functions.normalization_utils import normalize_repeated_unit_prefix, normalize_subtype
 from functions.popup_utils import *
 from geopy.geocoders import GoogleV3
 from imagekitio import ImageKit
@@ -210,6 +210,11 @@ def main() -> None:
     df["street_address"] = df["street_address"].astype("string").str.replace(
       r"^(\s*\d+)\.0(?=\s)", r"\1", regex=True
     )
+    original_street_addresses = df["street_address"].copy()
+    df["street_address"] = df["street_address"].map(normalize_repeated_unit_prefix)
+    normalized_unit_count = int(original_street_addresses.ne(df["street_address"]).sum())
+    if normalized_unit_count:
+      logger.info(f"Normalized repeated unit identifiers in {normalized_unit_count} buy addresses")
 
     # Define columns to remove all non-numeric characters from
     cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']

@@ -4,6 +4,36 @@ import html
 import json
 import re
 
+def normalize_repeated_unit_prefix(street_address: str) -> str:
+    """Remove a unit identifier duplicated before a street name.
+
+    Some source rows put ``17 P`` between the house number and street even
+    though ``#17P`` already appears at the end. Only remove the leading text
+    when both unit identifiers match, so numbered street names remain intact.
+
+    Args:
+        street_address: Full street line including its house number.
+
+    Returns:
+        Street line with a matching repeated unit removed, or the input unchanged.
+    """
+    match = re.fullmatch(
+        r"\s*(?P<house>\d+(?:\.0)?)\s+"
+        r"(?P<repeated>\d+\s*-?\s*[A-Za-z]{1,3})\s+"
+        r"(?P<street>[A-Za-z].*?)\s+"
+        r"(?P<unit>(?:#|apt\s+|unit\s+)\d+[A-Za-z]{1,3})\s*",
+        street_address,
+        flags=re.I,
+    )
+    if not match:
+        return street_address
+    repeated = re.sub(r"[\s-]", "", match.group("repeated")).casefold()
+    trailing = re.search(r"\d+[A-Za-z]{1,3}$", match.group("unit"))
+    if not trailing or repeated != trailing.group().casefold():
+        return street_address
+    return f"{match.group('house')} {match.group('street').strip()} {match.group('unit')}"
+
+
 # This normalizes lease terms into canonical codes so we don't get redundant terms for the same thing
 TERM_SYNONYMS: dict[str, str] = {
     # -----------------

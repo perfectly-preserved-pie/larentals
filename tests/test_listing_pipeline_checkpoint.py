@@ -22,12 +22,14 @@ from functions.geocoding_utils import (
     _google_result_matches_address,
     _google_result_rejection_reason,
     _google_verified_zip_correction,
+    _census_suffix_candidates,
     return_coordinates,
     fill_missing_location_fields_with_checkpoint,
     re_geocode_above_lat_threshold,
     update_dataframe_with_geocoding,
 )
 from functions.listing_location_overrides import apply_reviewed_location_overrides
+from functions.normalization_utils import normalize_repeated_unit_prefix
 from functions.listing_pipeline_checkpoint import (
     ListingCheckpointStore,
     address_fingerprint,
@@ -838,6 +840,53 @@ def test_google_retries_building_address_when_unit_query_has_no_result() -> None
     ]
 
 
+def test_google_retries_without_direction_for_verified_rooftop() -> None:
+    """Recover a condo whose Google route omits the listed south direction.
+
+    The alternative query is used only after the normal unit and building
+    queries fail, and the returned rooftop still has to match the source.
+
+    Returns:
+        None.
+    """
+    address = "1230 S Barranca Ave #F, Glendora 91740"
+    location = FakeLocation("1230 Main St, Los Angeles 91740")
+    location.raw["formatted_address"] = "1230 Barranca Ave Apt F, Glendora, CA 91740, USA"
+    location.raw["address_components"][1]["long_name"] = "Barranca Avenue"
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [None, None, location]
+
+    coordinates = return_coordinates(address, 0, geolocator, 1)
+
+    assert coordinates == (34.05, -118.25)
+    assert geolocator.geocode.call_count == 3
+    assert geolocator.geocode.call_args_list[-1].args[0] == (
+        "1230 Barranca Ave #F, Glendora 91740"
+    )
+    assert geolocator.geocode.call_args_list[-1].kwargs["components"] == {
+        "administrative_area": "CA", "country": "US"
+    }
+
+
+def test_google_directionless_retry_rejects_different_number() -> None:
+    """A shorter query cannot move the pin to another Barranca building.
+
+    Returns:
+        None.
+    """
+    location = FakeLocation("1231 Main St, Los Angeles 91740")
+    location.raw["formatted_address"] = "1231 Barranca Ave, Glendora, CA 91740, USA"
+    location.raw["address_components"][1]["long_name"] = "Barranca Avenue"
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [None, None, location, None, None]
+
+    coordinates = return_coordinates(
+        "1230 S Barranca Ave #F, Glendora 91740", 0, geolocator, 1
+    )
+
+    assert coordinates == (None, None)
+
+
 def test_google_logs_failed_check_and_both_unit_lookup_attempts() -> None:
     """Show each failed request and the mismatched house number in logs.
 
@@ -900,6 +949,68 @@ def test_google_accepts_expanded_street_names(address: str, google_route: str) -
 
 
 
+
+@pytest.mark.parametrize(
+    ("address", "google_route"),
+    [
+        ("37862 11th, Palmdale 93550", "11th Street East"),
+        ("43663 6th, Lancaster 93535", "6th Street East"),
+        ("38625 159th St, Lake Los Angeles 93591", "159th Street East"),
+        ("1247 Geraldine, Lancaster 93535", "Geraldine Avenue East"),
+        ("36458 50th, Palmdale 93552", "50th Street East"),
+        ("48321 91st, Lancaster 93536", "91st Street West"),
+        ("42502 W 52nd Street, Quartz Hill 93536", "52nd Street West"),
+        ("1548 2nd ST, Duarte 91010", "Second Street"),
+        ("5651 Sumner #109, Culver City 90230", "North Sumner Way"),
+    ],
+)
+def test_google_accepts_verified_antelope_valley_route_variants(
+    address: str, google_route: str
+) -> None:
+    """Accept omitted or relocated directions only at a verified rooftop.
+
+    Args:
+        address: Listing address with a short or reordered street name.
+        google_route: Equivalent Google route for the same building.
+
+    Returns:
+        None.
+    """
+    raw = FakeLocation("200 Main St, Los Angeles 90002").raw
+    number = address.split()[0]
+    zip_code = address[-5:]
+    city = address.split(",", 1)[1].removesuffix(zip_code).strip()
+    raw["formatted_address"] = f"{number} {google_route}, {city}, CA {zip_code}, USA"
+    raw["address_components"] = [
+        {"long_name": number, "types": ["street_number"]},
+        {"long_name": google_route, "types": ["route"]},
+        {"long_name": zip_code, "types": ["postal_code"]},
+    ]
+
+    assert _google_result_matches_address(address, raw)
+    if not re.match(r"\d+\s+[NSEW]\b", address) and google_route.endswith(("East", "West")):
+        raw["geometry"] = {"location_type": "GEOMETRIC_CENTER"}
+        assert not _google_result_matches_address(address, raw)
+
+
+def test_google_rejects_opposite_street_direction() -> None:
+    """Keep East and West properties with the same number distinct.
+
+    Returns:
+        None.
+    """
+    address = "42502 W 52nd Street, Quartz Hill 93536"
+    raw = FakeLocation("200 Main St, Los Angeles 90002").raw
+    raw["formatted_address"] = "42502 52nd St E, Quartz Hill, CA 93536, USA"
+    raw["address_components"] = [
+        {"long_name": "42502", "types": ["street_number"]},
+        {"long_name": "52nd Street East", "types": ["route"]},
+        {"long_name": "93536", "types": ["postal_code"]},
+    ]
+
+    assert not _google_result_matches_address(address, raw)
+
+
 def test_google_unrestricted_retry_accepts_verified_address() -> None:
     """Use the diagnostic candidate when its number, route, and ZIP all match.
 
@@ -958,7 +1069,7 @@ def test_google_unrestricted_retry_still_requires_matching_zip() -> None:
 
 
 
-def test_google_zip_correction_requires_exact_rooftop_building() -> None:
+def test_google_zip_correction_requires_matching_street_and_number() -> None:
     """A ZIP override cannot use a partial or different-building candidate.
 
     Returns:
@@ -970,6 +1081,10 @@ def test_google_zip_correction_requires_exact_rooftop_building() -> None:
     assert _google_verified_zip_correction(
         address, candidate, _google_result_rejection_reason(address, candidate)
     ) == "90003"
+    interpolated = {**candidate, "geometry": {"location_type": "RANGE_INTERPOLATED"}}
+    assert _google_verified_zip_correction(
+        address, interpolated, _google_result_rejection_reason(address, interpolated)
+    ) == "90003"
 
     for change in ("route", "number", "city", "precision", "partial"):
         changed = {**candidate, "address_components": [part.copy() for part in candidate["address_components"]]}
@@ -980,7 +1095,7 @@ def test_google_zip_correction_requires_exact_rooftop_building() -> None:
         elif change == "city":
             changed["formatted_address"] = "200 Main St, Beverly Hills, CA 90003, USA"
         elif change == "precision":
-            changed["geometry"] = {"location_type": "RANGE_INTERPOLATED"}
+            changed["geometry"] = {"location_type": "APPROXIMATE"}
         else:
             changed["partial_match"] = True
         assert _google_verified_zip_correction(
@@ -1026,6 +1141,188 @@ def test_google_zip_correction_updates_address_and_checkpoint(tmp_path: Path) ->
     assert second.at[0, "zip_code"] == "90003"
     assert second.at[0, "full_street_address"] == corrected_address
     assert geolocator.geocode.call_count == 2
+
+
+def test_census_batch_suggests_only_same_number_street_and_zip(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A Census range match may complete a suffix but cannot replace the road.
+
+    The nine logged addresses are sent in one batch, and only a compatible
+    normalized address becomes a candidate for the paid Google retry.
+
+    Args:
+        monkeypatch: Replaces the Census HTTP call with a fixed CSV response.
+
+    Returns:
+        None.
+    """
+    response = Mock()
+    response.text = (
+        '"0","33300 Eastern, Agua Dulce, CA, 91390","Match","Non_Exact","33300 EASTERN AVE, AGUA DULCE, CA, 91390","","",""\n'
+        '"1","23520 Western, Los Angeles, CA, 90710","Match","Non_Exact","23520 WESTERN AVE, HARBOR CITY, CA, 90710","","",""\n'
+        '"2","403 Cypress Grove, Pomona, CA, 91767","Match","Non_Exact","403 S CYPRESS ST, POMONA, CA, 91767","","",""\n'
+        '"3","9833 E Avenue S8, Littlerock, CA, 93543","Match","Non_Exact","9833 E AVE S-8, LITTLEROCK, CA, 93543","","",""\n'
+    )
+    calls = []
+
+    def fake_post(url: str, **kwargs: object) -> Mock:
+        """Capture one batch body and return Census formatted rows.
+
+        Args:
+            url: Census batch endpoint.
+            **kwargs: Form payload and timeout.
+
+        Returns:
+            The fixed Census response.
+        """
+        calls.append((url, kwargs))
+        return response
+
+    monkeypatch.setattr("functions.geocoding_utils.requests.post", fake_post)
+    candidates = _census_suffix_candidates({
+        0: "33300 Eastern, Agua Dulce 91390",
+        1: "23520 Western, Los Angeles 90710",
+        2: "403 Cypress Grove, Pomona 91767",
+        3: "9833 E Avenue S8, Littlerock 93543",
+    })
+
+    assert len(calls) == 1
+    assert "33300 Eastern,Agua Dulce,CA,91390" in calls[0][1]["files"]["addressFile"][1]
+    assert candidates == {
+        0: "33300 EASTERN AVE, Agua Dulce 91390",
+        1: "23520 WESTERN AVE, Los Angeles 90710",
+        3: "9833 E AVE S-8, Littlerock 93543",
+    }
+
+
+def test_census_suffix_google_retry_is_one_call_and_checkpointed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Spend one Google retry after Census, then reuse the completed address.
+
+    Args:
+        tmp_path: Temporary checkpoint directory.
+        monkeypatch: Supplies a verified Census suffix without a network call.
+
+    Returns:
+        None.
+    """
+    source_address = "33300 Eastern, Agua Dulce 91390"
+    completed = "33300 EASTERN AVE, Agua Dulce 91390"
+    monkeypatch.setattr(
+        "functions.geocoding_utils._census_suffix_candidates",
+        lambda addresses: {0: completed} if addresses else {},
+    )
+    location = FakeLocation("33300 Main St, Los Angeles 91390")
+    location.raw["formatted_address"] = "33300 Eastern Ave, Agua Dulce, CA 91390, USA"
+    location.raw["address_components"][1]["long_name"] = "Eastern Avenue"
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [None, None, location]
+    store = ListingCheckpointStore(tmp_path / "census.sqlite", listing_type="buy")
+    source = pd.DataFrame([{
+        "mls_number": "MLS-EASTERN", "street_address": "33300 Eastern",
+        "full_street_address": source_address,
+    }])
+
+    messages = StringIO()
+    sink = logger.add(messages, format="{message}", level="WARNING")
+    try:
+        first = update_dataframe_with_geocoding(source.copy(), geolocator=geolocator, checkpoint_store=store)
+        second = update_dataframe_with_geocoding(source.copy(), geolocator=geolocator, checkpoint_store=store)
+    finally:
+        logger.remove(sink)
+
+    assert "no usable result" not in messages.getvalue()
+    assert geolocator.geocode.call_count == 3
+    assert first.at[0, "full_street_address"] == completed
+    assert first.at[0, "street_address"] == "33300 EASTERN AVE"
+    assert first.at[0, "geocode_status"] == "success"
+    assert second.at[0, "geocode_status"] == "cached"
+    assert second.at[0, "geocode_provider"] == "google+census"
+    assert second.at[0, "full_street_address"] == completed
+    assert store.get("MLS-EASTERN")["census_source_address"] == source_address
+
+
+def test_census_fallback_keeps_detailed_warning_for_final_failure() -> None:
+    """Report Google's attempted queries when Census has no matching suffix.
+
+    Returns:
+        None.
+    """
+    geolocator = Mock()
+    geolocator.geocode.return_value = None
+    df = pd.DataFrame([{
+        "mls_number": "MLS-MAIN",
+        "full_street_address": "200 Main St, Los Angeles 90002",
+    }])
+    messages = StringIO()
+    sink = logger.add(messages, format="{message}", level="WARNING")
+    try:
+        result = update_dataframe_with_geocoding(df, geolocator=geolocator)
+    finally:
+        logger.remove(sink)
+
+    assert result.at[0, "geocode_status"] == "failed"
+    assert messages.getvalue().count("no usable result") == 1
+    assert "[ZIP constrained]: no result" in messages.getvalue()
+    assert "Census: no compatible street completion" in messages.getvalue()
+
+
+def test_census_retry_accepts_google_omitted_direction_at_rooftop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Use Census's west direction when Google confirms the same rooftop.
+
+    Args:
+        monkeypatch: Supplies a fixed Census completion without a network call.
+
+    Returns:
+        None.
+    """
+    source = "14118 W Pine, Van Nuys 91405"
+    completed = "14118 W PINE LN, Van Nuys 91405"
+    monkeypatch.setattr(
+        "functions.geocoding_utils._census_suffix_candidates",
+        lambda addresses: {0: completed} if addresses else {},
+    )
+    location = FakeLocation("14118 Main St, Los Angeles 91405")
+    location.raw["formatted_address"] = "14118 Pine Ln, Van Nuys, CA 91405, USA"
+    location.raw["address_components"][1]["long_name"] = "Pine Lane"
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [None, None, location]
+    df = pd.DataFrame([{"mls_number": "MLS-PINE", "full_street_address": source}])
+
+    result = update_dataframe_with_geocoding(df, geolocator=geolocator)
+
+    assert result.at[0, "geocode_status"] == "success"
+    assert result.at[0, "full_street_address"] == completed
+    assert geolocator.geocode.call_count == 3
+
+
+@pytest.mark.parametrize(
+    ("street_address", "expected"),
+    [
+        ("7890 17 P E Spring ST #17P", "7890 E Spring ST #17P"),
+        ("7890 17P E Spring ST #17P", "7890 E Spring ST #17P"),
+        ("7890 17-P E Spring ST #17P", "7890 E Spring ST #17P"),
+        ("7890 17 P E Spring ST #18P", "7890 17 P E Spring ST #18P"),
+        ("7890 E Spring ST #17P", "7890 E Spring ST #17P"),
+        ("7890 17 P E Spring ST", "7890 17 P E Spring ST"),
+        ("1230 S Barranca AVE #F", "1230 S Barranca AVE #F"),
+    ],
+)
+def test_normalize_repeated_unit_prefix_only_when_unit_matches(
+    street_address: str, expected: str
+) -> None:
+    """Clean duplicate unit fragments without changing other numbered roads.
+
+    Args:
+        street_address: Raw source street line.
+        expected: Street line after safe normalization.
+
+    Returns:
+        None.
+    """
+    assert normalize_repeated_unit_prefix(street_address) == expected
 
 
 def test_reviewed_lease_address_corrections_for_google_failures() -> None:

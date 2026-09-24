@@ -53,6 +53,8 @@ CHECKPOINT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("geocode_error", "TEXT"),
     ("geocode_provider", "TEXT"),
     ("geocode_address_hash", "TEXT"),
+    ("census_source_address", "TEXT"),
+    ("resolved_street_address", "TEXT"),
     ("latitude", "REAL"),
     ("longitude", "REAL"),
     ("inactive_check_input_hash", "TEXT"),
@@ -71,6 +73,8 @@ _MUTABLE_COLUMNS = {name for name, _ in CHECKPOINT_COLUMNS} - {
 _INPUT_HASH_EXCLUDED_COLUMNS = {
     "date_processed",
     "geocode_address_hash",
+    "census_source_address",
+    "resolved_street_address",
     "geocode_error",
     "geocode_provider",
     "geocode_status",
