@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 import re
 import sqlite3
+from unittest.mock import Mock
 
 import pandas as pd
 import pytest
+from loguru import logger
 
 from functions.dataframe_utils import (
     merge_listing_dataframes,
@@ -18,6 +20,7 @@ from functions.dataframe_utils import (
 )
 from functions.geocoding_utils import (
     _google_result_matches_address,
+    return_coordinates,
     fill_missing_location_fields_with_checkpoint,
     re_geocode_above_lat_threshold,
     update_dataframe_with_geocoding,
@@ -747,6 +750,85 @@ def test_google_result_requires_matching_street_and_zip() -> None:
         for part in exact["address_components"]
     ]}
     assert not _google_result_matches_address(address, wrong_number)
+
+
+
+
+def test_google_accepts_matching_half_street_number() -> None:
+    address = "6226 1/2 Main St, Los Angeles 90002"
+    raw = FakeLocation("6226 Main St, Los Angeles 90002").raw
+    half_number = {**raw, "address_components": [
+        {**part, "long_name": "6226 1/2"} if "street_number" in part["types"] else part
+        for part in raw["address_components"]
+    ]}
+    wrong_number = {**raw, "address_components": [
+        {**part, "long_name": "6227 1/2"} if "street_number" in part["types"] else part
+        for part in raw["address_components"]
+    ]}
+
+    assert _google_result_matches_address(address, raw)
+    assert _google_result_matches_address(address, half_number)
+    assert not _google_result_matches_address(address, wrong_number)
+
+
+def test_google_normalizes_decimal_street_number_before_lookup() -> None:
+    geolocator = Mock()
+    geolocator.geocode.side_effect = lambda query, **kwargs: FakeLocation(query)
+
+    coordinates = return_coordinates(
+        "800.0 Main St #1008, Los Angeles 90002.0",
+        row_index=0,
+        geolocator=geolocator,
+        total_rows=1,
+    )
+
+    assert coordinates == (34.05, -118.25)
+    geolocator.geocode.assert_called_once_with(
+        "800 Main St #1008, Los Angeles 90002",
+        timeout=10,
+        components={"administrative_area": "CA", "country": "US", "postal_code": "90002"},
+    )
+
+
+def test_google_retries_building_address_when_unit_query_has_no_result() -> None:
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [None, FakeLocation("2500 Main St, Los Angeles 90002")]
+
+    coordinates = return_coordinates(
+        "2500.0 Main St #1008, Los Angeles 90002",
+        row_index=0,
+        geolocator=geolocator,
+        total_rows=1,
+    )
+
+    assert coordinates == (34.05, -118.25)
+    assert [call.args[0] for call in geolocator.geocode.call_args_list] == [
+        "2500 Main St #1008, Los Angeles 90002",
+        "2500 Main St, Los Angeles 90002",
+    ]
+
+
+def test_google_logs_failed_check_and_both_unit_lookup_attempts() -> None:
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [
+        None,
+        FakeLocation("2501 Main St, Los Angeles 90002"),
+    ]
+    messages = StringIO()
+    sink = logger.add(messages, format="{message}", level="WARNING")
+    try:
+        coordinates = return_coordinates(
+            "2500 Main St #1008, Los Angeles 90002",
+            row_index=9,
+            geolocator=geolocator,
+            total_rows=419,
+        )
+    finally:
+        logger.remove(sink)
+
+    assert coordinates == (None, None)
+    assert "'2500 Main St #1008, Los Angeles 90002': no result" in messages.getvalue()
+    assert "'2500 Main St, Los Angeles 90002': street_number mismatch (expected ['2500'], got '2501')" in messages.getvalue()
 
 
 def test_geocode_is_reused_for_the_same_address(

@@ -122,7 +122,12 @@ def main() -> None:
       raise FileNotFoundError("Expected exactly one CSV, but found none")
     # take the first (and only) CSV
     source_file_hash = file_fingerprint(csv_files[0])
-    df = pd.read_csv(csv_files[0], float_precision="round_trip", skipinitialspace=True)
+    df = pd.read_csv(
+      csv_files[0],
+      dtype={"St #": "string"},
+      float_precision="round_trip",
+      skipinitialspace=True,
+    )
     pd.set_option("display.precision", 10)
 
     # sample new rows if in test mode
@@ -177,9 +182,10 @@ def main() -> None:
     # To get rid of garbage data
     df = df[df['mls_number'].astype(str).str.len() <= 20]
 
-    # Normalize Excel/CSV numeric ZIPs before building geocoder queries.
+    # Keep address identifiers as text before building lookup queries or labels.
     df["zip_code"] = df["zip_code"].astype("string").str.replace(r"\.0$", "", regex=True)
     df = apply_reviewed_location_overrides(df, "lease")
+    df["street_number"] = df["street_number"].astype("string").str.replace(r"\.0$", "", regex=True)
     df.dropna(subset=["street_name"], inplace=True)
 
     # Columns to clean

@@ -127,7 +127,7 @@ def main() -> None:
       raise FileNotFoundError("Expected one .xlsx in pipelines/, found none")
     excel_path = os.path.join(script_dir, excel_files[0])
     source_file_hash = file_fingerprint(excel_path)
-    xlsx = pd.read_excel(excel_path, sheet_name=None)
+    xlsx = pd.read_excel(excel_path, sheet_name=None, dtype={"St #": "string"})
 
     # Merge all sheets into a single DataFrame
     df = pd.concat(xlsx.values(), ignore_index=True)
@@ -203,9 +203,13 @@ def main() -> None:
       df = df.sample(SAMPLE_N, random_state=1)
       logger.info(f"[buy] TEST MODE: sampled {SAMPLE_N} new rows")
 
-    # Normalize Excel/CSV numeric ZIPs before building geocoder queries.
+    # Keep address identifiers as text before building lookup queries or labels.
     df["zip_code"] = df["zip_code"].astype("string").str.replace(r"\.0$", "", regex=True)
     df = apply_reviewed_location_overrides(df, "buy")
+    df["street_number"] = df["street_number"].astype("string").str.replace(r"\.0$", "", regex=True)
+    df["street_address"] = df["street_address"].astype("string").str.replace(
+      r"^(\s*\d+)\.0(?=\s)", r"\1", regex=True
+    )
 
     # Define columns to remove all non-numeric characters from
     cols = ['hoa_fee', 'list_price', 'ppsqft', 'sqft', 'year_built', 'lot_size']
@@ -368,6 +372,9 @@ def main() -> None:
     df_combined['city']     = df_combined['city'].fillna('').astype(str)
     df_combined['zip_code'] = df_combined['zip_code'].fillna('').astype(str)
     df_combined["street_number"] = df_combined["street_number"].astype(str).str.replace(r"\.0$", "", regex=True)
+    df_combined["street_address"] = df_combined["street_address"].astype("string").str.replace(
+      r"^(\s*\d+)\.0(?=\s)", r"\1", regex=True
+    )
 
     # Rebuild short_address and full_street_address for all rows with valid components
     valid_address_rows = df_combined["street_address"].notna()

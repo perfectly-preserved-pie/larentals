@@ -62,33 +62,38 @@ def _google_street_key(value: str) -> str:
     return normalized
 
 
-def _google_result_matches_address(address: str, raw: dict) -> bool:
-    """Accept a Google result only when it still describes the listing address.
+def _google_result_rejection_reason(address: str, raw: dict) -> Optional[str]:
+    """Explain why a Google candidate cannot safely locate this listing.
 
-    A geocoder can return a plausible point for the wrong street or ZIP. Check
-    the response we already paid for before allowing it to move a listing pin.
+    Google can return a plausible point for a nearby property. Report the first
+    failed check without another API request. A half-address may have a Google
+    street number of either its base number or the explicit ``1/2`` number.
 
     Args:
         address: Address sent to the geocoder.
         raw: Google's response fields for the candidate result.
 
     Returns:
-        Whether the precision, number, ZIP, and route pass the checks.
+        The first failed check, or None when the candidate matches.
     """
     if raw.get("partial_match"):
-        return False
+        return "partial_match=true"
     location_type = raw.get("geometry", {}).get("location_type")
     if location_type not in {"ROOFTOP", "RANGE_INTERPOLATED", "GEOMETRIC_CENTER"}:
-        return False
+        return f"location_type={location_type!r}"
     expected_number = re.match(r"\s*(\d+)", address)
     expected_zip = re.search(r"(?<!\d)(\d{5})(?:\.0)?\s*$", address)
     actual_number = _google_address_component(raw, ("street_number",))
     actual_zip = _google_address_component(raw, ("postal_code",))
     actual_route = _google_address_component(raw, ("route",))
-    if expected_number and actual_number != expected_number.group(1):
-        return False
+    if expected_number:
+        accepted_numbers = {expected_number.group(1)}
+        if re.match(r"\s*\d+\s+1/2\b", address):
+            accepted_numbers.add(f"{expected_number.group(1)} 1/2")
+        if actual_number not in accepted_numbers:
+            return f"street_number mismatch (expected {sorted(accepted_numbers)!r}, got {actual_number!r})"
     if expected_zip and actual_zip != expected_zip.group(1):
-        return False
+        return f"postal_code mismatch (expected {expected_zip.group(1)!r}, got {actual_zip!r})"
     street_line = address.split(",", 1)[0]
     street_line = re.sub(r"^\s*\d+(?:\s+1/2)?\s*", "", street_line)
     street_line = re.split(r"\s+(?:#{1,2}|apt\b|unit\b|ste\b)", street_line, maxsplit=1, flags=re.I)[0]
@@ -97,8 +102,24 @@ def _google_result_matches_address(address: str, raw: dict) -> bool:
             None, _google_street_key(street_line), _google_street_key(actual_route or "")
         ).ratio()
         if score < 0.65:
-            return False
-    return True
+            return f"route mismatch (expected {street_line.strip()!r}, got {actual_route!r}, similarity {score:.2f})"
+    return None
+
+
+def _google_result_matches_address(address: str, raw: dict) -> bool:
+    """Keep the boolean address check used by existing callers and tests.
+
+    The rejection helper owns the checks so logging and acceptance always use
+    the same decision.
+
+    Args:
+        address: Address sent to the geocoder.
+        raw: Google's response fields for the candidate result.
+
+    Returns:
+        Whether the candidate passes every address check.
+    """
+    return _google_result_rejection_reason(address, raw) is None
 
 
 def return_coordinates(
@@ -112,9 +133,10 @@ def return_coordinates(
 ) -> Tuple[Optional[float], Optional[float]]:
     """Geocode one listing address with the selected provider.
 
-    Google results pass an address-match check before moving a listing pin; a
-    plausible nearby coordinate can still be the wrong property. Lookup
-    failures return empty coordinates for the pipeline to handle.
+    Numeric source columns can turn a street number into ``800.0``. Normalize
+    it before querying Google. For a unit address with no usable candidate,
+    retry the building address and apply the same address checks before moving
+    a listing pin. Lookup failures return empty coordinates for the pipeline.
 
     Parameters:
     address (str): The full street address.
@@ -154,14 +176,32 @@ def return_coordinates(
         components = {'administrative_area': 'CA', 'country': 'US'}
         if zip_match:
             components['postal_code'] = zip_match.group(1)
-        normalized_address = re.sub(r"(\d{5})\.0\s*$", r"\1", address)
-        loc = geolocator.geocode(normalized_address, timeout=10, components=components)
-        if loc:
-            if _google_result_matches_address(normalized_address, loc.raw):
-                return loc.latitude, loc.longitude
-            logger.warning(f"[{row_index}/{total_rows}] GoogleV3: rejected imprecise result for '{address}'")
-            return None, None
-        logger.warning(f"[{row_index}/{total_rows}] GoogleV3: no result for '{address}'")
+        normalized_address = re.sub(r"^(\s*\d+)\.0(?=\s)", r"\1", address)
+        normalized_address = re.sub(r"(\d{5})\.0\s*$", r"\1", normalized_address)
+        street_line, separator, locality = normalized_address.partition(",")
+        building_street = re.sub(
+            r"\s+(?:#{1,2}|apt\b|unit\b|ste\b).*$",
+            "",
+            street_line,
+            flags=re.I,
+        )
+        queries = [normalized_address]
+        if building_street != street_line:
+            queries.append(building_street + separator + locality)
+        failures = []
+        for query in queries:
+            loc = geolocator.geocode(query, timeout=10, components=components)
+            if loc:
+                rejection_reason = _google_result_rejection_reason(query, loc.raw)
+                if rejection_reason is None:
+                    return loc.latitude, loc.longitude
+                failures.append(f"{query!r}: {rejection_reason}")
+            else:
+                failures.append(f"{query!r}: no result")
+        logger.warning(
+            f"[{row_index}/{total_rows}] GoogleV3: no usable result for "
+            f"'{address}'; attempts: {'; '.join(failures)}"
+        )
     except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
         logger.warning(f"[{row_index}/{total_rows}] GoogleV3 error: {e}")
     return None, None
