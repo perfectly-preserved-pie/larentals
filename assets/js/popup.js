@@ -237,6 +237,7 @@
     /**
      * Build the compact Housing Department summary shown in listing popups.
      * Unavailable data and a successful no-match have distinct messages for the renter.
+     * Counts come from the same live records fetched for the drawer.
      *
      * @param {unknown} summary Raw `lahd_property_summary` payload.
      * @returns {string} Human-readable housing issue summary.

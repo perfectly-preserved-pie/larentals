@@ -33,6 +33,7 @@ LAHD_LOCAL_ARTIFACT_PATH = LAHD_PROPERTY_HEATMAP_PATH
 LAHD_LOCAL_LOOKUP_ARTIFACT_PATH = LAHD_PROPERTY_LOOKUP_PATH
 LAHD_GEOCODE_CACHE_PATH = LAHD_PROPERTY_GEOCODE_CACHE_PATH
 LAHD_REQUEST_TIMEOUT_SECONDS = 180
+LAHD_RECORD_REQUEST_TIMEOUT_SECONDS = 15
 LAHD_ARTIFACT_VERSION = 1
 LAHD_DEFAULT_AGGREGATE_LIMIT = 25000
 LAHD_DEFAULT_LOOKUP_LIMIT = 50000
@@ -56,8 +57,7 @@ GeoJsonDict: TypeAlias = dict[str, Any]
 HeatPointTuple: TypeAlias = list[float]
 MarkerPointTuple: TypeAlias = list[float | int | str | None]
 
-LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS = 65.0
-LAHD_LOOKUP_SPATIAL_CELL_DEGREES = 0.001
+_STREET_DIRECTIONS = {"N", "S", "E", "W", "NE", "NW", "SE", "SW"}
 _LA_CITY_LISTING_CITY_LABELS = {
     "ARLETA",
     "CANOGA PARK",
@@ -124,7 +124,7 @@ _STREET_SUFFIX_NORMALIZATION = {
     "WAY": "WAY",
 }
 _UNIT_RE = re.compile(
-    r"\s+(?:#|APT|APARTMENT|UNIT|STE|SUITE|ROOM|RM|SPACE|SPC|BLDG|BUILDING|FL|FLOOR)\.?\s*.*$",
+    r"\s+(?:#\s*.*|(?:APT|APARTMENT|UNIT|STE|SUITE|ROOM|RM|SPACE|SPC|BLDG|BUILDING|FL|FLOOR)\b\.?\s*.*)$",
     re.IGNORECASE,
 )
 
@@ -346,25 +346,27 @@ def write_local_lahd_property_lookup(
 
 
 def _request_socrata_rows(url: str, params: dict[str, object]) -> list[JsonDict]:
-    """Fetch rows from a Socrata SODA endpoint.
-    Require a JSON row list so an API error object cannot be mistaken for an
-    empty result set.
+    """Fetch a JSON row list from a Socrata endpoint.
 
+    Per-parcel queries use a short timeout because they block an open popup;
+    bulk artifact builds retain the longer timeout. Reject an API error object
+    so it cannot be mistaken for a successful empty result.
 
     Args:
-        url: URL requested, validated, or downloaded by the function.
-        params: Query parameters included with the HTTP request.
+        url: Socrata dataset endpoint.
+        params: Query filters and result fields.
 
     Returns:
-        A list containing the request socrata rows.
+        Rows returned by the dataset.
 
     Raises:
-        ValueError: If the operation cannot be completed.
+        requests.RequestException: If the HTTP request fails.
+        ValueError: If the response is not a JSON row list.
     """
     response = requests.get(
         url,
         params=params,
-        timeout=LAHD_REQUEST_TIMEOUT_SECONDS,
+        timeout=LAHD_RECORD_REQUEST_TIMEOUT_SECONDS if "apn" in params else LAHD_REQUEST_TIMEOUT_SECONDS,
         headers=_build_socrata_headers(),
     )
     response.raise_for_status()
@@ -824,8 +826,9 @@ def fetch_lahd_property_record_details(
 ) -> JsonDict:
     """Return detailed LAHD case and violation rows for a property APN.
 
-    The popup summary uses a local lookup artifact; this detail fetch is live
-    and only runs when a user asks to inspect the underlying records.
+    The listing popup and records drawer share this cached live fetch so their
+    counts come from the same rows. A source outage can still return a marked
+    aggregate-only fallback for the drawer.
 
     Args:
         apn: Assessor Parcel Number identifying the property.
@@ -1580,28 +1583,6 @@ def _attach_coordinates(
     return geocoded
 
 
-def _distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Estimate the distance between two nearby coordinates in meters.
-
-    The local projection approximation is sufficient because candidates are already constrained to nearby Los Angeles parcels.
-
-    Args:
-        lat1: Latitude of the first point, in decimal degrees.
-        lon1: Longitude of the first point, in decimal degrees.
-        lat2: Latitude of the second point, in decimal degrees.
-        lon2: Longitude of the second point, in decimal degrees.
-
-    Returns:
-        The approximate distance between the coordinates, in meters.
-    """
-    lat1_rad = math.radians(lat1)
-    lat2_rad = math.radians(lat2)
-    mean_lat = (lat1_rad + lat2_rad) / 2
-    x = math.radians(lon2 - lon1) * math.cos(mean_lat)
-    y = math.radians(lat2 - lat1)
-    return 6371000 * math.sqrt((x * x) + (y * y))
-
-
 def _normalize_property_address_for_lookup(value: object) -> str:
     """Normalize a listing or LAHD address to a parcel-level street-address key.
 
@@ -1626,6 +1607,26 @@ def _normalize_property_address_for_lookup(value: object) -> str:
     if tokens:
         tokens[-1] = _STREET_SUFFIX_NORMALIZATION.get(tokens[-1], tokens[-1])
     return " ".join(tokens)
+
+
+def _property_address_parts(value: object) -> tuple[str, str, str] | None:
+    """Separate a street number, direction, and route for cautious parcel matching.
+
+    A listing can omit the direction present in LAHD's address. Keep it separate
+    so that omission can be resolved only when the remaining address is unique.
+
+    Args:
+        value: Listing or LAHD street address.
+
+    Returns:
+        Street number, direction, and route, or ``None`` for an incomplete address.
+    """
+    tokens = _normalize_property_address_for_lookup(value).split()
+    if len(tokens) < 3 or not tokens[0].isdigit():
+        return None
+    direction = tokens[1] if tokens[1] in _STREET_DIRECTIONS else ""
+    route = " ".join(tokens[2:] if direction else tokens[1:])
+    return (tokens[0], direction, route) if route else None
 
 
 def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
@@ -1669,63 +1670,6 @@ def _coerce_marker_lookup_record(point: object) -> JsonDict | None:
     if not record["address"]:
         return None
     return record
-
-
-def _lahd_spatial_bucket(lat: float, lon: float) -> tuple[int, int]:
-    """Return the lookup-grid bucket for a latitude/longitude pair.
-
-    A coarse grid narrows nearby candidates before exact distance checks.
-
-    Args:
-        lat: Latitude in decimal degrees.
-        lon: Longitude in decimal degrees.
-
-    Returns:
-        A tuple containing the LAHD spatial bucket.
-    """
-    return (
-        math.floor(lat / LAHD_LOOKUP_SPATIAL_CELL_DEGREES),
-        math.floor(lon / LAHD_LOOKUP_SPATIAL_CELL_DEGREES),
-    )
-
-
-def _lahd_spatial_neighbor_span() -> int:
-    """Return the number of adjacent coordinate buckets to inspect for nearby matches.
-
-    The span is rounded up so the search radius cannot omit a point across a cell boundary.
-
-    Returns:
-        The number of adjacent spatial buckets required for the search radius.
-    """
-    conservative_degrees = LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS / 60_000
-    return max(1, math.ceil(conservative_degrees / LAHD_LOOKUP_SPATIAL_CELL_DEGREES))
-
-
-def _candidate_lahd_records_near(
-    spatial_index: dict[tuple[int, int], list[JsonDict]],
-    *,
-    latitude: float,
-    longitude: float,
-) -> list[JsonDict]:
-    """Return lookup records in nearby coordinate buckets for distance matching.
-
-    Only adjacent grid cells need inspection for matches inside the configured radius.
-
-    Args:
-        spatial_index: LAHD records grouped into coordinate buckets for nearby lookup.
-        latitude: Property latitude in decimal degrees.
-        longitude: Property longitude in decimal degrees.
-
-    Returns:
-        A list containing the candidate LAHD records near.
-    """
-    bucket_lat, bucket_lon = _lahd_spatial_bucket(latitude, longitude)
-    span = _lahd_spatial_neighbor_span()
-    candidates: list[JsonDict] = []
-    for lat_offset in range(-span, span + 1):
-        for lon_offset in range(-span, span + 1):
-            candidates.extend(spatial_index.get((bucket_lat + lat_offset, bucket_lon + lon_offset), []))
-    return candidates
 
 
 def _empty_lahd_listing_lookup_result(
@@ -1785,47 +1729,6 @@ def unavailable_lahd_listing_lookup_result() -> LahdListingLookupResult:
     return _empty_lahd_listing_lookup_result(data_available=False)
 
 
-def _matched_lahd_listing_lookup_result(
-    record: JsonDict,
-    *,
-    match_type: str,
-    match_distance_meters: float | None = None,
-) -> LahdListingLookupResult:
-    """Convert a lookup record into the serializable popup payload.
-
-    Counts and dates are normalized here so popup consumers receive a stable JSON shape.
-
-    Args:
-        record: LAHD property record matched to the listing.
-        match_type: Strategy that produced the LAHD property match.
-        match_distance_meters: Distance between the listing and matched LAHD property, in meters.
-
-    Returns:
-        A populated LAHD lookup result for the matched property.
-    """
-    return {
-        "matched": True,
-        "data_available": True,
-        "match_type": match_type,
-        "match_distance_meters": (
-            round(match_distance_meters, 1)
-            if match_distance_meters is not None and math.isfinite(match_distance_meters)
-            else None
-        ),
-        "address": str(record.get("address") or "") or None,
-        "apn": str(record.get("apn") or "") or None,
-        "problem_score": _parse_int(record.get("problem_score")),
-        "documented_issue_count": _parse_int(record.get("documented_issue_count")),
-        "unresolved_issue_count": _parse_int(record.get("unresolved_issue_count")),
-        "investigation_case_count": _parse_int(record.get("investigation_case_count")),
-        "open_case_count": _parse_int(record.get("open_case_count")),
-        "violations_cited": _parse_int(record.get("violations_cited")),
-        "unresolved_violation_count": _parse_int(record.get("unresolved_violation_count")),
-        "latest_case_date": str(record.get("latest_case_date") or "") or None,
-        "jurisdiction_in_scope": True,
-    }
-
-
 @lru_cache(maxsize=4)
 def _load_lahd_listing_lookup(
     artifact_path: str,
@@ -1833,9 +1736,9 @@ def _load_lahd_listing_lookup(
 ) -> dict[str, Any]:
     """Load the LAHD property lookup records for listing popups.
 
-    Build address, APN, and spatial indexes once per artifact version. Missing
-    or unreadable artifacts return empty indexes so popups can report
-    unavailable data cleanly.
+    Build address and APN indexes once per artifact version. Keep every record
+    at a street address so an ambiguous address cannot silently pick one APN.
+    Missing or unreadable artifacts return empty indexes.
 
     Args:
         artifact_path: Filesystem path to the local data artifact.
@@ -1848,41 +1751,44 @@ def _load_lahd_listing_lookup(
 
     path = Path(artifact_path)
     if not path.exists():
-        return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
+        return {"records": [], "address_index": {}, "directionless_index": {}, "apn_index": {}, "metadata": {}}
 
     try:
         with gzip.open(path, "rb") as artifact_file:
             payload = orjson.loads(artifact_file.read())
     except (OSError, orjson.JSONDecodeError) as exc:
         logger.warning(f"Failed loading LAHD listing lookup from {path}: {exc}")
-        return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
+        return {"records": [], "address_index": {}, "directionless_index": {}, "apn_index": {}, "metadata": {}}
 
     marker_points = payload.get("records") if isinstance(payload, dict) else None
     if not isinstance(marker_points, list):
         features = payload.get("features") if isinstance(payload, dict) else None
         if not isinstance(features, list) or not features:
-            return {"records": [], "address_index": {}}
+            return {"records": [], "address_index": {}, "directionless_index": {}, "apn_index": {}, "metadata": {}}
 
         properties = features[0].get("properties") if isinstance(features[0], dict) else None
         marker_points = properties.get("marker_points") if isinstance(properties, dict) else None
         if not isinstance(marker_points, list):
-            return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
+            return {"records": [], "address_index": {}, "directionless_index": {}, "apn_index": {}, "metadata": {}}
 
     records = [
         record
         for record in (_coerce_marker_lookup_record(point) for point in marker_points)
         if record is not None
     ]
-    address_index: dict[str, JsonDict] = {}
+    address_index: dict[str, list[JsonDict]] = {}
+    directionless_index: dict[tuple[str, str], list[JsonDict]] = {}
     apn_index: dict[str, JsonDict] = {}
-    spatial_index: dict[tuple[int, int], list[JsonDict]] = {}
     for record in records:
         address_key = _normalize_property_address_for_lookup(record.get("address"))
         if not address_key:
             continue
-        existing = address_index.get(address_key)
-        if existing is None or _parse_int(record.get("problem_score")) > _parse_int(existing.get("problem_score")):
-            address_index[address_key] = record
+        address_index.setdefault(address_key, []).append(record)
+
+        address_parts = _property_address_parts(record.get("address"))
+        if address_parts:
+            number, _, route = address_parts
+            directionless_index.setdefault((number, route), []).append(record)
 
         apn = _normalize_apn(record.get("apn"))
         if apn:
@@ -1892,14 +1798,12 @@ def _load_lahd_listing_lookup(
             ):
                 apn_index[apn] = record
 
-        spatial_index.setdefault(_lahd_spatial_bucket(float(record["lat"]), float(record["lon"])), []).append(record)
-
     metadata = payload.get("metadata") if isinstance(payload, dict) and isinstance(payload.get("metadata"), dict) else {}
     return {
         "records": records,
         "address_index": address_index,
+        "directionless_index": directionless_index,
         "apn_index": apn_index,
-        "spatial_index": spatial_index,
         "metadata": metadata,
     }
 
@@ -1918,7 +1822,7 @@ def _load_lahd_lookup_artifact(artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_
     try:
         artifact_mtime_ns = artifact_path.stat().st_mtime_ns
     except OSError:
-        return {"records": [], "address_index": {}, "apn_index": {}, "spatial_index": {}, "metadata": {}}
+        return {"records": [], "address_index": {}, "directionless_index": {}, "apn_index": {}, "metadata": {}}
 
     return _load_lahd_listing_lookup(str(artifact_path), artifact_mtime_ns)
 
@@ -1992,6 +1896,44 @@ def prewarm_lahd_listing_lookup_cache() -> None:
     )
 
 
+def _postal_zip_for_lahd_lookup(value: object) -> str | None:
+    """Read a trailing five-digit ZIP from a listing or LAHD address.
+
+    Both sources include ZIPs after the street text. Requiring ZIP agreement
+    prevents an identical street address in another part of LA City from
+    claiming the listing's parcel.
+
+    Args:
+        value: Full listing or LAHD address text.
+
+    Returns:
+        The five-digit ZIP, or ``None`` when the address lacks one.
+    """
+    match = re.search(r"\b(\d{5})(?:-\d{4})?\s*$", str(value or ""))
+    return match.group(1) if match else None
+
+
+def _unique_lahd_address_record(candidates: list[JsonDict], postal_zip: str) -> JsonDict | None:
+    """Accept an address only when its records identify one APN.
+
+    Several LAHD rows can share a street address while representing separate
+    parcels. Filter by ZIP first, then reject any remaining APN ambiguity;
+    counts and coordinates cannot establish which parcel a listing occupies.
+
+    Args:
+        candidates: LAHD records with the same normalized street address.
+        postal_zip: Listing ZIP required for parcel agreement.
+
+    Returns:
+        The single parcel's record, or ``None`` when APNs differ or are missing.
+    """
+    same_zip = [record for record in candidates if _postal_zip_for_lahd_lookup(record.get("address")) == postal_zip]
+    apns = {_normalize_apn(record.get("apn")) for record in same_zip}
+    if len(apns) != 1 or not next(iter(apns)):
+        return None
+    return max(same_zip, key=lambda record: _parse_int(record.get("problem_score")))
+
+
 def lookup_lahd_property_for_listing(
     *,
     address: object,
@@ -1999,68 +1941,59 @@ def lookup_lahd_property_for_listing(
     longitude: object,
     artifact_path: Path = LAHD_LOCAL_LOOKUP_ARTIFACT_PATH,
 ) -> LahdListingLookupResult:
-    """Return an LAHD issue summary for a listing popup.
+    """Find the APN for a listing only from an unambiguous street address.
 
-    Matching uses a normalized property-level address first, then falls back to a
-    conservative nearest-parcel search against the LAHD lookup artifact.
+    MLS coordinates can be misplaced or shared by nearby parcels. Use a local
+    address index and require the same ZIP to resolve the APN, allowing an omitted
+    street direction only when it still identifies one parcel. Return no stored
+    issue counts; the listing API fills those from live records.
 
     Args:
-        address: Street address used to identify or geocode the property.
-        latitude: Property latitude in decimal degrees.
-        longitude: Property longitude in decimal degrees.
-        artifact_path: Filesystem path to the local data artifact.
+        address: Listing street address, optionally including a unit.
+        latitude: Listing latitude, ignored for parcel identity.
+        longitude: Listing longitude, ignored for parcel identity.
+        artifact_path: Filesystem path to the local APN index.
 
     Returns:
-        The matching LAHD property for listing.
+        The matched LAHD parcel or an explicit no-match result.
     """
+    del latitude, longitude
     try:
         artifact_mtime_ns = artifact_path.stat().st_mtime_ns
     except OSError:
         return _empty_lahd_listing_lookup_result(data_available=False)
 
     lookup = _load_lahd_listing_lookup(str(artifact_path), artifact_mtime_ns)
-    records: list[JsonDict] = lookup.get("records") or []
-    address_index: dict[str, JsonDict] = lookup.get("address_index") or {}
-    spatial_index: dict[tuple[int, int], list[JsonDict]] = lookup.get("spatial_index") or {}
-    if not records:
+    if not lookup.get("records"):
         return _empty_lahd_listing_lookup_result(data_available=False)
 
+    address_parts = _property_address_parts(address)
+    postal_zip = _postal_zip_for_lahd_lookup(address)
+    if address_parts is None or postal_zip is None:
+        return _empty_lahd_listing_lookup_result(data_available=True)
+
     address_key = _normalize_property_address_for_lookup(address)
-    if address_key and address_key in address_index:
-        return _matched_lahd_listing_lookup_result(
-            address_index[address_key],
-            match_type="address",
-        )
-
-    try:
-        lat = float(latitude)
-        lon = float(longitude)
-    except (TypeError, ValueError):
+    address_index: dict[str, list[JsonDict]] = lookup.get("address_index") or {}
+    record = _unique_lahd_address_record(address_index.get(address_key, []), postal_zip)
+    if record is None and address_index.get(address_key):
         return _empty_lahd_listing_lookup_result(data_available=True)
 
-    if not math.isfinite(lat) or not math.isfinite(lon) or not _coordinates_in_bounds(lat, lon):
+    if record is None:
+        number, direction, route = address_parts
+        if direction:
+            return _empty_lahd_listing_lookup_result(data_available=True)
+        directionless_index: dict[tuple[str, str], list[JsonDict]] = lookup.get("directionless_index") or {}
+        record = _unique_lahd_address_record(directionless_index.get((number, route), []), postal_zip)
+    if record is None:
         return _empty_lahd_listing_lookup_result(data_available=True)
 
-    candidate_records = _candidate_lahd_records_near(spatial_index, latitude=lat, longitude=lon) if spatial_index else records
-    if not candidate_records:
-        return _empty_lahd_listing_lookup_result(data_available=True)
-
-    nearest_record: JsonDict | None = None
-    nearest_distance = math.inf
-    for record in candidate_records:
-        distance = _distance_meters(lat, lon, float(record["lat"]), float(record["lon"]))
-        if distance < nearest_distance:
-            nearest_distance = distance
-            nearest_record = record
-
-    if nearest_record is not None and nearest_distance <= LAHD_LISTING_LOOKUP_MAX_DISTANCE_METERS:
-        return _matched_lahd_listing_lookup_result(
-            nearest_record,
-            match_type="nearby_parcel",
-            match_distance_meters=nearest_distance,
-        )
-
-    return _empty_lahd_listing_lookup_result(data_available=True)
+    return {
+        **_empty_lahd_listing_lookup_result(data_available=True),
+        "matched": True,
+        "match_type": "address",
+        "address": str(record.get("address") or "") or None,
+        "apn": _normalize_apn(record.get("apn")),
+    }
 
 
 def _pick_quantile_threshold(values: list[int], fraction: float) -> int:

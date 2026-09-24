@@ -9,10 +9,7 @@ import dash_ag_grid as dag
 import dash_mantine_components as dmc
 from loguru import logger
 
-from functions.lahd import (
-    fetch_lahd_property_record_details,
-    lookup_lahd_property_for_listing,
-)
+from functions.lahd import fetch_lahd_property_record_details
 
 
 LAHD_RECORD_EVENT_NAME = "lahdrecordrequest"
@@ -77,9 +74,9 @@ def create_lahd_records_drawer() -> dmc.Drawer:
 def register_lahd_records_drawer_callback(app: Any) -> None:
     """Register callbacks that load and display LAHD records in the drawer.
 
-    The popup asks for a parcel by APN, then the callback loads details only
-    when the drawer opens. Failed lookups produce drawer content rather than
-    breaking the map interaction.
+    The popup supplies the parcel APN, and the callback loads that parcel when
+    the drawer opens. Failed lookups produce drawer content rather than breaking
+    the map interaction.
 
     Args:
         app: Dash application on which the callback is registered.
@@ -87,10 +84,6 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
     Returns:
         None.
     """
-    """
-    Register the callback that fills the Housing Department records drawer from an APN event.
-    """
-
     @app.callback(
         Output("lahd-records-drawer", "opened"),
         Output("lahd-records-drawer-title", "children"),
@@ -101,9 +94,10 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
     def open_lahd_records_drawer(event: dict[str, Any] | None) -> tuple[bool, Any, Any]:
         """Open the LAHD records drawer for a popup parcel request.
 
-        Resolve a canonical APN from the popup address when possible before
-        fetching records. Missing APNs leave the drawer untouched; fetch errors
-        become readable drawer content.
+        Fetch the APN supplied by the popup, which already identifies its matched
+        parcel. Resolving the address again could select a different property
+        when multiple parcels share an address key. Missing APNs leave the drawer
+        untouched; fetch errors become readable drawer content.
 
         Args:
             event: Dash or browser event payload being handled.
@@ -121,18 +115,7 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
         address = _event_value(event, "detail.address")
 
         try:
-            requested_apn = str(apn)
-            if address:
-                address_match = lookup_lahd_property_for_listing(
-                    address=address,
-                    latitude=None,
-                    longitude=None,
-                )
-                canonical_apn = address_match.get("apn") if address_match.get("matched") else None
-                if canonical_apn:
-                    requested_apn = str(canonical_apn)
-
-            details = fetch_lahd_property_record_details(requested_apn)
+            details = fetch_lahd_property_record_details(str(apn))
         except Exception as exc:  # pragma: no cover - exercised manually against live data
             logger.exception(f"Failed fetching Housing Department records for APN {apn}.")
             title = _build_drawer_title(apn, address)

@@ -290,10 +290,11 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(
     assert summary["jurisdiction_in_scope"] is True
 
 
-def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path: Path) -> None:
-    """Verify that lahd listing lookup uses spatial candidates.
+def test_lahd_listing_rejects_neighboring_street_number(tmp_path: Path) -> None:
+    """Do not assign a nearby parcel with a different street number.
 
-    Nearby listings need spatial candidates when their normalized addresses differ.
+    MLS coordinates can sit directly on the neighboring building, so distance
+    does not establish that its LAHD records belong to the listing.
 
     Args:
         tmp_path: Temporary directory supplied by pytest.
@@ -339,9 +340,339 @@ def test_lahd_listing_lookup_uses_spatial_candidates(tmp_path: Path) -> None:
     finally:
         lahd._load_lahd_listing_lookup.cache_clear()
 
-    assert result["matched"] is True
-    assert result["match_type"] == "nearby_parcel"
-    assert result["apn"] == "5030011006"
+    assert result["matched"] is False
+    assert result["apn"] is None
+
+
+
+def test_lahd_listing_prefers_unique_address_with_missing_direction_over_wrong_coordinates(tmp_path: Path) -> None:
+    """Use the Marathon street address when a listing pin falls on Mariposa.
+
+    LAHD includes a west direction that the MLS listing omits, while the MLS
+    coordinates point about a kilometer away to another LAHD property.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
+    artifact_path = tmp_path / "lookup.json.gz"
+    payload = {
+        "metadata": {"generated_at": "2026-05-27T17:09:54Z"},
+        "records": [
+            [34.084319, -118.285263, 70, 70, 0, 3, 0, 67, 0, 16, 3, 67,
+             "3920 W MARATHON ST, Los Angeles, CA 90029", "5539019017", "2019-02-26", "2025-05-15"],
+            [34.08431, -118.298563, 64, 64, 0, 11, 0, 53, 0, 21, 11, 53,
+             "724 N MARIPOSA AVE, Los Angeles, CA 90029", "5538007029", "2021-03-25", "2025-03-07"],
+        ],
+    }
+    with gzip.open(artifact_path, "wb") as artifact_file:
+        artifact_file.write(orjson.dumps(payload))
+
+    lahd._load_lahd_listing_lookup.cache_clear()
+    try:
+        matched = lahd.lookup_lahd_property_for_listing(
+            address="3920 Marathon St #7a, Los Angeles 90029",
+            latitude=34.08431,
+            longitude=-118.298563,
+            artifact_path=artifact_path,
+        )
+        unmatched = lahd.lookup_lahd_property_for_listing(
+            address="3922 Marathon St #7a",
+            latitude=34.08431,
+            longitude=-118.298563,
+            artifact_path=artifact_path,
+        )
+    finally:
+        lahd._load_lahd_listing_lookup.cache_clear()
+
+    assert matched["matched"] is True
+    assert matched["match_type"] == "address"
+    assert matched["apn"] == "5539019017"
+    assert matched["documented_issue_count"] == 0  # The local index supplies identity only.
+    assert unmatched["matched"] is False
+    assert unmatched["apn"] is None
+
+
+def test_lahd_listing_does_not_guess_missing_direction_when_ambiguous(tmp_path: Path) -> None:
+    """Leave a directionless address unmatched if LAHD has two distinct parcels.
+
+    The same street number can exist on both sides of a directional street, so
+    an omitted direction alone cannot identify either property.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
+    artifact_path = tmp_path / "lookup.json.gz"
+    payload = {"records": [
+        [34.084319, -118.285263, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0,
+         "3920 W MARATHON ST, Los Angeles, CA 90029", "5539019017", "", ""],
+        [34.08431, -118.298563, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0,
+         "3920 E MARATHON ST, Los Angeles, CA 90029", "5538007029", "", ""],
+    ]}
+    with gzip.open(artifact_path, "wb") as artifact_file:
+        artifact_file.write(orjson.dumps(payload))
+
+    lahd._load_lahd_listing_lookup.cache_clear()
+    try:
+        result = lahd.lookup_lahd_property_for_listing(
+            address="3920 Marathon St, Los Angeles 90029",
+            latitude=None,
+            longitude=None,
+            artifact_path=artifact_path,
+        )
+    finally:
+        lahd._load_lahd_listing_lookup.cache_clear()
+
+    assert result["matched"] is False
+
+
+
+
+def test_lahd_listing_rejects_shared_address_with_multiple_apns(tmp_path: Path) -> None:
+    """Leave an exact street address unmatched when LAHD lists two parcels.
+
+    A higher issue count on one parcel is not evidence that a listing belongs
+    to it, even when both LAHD records use the same address and ZIP.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
+    artifact_path = tmp_path / "lookup.json.gz"
+    payload = {"records": [
+        [34.05, -118.24, 100, 100, 0, 1, 0, 0, 0, 0, 1, 0,
+         "123 S FIGUEROA ST, Los Angeles, CA 90012", "5151001027", "", ""],
+        [34.05, -118.24, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0,
+         "123 S FIGUEROA ST, Los Angeles, CA 90012", "5151001033", "", ""],
+    ]}
+    with gzip.open(artifact_path, "wb") as artifact_file:
+        artifact_file.write(orjson.dumps(payload))
+
+    lahd._load_lahd_listing_lookup.cache_clear()
+    try:
+        result = lahd.lookup_lahd_property_for_listing(
+            address="123 S Figueroa Street, Los Angeles 90012",
+            latitude=34.05,
+            longitude=-118.24,
+            artifact_path=artifact_path,
+        )
+    finally:
+        lahd._load_lahd_listing_lookup.cache_clear()
+
+    assert result["matched"] is False
+
+
+
+def test_lahd_listing_uses_zip_to_separate_identical_street_addresses(tmp_path: Path) -> None:
+    """Select the parcel in the listing ZIP when two areas share an address.
+
+    Venice and San Pedro both have a 704 S Pacific Ave in the stored LAHD data.
+    The ZIP is part of the listing address and identifies the intended area.
+
+    Args:
+        tmp_path: Temporary directory supplied by pytest.
+
+    Returns:
+        None.
+    """
+    artifact_path = tmp_path / "lookup.json.gz"
+    payload = {"records": [
+        [33.73, -118.29, 5, 5, 0, 1, 0, 0, 0, 0, 1, 0,
+         "704 S PACIFIC AVE, SAN PEDRO, CA 90731", "7455006001", "", ""],
+        [33.99, -118.46, 6, 6, 0, 1, 0, 0, 0, 0, 1, 0,
+         "704 S PACIFIC AVE, VENICE, CA 90291", "4286015003", "", ""],
+    ]}
+    with gzip.open(artifact_path, "wb") as artifact_file:
+        artifact_file.write(orjson.dumps(payload))
+
+    lahd._load_lahd_listing_lookup.cache_clear()
+    try:
+        matched = lahd.lookup_lahd_property_for_listing(
+            address="704 S Pacific Avenue, Venice 90291",
+            latitude=33.73,
+            longitude=-118.29,
+            artifact_path=artifact_path,
+        )
+        missing_zip = lahd.lookup_lahd_property_for_listing(
+            address="704 S Pacific Avenue",
+            latitude=33.99,
+            longitude=-118.46,
+            artifact_path=artifact_path,
+        )
+    finally:
+        lahd._load_lahd_listing_lookup.cache_clear()
+
+    assert matched["apn"] == "4286015003"
+    assert missing_zip["matched"] is False
+
+
+def test_lahd_street_name_prefix_is_not_removed_as_unit() -> None:
+    """Keep street names beginning with a unit abbreviation intact.
+
+    STEVELY once became an empty route because the unit regex treated its
+    first three letters as a suite marker.
+
+    Returns:
+        None.
+    """
+    assert lahd._normalize_property_address_for_lookup("3923 S Stevely Ave #2") == "3923 S STEVELY AVE"
+    assert lahd._normalize_property_address_for_lookup("3920 Marathon St Ste 2") == "3920 MARATHON ST"
+
+
+def test_lahd_listing_summary_uses_live_counts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Show the drawer's live totals instead of stale artifact counts.
+
+    Both popup and drawer must use the same APN and row summary when the live
+    source succeeds.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace lookup and live fetch.
+
+    Returns:
+        None.
+    """
+    monkeypatch.setattr(listings, "is_listing_in_los_angeles_city", lambda **kwargs: True)
+    monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: True)
+    monkeypatch.setattr(listings, "lookup_lahd_property_for_listing", lambda **kwargs: {
+        "matched": True, "data_available": True, "apn": "5539019017",
+        "address": "3920 W MARATHON ST, Los Angeles, CA 90029",
+        "documented_issue_count": 70, "snapshot_generated_at": "2026-05-27T17:09:54Z",
+    })
+    requested_apns = []
+
+    def fake_fetch(apn):
+        """Supply a live count for the requested APN.
+
+        Args:
+            apn: Parcel identifier requested by the popup.
+
+        Returns:
+            Minimal current LAHD details for this test.
+        """
+        requested_apns.append(apn)
+        return {
+            "summary": {"case_count": 13, "open_case_count": 1,
+                        "violations_cited": 0, "unresolved_violation_count": 0,
+                        "documented_issue_count": 13, "unresolved_issue_count": 1,
+                        "latest_case_date": "2026-03-11"},
+            "detail_status": {"live_records_available": True},
+            "truncated": {"cases": False, "violations": False},
+        }
+
+    monkeypatch.setattr(listings, "fetch_lahd_property_record_details", fake_fetch)
+    summary = listings.build_lahd_listing_summary({
+        "city": "Los Angeles", "full_street_address": "3920 Marathon St #7a",
+        "latitude": 34.0843, "longitude": -118.2987,
+    })
+
+    assert requested_apns == ["5539019017"]
+    assert summary["documented_issue_count"] == 13
+    assert summary["investigation_case_count"] == 13
+    assert summary["latest_case_date"] == "2026-03-11"
+
+
+def test_lahd_listing_summary_hides_stale_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Do not show snapshot totals when the live API cannot provide rows.
+
+    A drawer fallback explicitly marks its summary as old; the popup should
+    report unavailable data rather than presenting that count as current.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace lookup and live fetch.
+
+    Returns:
+        None.
+    """
+    monkeypatch.setattr(listings, "is_listing_in_los_angeles_city", lambda **kwargs: True)
+    monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: True)
+    monkeypatch.setattr(listings, "lookup_lahd_property_for_listing", lambda **kwargs: {
+        "matched": True, "data_available": True, "apn": "5539019017",
+        "documented_issue_count": 70,
+    })
+    monkeypatch.setattr(listings, "fetch_lahd_property_record_details", lambda apn: {
+        "summary": {"documented_issue_count": 70},
+        "detail_status": {"live_records_available": False},
+    })
+
+    summary = listings.build_lahd_listing_summary({"city": "Los Angeles"})
+
+    assert summary["data_available"] is False
+    assert summary["matched"] is False
+
+
+def test_lahd_records_drawer_fetches_popup_apn(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep drawer details tied to the APN selected by the listing popup.
+
+    An address lookup can have a different winner when the same normalized
+    address belongs to multiple parcels.
+
+    Args:
+        monkeypatch: Pytest fixture used to replace the live fetch.
+
+    Returns:
+        None.
+    """
+    callbacks = []
+
+    class FakeApp:
+        """Capture the callback registered for the drawer event."""
+
+        def callback(self, *args, **kwargs):
+            """Return a decorator that records the drawer handler.
+
+            Args:
+                *args: Dash callback output and input declarations.
+                **kwargs: Dash callback registration options.
+
+            Returns:
+                A decorator that captures the callback.
+            """
+            def capture(handler):
+                """Keep the handler available for the event test.
+
+                Args:
+                    handler: Drawer callback registered by the UI.
+
+                Returns:
+                    The unchanged drawer callback.
+                """
+                callbacks.append(handler)
+                return handler
+            return capture
+
+    requested_apns = []
+
+    def fake_fetch(apn):
+        """Record the requested parcel without contacting LAHD.
+
+        Args:
+            apn: APN passed by the drawer callback.
+
+        Returns:
+            Minimal details passed to the mocked renderer.
+        """
+        requested_apns.append(apn)
+        return {"apn": apn, "summary": {}}
+
+    monkeypatch.setattr(lahd_records_ui, "fetch_lahd_property_record_details", fake_fetch)
+    monkeypatch.setattr(lahd_records_ui, "build_lahd_records_drawer_content", lambda details: details)
+    lahd_records_ui.register_lahd_records_drawer_callback(FakeApp())
+
+    opened, _, content = callbacks[0]({
+        "detail.apn": "5539019017",
+        "detail.address": "3920 W MARATHON ST, Los Angeles, CA 90029",
+    })
+
+    assert opened is True
+    assert requested_apns == ["5539019017"]
+    assert content["apn"] == "5539019017"
 
 
 def test_lahd_records_grids_do_not_repeat_property_address() -> None:

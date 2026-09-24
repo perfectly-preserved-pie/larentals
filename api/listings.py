@@ -2,8 +2,11 @@ import sqlite3
 from typing import Any
 
 from flask import Blueprint, Response, abort, jsonify
+from loguru import logger
+
 from functions.data_paths import LARENTALS_DB_PATH
 from functions.lahd import (
+    fetch_lahd_property_record_details,
     is_listing_in_los_angeles_city,
     live_lahd_datasets_available,
     lookup_lahd_property_for_listing,
@@ -164,8 +167,9 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
     """Resolve Housing Department context for a listing popup.
 
-    Listings confirmed outside LA City get an out-of-scope result. If the live
-    dataset is unavailable, report that separately instead of implying no match.
+    Resolve the APN from the local address index, then use the same live rows
+    that feed the records drawer for popup counts. A failed or truncated live
+    fetch is unavailable rather than a stale or partial total.
 
     Args:
         payload: Listing city, coordinates, and street address from the detail row.
@@ -184,11 +188,39 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
     if not live_lahd_datasets_available():
         return unavailable_lahd_listing_lookup_result()
 
-    return lookup_lahd_property_for_listing(
+    match = lookup_lahd_property_for_listing(
         address=payload.get("full_street_address"),
         latitude=payload.get("latitude"),
         longitude=payload.get("longitude"),
     )
+    if not match.get("matched") or not match.get("apn"):
+        return match
+
+    try:
+        details = fetch_lahd_property_record_details(str(match["apn"]))
+    except Exception as exc:
+        logger.warning(f"Failed fetching live LAHD summary for APN {match['apn']}: {exc}")
+        return unavailable_lahd_listing_lookup_result()
+
+    detail_status = details.get("detail_status") or {}
+    truncated = details.get("truncated") or {}
+    if detail_status.get("live_records_available") is not True or truncated.get("cases") or truncated.get("violations"):
+        return unavailable_lahd_listing_lookup_result()
+
+    summary = details.get("summary") or {}
+    documented = int(summary.get("documented_issue_count") or 0)
+    unresolved = int(summary.get("unresolved_issue_count") or 0)
+    return {
+        **match,
+        "problem_score": documented + unresolved,
+        "documented_issue_count": documented,
+        "unresolved_issue_count": unresolved,
+        "investigation_case_count": int(summary.get("case_count") or 0),
+        "open_case_count": int(summary.get("open_case_count") or 0),
+        "violations_cited": int(summary.get("violations_cited") or 0),
+        "unresolved_violation_count": int(summary.get("unresolved_violation_count") or 0),
+        "latest_case_date": summary.get("latest_case_date"),
+    }
 
 
 def build_rso_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
