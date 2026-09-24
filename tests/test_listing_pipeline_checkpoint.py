@@ -20,11 +20,14 @@ from functions.dataframe_utils import (
 )
 from functions.geocoding_utils import (
     _google_result_matches_address,
+    _google_result_rejection_reason,
+    _google_verified_zip_correction,
     return_coordinates,
     fill_missing_location_fields_with_checkpoint,
     re_geocode_above_lat_threshold,
     update_dataframe_with_geocoding,
 )
+from functions.listing_location_overrides import apply_reviewed_location_overrides
 from functions.listing_pipeline_checkpoint import (
     ListingCheckpointStore,
     address_fingerprint,
@@ -738,10 +741,15 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
 
 
 def test_google_result_requires_matching_street_and_zip() -> None:
+    """Keep wrong numbers and low precision out while allowing verified partials.
+
+    Returns:
+        None.
+    """
     address = "200 Main St, Los Angeles 90002"
     exact = FakeLocation(address).raw
     assert _google_result_matches_address(address, exact)
-    assert not _google_result_matches_address(address, {**exact, "partial_match": True})
+    assert _google_result_matches_address(address, {**exact, "partial_match": True})
     assert not _google_result_matches_address(
         address, {**exact, "geometry": {"location_type": "APPROXIMATE"}}
     )
@@ -750,25 +758,41 @@ def test_google_result_requires_matching_street_and_zip() -> None:
         for part in exact["address_components"]
     ]}
     assert not _google_result_matches_address(address, wrong_number)
-
-
-
-
-def test_google_accepts_matching_half_street_number() -> None:
-    address = "6226 1/2 Main St, Los Angeles 90002"
-    raw = FakeLocation("6226 Main St, Los Angeles 90002").raw
-    half_number = {**raw, "address_components": [
-        {**part, "long_name": "6226 1/2"} if "street_number" in part["types"] else part
-        for part in raw["address_components"]
+    assert not _google_result_matches_address(
+        address, {**wrong_number, "partial_match": True}
+    )
+    wrong_route = {**exact, "address_components": [
+        {**part, "long_name": "Oak Street"} if "route" in part["types"] else part
+        for part in exact["address_components"]
     ]}
-    wrong_number = {**raw, "address_components": [
-        {**part, "long_name": "6227 1/2"} if "street_number" in part["types"] else part
-        for part in raw["address_components"]
-    ]}
+    assert not _google_result_matches_address(address, wrong_route)
 
-    assert _google_result_matches_address(address, raw)
-    assert _google_result_matches_address(address, half_number)
-    assert not _google_result_matches_address(address, wrong_number)
+
+
+
+def test_google_accepts_fractional_numbers_on_the_same_building() -> None:
+    """Use a fractional neighbor's pin only when its base number and route match.
+
+    Returns:
+        None.
+    """
+    raw = FakeLocation("5257 Main St, Los Angeles 90002").raw
+    for address in (
+        "5257 Main St, Los Angeles 90002",
+        "5257 1/2 Main St, Los Angeles 90002",
+        "5257 3/4 Main St, Los Angeles 90002",
+    ):
+        for number in ("5257", "5257 1/2", "5257 3/4", "5257 1/8"):
+            candidate = {**raw, "address_components": [
+                {**part, "long_name": number} if "street_number" in part["types"] else part
+                for part in raw["address_components"]
+            ]}
+            assert _google_result_matches_address(address, candidate)
+        wrong_number = {**raw, "address_components": [
+            {**part, "long_name": "5258 1/2"} if "street_number" in part["types"] else part
+            for part in raw["address_components"]
+        ]}
+        assert not _google_result_matches_address(address, wrong_number)
 
 
 def test_google_normalizes_decimal_street_number_before_lookup() -> None:
@@ -791,8 +815,13 @@ def test_google_normalizes_decimal_street_number_before_lookup() -> None:
 
 
 def test_google_retries_building_address_when_unit_query_has_no_result() -> None:
+    """Try the unit first, then the building after constrained queries fail.
+
+    Returns:
+        None.
+    """
     geolocator = Mock()
-    geolocator.geocode.side_effect = [None, FakeLocation("2500 Main St, Los Angeles 90002")]
+    geolocator.geocode.side_effect = [None, None, FakeLocation("2500 Main St, Los Angeles 90002")]
 
     coordinates = return_coordinates(
         "2500.0 Main St #1008, Los Angeles 90002",
@@ -804,14 +833,22 @@ def test_google_retries_building_address_when_unit_query_has_no_result() -> None
     assert coordinates == (34.05, -118.25)
     assert [call.args[0] for call in geolocator.geocode.call_args_list] == [
         "2500 Main St #1008, Los Angeles 90002",
+        "2500 Main St #1008, Los Angeles 90002",
         "2500 Main St, Los Angeles 90002",
     ]
 
 
 def test_google_logs_failed_check_and_both_unit_lookup_attempts() -> None:
+    """Show each failed request and the mismatched house number in logs.
+
+    Returns:
+        None.
+    """
     geolocator = Mock()
     geolocator.geocode.side_effect = [
         None,
+        None,
+        FakeLocation("2501 Main St, Los Angeles 90002"),
         FakeLocation("2501 Main St, Los Angeles 90002"),
     ]
     messages = StringIO()
@@ -827,8 +864,199 @@ def test_google_logs_failed_check_and_both_unit_lookup_attempts() -> None:
         logger.remove(sink)
 
     assert coordinates == (None, None)
-    assert "'2500 Main St #1008, Los Angeles 90002': no result" in messages.getvalue()
-    assert "'2500 Main St, Los Angeles 90002': street_number mismatch (expected ['2500'], got '2501')" in messages.getvalue()
+    assert "'2500 Main St #1008, Los Angeles 90002' [ZIP constrained]: no result" in messages.getvalue()
+    assert "'2500 Main St, Los Angeles 90002' [ZIP constrained]: street_number mismatch (expected base '2500', got '2501')" in messages.getvalue()
+
+
+
+@pytest.mark.parametrize(
+    ("address", "google_route"),
+    [
+        ("702 S St Andrews, Los Angeles 90005", "South Saint Andrews Place"),
+        ("1319 E 59th, Los Angeles 90001", "East 59th Place"),
+        ("441 S Doheny, Beverly Hills 90211", "South Doheny Drive"),
+    ],
+)
+def test_google_accepts_expanded_street_names(address: str, google_route: str) -> None:
+    """Accept Google's expanded direction and suffix for the same street.
+
+    Args:
+        address: Listing address containing abbreviated street words.
+        google_route: Equivalent route spelling returned by Google.
+
+    Returns:
+        None.
+    """
+    raw = FakeLocation("200 Main St, Los Angeles 90002").raw
+    number = address.split()[0]
+    zip_code = address[-5:]
+    raw["address_components"] = [
+        {"long_name": number, "types": ["street_number"]},
+        {"long_name": google_route, "types": ["route"]},
+        {"long_name": zip_code, "types": ["postal_code"]},
+    ]
+
+    assert _google_result_matches_address(address, raw)
+
+
+
+def test_google_unrestricted_retry_accepts_verified_address() -> None:
+    """Use the diagnostic candidate when its number, route, and ZIP all match.
+
+    Returns:
+        None.
+    """
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [
+        None,
+        FakeLocation("200 Main St, Los Angeles 90002"),
+    ]
+
+    coordinates = return_coordinates(
+        "200 Main St, Los Angeles 90002",
+        row_index=0,
+        geolocator=geolocator,
+        total_rows=1,
+    )
+
+    assert coordinates == (34.05, -118.25)
+    assert geolocator.geocode.call_args_list[1].kwargs["components"] == {
+        "administrative_area": "CA", "country": "US"
+    }
+
+
+def test_google_unrestricted_retry_still_requires_matching_zip() -> None:
+    """A diagnostic lookup cannot move a pin into Google's different ZIP.
+
+    Returns:
+        None.
+    """
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [
+        None,
+        FakeLocation("200 Main St, Los Angeles 90003"),
+    ]
+    messages = StringIO()
+    sink = logger.add(messages, format="{message}", level="WARNING")
+    try:
+        coordinates = return_coordinates(
+            "200 Main St, Los Angeles 90002",
+            row_index=0,
+            geolocator=geolocator,
+            total_rows=1,
+        )
+    finally:
+        logger.remove(sink)
+
+    assert coordinates == (None, None)
+    assert "postal_code mismatch (expected '90002', got '90003')" in messages.getvalue()
+    assert geolocator.geocode.call_args_list[1].kwargs["components"] == {
+        "administrative_area": "CA", "country": "US"
+    }
+
+
+
+
+
+def test_google_zip_correction_requires_exact_rooftop_building() -> None:
+    """A ZIP override cannot use a partial or different-building candidate.
+
+    Returns:
+        None.
+    """
+    address = "200 Main St, Los Angeles 90002"
+    candidate = FakeLocation("200 Main St, Los Angeles 90003").raw
+    candidate["formatted_address"] = "200 Main St, Los Angeles, CA 90003, USA"
+    assert _google_verified_zip_correction(
+        address, candidate, _google_result_rejection_reason(address, candidate)
+    ) == "90003"
+
+    for change in ("route", "number", "city", "precision", "partial"):
+        changed = {**candidate, "address_components": [part.copy() for part in candidate["address_components"]]}
+        if change == "route":
+            changed["address_components"][1]["long_name"] = "Oak Street"
+        elif change == "number":
+            changed["address_components"][0]["long_name"] = "201"
+        elif change == "city":
+            changed["formatted_address"] = "200 Main St, Beverly Hills, CA 90003, USA"
+        elif change == "precision":
+            changed["geometry"] = {"location_type": "RANGE_INTERPOLATED"}
+        else:
+            changed["partial_match"] = True
+        assert _google_verified_zip_correction(
+            address, changed, _google_result_rejection_reason(address, changed)
+        ) is None
+
+
+def test_google_zip_correction_updates_address_and_checkpoint(tmp_path: Path) -> None:
+    """Reuse a verified rooftop ZIP correction with its corrected address hash.
+
+    Args:
+        tmp_path: Temporary directory for an isolated checkpoint database.
+
+    Returns:
+        None.
+    """
+    original_address = "200 Main St, Los Angeles 90002"
+    corrected_address = "200 Main St, Los Angeles 90003"
+    candidate = FakeLocation(corrected_address)
+    candidate.raw["formatted_address"] = "200 Main St, Los Angeles, CA 90003, USA"
+    geolocator = Mock()
+    geolocator.geocode.side_effect = [None, candidate]
+    store = ListingCheckpointStore(tmp_path / "zip-correction.sqlite", listing_type="lease")
+    source = pd.DataFrame([{
+        "mls_number": "MLS-ZIP", "street_number": "200", "street_name": "Main St",
+        "city": "Los Angeles", "zip_code": "90002",
+        "full_street_address": original_address,
+    }])
+
+    first = update_dataframe_with_geocoding(
+        source.copy(), geolocator=geolocator, checkpoint_store=store
+    )
+    second = update_dataframe_with_geocoding(
+        source.copy(), geolocator=geolocator, checkpoint_store=store
+    )
+
+    assert first.at[0, "geocode_status"] == "success"
+    assert first.at[0, "zip_code"] == "90003"
+    assert first.at[0, "full_street_address"] == corrected_address
+    assert first.at[0, "geocode_address_hash"] == address_fingerprint(corrected_address)
+    assert store.get("MLS-ZIP")["resolved_zip_code"] == "90003"
+    assert second.at[0, "geocode_status"] == "cached"
+    assert second.at[0, "zip_code"] == "90003"
+    assert second.at[0, "full_street_address"] == corrected_address
+    assert geolocator.geocode.call_count == 2
+
+
+def test_reviewed_lease_address_corrections_for_google_failures() -> None:
+    """Apply only the MLS-specific street and ZIP corrections found in the audit.
+
+    Returns:
+        None.
+    """
+    corrections = {
+        "26990721": ("12th Ave #A", "90019"),
+        "26990527": ("Original", "90064"),
+        "26991535": ("1/2 W 23rd St", "90007"),
+        "26990391": ("Cahuenga Blvd E #4121", "90068"),
+        "PW26206410MR": ("Cherry Ave", "90755"),
+        "CV26203174MR": ("College Ave #4", "90602"),
+        "26990365": ("N Van Ness Ave", "90004"),
+        "26990387": ("W Knoll Dr #301", "90069"),
+    }
+    source = pd.DataFrame(
+        {"mls_number": list(corrections), "street_name": "Original",
+         "zip_code": [
+             "90405" if mls == "26990527" else "90011" if mls == "26991535"
+             else expected_zip for mls, (_, expected_zip) in corrections.items()
+         ],
+         "street_number": "100", "city": "Los Angeles"}
+    )
+
+    corrected = apply_reviewed_location_overrides(source, "lease")
+
+    for row in corrected.itertuples():
+        assert (row.street_name, row.zip_code) == corrections[row.mls_number]
 
 
 def test_geocode_is_reused_for_the_same_address(

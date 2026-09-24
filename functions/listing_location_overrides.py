@@ -9,6 +9,8 @@ from functions.listing_report_utils import normalize_mls_number
 
 ZIP_OVERRIDES = {
     ("buy", "TR26010924MR"): "91732",  # 11547 Lower Azusa Rd, El Monte
+    ("lease", "26990527"): "90064",  # 2594 Amherst Ave, source ZIP 90405
+    ("lease", "26991535"): "90007",  # 1363 1/2 W 23rd St, source ZIP 90011
     ("buy", "SR26018258MR"): "91706",  # 4306 Baldwin Park Blvd
     ("lease", "WS26121911MR"): "91755",  # 130 New Ave, unit 5
     ("lease", "WS26115741MR"): "91755",  # 130 New Ave, unit 6
@@ -86,6 +88,13 @@ CITY_OVERRIDES = {
 
 STREET_OVERRIDES = {
     ("buy", "IG26164136MR"): "10251 Angel Ln",
+    ("lease", "26990721"): "12th Ave #A",
+    ("lease", "26991535"): "1/2 W 23rd St",
+    ("lease", "26990391"): "Cahuenga Blvd E #4121",
+    ("lease", "PW26206410MR"): "Cherry Ave",
+    ("lease", "CV26203174MR"): "College Ave #4",
+    ("lease", "26990365"): "N Van Ness Ave",
+    ("lease", "26990387"): "W Knoll Dr #301",
     ("buy", "OC26161534MR"): "1507 Mission Ln",
     ("lease", "SR26163104MR"): "Sherman Way",
     ("lease", "SR26022546MR"): "Brand Blvd",

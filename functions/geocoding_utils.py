@@ -44,30 +44,47 @@ def _ensure_object_columns(
 
 
 def _google_street_key(value: str) -> str:
-    """Make a street name comparable with Google's route component.
+    """Compare common street spellings without losing the street identity.
 
-    Punctuation and common suffix spellings should not make a matching address
-    look different. This key is only used for the route similarity check.
+    Google expands directions and suffixes (for example ``S St Andrews`` to
+    ``South Saint Andrews Place``). Normalize whole words so suffix removal
+    cannot accidentally alter a street name such as ``East``.
 
     Args:
         value: Street name from the listing or geocoder response.
 
     Returns:
-        Lowercase alphanumeric street key without a common suffix.
+        Comparable alphanumeric street key.
     """
-    normalized = re.sub(r"[^a-z0-9]", "", value.casefold())
-    for suffix in ("boulevard", "blvd", "avenue", "ave", "street", "st", "road", "rd"):
-        if normalized.endswith(suffix):
-            return normalized[: -len(suffix)]
-    return normalized
+    words = re.findall(r"[a-z0-9]+", value.casefold())
+    directions = {"n": "north", "s": "south", "e": "east", "w": "west"}
+    suffixes = {
+        "st": "street", "ave": "avenue", "blvd": "boulevard", "rd": "road",
+        "dr": "drive", "pl": "place", "ct": "court", "ln": "lane",
+        "ter": "terrace", "pkwy": "parkway", "cir": "circle",
+    }
+    normalized = []
+    for index, word in enumerate(words):
+        if word == "st" and index < len(words) - 1 and words[index + 1] not in suffixes:
+            word = "saint"
+        else:
+            word = directions.get(word, suffixes.get(word, word))
+        if word in directions.values() and normalized and normalized[-1] == word:
+            continue
+        normalized.append(word)
+    while normalized and normalized[-1] in suffixes.values():
+        normalized.pop()
+    return "".join(normalized)
 
 
 def _google_result_rejection_reason(address: str, raw: dict) -> Optional[str]:
     """Explain why a Google candidate cannot safely locate this listing.
 
     Google can return a plausible point for a nearby property. Report the first
-    failed check without another API request. A half-address may have a Google
-    street number of either its base number or the explicit ``1/2`` number.
+    failed check without another API request. Fractional house numbers such as
+    ``5257 1/2`` share the base building number ``5257`` for map pin purposes.
+    A partial-match flag is acceptable when Google still supplies matching
+    street number, route, ZIP, and usable precision.
 
     Args:
         address: Address sent to the geocoder.
@@ -76,8 +93,6 @@ def _google_result_rejection_reason(address: str, raw: dict) -> Optional[str]:
     Returns:
         The first failed check, or None when the candidate matches.
     """
-    if raw.get("partial_match"):
-        return "partial_match=true"
     location_type = raw.get("geometry", {}).get("location_type")
     if location_type not in {"ROOFTOP", "RANGE_INTERPOLATED", "GEOMETRIC_CENTER"}:
         return f"location_type={location_type!r}"
@@ -87,15 +102,13 @@ def _google_result_rejection_reason(address: str, raw: dict) -> Optional[str]:
     actual_zip = _google_address_component(raw, ("postal_code",))
     actual_route = _google_address_component(raw, ("route",))
     if expected_number:
-        accepted_numbers = {expected_number.group(1)}
-        if re.match(r"\s*\d+\s+1/2\b", address):
-            accepted_numbers.add(f"{expected_number.group(1)} 1/2")
-        if actual_number not in accepted_numbers:
-            return f"street_number mismatch (expected {sorted(accepted_numbers)!r}, got {actual_number!r})"
+        actual_number_parts = re.fullmatch(r"(\d+)(?:\s+\d+/\d+)?", actual_number or "")
+        if not actual_number_parts or actual_number_parts.group(1) != expected_number.group(1):
+            return f"street_number mismatch (expected base {expected_number.group(1)!r}, got {actual_number!r})"
     if expected_zip and actual_zip != expected_zip.group(1):
         return f"postal_code mismatch (expected {expected_zip.group(1)!r}, got {actual_zip!r})"
     street_line = address.split(",", 1)[0]
-    street_line = re.sub(r"^\s*\d+(?:\s+1/2)?\s*", "", street_line)
+    street_line = re.sub(r"^\s*\d+(?:\s+\d+/\d+)?\s*", "", street_line)
     street_line = re.split(r"\s+(?:#{1,2}|apt\b|unit\b|ste\b)", street_line, maxsplit=1, flags=re.I)[0]
     if street_line.strip():
         score = SequenceMatcher(
@@ -103,6 +116,8 @@ def _google_result_rejection_reason(address: str, raw: dict) -> Optional[str]:
         ).ratio()
         if score < 0.65:
             return f"route mismatch (expected {street_line.strip()!r}, got {actual_route!r}, similarity {score:.2f})"
+    if raw.get("partial_match") and (not expected_number or not expected_zip):
+        return "partial_match=true (street number or ZIP cannot be verified)"
     return None
 
 
@@ -122,21 +137,107 @@ def _google_result_matches_address(address: str, raw: dict) -> bool:
     return _google_result_rejection_reason(address, raw) is None
 
 
-def return_coordinates(
+
+def _google_verified_zip_correction(address: str, raw: dict, reason: Optional[str]) -> Optional[str]:
+    """Trust Google's ZIP only for a precise match to the listed building.
+
+    A wrong source ZIP can make Google's constrained request return nothing.
+    An unrestricted rooftop result may correct it only when the number, route,
+    and city still identify the same property; a nearby road is insufficient.
+
+    Args:
+        address: Listing address used for this geocoding attempt.
+        raw: Google's response fields for the candidate result.
+        reason: Failed strict check for the candidate.
+
+    Returns:
+        Google's five-digit ZIP when the other address fields verify, or None.
+    """
+    if not reason or not reason.startswith("postal_code mismatch"):
+        return None
+    if raw.get("partial_match") or raw.get("geometry", {}).get("location_type") != "ROOFTOP":
+        return None
+    google_zip = _google_address_component(raw, ("postal_code",))
+    google_route = _google_address_component(raw, ("route",))
+    if not google_zip or not re.fullmatch(r"\d{5}", google_zip) or not google_route:
+        return None
+    street_line, separator, locality = address.partition(",")
+    if not separator:
+        return None
+    listed_route = re.sub(r"^\s*\d+(?:\s+\d+/\d+)?\s*", "", street_line)
+    listed_route = re.split(
+        r"\s+(?:#{1,2}|apt\b|unit\b|ste\b)", listed_route, maxsplit=1, flags=re.I
+    )[0]
+    if not listed_route or _google_street_key(listed_route) != _google_street_key(google_route):
+        return None
+    listed_city = re.sub(r"\s+\d{5}(?:\.0)?\s*$", "", locality).strip().casefold()
+    formatted_address = str(raw.get("formatted_address") or "").casefold()
+    if not listed_city or listed_city not in formatted_address:
+        return None
+    return google_zip
+
+
+def _address_with_zip(address: str, zip_code: str) -> str:
+    """Replace the trailing listing ZIP while preserving its street and city.
+
+    The full address and geocode fingerprint must refer to the same corrected
+    ZIP, or a later pipeline run would repeat the paid lookup.
+
+    Args:
+        address: Full listing address ending in a five-digit ZIP.
+        zip_code: Verified replacement ZIP from Google.
+
+    Returns:
+        Full address with the verified ZIP.
+    """
+    return re.sub(r"(?<!\d)\d{5}(?:\.0)?\s*$", zip_code, address)
+
+
+def _set_google_zip_on_row(
+    df: pd.DataFrame, row_index: int, address: str, zip_code: str
+) -> str:
+    """Keep the displayed ZIP and full address aligned after a correction.
+
+    The source report remains untouched. Only this working listing row changes,
+    and its address fingerprint is recomputed by the caller for checkpoint use.
+
+    Args:
+        df: Listing dataframe being geocoded.
+        row_index: Row whose verified ZIP differs from the report.
+        address: Full source address on that row.
+        zip_code: ZIP verified by the Google rooftop result.
+
+    Returns:
+        Full address with the corrected ZIP.
+    """
+    corrected_address = _address_with_zip(address, zip_code)
+    if "zip_code" in df.columns:
+        df["zip_code"] = df["zip_code"].astype("object")
+    df.at[row_index, "zip_code"] = zip_code
+    df.at[row_index, "full_street_address"] = corrected_address
+    return corrected_address
+
+
+def _return_coordinates_with_zip(
     address: str,
     row_index: int,
     geolocator: GoogleV3,
     total_rows: int,
     use_nominatim: bool = False,
     nominatim_user_agent: str = "larentals-geocoder",
-    nominatim_timeout: int = 10
-) -> Tuple[Optional[float], Optional[float]]:
-    """Geocode one listing address with the selected provider.
+    nominatim_timeout: int = 10,
+    allow_zip_correction: bool = False,
+) -> Tuple[Optional[float], Optional[float], Optional[str]]:
+    """Geocode a listing and carry a verified Google ZIP correction.
 
     Numeric source columns can turn a street number into ``800.0``. Normalize
     it before querying Google. For a unit address with no usable candidate,
     retry the building address and apply the same address checks before moving
-    a listing pin. Lookup failures return empty coordinates for the pipeline.
+    a listing pin. A query without the ZIP filter diagnoses source ZIP errors,
+    but its candidate must still match the listing ZIP unless the dataframe
+    caller allows a verified correction. Failures return empty coordinates.
+    The third return field is set only when a
+    rooftop result verifies the building but contradicts the source ZIP.
 
     Parameters:
     address (str): The full street address.
@@ -146,9 +247,11 @@ def return_coordinates(
     use_nominatim (bool): Whether to use Nominatim instead of GoogleV3.
     nominatim_user_agent (str): User-agent sent to Nominatim.
     nominatim_timeout (int): Nominatim request timeout in seconds.
+    allow_zip_correction (bool): Whether a verified rooftop result may replace the source ZIP.
 
     Returns:
-    Tuple[Optional[float], Optional[float]]: Latitude and Longitude as a tuple, or (None, None) if unsuccessful.
+    Tuple[Optional[float], Optional[float], Optional[str]]: Latitude, longitude,
+    and an optional corrected ZIP. Coordinates are None when no candidate passes.
     """
     if use_nominatim:
         try:
@@ -164,11 +267,11 @@ def return_coordinates(
                 timeout=nominatim_timeout
             )
             if location:
-                return location.latitude, location.longitude
+                return location.latitude, location.longitude, None
             logger.error(f"[{row_index}/{total_rows}] Nominatim: no result for '{address}'")
         except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
             logger.error(f"[{row_index}/{total_rows}] Nominatim error: {e}")
-        return None, None
+        return None, None, None
 
     # default: GoogleV3
     try:
@@ -188,23 +291,75 @@ def return_coordinates(
         queries = [normalized_address]
         if building_street != street_line:
             queries.append(building_street + separator + locality)
+        attempts = [("ZIP constrained", components)]
+        if zip_match:
+            attempts.append(("without ZIP filter", {'administrative_area': 'CA', 'country': 'US'}))
         failures = []
         for query in queries:
-            loc = geolocator.geocode(query, timeout=10, components=components)
-            if loc:
-                rejection_reason = _google_result_rejection_reason(query, loc.raw)
-                if rejection_reason is None:
-                    return loc.latitude, loc.longitude
-                failures.append(f"{query!r}: {rejection_reason}")
-            else:
-                failures.append(f"{query!r}: no result")
+            for label, request_components in attempts:
+                loc = geolocator.geocode(query, timeout=10, components=request_components)
+                if loc:
+                    rejection_reason = _google_result_rejection_reason(query, loc.raw)
+                    if rejection_reason is None:
+                        return loc.latitude, loc.longitude, None
+                    corrected_zip = (
+                        _google_verified_zip_correction(query, loc.raw, rejection_reason)
+                        if allow_zip_correction else None
+                    )
+                    if corrected_zip:
+                        logger.info(
+                            f"[{row_index}/{total_rows}] GoogleV3: corrected ZIP for "
+                            f"'{address}' to {corrected_zip} from a matching rooftop result"
+                        )
+                        return loc.latitude, loc.longitude, corrected_zip
+                    failures.append(
+                        f"{query!r} [{label}]: {rejection_reason}; "
+                        f"Google returned {loc.raw.get('formatted_address')!r}"
+                    )
+                else:
+                    failures.append(f"{query!r} [{label}]: no result")
         logger.warning(
             f"[{row_index}/{total_rows}] GoogleV3: no usable result for "
             f"'{address}'; attempts: {'; '.join(failures)}"
         )
     except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
         logger.warning(f"[{row_index}/{total_rows}] GoogleV3 error: {e}")
-    return None, None
+    return None, None, None
+
+
+def return_coordinates(
+    address: str,
+    row_index: int,
+    geolocator: GoogleV3,
+    total_rows: int,
+    use_nominatim: bool = False,
+    nominatim_user_agent: str = "larentals-geocoder",
+    nominatim_timeout: int = 10,
+) -> Tuple[Optional[float], Optional[float]]:
+    """Return coordinates for callers that do not store ZIP corrections.
+
+    The dataframe pipeline uses the detailed result so it can update the ZIP
+    and address hash together. Coordinate-only callers keep rejecting ZIP
+    mismatches because they have no place to store a correction.
+
+    Args:
+        address: Full listing address.
+        row_index: Row index for logging.
+        geolocator: Configured geocoding provider.
+        total_rows: Total rows for logging.
+        use_nominatim: Whether to use Nominatim instead of Google.
+        nominatim_user_agent: User agent sent to Nominatim.
+        nominatim_timeout: Nominatim timeout in seconds.
+
+    Returns:
+        Latitude and longitude, or two None values when no result passes.
+    """
+    latitude, longitude, _ = _return_coordinates_with_zip(
+        address, row_index, geolocator, total_rows,
+        use_nominatim, nominatim_user_agent, nominatim_timeout,
+    )
+    return latitude, longitude
+
 
 def fetch_missing_city(address: str, geolocator: GoogleV3) -> Optional[str]:
     """Fetches the city name for a given address using geocoding.
@@ -508,8 +663,9 @@ def update_dataframe_with_geocoding(
 ) -> pd.DataFrame:
     """Geocode listings with address-keyed checkpoint reuse.
 
-    A checkpoint hit avoids another paid lookup. Legacy coordinates are reused
-    only when their normalized address still matches the incoming address.
+    A checkpoint hit avoids another paid lookup. A verified Google ZIP change
+    updates the row's displayed address and fingerprint together, and the
+    checkpoint can restore that correction on the next run.
 
     Args:
         df: Dataframe to update dataframe with geocoding.
@@ -553,6 +709,17 @@ def update_dataframe_with_geocoding(
         address = df.at[row_index, "full_street_address"]
         address_hash = address_fingerprint(address)
         record = checkpoint_store.get(mls_number) if checkpoint_store else None
+        cached_zip = record.get("resolved_zip_code") if record else None
+        if (
+            not use_nominatim
+            and isinstance(cached_zip, str)
+            and re.fullmatch(r"\d{5}", cached_zip)
+            and record.get("geocode_status") in SUCCESS_STATUSES
+            and record.get("geocode_address_hash")
+            == address_fingerprint(_address_with_zip(address, cached_zip))
+        ):
+            address = _set_google_zip_on_row(df, row_index, address, cached_zip)
+            address_hash = address_fingerprint(address)
 
         checkpoint_hit = bool(
             address_hash
@@ -568,6 +735,7 @@ def update_dataframe_with_geocoding(
 
         should_sync = False
         geocode_error = None
+        corrected_zip = None
         if checkpoint_hit:
             latitude = record.get("latitude")
             longitude = record.get("longitude")
@@ -603,18 +771,22 @@ def update_dataframe_with_geocoding(
                 longitude = existing_row.get("longitude")
                 status = "reused"
             else:
-                latitude, longitude = return_coordinates(
+                latitude, longitude, corrected_zip = _return_coordinates_with_zip(
                     address=address,
                     row_index=row_index,
                     geolocator=geolocator,
                     total_rows=len(df),
                     use_nominatim=use_nominatim,
+                    allow_zip_correction=True,
                 )
                 if _usable_coordinates(
                     latitude,
                     longitude,
                     max_valid_latitude=max_valid_latitude,
                 ):
+                    if corrected_zip:
+                        address = _set_google_zip_on_row(df, row_index, address, corrected_zip)
+                        address_hash = address_fingerprint(address)
                     status = "success"
                 else:
                     status = "failed"
@@ -628,15 +800,17 @@ def update_dataframe_with_geocoding(
         df.at[row_index, "geocode_address_hash"] = address_hash
 
         if checkpoint_store and should_sync:
-            checkpoint_store.checkpoint(
-                mls_number,
-                geocode_status=status,
-                geocode_error=geocode_error,
-                geocode_provider=provider,
-                geocode_address_hash=address_hash,
-                latitude=latitude,
-                longitude=longitude,
-            )
+            checkpoint_fields = {
+                "geocode_status": status,
+                "geocode_error": geocode_error,
+                "geocode_provider": provider,
+                "geocode_address_hash": address_hash,
+                "latitude": latitude,
+                "longitude": longitude,
+            }
+            if corrected_zip and status == "success":
+                checkpoint_fields["resolved_zip_code"] = corrected_zip
+            checkpoint_store.checkpoint(mls_number, **checkpoint_fields)
 
     df.drop(
         columns=["_prefetched_latitude", "_prefetched_longitude"],
