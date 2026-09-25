@@ -517,7 +517,6 @@ def test_inactive_check_falls_back_from_bhhs_to_agency(
         None.
     """
     checks: list[str] = []
-    deleted_images: list[str] = []
 
     monkeypatch.setattr(
         "functions.dataframe_utils.check_expired_listing_bhhs",
@@ -526,10 +525,6 @@ def test_inactive_check_falls_back_from_bhhs_to_agency(
     monkeypatch.setattr(
         "functions.dataframe_utils.check_expired_listing_theagency",
         lambda url, mls: checks.append("The Agency") or True,
-    )
-    monkeypatch.setattr(
-        "functions.dataframe_utils.delete_single_mls_image",
-        deleted_images.append,
     )
 
     result = remove_inactive_listings(
@@ -547,7 +542,6 @@ def test_inactive_check_falls_back_from_bhhs_to_agency(
 
     assert result.empty
     assert checks == ["BHHS", "The Agency"]
-    assert deleted_images == ["MLS-4"]
 
 
 def test_inactive_check_ignores_spoofed_bhhs_host(
@@ -627,10 +621,6 @@ def test_inactive_check_uses_rentcast_for_missing_listing_url(
         "functions.dataframe_utils.check_expired_listing_rentcast",
         fake_rentcast,
     )
-    monkeypatch.setattr(
-        "functions.dataframe_utils.delete_single_mls_image",
-        lambda mls: None,
-    )
 
     result = remove_inactive_listings(
         pd.DataFrame(
@@ -667,7 +657,6 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
         None.
     """
     checks: list[tuple[str, str]] = []
-    deleted_images: list[str] = []
 
     def fake_agency_check(url: str, mls: str) -> bool:
         """Handle fake agency check.
@@ -687,10 +676,6 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
     monkeypatch.setattr(
         "functions.dataframe_utils.check_expired_listing_theagency",
         fake_agency_check,
-    )
-    monkeypatch.setattr(
-        "functions.dataframe_utils.delete_single_mls_image",
-        deleted_images.append,
     )
     store = ListingCheckpointStore(
         tmp_path / "lease.sqlite",
@@ -737,7 +722,6 @@ def test_inactive_checks_resume_from_checkpoint_until_source_changes(
         ("https://www.theagencyre.com/listing/active", "MLS-ACTIVE"),
         ("https://www.theagencyre.com/listing/inactive", "MLS-INACTIVE"),
     ]
-    assert deleted_images == ["MLS-INACTIVE", "MLS-INACTIVE", "MLS-INACTIVE"]
     assert store.get("MLS-ACTIVE")["inactive_check_status"] == "success"
     assert store.get("MLS-INACTIVE")["inactive_check_is_inactive"] == 1
 

@@ -1,4 +1,4 @@
-from functions.mls_image_processing_utils import imagekit_transform, delete_single_mls_image
+from functions.mls_image_processing_utils import imagekit_transform
 from functions.webscraping_utils import (
     check_expired_listing_bhhs,
     check_expired_listing_rentcast,
@@ -220,7 +220,9 @@ def remove_inactive_listings(
     Completed provider checks are checkpointed one listing at a time. A result
     is reusable only while both the source-file revision and listing URL match,
     which makes an interrupted run resumable without making future weekly
-    refreshes stale.
+    refreshes stale. ImageKit cleanup runs after the listing tables are
+    published, so an interrupted pipeline cannot delete a photo still used by
+    the database.
 
     Args:
         df: Dataframe to remove inactive listings.
@@ -290,7 +292,6 @@ def remove_inactive_listings(
 
         if inactive:
             to_delete.append(mls)
-            delete_single_mls_image(mls)
 
         elapsed = time.monotonic() - started_at
         remaining = elapsed / position * (total_rows - position)

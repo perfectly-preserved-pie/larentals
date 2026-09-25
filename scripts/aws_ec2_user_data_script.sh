@@ -206,13 +206,41 @@ with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as connection:
 PY
 
 echo "----- RECONCILE IMAGEKIT WITH ACTIVE LISTINGS -----"
-uv run reconcile-imagekit-assets \
+IMAGEKIT_AUDIT_DIR="$BASE_DIR/data/audits/imagekit_reconcile_$TIMESTAMP"
+if uv run reconcile-imagekit-assets \
   --apply \
   --db-path "$DB_PATH" \
+  --audit-dir "$IMAGEKIT_AUDIT_DIR" \
   --buy-checkpoint-path "$CHECKPOINT_DIR/buy.sqlite" \
   --lease-checkpoint-path "$CHECKPOINT_DIR/lease.sqlite" \
   --checkpoint-s3-bucket "$S3_BUCKET" \
-  --checkpoint-s3-prefix "$CHECKPOINT_S3_PREFIX"
+  --checkpoint-s3-prefix "$CHECKPOINT_S3_PREFIX"; then
+  :
+else
+  reconcile_status=$?
+  if (( reconcile_status != 3 )); then
+    exit "$reconcile_status"
+  fi
+  echo "WARNING: ImageKit deletion exceeded its safety limit; cleanup deferred for review." >&2
+fi
+
+# Preserve the proposed deletion list before the instance shuts down.
+uv run python - "$IMAGEKIT_AUDIT_DIR" "$S3_BUCKET" "$TIMESTAMP" <<'PY_AUDIT'
+import sys
+from pathlib import Path
+
+import boto3
+
+audit_dir = Path(sys.argv[1])
+bucket = sys.argv[2]
+timestamp = sys.argv[3]
+s3 = boto3.client("s3")
+for name in ("delete_current.csv", "summary.json"):
+    path = audit_dir / name
+    key = f"audits/imagekit_reconcile/{timestamp}/{name}"
+    s3.upload_file(str(path), bucket, key)
+    print(f"Uploaded s3://{bucket}/{key}")
+PY_AUDIT
 
 echo "----- UPLOAD DB -----"
 uv run python - "$DB_PATH" "$S3_BUCKET" "$S3_KEY" <<'PY'

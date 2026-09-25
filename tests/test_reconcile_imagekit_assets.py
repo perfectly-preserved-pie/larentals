@@ -1,10 +1,15 @@
 """Tests for guarded ImageKit-to-listing reconciliation."""
 
 from pathlib import Path
+import json
 import sqlite3
 
+import pytest
+
 from scripts.reconcile_imagekit_assets import (
+    DeletionGuardExceeded,
     _reconcile_database,
+    reconcile,
     load_database_photo_state,
 )
 
@@ -116,3 +121,59 @@ def test_reconcile_database_clears_inactive_missing_and_placeholder_urls(
         ).fetchone()
     assert rows == {"D": "success", "E": "failed"}
     assert missing_photo == (None,)
+
+
+def test_guard_writes_audit_without_deleting_assets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep an over-limit cleanup reviewable without changing remote assets.
+
+    The guarded exit leaves a manifest that bootstrap can preserve after publishing the database.
+
+    Args:
+        tmp_path: Pytest-managed temporary directory.
+        monkeypatch: Replaces the remote ImageKit client with a fixed asset list.
+
+    Returns:
+        None.
+    """
+    database = tmp_path / "listings.db"
+    _create_listing_database(database)
+    assets = [
+        {"fileId": str(index), "filePath": path, "size": 10}
+        for index, path in enumerate(("/listings/buy/A", "/D", "/E", "/orphan"))
+    ]
+
+    class FakeClient:
+        """Expose current files and fail if guarded cleanup attempts deletion."""
+
+        def __init__(self, private_key: str) -> None:
+            self.private_key = private_key
+
+        def list_assets(self, asset_type: str) -> list[dict]:
+            assert asset_type == "file"
+            return assets
+
+        def delete_files(self, file_ids: object) -> int:
+            raise AssertionError("guarded cleanup must not delete files")
+
+    monkeypatch.setattr("scripts.reconcile_imagekit_assets.ImageKitMediaClient", FakeClient)
+    audit_dir = tmp_path / "audit"
+    options = dict(
+        db_path=database,
+        audit_dir=audit_dir,
+        private_key="test",
+        url_endpoint="https://ik.imagekit.io/account",
+        force=False,
+        max_delete_fraction=0.10,
+        min_active_references=1,
+    )
+
+    with pytest.raises(DeletionGuardExceeded, match="25.0%"):
+        reconcile(**options, apply=True)
+
+    summary = json.loads((audit_dir / "summary.json").read_text())
+    assert summary["status"] == "review_required"
+    assert summary["current_assets_to_delete"] == 1
+    assert "/orphan" in (audit_dir / "delete_current.csv").read_text()
+    assert reconcile(**options, apply=False)["status"] == "review_required"

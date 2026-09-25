@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import sys
 import time
 from typing import Any, Iterable
 from urllib.parse import unquote, urlparse
@@ -24,6 +25,15 @@ from functions.data_paths import CHECKPOINT_DIR, LARENTALS_DB_PATH
 
 IMAGEKIT_FILES_API = "https://api.imagekit.io/v1/files"
 NULL_TEXT = frozenset({"", "none", "nan", "null", "nat", "<na>"})
+DELETE_GUARD_EXIT_CODE = 3
+
+
+class DeletionGuardExceeded(RuntimeError):
+    """Signal that a reviewable cleanup proposal exceeded the automatic limit.
+
+    The distinct exit code lets bootstrap publish the validated database while
+    leaving remote media untouched for review.
+    """
 
 
 @dataclass(frozen=True)
@@ -497,12 +507,6 @@ def reconcile(
         if unquote(str(asset["filePath"])) not in state.active_paths
     ]
     delete_fraction = len(delete_rows) / len(current) if current else 0.0
-    if delete_fraction > max_delete_fraction and not force:
-        raise RuntimeError(
-            "Refusing to delete "
-            f"{delete_fraction:.1%} of current ImageKit files; pass --force after review"
-        )
-
     audit_dir.mkdir(parents=True, exist_ok=True)
     _write_csv(audit_dir / "delete_current.csv", delete_rows)
     summary: dict[str, Any] = {
@@ -513,12 +517,21 @@ def reconcile(
         "current_assets_before": len(current),
         "current_assets_to_delete": len(delete_rows),
         "current_bytes_to_delete": sum(row["size"] for row in delete_rows),
+        "delete_fraction": delete_fraction,
+        "max_delete_fraction": max_delete_fraction,
     }
-    if not apply:
-        (audit_dir / "summary.json").write_text(
-            json.dumps(summary, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
+    guarded = delete_fraction > max_delete_fraction and not force
+    summary["status"] = "review_required" if guarded else "ready"
+    (audit_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    if guarded and apply:
+        raise DeletionGuardExceeded(
+            f"Refusing to delete {delete_fraction:.1%} of current ImageKit files; "
+            f"review {audit_dir / 'delete_current.csv'} before using --force"
         )
+    if not apply:
         return summary
 
     summary["current_assets_deleted"] = client.delete_files(
@@ -595,6 +608,7 @@ def reconcile(
         )
     if client.list_version_page():
         raise RuntimeError("Post-cleanup verification found historical versions")
+    summary["status"] = "completed"
     summary["current_assets_after"] = len(current)
     summary["historical_versions_after"] = 0
     (audit_dir / "summary.json").write_text(
@@ -645,20 +659,24 @@ def main() -> None:
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     audit_dir = Path(args.audit_dir or f"data/audits/imagekit_reconcile_{timestamp}")
-    result = reconcile(
-        db_path=Path(args.db_path),
-        audit_dir=audit_dir,
-        private_key=private_key,
-        url_endpoint=url_endpoint,
-        apply=args.apply,
-        force=args.force,
-        max_delete_fraction=args.max_delete_fraction,
-        min_active_references=args.min_active_references,
-        buy_checkpoint_path=Path(args.buy_checkpoint_path),
-        lease_checkpoint_path=Path(args.lease_checkpoint_path),
-        checkpoint_s3_bucket=args.checkpoint_s3_bucket,
-        checkpoint_s3_prefix=args.checkpoint_s3_prefix,
-    )
+    try:
+        result = reconcile(
+            db_path=Path(args.db_path),
+            audit_dir=audit_dir,
+            private_key=private_key,
+            url_endpoint=url_endpoint,
+            apply=args.apply,
+            force=args.force,
+            max_delete_fraction=args.max_delete_fraction,
+            min_active_references=args.min_active_references,
+            buy_checkpoint_path=Path(args.buy_checkpoint_path),
+            lease_checkpoint_path=Path(args.lease_checkpoint_path),
+            checkpoint_s3_bucket=args.checkpoint_s3_bucket,
+            checkpoint_s3_prefix=args.checkpoint_s3_prefix,
+        )
+    except DeletionGuardExceeded as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(DELETE_GUARD_EXIT_CODE) from None
     print(json.dumps(result, indent=2, sort_keys=True))
 
 
