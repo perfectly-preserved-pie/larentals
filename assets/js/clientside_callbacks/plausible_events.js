@@ -85,7 +85,7 @@
     const SECTION_LABELS = Object.freeze({
         listed_date: "Listed Date",
         location: "Location",
-        subtypes: "Subtypes",
+        subtypes: "Home Type",
         monthly_rent: "Monthly Rent",
         rent_control: "Rent Control",
         bedrooms: "Bedrooms",

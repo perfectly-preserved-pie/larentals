@@ -1,7 +1,6 @@
 from dash import dcc, html
 import dash_mantine_components as dmc
 import numpy as np
-import pandas as pd
 
 from .component_base import BaseClass, _build_cached_geojson_payload, _db_cache_token
 from .component_factories import (
@@ -20,6 +19,7 @@ from .component_factories import (
     iqr_capped_range_bounds,
 )
 from .component_models import FilterSection, PageConfig, PageParts
+from .filter_options import build_home_type_options
 from .responsive_filter_ui import build_map_filter_toolbar, build_mobile_price_legend
 from functions.distribution import attach_distribution
 
@@ -100,12 +100,10 @@ class BuyComponents(BaseClass):
             "display": "block",
         },
         active_filter_items=(
-            "listed_date",
             "location",
-            "subtypes",
             "list_price",
+            "subtypes",
             "bedrooms",
-            "bathrooms",
         ),
         accordion_class_name="options-accordion",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -199,13 +197,13 @@ class BuyComponents(BaseClass):
     def _build_filter_sections(self) -> list[FilterSection]:
         """Build the accordion sections shown on the buy sidebar.
 
-        Accordion sections group related controls so the sidebar remains scannable.
+        Location, price, and home type lead because buyers commonly narrow
+        the search by those constraints before finer property details.
 
         Returns:
             Ordered filter-section tuples for the buy page.
         """
         return [
-            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             (
                 "Location",
                 build_location_filter_components(
@@ -217,10 +215,11 @@ class BuyComponents(BaseClass):
                 ),
                 "location",
             ),
-            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("List Price", self._build_list_price_filter(), "list_price"),
+            ("Home Type", self.create_subtype_checklist(), "subtypes"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
+            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("HOA Fees", self.create_hoa_fee_components(), "hoa_fees"),
             (
                 "HOA Fee Frequency",
@@ -383,26 +382,25 @@ class BuyComponents(BaseClass):
         )
 
     def create_subtype_checklist(self) -> html.Div:
-        """Build the subtype dropdown for buy listings.
+        """Offer broad home types with exact MLS labels available through search.
 
-        A checklist lets users select multiple listing categories without losing other active filters.
+        Counts describe the unfiltered buy inventory and expose sparse choices
+        before they are combined with location or price.
 
         Returns:
-            A subtype filter ``Div``.
+            A grouped home-type dropdown.
         """
-        unique_subtypes = sorted(
-            {
-                subtype if pd.notna(subtype) else "Unknown"
-                for subtype in self.df["subtype"].unique()
-            }
-        )
-
-        return build_subtype_filter(
-            values=unique_subtypes,
-            dynamic_id=self.dynamic_output_id("subtype"),
-            placeholder="Type of home (e.g. Condominium, Single Family Residence, Townhouse)",
-            outer_id="subtypes_div_buy",
-            dropdown_style={"marginBottom": "10px"},
+        return html.Div(
+            [
+                dmc.Text("Counts across all homes; the map count reflects your other filters.", size="sm", c="dimmed", mb="xs"),
+                build_subtype_filter(
+                    options=build_home_type_options(self.df["subtype"]),
+                    dynamic_id=self.dynamic_output_id("subtype"),
+                    placeholder="Any home type",
+                    outer_id="subtypes_div_buy",
+                    dropdown_style={"marginBottom": "10px"},
+                ),
+            ]
         )
 
     def create_lot_size_components(self) -> html.Div:

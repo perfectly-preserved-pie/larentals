@@ -25,6 +25,7 @@ from .component_factories import (
     iqr_capped_range_bounds,
 )
 from .component_models import FilterSection, PageConfig, PageParts
+from .filter_options import build_home_type_options, build_pet_policy_options
 from .responsive_filter_ui import build_map_filter_toolbar, build_mobile_price_legend
 from functions.distribution import attach_distribution
 from functions.rso import add_rso_status_to_listing_geojson
@@ -119,12 +120,11 @@ class LeaseComponents(BaseClass):
             "display": "block",
         },
         active_filter_items=(
-            "listed_date",
             "location",
-            "subtypes",
             "monthly_rent",
+            "subtypes",
             "bedrooms",
-            "bathrooms",
+            "pet_policy",
         ),
         accordion_class_name="options-accordion dmc",
         map_card_class_name="d-block d-md-block sticky-top dbc border-0 rounded-0",
@@ -223,14 +223,14 @@ class LeaseComponents(BaseClass):
     def _build_filter_sections(self) -> list[FilterSection]:
         """Build the accordion sections shown on the lease sidebar.
 
-        Keep the section order stable across the desktop sidebar and responsive
-        filter drawer so control IDs and quick links refer to the same groups.
+        Location, rent, and home type lead because they define the first
+        housing decision. The desktop sidebar and responsive drawer share this
+        order so quick links reach the same groups on either layout.
 
         Returns:
             Ordered filter-section tuples for the lease page.
         """
         return [
-            ("Listed Date", self.create_listed_date_components(), "listed_date"),
             (
                 "Location",
                 build_location_filter_components(
@@ -242,12 +242,13 @@ class LeaseComponents(BaseClass):
                 ),
                 "location",
             ),
-            ("Subtypes", self.create_subtype_checklist(), "subtypes"),
             ("Monthly Rent", self._build_rental_price_filter(), "monthly_rent"),
+            ("Home Type", self.create_subtype_checklist(), "subtypes"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
-            ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
-            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             ("Pet Policy", self.create_pets_radio_button(), "pet_policy"),
+            ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
+            ("Listed Date", self.create_listed_date_components(), "listed_date"),
+            ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             (
                 "Deposits",
                 [
@@ -256,7 +257,7 @@ class LeaseComponents(BaseClass):
                         column="key_deposit",
                         slider_id="key_deposit_slider",
                         switch_id="key_deposit_missing_switch",
-                        switch_label="Include properties with an unknown key deposit",
+                        switch_label="Include listings with no key deposit reported (different from $0)",
                         dynamic_index="key_deposit",
                         component_id="key_deposit_div",
                     ),
@@ -265,7 +266,7 @@ class LeaseComponents(BaseClass):
                         column="other_deposit",
                         slider_id="other_deposit_slider",
                         switch_id="other_deposit_missing_switch",
-                        switch_label="Include properties with an unknown misc/other deposit",
+                        switch_label="Include listings with no other deposit reported (different from $0)",
                         dynamic_index="other_deposit",
                         component_id="other_deposit_div",
                     ),
@@ -274,7 +275,7 @@ class LeaseComponents(BaseClass):
                         column="pet_deposit",
                         slider_id="pet_deposit_slider",
                         switch_id="pet_deposit_missing_switch",
-                        switch_label="Include properties with an unknown pet deposit",
+                        switch_label="Include listings with no pet deposit reported (different from $0)",
                         dynamic_index="pet_deposit",
                         component_id="pet_deposit_div",
                     ),
@@ -283,7 +284,7 @@ class LeaseComponents(BaseClass):
                         column="security_deposit",
                         slider_id="security_deposit_slider",
                         switch_id="security_deposit_missing_switch",
-                        switch_label="Include properties with an unknown security deposit",
+                        switch_label="Include listings with no security deposit reported (different from $0)",
                         dynamic_index="security_deposit",
                         component_id="security_deposit_div",
                     ),
@@ -435,7 +436,7 @@ class LeaseComponents(BaseClass):
             step=1,
             marks=bounds.marks(),
             include_missing_switch_id="garage_missing_switch",
-            include_missing_switch_label="Include properties with an unknown number of garage spaces",
+            include_missing_switch_label="Include listings with no parking count reported (different from 0 spaces)",
             container_style={"marginBottom": "10px"},
         )
 
@@ -553,41 +554,42 @@ class LeaseComponents(BaseClass):
             include_missing_switch_label=switch_label,
             container_style={"marginBottom": "10px"},
             header_children=[
-                html.H5(
-                    title,
-                    style={"display": "inline-block", "marginRight": "10px"},
-                )
+                html.H5(title, style={"display": "inline-block", "marginRight": "10px"}),
+                dmc.Text(
+                    f"Reported on {self.df[column].notna().sum():,} of {len(self.df):,} rentals. "
+                    "A reported $0 may need confirmation.",
+                    size="sm",
+                    c="dimmed",
+                    mb="xs",
+                ),
             ],
         )
 
     def create_subtype_checklist(self) -> html.Div:
-        """Build the subtype dropdown for lease listings.
+        """Offer broad home types first while retaining every exact MLS subtype.
 
-        A checklist lets users select multiple listing categories without losing other active filters.
+        Source-wide counts identify rare categories. The exact labels remain
+        searchable for people with a specific housing requirement.
 
         Returns:
-            A subtype filter ``Div``.
+            A grouped home-type dropdown.
         """
-        subtype_series = (
-            self.df["subtype"]
-            .fillna("Unknown")
-            .replace({None: "Unknown", "None": "Unknown"})
-            .astype(str)
-        )
-        unique_subtypes = sorted(set(subtype_series.unique()))
-        if "Unknown" not in unique_subtypes:
-            unique_subtypes = sorted([*unique_subtypes, "Unknown"])
-
-        return build_subtype_filter(
-            values=unique_subtypes,
-            dynamic_id=self.dynamic_output_id("subtype"),
-            placeholder="Type of home (e.g. Apartment, Single Family Residence, Townhouse)",
+        return html.Div(
+            [
+                dmc.Text("Counts across all rentals; the map count reflects your other filters.", size="sm", c="dimmed", mb="xs"),
+                build_subtype_filter(
+                    options=build_home_type_options(self.df["subtype"]),
+                    dynamic_id=self.dynamic_output_id("subtype"),
+                    placeholder="Any home type",
+                ),
+            ]
         )
 
     def create_pets_radio_button(self) -> html.Div:
-        """Build the pet-policy radio controls.
+        """Show confirmed and uncertain pet policies as separate choices.
 
-        The radio group expresses one pet-policy choice at a time, including an unknown/default state.
+        A listing that omits pets or says ``Call`` can appear in the inclusive
+        search without being presented as confirmed permission.
 
         Returns:
             A pet-policy filter ``Div``.
@@ -598,15 +600,15 @@ class LeaseComponents(BaseClass):
                     [
                         dcc.RadioItems(
                             id="pets_radio",
-                            options=[
-                                {"label": "Pets Allowed", "value": True},
-                                {"label": "Pets NOT Allowed", "value": False},
-                                {"label": "Both", "value": "Both"},
-                            ],
-                            value="Both",
+                            options=build_pet_policy_options(self.df["pet_policy"]),
+                            value="any",
                             inputStyle={"marginRight": "4px", "marginLeft": "0px"},
-                            className="d-flex flex-wrap align-items-center gap-3 mb-1",
-                            inline=True,
+                            className="d-flex flex-column gap-1 mb-1",
+                        ),
+                        dmc.Text(
+                            "Unclear includes blank, call-only, and restriction-only policies. Confirm with the listing office.",
+                            size="sm",
+                            c="dimmed",
                         ),
                     ],
                     id=self.dynamic_output_id("pets"),

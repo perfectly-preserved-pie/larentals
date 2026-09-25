@@ -600,3 +600,57 @@ test("ISP slider tooltips stay clear of the next control", async ({ page }) => {
     geometry.uploadTooltipBottom + 8,
   );
 });
+
+test("lease pet choices keep uncertain policies separate from confirmed permission", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const errors = await collectPageErrors(page);
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "lease");
+
+  await expect(page.locator("#pets_radio")).toContainText("Allowed, confirmed");
+  await expect(page.locator("#pets_radio")).toContainText("Unclear or unlisted");
+  const counts = {};
+  let previousCount = await page.evaluate(() => window.larentals.responsiveFilters.appliedCounts.lease);
+  for (const choice of ["allowed", "possible", "unknown", "prohibited"]) {
+    await page.evaluate((value) => window.dash_clientside.set_props("pets_radio", { value }), choice);
+    await page.waitForFunction(
+      ({ value, previous }) => window.larentals.responsiveFilters.applied.lease.pets === value &&
+        window.larentals.responsiveFilters.appliedCounts.lease !== previous,
+      { value: choice, previous: previousCount },
+    );
+    counts[choice] = await page.evaluate(() => window.larentals.responsiveFilters.appliedCounts.lease);
+    previousCount = counts[choice];
+  }
+  expect(counts.allowed).toBeGreaterThan(0);
+  expect(counts.possible).toBeGreaterThan(counts.allowed);
+  expect(counts.unknown).toBeGreaterThan(0);
+  expect(counts.prohibited).toBeGreaterThan(0);
+  await expect(page.locator("#lease-quick-pets")).toContainText("No pets");
+  expect(errors).toEqual([]);
+});
+
+test("buy broad home types retain exact MLS subtype choices", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const errors = await collectPageErrors(page);
+  await page.goto(`${BASE_URL}/buy`, { waitUntil: "domcontentloaded" });
+  await waitForFilterState(page, "buy");
+
+  const initialCount = await page.evaluate(() => window.larentals.responsiveFilters.appliedCounts.buy);
+  await page.evaluate(() => window.dash_clientside.set_props("subtype_checklist", { value: ["group:condo"] }));
+  await page.waitForFunction(
+    (previous) => window.larentals.responsiveFilters.applied.buy.subtypes?.[0] === "group:condo" &&
+      window.larentals.responsiveFilters.appliedCounts.buy !== previous,
+    initialCount,
+  );
+  const broadCount = await page.evaluate(() => window.larentals.responsiveFilters.appliedCounts.buy);
+  await page.evaluate(() => window.dash_clientside.set_props("subtype_checklist", { value: ["Condominium"] }));
+  await page.waitForFunction(
+    (previous) => window.larentals.responsiveFilters.applied.buy.subtypes?.[0] === "Condominium" &&
+      window.larentals.responsiveFilters.appliedCounts.buy !== previous,
+    broadCount,
+  );
+  const exactCount = await page.evaluate(() => window.larentals.responsiveFilters.appliedCounts.buy);
+  expect(broadCount).toBeGreaterThanOrEqual(exactCount);
+  expect(exactCount).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

@@ -1426,27 +1426,29 @@ def build_school_layer_filter_panel(page_type: str) -> dbc.Collapse:
 
 def build_subtype_filter(
     *,
-    values: Sequence[str],
+    options: Sequence[Mapping[str, str]] | None = None,
+    values: Sequence[str] | None = None,
     dynamic_id: DashId,
     placeholder: str,
     outer_id: str | None = None,
     dropdown_style: Mapping[str, Any] | None = None,
 ) -> html.Div:
-    """Build the shared subtype dropdown section.
+    """Build the shared home-type dropdown with stable callback IDs.
 
-    The factory standardizes subtype options and callback IDs across buy and lease pages.
+    Explicit options let the pages show category and source-wide counts.
+    Plain values remain accepted by older callers that only need exact types.
 
     Args:
-        values: Sorted subtype labels to offer.
+        options: Grouped and exact subtype choices with labels and values.
+        values: Legacy exact subtype labels, used when options are omitted.
         dynamic_id: Pattern-matching id for the dropdown wrapper.
         placeholder: Placeholder text for the dropdown.
         outer_id: Optional id for the outer container.
         dropdown_style: Optional inline style override for the dropdown.
 
     Returns:
-        A subtype-selection ``Div``.
+        A home-type selection ``Div``.
     """
-    data = [{"label": value, "value": value} for value in values]
     container_kwargs = {}
     if outer_id is not None:
         container_kwargs["id"] = outer_id
@@ -1461,7 +1463,9 @@ def build_subtype_filter(
                         id="subtype_checklist",
                         maxHeight=400,
                         multi=True,
-                        options=data,
+                        options=list(options) if options is not None else [
+                            {"label": value, "value": value} for value in (values or [])
+                        ],
                         placeholder=placeholder,
                         searchable=True,
                         style=dropdown_style,

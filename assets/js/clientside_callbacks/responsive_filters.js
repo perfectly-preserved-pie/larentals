@@ -488,7 +488,13 @@
       } else if (group === "bathrooms") {
         text = rangeLabel("Baths", state.bathroomsRange, defaults.bathroomsRange, false);
       } else if (group === "pets") {
-        text = `${state.pets === true ? "Pets allowed" : "No pets"} ×`;
+        const petLabels = {
+          allowed: "Pets allowed",
+          possible: "Pets possible",
+          unknown: "Pet policy unknown",
+          prohibited: "No pets",
+        };
+        text = `${petLabels[state.pets] || "Pet policy"} ×`;
       }
     }
 
@@ -805,7 +811,7 @@
   const SECTION_LABELS = Object.freeze({
     listed_date: "Listed Date",
     location: "Location",
-    subtypes: "Subtypes",
+    subtypes: "Home Type",
     monthly_rent: "Monthly Rent",
     list_price: "List Price",
     bedrooms: "Bedrooms",
@@ -816,15 +822,15 @@
   const ACCORDION_DEFAULTS = Object.freeze({
     lease: Object.freeze({
       desktop: Object.freeze([
-        "listed_date", "location", "subtypes", "monthly_rent", "bedrooms", "bathrooms",
+        "location", "monthly_rent", "subtypes", "bedrooms", "pet_policy",
       ]),
-      compact: Object.freeze(["location", "monthly_rent", "bedrooms"]),
+      compact: Object.freeze(["location", "monthly_rent", "subtypes"]),
     }),
     buy: Object.freeze({
       desktop: Object.freeze([
-        "listed_date", "location", "subtypes", "list_price", "bedrooms", "bathrooms",
+        "location", "list_price", "subtypes", "bedrooms",
       ]),
-      compact: Object.freeze(["location", "list_price", "bedrooms"]),
+      compact: Object.freeze(["location", "list_price", "subtypes"]),
     }),
   });
 

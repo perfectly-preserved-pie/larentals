@@ -195,21 +195,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     yrBuiltFilter = true;
                 }
 
-                // 8) Subtype Filter
-                let subtypeFilter = true;
-                const normalizedSubtypeSelection = Array.isArray(subtypeSelection)
-                    ? subtypeSelection
-                    : [];
-                const propertySubtype = (props.subtype || '').toUpperCase();
-                if (normalizedSubtypeSelection.length > 0) {
-                    if (propertySubtype === '' && normalizedSubtypeSelection.includes('Unknown')) {
-                        subtypeFilter = true;
-                    } else {
-                        subtypeFilter = normalizedSubtypeSelection.some(
-                            sel => sel.toUpperCase() === propertySubtype
-                        );
-                    }
-                }
+                // Broad groups and exact MLS labels are both selectable.
+                const subtypeFilter = window.larentals.filters.matchesHomeType(
+                    props.subtype, subtypeSelection
+                );
 
                 // 9) Listed Date Filter
                 let dateFilter = false;

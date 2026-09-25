@@ -1,13 +1,15 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
-         * Filters GeoJSON features according to user-selected criteria (lease page).
+         * Filter rental GeoJSON for both desktop and responsive map views.
          *
+         * The same selection path is used for the drawer preview and applied
+         * map. Missing policy data stays separate from explicit permission.
          * @param {[number, number]} priceRange - [minPrice, maxPrice]
          * @param {[number, number]} bedroomsRange - [minBedrooms, maxBedrooms]
          *
          * @param {[number, number]} bathroomsRange - [minBathrooms, maxBathrooms]
-         * @param {boolean|string} petPolicy - User-selected pet policy (true, false, "Both")
+         * @param {string} petPolicy - Any, confirmed, possible, unknown, or prohibited policy choice
          *
          * @param {[number, number]} sqftRange - [minSqft, maxSqft]
          * @param {boolean} sqftIncludeMissing - Whether to include listings with null/undefined sqft
@@ -238,14 +240,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const keyDeposit = feature.properties.key_deposit;
                 const otherDeposit = feature.properties.other_deposit;
 
-                // 1) petPolicyFilter
+                // An unreported or call-only rule remains uncertain, not allowed.
+                const petStatus = window.larentals.filters.petPolicyStatus(petPolicyValue);
                 let petPolicyFilter = true;
-                if (petPolicy === true) {
-                    petPolicyFilter = !['No', 'No, Size Limit'].includes(petPolicyValue);
-                } else if (petPolicy === false) {
-                    petPolicyFilter = ['No', 'No, Size Limit'].includes(petPolicyValue);
-                } else if (petPolicy === 'Both') {
-                    petPolicyFilter = true;
+                if (petPolicy === "allowed" || petPolicy === true) {
+                    petPolicyFilter = petStatus === "allowed";
+                } else if (petPolicy === "possible") {
+                    petPolicyFilter = petStatus !== "prohibited";
+                } else if (petPolicy === "unknown") {
+                    petPolicyFilter = petStatus === "unknown";
+                } else if (petPolicy === "prohibited" || petPolicy === false) {
+                    petPolicyFilter = petStatus === "prohibited";
                 }
 
                 // 2) sqftFilter
@@ -396,11 +401,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     laundryFilter = chosenLaundry.includes(laundryCategory) || unknownLaundryOk;
                 }
 
-                // 13) subtypeFilter
-                let subtypeFilter = true;
-                if (subtypeSelection && subtypeSelection.length > 0) {
-                    subtypeFilter = subtypeSelection.includes(subtype);
-                }
+                // Group choices and exact MLS types share the same dropdown.
+                const subtypeFilter = window.larentals.filters.matchesHomeType(subtype, subtypeSelection);
 
                 // 14) priceFilter, bedroomsFilter, bathroomsFilter
                 const priceFilter = price >= minPrice &&
