@@ -4,6 +4,7 @@ from functions.webscraping_utils import (
     check_expired_listing_rentcast,
     check_expired_listing_theagency,
     fetch_the_agency_data,
+    listing_subtype,
     webscrape_bhhs,
 )
 from functions.listing_pipeline_checkpoint import (
@@ -330,7 +331,9 @@ def update_dataframe_with_listing_data(
 
     Reuse checkpointed scrape and image results when their inputs still match.
     BHHS fills fields The Agency did not supply, avoiding repeat requests and
-    image uploads for listings already processed.
+    image uploads for listings already processed. Missing subtypes use explicit
+    provider types while source subtypes remain authoritative. Checkpointed
+    subtype attempts avoid repeat lookups even when no type was found.
 
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
@@ -347,6 +350,9 @@ def update_dataframe_with_listing_data(
     """
     if listing_type not in {"buy", "lease"}:
         raise ValueError(f"Unsupported listing type: {listing_type!r}")
+
+    if "subtype" in df.columns:
+        df["subtype"] = df["subtype"].astype(object)
 
     total_rows = len(df)
     started_at = time.monotonic()
@@ -408,15 +414,22 @@ def update_dataframe_with_listing_data(
             source_file_hash=source_file_hash,
         )
         record = checkpoint_store.get(mls_number) if checkpoint_store else None
+        needs_subtype = "subtype" in df.columns and (
+            not usable(row.get("subtype"))
+            or str(row.get("subtype")).strip().lower() in {"", "unknown", "none", "null", "nan", "n/a"}
+        )
+        scraped_subtype = None
 
         scrape_was_cached = bool(
             record
             and record.get("listing_input_hash") == input_hash
             and record.get("scrape_status") in TERMINAL_SCRAPE_STATUSES
+            and (not needs_subtype or record.get("subtype_lookup_status"))
         )
 
         try:
             if scrape_was_cached:
+                scraped_subtype = record.get("scraped_subtype")
                 listed_date = record.get("listed_date")
                 listing_url = record.get("listing_url")
                 source_photo_url = record.get("source_photo_url")
@@ -430,8 +443,9 @@ def update_dataframe_with_listing_data(
                     row_index=position - 1,
                     total_rows=total_rows,
                 )
+                scraped_subtype = listing_subtype(agency_data[3]) if len(agency_data) > 3 else None
                 bhhs_data = (None, None, None)
-                bhhs_was_checked = not all(usable(value) for value in agency_data)
+                bhhs_was_checked = not all(usable(value) for value in agency_data[:3]) or (needs_subtype and not scraped_subtype)
                 if bhhs_was_checked:
                     listing_path = "for-sale" if listing_type == "buy" else "for-lease"
                     bhhs_data = webscrape_bhhs(
@@ -441,7 +455,10 @@ def update_dataframe_with_listing_data(
                         total_rows=total_rows,
                     )
 
-                # BHHS tuple: date, photo, URL. Agency tuple: date, URL, photo.
+                if not scraped_subtype and len(bhhs_data) > 3:
+                    scraped_subtype = listing_subtype(bhhs_data[3])
+
+                # Both tuples end with subtype; photo and URL positions differ.
                 listed_date = first_usable(agency_data[0], bhhs_data[0])
                 source_photo_url = first_usable(agency_data[2], bhhs_data[1])
                 listing_url = first_usable(agency_data[1], bhhs_data[2])
@@ -495,6 +512,8 @@ def update_dataframe_with_listing_data(
                 image_status = "not_found"
                 image_error = None
 
+            if needs_subtype and scraped_subtype:
+                df.at[row_index, "subtype"] = scraped_subtype
             df.at[row_index, "listed_date"] = listed_date
             df.at[row_index, "listing_url"] = listing_url
             df.at[row_index, "source_photo_url"] = source_photo_url
@@ -516,6 +535,8 @@ def update_dataframe_with_listing_data(
                         else scrape_status
                     ),
                     scrape_error=scrape_error,
+                    scraped_subtype=scraped_subtype,
+                    subtype_lookup_status="success" if scraped_subtype else "not_found",
                     listed_date=listed_date,
                     listing_url=listing_url,
                     source_photo_url=source_photo_url,

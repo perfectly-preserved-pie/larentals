@@ -1,3 +1,4 @@
+from functions.normalization_utils import normalize_subtype
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -559,7 +560,41 @@ def check_expired_listing_rentcast(
 
     return None
 
-def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
+def listing_subtype(raw: object) -> Optional[str]:
+    """Clean explicit provider types while rejecting missing and market categories.
+
+    Residential identifies a market, not a home subtype, so accepting it would
+    hide an unknown home type in the listing filters.
+    """
+    if not isinstance(raw, str) or raw.strip().lower() in {
+        "", "unknown", "none", "null", "nan", "n/a", "residential",
+        "residential lease", "residential income", "commercial", "land",
+    }:
+        return None
+    return normalize_subtype(raw)
+
+
+def extract_bhhs_subtype(soup: BeautifulSoup) -> Optional[str]:
+    """Read an explicit property type label from the current BHHS response.
+
+    Descriptions can mention other home types, so they are never used to guess
+    a subtype. This lookup makes no additional detail-page request.
+    """
+    tokens = list(soup.stripped_strings)
+    for index, token in enumerate(tokens):
+        match = re.fullmatch(
+            r"(?:property\s+sub\s*type|sub\s*type|property\s+type)(?:\s*:\s*(.*))?",
+            token, re.IGNORECASE,
+        )
+        if match:
+            raw = match.group(1) or (tokens[index + 1] if index + 1 < len(tokens) else "")
+            subtype = listing_subtype(raw)
+            if subtype:
+                return subtype
+    return None
+
+
+def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str], Optional[str]]:
     """Scrapes the BHHS website for listing details.
 
     The provider page is a fallback when the primary source lacks fields.
@@ -573,11 +608,12 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     total_rows (int): The total number of rows to process.
 
     Returns:
-    Tuple[Optional[pd.Timestamp], Optional[str], Optional[str]]:
+    Tuple[Optional[pd.Timestamp], Optional[str], Optional[str], Optional[str]]:
         - listed_date (pd.Timestamp): The listing date if found.
         - photo (str): The URL of the listing photo if found.
         - link (str): The detailed listing URL if found.
-        Returns (None, None, None) if data is not found or an error occurs.
+        - subtype (str): Normalized explicit property type if present.
+        Returns four empty fields if data is not found or an error occurs.
     """
     logger.debug(
         f"Checking BHHS for MLS {mls_number} "
@@ -622,7 +658,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         if listed_date is None and photo is None and link is None:
             logger.debug(f"BHHS returned no usable data for MLS {mls_number}.")
 
-        return listed_date, photo, link
+        return listed_date, photo, link, extract_bhhs_subtype(soup)
 
     except HostCircuitOpen:
         logger.debug(f"Skipping BHHS scrape for MLS {mls_number}; host circuit is open.")
@@ -631,7 +667,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     except Exception as e:
         logger.warning(f"Error scraping BHHS page for {mls_number}: {e}")
 
-    return None, None, None
+    return None, None, None, None
 
 def extract_street_name(full_street_address: str) -> Optional[str]:
     """Extracts the street name from a full street address.
@@ -689,11 +725,13 @@ def fetch_the_agency_data(
     mls_number: str,
     row_index: int,
     total_rows: int,
-) -> Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
+) -> Tuple[Optional[datetime.date], Optional[str], Optional[str], Optional[str]]:
     """Fetches property data for a given MLS number from The Agency API.
 
     This is the primary detail source for the listing pipeline. Missing records
     or transport errors return empty fields so BHHS can fill what is available.
+    Explicit subtype fields take priority over PropertyType and its label;
+    broad market categories are ignored so an unknown home type stays unknown.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.
@@ -701,11 +739,12 @@ def fetch_the_agency_data(
     total_rows (int): Total rows being processed for progress indication.
 
     Returns:
-    Tuple[Optional[datetime.date], Optional[str], Optional[str]]:
+    Tuple[Optional[datetime.date], Optional[str], Optional[str], Optional[str]]:
         - The listing date (as a datetime.date object) if found; otherwise, None.
         - The detail URL of the property if found; otherwise, None.
         - The first property image URL if found; otherwise, None.
-    Returns (None, None, None) if no matching property is found or if an error occurs.
+        - Normalized explicit property subtype if present; otherwise, None.
+    Returns four empty fields if no matching property is found or an error occurs.
     """
     url = f"https://search-service.idcrealestate.com/api/property/en_US/d4/detail/clr/{mls_number}"
     headers = {
@@ -773,7 +812,11 @@ def fetch_the_agency_data(
             f"The Agency returned {populated_fields}/3 fields for MLS "
             f"{mls_number}."
         )
-        return list_date, detail_url, img_src
+        subtype = next((
+            cleaned for key in ("PropertySubType", "PropertySubtype", "SubType", "PropertyType", "PropertyTypeLabel")
+            if (cleaned := listing_subtype(data.get(key)))
+        ), None)
+        return list_date, detail_url, img_src, subtype
 
     except HostCircuitOpen:
         logger.debug(f"Skipping Agency lookup for MLS {mls_number}; host circuit is open.")
@@ -788,7 +831,7 @@ def fetch_the_agency_data(
     except Exception as e:
         logger.error(f"An unexpected error occurred while fetching MLS {mls_number}: {e}")
 
-    return None, None, None
+    return None, None, None, None
 
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     """Updates the HOA fee value for a given MLS number by scraping the HOA fee from the detailed listing webpage.

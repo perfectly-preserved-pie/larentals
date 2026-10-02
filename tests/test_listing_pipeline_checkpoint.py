@@ -1817,3 +1817,51 @@ def test_changed_address_and_photo_invalidate_failed_enrichment() -> None:
     assert pd.isna(merged.at["MLS-1", "latitude"])
     assert pd.isna(merged.at["MLS-1", "longitude"])
     assert pd.isna(merged.at["MLS-1", "mls_photo"])
+
+
+@pytest.mark.parametrize("source_type, agency_type, bhhs_type, expected, bhhs_count", [
+    (None, "SFR", None, "Single Family Residence", 0),
+    ("Unknown", None, "Condominium", "Condominium", 1),
+    ("", None, None, "", 1),
+    ("Apartment", "SFR", None, "Apartment", 0),
+    ("Loft", "Condominium", None, "Loft", 0),
+    ("Stock Cooperative", "Condominium", None, "Stock Cooperative", 0),
+    ("Own Your Own", "Single Family", None, "Own Your Own", 0),
+])
+def test_missing_subtype_enrichment_and_resume(
+    monkeypatch, tmp_path, source_type, agency_type, bhhs_type, expected, bhhs_count,
+):
+    """Fill missing types while retaining source types and cached provider attempts.
+
+    Resume must restore a recovered subtype without repeating provider lookups,
+    including when an earlier attempt found no explicit type.
+    """
+    agency_calls = []
+    bhhs_calls = []
+
+    def agency(*args, **kwargs):
+        """Return a complete primary listing with a controlled type.
+
+        Tracking calls detects repeated requests during checkpoint reuse.
+        """
+        agency_calls.append(args)
+        return pd.Timestamp("2026-07-20"), "https://example.test/listing", "https://example.test/photo", agency_type
+
+    def bhhs(**kwargs):
+        """Supply only the fallback subtype.
+
+        The primary provider already supplied all other listing fields.
+        """
+        bhhs_calls.append(kwargs)
+        return None, None, None, bhhs_type
+
+    monkeypatch.setattr("functions.dataframe_utils.fetch_the_agency_data", agency)
+    monkeypatch.setattr("functions.dataframe_utils.webscrape_bhhs", bhhs)
+    monkeypatch.setattr("functions.dataframe_utils.imagekit_transform", lambda *args, **kwargs: "https://example.test/uploaded")
+    store = ListingCheckpointStore(tmp_path / "subtype.sqlite", listing_type="buy")
+    source = pd.DataFrame([{"mls_number": "MLS-1", "subtype": source_type}])
+    for _ in range(2):
+        enriched = update_dataframe_with_listing_data(source.copy(), object(), listing_type="buy", checkpoint_store=store)
+        assert enriched.loc[0, "subtype"] == expected
+    assert len(agency_calls) == 1
+    assert len(bhhs_calls) == bhhs_count
