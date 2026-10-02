@@ -94,30 +94,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.43.99"
+version = "1.43.104"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/99/10/5e0c4c1a87443680194db582888e8e5e0a80e3e1ed224ca8111becf9e5ed/boto3-1.43.99.tar.gz", hash = "sha256:328c8640e7b7dbdaebc271e6eea0f7301218872d67d0661a7beda7d3a1799c07", size = 112659, upload-time = "2026-09-21T19:37:18.115Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/d3/aae7125fb2ed6796aea7a0f5588af71971569f14063cfa65a01178f619ca/boto3-1.43.104.tar.gz", hash = "sha256:d26ad9b8f6066e9be90c78c1f8f0cdd82e33e0a363a1ccc5ab01008b0e48c7fd", size = 112676, upload-time = "2026-09-28T19:32:15.638Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/37/d59247c882bc078b73cfa6f6bb247ac51bedc7637f6a8800def385dcfbba/boto3-1.43.99-py3-none-any.whl", hash = "sha256:3becba8d7bdf80ea0010c68bc6b0772adb8be344f06bdcea77629002be19beb7", size = 140029, upload-time = "2026-09-21T19:37:16.518Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/94/518f876ac2ea906c67ab3d08c7659c78bbeed358604911bfba773bc2bbda/boto3-1.43.104-py3-none-any.whl", hash = "sha256:dc0c4b5c217fa38792d6b2e3c89b0d26220fd938dc173e48adab45d2d05e6977", size = 140042, upload-time = "2026-09-28T19:32:14.133Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.43.102"
+version = "1.43.107"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/12/97d043f9bfdd54984f8d562169a9ac800c7b94a5b5fdb9b7d7b46659ebd2/botocore-1.43.102.tar.gz", hash = "sha256:3239f3c8611f0fbfb1a3fda77fb70e18f87bec102edf38f67e40902c56639c10", size = 16232455, upload-time = "2026-09-24T19:25:13.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/22/3aed44a1e0b9820485124a9ad25e9bccd5539c547ef12827547c3cbeb25f/botocore-1.43.107.tar.gz", hash = "sha256:4a37fa072a00280c746313532d19b00e2dc53f1993222601df104d71d548d5b6", size = 16306128, upload-time = "2026-10-01T19:31:17.202Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/95/e2791a9dfc989e3580ce087085a45a67987e693f364e2461904d962e3951/botocore-1.43.102-py3-none-any.whl", hash = "sha256:78d9dcee19950444b4ff0250125aff735da4f7d6db46eb1e9aca82dc8f101a66", size = 15926988, upload-time = "2026-09-24T19:25:09.891Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/39/3a0db1ba57531062cda616dae68b69faef8114939414a2a291b3aac7617b/botocore-1.43.107-py3-none-any.whl", hash = "sha256:23cbe854e815dbaccf097f7fd32b461c9e1d2ed7e0c7dcc5658218704509d840", size = 16002666, upload-time = "2026-10-01T19:31:14.463Z" },
 ]
 
 [[package]]
@@ -489,7 +489,7 @@ wheels = [
 
 [[package]]
 name = "geopandas"
-version = "1.1.4"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -499,9 +499,9 @@ dependencies = [
     { name = "pyproj" },
     { name = "shapely" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/39/a9/0478b74a33aea66827c10baaf6025cb2a17e44b1c117533eecd3e977bb75/geopandas-1.1.4.tar.gz", hash = "sha256:06f2890a07e1a239047daa14b486a7c6ae5ce82dcf7405e13c46bf31f5d0dd66", size = 337445, upload-time = "2026-06-26T17:23:54.497Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/6b/079d42d468f6537b0e8ba04ad411d53fe6b03070801e5b85328b01d28772/geopandas-1.2.0.tar.gz", hash = "sha256:72425b0dec1b77122b1e00f72c2b3b91f320cf0331ae236d37e26865e8808628", size = 337713, upload-time = "2026-09-28T15:53:57.721Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/a8/bd530cc264e62ddbc1d1bb7225823992e6f2432c664693e9281bb6b9c359/geopandas-1.1.4-py3-none-any.whl", hash = "sha256:1a0c459cbdb1537cd154dafe6174be20d1760844b7f1c967dc8520b180f2e773", size = 343292, upload-time = "2026-06-26T17:23:53.112Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/26/10e1061c79b388621b7bae46fcd4942a8c62f960018adf4c38719e9e91ac/geopandas-1.2.0-py3-none-any.whl", hash = "sha256:948fd57df4f713697d5cce149333c0e4714965320c9f5ffa411666c577962eba", size = 368068, upload-time = "2026-09-28T15:53:55.62Z" },
 ]
 
 [[package]]
@@ -1184,11 +1184,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.7.0"
+version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63", size = 458972, upload-time = "2026-09-15T19:29:36.253Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+    { url = "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3", size = 135717, upload-time = "2026-09-15T19:29:34.577Z" },
 ]
 
 [[package]]
@@ -1280,7 +1280,7 @@ requires-dist = [
     { name = "dash-mantine-components", specifier = "~=2.8.0" },
     { name = "flask", specifier = "~=3.1.3" },
     { name = "flask-compress", specifier = ">=1.23" },
-    { name = "geopandas", specifier = "~=1.1.4" },
+    { name = "geopandas", specifier = ">=1.1.4,<1.3.0" },
     { name = "geopy", specifier = "~=2.5.0" },
     { name = "gevent", specifier = ">=26.8,<26.10" },
     { name = "gunicorn", specifier = ">=26.0,<26.3" },
