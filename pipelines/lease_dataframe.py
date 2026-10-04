@@ -5,6 +5,7 @@ from pathlib import Path
 # Add parent directory to path so 'functions' module can be found
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from functions.logging_config import configure_logging
 from functions.aws_functions import load_ssm_parameters
 from functions.dataframe_utils import *
 from functions.data_paths import CHECKPOINT_DIR, LARENTALS_DB_PATH
@@ -38,6 +39,8 @@ def main() -> None:
 
   The job resumes saved enrichment work where possible, then writes the rental
   table. A sample run stops before publication for local inspection.
+  Console and rotating file logs use the shared LOG_LEVEL threshold and label
+  shared helper events as lease-pipeline work.
 
   Returns:
     ``None`` after the pipeline completes.
@@ -71,17 +74,7 @@ def main() -> None:
   USE_NOMINATIM  = args.use_nominatim
   LOGFILE  = args.logfile or "~/larentals/lease_dataframe.log"
 
-  # — Setup logging — remove defaults, add stderr + chosen file only
-  logger.remove()
-  logger.add(sys.stderr, format="{time} {level} {message}", level="INFO")
-  logger.add(
-    LOGFILE,
-    level="INFO",
-    rotation="10 MB",
-    retention="7 days",
-    backtrace=True,
-    diagnose=True,
-  )
+  configure_logging(logfile=LOGFILE, pipeline="lease")
 
   ## SETUP AND VARIABLES
   # load env

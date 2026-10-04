@@ -15,10 +15,6 @@ import io
 import re
 import requests
 import pandas as pd
-import sys
-
-# Initialize logging
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 
 def _ensure_object_columns(
@@ -43,7 +39,6 @@ def _ensure_object_columns(
             df[column] = df[column].astype("object")
         else:
             df[column] = pd.Series(index=df.index, dtype="object")
-
 
 
 def _google_street_parts(value: str) -> tuple[Optional[str], str]:
@@ -189,7 +184,6 @@ def _google_result_matches_address(address: str, raw: dict) -> bool:
         Whether the candidate passes every address check.
     """
     return _google_result_rejection_reason(address, raw) is None
-
 
 
 def _google_verified_zip_correction(address: str, raw: dict, reason: Optional[str]) -> Optional[str]:

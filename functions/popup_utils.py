@@ -2,10 +2,8 @@ from loguru import logger
 from typing import Any
 import numpy as np
 import pandas as pd
-import sys
 from string import Formatter
 
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def _format_template_value(value: Any, template: str | None = None) -> str:
   """Format one popup value with a restricted template.

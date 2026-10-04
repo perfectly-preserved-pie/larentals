@@ -25,12 +25,8 @@ import os
 import pandas as pd
 import re
 import requests
-import sys
 import time
 from urllib.parse import urlsplit
-
-# Initialize logging
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 
 def _format_duration(seconds: float) -> str:

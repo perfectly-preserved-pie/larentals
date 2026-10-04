@@ -1,9 +1,7 @@
 from loguru import logger
 from typing import Dict
 import boto3
-import sys
 
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def load_ssm_parameters(
     path: str,

@@ -6,14 +6,11 @@ from typing import Optional, List, Generator, Set
 import geopandas as gpd
 import os
 import pandas as pd
-import sys
 
 load_dotenv(find_dotenv())
 
 # https://github.com/imagekit-developer/imagekit-python#file-upload
 
-# Initialize logging
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 def imagekit_transform(
         bhhs_mls_photo_url: Optional[str],

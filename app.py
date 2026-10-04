@@ -33,8 +33,6 @@ import dash_mantine_components as dmc
 import logging
 import time
 
-logging.getLogger().setLevel(logging.INFO)
-
 CANONICAL_BASE_URL = "https://wheretolive.la"
 STRUCTURED_DATA_SCRIPT = build_structured_data_script(CANONICAL_BASE_URL)
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]

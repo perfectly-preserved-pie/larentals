@@ -8,14 +8,10 @@ import os
 import pandas as pd
 import re
 import requests
-import sys
 import time
 import random
 import threading
 from urllib.parse import urlencode, urlparse
-
-# Initialize logging
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="DEBUG")
 
 
 # Listing sites rate-limit aggressively.  Keep this state at module level so all

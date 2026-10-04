@@ -23,7 +23,6 @@ from .responsive_filter_ui import (
 from loguru import logger
 import dash
 import dash_bootstrap_components as dbc
-import sys
 import time
 
 dash.register_page(
@@ -34,8 +33,6 @@ dash.register_page(
   description='An interactive map of available rentals in Los Angeles County. Updated weekly.',
 )
 
-
-logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 external_stylesheets = [dbc.themes.DARKLY, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME]
 

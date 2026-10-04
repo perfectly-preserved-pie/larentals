@@ -446,7 +446,8 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
 
     The headers identify the same protocol version, method, and target as the
     body. Reject disagreement before dispatch so intermediaries and clients
-    cannot make the server act on two different requests.
+    cannot make the server act on two different requests. Header decoding
+    failures are logged with their reason before returning HeaderMismatch.
 
     Args:
         payload: Modern MCP request whose standard headers should be checked.
@@ -478,7 +479,7 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
     try:
         decoded_method = _decode_mcp_header_value(method_header)
     except ValueError as exc:
-        logger.warning("Invalid Mcp-Method header value: %s", exc)
+        logger.warning("Invalid Mcp-Method header value: {}", exc)
         return _header_mismatch(
             request_id, "Header mismatch: invalid Mcp-Method header"
         )
@@ -496,7 +497,7 @@ def _validate_modern_headers(payload: dict[str, Any]) -> Response | None:
         try:
             decoded_name = _decode_mcp_header_value(name_header)
         except ValueError as exc:
-            logger.warning("Invalid Mcp-Name header value: %s", exc)
+            logger.warning("Invalid Mcp-Name header value: {}", exc)
             return _header_mismatch(
                 request_id, "Header mismatch: invalid Mcp-Name header"
             )
