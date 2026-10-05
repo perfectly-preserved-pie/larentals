@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import sys
-from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
@@ -75,36 +74,6 @@ def _json_sink(message: "Message") -> None:
         payload["message"] = f"[{pipeline}] {payload['message']}"
     sys.stderr.write(json.dumps(payload, default=str) + "\n")
     sys.stderr.flush()
-
-
-class McpDiscoveryLogFilter(logging.Filter):
-    """Suppress Gunicorn's repetitive MCP discovery request records."""
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        """Keep failures visible while dropping routine MCP GET chatter.
-
-        Gunicorn access records carry request atoms before formatting, which
-        lets us check the status without parsing a rendered log line. Its
-        request debug record has no status; suppress only that exact template
-        and endpoint, leaving exception and lifecycle diagnostics untouched.
-
-        Args:
-            record: Gunicorn event before console serialization.
-
-        Returns:
-            Whether the event should reach the console handler.
-        """
-        if record.name == "gunicorn.access" and isinstance(record.args, Mapping):
-            atoms = record.args
-            if atoms.get("m") == "GET" and atoms.get("U") == "/_mcp":
-                try:
-                    return not 200 <= int(atoms.get("s", "")) < 400
-                except (TypeError, ValueError):
-                    return True
-        if (record.name == "gunicorn.error" and record.levelno == logging.DEBUG
-                and record.msg == "%s %s" and record.args == ("GET", "/_mcp")):
-            return False
-        return True
 
 
 class DozzleFormatter(logging.Formatter):

@@ -1,16 +1,13 @@
-"""Keep Gunicorn lifecycle and access events filterable alongside app logs."""
+"""Emit Gunicorn warnings and errors without routine request or lifecycle noise."""
 
 from functions.logging_config import get_log_level
 
-loglevel = get_log_level().lower()
-accesslog = "-"
+loglevel = "warning"
+accesslog = None
 errorlog = "-"
 logconfig_dict = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {
-        "mcp_discovery": {"()": "functions.logging_config.McpDiscoveryLogFilter"},
-    },
     "formatters": {
         "json": {"()": "functions.logging_config.DozzleFormatter"},
     },
@@ -19,10 +16,9 @@ logconfig_dict = {
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stderr",
             "formatter": "json",
-            "filters": ["mcp_discovery"],
         },
     },
-    "root": {"level": loglevel.upper(), "handlers": ["console"]},
+    "root": {"level": get_log_level(), "handlers": ["console"]},
     "loggers": {
         "gunicorn.error": {
             "level": loglevel.upper(), "handlers": ["console"], "propagate": False,

@@ -202,13 +202,12 @@ def test_flask_filter_survives_shared_handler() -> None:
     assert events[0]['message'] == 'Exception on /api/listings [GET]'
 
 
-def test_gunicorn_config_emits_json_without_duplicates() -> None:
-    """Exercise Gunicorn's real logger initialization with the deployed config.
+@pytest.mark.parametrize('level', ['DEBUG', 'INFO', 'ERROR'])
+def test_gunicorn_keeps_only_warnings_and_errors(level: str) -> None:
+    """Keep server noise suppressed independently of application thresholds.
 
-    Explicit server handlers must emit each lifecycle or access event once.
-
-    Returns:
-        None.
+    Real Gunicorn initialization must disable access logging and still emit
+    warnings and errors once, even when application logging is more restrictive.
     """
     events = run_logging('''
         import runpy
@@ -220,59 +219,22 @@ def test_gunicorn_config_emits_json_without_duplicates() -> None:
         for key in ('loglevel', 'accesslog', 'errorlog', 'logconfig_dict'):
             config.set(key, settings[key])
         server_logger = Logger(config)
+        assert config.accesslog is None
         server_logger.debug('worker diagnostic')
         server_logger.info('worker started')
         logging.getLogger('gunicorn.access').info('GET /health 200')
-        logging.warning('library warning')
-    ''')
-    assert [event['level'] for event in events] == ['debug', 'info', 'info', 'warn']
-    assert events[0]['message'] == 'worker diagnostic'
-    assert events[2]['logger'] == 'gunicorn.access'
-
-
-def test_gunicorn_mcp_discovery_filter_preserves_failures() -> None:
-    """Exercise discovery suppression through Gunicorn's real access logger.
-
-    Query strings should not bypass suppression, and failed GETs, tool POSTs,
-    other paths, and server errors must remain available for diagnosis.
-    """
-    events = run_logging('''
-        import runpy
-        from datetime import timedelta
-        from types import SimpleNamespace
-        from gunicorn.config import Config
-        from gunicorn.glogging import Logger
-        settings = runpy.run_path('gunicorn.conf.py')
-        config = Config()
-        for key in ('loglevel', 'accesslog', 'errorlog', 'logconfig_dict'):
-            config.set(key, settings[key])
-        server_logger = Logger(config)
-        server_logger.debug('%s %s', 'GET', '/_mcp')
-        for method, path, status in (
-            ('GET', '/_mcp', '200 OK'),
-            ('GET', '/_mcp', '204 No Content'),
-            ('GET', '/_mcp', '400 Bad Request'),
-            ('GET', '/_mcp', '500 Internal Server Error'),
-            ('POST', '/_mcp', '200 OK'),
-            ('GET', '/_mcp-other', '200 OK'),
-        ):
-            server_logger.access(
-                SimpleNamespace(status=status, sent=19, headers=[]), [],
-                {'REQUEST_METHOD': method, 'PATH_INFO': path,
-                 'RAW_URI': path + '?probe=1', 'QUERY_STRING': 'probe=1',
-                 'SERVER_PROTOCOL': 'HTTP/1.1'}, timedelta(milliseconds=1),
-            )
-        server_logger.debug('%s %s', 'POST', '/_mcp')
-        server_logger.error('MCP request failed')
-        server_logger.access_log.info('unstructured access event')
-        server_logger.access_log.info('%(s)s', {'m': 'GET', 'U': '/_mcp', 's': '-'})
-    ''')
-    assert len(events) == 8
-    assert '400' in events[0]['message']
-    assert '500' in events[1]['message']
-    assert 'POST /_mcp?' in events[2]['message']
-    assert 'GET /_mcp-other?' in events[3]['message']
-    assert events[4]['message'] == 'POST /_mcp'
-    assert events[5]['level'] == 'error'
-    assert events[6]['message'] == 'unstructured access event'
-    assert events[7]['message'] == '-'
+        server_logger.warning('worker warning')
+        server_logger.error('worker failure')
+        server_logger.critical('worker fatal')
+        logging.debug('application diagnostic')
+        logging.error('application failure')
+    ''', LOG_LEVEL=level)
+    expected = ['warn', 'error', 'fatal']
+    if level == 'DEBUG':
+        expected.append('debug')
+    expected.append('error')
+    assert [event['level'] for event in events] == expected
+    assert [event['message'] for event in events[:3]] == [
+        'worker warning', 'worker failure', 'worker fatal',
+    ]
+    assert all(event['logger'] == 'gunicorn.error' for event in events[:3])
