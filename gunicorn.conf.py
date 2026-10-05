@@ -8,6 +8,9 @@ errorlog = "-"
 logconfig_dict = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "mcp_discovery": {"()": "functions.logging_config.McpDiscoveryLogFilter"},
+    },
     "formatters": {
         "json": {"()": "functions.logging_config.DozzleFormatter"},
     },
@@ -16,6 +19,7 @@ logconfig_dict = {
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stderr",
             "formatter": "json",
+            "filters": ["mcp_discovery"],
         },
     },
     "root": {"level": loglevel.upper(), "handlers": ["console"]},

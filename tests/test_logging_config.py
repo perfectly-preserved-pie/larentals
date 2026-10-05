@@ -228,3 +228,51 @@ def test_gunicorn_config_emits_json_without_duplicates() -> None:
     assert [event['level'] for event in events] == ['debug', 'info', 'info', 'warn']
     assert events[0]['message'] == 'worker diagnostic'
     assert events[2]['logger'] == 'gunicorn.access'
+
+
+def test_gunicorn_mcp_discovery_filter_preserves_failures() -> None:
+    """Exercise discovery suppression through Gunicorn's real access logger.
+
+    Query strings should not bypass suppression, and failed GETs, tool POSTs,
+    other paths, and server errors must remain available for diagnosis.
+    """
+    events = run_logging('''
+        import runpy
+        from datetime import timedelta
+        from types import SimpleNamespace
+        from gunicorn.config import Config
+        from gunicorn.glogging import Logger
+        settings = runpy.run_path('gunicorn.conf.py')
+        config = Config()
+        for key in ('loglevel', 'accesslog', 'errorlog', 'logconfig_dict'):
+            config.set(key, settings[key])
+        server_logger = Logger(config)
+        server_logger.debug('%s %s', 'GET', '/_mcp')
+        for method, path, status in (
+            ('GET', '/_mcp', '200 OK'),
+            ('GET', '/_mcp', '204 No Content'),
+            ('GET', '/_mcp', '400 Bad Request'),
+            ('GET', '/_mcp', '500 Internal Server Error'),
+            ('POST', '/_mcp', '200 OK'),
+            ('GET', '/_mcp-other', '200 OK'),
+        ):
+            server_logger.access(
+                SimpleNamespace(status=status, sent=19, headers=[]), [],
+                {'REQUEST_METHOD': method, 'PATH_INFO': path,
+                 'RAW_URI': path + '?probe=1', 'QUERY_STRING': 'probe=1',
+                 'SERVER_PROTOCOL': 'HTTP/1.1'}, timedelta(milliseconds=1),
+            )
+        server_logger.debug('%s %s', 'POST', '/_mcp')
+        server_logger.error('MCP request failed')
+        server_logger.access_log.info('unstructured access event')
+        server_logger.access_log.info('%(s)s', {'m': 'GET', 'U': '/_mcp', 's': '-'})
+    ''')
+    assert len(events) == 8
+    assert '400' in events[0]['message']
+    assert '500' in events[1]['message']
+    assert 'POST /_mcp?' in events[2]['message']
+    assert 'GET /_mcp-other?' in events[3]['message']
+    assert events[4]['message'] == 'POST /_mcp'
+    assert events[5]['level'] == 'error'
+    assert events[6]['message'] == 'unstructured access event'
+    assert events[7]['message'] == '-'
