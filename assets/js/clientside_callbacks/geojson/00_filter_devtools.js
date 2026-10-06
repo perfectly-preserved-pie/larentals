@@ -5,6 +5,8 @@
     const DEFAULT_VISIBLE_LIMIT = 25; // Max number of excluded listings to keep in memory and show in the panel
     const REASON_PROPERTY_MAP = {
         buy: {
+            "Air conditioning": ["has_ac"],
+            "Dishwasher": ["has_dishwasher"],
             "Price": ["list_price"],
             "Bedrooms": ["bedrooms"],
             "Bathrooms": ["total_bathrooms"],
@@ -25,6 +27,8 @@
             "Bedrooms": ["bedrooms"],
             "Bathrooms": ["total_bathrooms"],
             "Pet policy": ["pet_policy"],
+            "Air conditioning": ["has_ac"],
+            "Dishwasher": ["has_dishwasher"],
             "Sqft": ["sqft"],
             "Price per sqft": ["ppsqft"],
             "Parking": ["parking_spaces"],

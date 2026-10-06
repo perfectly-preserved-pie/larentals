@@ -329,7 +329,8 @@ def update_dataframe_with_listing_data(
     BHHS fills fields The Agency did not supply, avoiding repeat requests and
     image uploads for listings already processed. Missing subtypes use explicit
     provider types while source subtypes remain authoritative. Checkpointed
-    subtype attempts avoid repeat lookups even when no type was found.
+    subtype and amenity attempts avoid repeat lookups when nothing was found.
+    Labeled AC/dishwasher statuses stay unknown when a provider omits them.
 
     Parameters:
     df (pd.DataFrame): The DataFrame to update.
@@ -360,6 +361,8 @@ def update_dataframe_with_listing_data(
     _ensure_object_columns(
         df,
         (
+            "has_ac",
+            "has_dishwasher",
             "listed_date",
             "listing_url",
             "source_photo_url",
@@ -421,10 +424,12 @@ def update_dataframe_with_listing_data(
             and record.get("listing_input_hash") == input_hash
             and record.get("scrape_status") in TERMINAL_SCRAPE_STATUSES
             and (not needs_subtype or record.get("subtype_lookup_status"))
+            and record.get("amenity_lookup_status")
         )
 
         try:
             if scrape_was_cached:
+                amenities = {key: record.get(key) for key in ("has_ac", "has_dishwasher")}
                 scraped_subtype = record.get("scraped_subtype")
                 listed_date = record.get("listed_date")
                 listing_url = record.get("listing_url")
@@ -440,6 +445,7 @@ def update_dataframe_with_listing_data(
                     total_rows=total_rows,
                 )
                 scraped_subtype = listing_subtype(agency_data[3]) if len(agency_data) > 3 else None
+                amenities = agency_data[4] if len(agency_data) > 4 else {}
                 bhhs_data = (None, None, None)
                 bhhs_was_checked = not all(usable(value) for value in agency_data[:3]) or (needs_subtype and not scraped_subtype)
                 if bhhs_was_checked:
@@ -454,7 +460,10 @@ def update_dataframe_with_listing_data(
                 if not scraped_subtype and len(bhhs_data) > 3:
                     scraped_subtype = listing_subtype(bhhs_data[3])
 
-                # Both tuples end with subtype; photo and URL positions differ.
+                fallback_amenities = bhhs_data[4] if len(bhhs_data) > 4 else {}
+                amenities = {key: first_usable(amenities.get(key), fallback_amenities.get(key)) for key in ("has_ac", "has_dishwasher")}
+
+                # Photo and URL positions differ between provider tuples.
                 listed_date = first_usable(agency_data[0], bhhs_data[0])
                 source_photo_url = first_usable(agency_data[2], bhhs_data[1])
                 listing_url = first_usable(agency_data[1], bhhs_data[2])
@@ -510,6 +519,8 @@ def update_dataframe_with_listing_data(
 
             if needs_subtype and scraped_subtype:
                 df.at[row_index, "subtype"] = scraped_subtype
+            for key, status in amenities.items():
+                df.at[row_index, key] = row.get(key) if row.get(key) in {"Yes", "No"} else status
             df.at[row_index, "listed_date"] = listed_date
             df.at[row_index, "listing_url"] = listing_url
             df.at[row_index, "source_photo_url"] = source_photo_url
@@ -531,6 +542,9 @@ def update_dataframe_with_listing_data(
                         else scrape_status
                     ),
                     scrape_error=scrape_error,
+                    has_ac=amenities.get("has_ac"),
+                    has_dishwasher=amenities.get("has_dishwasher"),
+                    amenity_lookup_status="checked",
                     scraped_subtype=scraped_subtype,
                     subtype_lookup_status="success" if scraped_subtype else "not_found",
                     listed_date=listed_date,

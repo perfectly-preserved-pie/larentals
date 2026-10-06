@@ -12,6 +12,7 @@
         bedrooms_slider: "bedrooms",
         bathrooms_slider: "bathrooms",
         pets_radio: "pet_policy",
+        required_amenities: "amenities",
         sqft_slider: "sqft",
         sqft_missing_switch: "sqft",
         ppsqft_slider: "price_per_sqft",
@@ -45,6 +46,7 @@
     });
 
     const BUY_FILTER_CATEGORIES = Object.freeze({
+        required_amenities: "amenities",
         list_price_slider: "list_price",
         bedrooms_slider: "bedrooms",
         bathrooms_slider: "bathrooms",
@@ -91,6 +93,7 @@
         bedrooms: "Bedrooms",
         bathrooms: "Bathrooms",
         pet_policy: "Pet Policy",
+        amenities: "Amenities",
         deposits: "Deposits",
         furnished: "Furnished",
         parking_spaces: "Parking Spaces",

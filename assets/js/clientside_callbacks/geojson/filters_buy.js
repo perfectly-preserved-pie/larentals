@@ -1,8 +1,8 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
         /**
-         * Filters and clusters the GeoJSON data for buying properties based on various criteria.
-         * The order of parameters matches the Dash callback's Input order.
+         * Filter sale listings for both applied results and drawer previews.
+         * Amenity requirements exclude unreported records; selecting both requires both to match.
          *
          * @param {Array<number>} priceRange - [minPrice, maxPrice] for filtering by `list_price`.
          * @param {Array<number>} bedroomsRange - [minBeds, maxBeds] for filtering by `bedrooms`.
@@ -47,6 +47,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload.
          *
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
+         * @param {string} hasAc - Any, Yes, No, or unknown AC choice.
+         * @param {string} hasDishwasher - Any, Yes, No, or unknown dishwasher choice.
          * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
          */
         filterAndClusterBuy: function(
@@ -79,7 +81,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             lotSizeUpperBound,
             hoaUpperBound,
             zipBoundaryData,
-            fullGeojson
+            fullGeojson,
+            hasAc,
+            hasDishwasher
         ) {
             window.larentals?.analytics?.trackBuyFilterChanges();
 
@@ -260,8 +264,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     );
                 }
 
+                const acFilter = !hasAc || hasAc === "any" ||
+                    (hasAc === "unknown" ? !["Yes", "No"].includes(props.has_ac) : props.has_ac === hasAc);
+                const dishwasherFilter = !hasDishwasher || hasDishwasher === "any" ||
+                    (hasDishwasher === "unknown" ? !["Yes", "No"].includes(props.has_dishwasher) : props.has_dishwasher === hasDishwasher);
+
                 // Combine all filters
                 const includeFeature =
+                    acFilter &&
+                    dishwasherFilter &&
                     priceInRange &&
                     bedroomsInRange &&
                     bathroomsInRange &&
@@ -279,6 +290,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                 if (!includeFeature && exclusionCollector) {
                     const failedReasons = [];
+                    if (!acFilter) failedReasons.push("Air conditioning");
+                    if (!dishwasherFilter) failedReasons.push("Dishwasher");
 
                     if (!priceInRange) failedReasons.push("Price");
                     if (!bedroomsInRange) failedReasons.push("Bedrooms");
@@ -354,6 +367,8 @@ window.larentals.filters.filterBuyState = function(state, fullGeojson) {
         state.lotSizeUpperBound,
         state.hoaUpperBound,
         state.zipBoundary,
-        fullGeojson
+        fullGeojson,
+        state.requiredAmenities?.includes("has_ac") ? "Yes" : "any",
+        state.requiredAmenities?.includes("has_dishwasher") ? "Yes" : "any"
     );
 };

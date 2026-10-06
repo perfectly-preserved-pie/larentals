@@ -4,6 +4,7 @@ import numpy as np
 
 from .component_base import BaseClass, _build_cached_geojson_payload, _db_cache_token
 from .component_factories import (
+    build_amenity_filters,
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
@@ -50,6 +51,8 @@ class BuyComponents(BaseClass):
         "total_bathrooms",
         "sqft",
         "ppsqft",
+        "has_ac",
+        "has_dishwasher",
         "year_built",
         "lot_size",
         "garage_spaces",
@@ -73,6 +76,8 @@ class BuyComponents(BaseClass):
         "total_bathrooms",
         "sqft",
         "ppsqft",
+        "has_ac",
+        "has_dishwasher",
         "year_built",
         "lot_size",
         "garage_spaces",
@@ -219,6 +224,7 @@ class BuyComponents(BaseClass):
             ("Home Type", self.create_subtype_checklist(), "subtypes"),
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
+            ("Amenities", build_amenity_filters(self.df), "amenities"),
             ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("HOA Fees", self.create_hoa_fee_components(), "hoa_fees"),
             (

@@ -1,0 +1,206 @@
+[
+  {
+    "mls_number": "26995393",
+    "listing_url": "https://www.theagencyre.com/condominium/clr/26995393/6468-cavalleri-rd-malibu-ca-90265",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Oven, Range",
+          "Label": "Appliances",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Dishwasher, Refrigerator, Range/Oven",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Air Conditioning",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    },
+    "listing_type": "lease"
+  },
+  {
+    "mls_number": "26995421",
+    "listing_url": "https://www.theagencyre.com/condominium/clr/26995421/1414-s-orange-dr-los-angeles-ca-90019",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Water Line to Refrigerator, Washer, Dishwasher, Dryer, Freezer, Garbage Disposal, Ice Maker, Hood Fan, Microwave, Range/Oven, Refrigerator",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Central",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    },
+    "listing_type": "lease"
+  },
+  {
+    "mls_number": "26995453",
+    "listing_url": "https://www.theagencyre.com/single-family/clr/26995453/272-n-topanga-cyn-3-topanga-ca-90290",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "None",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Air Conditioning",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": null
+    },
+    "listing_type": "lease"
+  },
+  {
+    "mls_number": "26995521",
+    "listing_url": "https://www.theagencyre.com/apartment/clr/26995521/345-s-gramercy-pl-205-los-angeles-ca-90020",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Range/Oven, Dishwasher, Gas Or Electric Dryer Hookup, Refrigerator, Dryer, Washer",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Central",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    },
+    "listing_type": "lease"
+  },
+  {
+    "mls_number": "26836705",
+    "listing_type": "buy",
+    "listing_url": "https://www.theagencyre.com/single-family/clr/26836705/14502-vesta-ct-panorama-city-ca-91402",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Oven, Range, Range Hood",
+          "Label": "Appliances",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Dishwasher, Built-Ins, Garbage Disposal, Range/Oven, Solar Panels, Microwave",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Air Conditioning",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    }
+  },
+  {
+    "mls_number": "26993535",
+    "listing_type": "buy",
+    "listing_url": "https://www.theagencyre.com/condominium/clr/26993535/1831-prosser-ave-214-los-angeles-ca-90025",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Microwave, Range, Oven-Electric, Gas/Electric Range",
+          "Label": "Appliances",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Built-Ins, Dishwasher, Garbage Disposal, Microwave, Refrigerator, Elevator",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Wall Unit(s)",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    }
+  },
+  {
+    "mls_number": "26994977",
+    "listing_type": "buy",
+    "listing_url": "https://www.theagencyre.com/condominium/clr/26994977/1121-n-olive-dr-210-west-hollywood-ca-90069",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Dishwasher, Freezer, Garbage Disposal, Microwave, Range/Oven, Refrigerator",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Air Conditioning, Central",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    }
+  },
+  {
+    "mls_number": "26995263",
+    "listing_type": "buy",
+    "listing_url": "https://www.theagencyre.com/condominium/clr/26995263/4549-haskell-ave-1-encino-ca-91436",
+    "AddtionalPropertyInfo": {
+      "Item": [
+        {
+          "Value": "Range, Range Hood, Oven-Gas, Microwave",
+          "Label": "Appliances",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Range/Oven, Dishwasher, Dryer, Washer, Refrigerator, Gas Dryer Hookup, Garbage Disposal, Trash Compactor",
+          "Label": "Equipment",
+          "Group": "interior features"
+        },
+        {
+          "Value": "Air Conditioning, Central",
+          "Label": "Cooling",
+          "Group": "utilities"
+        }
+      ]
+    },
+    "expected": {
+      "has_ac": "Yes",
+      "has_dishwasher": "Yes"
+    }
+  }
+]

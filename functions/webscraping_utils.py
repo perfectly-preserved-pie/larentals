@@ -1,6 +1,6 @@
 from functions.normalization_utils import normalize_subtype
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
 from loguru import logger
 from typing import Tuple, Optional
@@ -590,7 +590,68 @@ def extract_bhhs_subtype(soup: BeautifulSoup) -> Optional[str]:
     return None
 
 
-def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> Tuple[Optional[pd.Timestamp], Optional[str], Optional[str], Optional[str]]:
+def extract_listing_amenities(fields: list[dict]) -> dict[str, str | None]:
+    """Read AC and dishwasher availability from explicit provider labels.
+
+    Appliance lists are often incomplete, so omission of dishwasher stays
+    unknown. Cooling must name an AC system; fans and heating alone do not
+    establish AC. Descriptions are excluded because they can describe other units.
+
+    Args:
+        fields: Provider detail items with explicit Label and Value entries.
+
+    Returns:
+        Yes/No statuses for known amenities, with None for unreported features.
+    """
+    labeled: dict[str, list[str]] = {}
+    for field in fields:
+        label = str(field.get("Label", "")).strip().lower().rstrip(":")
+        raw = field.get("Value")
+        if raw is not None:
+            labeled.setdefault(label, []).append(str(raw).strip())
+    cooling = ", ".join(labeled.get("cooling", [])).lower()
+    appliances = ", ".join(labeled.get("appliances", []) + labeled.get("equipment", [])).lower()
+    ac = None
+    if cooling.strip() in {"none", "no", "no cooling", "no air conditioning"}:
+        ac = "No"
+    elif not re.search(r"\b(no|without)\b", cooling) and re.search(r"\b(central|air conditioning|air conditioner|a/c|wall/window|window/wall|window unit|wall unit|mini.?split|ductless|heat pump)\b", cooling):
+        ac = "Yes"
+    dishwasher = None
+    explicit = ", ".join(labeled.get("dishwasher", [])).lower()
+    if explicit in {"no", "false", "0", "none"} or re.search(r"\bno dishwasher\b", appliances):
+        dishwasher = "No"
+    elif explicit in {"yes", "true", "1"} or (
+        re.search(r"\bdishwasher\b", appliances)
+        and not re.search(r"\bdishwasher\s+(hook.?up|ready|optional|not included|not available)\b", appliances)
+    ):
+        dishwasher = "Yes"
+    elif appliances.strip() == "no appliances":
+        dishwasher = "No"
+    return {"has_ac": ac, "has_dishwasher": dishwasher}
+
+
+def extract_bhhs_amenities(soup: BeautifulSoup) -> dict[str, str | None]:
+    """Read labeled amenities from the BHHS response already fetched.
+
+    Only dedicated labels qualify; free-form descriptions must not turn an
+    omitted amenity into a confirmed feature. No extra page is fetched.
+
+    Args:
+        soup: Parsed fallback listing response.
+
+    Returns:
+        AC/dishwasher statuses inferred only from dedicated feature labels.
+    """
+    fields = []
+    for label in soup.select("dt, th, .feature-label"):
+        if label.get_text(strip=True).lower().rstrip(":") in {"cooling", "appliances", "equipment", "dishwasher"}:
+            sibling = label.find_next_sibling()
+            if sibling:
+                fields.append({"Label": label.get_text(strip=True), "Value": sibling.get_text(" ", strip=True)})
+    return extract_listing_amenities(fields)
+
+
+def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -> tuple[pd.Timestamp | None, str | None, str | None, str | None, dict[str, str | None]]:
     """Scrapes the BHHS website for listing details.
 
     The provider page is a fallback when the primary source lacks fields.
@@ -604,12 +665,13 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     total_rows (int): The total number of rows to process.
 
     Returns:
-    Tuple[Optional[pd.Timestamp], Optional[str], Optional[str], Optional[str]]:
+    tuple:
         - listed_date (pd.Timestamp): The listing date if found.
         - photo (str): The URL of the listing photo if found.
         - link (str): The detailed listing URL if found.
         - subtype (str): Normalized explicit property type if present.
-        Returns four empty fields if data is not found or an error occurs.
+        - amenities (dict): AC/dishwasher Yes/No statuses, or None when unknown.
+        Returns empty fields and unknown amenities when the request fails.
     """
     logger.debug(
         f"Checking BHHS for MLS {mls_number} "
@@ -654,7 +716,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
         if listed_date is None and photo is None and link is None:
             logger.debug(f"BHHS returned no usable data for MLS {mls_number}.")
 
-        return listed_date, photo, link, extract_bhhs_subtype(soup)
+        return listed_date, photo, link, extract_bhhs_subtype(soup), extract_bhhs_amenities(soup)
 
     except HostCircuitOpen:
         logger.debug(f"Skipping BHHS scrape for MLS {mls_number}; host circuit is open.")
@@ -663,7 +725,7 @@ def webscrape_bhhs(url: str, row_index: int, mls_number: str, total_rows: int) -
     except Exception as e:
         logger.warning(f"Error scraping BHHS page for {mls_number}: {e}")
 
-    return None, None, None, None
+    return None, None, None, None, {"has_ac": None, "has_dishwasher": None}
 
 def extract_street_name(full_street_address: str) -> Optional[str]:
     """Extracts the street name from a full street address.
@@ -721,13 +783,14 @@ def fetch_the_agency_data(
     mls_number: str,
     row_index: int,
     total_rows: int,
-) -> Tuple[Optional[datetime.date], Optional[str], Optional[str], Optional[str]]:
+) -> tuple[date | None, str | None, str | None, str | None, dict[str, str | None]]:
     """Fetches property data for a given MLS number from The Agency API.
 
     This is the primary detail source for the listing pipeline. Missing records
     or transport errors return empty fields so BHHS can fill what is available.
     Explicit subtype fields take priority over PropertyType and its label;
     broad market categories are ignored so an unknown home type stays unknown.
+    Amenity statuses use dedicated detail labels; omitted appliances stay unknown.
 
     Parameters:
     mls_number (str): The MLS number of the property to fetch.
@@ -735,12 +798,13 @@ def fetch_the_agency_data(
     total_rows (int): Total rows being processed for progress indication.
 
     Returns:
-    Tuple[Optional[datetime.date], Optional[str], Optional[str], Optional[str]]:
+    tuple:
         - The listing date (as a datetime.date object) if found; otherwise, None.
         - The detail URL of the property if found; otherwise, None.
         - The first property image URL if found; otherwise, None.
         - Normalized explicit property subtype if present; otherwise, None.
-    Returns four empty fields if no matching property is found or an error occurs.
+        - AC/dishwasher Yes/No statuses, or None when unknown.
+    Returns empty fields and unknown amenities if the request fails.
     """
     url = f"https://search-service.idcrealestate.com/api/property/en_US/d4/detail/clr/{mls_number}"
     headers = {
@@ -812,7 +876,14 @@ def fetch_the_agency_data(
             cleaned for key in ("PropertySubType", "PropertySubtype", "SubType", "PropertyType", "PropertyTypeLabel")
             if (cleaned := listing_subtype(data.get(key)))
         ), None)
-        return list_date, detail_url, img_src, subtype
+        details = data.get("AddtionalPropertyInfo", data.get("AdditionalPropertyInfo", {})) or {}
+        fields = (details.get("Item", []) or []) if isinstance(details, dict) else []
+        if isinstance(fields, dict):
+            fields = [fields]
+        if not isinstance(fields, list):
+            fields = []
+        fields = [field for field in fields if isinstance(field, dict)]
+        return list_date, detail_url, img_src, subtype, extract_listing_amenities(fields)
 
     except HostCircuitOpen:
         logger.debug(f"Skipping Agency lookup for MLS {mls_number}; host circuit is open.")
@@ -827,7 +898,7 @@ def fetch_the_agency_data(
     except Exception as e:
         logger.error(f"An unexpected error occurred while fetching MLS {mls_number}: {e}")
 
-    return None, None, None, None
+    return None, None, None, None, {"has_ac": None, "has_dishwasher": None}
 
 def update_hoa_fee(df: pd.DataFrame, mls_number: str) -> None:
     """Updates the HOA fee value for a given MLS number by scraping the HOA fee from the detailed listing webpage.

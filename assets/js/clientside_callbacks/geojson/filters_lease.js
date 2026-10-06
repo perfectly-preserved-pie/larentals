@@ -4,7 +4,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * Filter rental GeoJSON for both desktop and responsive map views.
          *
          * The same selection path is used for the drawer preview and applied
-         * map. Missing policy data stays separate from explicit permission.
+         * map. Missing policy and amenity data stay separate from explicit
+         * permission or availability; both amenity requirements must match.
          * @param {[number, number]} priceRange - [minPrice, maxPrice]
          * @param {[number, number]} bedroomsRange - [minBedrooms, maxBedrooms]
          *
@@ -74,6 +75,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Object} zipBoundaryData - Optional ZIP boundary feature payload
          * @param {Object} fullGeojson - GeoJSON data with .features array
          *
+         * @param {string} hasAc - Any, Yes, No, or unknown AC choice
+         * @param {string} hasDishwasher - Any, Yes, No, or unknown dishwasher choice
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
         filterAndClusterLease: function(
@@ -122,7 +125,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             keyDepositUpperBound,
             otherDepositUpperBound,
             zipBoundaryData,
-            fullGeojson
+            fullGeojson,
+            hasAc,
+            hasDishwasher
         ) {
             window.larentals?.analytics?.trackLeaseFilterChanges();
 
@@ -454,12 +459,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     );
                 }
 
+                const acFilter = !hasAc || hasAc === "any" ||
+                    (hasAc === "unknown" ? !["Yes", "No"].includes(feature.properties.has_ac) : feature.properties.has_ac === hasAc);
+                const dishwasherFilter = !hasDishwasher || hasDishwasher === "any" ||
+                    (hasDishwasher === "unknown" ? !["Yes", "No"].includes(feature.properties.has_dishwasher) : feature.properties.has_dishwasher === hasDishwasher);
+
                 // Combine all filters
                 const includeFeature =
                     priceFilter &&
                     bedroomsFilter &&
                     bathroomsFilter &&
                     petPolicyFilter &&
+                    acFilter &&
+                    dishwasherFilter &&
                     sqftFilter &&
                     ppsqftFilter &&
                     parkingFilter &&
@@ -485,6 +497,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     if (!bedroomsFilter) failedReasons.push("Bedrooms");
                     if (!bathroomsFilter) failedReasons.push("Bathrooms");
                     if (!petPolicyFilter) failedReasons.push("Pet policy");
+                    if (!acFilter) failedReasons.push("Air conditioning");
+                    if (!dishwasherFilter) failedReasons.push("Dishwasher");
                     if (!sqftFilter) failedReasons.push("Sqft");
                     if (!ppsqftFilter) failedReasons.push("Price per sqft");
                     if (!parkingFilter) failedReasons.push("Parking");
@@ -578,6 +592,8 @@ window.larentals.filters.filterLeaseState = function(state, fullGeojson) {
         state.keyDepositUpperBound,
         state.otherDepositUpperBound,
         state.zipBoundary,
-        fullGeojson
+        fullGeojson,
+        state.requiredAmenities?.includes("has_ac") ? "Yes" : "any",
+        state.requiredAmenities?.includes("has_dishwasher") ? "Yes" : "any"
     );
 };

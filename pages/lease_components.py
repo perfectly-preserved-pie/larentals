@@ -10,6 +10,7 @@ from .component_base import (
     categorize_laundry_features,
 )
 from .component_factories import (
+    build_amenity_filters,
     build_isp_speed_components,
     build_listed_date_filter,
     build_location_filter_components,
@@ -61,6 +62,8 @@ class LeaseComponents(BaseClass):
         "parking_spaces",
         "laundry",
         "laundry_category",
+        "has_ac",
+        "has_dishwasher",
         "pet_policy",
         "terms",
         "furnished",
@@ -92,6 +95,8 @@ class LeaseComponents(BaseClass):
         "year_built",
         "parking_spaces",
         "laundry_category",
+        "has_ac",
+        "has_dishwasher",
         "pet_policy",
         "terms",
         "furnished",
@@ -247,6 +252,15 @@ class LeaseComponents(BaseClass):
             ("Bedrooms", self._build_bedrooms_filter(), "bedrooms"),
             ("Pet Policy", self.create_pets_radio_button(), "pet_policy"),
             ("Bathrooms", self._build_bathrooms_filter(), "bathrooms"),
+            (
+                "Amenities",
+                dmc.Stack([
+                    build_amenity_filters(self.df),
+                    dmc.Divider(label="Laundry", labelPosition="left"),
+                    self.create_laundry_checklist(),
+                ], gap="md"),
+                "amenities",
+            ),
             ("Listed Date", self.create_listed_date_components(), "listed_date"),
             ("Rent Control", self.create_rent_control_filter(), "rent_control"),
             (
@@ -301,7 +315,6 @@ class LeaseComponents(BaseClass):
                 ),
                 "isp_speed",
             ),
-            ("Laundry", self.create_laundry_checklist(), "laundry"),
             ("Price Per Sqft", self._build_ppsqft_filter(), "ppsqft"),
             ("Rental Terms", self.create_rental_terms_checklist(), "rental_terms"),
             ("Square Footage", self._build_square_footage_filter(), "square_footage"),
@@ -758,7 +771,9 @@ class LeaseComponents(BaseClass):
     def create_laundry_checklist(self) -> html.Div:
         """Build the laundry-category filter.
 
-        Laundry source values are bucketed first so the UI does not expose inconsistent provider wording.
+        Laundry source values are bucketed first so the UI does not expose
+        inconsistent provider wording. These controls live under Amenities;
+        their existing IDs keep client filtering and reset behavior intact.
 
         Returns:
             A laundry filter ``Div``.

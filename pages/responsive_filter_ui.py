@@ -581,7 +581,8 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
 def _lease_capture_inputs() -> list[Input]:
     """Return every Dash input that contributes to the rental filter state.
 
-    The order matches the arguments accepted by ``captureLeaseFilterState``.
+    The order matches ``captureLeaseFilterState``, including amenity choices
+    so drawer previews, applied results, and resets use the same state.
 
     Returns:
         A list containing the lease capture inputs.
@@ -642,13 +643,15 @@ def _lease_capture_inputs() -> list[Input]:
         Input("lease-location-input", "value"),
         Input("lease-nearby-zip-switch", "checked"),
         Input("lease-zip-boundary-store", "data"),
+        Input("required_amenities", "value"),
     ]
 
 
 def _buy_capture_inputs() -> list[Input]:
     """Return every Dash input that contributes to the for-sale filter state.
 
-    The order matches the arguments accepted by ``captureBuyFilterState``.
+    The order matches ``captureBuyFilterState``, including amenity choices
+    so staged previews and resets use the same state as the map.
 
     Returns:
         A list containing the buy capture inputs.
@@ -691,4 +694,5 @@ def _buy_capture_inputs() -> list[Input]:
         Input("buy-location-input", "value"),
         Input("buy-nearby-zip-switch", "checked"),
         Input("buy-zip-boundary-store", "data"),
+        Input("required_amenities", "value"),
     ]

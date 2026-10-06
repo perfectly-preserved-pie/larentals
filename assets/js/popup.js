@@ -541,7 +541,7 @@
 
     /**
      * Build the lease-page popup body for a single listing.
-     * Rental-specific rows and asynchronously loaded ISP options are added alongside shared listing details.
+     * Amenity rows distinguish reported availability from missing data; ISP options load asynchronously.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -620,6 +620,14 @@
                         <span class="value">${popupData.parking_spaces || "Unknown"}</span>
                     </div>
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                        <span class="label" style="font-weight: bold;">Air Conditioning</span>
+                        <span class="value">${["Yes", "No"].includes(popupData.has_ac) ? popupData.has_ac + " (reported)" : "Not reported"}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                        <span class="label" style="font-weight: bold;">Dishwasher</span>
+                        <span class="value">${["Yes", "No"].includes(popupData.has_dishwasher) ? popupData.has_dishwasher + " (reported)" : "Not reported"}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Pets Allowed?</span>
                         <span class="value">${popupData.pet_policy || "Unknown"}</span>
                     </div>
@@ -659,7 +667,7 @@
 
     /**
      * Build the buy-page popup body for a single listing.
-     * Purchase details use the buy API payload while keeping the shared listing summary layout.
+     * Amenity rows distinguish reported availability from missing data, including older buy tables.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -735,6 +743,14 @@
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Bedrooms/Bathrooms</span>
                         <span class="value">${popupData.bedrooms}/${popupData.total_bathrooms}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                        <span class="label" style="font-weight: bold;">Air Conditioning</span>
+                        <span class="value">${["Yes", "No"].includes(popupData.has_ac) ? popupData.has_ac + " (reported)" : "Not reported"}</span>
+                    </div>
+                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
+                        <span class="label" style="font-weight: bold;">Dishwasher</span>
+                        <span class="value">${["Yes", "No"].includes(popupData.has_dishwasher) ? popupData.has_dishwasher + " (reported)" : "Not reported"}</span>
                     </div>
                     ${parkingContent}
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">

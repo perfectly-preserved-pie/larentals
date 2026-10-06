@@ -1635,3 +1635,34 @@ def build_page_parts(
             card_class_name=config.map_card_class_name,
         ),
     )
+
+
+def build_amenity_filters(df: pd.DataFrame) -> dmc.CheckboxGroup:
+    """Let renters and buyers require either or both reported amenities.
+
+    An empty selection keeps all listings. Selected amenities must all be
+    reported present; missing source details never imply availability.
+
+    Args:
+        df: Listings used to count reported amenities in the whole inventory.
+
+    Returns:
+        A labeled checkbox group shared by the lease and buy filter sections.
+    """
+    return dmc.CheckboxGroup(
+        id="required_amenities",
+        label="Must have",
+        description="Selected amenities must be reported present. Missing details are excluded; confirm with the listing office.",
+        value=[],
+        children=dmc.Stack(
+            [
+                dmc.Checkbox(
+                    label=f"{label} ({int(df.get(key, pd.Series(dtype=object)).eq('Yes').sum()):,} reported)",
+                    value=key,
+                    size="md",
+                )
+                for key, label in (("has_ac", "Air conditioning"), ("has_dishwasher", "Dishwasher"))
+            ],
+            gap="sm", mt="sm",
+        ),
+    )

@@ -42,6 +42,7 @@
       bedroomsRange: ["bedrooms_slider", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
       pets: ["pets_radio", "value"],
+      requiredAmenities: ["required_amenities", "value"],
       sqftRange: exactRangeControl("sqft"),
       sqftMissing: ["sqft_missing_switch", "checked"],
       ppsqftRange: exactRangeControl("ppsqft"),
@@ -80,6 +81,7 @@
     buy: Object.freeze({
       priceRange: exactRangeControl("list_price"),
       bedroomsRange: ["bedrooms_slider", "value"],
+      requiredAmenities: ["required_amenities", "value"],
       bathroomsRange: ["bathrooms_slider", "value"],
       sqftRange: exactRangeControl("sqft"),
       sqftMissing: ["sqft_missing_switch", "checked"],
@@ -113,6 +115,7 @@
       bedrooms: ["bedroomsRange"],
       bathrooms: ["bathroomsRange"],
       pets: ["pets"],
+      amenities: ["requiredAmenities", "laundry", "laundryMissing"],
       sqft: ["sqftRange", "sqftMissing"],
       ppsqft: ["ppsqftRange", "ppsqftMissing"],
       parking: ["parkingRange", "parkingMissing"],
@@ -124,7 +127,6 @@
         "petDepositMissing", "keyDepositRange", "keyDepositMissing",
         "otherDepositRange", "otherDepositMissing",
       ],
-      laundry: ["laundry", "laundryMissing"],
       subtypes: ["subtypes"],
       listedDate: ["listedRange", "dateStart", "dateEnd", "dateMissing"],
       isp: ["downloadRange", "uploadRange", "ispMissing"],
@@ -134,6 +136,7 @@
       location: ["locationText", "nearbyZip"],
       price: ["priceRange"],
       bedrooms: ["bedroomsRange"],
+      amenities: ["requiredAmenities"],
       bathrooms: ["bathroomsRange"],
       sqft: ["sqftRange", "sqftMissing"],
       ppsqft: ["ppsqftRange", "ppsqftMissing"],
@@ -817,6 +820,7 @@
     bedrooms: "Bedrooms",
     bathrooms: "Bathrooms",
     pet_policy: "Pet Policy",
+    amenities: "Amenities",
   });
 
   const ACCORDION_DEFAULTS = Object.freeze({
@@ -1206,6 +1210,7 @@
 
       /**
        * Capture rental controls in Dash callback order and stage or apply them.
+       * Amenity choices travel with the draft so mobile previews and resets match the map.
        * @returns {Array<*>} Draft and applied values for the callback outputs.
        */
       captureLeaseFilterState: function (
@@ -1222,7 +1227,7 @@
         otherDepositMinimum, otherDepositMaximum, otherDepositUpperBound, otherDepositMissing,
         laundry, laundryMissing, subtypes, listedRange, dateStart, dateEnd,
         dateMissing, downloadRange, uploadRange, ispMissing, rentControl,
-        locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
+        locationText, nearbyZip, zipBoundary, requiredAmenities, _applyClicks, _viewport, currentApplied
       ) {
         const priceRange = exactRange(priceMinimum, priceMaximum);
         const sqftRange = exactRange(sqftMinimum, sqftMaximum);
@@ -1244,12 +1249,13 @@
           otherDepositRange, otherDepositUpperBound, otherDepositMissing,
           laundry, laundryMissing, subtypes, listedRange, dateStart, dateEnd,
           dateMissing, downloadRange, uploadRange, ispMissing, rentControl,
-          locationText, nearbyZip, zipBoundary,
+          locationText, nearbyZip, zipBoundary, requiredAmenities,
         }, currentApplied);
       },
 
       /**
        * Capture for-sale controls in Dash callback order and stage or apply them.
+       * Amenity choices travel with the draft so mobile previews and resets match the map.
        * @returns {Array<*>} Draft and applied values for the callback outputs.
        */
       captureBuyFilterState: function (
@@ -1263,7 +1269,7 @@
         subtypes, listedRange, dateStart, dateEnd, dateMissing,
         hoaMinimum, hoaMaximum, hoaUpperBound, hoaMissing, hoaFrequency,
         downloadRange, uploadRange, ispMissing,
-        locationText, nearbyZip, zipBoundary, _applyClicks, _viewport, currentApplied
+        locationText, nearbyZip, zipBoundary, requiredAmenities, _applyClicks, _viewport, currentApplied
       ) {
         const priceRange = exactRange(priceMinimum, priceMaximum);
         const sqftRange = exactRange(sqftMinimum, sqftMaximum);
@@ -1279,7 +1285,7 @@
           subtypes, listedRange, dateStart, dateEnd, dateMissing,
           hoaRange, hoaUpperBound, hoaMissing, hoaFrequency,
           downloadRange, uploadRange, ispMissing,
-          locationText, nearbyZip, zipBoundary,
+          locationText, nearbyZip, zipBoundary, requiredAmenities,
         }, currentApplied);
       },
 

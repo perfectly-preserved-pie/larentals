@@ -111,7 +111,8 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
         """Load a rental listing and its city-specific property summaries.
 
         A missing MLS number returns 404 so the popup can show its fallback
-        state. LAHD and RSO lookups run only after the listing row exists.
+        state. Amenity columns are optional while older databases await their
+        next pipeline run. LAHD and RSO lookups require a listing row.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -125,11 +126,21 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(LEASE_LISTING_DETAIL_SQL, (listing_id,)).fetchone()
+            columns = {column[1] for column in conn.execute("PRAGMA table_info(lease)")}
+            amenity_columns = [key for key in ("has_ac", "has_dishwasher") if key in columns]
+            amenities = {}
+            if row is not None and amenity_columns:
+                amenity_row = conn.execute(
+                    f"SELECT {', '.join(amenity_columns)} FROM lease WHERE mls_number = ? LIMIT 1",
+                    (listing_id,),
+                ).fetchone()
+                amenities = dict(amenity_row)
 
         payload = build_listing_detail_payload(row)
         if payload is None:
             abort(404, f"Lease listing not found: {listing_id}")
 
+        payload.update({key: amenities.get(key) for key in ("has_ac", "has_dishwasher")})
         payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
         payload["rso_property_summary"] = build_rso_listing_summary(payload)
         return jsonify(payload)
@@ -139,7 +150,8 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
         """Load a sale listing and its Housing Department summary.
 
         Sale popups do not need the rental-only RSO lookup. A missing MLS number
-        returns 404 for the popup's fallback state.
+        returns 404 for the popup's fallback state. Optional amenity columns
+        remain unknown until an older listing table is refreshed.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -153,11 +165,21 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(BUY_LISTING_DETAIL_SQL, (listing_id,)).fetchone()
+            columns = {column[1] for column in conn.execute("PRAGMA table_info(buy)")}
+            amenity_columns = [key for key in ("has_ac", "has_dishwasher") if key in columns]
+            amenities = {}
+            if row is not None and amenity_columns:
+                amenity_row = conn.execute(
+                    f"SELECT {', '.join(amenity_columns)} FROM buy WHERE mls_number = ? LIMIT 1",
+                    (listing_id,),
+                ).fetchone()
+                amenities = dict(amenity_row)
 
         payload = build_listing_detail_payload(row)
         if payload is None:
             abort(404, f"Buy listing not found: {listing_id}")
 
+        payload.update({key: amenities.get(key) for key in ("has_ac", "has_dishwasher")})
         payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
         return jsonify(payload)
 
