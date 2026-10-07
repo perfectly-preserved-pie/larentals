@@ -27,8 +27,8 @@ The existing BHHS fallback request can supply dedicated HTML feature labels, but
 missing amenities alone do not trigger another BHHS request.
 
 The UI and popup API also support older databases without the new columns. Until
-the next listing pipeline refresh, those records appear as Not reported. No bulk
-refresh or production deployment was performed for this change.
+the next listing pipeline refresh, those records appear as Not reported. The amenities-only backfill below can
+populate an existing database without a complete listing pipeline run.
 
 ## Live sample on October 6, 2026
 
@@ -60,3 +60,25 @@ Run the focused backend checks with:
 ```
 
 Browser checks live in `tests/e2e/listing_amenities.spec.js`.
+
+
+## Amenities-only database backfill
+
+Run `.venv/bin/python -m scripts.backfill_listing_amenities` to enrich all existing
+buy and lease rows in place. It creates `data/checkpoints/amenities.before.sqlite`
+once as a full pre-backfill backup, and saves individual lookup outcomes in
+`data/checkpoints/amenities.sqlite`. Re-running resumes saved outcomes; transient
+errors are retried, while provider 404/410 responses stay unavailable. Only
+`has_ac` and `has_dishwasher` are updated. Existing confirmed fields survive
+omitted provider details. No geocoding, images, prices, or listing removal runs.
+
+The provider API may double-encode JSON when `Accept: application/json` is sent.
+This backfill uses the existing pipeline's `Accept: */*` and supports both response
+shapes. Requests retain the shared five-second cadence and retry/circuit behavior.
+11,546 listings therefore take roughly 16 hours before retries. Rows are processed
+across both markets in MLS order, and each completed update commits immediately.
+
+The running workspace job writes `data/checkpoints/amenities.backfill.log`; its
+PID is saved in `data/checkpoints/amenities.backfill.pid`. The runner retries
+incomplete passes after 15 minutes. These files and the backups are ignored by
+Git. This job does not publish to S3 or restart a production server.

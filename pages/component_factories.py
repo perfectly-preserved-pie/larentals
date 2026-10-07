@@ -1652,7 +1652,7 @@ def build_amenity_filters(df: pd.DataFrame) -> dmc.CheckboxGroup:
     return dmc.CheckboxGroup(
         id="required_amenities",
         label="Must have",
-        description="Selected amenities must be reported present. Missing details are excluded; confirm with the listing office.",
+        description="Only listings that explicitly say these amenities are present will match.",
         value=[],
         children=dmc.Stack(
             [
