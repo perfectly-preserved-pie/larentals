@@ -658,20 +658,23 @@
     });
 
     var observer = new MutationObserver(scheduleRefresh);
-    var observing = false;
+    var observedPane = null;
 
     /**
-     * Start observing the Leaflet marker pane once it exists.
-     * The map is mounted asynchronously, so repeated calls wait until the pane can be observed and then bind only once.
+     * Observe the current Leaflet marker pane, including after page changes.
+     * Buy and Lease replace the map when navigating between them. Disconnect
+     * from the old pane so filter updates refresh the current listings and
+     * price sample instead of leaving markers colored against the previous page.
      *
      * @returns {void}
      */
     function bind() {
-        if (observing) return;
         var pane = document.querySelector(".leaflet-marker-pane");
+        if (pane === observedPane) return;
+        observer.disconnect();
+        observedPane = pane;
         if (!pane) return;
         observer.observe(pane, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
-        observing = true;
         refresh();
     }
 

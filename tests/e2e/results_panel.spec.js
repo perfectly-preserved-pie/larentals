@@ -5,6 +5,52 @@ const pages = [
   { name: "buy", path: "/buy", key: "buy" },
 ];
 
+for (const destination of pages) {
+  test(`${destination.name} price scale refreshes after navigation and combined filters`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const origin = pages.find((candidate) => candidate.key !== destination.key);
+    await page.goto(origin.path, { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".results-row").first()).toBeVisible({ timeout: 30_000 });
+    await page.locator(`a[href="${destination.path}"]`).first().click();
+    const rows = page.locator(`[data-results-panel="${destination.key}"] .results-row`);
+    await expect(rows.first()).toBeVisible({ timeout: 30_000 });
+
+    for (const combined of [false, true]) {
+      await page.evaluate(({ key, combined }) => {
+        // An unrelated price sample exposes a missed refresh even when the
+        // new page happens to have similar price percentiles to the old one.
+        window.larentals.priceScale.update([1e9, 2e9, 3e9, 4e9, 5e9]);
+        window.larentals.priceScale.repaint();
+        window.dash_clientside.set_props("listed_time_range_radio", { value: combined ? 30 : 14 });
+        window.dash_clientside.set_props("listed_date_missing_switch", { checked: false });
+        if (combined) {
+          const defaults = window.larentals.responsiveFilters.defaults[key];
+          window.dash_clientside.set_props("bedrooms_slider", { value: [1, defaults.bedroomsUpperBound] });
+          window.dash_clientside.set_props("bathrooms_slider", { value: [1, defaults.bathroomsUpperBound] });
+        }
+      }, { key: destination.key, combined });
+
+      await expect.poll(async () => page.evaluate(() => {
+        const scale = window.larentals.priceScale;
+        const colors = [...document.querySelectorAll(".price-marker[data-price], [data-cluster-price]")]
+          .map((marker) => scale.colorFor(marker.dataset.price || marker.dataset.clusterPrice));
+        return new Set(colors).size;
+      })).toBeGreaterThan(1);
+      await expect(rows.first()).toBeVisible();
+      await expect.poll(async () => page.evaluate(() => {
+        const scale = window.larentals.priceScale;
+        return [...document.querySelectorAll(".price-marker[data-price], [data-cluster-price]")]
+          .every((marker) => {
+            const price = marker.dataset.price || marker.dataset.clusterPrice;
+            const layers = marker.matches(".price-marker") ? [marker]
+              : [...marker.querySelectorAll(".cluster-price-core, .cluster-price-ring")];
+            return layers.every((layer) => layer.dataset.priceColor === scale.colorFor(price));
+          });
+      })).toBe(true);
+    }
+  });
+}
+
 for (const listingPage of pages) {
   test(`${listingPage.name} result click preserves zoom and opens that listing`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
