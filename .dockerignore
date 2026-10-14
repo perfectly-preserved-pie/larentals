@@ -11,6 +11,7 @@
 *dataframe.py
 assets/dashExtensions_default.js
 data/**/*.bak
+data/audits/
 data/cache/
 data/derived/layers/DINS*
 data/sources/broadband/ca_broadband_geopackage.gpkg*
