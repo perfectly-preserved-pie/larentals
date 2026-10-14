@@ -134,3 +134,68 @@ def test_guard_scope(path, expected):
     register_dash_asset_request_guard(server)
     server.add_url_rule("/<path:path>", view_func=lambda path: "passed through")
     assert server.test_client().get(path).status_code == expected
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/_dash-component-suites/dash/dcc/forwardRef((function(t,n){",
+        "/_dash-component-suites/dash/deps/.env",
+        "/_dash-component-suites/dash/deps/phpinfo.php",
+        "/_dash-component-suites/dash/deps/",
+        "/_dash-component-suites/unknown/bundle.js",
+        "/_dash-component-suites/dash/dcc/missing.js.map",
+    ],
+)
+def test_unregistered_assets_return_404(dash_client, caplog, method, path):
+    """Reject scanner paths through Dash's actual package validation.
+
+    These names bypass the early malformed-chunk checks and previously raised
+    dependency exceptions, including probes under otherwise valid packages.
+    """
+    response = dash_client.open(path, method=method)
+    assert response.status_code == 404
+    assert not [record for record in caplog.records if record.levelno >= 40]
+
+
+@pytest.mark.parametrize(
+    "path, method",
+    [("/callback", "GET"), ("/_dash-component-suites/dash/bundle.js", "POST")],
+)
+def test_other_dependency_failures_remain_visible(path, method):
+    """Keep unrelated dependency errors from becoming misleading 404s.
+
+    The handler is registered on Flask globally, so both the route prefix and
+    request method must constrain which failures it translates.
+    """
+    from dash.exceptions import DependencyException
+
+    server = Flask(__name__)
+    server.config["TESTING"] = True
+    register_dash_asset_request_guard(server)
+
+    def fail():
+        """Simulate a dependency failure outside component asset retrieval.
+
+        A real callback failure must still propagate to Flask's error handling.
+        """
+        raise DependencyException("unrelated dependency failure")
+
+    server.add_url_rule(path, view_func=fail, methods=[method])
+    with pytest.raises(DependencyException, match="unrelated dependency failure"):
+        server.test_client().open(path, method=method)
+
+
+def test_fingerprinted_asset_still_loads(dash_client):
+    """Let Dash normalize cache fingerprints before validating asset names.
+
+    Browser bundle URLs contain version and modification-time tokens that are
+    absent from the registered filename and must not be rejected literally.
+    """
+    response = dash_client.get(
+        "/_dash-component-suites/dash/dcc/"
+        "dash_core_components.v4_4_1m1234567890.js"
+    )
+    assert response.status_code == 200
+    assert response.data

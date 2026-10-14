@@ -1,6 +1,8 @@
 """Reject known malformed Dash component asset requests before routing."""
 
-from flask import Flask, abort, request
+from dash.exceptions import DependencyException
+from flask import Flask, Response, abort, request
+from werkzeug.exceptions import NotFound
 
 
 _COMPONENT_SUITES_PREFIX = "/_dash-component-suites/"
@@ -56,9 +58,11 @@ def _is_nested_component_asset(path: str) -> bool:
 
 
 def register_dash_asset_request_guard(server: Flask) -> None:
-    """Return 404 for malformed asset paths before Dash raises an exception.
+    """Return 404 for malformed or unregistered Dash component assets.
 
-    Installing once avoids duplicate Flask before-request hooks during app setup.
+    Known malformed paths are rejected before routing. Other filenames are
+    validated by Dash itself so fingerprinted bundles and newly registered
+    assets follow the framework's rules without a separate allowlist.
 
     Args:
         server: Flask application serving Dash component assets.
@@ -66,6 +70,25 @@ def register_dash_asset_request_guard(server: Flask) -> None:
     Returns:
         None.
     """
+
+    @server.errorhandler(DependencyException)
+    def missing_component_asset(error: DependencyException) -> Response:
+        """Translate Dash asset validation failures into ordinary missing files.
+
+        Only component asset GET/HEAD requests qualify; dependency failures in
+        callbacks or other routes must remain visible as application errors.
+
+        Args:
+            error: Dependency failure raised while dispatching the request.
+
+        Returns:
+            A standard 404 response for an unregistered component asset.
+        """
+        if request.method in {"GET", "HEAD"} and request.path.startswith(
+            _COMPONENT_SUITES_PREFIX
+        ):
+            return NotFound().get_response(request.environ)
+        raise error
 
     @server.before_request
     def reject_malformed_component_asset() -> None:
