@@ -1,0 +1,509 @@
+{
+  "direction": [
+    "data/runtime/larentals.db",
+    "data/runtime/larentals(3).db"
+  ],
+  "tables": {
+    "_outlier_removal_report": {
+      "before": 22,
+      "after": 22,
+      "net": 0,
+      "key": [
+        "table_name",
+        "column_name"
+      ],
+      "added": 0,
+      "removed": 0,
+      "updated": 0,
+      "unchanged": 22,
+      "changed_columns": {}
+    },
+    "buy": {
+      "before": 7584,
+      "after": 8069,
+      "net": 485,
+      "key": [
+        "mls_number"
+      ],
+      "added": 665,
+      "removed": 180,
+      "updated": 2,
+      "unchanged": 7402,
+      "changed_columns": {
+        "date_processed": 2,
+        "listing_input_hash": 2,
+        "geocode_status": 2,
+        "scrape_status": 1,
+        "image_status": 1,
+        "has_ac": 1,
+        "has_dishwasher": 1,
+        "zip_code": 1,
+        "subtype": 1,
+        "full_street_address": 1
+      }
+    },
+    "buy_enrichment": {
+      "before": 22420,
+      "after": 23076,
+      "net": 656,
+      "key": [
+        "mls_number"
+      ],
+      "added": 656,
+      "removed": 0,
+      "updated": 7378,
+      "unchanged": 15042,
+      "changed_columns": {
+        "source_version": 7378,
+        "enriched_at": 7378
+      }
+    },
+    "buy_provider_options": {
+      "before": 30778,
+      "after": 32641,
+      "net": 1863,
+      "key": null,
+      "added": 2688,
+      "removed": 825,
+      "updated": null,
+      "unchanged": 29953,
+      "method": "exact-row multiset; no verified unique key"
+    },
+    "buy_sample": {
+      "before": 15,
+      "after": 15,
+      "net": 0,
+      "key": [
+        "mls_number"
+      ],
+      "added": 0,
+      "removed": 0,
+      "updated": 0,
+      "unchanged": 15,
+      "changed_columns": {}
+    },
+    "lease": {
+      "before": 3962,
+      "after": 4136,
+      "net": 174,
+      "key": [
+        "mls_number"
+      ],
+      "added": 470,
+      "removed": 296,
+      "updated": 3,
+      "unchanged": 3663,
+      "changed_columns": {
+        "date_processed": 3,
+        "listing_input_hash": 3,
+        "geocode_status": 3,
+        "has_ac": 1,
+        "has_dishwasher": 1,
+        "security_deposit": 1,
+        "list_price": 1,
+        "ppsqft": 1
+      }
+    },
+    "lease_enrichment": {
+      "before": 21915,
+      "after": 22379,
+      "net": 464,
+      "key": [
+        "mls_number"
+      ],
+      "added": 464,
+      "removed": 0,
+      "updated": 3655,
+      "unchanged": 18260,
+      "changed_columns": {
+        "source_version": 3655,
+        "enriched_at": 3655,
+        "nearest_high_school_name": 132,
+        "nearest_mid_school_name": 63,
+        "school_district_name": 14,
+        "school_district_type": 14,
+        "nearest_elem_school_name": 11
+      }
+    },
+    "lease_provider_options": {
+      "before": 15759,
+      "after": 16552,
+      "net": 793,
+      "key": null,
+      "added": 2023,
+      "removed": 1230,
+      "updated": null,
+      "unchanged": 14529,
+      "method": "exact-row multiset; no verified unique key"
+    },
+    "lease_sample": {
+      "before": 15,
+      "after": 15,
+      "net": 0,
+      "key": [
+        "mls_number"
+      ],
+      "added": 0,
+      "removed": 0,
+      "updated": 0,
+      "unchanged": 15,
+      "changed_columns": {}
+    },
+    "listing_reports": {
+      "before": 0,
+      "after": 0,
+      "net": 0,
+      "key": [
+        "mls_number"
+      ],
+      "added": 0,
+      "removed": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "changed_columns": {}
+    },
+    "sqlite_sequence": {
+      "before": 0,
+      "after": 0,
+      "net": 0,
+      "key": [
+        "name"
+      ],
+      "added": 0,
+      "removed": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "changed_columns": {}
+    }
+  },
+  "subtypes": {
+    "buy": [
+      {
+        "subtype": "Condominium",
+        "before": 2766,
+        "after": 2884,
+        "net": 118,
+        "added": 235,
+        "removed": 117,
+        "updated": 1,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Loft",
+        "before": 10,
+        "after": 9,
+        "net": -1,
+        "added": 0,
+        "removed": 1,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Own Your Own",
+        "before": 5,
+        "after": 5,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Single Family Residence",
+        "before": 962,
+        "after": 1315,
+        "net": 353,
+        "added": 354,
+        "removed": 2,
+        "updated": 1,
+        "subtype_in": 1,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Stock Cooperative",
+        "before": 9,
+        "after": 9,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Townhouse",
+        "before": 683,
+        "after": 741,
+        "net": 58,
+        "added": 67,
+        "removed": 9,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Unknown",
+        "before": 3149,
+        "after": 3106,
+        "net": -43,
+        "added": 9,
+        "removed": 51,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 1
+      }
+    ],
+    "buy_sample": [
+      {
+        "subtype": "Condominium",
+        "before": 7,
+        "after": 7,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Townhouse",
+        "before": 1,
+        "after": 1,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Unknown",
+        "before": 7,
+        "after": 7,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      }
+    ],
+    "lease": [
+      {
+        "subtype": "Apartment",
+        "before": 884,
+        "after": 920,
+        "net": 36,
+        "added": 99,
+        "removed": 63,
+        "updated": 1,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Co-Op",
+        "before": 2,
+        "after": 1,
+        "net": -1,
+        "added": 0,
+        "removed": 1,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Combo - Res & Com",
+        "before": 13,
+        "after": 15,
+        "net": 2,
+        "added": 2,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Condominium",
+        "before": 704,
+        "after": 809,
+        "net": 105,
+        "added": 144,
+        "removed": 39,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Duplex",
+        "before": 20,
+        "after": 20,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Loft",
+        "before": 4,
+        "after": 4,
+        "net": 0,
+        "added": 1,
+        "removed": 1,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Own Your Own",
+        "before": 1,
+        "after": 2,
+        "net": 1,
+        "added": 1,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Quadplex",
+        "before": 13,
+        "after": 13,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Room For Rent",
+        "before": 2,
+        "after": 2,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Single Family Residence",
+        "before": 856,
+        "after": 992,
+        "net": 136,
+        "added": 181,
+        "removed": 45,
+        "updated": 1,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Stock Cooperative",
+        "before": 1,
+        "after": 1,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Studio",
+        "before": 3,
+        "after": 3,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Townhouse",
+        "before": 297,
+        "after": 326,
+        "net": 29,
+        "added": 39,
+        "removed": 10,
+        "updated": 1,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Triplex",
+        "before": 6,
+        "after": 6,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Unknown",
+        "before": 1156,
+        "after": 1022,
+        "net": -134,
+        "added": 3,
+        "removed": 137,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      }
+    ],
+    "lease_sample": [
+      {
+        "subtype": "Apartment",
+        "before": 4,
+        "after": 4,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Condominium",
+        "before": 1,
+        "after": 1,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      },
+      {
+        "subtype": "Unknown",
+        "before": 10,
+        "after": 10,
+        "net": 0,
+        "added": 0,
+        "removed": 0,
+        "updated": 0,
+        "subtype_in": 0,
+        "subtype_out": 0
+      }
+    ]
+  },
+  "subtype_transitions": {
+    "buy": [
+      {
+        "from": "Unknown",
+        "to": "Single Family Residence",
+        "count": 1
+      }
+    ],
+    "buy_sample": [],
+    "lease": [],
+    "lease_sample": []
+  }
+}
