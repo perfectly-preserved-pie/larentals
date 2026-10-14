@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "current_files_removed_net": 6845,
+  "current_files_retained": 9849,
+  "historical_versions_before": 938,
+  "historical_versions_after": 0,
+  "estimated_bytes_removed": 784924825,
+  "database_integrity": "ok",
+  "remote_database_and_checkpoints_uploaded": false,
+  "counting_note": "Use inventory differences for unique removal counts. API operation counters include already absent items or IDs returned for associated versions; historical versions also disappear when their parent file is deleted."
+}

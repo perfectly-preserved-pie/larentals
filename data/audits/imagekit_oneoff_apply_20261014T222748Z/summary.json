@@ -1,0 +1,32 @@
+{
+  "active_database_rows": 11662,
+  "active_reference_paths": 9855,
+  "apply": true,
+  "checkpoint_urls_cleared": {
+    "buy": 74,
+    "lease": 133
+  },
+  "current_assets_after": 9849,
+  "current_assets_before": 16694,
+  "current_assets_deleted": 7530,
+  "current_assets_to_delete": 6845,
+  "current_bytes_to_delete": 677547652,
+  "database_updates": {
+    "buy": {
+      "inactive_rows_cleared": 0,
+      "missing_active_urls_cleared": 6,
+      "placeholder_urls_cleared": 34
+    },
+    "lease": {
+      "inactive_rows_cleared": 543,
+      "missing_active_urls_cleared": 0,
+      "placeholder_urls_cleared": 0
+    }
+  },
+  "delete_fraction": 0.41002755481011144,
+  "historical_versions_after": 0,
+  "historical_versions_deleted": 868,
+  "inactive_database_rows": 543,
+  "max_delete_fraction": 0.1,
+  "status": "completed"
+}

@@ -1,0 +1,28 @@
+{
+  "published_last_modified": "UNVERIFIED: local snapshot from October 14",
+  "active_rows": 11662,
+  "inactive_rows": 543,
+  "active_paths": 9855,
+  "current_files": 16694,
+  "delete_current": 6845,
+  "delete_bytes": 677547652,
+  "delete_versions": 938,
+  "version_bytes": 107377173,
+  "keep_current": 9849,
+  "missing_active_paths": [
+    "/AR24242830MR",
+    "/OC24243967MR",
+    "/OC24248877MR",
+    "/PW24132444",
+    "/TR24221941MR",
+    "/WS25000197MR"
+  ],
+  "delete_reasons": {
+    "unreferenced": 6845
+  },
+  "delete_folders": {
+    "/listings/buy": 1123,
+    "": 3847,
+    "/listings/lease": 1875
+  }
+}
