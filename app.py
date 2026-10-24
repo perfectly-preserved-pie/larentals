@@ -19,6 +19,7 @@ from functions.mcp_usage_logging import register_mcp_usage_logging
 from functions.mcp_2026 import register_mcp_2026_transport
 from functions.source_map_logging import register_source_map_error_filter
 from functions.dash_asset_requests import register_dash_asset_request_guard
+from functions.security_headers import register_security_headers
 from functions.mcp_listings import configure_listings_mcp
 from functions.seo import (
   build_llms_txt,
@@ -91,6 +92,7 @@ Compress(app.server)
 
 # For Gunicorn
 server = app.server
+register_security_headers(server, app.csp_hashes)
 register_mcp_usage_logging(server)
 register_mcp_2026_transport(server, allowed_origins={CANONICAL_BASE_URL})
 register_source_map_error_filter(server)

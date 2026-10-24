@@ -77,3 +77,20 @@ function reportListing(listingProps) {
         }
     });
 }
+
+/**
+ * Open report dialogs for dynamically created Leaflet popup links.
+ * Delegation keeps listing data out of executable HTML attributes and works
+ * when a popup is replaced without reattaching listeners.
+ *
+ * @param {MouseEvent} event Document click that may target a report link.
+ * @returns {void}
+ */
+function handleReportListingClick(event) {
+    const link = event.target.closest?.("[data-report-listing]");
+    if (!link) return;
+    event.preventDefault();
+    reportListing(decodeURIComponent(link.dataset.reportListing));
+}
+
+document.addEventListener("click", handleReportListingClick);

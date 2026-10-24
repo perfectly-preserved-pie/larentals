@@ -522,7 +522,8 @@
 
     /**
      * Render the report-listing footer link for a popup.
-     * The listing identifier is encoded into the report dialog payload before interpolation.
+     * The listing identifier is encoded as data for the delegated click listener,
+     * so popups created after page load need no inline JavaScript handlers.
      *
      * @param {string} listingId Listing identifier / MLS number.
      * @returns {string} HTML string for the report link.
@@ -531,7 +532,7 @@
         const payload = encodeURIComponent(JSON.stringify({ mls_number: listingId }));
         return `
             <div style="text-align: center; margin-top: 10px;">
-                <a href="#" title="Report Listing" onclick='reportListing(decodeURIComponent("${payload}"))' style="text-decoration: none; color: #d55e00;">
+                <a href="#" title="Report Listing" data-report-listing="${escapeHtml(payload)}" style="text-decoration: none; color: #d55e00;">
                     <i class="fa-solid fa-flag" style="font-size:1.25em; vertical-align: middle;"></i>
                     <span style="vertical-align: middle; margin-left: 5px;">Report Listing</span>
                 </a>
