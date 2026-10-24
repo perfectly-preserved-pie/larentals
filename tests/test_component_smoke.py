@@ -8,6 +8,7 @@ import dash_mantine_components as dmc
 from dash import dcc, html
 
 from pages.component_factories import (
+    CappedRangeBounds,
     build_isp_speed_components,
     build_location_filter_components,
     build_location_filter_status,
@@ -44,6 +45,27 @@ def _collect_components(component: object) -> Iterator[object]:
 
 
 class ComponentsSmokeTest(unittest.TestCase):
+    def test_currency_marks_keep_irregular_endpoints_clear(self) -> None:
+        """Keep nearby regular ticks from crowding purchase and lease endpoints.
+
+        Both price filters use the shared mark generator; preserve the exact
+        endpoint while dropping only the interior tick that would overlap it.
+        """
+        for maximum, step, endpoint in (
+            (1_050_000, 500_000, "$1.05M"),
+            (10_500, 5_000, "$10.5k"),
+        ):
+            for capped in (False, True):
+                with self.subTest(maximum=maximum, capped=capped):
+                    bounds = CappedRangeBounds(
+                        0, maximum + step if capped else maximum, capped,
+                        maximum if capped else None,
+                    )
+                    self.assertEqual(
+                        bounds.marks(currency=True, include_open_end=False, target_intervals=3),
+                        {0: "$0", step: "$500k" if step == 500_000 else "$5k", maximum: endpoint},
+                    )
+
     def test_distribution_callbacks_can_share_slider_id_with_unique_outputs(self) -> None:
         """Keep page-specific histogram outputs unique for shared slider IDs.
 

@@ -59,7 +59,9 @@ class CappedRangeBounds:
 
         Choose compact labels for large values and reserve the last mark for an
         open upper bound when the slider is capped. That mark means the filter
-        should include values above the display maximum.
+        should include values above the display maximum. Omit interior ticks
+        within half a regular interval of the finite endpoint so an irregular
+        maximum does not crowd its neighboring label on narrow filter panels.
 
         Args:
             currency: Whether currency behavior is enabled.
@@ -124,6 +126,9 @@ class CappedRangeBounds:
             marks[key] = format_value(key)
             current = round(current + tick_step, 10)
 
+        for key in list(marks):
+            if self.minimum < key < finite_maximum and finite_maximum - key < tick_step / 2:
+                del marks[key]
         marks[finite_maximum] = format_value(finite_maximum)
         if include_open_end and self.is_capped:
             marks[self.maximum] = "Unlimited"
