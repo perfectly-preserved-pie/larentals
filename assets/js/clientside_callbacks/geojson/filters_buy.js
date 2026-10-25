@@ -49,6 +49,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          * @param {Object} fullGeojson - The full buy GeoJSON data as a FeatureCollection.
          * @param {string} hasAc - Any, Yes, No, or unknown AC choice.
          * @param {string} hasDishwasher - Any, Yes, No, or unknown dishwasher choice.
+         * @param {boolean} quiet - Suppress analytics and debug publication for histogram samples.
          * @returns {Object} A GeoJSON FeatureCollection containing features that match all filters.
          */
         filterAndClusterBuy: function(
@@ -83,16 +84,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             zipBoundaryData,
             fullGeojson,
             hasAc,
-            hasDishwasher
+            hasDishwasher,
+            quiet = false
         ) {
-            window.larentals?.analytics?.trackBuyFilterChanges();
+            if (!quiet) window.larentals?.analytics?.trackBuyFilterChanges();
 
             // Guard against missing or malformed GeoJSON
             if (!fullGeojson || !Array.isArray(fullGeojson.features)) {
                 return { type: "FeatureCollection", features: [] };
             }
 
-            const exclusionCollector = window.larentals?.filterDevtools?.createRunCollector(
+            const exclusionCollector = quiet ? null : window.larentals?.filterDevtools?.createRunCollector(
                 "buy",
                 fullGeojson.features.length,
             );
@@ -334,9 +336,10 @@ window.larentals.filters = window.larentals.filters || {};
  * @param {Object<string, *>} state Applied for-sale filter values.
  * @param {{type: string, features: Array<Object>}} fullGeojson Source listings.
  *
+ * @param {boolean} quiet Suppress analytics and debug publication for auxiliary samples.
  * @returns {{type: string, features: Array<Object>}} Filtered Buy listings.
  */
-window.larentals.filters.filterBuyState = function(state, fullGeojson) {
+window.larentals.filters.filterBuyState = function(state, fullGeojson, quiet = false) {
     return window.dash_clientside.clientside.filterAndClusterBuy(
         state.priceRange,
         state.bedroomsRange,
@@ -369,6 +372,7 @@ window.larentals.filters.filterBuyState = function(state, fullGeojson) {
         state.zipBoundary,
         fullGeojson,
         state.requiredAmenities?.includes("has_ac") ? "Yes" : "any",
-        state.requiredAmenities?.includes("has_dishwasher") ? "Yes" : "any"
+        state.requiredAmenities?.includes("has_dishwasher") ? "Yes" : "any",
+        quiet
     );
 };

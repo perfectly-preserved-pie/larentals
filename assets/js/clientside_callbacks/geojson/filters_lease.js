@@ -77,6 +77,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
          *
          * @param {string} hasAc - Any, Yes, No, or unknown AC choice
          * @param {string} hasDishwasher - Any, Yes, No, or unknown dishwasher choice
+         * @param {boolean} quiet - Suppress analytics and debug publication for histogram samples.
          * @returns {Object} - A GeoJSON FeatureCollection of filtered features
          */
         filterAndClusterLease: function(
@@ -127,15 +128,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             zipBoundaryData,
             fullGeojson,
             hasAc,
-            hasDishwasher
+            hasDishwasher,
+            quiet = false
         ) {
-            window.larentals?.analytics?.trackLeaseFilterChanges();
+            if (!quiet) window.larentals?.analytics?.trackLeaseFilterChanges();
 
             if (!fullGeojson || !fullGeojson.features) {
                 return window.dash_clientside.no_update;
             }
 
-            const exclusionCollector = window.larentals?.filterDevtools?.createRunCollector(
+            const exclusionCollector = quiet ? null : window.larentals?.filterDevtools?.createRunCollector(
                 "lease",
                 fullGeojson.features.length,
             );
@@ -543,9 +545,10 @@ window.larentals.filters = window.larentals.filters || {};
  * @param {Object<string, *>} state Applied rental filter values.
  * @param {{type: string, features: Array<Object>}} fullGeojson Source listings.
  *
+ * @param {boolean} quiet Suppress analytics and debug publication for auxiliary samples.
  * @returns {{type: string, features: Array<Object>}} Filtered rental listings.
  */
-window.larentals.filters.filterLeaseState = function(state, fullGeojson) {
+window.larentals.filters.filterLeaseState = function(state, fullGeojson, quiet = false) {
     return window.dash_clientside.clientside.filterAndClusterLease(
         state.priceRange,
         state.bedroomsRange,
@@ -594,6 +597,7 @@ window.larentals.filters.filterLeaseState = function(state, fullGeojson) {
         state.zipBoundary,
         fullGeojson,
         state.requiredAmenities?.includes("has_ac") ? "Yes" : "any",
-        state.requiredAmenities?.includes("has_dishwasher") ? "Yes" : "any"
+        state.requiredAmenities?.includes("has_dishwasher") ? "Yes" : "any",
+        quiet
     );
 };

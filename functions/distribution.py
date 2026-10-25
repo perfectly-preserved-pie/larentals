@@ -52,7 +52,8 @@ def build_distribution_strip(
 
     Mask and readout elements carry predictable IDs for the client-side
     selection callback. Bar heights use a square-root scale so a few dense
-    bins do not flatten the rest of the distribution.
+    bins do not flatten the rest of the distribution. Empty samples retain
+    zero-height bars so later filter changes can populate the same strip.
 
     Args:
         slider_id: Base ID shared with the slider callback.
@@ -63,21 +64,22 @@ def build_distribution_strip(
         suffix: Text placed after values in the readout.
 
     Returns:
-        Histogram markup, or None when every bin is empty.
+        Histogram markup, or None when the displayed range is invalid.
     """
-    if not counts or not any(counts):
+    if maximum <= minimum:
         return None
-    peak = max(counts)
+    counts = list(counts) or [0] * BIN_COUNT
+    peak = max(counts) or 1
     bars = [
         html.Div(
             className="dist__bar",
-            style={"height": f"{max((count / peak) ** 0.5 * 100, 2):.1f}%"},
+            style={"height": f"{max((count / peak) ** 0.5 * 100, 2) if count else 0:.1f}%"},
         )
         for count in counts
     ]
     return html.Div(
         [
-            html.Div(bars, className="dist__bars"),
+            html.Div(bars, id=f"{slider_id}_dist_bars", className="dist__bars"),
             html.Div(id=f"{slider_id}_dist_lo", className="dist__mask"),
             html.Div(id=f"{slider_id}_dist_hi", className="dist__mask"),
             html.Div(className="dist__cursor"),
@@ -106,9 +108,9 @@ def attach_distribution(
 ) -> html.Div | None:
     """Build a distribution strip and register live selection shading.
 
-    The server renders the histogram once; a client-side callback then moves
-    only the masks while the slider is dragged. This keeps the visual response
-    quick without rerunning the listing filter on every movement.
+    The initial bars use the full inventory; responsive filter previews replace
+    them using the other active filters. A separate client-side callback moves
+    only the selection masks during dragging, preserving fixed bin boundaries.
 
     Args:
         slider_id: ID of the range slider that drives the selection shading.

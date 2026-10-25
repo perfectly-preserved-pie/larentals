@@ -358,7 +358,7 @@
 
   /**
    * Calculate and store the result count for uncommitted filter values.
-   * Previewing updates the drawer count without changing applied map results.
+   * Previewing updates the drawer count and histograms without changing applied map results.
    * @param {ListingPage} page Listing mode being previewed.
    * @param {FilterState} state Draft filter values.
    * @param {FeatureCollection} fullGeojson Unfiltered listing features.
@@ -367,6 +367,7 @@
   function preview(page, state, fullGeojson) {
     const result = filterState(page, state, fullGeojson);
     if (!result) return { count: null };
+    root.distributions?.update(page, state, fullGeojson);
     const count = result.features.length;
     ui.previewCounts[page] = count;
     scheduleRender(page);
