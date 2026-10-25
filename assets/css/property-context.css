@@ -1,0 +1,213 @@
+/* Leaflet creates popup content outside the Dash tree. The native dialog is
+ * shared by both markets and uses the application's root color scheme. */
+.property-context-summary {
+  padding: 12px;
+  border: 1px solid #c5d5e8;
+  border-radius: 10px;
+  background: #f3f7fc;
+  color: #20334a;
+}
+
+.property-context-summary dl,
+.property-permits dl {
+  margin: 8px 0;
+}
+
+.property-context-summary dl > div,
+.property-permits dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 5px 0;
+}
+
+.property-context-summary dt,
+.property-permits dt {
+  font-weight: 600;
+  flex: 0 0 42%;
+}
+
+.property-context-summary dd,
+.property-permits dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.property-context-open {
+  border: 1px solid #8daecf;
+  border-radius: 6px;
+  background: #fff;
+  color: #164d83;
+  padding: 7px 10px;
+  margin-top: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.property-context-open:focus-visible,
+.property-records-drawer button:focus-visible,
+.property-records-section > summary:focus-visible {
+  outline: 3px solid #418bd6;
+  outline-offset: 3px;
+}
+
+.property-records-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(94vw, 720px);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  box-sizing: border-box;
+  border: 0;
+  padding: 0;
+  background: #fff;
+  color: #243447;
+  box-shadow: -8px 0 40px #0003;
+}
+
+.property-records-drawer::backdrop {
+  background: #0007;
+}
+
+body:has(.property-records-drawer[open]) {
+  overflow: hidden;
+}
+
+.property-records-drawer > header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #d4dce5;
+  background: inherit;
+  z-index: 1;
+}
+
+.property-records-drawer h2 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.property-records-close {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.property-records-body {
+  padding: 16px 20px 32px;
+}
+
+.property-records-address {
+  font-weight: 700;
+  font-size: 1.08rem;
+  overflow-wrap: anywhere;
+}
+
+.property-records-note {
+  font-size: .85rem;
+  line-height: 1.5;
+  color: #52657b;
+  overflow-wrap: anywhere;
+}
+
+.property-records-section {
+  border: 1px solid #d4dce5;
+  border-radius: 8px;
+  margin: 14px 0;
+}
+
+.property-records-section > summary {
+  cursor: pointer;
+  padding: 14px;
+  font-weight: 700;
+}
+
+.property-records-section > div {
+  padding: 0 14px 14px;
+}
+
+.property-records-section h3 {
+  font-size: 1rem;
+  margin: 16px 0 10px;
+}
+
+.property-records-fields > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 12px;
+  border-bottom: 1px solid #d4dce5;
+  padding: 9px 0;
+}
+
+.property-records-fields dt,
+.property-records-fields dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .property-records-fields > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+
+.property-permits {
+  list-style: none;
+  padding: 0;
+}
+
+.property-permits li {
+  padding: 12px 0;
+  border-bottom: 1px solid #d4dce5;
+}
+
+.property-permits p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+html[data-mantine-color-scheme="dark"] .property-context-summary {
+  background: #1b2c3f;
+  color: #e1ebf5;
+  border-color: #425b74;
+}
+
+html[data-mantine-color-scheme="dark"] .property-context-open {
+  background: #253d56;
+  color: #b8d9fb;
+  border-color: #557a9d;
+}
+
+html[data-mantine-color-scheme="dark"] .property-records-drawer {
+  background: #20252d;
+  color: #e1e6ed;
+}
+
+html[data-mantine-color-scheme="dark"] .property-records-note {
+  color: #afbdcf;
+}
+
+html[data-mantine-color-scheme="dark"] .property-records-drawer a {
+  color: #8dc4ff;
+}
+
+html[data-mantine-color-scheme="dark"] .property-records-section,
+html[data-mantine-color-scheme="dark"] .property-records-fields > div,
+html[data-mantine-color-scheme="dark"] .property-permits li,
+html[data-mantine-color-scheme="dark"] .property-records-drawer > header {
+  border-color: #46505c;
+}

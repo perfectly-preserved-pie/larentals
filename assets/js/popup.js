@@ -542,7 +542,8 @@
 
     /**
      * Build the lease-page popup body for a single listing.
-     * Amenity rows distinguish reported availability from missing data; ISP options load asynchronously.
+     * Amenities distinguish reported availability from missing data. Official
+     * property records and ISP options load independently of the listing body.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -575,6 +576,7 @@
                         <span class="value">${formatDate(popupData.listed_date)}</span>
                     </div>
                     ${renderLahdIssueRow(popupData)}
+                    ${window.larentals?.propertyContext?.placeholder(popupData, "lease") ?? ""}
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
                         <span class="value">${mlsNumberDisplay}</span>
@@ -668,7 +670,9 @@
 
     /**
      * Build the buy-page popup body for a single listing.
-     * Amenity rows distinguish reported availability from missing data, including older buy tables.
+     * Amenities distinguish reported availability from missing data, including
+     * older buy tables. Property hazards load separately so agency outages do
+     * not delay the ordinary listing details.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -709,6 +713,7 @@
                         <span class="value">${formatDate(popupData.listed_date)}</span>
                     </div>
                     ${renderLahdIssueRow(popupData)}
+                    ${window.larentals?.propertyContext?.placeholder(popupData, "buy") ?? ""}
                     <div class="property-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ddd;">
                         <span class="label" style="font-weight: bold;">Listing ID (MLS#)</span>
                         <span class="value">${mlsNumberDisplay}</span>
@@ -874,8 +879,9 @@
     }
 
     /**
-     * Update the popup content and hydrate ISP placeholder content if present.
-     * Hydration runs after markup replacement so the new placeholder can be found in the popup DOM.
+     * Replace popup markup, then hydrate property and ISP placeholders.
+     * Independent requests keep agency availability from blocking listing
+     * content, and hydration targets only the newly mounted popup nodes.
      *
      * @param {PopupLayer} layer Leaflet layer whose popup should be updated.
      * @param {string} content HTML content for the popup.
@@ -889,6 +895,7 @@
 
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
+        window.larentals?.propertyContext?.hydratePopup(popupEl);
         if (popup.larentalsCenterInMap) {
             if (typeof ResizeObserver === "function" && !popup.larentalsCenterObserver) {
                 popup.larentalsCenterObserver = new ResizeObserver(() => {

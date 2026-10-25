@@ -41,4 +41,5 @@ LAHD_PROPERTY_LOOKUP_PATH = LOOKUP_DIR / "lahd_property_lookup.json.gz"
 RSO_PROPERTY_LOOKUP_PATH = LOOKUP_DIR / "rso_property_lookup.json.gz"
 
 LAHD_PROPERTY_GEOCODE_CACHE_PATH = CACHE_DIR / "lahd_property_geocode_cache.json"
+PROPERTY_CONTEXT_CACHE_PATH = CACHE_DIR / "property_context.sqlite"
 SANTA_MONICA_SUPERMARKETS_GEOCODE_CACHE_PATH = CACHE_DIR / "santa_monica_supermarkets_geocode_cache.json"

@@ -1,0 +1,882 @@
+[
+  {
+    "Key": "Address/Legal Information",
+    "Value": [
+      {
+        "DefinitionKey": "address.htm",
+        "Description": "Site Address",
+        "TabName": 1,
+        "Value": "361 N LA BREA AVE"
+      },
+      {
+        "DefinitionKey": "zipcode.htm",
+        "Description": "ZIP Code",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ZIP_CD&value=90036&pin=138B181   112",
+        "TabName": 1,
+        "Value": "90036"
+      },
+      {
+        "DefinitionKey": "pinnumber.htm",
+        "Description": "PIN Number",
+        "TabName": 1,
+        "Value": "138B181   112"
+      },
+      {
+        "DefinitionKey": "areacalc.htm",
+        "Description": "Lot/Parcel Area (Calculated)",
+        "TabName": 1,
+        "Value": "5,240.0 (sq ft)"
+      },
+      {
+        "DefinitionKey": "tbmgrid.htm",
+        "Description": "Thomas Brothers Grid",
+        "TabName": 1,
+        "Value": "PAGE 593 - GRID D7"
+      },
+      {
+        "DefinitionKey": "apn.htm",
+        "Description": "Assessor Parcel No. (APN)",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=BPP&value=5525033001&pin=138B181   112",
+        "TabName": 1,
+        "Value": "5525033001"
+      },
+      {
+        "DefinitionKey": "tract.htm",
+        "Description": "Tract",
+        "TabName": 1,
+        "Value": "TR 4924"
+      },
+      {
+        "DefinitionKey": "mapref.htm",
+        "Description": "Map Reference",
+        "TabName": 1,
+        "Value": "M B 109-30/31"
+      },
+      {
+        "DefinitionKey": "block.htm",
+        "Description": "Block",
+        "TabName": 1,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "lot.htm",
+        "Description": "Lot",
+        "TabName": 1,
+        "Value": "2"
+      },
+      {
+        "DefinitionKey": "arb.htm",
+        "Description": "Arb (Lot Cut Reference)",
+        "TabName": 1,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "mapsheet.htm",
+        "Description": "Map Sheet",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=MAPSHEET&value=138B181&pin=138B181   112",
+        "TabName": 1,
+        "Value": "138B181"
+      }
+    ]
+  },
+  {
+    "Key": "Planning and Zoning Information",
+    "Value": [
+      {
+        "Description": "Special Notes",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "zoning.htm",
+        "Description": "Zoning",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ZONING&value=C2-1VL&pin=138B181   112",
+        "TabName": 3,
+        "Value": "C2-1VL"
+      },
+      {
+        "DefinitionKey": "zoneinfo.htm",
+        "Description": "Zoning Information (ZI)",
+        "ExtendedProperties": [
+          {
+            "Key": "highlight",
+            "Value": "true"
+          }
+        ],
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ZONEINFO&value=ZI-2535%20Prior%20Housing%20Element%20Sites%20-%20Ministerial%20Approval&pin=138B181   112",
+        "TabName": 3,
+        "Value": "ZI-2535 Prior Housing Element Sites - Ministerial Approval"
+      },
+      {
+        "DefinitionKey": "zoneinfo.htm",
+        "Description": "Zoning Information (ZI)",
+        "ExtendedProperties": [
+          {
+            "Key": "highlight",
+            "Value": "true"
+          }
+        ],
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ZONEINFO&value=ZI-2452%20Transit%20Priority%20Area%20in%20the%20City%20of%20Los%20Angeles&pin=138B181   112",
+        "TabName": 3,
+        "Value": "ZI-2452 Transit Priority Area in the City of Los Angeles"
+      },
+      {
+        "DefinitionKey": "zoneinfo.htm",
+        "Description": "Zoning Information (ZI)",
+        "ExtendedProperties": [
+          {
+            "Key": "highlight",
+            "Value": "true"
+          }
+        ],
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ZONEINFO&value=ZI-2512%20Housing%20Element%20Sites&pin=138B181   112",
+        "TabName": 3,
+        "Value": "ZI-2512 Housing Element Sites"
+      },
+      {
+        "DefinitionKey": "zoneinfo.htm",
+        "Description": "Zoning Information (ZI)",
+        "ExtendedProperties": [
+          {
+            "Key": "highlight",
+            "Value": "true"
+          }
+        ],
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ZONEINFO&value=ZI-2534%20Lower%20Income%20Rezoning%20Housing%20Element%20Sites%20-%20Ministerial%20Approval%20and%20Minimum%20Density&pin=138B181   112",
+        "TabName": 3,
+        "Value": "ZI-2534 Lower Income Rezoning Housing Element Sites - Ministerial Approval and Minimum Density"
+      },
+      {
+        "DefinitionKey": "genplan.htm",
+        "Description": "General Plan Land Use",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=GENPLAN&value=General%20Commercial&pin=138B181   112",
+        "TabName": 3,
+        "Value": "General Commercial"
+      },
+      {
+        "Description": "General Plan Note(s)",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=GPFN&value=Yes&pin=138B181   112",
+        "TabName": 3,
+        "Value": "Yes"
+      },
+      {
+        "DefinitionKey": "MinimumDensityRequirement.htm",
+        "Description": "Minimum Density Requirement",
+        "TabName": 3,
+        "Value": "Yes (Rezoning Site)"
+      },
+      {
+        "DefinitionKey": "hlsarea.htm",
+        "Description": "Hillside Area (Zoning Code)",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "Description": "Specific Plan Area",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "Description": "     Subarea",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "Description": "     Special Land Use / Zoning",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "historic.htm",
+        "Description": "Historic Preservation Review",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "historicplacesla.htm",
+        "Description": "HistoricPlacesLA",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=HPLA&value=No&pin=138B181   112",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "cdo.htm",
+        "Description": "CDO: Community Design Overlay",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "cpio.htm",
+        "Description": "CPIO: Community Plan Imp. Overlay",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "Description": "     Subarea",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "Description": "     CPIO Historic Preservation Review",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "cugu.htm",
+        "Description": "CUGU: Clean Up-Green Up",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "hcr.htm",
+        "Description": "HCR: Hillside Construction Regulation",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "nso.htm",
+        "Description": "NSO: Neighborhood Stabilization Overlay",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "pod.htm",
+        "Description": "POD: Pedestrian Oriented Districts",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "RBP.htm",
+        "Description": "RBP: Restaurant Beverage Program Eligible Area",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=RBP&value=General%20(RBPA)&pin=138B181   112",
+        "TabName": 3,
+        "Value": "General (RBPA)"
+      },
+      {
+        "DefinitionKey": "ASP.htm",
+        "Description": "ASP: Alcohol Sales Program",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "rfa.htm",
+        "Description": "RFA: Residential Floor Area District",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "rio.htm",
+        "Description": "RIO: River Implementation Overlay",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "sign.htm",
+        "Description": "SN: Sign District",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "Description": "SB 9 Eligibility",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=SB9_CRITERIA&value=View&pin=138B181   112",
+        "TabName": 3,
+        "Value": "View"
+      },
+      {
+        "Description": "SB 35 Eligibility",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=SB35_CRITERIA&value=View&pin=138B181   112",
+        "TabName": 3,
+        "Value": "View"
+      },
+      {
+        "Description": "SB 79 Eligibility",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=SB79_LINK&value=View&pin=138B181   112",
+        "TabName": 3,
+        "Value": "View"
+      },
+      {
+        "Description": "SHRA / SB 684 Eligibility",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=SB684_CRITERIA&value=View&pin=138B181   112",
+        "TabName": 3,
+        "Value": "View"
+      },
+      {
+        "DefinitionKey": "AB2334.htm",
+        "Description": "AB 2334: Very Low Vehicle Travel Area",
+        "TabName": 3,
+        "Value": "Yes"
+      },
+      {
+        "DefinitionKey": "AB2097.htm",
+        "Description": "AB 2097: Within a half mile of a Major Transit Stop",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=AB2097&value=Yes&pin=138B181   112",
+        "TabName": 3,
+        "Value": "Yes"
+      },
+      {
+        "DefinitionKey": "AB2011.htm",
+        "Description": "AB 2011 Eligibility",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=AB2011_CRITERIA&value=View&pin=138B181   112",
+        "TabName": 3,
+        "Value": "View"
+      },
+      {
+        "Description": "AB 130 Eligibility",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=AB130_CRITERIA&value=View&pin=138B181   112",
+        "TabName": 3,
+        "Value": "View"
+      },
+      {
+        "DefinitionKey": "streetscape.htm",
+        "Description": "Streetscape",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "aro.htm",
+        "Description": "Adaptive Reuse Subareas",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "aro.htm",
+        "Description": "Adaptive Reuse Program",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ARP&value=Citywide%20Adaptive%20Reuse%20Program&pin=138B181   112",
+        "TabName": 3,
+        "Value": "Citywide Adaptive Reuse Program"
+      },
+      {
+        "Description": "Affordable Housing Linkage Fee",
+        "TabName": 3,
+        "Value": ""
+      },
+      {
+        "DefinitionKey": "ahlf.htm",
+        "Description": "     Neighborhood",
+        "TabName": 3,
+        "Value": "Fairfax"
+      },
+      {
+        "DefinitionKey": "ahlf.htm",
+        "Description": "     Residential Market Area",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=AHLF_RES&value=High&pin=138B181   112",
+        "TabName": 3,
+        "Value": "High"
+      },
+      {
+        "DefinitionKey": "ahlf.htm",
+        "Description": "     Commercial Market Area",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=AHLF_NONRES&value=High&pin=138B181   112",
+        "TabName": 3,
+        "Value": "High"
+      },
+      {
+        "Description": "Inclusionary Housing",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "Description": "Local Affordable Housing Incentive",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "Description": "Targeted Planting",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "Description": "Special Lot Line",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "toc_tiers.htm",
+        "Description": "Transit Oriented Communities (TOC)",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=JJJ_TOC&value=Tier%203&pin=138B181   112",
+        "TabName": 3,
+        "Value": "Tier 3"
+      },
+      {
+        "Description": "Mixed Income Incentive Programs",
+        "TabName": 3,
+        "Value": ""
+      },
+      {
+        "DefinitionKey": "toia.htm",
+        "Description": "     Transit Oriented Incentive Area (TOIA)",
+        "TabName": 3,
+        "Value": "2"
+      },
+      {
+        "DefinitionKey": "ocia.htm",
+        "Description": "     Opportunity Corridors Incentive Area",
+        "TabName": 3,
+        "Value": "OC-3"
+      },
+      {
+        "DefinitionKey": "ctia.htm",
+        "Description": "     Corridor Transition Incentive Area",
+        "TabName": 3,
+        "Value": "Not Eligible"
+      },
+      {
+        "DefinitionKey": "tcac.htm",
+        "Description": "TCAC Opportunity Area",
+        "TabName": 3,
+        "Value": "High"
+      },
+      {
+        "Description": "High Quality Transit Corridor (within 1/2 mile)",
+        "TabName": 3,
+        "Value": "Yes"
+      },
+      {
+        "DefinitionKey": "ed1.htm",
+        "Description": "ED 1 Eligibility",
+        "TabName": 3,
+        "Value": "Eligible Site"
+      },
+      {
+        "DefinitionKey": "rpa.htm",
+        "Description": "RPA: Redevelopment Project Area",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "ccypkg.htm",
+        "Description": "Central City Parking",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "dtnpkg.htm",
+        "Description": "Downtown Parking",
+        "TabName": 3,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "bldgline.htm",
+        "Description": "Building Line",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "school500.htm",
+        "Description": "500 Ft School Zone",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "Description": "500 Ft Park Zone",
+        "TabName": 3,
+        "Value": "None"
+      },
+      {
+        "Description": "Zanja System 1 Mile Buffer",
+        "TabName": 3,
+        "Value": "No"
+      }
+    ]
+  },
+  {
+    "Key": "Case Numbers",
+    "Value": [
+      {
+        "DefinitionKey": "recentactivity.htm",
+        "Description": "Recent Activity",
+        "TabName": 5,
+        "Value": "None"
+      },
+      {
+        "Description": "City Planning Commission",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=20000&value=CPC-2024-5977-DB-VHCA&pin=138B181   112",
+        "TabName": 5,
+        "Value": "CPC-2024-5977-DB-VHCA"
+      },
+      {
+        "Description": "City Planning Commission",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=20000&value=CPC-19XX-30618&pin=138B181   112",
+        "TabName": 5,
+        "Value": "CPC-19XX-30618"
+      },
+      {
+        "Description": "Ordinance",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=50000&value=ORD-183497&pin=138B181   112",
+        "TabName": 5,
+        "Value": "ORD-183497"
+      },
+      {
+        "Description": "Ordinance",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=50000&value=ORD-158951&pin=138B181   112",
+        "TabName": 5,
+        "Value": "ORD-158951"
+      },
+      {
+        "Description": "Zoning Administration",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=90000&value=ZA-1996-286-ZV&pin=138B181   112",
+        "TabName": 5,
+        "Value": "ZA-1996-286-ZV"
+      },
+      {
+        "Description": "Zoning Administration",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=90000&value=BZA-1996-5251-ZV&pin=138B181   112",
+        "TabName": 5,
+        "Value": "BZA-1996-5251-ZV"
+      },
+      {
+        "Description": "Zoning Administration",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=90000&value=BZA-1996-5250-ZV&pin=138B181   112",
+        "TabName": 5,
+        "Value": "BZA-1996-5250-ZV"
+      },
+      {
+        "Description": "Environmental",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=40000&value=ENV-2024-5978-CE&pin=138B181   112",
+        "TabName": 5,
+        "Value": "ENV-2024-5978-CE"
+      },
+      {
+        "Description": "Environmental Case",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ENV_CASE&value=ND-83-160-HD&pin=138B181   112",
+        "TabName": 5,
+        "Value": "ND-83-160-HD"
+      },
+      {
+        "Description": "Affidavit",
+        "TabName": 5,
+        "Value": "AFF-21028"
+      },
+      {
+        "Description": "Affidavit",
+        "TabName": 5,
+        "Value": "AFF-11156"
+      }
+    ]
+  },
+  {
+    "Key": "Additional Information",
+    "Value": [
+      {
+        "DefinitionKey": "airhaz.htm",
+        "Description": "Airport Hazard",
+        "TabName": 7,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "coastzone.htm",
+        "Description": "Coastal Zone",
+        "TabName": 7,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "bluffpotential.htm",
+        "Description": "Coastal Bluff Potential",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "bluffpotential.htm",
+        "Description": "Canyon Bluff Potential",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "farmland.htm",
+        "Description": "Farmland",
+        "TabName": 7,
+        "Value": "Area Not Mapped"
+      },
+      {
+        "DefinitionKey": "uaiz.htm",
+        "Description": "Urban Agriculture Incentive Zone",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=UAIZ&value=YES&pin=138B181   112",
+        "TabName": 7,
+        "Value": "YES"
+      },
+      {
+        "DefinitionKey": "firebrushzone.htm",
+        "Description": "Very High Fire Hazard Severity Zone",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "fire1.htm",
+        "Description": "Fire District No. 1",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "flood.htm",
+        "Description": "Flood Zone",
+        "TabName": 7,
+        "Value": "Outside Flood Zone"
+      },
+      {
+        "DefinitionKey": "watercourse.htm",
+        "Description": "Watercourse",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "stream.htm",
+        "Description": "Streams",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "methane.htm",
+        "Description": "Methane Hazard Site",
+        "TabName": 7,
+        "Value": "Methane Zone"
+      },
+      {
+        "DefinitionKey": "hiwind.htm",
+        "Description": "High Wind Velocity Areas",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "hillside.htm",
+        "Description": "Special Grading Area (BOE Basic Grid Map A-13372)",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "wells.htm",
+        "Description": "Wells",
+        "TabName": 7,
+        "Value": "None"
+      },
+      {
+        "Description": "Sea Level Rise Area",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "Description": "Oil Well Adjacency",
+        "TabName": 7,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "UPR.htm",
+        "Description": "Universal Planning Review Service Applicability",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=ERP&value=Needs%20Review&pin=138B181   112",
+        "TabName": 7,
+        "Value": "Needs Review"
+      },
+      {
+        "DefinitionKey": "northeastridgeline.htm",
+        "Description": "Northeast D/Q Ordinance Ridgelines",
+        "TabName": 7,
+        "Value": "No"
+      }
+    ]
+  },
+  {
+    "Key": "Seismic Hazards",
+    "Value": [
+      {
+        "Description": "Active Fault Near-Source Zone",
+        "TabName": 8,
+        "Value": ""
+      },
+      {
+        "Description": "     Nearest Fault (Distance in km)",
+        "TabName": 8,
+        "Value": "2.87901888"
+      },
+      {
+        "DefinitionKey": "nearest_fault",
+        "Description": "     Nearest Fault (Name)",
+        "TabName": 8,
+        "Value": "Hollywood Fault"
+      },
+      {
+        "DefinitionKey": "fault_region",
+        "Description": "     Region",
+        "TabName": 8,
+        "Value": "Transverse Ranges and Los Angeles Basin"
+      },
+      {
+        "DefinitionKey": "fault_type",
+        "Description": "     Fault Type",
+        "TabName": 8,
+        "Value": "B"
+      },
+      {
+        "DefinitionKey": "slip_rate",
+        "Description": "     Slip Rate (mm/year)",
+        "TabName": 8,
+        "Value": "1.00000000"
+      },
+      {
+        "DefinitionKey": "slip_geometry",
+        "Description": "     Slip Geometry",
+        "TabName": 8,
+        "Value": "Left Lateral - Reverse - Oblique"
+      },
+      {
+        "DefinitionKey": "slip_type",
+        "Description": "     Slip Type",
+        "TabName": 8,
+        "Value": "Poorly Constrained"
+      },
+      {
+        "DefinitionKey": "down_dip_width",
+        "Description": "     Down Dip Width (km)",
+        "TabName": 8,
+        "Value": "14.00000000"
+      },
+      {
+        "DefinitionKey": "rupture_top",
+        "Description": "     Rupture Top",
+        "TabName": 8,
+        "Value": "0.00000000"
+      },
+      {
+        "DefinitionKey": "rupture_bottom",
+        "Description": "     Rupture Bottom",
+        "TabName": 8,
+        "Value": "13.00000000"
+      },
+      {
+        "DefinitionKey": "dip_angle",
+        "Description": "     Dip Angle (degrees)",
+        "TabName": 8,
+        "Value": "70.00000000"
+      },
+      {
+        "DefinitionKey": "max_mag",
+        "Description": "     Maximum Magnitude",
+        "TabName": 8,
+        "Value": "6.40000000"
+      },
+      {
+        "DefinitionKey": "faultzn.htm",
+        "Description": "Alquist-Priolo Fault Zone",
+        "TabName": 8,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "landslide.htm",
+        "Description": "Landslide",
+        "TabName": 8,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "liquefaction.htm",
+        "Description": "Liquefaction",
+        "TabName": 8,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "faultstudy.htm",
+        "Description": "Preliminary Fault Rupture Study Area",
+        "TabName": 8,
+        "Value": "None"
+      },
+      {
+        "DefinitionKey": "tsunami",
+        "Description": "Tsunami Hazard Area",
+        "TabName": 8,
+        "Value": "No"
+      }
+    ]
+  },
+  {
+    "Key": "Housing",
+    "Value": [
+      {
+        "Description": "Direct all Inquiries to",
+        "TabName": 10,
+        "Value": "Los Angeles Housing Department"
+      },
+      {
+        "Description": "     Telephone",
+        "TabName": 10,
+        "Value": "(866) 557-7368"
+      },
+      {
+        "Description": "     Website",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=HCID_WEBSITE&value=housing.lacity.gov&pin=138B181   112",
+        "TabName": 10,
+        "Value": "housing.lacity.gov"
+      },
+      {
+        "DefinitionKey": "rso.htm",
+        "Description": "Rent Stabilization Ordinance (RSO)",
+        "ExtendedProperties": [
+          {
+            "Key": "project",
+            "Value": "Assessor"
+          }
+        ],
+        "TabName": 10,
+        "Value": "No [APN: 5525033001]"
+      },
+      {
+        "DefinitionKey": "ellis.htm",
+        "Description": "Ellis Act Property",
+        "TabName": 10,
+        "Value": "No"
+      },
+      {
+        "Description": "Just Cause For Eviction Ordinance (JCO)",
+        "TabName": 10,
+        "Value": "No"
+      },
+      {
+        "DefinitionKey": "HOUSING_CRISIS.htm",
+        "Description": "Housing Crisis Act and Resident Protections Ordinance Replacement Review",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=HOUSING_CRISIS_GUIDE&value=View&pin=138B181   112",
+        "TabName": 10,
+        "Value": "View"
+      },
+      {
+        "Description": "Direct all Housing Element Sites Inquiries to",
+        "TabName": 10,
+        "Value": "Los Angeles City Planning"
+      },
+      {
+        "Description": "     Email",
+        "TabName": 10,
+        "Value": "planning.housingpolicy@lacity.org"
+      },
+      {
+        "Description": "Housing Element Sites",
+        "TabName": 10,
+        "Value": ""
+      },
+      {
+        "Description": "     HE Replacement Required",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=HSE_ELE_REPLACEMNT&value=Yes&pin=138B181   112",
+        "TabName": 10,
+        "Value": "Yes"
+      },
+      {
+        "DefinitionKey": "HE_SB166.htm",
+        "Description": "     SB 166 Units",
+        "TabName": 10,
+        "Value": "Appendix 4.1  0.18"
+      },
+      {
+        "DefinitionKey": "HE_SB166.htm",
+        "Description": "     SB 166 Units",
+        "TabName": 10,
+        "Value": "Rezoning Sites  11"
+      },
+      {
+        "Description": "     Interactive Map",
+        "Link": "https://zimas.lacity.org/zm4WS/processdatalink.aspx?field=HSE_ELE_MAP&value=View&pin=138B181   112",
+        "TabName": 10,
+        "Value": "View"
+      },
+      {
+        "Description": "Housing Use within Prior 5 Years",
+        "TabName": 10,
+        "Value": "No"
+      }
+    ]
+  }
+]
