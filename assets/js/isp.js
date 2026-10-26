@@ -114,6 +114,22 @@
    */
   const ispFetchCache = new Map();
 
+  const ISP_EXPANDED_STORAGE_KEY = "larentals.ispOptionsExpanded";
+
+  /**
+   * Restore the ISP disclosure preference shared by lease and buy popups.
+   * Missing or inaccessible storage keeps long provider lists collapsed by default.
+   *
+   * @returns {boolean} Whether the provider list should start expanded.
+   */
+  function isIspOptionsExpanded() {
+    try {
+      return window.localStorage.getItem(ISP_EXPANDED_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Convert ALL CAPS text to Title Case.
    * Mixed-case names are preserved, while common provider acronyms keep their capitalization.
@@ -475,32 +491,53 @@
   }
 
   /**
-   * Render placeholder HTML to be inserted into the popup.
-   * The placeholder lets the popup open immediately while the separate ISP request is pending.
+   * Render an ISP disclosure with a placeholder for the separate availability request.
+   * The saved expansion preference applies across listings; only the provider content
+   * is replaced during hydration so loading cannot reset the user's toggle.
+   * Visible Show/Hide labels follow the native open state to make the action explicit.
    *
    * @param {unknown} listingIdRaw Listing id pulled from popup properties.
-   * @returns {string} Placeholder HTML rendered before the API request completes.
+   * @returns {string} Disclosure HTML containing loading or missing-listing text.
    */
   function renderIspOptionsPlaceholderHtml(listingIdRaw) {
     const listingId = normalizeNullableString(listingIdRaw);
-    if (!listingId) {
-      return `<span style="color:#666;">Unknown</span>`;
-    }
     return `
-      <div data-isp-container="true" data-listing-id="${escapeHtml(listingId)}">
-        <span style="color:#666;">Loading…</span>
-      </div>
+      <details class="listing-popup__isp-options" ${isIspOptionsExpanded() ? "open" : ""}>
+        <summary>
+          <span>ISP Options</span>
+          <span class="listing-popup__isp-action">
+            <span class="listing-popup__isp-show">Show</span>
+            <span class="listing-popup__isp-hide">Hide</span>
+          </span>
+        </summary>
+        <div data-isp-container="true" data-listing-id="${escapeHtml(listingId)}">
+          <span style="color:#666;">${listingId ? "Loading…" : "Unknown"}</span>
+        </div>
+      </details>
     `;
   }
 
   /**
-   * Hydrate the ISP placeholder within an opened popup.
-   * It checks that the popup still contains the target after the async request before replacing its content.
+   * Bind the disclosure preference and hydrate the ISP placeholder within a popup.
+   * Storage failures leave the native toggle usable. Binding once prevents duplicate
+   * listeners on repeated hydration, while nested plan toggles keep their own state.
    *
    * @param {HTMLElement} popupRootEl Root popup element created by Leaflet.
    * @returns {void} Does not return a value; mutates the placeholder container in place.
    */
   function hydrateIspOptionsInPopup(popupRootEl) {
+    const disclosure = popupRootEl.querySelector(".listing-popup__isp-options");
+    if (disclosure && !disclosure.dataset.ispToggleBound) {
+      disclosure.dataset.ispToggleBound = "true";
+      disclosure.addEventListener("toggle", () => {
+        try {
+          window.localStorage.setItem(ISP_EXPANDED_STORAGE_KEY, String(disclosure.open));
+        } catch {
+          // Browser privacy settings can disable storage without disabling the disclosure.
+        }
+      });
+    }
+
     const container = popupRootEl.querySelector('[data-isp-container="true"]');
     if (!container) return;
 

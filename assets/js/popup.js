@@ -545,7 +545,9 @@
 
     /**
      * Build the lease-page popup body for a single listing.
-     * Amenity rows distinguish reported availability from missing data; ISP options load asynchronously.
+     * Amenities distinguish reported availability from missing data. ISP options
+     * load separately so the listing body does not wait for provider availability.
+     * The ISP disclosure restores the same expansion preference across listings.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -657,11 +659,8 @@
                         <span class="label" style="font-weight: bold;">Physical Sub Type</span>
                         <span class="value">${subtype || "Unknown"}</span>
                     </div>
-                    <div class="property-row" style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px; border-bottom:1px solid #ddd; gap:12px;">
-                        <span class="label" style="font-weight:bold;">ISP Options</span>
-                        <div class="value" style="text-align:right;">
-                            ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
-                        </div>
+                    <div class="property-row" style="padding:8px; border-bottom:1px solid #ddd;">
+                        ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
                     </div>
                 </div>
                 ${reportLink}
@@ -671,7 +670,9 @@
 
     /**
      * Build the buy-page popup body for a single listing.
-     * Amenity rows distinguish reported availability from missing data, including older buy tables.
+     * Amenities distinguish reported availability from missing data, including
+     * older buy tables. ISP options load separately from the listing body.
+     * The ISP disclosure shares its saved expansion preference with lease popups.
      *
      * @param {Record<string, unknown>} popupData Listing properties shown in the popup.
      * @returns {string} HTML string bound to the Leaflet popup.
@@ -773,11 +774,8 @@
                         <span class="label" style="font-weight: bold;">Physical Sub Type</span>
                         <span class="value">${subtype || "Unknown"}</span>
                     </div>
-                    <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                        <span class="label" style="font-weight: bold;">ISP Options</span>
-                        <div class="value" style="text-align: right;">
-                            ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
-                        </div>
+                    <div class="property-row" style="padding:8px; border-bottom:1px solid #ddd;">
+                        ${window.larentals?.isp?.renderIspOptionsPlaceholderHtml(popupData.mls_number) ?? ""}
                     </div>
                 </div>
                 ${reportLink}
