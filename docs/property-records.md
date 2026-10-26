@@ -59,32 +59,76 @@ unmatched address. Empty hazard intersections never become “low risk” or “
 hazard”. An empty permit feed means no matching records in that dataset, not
 that a property has no permits or that work was unpermitted.
 
-## Loading and cache
+## Loading and server snapshots
 
-Agency requests never run in the listing-detail route or at page startup.
-The browser hydrates a summary after the ordinary listing popup appears and
-shares its request with the drawer. Late responses cannot replace a different
-home's drawer. Failed requests can be retried by reopening it.
+Listing details, property records, and popup housing summaries read local data
+only. A cache miss returns an explicit “not prepared yet” state. No popup HTTP
+request can start an agency lookup, even with a single synchronous web worker.
+The existing LAHD records drawer retains its separate APN detail lookup.
 
-Successful snapshots expire after six hours; any unavailable source shortens
-expiry to one minute. Cache identity includes the stored address, ZIP, city,
-and coordinates. Source lookups run concurrently where independent, with
-bounded timeouts. ZIMAS's slower address/profile requests have a 15-second
-read budget; other requests have an eight-second budget. Cache reuse retains
-the original “Records checked” timestamp rather than presenting it as a fresh
-agency update. Permit source refresh dates are displayed separately.
+The browser loads saved property and housing summaries independently after
+the ordinary listing appears. Late responses cannot replace another home's
+records. Every source retains its own last successful check time. Older records
+remain readable during outages and are labeled as awaiting an update. A failed
+refresh cannot overwrite successful facts with an empty or unavailable result.
 
-The optional shared SQLite cache lives at `data/cache/property_context.sqlite`
-and is capped at 2,048 snapshots. A small process cache also avoids disk reads.
-Missing/corrupt/read-only cache storage does not prevent live lookups. No MLS
-table migration, enrichment backfill, API key, or new dependency is required.
-Delete that cache to force a new source lookup after changing adapter rules,
-and bump its version prefix when changing payload or matching semantics.
+Snapshots live in the `property_snapshots` table inside
+`data/cache/property_context.sqlite`. Unlike the old six-hour request cache,
+these records do not expire or have a 2,048-property eviction cap. Share this
+file between the refresh process and web workers, and keep it on a persistent
+volume when deploying containers. A still-fresh legacy cache can be read during
+migration, without starting any network work.
+
+### Source cadence and our refresh targets
+
+| Source | Published source cadence | Our check interval |
+| --- | --- | --- |
+| LA City issued building permits | Weekly in the city's dataset metadata | Weekly |
+| LAHD investigation and violation feeds | Quarterly in the city's metadata | Weekly, to catch out-of-cycle publications |
+| CAL FIRE hazard maps | Formal map releases; current service versions are 2024 SRA and 2025 LRA | Weekly |
+| FEMA NFHL | Changes as effective maps and revisions are incorporated; no fixed cadence verified here | Daily |
+| ZIMAS parcel profile | Multiple contributing city datasets; no single guaranteed cadence verified here | Daily |
+
+These are refresh policies, not claims that the agencies publish new records
+at each interval. Permit feed refresh dates remain separate from our check time.
+
+### Refresh job
+
+Run the job after importing listings, then schedule a daily invocation. Existing
+sections inside their check interval are reused. Uncached and newer properties
+are prioritized for a limited backfill; relistings with identical address and
+location share a snapshot. Each property commits separately so interrupted
+backfills can resume.
+
+```bash
+# Warm all current listings independently of the app server.
+uv run refresh-property-snapshots
+
+# Recover selected listings or run a limited backfill.
+uv run refresh-property-snapshots --mls 26991311 --mls 26996609
+uv run refresh-property-snapshots --limit 100 --workers 2
+
+# Force a source refresh regardless of its check interval.
+uv run refresh-property-snapshots --mls 26991311 --force
+```
+
+Example cron entry for the server running this checkout (3:15 AM in the cron
+daemon's timezone). The lock avoids overlapping long initial backfills:
+
+```cron
+15 3 * * * cd /home/straying/larentals && flock -n /tmp/larentals-property-refresh.lock uv run refresh-property-snapshots >> /home/straying/larentals/property-refresh.log 2>&1
+```
+
+This repository supplies the refresh command; installing a host scheduler or
+mounting production volumes is part of deployment. Initial backfills contact
+agencies and can take time, but they never occupy a web request worker. Source
+concurrency is bounded, and failed attempts wait an hour before another normal
+maintenance run retries them. `--force` bypasses that cooldown for recovery.
 
 ## Verification
 
 ```bash
-uv run pytest tests/test_property_context.py tests/test_docstring_depth.py
+uv run pytest tests/test_property_context.py tests/test_property_snapshots.py tests/test_docstring_depth.py
 npx playwright test tests/e2e/property_context.spec.js
 ```
 

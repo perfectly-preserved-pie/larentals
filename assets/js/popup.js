@@ -23,6 +23,7 @@
 
     /** @type {Map<string, Promise<Record<string, unknown>>>} */
     const listingDetailFetchCache = new Map();
+    const housingSummaryFetchCache = new Map();
 
     document.addEventListener("click", function trackListingLinkClick(event) {
         const target = event.target;
@@ -237,7 +238,8 @@
     /**
      * Build the compact Housing Department summary shown in listing popups.
      * Unavailable data and a successful no-match have distinct messages for the renter.
-     * Counts come from the same live records fetched for the drawer.
+     * Counts come from a dated server snapshot; the drawer can contain newer
+     * source records after an agency publishes an update.
      *
      * @param {unknown} summary Raw `lahd_property_summary` payload.
      * @returns {string} Human-readable housing issue summary.
@@ -263,13 +265,16 @@
             : "";
         const recordsTrigger = renderLahdRecordsTrigger(summary);
         const recordsTriggerLabel = recordsTrigger ? `<br>${recordsTrigger}` : "";
+        const snapshotDate = normalizeNullableString(summary.checked_at);
+        const snapshotLabel = snapshotDate ? `<br><small>Saved records checked ${escapeHtml(snapshotDate.split("T")[0])}</small>` : "";
 
-        return `${documented} records found · ${unresolved} may need attention (estimate)${latestCaseLabel}${recordsTriggerLabel}`;
+        return `${documented} records found · ${unresolved} may need attention (estimate)${latestCaseLabel}${snapshotLabel}${recordsTriggerLabel}`;
     }
 
     /**
      * Render the Housing Department issue row for listing popups.
-     * Out-of-jurisdiction and unavailable summaries are omitted rather than implying zero records.
+     * Housing counts hydrate from a server snapshot after the basic listing
+     * appears. Out-of-jurisdiction and unavailable counts never imply zero.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
      * @returns {string} HTML row.
@@ -277,7 +282,8 @@
     function renderLahdIssueRow(popupData) {
         const summary = popupData.lahd_property_summary;
         if (!summary || typeof summary !== "object") {
-            return "";
+            const id = normalizeListingId(popupData.mls_number);
+            return id ? `<div class="property-row" data-housing-summary="${escapeHtml(id)}"><span class="label">Housing records</span><span class="value">Loading saved records…</span></div>` : "";
         }
 
         if (summary.jurisdiction_in_scope === false || summary.data_available === false) {
@@ -292,6 +298,36 @@
                 </span>
             </div>
         `;
+    }
+
+    /**
+     * Hydrate saved housing counts independently of price, photos, and hazards.
+     * The route reads server snapshots only. Detached popup nodes are ignored,
+     * and a missing snapshot removes the row instead of inventing zero cases.
+     * @param {HTMLElement} popup Open popup containing any housing placeholder.
+     * @returns {void}
+     */
+    function hydrateHousingSummary(popup) {
+        popup.querySelectorAll("[data-housing-summary]").forEach(container => {
+            if (container.dataset.loading) return;
+            container.dataset.loading = "true";
+            const id = container.dataset.housingSummary;
+            const base = getListingDetailApiBasePath().replace("/listing-details/", "/housing-summary/");
+            const key = `${base}${encodeURIComponent(id)}`;
+            let pending = housingSummaryFetchCache.get(key);
+            if (!pending) {
+                pending = fetch(buildSameOriginDashUrl(key), { credentials: "same-origin", signal: AbortSignal.timeout(10000) })
+                    .then(response => {
+                        if (!response.ok) throw new Error("Housing snapshot unavailable");
+                        return response.json();
+                    }).catch(error => { housingSummaryFetchCache.delete(key); throw error; });
+                housingSummaryFetchCache.set(key, pending);
+            }
+            pending.then(summary => {
+                if (summary.data_available === false) housingSummaryFetchCache.delete(key);
+                if (container.isConnected) container.outerHTML = renderLahdIssueRow({ lahd_property_summary: summary });
+            }).catch(() => { if (container.isConnected) container.remove(); });
+        });
     }
 
     /**
@@ -393,7 +429,8 @@
 
     /**
      * Fetch listing details for a single popup and cache the in-flight request.
-     * Concurrent popup opens share the promise, while a failure clears it so a later open can retry.
+     * Concurrent opens share the promise. A bounded request and eviction on
+     * failure let reopening recover instead of retaining a hung promise.
      *
      * @param {string} listingId Listing identifier used by the API.
      * @returns {Promise<Record<string, unknown>>} Promise resolving to popup detail data.
@@ -412,6 +449,7 @@
             method: "GET",
             headers: { Accept: "application/json" },
             credentials: "same-origin",
+            signal: AbortSignal.timeout(10000),
         })
             .then((res) => {
                 if (!res.ok) throw new Error(`Listing detail fetch failed (${res.status})`);
@@ -895,6 +933,7 @@
 
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
+        hydrateHousingSummary(popupEl);
         window.larentals?.propertyContext?.hydratePopup(popupEl);
         if (popup.larentalsCenterInMap) {
             if (typeof ResizeObserver === "function" && !popup.larentalsCenterObserver) {

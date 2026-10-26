@@ -9,6 +9,7 @@
         outside_coverage: "ZIMAS and LA City permits cover the City of Los Angeles. This listing is outside that coverage.",
         unmatched: "We could not confidently match this address to one LA City parcel.",
         missing_location: "A verified listing location is not available.",
+        not_cached: "Records for this property have not been prepared yet. They will appear after the next server refresh.",
     };
 
     /**
@@ -53,9 +54,9 @@
     }
 
     /**
-     * Share requests between popup summaries and the property drawer.
-     * Partial agency outages expire quickly, and rejected requests are removed
-     * so reopening the drawer can recover without reloading the page.
+     * Share saved server records between popup summaries and the drawer.
+     * Short browser lifetimes let newly published snapshots appear promptly;
+     * these requests never initiate an agency lookup on the server.
      * @param {string} market Buy or lease page key.
      * @param {string} id Stored MLS identifier.
      * @returns {Promise<object>} Official property context.
@@ -65,14 +66,13 @@
         const entry = cache.get(key);
         if (entry && entry.expires > Date.now()) return entry.promise;
         const next = { expires: Infinity, promise: null };
-        next.promise = fetch(key, { credentials: "same-origin", headers: { Accept: "application/json" }, signal: AbortSignal.timeout(55000) })
+        next.promise = fetch(key, { credentials: "same-origin", headers: { Accept: "application/json" }, signal: AbortSignal.timeout(10000) })
             .then(response => {
                 if (!response.ok) throw new Error("Property records unavailable");
                 return response.json();
             })
             .then(context => {
-                const partial = ["fire", "flood", "zimas", "permits"].some(section => context[section]?.status === "unavailable");
-                next.expires = Date.now() + (partial ? 60000 : 6 * 60 * 60 * 1000);
+                next.expires = Date.now() + 60000;
                 return context;
             })
             .catch(error => { cache.delete(key); throw error; });
@@ -93,7 +93,7 @@
         if (!id) return "";
         return `<section class="property-context-summary" data-property-market="${escapeHtml(market)}" data-property-id="${escapeHtml(id)}">
             <strong>${market === "buy" ? "Property & hazards" : "Hazards & property records"}</strong>
-            <div class="property-context-summary__facts" aria-live="polite">Loading official records…</div>
+            <div class="property-context-summary__facts" aria-live="polite">Loading saved records…</div>
             <button type="button" class="property-context-open">View property records</button>
         </section>`;
     }
@@ -164,6 +164,20 @@
     }
 
     /**
+     * Label a saved source check separately from the agency's publication date.
+     * Old successful records stay visible after a failed refresh, with their
+     * original check time and an indication that they await an update.
+     * @param {object} source Saved source section.
+     * @returns {string} Snapshot freshness note or an empty string.
+     */
+    function snapshotNote(source) {
+        if (!source?.checked_at) return "";
+        const checked = new Date(source.checked_at);
+        if (Number.isNaN(checked.getTime())) return "";
+        return `<p class="property-records-note">Saved records checked ${escapeHtml(checked.toLocaleString())}.${source.refresh_failed || source.stale ? " An update is pending; the last saved records are shown." : ""}</p>`;
+    }
+
+    /**
      * Describe point-based hazards alongside separately sourced ZIMAS flags.
      * A ZIMAS very-high yes/no flag cannot replace the newer three-level fire
      * designation, and both sources remain visible when they differ.
@@ -176,11 +190,11 @@
         const fireRows = (fire.zones || []).map(zone => ({ label: zone.responsibility, value: zone.designation }));
         const floodRows = (flood.zones || []).map(zone => ({ label: `FEMA zone ${zone.zone}`, value: [zone.subtype,
             zone.special_flood_hazard_area === "T" ? "Special Flood Hazard Area" : zone.special_flood_hazard_area === "F" ? "Outside Special Flood Hazard Area" : ""].filter(Boolean).join(" · ") || "Subtype not reported" }));
-        return `<h3>Fire hazard severity</h3>${fire.status === "available" ? recordRows(fireRows) : `<p>${escapeHtml(fire.status === "no_intersection" ? "No mapped fire zone intersects the listing point." : statusLabels[fire.status] || "Not available")}</p>`}
+        return `<h3>Fire hazard severity</h3>${snapshotNote(fire)}${fire.status === "available" ? recordRows(fireRows) : `<p>${escapeHtml(fire.status === "no_intersection" ? "No mapped fire zone intersects the listing point." : statusLabels[fire.status] || "Not available")}</p>`}
             <p class="property-records-note">${sourceLink(fire.source_url, "CAL FIRE maps")}. LRA designations are state recommendations; check local adoption. Hazard designations do not measure an individual building's fire risk or insurance cost.</p>
-            <h3>Flood zone</h3>${flood.status === "available" ? recordRows(floodRows) : `<p>${escapeHtml(flood.status === "no_intersection" ? "FEMA did not return a mapped flood zone for this location." : statusLabels[flood.status] || "Not available")}</p>`}
+            <h3>Flood zone</h3>${snapshotNote(flood)}${flood.status === "available" ? recordRows(floodRows) : `<p>${escapeHtml(flood.status === "no_intersection" ? "FEMA did not return a mapped flood zone for this location." : statusLabels[flood.status] || "Not available")}</p>`}
             <p class="property-records-note">${sourceLink(flood.source_url, "FEMA Flood Map Service Center")}. Flooding can occur outside mapped high-hazard areas. These map lookups use the listing point; they do not evaluate the whole parcel.</p>
-            <h3>ZIMAS parcel hazard flags</h3>${context.zimas?.status === "available" ? recordRows(context.zimas.hazards) : `<p>${escapeHtml(statusLabels[context.zimas?.status] || "Not available")}</p>`}
+            <h3>ZIMAS parcel hazard flags</h3>${snapshotNote(context.zimas)}${context.zimas?.status === "available" ? recordRows(context.zimas.hazards) : `<p>${escapeHtml(statusLabels[context.zimas?.status] || "Not available")}</p>`}
             <p class="property-records-note">Liquefaction, landslide, and fault zones describe mapped ground hazards, not a building's earthquake performance. ${sourceLink("https://www.conservation.ca.gov/cgs/geohazards/eq-zapp", "Check California earthquake hazard maps")}.</p>`;
     }
 
@@ -192,13 +206,13 @@
      * @returns {string} Permit cards, source attribution, and coverage notes.
      */
     function permitDetails(permits) {
-        let content = "";
+        let content = snapshotNote(permits);
         if (permits.status !== "available") {
-            content = `<p>${escapeHtml(statusLabels[permits.status] || "Not available")}</p>`;
+            content += `<p>${escapeHtml(statusLabels[permits.status] || "Not available")}</p>`;
         } else if (!permits.records?.length) {
-            content = "<p>No matching issued building permits were returned from the 2020–present dataset.</p>";
+            content += "<p>No matching issued building permits were returned from the 2020–present dataset.</p>";
         } else {
-            content = `<ol class="property-permits">${permits.records.map(row => `<li>
+            content += `<ol class="property-permits">${permits.records.map(row => `<li>
                 <strong>${escapeHtml(row.permit_type || "Building permit")} · ${escapeHtml(row.permit_nbr)}</strong>
                 <p>${escapeHtml(row.work_desc || "Work description not supplied")}</p>
                 <dl><div><dt>Issued</dt><dd>${escapeHtml(row.issue_date?.slice(0, 10) || "Not reported")}</dd></div>
@@ -221,6 +235,10 @@
      */
     function drawerContent(context, market) {
         const zimas = context.zimas || {};
+        if (["fire", "flood", "zimas", "permits"].every(name => context[name]?.status === "not_cached")) {
+            return `<p class="property-records-address">${escapeHtml(context.address)}</p><p>${escapeHtml(statusLabels.not_cached)}</p>
+                <p>${sourceLink(zimas.source_url, "Look up this property in ZIMAS")}</p>`;
+        }
         const unavailable = `<p>${escapeHtml(statusLabels[zimas.status] || "Not available")}</p>`;
         const housing = section("Housing & tenant protections", (zimas.status === "available" ? recordRows(zimas.housing) : unavailable)
             + '<p class="property-records-note">City records describe the property. Coverage may differ by unit or tenancy; use the source notes and LAHD records to investigate.</p>', market === "lease");
@@ -230,12 +248,12 @@
         const permits = section("Building permit history", permitDetails(context.permits || {}), market === "buy");
         const cases = section("Planning cases & recorded activity", (zimas.status === "available" ? recordRows(zimas.cases) : unavailable)
             + '<p class="property-records-note">These are records attached to this property, including historical cases and ordinances. A listed case does not establish approval, construction, or nearby construction activity.</p>');
-        const checked = new Date(context.checked_at);
+        const checked = context.checked_at ? new Date(context.checked_at) : null;
         return `<p class="property-records-address">${escapeHtml(context.address)}</p>
             ${zimas.address ? `<p class="property-records-note">City records matched to ${escapeHtml(zimas.address)}.</p>` : ""}
             <p class="property-records-note">${sourceLink(zimas.source_url, "Open ZIMAS")}${zimas.pin ? ` · PIN ${escapeHtml(zimas.pin)}` : ""}
             ${zimas.apns?.length ? ` · APN ${escapeHtml(zimas.apns.join(", "))}` : ""}<br>
-            ${Number.isNaN(checked.getTime()) ? "" : `Records checked ${escapeHtml(checked.toLocaleString())}`}</p>
+            ${!checked || Number.isNaN(checked.getTime()) ? "" : `Records checked ${escapeHtml(checked.toLocaleString())}`}</p>
             ${market === "lease" ? housing + hazards + permits + planning + cases : hazards + planning + permits + housing + cases}`;
     }
 

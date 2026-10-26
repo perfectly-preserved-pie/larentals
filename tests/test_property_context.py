@@ -213,7 +213,7 @@ def test_property_api_uses_stored_identity_and_handles_missing_listings(monkeypa
         conn.execute(f"CREATE TABLE {market} (mls_number TEXT, full_street_address TEXT, city TEXT, latitude REAL, longitude REAL)")
         conn.execute(f"INSERT INTO {market} VALUES (?, ?, ?, ?, ?)", ("MLS-1", LISTING["full_street_address"], "Los Angeles", 34.077, -118.344))
     seen = []
-    monkeypatch.setattr("api.property_context.get_property_context", lambda listing: seen.append(listing) or {"address": listing["full_street_address"]})
+    monkeypatch.setattr("api.property_context.read_property_snapshot", lambda listing: seen.append(listing) or {"address": listing["full_street_address"]})
     server = Flask(__name__)
     register_property_context_routes(server, str(db))
     client = server.test_client()

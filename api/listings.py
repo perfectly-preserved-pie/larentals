@@ -14,6 +14,7 @@ from functions.lahd import (
     unavailable_lahd_listing_lookup_result,
 )
 from functions.rso import lookup_rso_property_for_listing
+from functions.property_snapshots import read_housing_snapshot
 
 LEASE_LISTING_DETAIL_SQL = """
   SELECT
@@ -108,11 +109,12 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 
     @bp.get("/api/lease/listing-details/<listing_id>")
     def get_lease_listing_details(listing_id: str) -> Response:
-        """Load a rental listing and its city-specific property summaries.
+        """Load a rental listing and locally available rent protection context.
 
         A missing MLS number returns 404 so the popup can show its fallback
         state. Amenity columns are optional while older databases await their
-        next pipeline run. LAHD and RSO lookups require a listing row.
+        next pipeline run. Saved LAHD summaries load through a separate local
+        route; live agency requests run only in the snapshot refresh command.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
@@ -141,23 +143,23 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
             abort(404, f"Lease listing not found: {listing_id}")
 
         payload.update({key: amenities.get(key) for key in ("has_ac", "has_dishwasher")})
-        payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
         payload["rso_property_summary"] = build_rso_listing_summary(payload)
         return jsonify(payload)
 
     @bp.get("/api/buy/listing-details/<listing_id>")
     def get_buy_listing_details(listing_id: str) -> Response:
-        """Load a sale listing and its Housing Department summary.
+        """Load a sale listing without waiting for external agency records.
 
         Sale popups do not need the rental-only RSO lookup. A missing MLS number
         returns 404 for the popup's fallback state. Optional amenity columns
-        remain unknown until an older listing table is refreshed.
+        remain unknown until an older listing table is refreshed. Saved Housing
+        Department summaries load independently without contacting an agency.
 
         Args:
             listing_id: MLS identifier supplied in the route path.
 
         Returns:
-            JSON response containing listing details and the LAHD summary.
+            JSON response containing listing details and optional amenities.
 
         Raises:
             werkzeug.exceptions.HTTPException: If the listing does not exist.
@@ -180,8 +182,31 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
             abort(404, f"Buy listing not found: {listing_id}")
 
         payload.update({key: amenities.get(key) for key in ("has_ac", "has_dishwasher")})
-        payload["lahd_property_summary"] = build_lahd_listing_summary(payload)
         return jsonify(payload)
+
+    @bp.get("/api/<market>/housing-summary/<listing_id>")
+    def get_housing_summary(market: str, listing_id: str) -> Response:
+        """Read cached housing counts independently of the listing response.
+
+        Match the stored listing identity rather than client-supplied parcel
+        information. Cache misses remain unavailable until the refresh job
+        publishes a snapshot; this route never contacts an agency.
+        """
+        if market not in {"buy", "lease"}:
+            abort(404)
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            columns = {column[1] for column in conn.execute(f"PRAGMA table_info({market})")}
+            if not columns:
+                abort(404)
+            identity = [name for name in ("full_street_address", "zip_code", "city", "latitude", "longitude") if name in columns]
+            row = conn.execute(f"SELECT {', '.join(identity)} FROM {market} WHERE mls_number = ? LIMIT 1", (listing_id,)).fetchone()
+        listing = build_listing_detail_payload(row)
+        if listing is None:
+            abort(404)
+        response = jsonify(read_housing_snapshot(listing))
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     server.register_blueprint(bp)
 

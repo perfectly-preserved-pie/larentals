@@ -6,7 +6,7 @@ from typing import Any
 from flask import Blueprint, Response, abort, jsonify
 
 from functions.data_paths import LARENTALS_DB_PATH
-from functions.property_context import get_property_context
+from functions.property_snapshots import read_property_snapshot
 
 
 def register_property_context_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) -> None:
@@ -22,8 +22,8 @@ def register_property_context_routes(server: Any, db_path: str = str(LARENTALS_D
     def property_context(market: str, listing_id: str) -> Response:
         """Fetch agency records for a stored buy or rental listing.
 
-        Legacy tables may lack ZIP codes, so the address matcher can still
-        require a unique city parcel while hazard queries use the stored point.
+        Only server-side snapshots are read here. Missing or old records never
+        start an agency request; the separate refresh job maintains them.
         """
         if market not in {"buy", "lease"}:
             abort(404)
@@ -38,7 +38,7 @@ def register_property_context_routes(server: Any, db_path: str = str(LARENTALS_D
             row = conn.execute(f"SELECT {', '.join(selected)} FROM {market} WHERE mls_number = ? LIMIT 1", (listing_id,)).fetchone()
         if row is None:
             abort(404)
-        response = jsonify(get_property_context(dict(row)))
+        response = jsonify(read_property_snapshot(dict(row)))
         # Browser caching is owned by the records UI; failed agency sections can
         # be retried without a CDN retaining an incomplete snapshot.
         response.headers["Cache-Control"] = "no-store"
