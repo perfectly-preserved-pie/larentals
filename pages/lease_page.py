@@ -15,6 +15,7 @@ from functions.zip_geocoding_utils import (
 )
 from functions.sql_helpers import get_earliest_listed_date
 from functions.data_paths import LARENTALS_DB_PATH, SOCAL_SERVICE_AREA_ZIP_CODES_PATH, ZIP_PLACE_CROSSWALK_PATH
+from functions.seo import SOCIAL_PREVIEW_IMAGE_URL
 from .responsive_filter_ui import (
   build_filter_ui_stores,
   build_responsive_listing_shell,
@@ -31,6 +32,7 @@ dash.register_page(
   name='LA County Homes for Rent',
   title='Where to Rent in LA',
   description='An interactive map of available rentals in Los Angeles County. Updated weekly.',
+  image_url=SOCIAL_PREVIEW_IMAGE_URL,
 )
 
 

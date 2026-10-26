@@ -168,6 +168,13 @@ test("listing popup paints above overlay controls when they overlap", async ({ p
 
 test("lease popup listing links stay on canonical http(s) URLs", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
+  // Weekly data may start with a listing that has neither a photo nor a link.
+  // Supply a known destination so this check exercises URL rendering every run.
+  const listingUrl = "https://www.theagencyre.com/listing/test-property?source=popup&mode=lease";
+  await page.route("**/api/lease/listing-details/*", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...await response.json(), listing_url: listingUrl } });
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   const rows = page.locator('[data-results-panel="lease"] .results-row');
@@ -191,5 +198,6 @@ test("lease popup listing links stay on canonical http(s) URLs", async ({ page }
   expect(popupHrefs.length).toBeGreaterThan(0);
   for (const href of popupHrefs) {
     expect(href).toMatch(/^https?:\/\//);
+    expect(href).toBe(listingUrl);
   }
 });

@@ -297,6 +297,8 @@ def build_responsive_listing_shell(
 
     Desktop widths show the filter content as a sidebar. Smaller widths reuse
     that same content inside a dismissible drawer or bottom sheet.
+    A heading and focusable map landmark stay outside that drawer so keyboard
+    and screen-reader users can reach the page content at either width.
 
     Args:
         page_type: Listing page type, either ``buy`` or ``lease``.
@@ -458,12 +460,28 @@ def build_responsive_listing_shell(
 
     return html.Div(
         [
+            html.A(
+                "Skip to main content",
+                href=f"#{page_type}-map-main",
+                className="skip-link",
+            ),
             backdrop,
             panel,
             html.Main(
-                map_card,
+                [
+                    html.H1(
+                        "Homes for rent in Los Angeles County"
+                        if page_type == "lease"
+                        else "Homes for sale in Los Angeles County",
+                        id=f"{page_type}-page-title",
+                        className="visually-hidden",
+                    ),
+                    map_card,
+                ],
                 id=f"{page_type}-map-main",
                 className="listing-map-col map-col",
+                tabIndex=-1,
+                **{"aria-labelledby": f"{page_type}-page-title"},
             ),
             results_panel,
             column_toggle,

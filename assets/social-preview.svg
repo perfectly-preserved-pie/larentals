@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">WhereToLive.LA — Find your place in LA.</title>
+  <desc id="description">Rentals and homes for sale on one map, with a stylized street grid and housing pins.</desc>
+  <!-- Editable source for social-preview.png; export at its native 1200 by 630 size. -->
+  <defs>
+    <clipPath id="map-clip"><rect x="800" y="0" width="400" height="630"/></clipPath>
+    <g id="pin">
+      <path d="M0 45C-10 30-30 9-30-8a30 30 0 0 1 60 0C30 9 10 30 0 45Z" fill="#99e6ba" stroke="#123e34" stroke-width="6"/>
+      <path d="m-14-9 14-12 14 12v20H4V0h-8v11h-10Z" fill="#123e34"/>
+    </g>
+  </defs>
+  <rect width="1200" height="630" fill="#123e34"/>
+  <g clip-path="url(#map-clip)">
+    <rect x="800" width="400" height="630" fill="#1b5144"/>
+    <g fill="none" stroke="#326b59" stroke-width="14">
+      <path d="M760 90h500M760 210h500M760 330h500M760 450h500M760 570h500"/>
+      <path d="M855-30v720M975-30v720M1095-30v720"/>
+    </g>
+    <path d="m760 620 525-580" fill="none" stroke="#5f9272" stroke-width="32"/>
+    <path d="m760 620 525-580" fill="none" stroke="#a1c29a" stroke-width="3" stroke-dasharray="14 16"/>
+    <use href="#pin" x="875" y="178"/>
+    <use href="#pin" x="1095" y="340"/>
+    <use href="#pin" x="960" y="490"/>
+  </g>
+  <rect x="64" y="70" width="56" height="56" rx="14" fill="#99e6ba"/>
+  <path d="m77 90 6 22 9-15 9 15 6-22" fill="none" stroke="#123e34" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="140" y="109" fill="#e7f5e9" font-size="30" font-weight="700">WhereToLive.LA</text>
+    <text x="64" y="260" fill="#fff9ed" font-size="76" font-weight="700" letter-spacing="-2">Find your</text>
+    <text x="64" y="350" fill="#99e6ba" font-size="76" font-weight="700" letter-spacing="-2">place in LA.</text>
+    <text x="68" y="418" fill="#e7f5e9" font-size="28">Rentals. Homes for sale. One map.</text>
+    <rect x="68" y="510" width="48" height="4" rx="2" fill="#99e6ba"/>
+    <text x="68" y="554" fill="#bbd4c8" font-size="18" font-weight="700" letter-spacing="2">LOS ANGELES COUNTY · UPDATED WEEKLY</text>
+  </g>
+</svg>

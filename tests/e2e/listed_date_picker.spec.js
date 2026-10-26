@@ -46,14 +46,12 @@ for (const mode of ["lease", "buy"]) {
 
       // Every calendar button, including the last week and navigation, must be
       // reachable inside the scroll area and unobscured by the map or footer.
-      const buttons = calendar.locator("button:visible, .dash-datepicker-calendar-date-inside");
+      const buttons = calendar.locator("button:visible:enabled, .dash-datepicker-calendar-date-inside");
       for (const button of await buttons.all()) {
-        await button.scrollIntoViewIfNeeded();
-        expect(await button.evaluate((el) => {
-          const box = el.getBoundingClientRect();
-          const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
-          return el === hit || el.contains(hit);
-        })).toBe(true);
+        // The short landscape drawer can still be scrolling as the accordion
+        // expands. Trial clicks wait for a stable, unobscured hit target without
+        // changing the selected date or navigating away from this month.
+        await button.click({ trial: true });
       }
       const day = (number) => calendar.locator(".dash-datepicker-calendar-date-inside")
         .filter({ hasText: new RegExp(`^${number}$`) });

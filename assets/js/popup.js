@@ -481,14 +481,17 @@
     /**
      * Render the property photo row, optionally wrapping the image in the listing URL.
      * When a photo is missing, valid coordinates provide a Street View fallback.
+     * Reserve the pipeline's 400-by-300 photo frame before the request finishes
+     * so loading an image does not push the listing details down.
      *
      * @param {string|null} photoUrl Image URL for the listing.
      * @param {URL|null} listingUrl Parsed listing detail URL, if available.
+     * @param {Record<string, unknown>} popupData Listing address and fallback coordinates.
      * @returns {string} HTML string for the image row.
      */
     function buildImageRow(photoUrl, listingUrl, popupData) {
         if (photoUrl) {
-            const imageTag = `<img src="${escapeHtml(photoUrl)}" alt="Property photo" loading="lazy" style="width:100%;height:auto;">`;
+            const imageTag = `<img src="${escapeHtml(photoUrl)}" alt="Property photo" width="400" height="300" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:contain;">`;
             return listingUrl
                 ? `<div class="listing-popup__media"><a href="${escapeHtml(listingUrl.href)}" class="plausible-listing-link" target="_blank" rel="noreferrer">${imageTag}</a></div>`
                 : `<div class="listing-popup__media">${imageTag}</div>`;

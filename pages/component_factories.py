@@ -771,9 +771,11 @@ def build_title_card(
 
     Place the page switch, update date, and theme control beside the title so
     lease and sale pages share the same navigation and status layout.
+    The responsive shell owns the semantic page heading because this card is
+    hidden inside the closed filter drawer on phones.
 
     Args:
-        title: Heading shown at the top of the sidebar.
+        title: Display title shown at the top of the sidebar.
         subtitle: Secondary copy under the title.
         last_updated: Optional display date for the latest data refresh.
 
@@ -783,7 +785,7 @@ def build_title_card(
     title_card_children = [
         dbc.Row(
             [
-                dbc.Col(html.H3(title, className="card-title"), width="auto"),
+                dbc.Col(html.Div(title, className="card-title h3"), width="auto"),
                 dbc.Col(
                     dbc.ButtonGroup(
                         [

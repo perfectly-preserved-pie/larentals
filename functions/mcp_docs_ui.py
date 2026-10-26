@@ -73,6 +73,8 @@ def build_mcp_docs_layout() -> html.Main:
     """Build the responsive documentation page for the public MCP server.
 
     The page includes endpoint copying, client setup, capabilities, and prompts.
+    The skip link targets the hero heading so keyboard users can bypass the
+    navigation and theme switch without adding the heading to the tab order.
 
     Returns:
         The complete Dash layout for the MCP documentation page.
@@ -89,6 +91,11 @@ def build_mcp_docs_layout() -> html.Main:
 
     return html.Main(
         [
+            html.A(
+                "Skip to main content",
+                href="#mcp-page-title",
+                className="skip-link",
+            ),
             html.Nav(
                 [
                     dcc.Link(
@@ -142,7 +149,9 @@ def build_mcp_docs_layout() -> html.Main:
                                 [
                                     "Search LA housing from ",
                                     html.Span("your AI assistant."),
-                                ]
+                                ],
+                                id="mcp-page-title",
+                                tabIndex=-1,
                             ),
                             html.P(
                                 "Connect Claude, Hermes, or any Streamable HTTP "

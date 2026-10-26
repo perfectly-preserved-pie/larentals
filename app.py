@@ -3,7 +3,7 @@ from api import register_api_routes
 from functions.data_paths import LARENTALS_DB_PATH
 from dash_extensions import EventListener
 from flask_compress import Compress
-from flask import Response
+from flask import Response, request
 from functions.devtools import register_filter_exclusion_devtool
 from functions.lahd_records_ui import (
   create_lahd_records_drawer,
@@ -22,6 +22,8 @@ from functions.dash_asset_requests import register_dash_asset_request_guard
 from functions.security_headers import register_security_headers
 from functions.mcp_listings import configure_listings_mcp
 from functions.seo import (
+  CANONICAL_BASE_URL,
+  build_page_head,
   build_llms_txt,
   build_robots_txt,
   build_sitemap_xml,
@@ -34,7 +36,6 @@ import dash_mantine_components as dmc
 import logging
 import time
 
-CANONICAL_BASE_URL = "https://wheretolive.la"
 STRUCTURED_DATA_SCRIPT = build_structured_data_script(CANONICAL_BASE_URL)
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
@@ -56,6 +57,28 @@ external_scripts = [
 
 register_filter_exclusion_devtool()
 dmc.pre_render_color_scheme()
+
+
+@dash.hooks.index()
+def complete_page_head(index: str) -> str:
+  """Publish canonical metadata and document language in the initial response.
+
+  Run after Mantine's hook, which matches a bare html tag when seeding the
+  color scheme. Keeping that order preserves its pre-render theme handling.
+  Canonical URLs come from registered paths rather than the request host.
+
+  Args:
+      index: Dash's rendered HTML after earlier index hooks.
+
+  Returns:
+      The HTML shell with language and public-page identity tags.
+  """
+  head = build_page_head(
+    CANONICAL_BASE_URL, request.path, get_public_page_paths(dash.page_registry),
+  )
+  return index.replace("<html", '<html lang="en"', 1).replace("</head>", head + "\n</head>", 1)
+
+
 configure_listings_mcp()
 
 # Create the app

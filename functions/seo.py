@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from html import escape
 import json
 from typing import Any
 from urllib.parse import urljoin
@@ -8,10 +9,41 @@ from xml.etree import ElementTree
 SITEMAP_NAMESPACE = "http://www.sitemaps.org/schemas/sitemap/0.9"
 DEFAULT_PUBLIC_PATHS = ("/", "/buy", "/mcp")
 SITE_NAME = "WhereToLive.LA"
+CANONICAL_BASE_URL = "https://wheretolive.la"
+SOCIAL_PREVIEW_IMAGE_URL = f"{CANONICAL_BASE_URL}/assets/social-preview.png"
 SITE_DESCRIPTION = (
   "An interactive map of available rental and for-sale properties in Los "
   "Angeles County, with location-aware housing context and filters."
 )
+
+
+def build_page_head(base_url: str, page_path: str, public_paths: list[str]) -> str:
+  """Add canonical identity and image details to Dash's page metadata.
+
+  Only registered public pages receive these tags. Use the configured origin
+  and a query-free path so tracking parameters and proxy hostnames cannot
+  change the preferred URL. Dash supplies the image, title, and description tags.
+
+  Args:
+      base_url: Canonical public origin without a trailing slash.
+      page_path: Request path, excluding the query string.
+      public_paths: Registered browser pages eligible for canonical metadata.
+
+  Returns:
+      Escaped head markup, or an empty string for an unregistered path.
+  """
+  if page_path not in public_paths:
+    return ""
+  canonical_url = escape(base_url.rstrip("/") + page_path, quote=True)
+  return "\n".join([
+    f'<link rel="canonical" href="{canonical_url}">',
+    f'<meta property="og:url" content="{canonical_url}">',
+    f'<meta property="og:site_name" content="{SITE_NAME}">',
+    '<meta property="og:image:width" content="1200">',
+    '<meta property="og:image:height" content="630">',
+    '<meta property="og:image:alt" content="WhereToLive.LA — Find your place in LA. Rentals and homes for sale on one map.">',
+    '<meta name="twitter:image:alt" content="WhereToLive.LA — Find your place in LA. Rentals and homes for sale on one map.">',
+  ])
 
 
 def get_public_page_paths(page_registry: Mapping[str, Mapping[str, Any]]) -> list[str]:

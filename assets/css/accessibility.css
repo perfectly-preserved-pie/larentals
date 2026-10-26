@@ -1,0 +1,24 @@
+/* Keyboard skip links shared by the listing maps and MCP documentation.
+ * Explicit colors keep the focused link readable in both application themes.
+ * Fixed positioning keeps the hidden link out of the listing grid layout.
+ */
+.skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20000;
+  padding: 0.75rem 1rem;
+  border-radius: 0.4rem;
+  background: #164d40;
+  color: #fff;
+  font-weight: 700;
+  transform: translateY(calc(-100% - 2rem));
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #164d40;
+  color: #fff;
+}
