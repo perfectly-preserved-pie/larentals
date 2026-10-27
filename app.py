@@ -40,19 +40,19 @@ STRUCTURED_DATA_SCRIPT = build_structured_data_script(CANONICAL_BASE_URL)
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
 external_stylesheets = [
-	dbc.themes.BOOTSTRAP,
+  dbc.themes.BOOTSTRAP,
   dbc.icons.BOOTSTRAP,
   dbc.icons.FONT_AWESOME,
   # Supplies Mapbox's required, unmodified logo styling when Satellite imagery is active.
-  "https://api.mapbox.com/mapbox-gl-js/v3.23.1/mapbox-gl.css",
+  "https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.css",
 ]
 external_scripts = [
   {
     "src": "https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js",
     "async": "async",
   },
-  'https://cdn.jsdelivr.net/npm/@turf/turf@7.3.0/turf.min.js', # Turf.js for convex hulls
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11.26.24/dist/sweetalert2.all.min.js' # SweetAlert2 for popups
+  'https://cdn.jsdelivr.net/npm/@turf/turf@7.4.0/turf.min.js', # Turf.js for convex hulls and ZIP boundary filtering
+  'https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js' # SweetAlert2 for popups
 ]
 
 register_filter_exclusion_devtool()
