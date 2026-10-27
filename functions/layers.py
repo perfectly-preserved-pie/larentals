@@ -39,7 +39,8 @@ STREET_TILE_ATTRIBUTION = (
 
 MAPBOX_SATELLITE_BASE_LAYER_NAME = "Satellite imagery"
 MAPBOX_SATELLITE_TILE_URL_TEMPLATE = (
-    "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.jpg90?access_token={access_token}"
+    "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/"
+    "{z}/{x}/{y}?access_token={access_token}"
 )
 MAPBOX_SATELLITE_ATTRIBUTION = (
     '<a class="mapboxgl-ctrl-logo" href="https://www.mapbox.com/" '
@@ -110,18 +111,20 @@ def get_mapbox_access_token() -> str | None:
 
 
 def build_mapbox_satellite_tile_url(access_token: str) -> str:
-    """Build the browser-facing Mapbox Satellite Raster Tiles API template.
+    """Build the browser-facing Mapbox Satellite Streets tile template.
 
-    The template uses the public raster endpoint so the browser can request tiles directly.
+    The Static Tiles API renders road and place labels into the satellite tiles
+    so Leaflet can display them without a separate vector renderer. Callers must
+    use a 512-pixel tile size and a zoom offset of -1 to align them with Leaflet.
 
     Args:
         access_token: Mapbox access token used to authorize tile requests.
 
     Returns:
-        The constructed mapbox satellite tile URL text.
+        A tile URL template with Leaflet's coordinate placeholders preserved.
 
     Raises:
-        ValueError: If the operation cannot be completed.
+        ValueError: If the access token is blank after trimming whitespace.
     """
     normalized_token = str(access_token).strip()
     if not normalized_token:
@@ -979,22 +982,26 @@ class LayersClass:
         *,
         checked: bool = False,
     ) -> dl.BaseLayer:
-        """Create the token-authenticated Mapbox Satellite base layer.
+        """Create the token-authenticated satellite base layer with road and place labels.
 
-        This layer is optional because it depends on a deployment-provided Mapbox token.
+        The 512-pixel style tiles need a zoom offset of -1 to align with Leaflet's
+        default map scale. The shared control only offers this layer when a
+        deployment provides a Mapbox token.
 
         Args:
             access_token: Mapbox access token used to authorize tile requests.
-            checked: Whether checked behavior is enabled.
+            checked: Whether this basemap is selected when the control is created.
 
         Returns:
-            The created mapbox satellite base layer.
+            A selectable Satellite Streets basemap for either listing page.
         """
         return dl.BaseLayer(
             dl.TileLayer(
                 url=build_mapbox_satellite_tile_url(access_token),
                 attribution=MAPBOX_SATELLITE_ATTRIBUTION,
                 detectRetina=False,
+                tileSize=512,
+                zoomOffset=-1,
                 maxNativeZoom=21,
                 maxZoom=21,
             ),

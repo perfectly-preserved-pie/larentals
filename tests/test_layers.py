@@ -190,33 +190,42 @@ def test_layers_control_omits_satellite_without_mapbox_token(
     assert control.collapsed is False
 
 
+@pytest.mark.parametrize("page_key", ["lease", "buy"])
 def test_layers_control_includes_mapbox_satellite_when_configured(
     monkeypatch: pytest.MonkeyPatch,
+    page_key: str,
 ) -> None:
     """Verify that layers control includes mapbox satellite when configured.
 
-    A configured token should enable the satellite option without changing other basemaps.
+    Both listing pages should offer labeled imagery with correctly aligned
+    512-pixel tiles while keeping the street map selected initially.
 
     Args:
         monkeypatch: Pytest fixture used to replace dependencies during the test.
+        page_key: Listing page receiving the shared basemap control.
 
     Returns:
         None.
     """
     monkeypatch.setenv("MAPBOX_ACCESS_TOKEN", "pk.test-token")
 
-    control = LayersClass.create_layers_control("lease", [])
+    control = LayersClass.create_layers_control(page_key, [])
     street, satellite, parcels = control.children
 
     assert street.name == STREET_BASE_LAYER_NAME
+    assert street.checked is True
     assert isinstance(satellite, dl.BaseLayer)
     assert satellite.name == MAPBOX_SATELLITE_BASE_LAYER_NAME
+    assert satellite.name == "Satellite with labels"
     assert satellite.checked is False
     assert satellite.children.url == (
-        "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.jpg90"
+        "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}"
         "?access_token=pk.test-token"
     )
     assert satellite.children.maxNativeZoom == 21
+    assert satellite.children.maxZoom == 21
+    assert satellite.children.tileSize == 512
+    assert satellite.children.zoomOffset == -1
     assert "mapboxgl-ctrl-logo" in satellite.children.attribution
     assert "&copy; Mapbox" in satellite.children.attribution
     assert "&copy; OpenStreetMap" in satellite.children.attribution
