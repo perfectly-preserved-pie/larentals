@@ -362,8 +362,8 @@ def build_mcp_docs_layout() -> html.Main:
                                 icon="lucide:gauge",
                                 title="Bounded responses",
                                 copy=(
-                                    "Results are paginated and capped at 20 listings "
-                                    "per call for fast, predictable answers."
+                                    "Results default to 10 listings per call. "
+                                    "Request up to 100 per page for broader searches."
                                 ),
                             ),
                         ],

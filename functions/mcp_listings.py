@@ -17,7 +17,8 @@ from dash.mcp import configure_mcp_server, mcp_enabled
 
 
 DEFAULT_DB_PATH: Path = LARENTALS_DB_PATH
-MAX_PAGE_SIZE: int = 20
+# Larger batches reduce pagination calls while keeping listing payloads bounded.
+MAX_PAGE_SIZE: int = 100
 
 ListingType: TypeAlias = Literal["lease", "buy"]
 PriceDescription: TypeAlias = Literal["monthly_rent", "sale_price"]
@@ -412,7 +413,7 @@ def search_listings_in_database(
         listed_after: Optional ISO date requiring listings to be newer than that date.
         sort: Requested field and direction used to order search results.
         page: One-based result page number.
-        page_size: Maximum number of listings returned per page.
+        page_size: Listings per page, from 1 to 100; defaults to 10.
 
     Returns:
         The matching listings and pagination metadata.
@@ -632,8 +633,10 @@ def search_listings(
     ``min_price`` and ``max_price`` mean monthly rent for lease searches and
     sale price for buy searches. ``furnished`` is lease-only. ``min_lot_size``,
     ``max_hoa_fee``, and ``senior_community`` are buy-only. ``listed_after``
-    must use YYYY-MM-DD. At most 20 listings are returned per call; request the
-    next page when ``has_next_page`` is true.
+    must use YYYY-MM-DD. ``page_size`` defaults to 10 and accepts up to 100
+    listings for broader searches, reducing the number of pagination calls.
+    Request the next page when ``has_next_page`` is true, keeping the same
+    ``page_size`` so listings are not skipped or repeated.
 
     Args:
         listing_type: Listing market, either ``buy`` or ``lease``.
@@ -652,7 +655,7 @@ def search_listings(
         listed_after: Optional ISO date requiring listings to be newer than that date.
         sort: Requested field and direction used to order search results.
         page: One-based result page number.
-        page_size: Maximum number of listings returned per page.
+        page_size: Listings per page, from 1 to 100; defaults to 10.
 
     Returns:
         The matching listings and pagination metadata.
