@@ -4,7 +4,9 @@ from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
 from loguru import logger
 from typing import Tuple, Optional
+from collections.abc import Callable
 import os
+import json
 import pandas as pd
 import re
 import requests
@@ -385,17 +387,23 @@ def check_expired_listing_theagency(
     listing_url: str,
     mls_number: str,
     board_code: str = "clr",
+    *,
+    on_detail: Callable[[dict | None], None] | None = None,
 ) -> bool | None:
     """Check The Agency's active and off-market indexes for an MLS listing.
 
     The off-market endpoint contains expired, withdrawn, leased, and sold
     records; it does not consistently expose an ``IsSold`` key. An active
     lookup is therefore attempted first, followed by the off-market lookup.
+    An optional consumer receives each decoded detail object so the inventory
+    pass can recover subtypes from these same requests. A missing active record
+    sends None, preventing a redundant detail lookup after an HTTP 404.
 
     Args:
         listing_url: Saved listing URL used to infer the board code.
         mls_number: MLS identifier whose status is being checked.
         board_code: Default board code when the URL does not contain one.
+        on_detail: Consumer for decoded details, or None when the active record is absent.
 
     Returns:
         True if the listing is inactive, False if active, or None if unknown.
@@ -411,9 +419,14 @@ def check_expired_listing_theagency(
         )
         if active_response.status_code != 404:
             active_response.raise_for_status()
-            result = _agency_result_is_inactive(active_response.json())
+            data = _decode_agency_detail(active_response.json())
+            if on_detail is not None:
+                on_detail(data)
+            result = _agency_result_is_inactive(data)
             if result is not None:
                 return result
+        elif on_detail is not None:
+            on_detail(None)
 
         off_market_response = get_with_backoff(
             f"{base_url}/sold-detail/{board_code}/{mls_number}",
@@ -425,7 +438,10 @@ def check_expired_listing_theagency(
             )
             return None
         off_market_response.raise_for_status()
-        result = _agency_result_is_inactive(off_market_response.json())
+        data = _decode_agency_detail(off_market_response.json())
+        if on_detail is not None:
+            on_detail(data)
+        result = _agency_result_is_inactive(data)
         if result:
             logger.debug(f"The Agency reports MLS {mls_number} as inactive.")
         return result
@@ -779,6 +795,83 @@ def extract_zip_code(full_street_address: str) -> Optional[str]:
     else:
         return None
 
+def _decode_agency_detail(payload: object) -> dict:
+    """Unwrap the Agency's optional JSON string around a listing object.
+
+    Reject other JSON types so callers can retry invalid responses instead of
+    recording them as successful lookups with no reported subtype or status.
+    """
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+    if not isinstance(payload, dict):
+        raise ValueError("Agency returned a non-object listing payload")
+    return payload
+
+
+def fetch_agency_detail(mls_number: str, listing_url: str | None = None) -> dict:
+    """Read an Agency detail object without converting failures to missing data.
+
+    Backfills must distinguish a failed request from a successful response with
+    no subtype so transient failures can be retried. Saved Agency URLs select
+    the board; other URLs use CLR, the listing pipeline's default. The provider
+    sometimes wraps its JSON object in a JSON string, so unwrap that once.
+
+    Args:
+        mls_number: MLS identifier to look up on the selected board.
+        listing_url: Saved listing URL, when available, identifying its board.
+
+    Returns:
+        Decoded detail fields; HTTP, transport, and invalid JSON errors propagate.
+    """
+    board = _agency_board_code(listing_url or "", "clr")
+    response = get_with_backoff(
+        f"https://search-service.idcrealestate.com/api/property/en_US/d4/detail/{board}/{mls_number}",
+        headers=_agency_headers(),
+    )
+    response.raise_for_status()
+    return _decode_agency_detail(response.json())
+
+
+def _agency_detail_fields(payload: dict) -> list[dict]:
+    """Read labeled detail items from either Agency container spelling.
+
+    Empty and singleton containers occur alongside normal item lists. Ignore
+    malformed items so they cannot discard usable subtype or amenity fields.
+    """
+    details = payload.get("AddtionalPropertyInfo", payload.get("AdditionalPropertyInfo")) or {}
+    fields = (details.get("Item") or []) if isinstance(details, dict) else []
+    if isinstance(fields, dict):
+        fields = [fields]
+    return [field for field in fields if isinstance(field, dict)] if isinstance(fields, list) else []
+
+
+def extract_agency_subtype(payload: dict) -> str | None:
+    """Prefer explicit subtypes over the Agency's broader property type.
+
+    CLR responses commonly supply the home type in PropertyType or
+    PropertyTypeLabel. Explicit subtype keys and labeled detail items win when
+    present, preserving distinctions such as a townhouse within condominiums.
+    Market categories, URL slugs, remarks, and architectural styles do not
+    establish a subtype.
+
+    Args:
+        payload: Decoded Agency detail object from a successful request.
+
+    Returns:
+        Canonical home subtype, or None when no usable type is reported.
+    """
+    fields = _agency_detail_fields(payload)
+    candidates = [payload.get(key) for key in (
+        "PropertySubType", "PropertySubtype", "SubType", "Subtype",
+    )]
+    candidates.extend(
+        field.get("Value") for field in fields
+        if re.fullmatch(r"(?:property\s+)?sub\s*type", str(field.get("Label", "")).strip(), re.I)
+    )
+    candidates.extend(payload.get(key) for key in ("PropertyType", "PropertyTypeLabel"))
+    return next((subtype for raw in candidates if (subtype := listing_subtype(raw))), None)
+
+
 def fetch_the_agency_data(
     mls_number: str,
     row_index: int,
@@ -788,8 +881,9 @@ def fetch_the_agency_data(
 
     This is the primary detail source for the listing pipeline. Missing records
     or transport errors return empty fields so BHHS can fill what is available.
-    Explicit subtype fields take priority over PropertyType and its label;
-    broad market categories are ignored so an unknown home type stays unknown.
+    Explicit subtype keys and labels take priority over PropertyType and its
+    label; broad market categories are ignored. The shared detail reader handles
+    both ordinary objects and the provider's double-encoded JSON responses.
     Amenity statuses use dedicated detail labels; omitted appliances stay unknown.
 
     Parameters:
@@ -806,36 +900,10 @@ def fetch_the_agency_data(
         - AC/dishwasher Yes/No statuses, or None when unknown.
     Returns empty fields and unknown amenities if the request fails.
     """
-    url = f"https://search-service.idcrealestate.com/api/property/en_US/d4/detail/clr/{mls_number}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Origin": "https://www.theagencyre.com",
-        "Connection": "keep-alive",
-        #"Sec-Fetch-Dest": "empty",
-        #"Sec-Fetch-Mode": "no-cors",
-        #"Sec-Fetch-Site": "cross-site",
-        "Content-Type": "application/json",
-        "X-Tenant": "QUdZfFBST0R8Q09NUEFOWXwx",
-        "Priority": "u=4",
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache",
-        "Referer": "https://www.theagencyre.com/"
-    }
-
     logger.debug(f"Processing MLS {mls_number} ({row_index}/{total_rows})")
 
     try:
-        response = get_with_backoff(url, headers=headers)
-        #logger.debug(f"Request URL: {url}")
-        #logger.debug(f"Response Status Code: {response.status_code}")
-        response.raise_for_status()
-
-        # Parse JSON response
-        data = response.json()
-        #logger.debug(f"Response JSON for MLS {mls_number}: {data}")
+        data = fetch_agency_detail(mls_number)
 
         # Extract listing date
         list_date_str = data.get("ListDate", "")
@@ -872,18 +940,7 @@ def fetch_the_agency_data(
             f"The Agency returned {populated_fields}/3 fields for MLS "
             f"{mls_number}."
         )
-        subtype = next((
-            cleaned for key in ("PropertySubType", "PropertySubtype", "SubType", "PropertyType", "PropertyTypeLabel")
-            if (cleaned := listing_subtype(data.get(key)))
-        ), None)
-        details = data.get("AddtionalPropertyInfo", data.get("AdditionalPropertyInfo", {})) or {}
-        fields = (details.get("Item", []) or []) if isinstance(details, dict) else []
-        if isinstance(fields, dict):
-            fields = [fields]
-        if not isinstance(fields, list):
-            fields = []
-        fields = [field for field in fields if isinstance(field, dict)]
-        return list_date, detail_url, img_src, subtype, extract_listing_amenities(fields)
+        return list_date, detail_url, img_src, extract_agency_subtype(data), extract_listing_amenities(_agency_detail_fields(data))
 
     except HostCircuitOpen:
         logger.debug(f"Skipping Agency lookup for MLS {mls_number}; host circuit is open.")

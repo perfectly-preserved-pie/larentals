@@ -42,8 +42,9 @@ def main() -> None:
   """Build the normalized buy-listings dataframe and publish its artifacts.
 
   The job combines source rows with saved enrichment work before writing the
-  sale table. A sample run exits before publication so changes can be checked
-  without replacing the live dataset.
+  sale table. Missing subtypes in retained inventory get checkpointed Agency
+  lookups after the merge, reusing expiration responses where available. A sample
+  run exits before publication so changes can be checked without replacing the live dataset.
   Console and rotating file logs use the shared LOG_LEVEL threshold and label
   shared helper events as buy-pipeline work.
 
@@ -363,6 +364,11 @@ def main() -> None:
       source_file_hash=source_file_hash,
     )
     df_combined.reset_index(drop=True, inplace=True)
+
+    df_combined = update_missing_listing_subtypes(
+      df_combined,
+      checkpoint_store=checkpoint_store,
+    )
 
     df_combined = reconstruct_missing_address_components(df_combined)
 

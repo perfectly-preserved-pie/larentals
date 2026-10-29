@@ -3,7 +3,10 @@ from functions.webscraping_utils import (
     check_expired_listing_bhhs,
     check_expired_listing_rentcast,
     check_expired_listing_theagency,
+    extract_agency_subtype,
+    fetch_agency_detail,
     fetch_the_agency_data,
+    HostCircuitOpen,
     listing_subtype,
     webscrape_bhhs,
 )
@@ -20,6 +23,7 @@ from functions.listing_pipeline_checkpoint import (
 from functions.listing_report_utils import normalize_mls_number
 from loguru import logger
 from typing import Any, Sequence
+from collections.abc import Callable
 import json
 import os
 import pandas as pd
@@ -163,35 +167,40 @@ def _check_listing_inactive_sources(
     full_street_address: object,
     mls_number: str,
     listing_type: str,
+    on_agency_detail: Callable[[dict | None], None] | None = None,
 ) -> tuple[bool | None, str]:
     """Check a listing through the ordered provider fallback chain.
 
     Brokerage sources remain first because they carry CRMLS-derived records and
     do not consume a metered API allowance. RentCast is only used when enabled
     and the MLS-backed sources cannot determine a status.
+    Forwarding Agency detail objects lets the caller fill missing subtypes
+    without issuing another request for the same listing.
 
     Args:
         url: Saved public listing URL, if one is available.
         full_street_address: Property address used by address-based fallbacks.
         mls_number: MLS identifier whose current status is being checked.
         listing_type: Listing category, either ``buy`` or ``lease``.
+        on_agency_detail: Consumer of Agency objects, or None for a missing active record.
 
     Returns:
         The nullable inactive flag and a label describing the checked sources.
     """
     checked: list[str] = []
     result: bool | None = None
+    agency_options = {"on_detail": on_agency_detail} if on_agency_detail is not None else {}
 
     if _url_hostname_matches(url, "bhhscalifornia.com"):
         checked.append("BHHS")
         result = check_expired_listing_bhhs(url, mls_number)
     elif _url_hostname_matches(url, "theagencyre.com"):
         checked.append("The Agency")
-        result = check_expired_listing_theagency(url, mls_number)
+        result = check_expired_listing_theagency(url, mls_number, **agency_options)
 
     if result is None and "The Agency" not in checked:
         checked.append("The Agency")
-        result = check_expired_listing_theagency(url, mls_number)
+        result = check_expired_listing_theagency(url, mls_number, **agency_options)
 
     if result is None and os.getenv("RENTCAST_API_KEY"):
         checked.append("RentCast")
@@ -220,6 +229,9 @@ def remove_inactive_listings(
     refreshes stale. ImageKit cleanup runs after the listing tables are
     published, so an interrupted pipeline cannot delete a photo still used by
     the database.
+    Missing subtypes are recovered from the same Agency status responses and
+    checkpointed, so older inventory can be backfilled without duplicate HTTP
+    requests. Cached status checks also restore any saved subtype.
 
     Args:
         df: Dataframe to remove inactive listings.
@@ -233,6 +245,8 @@ def remove_inactive_listings(
     to_delete = []
     total_rows = len(df)
     started_at = time.monotonic()
+    if "subtype" in df.columns:
+        df["subtype"] = df["subtype"].astype(object)
     logger.info(
         f"Checking {total_rows} {table_name} listings for inactive status "
         "(MLS-backed sources with optional RentCast fallback)."
@@ -256,6 +270,9 @@ def remove_inactive_listings(
             source_file_hash=source_file_hash,
         )
         record = checkpoint_store.get(mls) if checkpoint_store else None
+        needs_subtype = "subtype" in df.columns and not listing_subtype(getattr(row, "subtype", None))
+        agency_details: list[dict | None] = []
+        subtype = None
         cached_result = record.get("inactive_check_is_inactive") if record else None
         cached = bool(
             record
@@ -267,25 +284,44 @@ def remove_inactive_listings(
             inactive = bool(cached_result)
             check_result = inactive
             provider = str(record.get("inactive_check_provider") or "unknown")
+            if needs_subtype:
+                subtype = listing_subtype(record.get("scraped_subtype"))
         else:
             check_result, provider = _check_listing_inactive_sources(
                 url=url,
                 full_street_address=getattr(row, "full_street_address", ""),
                 mls_number=mls,
                 listing_type=table_name,
+                on_agency_detail=agency_details.append if needs_subtype else None,
             )
+            subtype = next((
+                cleaned for payload in agency_details
+                if payload is not None and (cleaned := extract_agency_subtype(payload))
+            ), None)
+            checkpoint_fields: dict[str, Any] = {}
+            if agency_details:
+                checkpoint_fields.update(
+                    scraped_subtype=subtype,
+                    subtype_lookup_status=(
+                        "success" if subtype else "not_found"
+                        if any(payload is not None for payload in agency_details) else "unavailable"
+                    ),
+                )
             # ``None`` means no provider could determine status. Leave it
             # uncached so a later run or newly configured fallback retries it.
             if check_result is not None:
                 inactive = bool(check_result)
-                if checkpoint_store:
-                    checkpoint_store.checkpoint(
-                        mls,
-                        inactive_check_input_hash=check_hash,
-                        inactive_check_status="success",
-                        inactive_check_provider=provider,
-                        inactive_check_is_inactive=inactive,
-                    )
+                checkpoint_fields.update(
+                    inactive_check_input_hash=check_hash,
+                    inactive_check_status="success",
+                    inactive_check_provider=provider,
+                    inactive_check_is_inactive=inactive,
+                )
+            if checkpoint_store and checkpoint_fields:
+                checkpoint_store.checkpoint(mls, **checkpoint_fields)
+
+        if needs_subtype and subtype:
+            df.at[row.Index, "subtype"] = subtype
 
         if inactive:
             to_delete.append(mls)
@@ -423,7 +459,7 @@ def update_dataframe_with_listing_data(
             record
             and record.get("listing_input_hash") == input_hash
             and record.get("scrape_status") in TERMINAL_SCRAPE_STATUSES
-            and (not needs_subtype or record.get("subtype_lookup_status"))
+            and (not needs_subtype or record.get("subtype_lookup_status") in {"success", "not_found", "unavailable"})
             and record.get("amenity_lookup_status")
         )
 
@@ -546,7 +582,10 @@ def update_dataframe_with_listing_data(
                     has_dishwasher=amenities.get("has_dishwasher"),
                     amenity_lookup_status="checked",
                     scraped_subtype=scraped_subtype,
-                    subtype_lookup_status="success" if scraped_subtype else "not_found",
+                    subtype_lookup_status=(
+                        record.get("subtype_lookup_status") if scrape_was_cached
+                        else "success" if scraped_subtype else "not_found"
+                    ),
                     listed_date=listed_date,
                     listing_url=listing_url,
                     source_photo_url=source_photo_url,
@@ -623,6 +662,60 @@ def update_dataframe_with_listing_data(
     return df
 
 
+def update_missing_listing_subtypes(
+    df: pd.DataFrame,
+    *,
+    checkpoint_store: ListingCheckpointStore,
+) -> pd.DataFrame:
+    """Fill Unknown types after older listings have been merged into a run.
+
+    Normal detail enrichment only sees the incoming source rows. This pass
+    reaches older retained listings using subtype-only Agency requests, with
+    no image or geocoding work. Reuse successful types and completed no-type
+    lookups from the normal enrichment checkpoint, avoiding a second request
+    for incoming rows. Failed requests stay retryable; an open host circuit
+    leaves remaining rows untouched so the pipeline can finish.
+
+    Args:
+        df: Combined listing inventory, updated in place only where type is missing.
+        checkpoint_store: Market-specific store shared with detail enrichment.
+
+    Returns:
+        The same dataframe with recovered subtypes applied.
+    """
+    if "subtype" not in df.columns:
+        return df
+    df["subtype"] = df["subtype"].astype(object)
+    pending = df.index[df["subtype"].apply(listing_subtype).isna()]
+    logger.info(f"Checking {len(pending)} missing listing subtypes after merging inventory.")
+    for index in pending:
+        mls = normalize_mls_number(df.at[index, "mls_number"])
+        record = checkpoint_store.get(mls) or {}
+        subtype = listing_subtype(record.get("scraped_subtype"))
+        if record.get("subtype_lookup_status") not in {"success", "not_found", "unavailable"}:
+            try:
+                raw_url = df.loc[index].get("listing_url")
+                url = raw_url if isinstance(raw_url, str) else None
+                subtype = extract_agency_subtype(fetch_agency_detail(mls, url))
+                status = "success" if subtype else "not_found"
+            except HostCircuitOpen:
+                logger.warning("Stopping subtype backfill while the Agency host circuit is open.")
+                break
+            except (requests.RequestException, ValueError) as exc:
+                code = exc.response.status_code if isinstance(exc, requests.HTTPError) and exc.response is not None else None
+                status = "unavailable" if code in {404, 410} else "failed"
+                subtype = None
+                logger.warning(f"Subtype lookup for MLS {mls}: {exc}")
+            checkpoint_store.checkpoint(
+                mls,
+                scraped_subtype=subtype,
+                subtype_lookup_status=status,
+            )
+        if subtype:
+            df.at[index, "subtype"] = subtype
+    return df
+
+
 def merge_listing_dataframes(
     new_df: pd.DataFrame,
     old_df: pd.DataFrame,
@@ -633,6 +726,8 @@ def merge_listing_dataframes(
     when their stage succeeded; otherwise legacy values fill the gaps. Changed
     addresses invalidate legacy coordinates, and a changed upstream photo
     invalidates the legacy ImageKit URL when its replacement failed.
+    Missing or Unknown incoming subtypes retain a known stored subtype so a
+    later source refresh cannot undo a subtype-only backfill.
 
     Args:
         new_df: Dataframe to merge listing dataframes.
@@ -671,6 +766,11 @@ def merge_listing_dataframes(
 
     combined = new.combine_first(old)
     overlap = new.index.intersection(old.index)
+
+    if "subtype" in new.columns and "subtype" in old.columns:
+        for index in overlap:
+            if not listing_subtype(new.at[index, "subtype"]) and listing_subtype(old.at[index, "subtype"]):
+                combined.at[index, "subtype"] = old.at[index, "subtype"]
 
     if len(overlap) > 0 and "geocode_status" in new.columns:
         new_derived_address_hash = new.get(

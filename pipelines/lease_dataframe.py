@@ -38,7 +38,9 @@ def main() -> None:
   """Build the normalized lease-listings dataframe and publish its artifacts.
 
   The job resumes saved enrichment work where possible, then writes the rental
-  table. A sample run stops before publication for local inspection.
+  table. Missing subtypes in retained inventory reuse expiration responses;
+  remaining lookups are checkpointed. A sample run stops before publication
+  for local inspection.
   Console and rotating file logs use the shared LOG_LEVEL threshold and label
   shared helper events as lease-pipeline work.
 
@@ -377,6 +379,12 @@ def main() -> None:
 
     # --- Normalize lease terms (canonical + structured) ---
     canon_lists = df_combined["terms"].apply(normalize_terms)
+
+    # Include retained inventory that was absent from the incoming source file.
+    df_combined = update_missing_listing_subtypes(
+      df_combined,
+      checkpoint_store=checkpoint_store,
+    )
 
     # Normalize subtype values
     df_combined['subtype'] = df_combined['subtype'].apply(normalize_subtype)

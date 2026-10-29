@@ -1,0 +1,88 @@
+[
+  {
+    "listing_type": "buy",
+    "mls_number": "WS26207673MR",
+    "http_status": 200,
+    "double_encoded": false,
+    "payload": {
+      "MlsNumber": "WS26207673MR",
+      "DetailUrl": "/single-family/clr/ws26207673mr/6609-s-figueroa-los-angeles-ca-90003",
+      "ListDate": "2026-09-22T00:00:00",
+      "PropertyType": "Single Family",
+      "PropertyTypeLabel": "Single Family",
+      "AddtionalPropertyInfo": {
+        "Item": []
+      }
+    },
+    "expected_subtype": "Single Family Residence"
+  },
+  {
+    "listing_type": "buy",
+    "mls_number": "WS26197146MR",
+    "http_status": 200,
+    "double_encoded": false,
+    "payload": {
+      "MlsNumber": "WS26197146MR",
+      "DetailUrl": "/condominium/clr/ws26197146mr/420-s-san-pedro-st-405-los-angeles-ca-90013",
+      "ListDate": "2026-09-07T00:00:00",
+      "PropertyType": "Condominium",
+      "PropertyTypeLabel": "Condominium",
+      "AddtionalPropertyInfo": {
+        "Item": []
+      }
+    },
+    "expected_subtype": "Condominium"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "WS26206810MR",
+    "http_status": 200,
+    "double_encoded": false,
+    "payload": {
+      "MlsNumber": "WS26206810MR",
+      "DetailUrl": "/single-family/clr/ws26206810mr/529-n-st-louis-st-1-2-los-angeles-ca-90033",
+      "ListDate": "2026-09-21T00:00:00",
+      "PropertyType": "SINGLE FAMILY",
+      "PropertyTypeLabel": "SINGLE FAMILY",
+      "AddtionalPropertyInfo": {
+        "Item": []
+      }
+    },
+    "expected_subtype": "Single Family Residence"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "26992207",
+    "http_status": 200,
+    "double_encoded": false,
+    "payload": {
+      "MlsNumber": "26992207",
+      "DetailUrl": "/condominium/clr/26992207/3688-overland-ave-302-los-angeles-ca-90034",
+      "ListDate": "2026-09-23T00:00:00",
+      "PropertyType": "CONDOMINIUM",
+      "PropertyTypeLabel": "CONDOMINIUM",
+      "AddtionalPropertyInfo": {
+        "Item": [
+          {
+            "Value": "Modern",
+            "Label": "Style",
+            "Group": "structure"
+          }
+        ]
+      }
+    },
+    "expected_subtype": "Condominium"
+  },
+  {
+    "listing_type": "lease",
+    "mls_number": "CV25002817MR",
+    "http_status": 404,
+    "double_encoded": false,
+    "payload": {
+      "AddtionalPropertyInfo": {
+        "Item": []
+      }
+    },
+    "expected_subtype": null
+  }
+]

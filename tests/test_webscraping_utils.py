@@ -2,6 +2,7 @@ from functions import webscraping_utils as scraping
 import pytest
 import requests
 from urllib.parse import parse_qs, urlparse
+import json
 
 
 class FakeResponse:
@@ -571,14 +572,20 @@ def test_rentcast_missing_exact_mls_is_unknown(
     ({"PropertyType": "Single Family", "PropertyTypeLabel": "Single Family"}, "Single Family Residence"),
     ({"PropertyType": "SINGLE FAMILY", "PropertyTypeLabel": "SINGLE FAMILY"}, "Single Family Residence"),
     ({"PropertyTypeLabel": "Condominium"}, "Condominium"),
+    ({"Subtype": "Townhouse", "PropertyType": "Condominium"}, "Townhouse"),
+    ({"PropertyType": "Condominium", "AddtionalPropertyInfo": {"Item": {"Label": "Property Subtype", "Value": "Townhouse"}}}, "Townhouse"),
+    ({"PropertySubType": "Loft", "PropertyType": "Condominium", "AdditionalPropertyInfo": {"Item": [{"Label": "Subtype", "Value": "Townhouse"}]}}, "Loft"),
+    ({"AddtionalPropertyInfo": {"Item": [{"Label": "Style", "Value": "Modern"}, None]}}, None),
     ({}, None),
 ])
-def test_agency_extracts_explicit_subtype(monkeypatch, payload, expected):
+@pytest.mark.parametrize("encoded", [False, True])
+def test_agency_extracts_explicit_subtype(monkeypatch, payload, expected, encoded):
     """Read subtype from the response already fetched for listing details.
 
     A market category must not masquerade as a home type when subtype is absent.
+    Both supported JSON encodings must retain the same priority among fields.
     """
-    monkeypatch.setattr(scraping, "get_with_backoff", lambda *args, **kwargs: FakeResponse(200, json_data=payload))
+    monkeypatch.setattr(scraping, "get_with_backoff", lambda *args, **kwargs: FakeResponse(200, json_data=json.dumps(payload) if encoded else payload))
     assert scraping.fetch_the_agency_data("MLS-1", 0, 1)[3] == expected
 
 
