@@ -1,0 +1,258 @@
+{
+  "before": [
+    [
+      "index",
+      "idx_buy_enrichment_has_open_housing_or_code_case",
+      "buy_enrichment",
+      "CREATE INDEX \"idx_buy_enrichment_has_open_housing_or_code_case\"\n            ON \"buy_enrichment\"(\"has_open_housing_or_code_case\")\n            "
+    ],
+    [
+      "index",
+      "idx_buy_enrichment_school_district_name",
+      "buy_enrichment",
+      "CREATE INDEX \"idx_buy_enrichment_school_district_name\"\n            ON \"buy_enrichment\"(\"school_district_name\")\n            "
+    ],
+    [
+      "index",
+      "idx_buy_provider_options_listing_id",
+      "buy_provider_options",
+      "CREATE INDEX idx_buy_provider_options_listing_id ON buy_provider_options(listing_id)"
+    ],
+    [
+      "index",
+      "idx_lease_enrichment_has_open_housing_or_code_case",
+      "lease_enrichment",
+      "CREATE INDEX \"idx_lease_enrichment_has_open_housing_or_code_case\"\n            ON \"lease_enrichment\"(\"has_open_housing_or_code_case\")\n            "
+    ],
+    [
+      "index",
+      "idx_lease_enrichment_school_district_name",
+      "lease_enrichment",
+      "CREATE INDEX \"idx_lease_enrichment_school_district_name\"\n            ON \"lease_enrichment\"(\"school_district_name\")\n            "
+    ],
+    [
+      "index",
+      "idx_lease_provider_options_listing_id",
+      "lease_provider_options",
+      "CREATE INDEX idx_lease_provider_options_listing_id ON lease_provider_options(listing_id)"
+    ],
+    [
+      "index",
+      "idx_listing_reports_lookup",
+      "listing_reports",
+      "CREATE INDEX idx_listing_reports_lookup\nON listing_reports (listing_type, report_option, mls_number)\n"
+    ],
+    [
+      "index",
+      "sqlite_autoindex_buy_enrichment_1",
+      "buy_enrichment",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_lease_enrichment_1",
+      "lease_enrichment",
+      null
+    ],
+    [
+      "table",
+      "_outlier_removal_report",
+      "_outlier_removal_report",
+      "CREATE TABLE \"_outlier_removal_report\" (\n\"table_name\" TEXT,\n  \"column_name\" TEXT,\n  \"rows_before_table\" INTEGER,\n  \"rows_after_table\" INTEGER,\n  \"iqr_multiplier\" REAL,\n  \"q1\" REAL,\n  \"q3\" REAL,\n  \"iqr\" REAL,\n  \"cutoff\" REAL,\n  \"dropped_by_iqr\" INTEGER\n)"
+    ],
+    [
+      "table",
+      "buy",
+      "buy",
+      "CREATE TABLE \"buy\" (\n\"mls_number\" TEXT,\n  \"street_number\" TEXT,\n  \"street_address\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"hoa_fee\" REAL,\n  \"hoa_fee_frequency\" TEXT,\n  \"ppsqft\" TEXT,\n  \"bedrooms\" TEXT,\n  \"bedrooms_bathrooms\" TEXT,\n  \"sqft\" TEXT,\n  \"list_price\" TEXT,\n  \"year_built\" TEXT,\n  \"lot_size\" TEXT,\n  \"subtype\" TEXT,\n  \"garage_spaces\" TEXT,\n  \"location_status\" REAL,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"has_ac\" TEXT,\n  \"has_dishwasher\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"total_bathrooms\" TEXT,\n  \"full_bathrooms\" TEXT,\n  \"half_bathrooms\" TEXT,\n  \"three_quarter_bathrooms\" TEXT,\n  \"extra_bathrooms\" TEXT,\n  \"context\" TEXT,\n  \"space_rent\" REAL,\n  \"park_name\" REAL,\n  \"pets_allowed\" TEXT,\n  \"senior_community\" TEXT,\n  \"reported_as_inactive\" INTEGER\n)"
+    ],
+    [
+      "table",
+      "buy_enrichment",
+      "buy_enrichment",
+      "CREATE TABLE \"buy_enrichment\" (\n          \"mls_number\" TEXT PRIMARY KEY,\n  \"coverage_city_only_flag\" INTEGER,\n  \"census_tract\" TEXT,\n  \"school_district_name\" TEXT,\n  \"school_district_type\" TEXT,\n  \"nearest_elem_school_name\" TEXT,\n  \"nearest_elem_school_mi\" REAL,\n  \"nearest_mid_school_name\" TEXT,\n  \"nearest_mid_school_mi\" REAL,\n  \"nearest_high_school_name\" TEXT,\n  \"nearest_high_school_mi\" REAL,\n  \"zoning_code\" TEXT,\n  \"permits_500ft_12mo\" INTEGER,\n  \"major_permits_0_5mi_12mo\" INTEGER,\n  \"new_res_permits_0_5mi_36mo\" INTEGER,\n  \"demo_permits_0_5mi_36mo\" INTEGER,\n  \"calls_for_service_0_5mi_6mo\" INTEGER,\n  \"violent_crimes_0_5mi_12mo\" INTEGER,\n  \"property_crimes_0_5mi_12mo\" INTEGER,\n  \"quality_of_life_calls_0_5mi_6mo\" INTEGER,\n  \"nearest_rail_station\" TEXT,\n  \"dist_rail_station_mi\" REAL,\n  \"dist_frequent_transit_stop_mi\" REAL,\n  \"frequent_stops_0_5mi\" INTEGER,\n  \"transit_access_score\" REAL,\n  \"ces_percentile\" REAL,\n  \"pm25_percentile\" REAL,\n  \"diesel_pm_percentile\" REAL,\n  \"traffic_percentile\" REAL,\n  \"nearest_traffic_count\" REAL,\n  \"max_traffic_count_0_25mi\" REAL,\n  \"grocery_count_1mi\" INTEGER,\n  \"pharmacy_count_1mi\" INTEGER,\n  \"childcare_count_1mi\" INTEGER,\n  \"fitness_count_1mi\" INTEGER,\n  \"dist_grocery_mi\" REAL,\n  \"dist_public_ev_charger_mi\" REAL,\n  \"public_ev_count_2mi\" INTEGER,\n  \"dc_fast_count_5mi\" INTEGER,\n  \"lahd_violation_case_count\" INTEGER,\n  \"lahd_enforcement_case_count\" INTEGER,\n  \"lahd_ccris_case_count\" INTEGER,\n  \"dbs_open_code_case_count\" INTEGER,\n  \"has_open_housing_or_code_case\" INTEGER,\n  \"source_version\" TEXT,\n  \"enriched_at\" TEXT\n        )"
+    ],
+    [
+      "table",
+      "buy_provider_options",
+      "buy_provider_options",
+      "CREATE TABLE \"buy_provider_options\" (\n\"listing_id\" TEXT,\n  \"DBA\" TEXT,\n  \"TechCode\" INTEGER,\n  \"MaxAdDn\" REAL,\n  \"MaxAdUp\" REAL,\n  \"MaxDnTier\" INTEGER,\n  \"MaxUpTier\" INTEGER,\n  \"MinDnTier\" INTEGER,\n  \"MinUpTier\" INTEGER,\n  \"Contact\" TEXT,\n  \"Busconsm\" TEXT,\n  \"Service_Type\" TEXT\n)"
+    ],
+    [
+      "table",
+      "buy_sample",
+      "buy_sample",
+      "CREATE TABLE \"buy_sample\" (\n\"mls_number\" TEXT,\n  \"street_number\" TEXT,\n  \"street_address\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"hoa_fee\" REAL,\n  \"hoa_fee_frequency\" TEXT,\n  \"ppsqft\" TEXT,\n  \"bedrooms\" TEXT,\n  \"bedrooms_bathrooms\" TEXT,\n  \"sqft\" TEXT,\n  \"list_price\" TEXT,\n  \"year_built\" TEXT,\n  \"lot_size\" TEXT,\n  \"subtype\" TEXT,\n  \"garage_spaces\" TEXT,\n  \"location_status\" REAL,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"total_bathrooms\" TEXT,\n  \"full_bathrooms\" TEXT,\n  \"half_bathrooms\" TEXT,\n  \"three_quarter_bathrooms\" TEXT,\n  \"extra_bathrooms\" TEXT,\n  \"reported_as_inactive\" INTEGER\n)"
+    ],
+    [
+      "table",
+      "lease",
+      "lease",
+      "CREATE TABLE \"lease\" (\n\"mls_number\" TEXT,\n  \"subtype\" TEXT,\n  \"street_number\" TEXT,\n  \"street_name\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"bedrooms\" INTEGER,\n  \"other_deposit\" INTEGER,\n  \"pet_deposit\" INTEGER,\n  \"key_deposit\" INTEGER,\n  \"olp\" INTEGER,\n  \"security_deposit\" INTEGER,\n  \"list_price\" INTEGER,\n  \"sqft\" INTEGER,\n  \"ppsqft\" REAL,\n  \"year_built\" INTEGER,\n  \"parking_spaces\" INTEGER,\n  \"laundry\" TEXT,\n  \"pet_policy\" TEXT,\n  \"terms\" TEXT,\n  \"furnished\" TEXT,\n  \"phone_number\" TEXT,\n  \"lot_size\" INTEGER,\n  \"total_bathrooms\" INTEGER,\n  \"full_bathrooms\" INTEGER,\n  \"three_quarter_bathrooms\" INTEGER,\n  \"half_bathrooms\" INTEGER,\n  \"quarter_bathrooms\" INTEGER,\n  \"location_status\" TEXT,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"has_ac\" TEXT,\n  \"has_dishwasher\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"context\" TEXT,\n  \"senior_community\" REAL,\n  \"laundry_category\" TEXT,\n  \"reported_as_inactive\" INTEGER,\n  \"terms_norm\" TEXT\n)"
+    ],
+    [
+      "table",
+      "lease_enrichment",
+      "lease_enrichment",
+      "CREATE TABLE \"lease_enrichment\" (\n          \"mls_number\" TEXT PRIMARY KEY,\n  \"coverage_city_only_flag\" INTEGER,\n  \"census_tract\" TEXT,\n  \"school_district_name\" TEXT,\n  \"school_district_type\" TEXT,\n  \"nearest_elem_school_name\" TEXT,\n  \"nearest_elem_school_mi\" REAL,\n  \"nearest_mid_school_name\" TEXT,\n  \"nearest_mid_school_mi\" REAL,\n  \"nearest_high_school_name\" TEXT,\n  \"nearest_high_school_mi\" REAL,\n  \"zoning_code\" TEXT,\n  \"permits_500ft_12mo\" INTEGER,\n  \"major_permits_0_5mi_12mo\" INTEGER,\n  \"new_res_permits_0_5mi_36mo\" INTEGER,\n  \"demo_permits_0_5mi_36mo\" INTEGER,\n  \"calls_for_service_0_5mi_6mo\" INTEGER,\n  \"violent_crimes_0_5mi_12mo\" INTEGER,\n  \"property_crimes_0_5mi_12mo\" INTEGER,\n  \"quality_of_life_calls_0_5mi_6mo\" INTEGER,\n  \"nearest_rail_station\" TEXT,\n  \"dist_rail_station_mi\" REAL,\n  \"dist_frequent_transit_stop_mi\" REAL,\n  \"frequent_stops_0_5mi\" INTEGER,\n  \"transit_access_score\" REAL,\n  \"ces_percentile\" REAL,\n  \"pm25_percentile\" REAL,\n  \"diesel_pm_percentile\" REAL,\n  \"traffic_percentile\" REAL,\n  \"nearest_traffic_count\" REAL,\n  \"max_traffic_count_0_25mi\" REAL,\n  \"grocery_count_1mi\" INTEGER,\n  \"pharmacy_count_1mi\" INTEGER,\n  \"childcare_count_1mi\" INTEGER,\n  \"fitness_count_1mi\" INTEGER,\n  \"dist_grocery_mi\" REAL,\n  \"dist_public_ev_charger_mi\" REAL,\n  \"public_ev_count_2mi\" INTEGER,\n  \"dc_fast_count_5mi\" INTEGER,\n  \"lahd_violation_case_count\" INTEGER,\n  \"lahd_enforcement_case_count\" INTEGER,\n  \"lahd_ccris_case_count\" INTEGER,\n  \"dbs_open_code_case_count\" INTEGER,\n  \"has_open_housing_or_code_case\" INTEGER,\n  \"source_version\" TEXT,\n  \"enriched_at\" TEXT\n        )"
+    ],
+    [
+      "table",
+      "lease_provider_options",
+      "lease_provider_options",
+      "CREATE TABLE \"lease_provider_options\" (\n\"listing_id\" TEXT,\n  \"DBA\" TEXT,\n  \"TechCode\" INTEGER,\n  \"MaxAdDn\" REAL,\n  \"MaxAdUp\" REAL,\n  \"MaxDnTier\" INTEGER,\n  \"MaxUpTier\" INTEGER,\n  \"MinDnTier\" INTEGER,\n  \"MinUpTier\" INTEGER,\n  \"Contact\" TEXT,\n  \"Busconsm\" TEXT,\n  \"Service_Type\" TEXT\n)"
+    ],
+    [
+      "table",
+      "lease_sample",
+      "lease_sample",
+      "CREATE TABLE \"lease_sample\" (\n\"mls_number\" TEXT,\n  \"subtype\" TEXT,\n  \"street_number\" TEXT,\n  \"street_name\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"bedrooms\" INTEGER,\n  \"other_deposit\" INTEGER,\n  \"pet_deposit\" INTEGER,\n  \"key_deposit\" INTEGER,\n  \"olp\" INTEGER,\n  \"security_deposit\" INTEGER,\n  \"list_price\" INTEGER,\n  \"sqft\" INTEGER,\n  \"ppsqft\" REAL,\n  \"year_built\" INTEGER,\n  \"parking_spaces\" INTEGER,\n  \"laundry\" TEXT,\n  \"pet_policy\" TEXT,\n  \"terms\" TEXT,\n  \"furnished\" TEXT,\n  \"phone_number\" TEXT,\n  \"lot_size\" INTEGER,\n  \"total_bathrooms\" INTEGER,\n  \"full_bathrooms\" INTEGER,\n  \"three_quarter_bathrooms\" INTEGER,\n  \"half_bathrooms\" INTEGER,\n  \"quarter_bathrooms\" INTEGER,\n  \"location_status\" REAL,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"reported_as_inactive\" INTEGER,\n  \"terms_norm\" TEXT\n)"
+    ],
+    [
+      "table",
+      "listing_reports",
+      "listing_reports",
+      "CREATE TABLE listing_reports (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    listing_type TEXT NOT NULL CHECK (listing_type IN ('lease', 'buy')),\n    mls_number TEXT NOT NULL,\n    report_option TEXT NOT NULL,\n    report_text TEXT,\n    page_path TEXT NOT NULL,\n    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n)"
+    ],
+    [
+      "table",
+      "sqlite_sequence",
+      "sqlite_sequence",
+      "CREATE TABLE sqlite_sequence(name,seq)"
+    ],
+    [
+      "view",
+      "lease_with_isp_json",
+      "lease_with_isp_json",
+      "CREATE VIEW lease_with_isp_json AS\nWITH isp_enriched AS (\n  SELECT\n    p.*,\n\n    CASE\n      WHEN p.TechCode = 50 THEN 'fiber'\n      WHEN p.TechCode IN (40, 43) THEN 'cable'\n      WHEN p.TechCode IN (60, 70, 71) THEN 'fixed_wireless'\n      WHEN p.TechCode IN (10, 11, 12, 20) THEN 'dsl'\n      WHEN p.TechCode IN (90, 91) THEN 'satellite'\n      ELSE 'unknown'\n    END AS tech_class\n\n  FROM lease_provider_options p\n)\nSELECT\n  l.*,\n  COALESCE(\n    (\n      SELECT json_group_array(\n        json_object(\n          'dba', e.DBA,\n          'tech_code', e.TechCode,\n          'tech_class', e.tech_class,\n          'service_type_raw', e.Service_Type,\n          'best_dn', e.MaxAdDn,\n          'best_up', e.MaxAdUp,\n\n          'bucket',\n            CASE\n              WHEN e.tech_class = 'fiber' THEN 'best'\n              WHEN e.tech_class = 'cable' AND COALESCE(e.MaxAdDn, 0) >= 1000 THEN 'best'\n              WHEN e.tech_class = 'cable' THEN 'good'\n              WHEN e.tech_class = 'fixed_wireless' AND COALESCE(e.MaxAdDn, 0) >= 100 THEN 'good'\n              ELSE 'fallback'\n            END\n        )\n      )\n      FROM isp_enriched e\n      WHERE e.listing_id = l.mls_number\n        AND e.DBA IS NOT NULL\n      ORDER BY\n        COALESCE(e.MaxAdDn, -1) DESC,\n        COALESCE(e.MaxAdUp, -1) DESC,\n        e.DBA ASC\n      LIMIT 8\n    ),\n    json('[]')\n  ) AS isp_options_json\nFROM lease l"
+    ]
+  ],
+  "after": [
+    [
+      "index",
+      "idx_buy_enrichment_has_open_housing_or_code_case",
+      "buy_enrichment",
+      "CREATE INDEX \"idx_buy_enrichment_has_open_housing_or_code_case\"\n            ON \"buy_enrichment\"(\"has_open_housing_or_code_case\")\n            "
+    ],
+    [
+      "index",
+      "idx_buy_enrichment_school_district_name",
+      "buy_enrichment",
+      "CREATE INDEX \"idx_buy_enrichment_school_district_name\"\n            ON \"buy_enrichment\"(\"school_district_name\")\n            "
+    ],
+    [
+      "index",
+      "idx_buy_provider_options_listing_id",
+      "buy_provider_options",
+      "CREATE INDEX idx_buy_provider_options_listing_id ON buy_provider_options(listing_id)"
+    ],
+    [
+      "index",
+      "idx_lease_enrichment_has_open_housing_or_code_case",
+      "lease_enrichment",
+      "CREATE INDEX \"idx_lease_enrichment_has_open_housing_or_code_case\"\n            ON \"lease_enrichment\"(\"has_open_housing_or_code_case\")\n            "
+    ],
+    [
+      "index",
+      "idx_lease_enrichment_school_district_name",
+      "lease_enrichment",
+      "CREATE INDEX \"idx_lease_enrichment_school_district_name\"\n            ON \"lease_enrichment\"(\"school_district_name\")\n            "
+    ],
+    [
+      "index",
+      "idx_lease_provider_options_listing_id",
+      "lease_provider_options",
+      "CREATE INDEX idx_lease_provider_options_listing_id ON lease_provider_options(listing_id)"
+    ],
+    [
+      "index",
+      "idx_listing_reports_lookup",
+      "listing_reports",
+      "CREATE INDEX idx_listing_reports_lookup\nON listing_reports (listing_type, report_option, mls_number)\n"
+    ],
+    [
+      "index",
+      "sqlite_autoindex_buy_enrichment_1",
+      "buy_enrichment",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_lease_enrichment_1",
+      "lease_enrichment",
+      null
+    ],
+    [
+      "table",
+      "_outlier_removal_report",
+      "_outlier_removal_report",
+      "CREATE TABLE \"_outlier_removal_report\" (\n\"table_name\" TEXT,\n  \"column_name\" TEXT,\n  \"rows_before_table\" INTEGER,\n  \"rows_after_table\" INTEGER,\n  \"iqr_multiplier\" REAL,\n  \"q1\" REAL,\n  \"q3\" REAL,\n  \"iqr\" REAL,\n  \"cutoff\" REAL,\n  \"dropped_by_iqr\" INTEGER\n)"
+    ],
+    [
+      "table",
+      "buy",
+      "buy",
+      "CREATE TABLE \"buy\" (\n\"mls_number\" TEXT,\n  \"street_number\" TEXT,\n  \"street_address\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"hoa_fee\" REAL,\n  \"hoa_fee_frequency\" TEXT,\n  \"ppsqft\" TEXT,\n  \"bedrooms\" TEXT,\n  \"bedrooms_bathrooms\" TEXT,\n  \"sqft\" TEXT,\n  \"list_price\" TEXT,\n  \"year_built\" TEXT,\n  \"lot_size\" TEXT,\n  \"subtype\" TEXT,\n  \"garage_spaces\" TEXT,\n  \"location_status\" REAL,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"has_ac\" TEXT,\n  \"has_dishwasher\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"total_bathrooms\" TEXT,\n  \"full_bathrooms\" TEXT,\n  \"half_bathrooms\" TEXT,\n  \"three_quarter_bathrooms\" TEXT,\n  \"extra_bathrooms\" TEXT,\n  \"context\" TEXT,\n  \"space_rent\" REAL,\n  \"park_name\" REAL,\n  \"pets_allowed\" TEXT,\n  \"senior_community\" TEXT,\n  \"reported_as_inactive\" INTEGER\n)"
+    ],
+    [
+      "table",
+      "buy_enrichment",
+      "buy_enrichment",
+      "CREATE TABLE \"buy_enrichment\" (\n          \"mls_number\" TEXT PRIMARY KEY,\n  \"coverage_city_only_flag\" INTEGER,\n  \"census_tract\" TEXT,\n  \"school_district_name\" TEXT,\n  \"school_district_type\" TEXT,\n  \"nearest_elem_school_name\" TEXT,\n  \"nearest_elem_school_mi\" REAL,\n  \"nearest_mid_school_name\" TEXT,\n  \"nearest_mid_school_mi\" REAL,\n  \"nearest_high_school_name\" TEXT,\n  \"nearest_high_school_mi\" REAL,\n  \"zoning_code\" TEXT,\n  \"permits_500ft_12mo\" INTEGER,\n  \"major_permits_0_5mi_12mo\" INTEGER,\n  \"new_res_permits_0_5mi_36mo\" INTEGER,\n  \"demo_permits_0_5mi_36mo\" INTEGER,\n  \"calls_for_service_0_5mi_6mo\" INTEGER,\n  \"violent_crimes_0_5mi_12mo\" INTEGER,\n  \"property_crimes_0_5mi_12mo\" INTEGER,\n  \"quality_of_life_calls_0_5mi_6mo\" INTEGER,\n  \"nearest_rail_station\" TEXT,\n  \"dist_rail_station_mi\" REAL,\n  \"dist_frequent_transit_stop_mi\" REAL,\n  \"frequent_stops_0_5mi\" INTEGER,\n  \"transit_access_score\" REAL,\n  \"ces_percentile\" REAL,\n  \"pm25_percentile\" REAL,\n  \"diesel_pm_percentile\" REAL,\n  \"traffic_percentile\" REAL,\n  \"nearest_traffic_count\" REAL,\n  \"max_traffic_count_0_25mi\" REAL,\n  \"grocery_count_1mi\" INTEGER,\n  \"pharmacy_count_1mi\" INTEGER,\n  \"childcare_count_1mi\" INTEGER,\n  \"fitness_count_1mi\" INTEGER,\n  \"dist_grocery_mi\" REAL,\n  \"dist_public_ev_charger_mi\" REAL,\n  \"public_ev_count_2mi\" INTEGER,\n  \"dc_fast_count_5mi\" INTEGER,\n  \"lahd_violation_case_count\" INTEGER,\n  \"lahd_enforcement_case_count\" INTEGER,\n  \"lahd_ccris_case_count\" INTEGER,\n  \"dbs_open_code_case_count\" INTEGER,\n  \"has_open_housing_or_code_case\" INTEGER,\n  \"source_version\" TEXT,\n  \"enriched_at\" TEXT\n        )"
+    ],
+    [
+      "table",
+      "buy_provider_options",
+      "buy_provider_options",
+      "CREATE TABLE \"buy_provider_options\" (\n\"listing_id\" TEXT,\n  \"DBA\" TEXT,\n  \"TechCode\" INTEGER,\n  \"MaxAdDn\" REAL,\n  \"MaxAdUp\" REAL,\n  \"MaxDnTier\" INTEGER,\n  \"MaxUpTier\" INTEGER,\n  \"MinDnTier\" INTEGER,\n  \"MinUpTier\" INTEGER,\n  \"Contact\" TEXT,\n  \"Busconsm\" TEXT,\n  \"Service_Type\" TEXT\n)"
+    ],
+    [
+      "table",
+      "buy_sample",
+      "buy_sample",
+      "CREATE TABLE \"buy_sample\" (\n\"mls_number\" TEXT,\n  \"street_number\" TEXT,\n  \"street_address\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"hoa_fee\" REAL,\n  \"hoa_fee_frequency\" TEXT,\n  \"ppsqft\" TEXT,\n  \"bedrooms\" TEXT,\n  \"bedrooms_bathrooms\" TEXT,\n  \"sqft\" TEXT,\n  \"list_price\" TEXT,\n  \"year_built\" TEXT,\n  \"lot_size\" TEXT,\n  \"subtype\" TEXT,\n  \"garage_spaces\" TEXT,\n  \"location_status\" REAL,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"total_bathrooms\" TEXT,\n  \"full_bathrooms\" TEXT,\n  \"half_bathrooms\" TEXT,\n  \"three_quarter_bathrooms\" TEXT,\n  \"extra_bathrooms\" TEXT,\n  \"reported_as_inactive\" INTEGER\n)"
+    ],
+    [
+      "table",
+      "lease",
+      "lease",
+      "CREATE TABLE \"lease\" (\n\"mls_number\" TEXT,\n  \"subtype\" TEXT,\n  \"street_number\" TEXT,\n  \"street_name\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"bedrooms\" INTEGER,\n  \"other_deposit\" INTEGER,\n  \"pet_deposit\" INTEGER,\n  \"key_deposit\" INTEGER,\n  \"olp\" INTEGER,\n  \"security_deposit\" INTEGER,\n  \"list_price\" INTEGER,\n  \"sqft\" INTEGER,\n  \"ppsqft\" REAL,\n  \"year_built\" INTEGER,\n  \"parking_spaces\" INTEGER,\n  \"laundry\" TEXT,\n  \"pet_policy\" TEXT,\n  \"terms\" TEXT,\n  \"furnished\" TEXT,\n  \"phone_number\" TEXT,\n  \"lot_size\" INTEGER,\n  \"total_bathrooms\" INTEGER,\n  \"full_bathrooms\" INTEGER,\n  \"three_quarter_bathrooms\" INTEGER,\n  \"half_bathrooms\" INTEGER,\n  \"quarter_bathrooms\" INTEGER,\n  \"location_status\" TEXT,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"has_ac\" TEXT,\n  \"has_dishwasher\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"context\" TEXT,\n  \"senior_community\" REAL,\n  \"laundry_category\" TEXT,\n  \"reported_as_inactive\" INTEGER,\n  \"terms_norm\" TEXT\n)"
+    ],
+    [
+      "table",
+      "lease_enrichment",
+      "lease_enrichment",
+      "CREATE TABLE \"lease_enrichment\" (\n          \"mls_number\" TEXT PRIMARY KEY,\n  \"coverage_city_only_flag\" INTEGER,\n  \"census_tract\" TEXT,\n  \"school_district_name\" TEXT,\n  \"school_district_type\" TEXT,\n  \"nearest_elem_school_name\" TEXT,\n  \"nearest_elem_school_mi\" REAL,\n  \"nearest_mid_school_name\" TEXT,\n  \"nearest_mid_school_mi\" REAL,\n  \"nearest_high_school_name\" TEXT,\n  \"nearest_high_school_mi\" REAL,\n  \"zoning_code\" TEXT,\n  \"permits_500ft_12mo\" INTEGER,\n  \"major_permits_0_5mi_12mo\" INTEGER,\n  \"new_res_permits_0_5mi_36mo\" INTEGER,\n  \"demo_permits_0_5mi_36mo\" INTEGER,\n  \"calls_for_service_0_5mi_6mo\" INTEGER,\n  \"violent_crimes_0_5mi_12mo\" INTEGER,\n  \"property_crimes_0_5mi_12mo\" INTEGER,\n  \"quality_of_life_calls_0_5mi_6mo\" INTEGER,\n  \"nearest_rail_station\" TEXT,\n  \"dist_rail_station_mi\" REAL,\n  \"dist_frequent_transit_stop_mi\" REAL,\n  \"frequent_stops_0_5mi\" INTEGER,\n  \"transit_access_score\" REAL,\n  \"ces_percentile\" REAL,\n  \"pm25_percentile\" REAL,\n  \"diesel_pm_percentile\" REAL,\n  \"traffic_percentile\" REAL,\n  \"nearest_traffic_count\" REAL,\n  \"max_traffic_count_0_25mi\" REAL,\n  \"grocery_count_1mi\" INTEGER,\n  \"pharmacy_count_1mi\" INTEGER,\n  \"childcare_count_1mi\" INTEGER,\n  \"fitness_count_1mi\" INTEGER,\n  \"dist_grocery_mi\" REAL,\n  \"dist_public_ev_charger_mi\" REAL,\n  \"public_ev_count_2mi\" INTEGER,\n  \"dc_fast_count_5mi\" INTEGER,\n  \"lahd_violation_case_count\" INTEGER,\n  \"lahd_enforcement_case_count\" INTEGER,\n  \"lahd_ccris_case_count\" INTEGER,\n  \"dbs_open_code_case_count\" INTEGER,\n  \"has_open_housing_or_code_case\" INTEGER,\n  \"source_version\" TEXT,\n  \"enriched_at\" TEXT\n        )"
+    ],
+    [
+      "table",
+      "lease_provider_options",
+      "lease_provider_options",
+      "CREATE TABLE \"lease_provider_options\" (\n\"listing_id\" TEXT,\n  \"DBA\" TEXT,\n  \"TechCode\" INTEGER,\n  \"MaxAdDn\" REAL,\n  \"MaxAdUp\" REAL,\n  \"MaxDnTier\" INTEGER,\n  \"MaxUpTier\" INTEGER,\n  \"MinDnTier\" INTEGER,\n  \"MinUpTier\" INTEGER,\n  \"Contact\" TEXT,\n  \"Busconsm\" TEXT,\n  \"Service_Type\" TEXT\n)"
+    ],
+    [
+      "table",
+      "lease_sample",
+      "lease_sample",
+      "CREATE TABLE \"lease_sample\" (\n\"mls_number\" TEXT,\n  \"subtype\" TEXT,\n  \"street_number\" TEXT,\n  \"street_name\" TEXT,\n  \"city\" TEXT,\n  \"zip_code\" TEXT,\n  \"bedrooms\" INTEGER,\n  \"other_deposit\" INTEGER,\n  \"pet_deposit\" INTEGER,\n  \"key_deposit\" INTEGER,\n  \"olp\" INTEGER,\n  \"security_deposit\" INTEGER,\n  \"list_price\" INTEGER,\n  \"sqft\" INTEGER,\n  \"ppsqft\" REAL,\n  \"year_built\" INTEGER,\n  \"parking_spaces\" INTEGER,\n  \"laundry\" TEXT,\n  \"pet_policy\" TEXT,\n  \"terms\" TEXT,\n  \"furnished\" TEXT,\n  \"phone_number\" TEXT,\n  \"lot_size\" INTEGER,\n  \"total_bathrooms\" INTEGER,\n  \"full_bathrooms\" INTEGER,\n  \"three_quarter_bathrooms\" INTEGER,\n  \"half_bathrooms\" INTEGER,\n  \"quarter_bathrooms\" INTEGER,\n  \"location_status\" REAL,\n  \"short_address\" TEXT,\n  \"date_processed\" TIMESTAMP,\n  \"full_street_address\" TEXT,\n  \"listed_date\" TIMESTAMP,\n  \"listing_url\" TEXT,\n  \"source_photo_url\" TEXT,\n  \"mls_photo\" TEXT,\n  \"listing_input_hash\" TEXT,\n  \"scrape_status\" TEXT,\n  \"image_status\" TEXT,\n  \"image_source_hash\" TEXT,\n  \"latitude\" REAL,\n  \"longitude\" REAL,\n  \"geocode_status\" TEXT,\n  \"geocode_provider\" TEXT,\n  \"geocode_address_hash\" TEXT,\n  \"reported_as_inactive\" INTEGER,\n  \"terms_norm\" TEXT\n)"
+    ],
+    [
+      "table",
+      "listing_reports",
+      "listing_reports",
+      "CREATE TABLE listing_reports (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    listing_type TEXT NOT NULL CHECK (listing_type IN ('lease', 'buy')),\n    mls_number TEXT NOT NULL,\n    report_option TEXT NOT NULL,\n    report_text TEXT,\n    page_path TEXT NOT NULL,\n    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n)"
+    ],
+    [
+      "table",
+      "sqlite_sequence",
+      "sqlite_sequence",
+      "CREATE TABLE sqlite_sequence(name,seq)"
+    ],
+    [
+      "view",
+      "lease_with_isp_json",
+      "lease_with_isp_json",
+      "CREATE VIEW lease_with_isp_json AS\nWITH isp_enriched AS (\n  SELECT\n    p.*,\n\n    CASE\n      WHEN p.TechCode = 50 THEN 'fiber'\n      WHEN p.TechCode IN (40, 43) THEN 'cable'\n      WHEN p.TechCode IN (60, 70, 71) THEN 'fixed_wireless'\n      WHEN p.TechCode IN (10, 11, 12, 20) THEN 'dsl'\n      WHEN p.TechCode IN (90, 91) THEN 'satellite'\n      ELSE 'unknown'\n    END AS tech_class\n\n  FROM lease_provider_options p\n)\nSELECT\n  l.*,\n  COALESCE(\n    (\n      SELECT json_group_array(\n        json_object(\n          'dba', e.DBA,\n          'tech_code', e.TechCode,\n          'tech_class', e.tech_class,\n          'service_type_raw', e.Service_Type,\n          'best_dn', e.MaxAdDn,\n          'best_up', e.MaxAdUp,\n\n          'bucket',\n            CASE\n              WHEN e.tech_class = 'fiber' THEN 'best'\n              WHEN e.tech_class = 'cable' AND COALESCE(e.MaxAdDn, 0) >= 1000 THEN 'best'\n              WHEN e.tech_class = 'cable' THEN 'good'\n              WHEN e.tech_class = 'fixed_wireless' AND COALESCE(e.MaxAdDn, 0) >= 100 THEN 'good'\n              ELSE 'fallback'\n            END\n        )\n      )\n      FROM isp_enriched e\n      WHERE e.listing_id = l.mls_number\n        AND e.DBA IS NOT NULL\n      ORDER BY\n        COALESCE(e.MaxAdDn, -1) DESC,\n        COALESCE(e.MaxAdUp, -1) DESC,\n        e.DBA ASC\n      LIMIT 8\n    ),\n    json('[]')\n  ) AS isp_options_json\nFROM lease l"
+    ]
+  ]
+}

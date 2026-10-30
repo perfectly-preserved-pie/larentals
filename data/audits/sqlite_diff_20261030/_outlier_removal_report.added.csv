@@ -1,0 +1,1 @@
+table_name,column_name,rows_before_table,rows_after_table,iqr_multiplier,q1,q3,iqr,cutoff,dropped_by_iqr

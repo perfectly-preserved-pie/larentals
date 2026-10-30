@@ -1,0 +1,365 @@
+{
+  "before": "/home/straying/larentals/data/runtime/larentals.db",
+  "after": "/home/straying/larentals/data/runtime/larentals(1).db",
+  "tables": {
+    "_outlier_removal_report": {
+      "key_columns": [
+        "table_name",
+        "column_name"
+      ],
+      "before": 22,
+      "after": 22,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 22,
+      "changed_columns": {}
+    },
+    "buy": {
+      "key_columns": [
+        "mls_number"
+      ],
+      "before": 7327,
+      "after": 7445,
+      "added": 487,
+      "removed": 369,
+      "changed": 1998,
+      "unchanged": 4960,
+      "changed_columns": {
+        "subtype": 1998,
+        "street_address": 1,
+        "short_address": 1,
+        "date_processed": 1,
+        "full_street_address": 1,
+        "listing_input_hash": 1
+      }
+    },
+    "buy_enrichment": {
+      "key_columns": [
+        "mls_number"
+      ],
+      "before": 23664,
+      "after": 24140,
+      "added": 476,
+      "removed": 0,
+      "changed": 6916,
+      "unchanged": 16748,
+      "changed_columns": {
+        "source_version": 6916,
+        "enriched_at": 6916
+      }
+    },
+    "buy_provider_options": {
+      "key_columns": [
+        "listing_id",
+        "DBA",
+        "TechCode",
+        "Service_Type"
+      ],
+      "before": 29628,
+      "after": 30042,
+      "added": 1912,
+      "removed": 1498,
+      "changed": 0,
+      "unchanged": 28130,
+      "changed_columns": {}
+    },
+    "buy_sample": {
+      "key_columns": [
+        "mls_number"
+      ],
+      "before": 15,
+      "after": 15,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 15,
+      "changed_columns": {}
+    },
+    "lease": {
+      "key_columns": [
+        "mls_number"
+      ],
+      "before": 3789,
+      "after": 3973,
+      "added": 421,
+      "removed": 237,
+      "changed": 660,
+      "unchanged": 2892,
+      "changed_columns": {
+        "subtype": 660
+      }
+    },
+    "lease_enrichment": {
+      "key_columns": [
+        "mls_number"
+      ],
+      "before": 22824,
+      "after": 23237,
+      "added": 413,
+      "removed": 0,
+      "changed": 3526,
+      "unchanged": 19298,
+      "changed_columns": {
+        "source_version": 3526,
+        "enriched_at": 3526,
+        "school_district_name": 47,
+        "school_district_type": 47,
+        "nearest_mid_school_name": 27,
+        "nearest_elem_school_name": 5
+      }
+    },
+    "lease_provider_options": {
+      "key_columns": [
+        "listing_id",
+        "DBA",
+        "TechCode",
+        "Service_Type"
+      ],
+      "before": 15261,
+      "after": 16062,
+      "added": 1782,
+      "removed": 981,
+      "changed": 0,
+      "unchanged": 14280,
+      "changed_columns": {}
+    },
+    "lease_sample": {
+      "key_columns": [
+        "mls_number"
+      ],
+      "before": 15,
+      "after": 15,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 15,
+      "changed_columns": {}
+    },
+    "listing_reports": {
+      "key_columns": [
+        "id"
+      ],
+      "before": 0,
+      "after": 0,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 0,
+      "changed_columns": {}
+    },
+    "sqlite_sequence": {
+      "key_columns": [
+        "name"
+      ],
+      "before": 0,
+      "after": 0,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 0,
+      "changed_columns": {}
+    }
+  },
+  "subtypes": {
+    "buy": {
+      "before_missing": 2343,
+      "after_missing": 195,
+      "before_missing_retained": 2177,
+      "recovered": 1998,
+      "retained_still_missing": 179,
+      "missing_removed": 166,
+      "missing_added": 16,
+      "known_to_missing": 0,
+      "known_to_different_known": 0,
+      "subtype_only_changed_rows": 1997,
+      "recovered_subtype_only": 1997,
+      "recoveries_by_subtype": {
+        "Single Family Residence": 1980,
+        "Condominium": 18
+      },
+      "transitions": [
+        {
+          "before": "Unknown",
+          "after": "Single Family Residence",
+          "count": 1980
+        },
+        {
+          "before": "Unknown",
+          "after": "Condominium",
+          "count": 18
+        }
+      ],
+      "before_distribution": {
+        "Condominium": 2707,
+        "Unknown": 2343,
+        "Single Family Residence": 1624,
+        "Townhouse": 632,
+        "Stock Cooperative": 9,
+        "Loft": 8,
+        "Own Your Own": 4
+      },
+      "after_distribution": {
+        "Single Family Residence": 3821,
+        "Condominium": 2769,
+        "Townhouse": 641,
+        "Unknown": 195,
+        "Loft": 8,
+        "Stock Cooperative": 7,
+        "Own Your Own": 4
+      },
+      "known_type_changes": [],
+      "non_subtype_only_changes": [
+        {
+          "mls_number": "SR26207958MR",
+          "changes": {
+            "street_address": {
+              "before": "11031   Genesta AVE",
+              "after": "11031 Genesta AVE"
+            },
+            "subtype": {
+              "before": "Unknown",
+              "after": "Single Family Residence"
+            },
+            "short_address": {
+              "before": "11031   Genesta AVE, GRANADA HILLS",
+              "after": "11031 Genesta AVE, GRANADA HILLS"
+            },
+            "date_processed": {
+              "before": "2026-09-29 22:12:56.274677",
+              "after": "2026-10-29 13:22:36.761354"
+            },
+            "full_street_address": {
+              "before": "11031   Genesta AVE, GRANADA HILLS 91344",
+              "after": "11031 Genesta AVE, GRANADA HILLS 91344"
+            },
+            "listing_input_hash": {
+              "before": "eca864f61437e481e612061be91aef5457b9dc977dd3685417e0f14e4afd591a",
+              "after": "be3b0d06d31f7b4401dd0e78f3b4fcb28e5afde6104859c559f7043f17cd43ad"
+            }
+          }
+        }
+      ],
+      "before_sample_mismatches": [],
+      "after_sample_mismatches": [
+        {
+          "mls_number": "26860961",
+          "subtype": "Unknown"
+        },
+        {
+          "mls_number": "IN26159369MR",
+          "subtype": "Unknown"
+        },
+        {
+          "mls_number": "SR26160233MR",
+          "subtype": "Unknown"
+        },
+        {
+          "mls_number": "PW26157711MR",
+          "subtype": "Unknown"
+        }
+      ]
+    },
+    "lease": {
+      "before_missing": 845,
+      "after_missing": 143,
+      "before_missing_retained": 791,
+      "recovered": 660,
+      "retained_still_missing": 131,
+      "missing_removed": 54,
+      "missing_added": 12,
+      "known_to_missing": 0,
+      "known_to_different_known": 0,
+      "subtype_only_changed_rows": 660,
+      "recovered_subtype_only": 660,
+      "recoveries_by_subtype": {
+        "Condominium": 386,
+        "Single Family Residence": 264,
+        "Townhouse": 9,
+        "Co-Op": 1
+      },
+      "transitions": [
+        {
+          "before": "Unknown",
+          "after": "Condominium",
+          "count": 386
+        },
+        {
+          "before": "Unknown",
+          "after": "Single Family Residence",
+          "count": 264
+        },
+        {
+          "before": "Unknown",
+          "after": "Townhouse",
+          "count": 9
+        },
+        {
+          "before": "Unknown",
+          "after": "Co-Op",
+          "count": 1
+        }
+      ],
+      "before_distribution": {
+        "Single Family Residence": 952,
+        "Apartment": 846,
+        "Unknown": 845,
+        "Condominium": 769,
+        "Townhouse": 309,
+        "Duplex": 20,
+        "Combo - Res & Com": 13,
+        "Quadplex": 13,
+        "Loft": 7,
+        "Triplex": 6,
+        "Studio": 3,
+        "Room For Rent": 2,
+        "Own Your Own": 2,
+        "Co-Op": 1,
+        "Stock Cooperative": 1
+      },
+      "after_distribution": {
+        "Single Family Residence": 1291,
+        "Condominium": 1250,
+        "Apartment": 876,
+        "Townhouse": 344,
+        "Unknown": 143,
+        "Duplex": 20,
+        "Combo - Res & Com": 14,
+        "Quadplex": 13,
+        "Loft": 6,
+        "Triplex": 6,
+        "Studio": 3,
+        "Co-Op": 2,
+        "Room For Rent": 2,
+        "Own Your Own": 2,
+        "Stock Cooperative": 1
+      },
+      "known_type_changes": [],
+      "non_subtype_only_changes": [],
+      "before_sample_mismatches": [],
+      "after_sample_mismatches": [
+        {
+          "mls_number": "26861913",
+          "subtype": "Unknown"
+        }
+      ]
+    }
+  },
+  "sha256": {
+    "/home/straying/larentals/data/runtime/larentals.db": "1dcf910fd744a01c4735734e0e3b3ca0dbfc3e35d018ff7d121bd664de6dc8ae",
+    "/home/straying/larentals/data/runtime/larentals(1).db": "2582e88dd67e4a628cd6ed97584a09e6d21dfd1ff7bae5435b0eee91283de9ca"
+  },
+  "integrity_checks": [
+    [
+      [
+        "ok"
+      ]
+    ],
+    [
+      [
+        "ok"
+      ]
+    ]
+  ],
+  "schema_identical": true
+}

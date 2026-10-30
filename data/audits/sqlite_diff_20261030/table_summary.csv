@@ -1,0 +1,12 @@
+table,before,after,added,removed,changed,unchanged
+_outlier_removal_report,22,22,0,0,0,22
+buy,7327,7445,487,369,1998,4960
+buy_enrichment,23664,24140,476,0,6916,16748
+buy_provider_options,29628,30042,1912,1498,0,28130
+buy_sample,15,15,0,0,0,15
+lease,3789,3973,421,237,660,2892
+lease_enrichment,22824,23237,413,0,3526,19298
+lease_provider_options,15261,16062,1782,981,0,14280
+lease_sample,15,15,0,0,0,15
+listing_reports,0,0,0,0,0,0
+sqlite_sequence,0,0,0,0,0,0
