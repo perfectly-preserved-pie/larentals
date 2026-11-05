@@ -927,7 +927,9 @@ def resolve_locations_to_zip_boundaries(
 
     Returns:
         A tuple containing the combined boundary-store payload and a status
-        message suitable for display below the location control.
+        message suitable for display below the location control. Failed tags
+        add warnings even when other tags produced a usable boundary, allowing
+        the field to show partial failures without dropping valid matches.
     """
     raw_locations = (
         [locations]
@@ -1098,11 +1100,12 @@ def resolve_locations_to_zip_boundaries(
     if not sorted_zip_codes:
         error = "place_outside" if outside_service_area else "place_not_found"
 
-    return (
-        {
-            "zip_codes": sorted_zip_codes,
-            "features": list(features_by_zip.values()),
-            "error": error,
-        },
-        " ".join(status_parts),
-    )
+    payload = {
+        "zip_codes": sorted_zip_codes,
+        "features": list(features_by_zip.values()),
+        "error": error,
+    }
+    warnings = status_parts[1:] if sorted_zip_codes else status_parts
+    if warnings:
+        payload["warnings"] = warnings
+    return payload, " ".join(status_parts)

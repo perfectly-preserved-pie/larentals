@@ -311,7 +311,8 @@ def test_resolve_locations_preserves_qualified_place_and_address_commas() -> Non
 def test_resolve_locations_reports_partial_failures_without_dropping_matches() -> None:
     """Verify that resolve locations reports partial failures without dropping matches.
 
-    One failed tag should be reported without discarding successfully resolved locations.
+    A usable boundary has no fatal error, so structured warnings are needed to
+    stop the input from showing all-clear while another selected tag failed.
 
     Returns:
         None.
@@ -335,6 +336,7 @@ def test_resolve_locations_reports_partial_failures_without_dropping_matches() -
         "zip_codes": ["91101"],
         "features": [polygon],
         "error": None,
+        "warnings": ["Could not find a California location matching 'Atlantis'."],
     }
     assert status == (
         "Filtering by ZIP codes: 91101. "

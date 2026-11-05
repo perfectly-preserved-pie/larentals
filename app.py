@@ -36,6 +36,9 @@ import dash_mantine_components as dmc
 import logging
 import time
 
+# DMC 3 uses Mantine 9, whose components require React 19.
+dash._dash_renderer._set_react_version("19.2.4")
+
 STRUCTURED_DATA_SCRIPT = build_structured_data_script(CANONICAL_BASE_URL)
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
@@ -279,7 +282,10 @@ prewarm_startup_caches()
 def main() -> None:
   """Start the Dash development server when invoked as a console script.
 
-  The entry point is limited to local development; deployment servers import the configured app object.
+  React 19's development bundle uses `eval`, which the strict Content Security
+  Policy blocks. Keep Python debugging and hot reload, but disable browser prop
+  checks so Dash serves the CSP-safe production React bundles. Deployment servers
+  import the configured app object instead of using this entry point.
 
   Side Effects:
     Binds the configured local web server and blocks while serving requests.
@@ -287,7 +293,11 @@ def main() -> None:
   Returns:
       None.
   """
-  app.run(debug=True)
+  app.run(
+    debug=True,
+    dev_tools_props_check=False,
+    dev_tools_serve_dev_bundles=False,
+  )
 
 
 if __name__ == '__main__':

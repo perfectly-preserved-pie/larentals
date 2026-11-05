@@ -1,6 +1,6 @@
 /* Desktop listing results, column toggles, map price pins, and legend.
- * Loads after responsive-filters.css (alphabetical) to widen its grid
- * from two columns to three. Dark mode changes the open-row color.
+ * Native Splitter panes own desktop column widths; these rules style their
+ * contents and collapse buttons. Dark mode changes the open-row color.
  */
 
 :root {
@@ -31,24 +31,10 @@
 @media (min-width: 1100px) {
   .listing-page-layout {
     position: relative;
-    grid-template-columns: var(--filter-panel-width) minmax(0, 1fr) var(--results-panel-width);
-    transition: grid-template-columns 0.18s ease;
   }
 
-  .listing-page-layout.is-filters-hidden {
-    grid-template-columns: 0 minmax(0, 1fr) var(--results-panel-width);
-  }
-
-  .listing-page-layout.is-results-hidden {
-    grid-template-columns: var(--filter-panel-width) minmax(0, 1fr) 0;
-  }
-
-  .listing-page-layout.is-filters-hidden.is-results-hidden {
-    grid-template-columns: 0 minmax(0, 1fr) 0;
-  }
-
-  .listing-page-layout.is-filters-hidden > .responsive-filter-panel.options-col,
-  .listing-page-layout.is-results-hidden > .results-panel {
+  .listing-page-layout.is-filters-hidden .responsive-filter-panel.options-col,
+  .listing-page-layout.is-results-hidden .results-panel {
     border: 0;
     opacity: 0;
     pointer-events: none;

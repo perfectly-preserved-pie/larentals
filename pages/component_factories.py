@@ -241,7 +241,8 @@ def build_range_filter(
 
     Exact number fields can represent limits beyond the slider's finite display
     range. Histogram sliders commit on release so dragging the selection does
-    not repeatedly rerun map filtering.
+    not repeatedly rerun map filtering. Selecting an exact field selects its
+    formatted number so a new budget or area limit replaces the previous entry.
 
     Args:
         slider_id: Dash id for the slider.
@@ -326,6 +327,7 @@ def build_range_filter(
             "thousandSeparator": ",",
             "debounce": 250,
             "autoComplete": "off",
+            "selectAllOnFocus": True,
             "className": "range-filter__exact-input",
         }
         if input_prefix:
@@ -566,8 +568,9 @@ def build_location_filter_components(
     """Build the shared location filter controls.
 
     The control accepts several places as tags, while the nearby switch changes
-    how their ZIP boundaries are combined. Shared IDs let the same callbacks
-    serve both listing pages.
+    how their ZIP boundaries are combined. Custom pills label ZIPs separately
+    from named places without changing the strings sent to the resolver.
+    Loading and validation are driven by that resolver, not by text appearance.
 
     Args:
         page_type: Current page key such as ``lease`` or ``buy``.
@@ -597,6 +600,12 @@ def build_location_filter_components(
                         allowDuplicates=False,
                         clearable=True,
                         maxTags=5,
+                        renderPill={"function": "renderLocationPill"},
+                        withPillsReorder=False,
+                        loading=False,
+                        loadingPosition="left",
+                        errorProps={"className": "visually-hidden"},
+                        successProps={"className": "visually-hidden"},
                         # The responsive filter sheet sits at z-index 2400.
                         # Keep the portaled suggestion menu above it on touch
                         # layouts, matching the location ZIP popover below.
@@ -679,6 +688,31 @@ def build_location_filter_components(
         ],
         style={"marginBottom": "10px"},
     )
+
+
+def build_location_input_feedback(
+    boundary_payload: Mapping[str, Any], status: str,
+) -> tuple[str, str, str]:
+    """Reflect resolver success or unresolved tags in the location field.
+
+    A partial match still filters by its valid ZIPs, but must not show an
+    all-clear state while another tag failed. The existing live status carries
+    the visible explanation; field feedback also supplies accessible validation.
+
+    Args:
+        boundary_payload: Combined ZIPs and optional per-location warnings.
+        status: Human-readable resolver explanation, including failure details.
+
+    Returns:
+        Field error, field success, and the live status CSS classes.
+    """
+    warnings = boundary_payload.get("warnings", [])
+    error = " ".join(str(warning) for warning in warnings)
+    if boundary_payload.get("error") and not error:
+        error = status or "Could not resolve this location. Please try another place or ZIP code."
+    success = "Location matched." if boundary_payload.get("zip_codes") and not error else ""
+    state = "error" if error else "success" if success else "idle"
+    return error, success, f"location-filter-status location-filter-status--{state}"
 
 
 def build_location_filter_status(

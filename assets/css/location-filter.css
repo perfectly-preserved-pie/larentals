@@ -35,6 +35,52 @@
     min-width: 24px;
 }
 
+.location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 1px 2px 1px 7px;
+    border: 1px solid color-mix(in srgb, var(--mantine-color-teal-6) 35%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--mantine-color-teal-6) 10%, transparent);
+    font-size: 0.8rem;
+}
+
+.location-pill--zip {
+    border-color: color-mix(in srgb, var(--mantine-color-blue-6) 35%, transparent);
+    background: color-mix(in srgb, var(--mantine-color-blue-6) 10%, transparent);
+}
+
+.location-pill__kind {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    opacity: 0.8;
+}
+
+.location-pill__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.location-pill__remove {
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.location-pill__remove:hover,
+.location-pill__remove:focus-visible {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 @keyframes location-resolving-spin {
     to {
         transform: rotate(360deg);
@@ -60,6 +106,14 @@
     color: #9aa0a6;
     font-size: 0.85rem;
     margin-top: 6px;
+}
+
+.location-filter-status--success {
+    color: var(--mantine-color-teal-text);
+}
+
+.location-filter-status--error {
+    color: var(--mantine-color-error);
 }
 
 .location-filter-status .mantine-Popover-root {

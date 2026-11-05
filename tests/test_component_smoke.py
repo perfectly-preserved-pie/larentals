@@ -12,6 +12,7 @@ from pages.component_factories import (
     build_isp_speed_components,
     build_location_filter_components,
     build_location_filter_status,
+    build_location_input_feedback,
     build_location_suggestions,
     build_range_filter,
     build_subtype_filter,
@@ -111,6 +112,33 @@ class ComponentsSmokeTest(unittest.TestCase):
             ],
         )
 
+    def test_location_feedback_keeps_partial_matches_in_error_state(self) -> None:
+        """Keep unresolved chips visible as errors even when another chip matched.
+
+        A usable boundary must not turn the whole input green when part of the
+        requested location filter could not be applied.
+
+        Returns:
+            None.
+        """
+        warning = "Could not find Atlantis."
+        error, success, state = build_location_input_feedback(
+            {"zip_codes": ["90012"], "warnings": [warning]}, "Matched one ZIP."
+        )
+        self.assertEqual(error, warning)
+        self.assertEqual(success, "")
+        self.assertTrue(state.endswith("--error"))
+        error, success, state = build_location_input_feedback(
+            {"zip_codes": ["90012"]}, "Matched one ZIP."
+        )
+        self.assertEqual(error, "")
+        self.assertEqual(success, "Location matched.")
+        self.assertTrue(state.endswith("--success"))
+        self.assertEqual(
+            build_location_input_feedback({}, ""),
+            ("", "", "location-filter-status location-filter-status--idle"),
+        )
+
     def test_location_inputs_use_associated_labels(self) -> None:
         """Verify that location inputs use associated labels.
 
@@ -138,6 +166,8 @@ class ComponentsSmokeTest(unittest.TestCase):
                     "Search neighborhoods, cities, or ZIPs",
                 )
                 self.assertFalse(props["acceptValueOnBlur"])
+                self.assertEqual(props["renderPill"], {"function": "renderLocationPill"})
+                self.assertFalse(props["withPillsReorder"])
                 self.assertIn("Los Feliz, CA", props["data"])
                 self.assertIn("Silver Lake, CA", props["data"])
                 self.assertIsInstance(add_button, html.Button)
@@ -354,6 +384,8 @@ class ComponentsSmokeTest(unittest.TestCase):
         self.assertEqual(minimum_input.id, "test_price_minimum_input")
         self.assertEqual(minimum_input.label, "Minimum")
         self.assertEqual(minimum_input.value, 0)
+        self.assertTrue(minimum_input.selectAllOnFocus)
+        self.assertTrue(maximum_input.selectAllOnFocus)
         minimum_clear_button = minimum_input.rightSection
         self.assertIsInstance(minimum_clear_button, dmc.ActionIcon)
         self.assertEqual(minimum_clear_button.id, "test_price_minimum_clear")

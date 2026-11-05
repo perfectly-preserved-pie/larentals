@@ -512,7 +512,8 @@
 
   /**
    * Keep location-entry instructions aligned with the device and tag state.
-   * Removal buttons receive location-specific accessible names after the tag UI renders.
+   * Removal buttons receive location-specific names after rendering. Custom
+   * pills already name their buttons without including the decorative kind badge.
    * @param {ListingPage} page Listing mode to update.
    * @returns {void}
    */
@@ -528,6 +529,7 @@
       rootElement.querySelectorAll(".mantine-TagsInput-pill").forEach(function (pill) {
         const removeButton = pill.querySelector("button");
         if (!removeButton) return;
+        if (pill.hasAttribute("data-location-kind")) return;
         const copy = pill.cloneNode(true);
         copy.querySelectorAll("button").forEach(function (button) { button.remove(); });
         const label = String(copy.textContent || "").trim();

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dash import ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 
 
 FILTER_UI_BREAKPOINT = 1100
@@ -295,8 +296,9 @@ def build_responsive_listing_shell(
 ) -> html.Div:
     """Arrange one filter tree beside or over the listing map.
 
-    Desktop widths show the filter content as a sidebar. Smaller widths reuse
-    that same content inside a dismissible drawer or bottom sheet.
+    Desktop widths place the existing filter, map and results trees in a
+    persistent, keyboard-resizable Splitter. Smaller widths flatten the pane
+    wrappers so the same filters still form a drawer or bottom sheet.
     A heading and focusable map landmark stay outside that drawer so keyboard
     and screen-reader users can reach the page content at either width.
 
@@ -458,6 +460,37 @@ def build_responsive_listing_shell(
         },
     )
 
+    filter_toggle = html.Button(
+        html.I(className="bi bi-layout-sidebar", **{"aria-hidden": "true"}),
+        id=f"{page_type}-toggle-filters",
+        type="button",
+        className="column-toggle column-toggle--left",
+        **{
+            "data-column-toggle": "filters",
+            "data-tooltip": "Hide filters",
+            "data-tooltip-show": "Show filters",
+            "data-tooltip-hide": "Hide filters",
+            "aria-label": "Hide filters",
+            "aria-expanded": "true",
+        },
+    )
+    map_main = html.Main(
+        [
+            html.H1(
+                "Homes for rent in Los Angeles County"
+                if page_type == "lease"
+                else "Homes for sale in Los Angeles County",
+                id=f"{page_type}-page-title",
+                className="visually-hidden",
+            ),
+            map_card,
+        ],
+        id=f"{page_type}-map-main",
+        className="listing-map-col map-col",
+        tabIndex=-1,
+        **{"aria-labelledby": f"{page_type}-page-title"},
+    )
+
     return html.Div(
         [
             html.A(
@@ -466,24 +499,37 @@ def build_responsive_listing_shell(
                 className="skip-link",
             ),
             backdrop,
-            panel,
-            html.Main(
+            dcc.Store(id=f"{page_type}-splitter-state", storage_type="memory"),
+            dmc.Splitter(
                 [
-                    html.H1(
-                        "Homes for rent in Los Angeles County"
-                        if page_type == "lease"
-                        else "Homes for sale in Los Angeles County",
-                        id=f"{page_type}-page-title",
-                        className="visually-hidden",
+                    dmc.SplitterPane(
+                        panel, defaultSize="360px", min="280px", max="520px",
+                        collapsible=True,
+                        className="listing-splitter-pane listing-filter-pane",
                     ),
-                    map_card,
+                    dmc.SplitterPane(
+                        map_main, defaultSize="100%", min="320px",
+                        className="listing-splitter-pane listing-map-pane",
+                    ),
+                    dmc.SplitterPane(
+                        results_panel, defaultSize="290px", min="240px", max="480px",
+                        collapsible=True,
+                        className="listing-splitter-pane listing-results-pane",
+                    ),
                 ],
-                id=f"{page_type}-map-main",
-                className="listing-map-col map-col",
-                tabIndex=-1,
-                **{"aria-labelledby": f"{page_type}-page-title"},
+                id=f"{page_type}-listing-splitter",
+                className="listing-splitter",
+                sizes=["360px", "100%", "290px"],
+                collapsed=[],
+                persistence=True,
+                persistence_type="local",
+                persisted_props=["sizes", "collapsed"],
+                resetOnDoubleClick=True,
+                step="12px",
+                shiftStep="48px",
+                lineSize=6,
             ),
-            results_panel,
+            filter_toggle,
             column_toggle,
         ],
         className="listing-page-layout",
@@ -531,6 +577,8 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
 
     These callbacks capture control values, calculate preview counts, apply
     committed filters to the map, and open the requested accordion section.
+    The Splitter bridge synchronizes its pane state with native column buttons
+    and map resizing without sending layout interactions to the server.
 
     Args:
         page_type: Listing page type, either ``buy`` or ``lease``.
@@ -542,6 +590,13 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
         ValueError: If the operation cannot be completed.
     """
     _register_hybrid_range_callbacks(page_type)
+    clientside_callback(
+        ClientsideFunction(namespace="clientside", function_name="syncListingSplitter"),
+        Output(f"{page_type}-splitter-state", "data"),
+        Input(f"{page_type}-listing-splitter", "sizes"),
+        Input(f"{page_type}-listing-splitter", "collapsed"),
+        State(f"{page_type}-listing-splitter", "id"),
+    )
 
     if page_type == "lease":
         capture_inputs = _lease_capture_inputs()

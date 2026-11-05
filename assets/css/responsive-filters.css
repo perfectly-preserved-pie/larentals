@@ -16,11 +16,33 @@
 }
 
 .listing-page-layout {
-  display: grid;
-  grid-template-columns: var(--filter-panel-width) minmax(0, 1fr);
+  position: relative;
+  display: block;
   min-height: 100vh;
   min-height: 100dvh;
   overflow: hidden;
+}
+
+.listing-splitter {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.listing-splitter-pane {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.listing-splitter > [role="separator"] {
+  z-index: 3;
+  background: var(--filter-panel-border);
+}
+
+.listing-splitter > [role="separator"]:hover,
+.listing-splitter > [role="separator"]:focus-visible {
+  background: var(--filter-panel-accent);
 }
 
 .responsive-filter-panel.options-col {
@@ -260,6 +282,17 @@
 }
 
 @media (max-width: 1099.98px) {
+  /* Flatten wrappers instead of mounting a second filter/map tree. Native
+     pane sizes and desktop collapse choices must not hide the mobile sheet. */
+  .listing-splitter,
+  .listing-splitter-pane {
+    display: contents !important;
+  }
+
+  .listing-splitter > [role="separator"] {
+    display: none;
+  }
+
   .listing-page-layout {
     display: block;
   }

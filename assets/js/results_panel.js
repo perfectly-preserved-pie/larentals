@@ -629,6 +629,9 @@
         focusListing(entry);
     });
 
+    // Keep the existing column buttons and native Splitter collapse state in
+    // sync. The Splitter changes geometry while these buttons retain their
+    // accessible labels and listing-detail rehoming behavior.
     document.addEventListener("click", function (event) {
         var toggle = event.target && event.target.closest
             ? event.target.closest("[data-column-toggle]")
@@ -641,6 +644,13 @@
                 ? "is-results-hidden"
                 : "is-filters-hidden"
         );
+        if (larentals.listingSplitter) {
+            larentals.listingSplitter.setPanelHidden(
+                layout.getAttribute("data-listing-page"),
+                toggle.getAttribute("data-column-toggle"),
+                hidden
+            );
+        }
         toggle.setAttribute("aria-expanded", hidden ? "false" : "true");
         var label = toggle.getAttribute(hidden ? "data-tooltip-show" : "data-tooltip-hide");
         if (label) {

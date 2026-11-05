@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from .components import LeaseComponents
-from .component_factories import build_location_filter_status
+from .component_factories import build_location_filter_status, build_location_input_feedback
 from dash import dcc, clientside_callback, ClientsideFunction, callback
 from dash.dependencies import ALL, Input, Output, State
 from functions.layers import (
@@ -188,6 +188,7 @@ def load_lease_geojson(_: int) -> dict:
   Input(LayersClass.layers_control_id("lease"), "overlays"),
   State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "id"),
   State({"type": "lazy-layer-geojson", "page": "lease", "layer": ALL}, "data"),
+  compress_payload=True,
 )
 def load_lease_optional_layers(
   selected_overlays: list[str] | None,
@@ -196,7 +197,9 @@ def load_lease_optional_layers(
 ) -> list[dict]:
   """Lazy-load optional map layers only after the user enables them.
 
-  Lazy loading keeps optional overlay files out of the initial map response.
+  Lazy loading keeps unused overlays out of the initial map response. Later
+  toggles send existing GeoJSON back as State, so compress those requests to
+  avoid uploading every loaded layer as uncompressed JSON.
 
   Args:
       selected_overlays: Names of map overlays currently selected by the user.
@@ -413,21 +416,26 @@ def update_lease_school_layer(
 @callback(
   Output("lease-zip-boundary-store", "data"),
   Output("lease-location-status", "children"),
+  Output("lease-location-input", "error"),
+  Output("lease-location-input", "success"),
+  Output("lease-location-status", "className"),
   Input("lease-location-input", "value"),
   Input("lease-nearby-zip-switch", "checked"),
+  running=[(Output("lease-location-input", "loading"), True, False)],
 )
 def update_lease_zip_boundary(
   locations: list[str] | None,
   include_nearby: bool | None,
-) -> tuple[dict, str | list[object]]:
+) -> tuple[dict, str | list[object], str, str, str]:
   """Update the ZIP boundary store based on the user-entered locations.
 
   Each tag is resolved independently, then all matching ZIPs are combined
   with OR semantics. The HUD crosswalk is preferred, with geocoding and
-  point-in-polygon lookup as a fallback.
+  point-in-polygon lookup as a fallback. Validation reports failed tags even
+  when other tags still produce a usable boundary; loading covers the lookup.
 
   Returns:
-    A tuple of (boundary payload dict, status content).
+    Boundary data, live status, field error/success, and status CSS classes.
 
   Args:
       locations: Location queries submitted by the user.
@@ -439,7 +447,8 @@ def update_lease_zip_boundary(
     ZIP_POLYGONS,
     include_nearby=bool(include_nearby),
   )
-  return payload, build_location_filter_status(payload, status)
+  error, success, status_class = build_location_input_feedback(payload, status)
+  return payload, build_location_filter_status(payload, status), error, success, status_class
 
 
 clientside_callback(
