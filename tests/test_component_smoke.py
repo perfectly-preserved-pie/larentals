@@ -178,21 +178,18 @@ class ComponentsSmokeTest(unittest.TestCase):
                 self.assertNotIn("inputProps", props)
                 self.assertNotIn("aria-label", props)
 
-                loading = component.children[3]
-                self.assertIsInstance(loading, dcc.Loading)
-                loading_props = loading.to_plotly_json()["props"]
-                self.assertEqual(
-                    loading_props["target_components"],
-                    {f"{page_type}-location-status": "children"},
-                )
+                feedback = component.children[3]
+                status, resolving = feedback.children
+                resolving_props = resolving.to_plotly_json()["props"]
+                self.assertEqual(resolving_props["id"], f"{page_type}-location-resolving-status")
+                self.assertEqual(resolving_props["style"], {"display": "none"})
                 self.assertIn(
                     "Resolving locations",
                     "".join(
                         str(child)
-                        for child in loading_props["custom_spinner"].children
+                        for child in resolving.children
                     ),
                 )
-                status = loading.children
                 status_props = status.to_plotly_json()["props"]
                 self.assertEqual(status_props["role"], "status")
                 self.assertEqual(status_props["aria-live"], "polite")

@@ -18,6 +18,7 @@
   ui.forceApplyUntil = ui.forceApplyUntil || {};
   ui.pendingApplyAnalytics = ui.pendingApplyAnalytics || {};
   ui.pendingLocationApply = ui.pendingLocationApply || {};
+  ui.locationMapUpdates = ui.locationMapUpdates || {};
   ui.lastLocationErrorKey = ui.lastLocationErrorKey || {};
   ui.restoring = ui.restoring || {};
   ui.openedAt = ui.openedAt || {};
@@ -281,6 +282,10 @@
     const restoring = ui.restoring[page];
     if (restoring && restoring.expires >= Date.now()) {
       ui.drafts[page] = clone(restoring.state);
+      if (ids.includes(zipStoreId)) {
+        delete ui.locationMapUpdates[page];
+        window.dash_clientside.set_props(`${page}-location-input`, { loading: false });
+      }
       scheduleRender(page);
       return [restoring.state, window.dash_clientside.no_update];
     }
@@ -294,6 +299,19 @@
     );
     const shouldApply = isInitial || window.innerWidth >= DESKTOP_BREAKPOINT ||
       ids.includes(applyId) || forced || completesPendingLocation;
+
+    if (ids.includes(zipStoreId)) {
+      if (shouldApply) {
+        ui.locationMapUpdates[page] = {
+          locationKey: locationValueKey(state.locationText),
+          boundaryKey: locationBoundaryKey(state.zipBoundary),
+        };
+      } else {
+        // Phone edits stay staged until Apply; lookup is complete and no map update is pending.
+        delete ui.locationMapUpdates[page];
+        window.dash_clientside.set_props(`${page}-location-input`, { loading: false });
+      }
+    }
 
     if (!ui.defaults[page] || isInitial) {
       ui.defaults[page] = clone(state);
@@ -357,6 +375,20 @@
   }
 
   /**
+   * Compare only the resolver fields that determine location filtering.
+   * GeoJSON polygons are large and stable, so matching their ZIP/error summary is enough.
+   * @param {object | null} boundary Resolved boundary stored with filter state.
+   * @returns {string} Stable key for the applied ZIP selection and its validation state.
+   */
+  function locationBoundaryKey(boundary) {
+    return JSON.stringify([
+      boundary?.zip_codes || [],
+      boundary?.error || null,
+      boundary?.warnings || [],
+    ]);
+  }
+
+  /**
    * Calculate and store the result count for uncommitted filter values.
    * Previewing updates the drawer count and histograms without changing applied map results.
    * @param {ListingPage} page Listing mode being previewed.
@@ -401,6 +433,15 @@
     }
 
     scheduleRender(page);
+    const pendingLocation = ui.locationMapUpdates[page];
+    if (pendingLocation &&
+      pendingLocation.locationKey === locationValueKey(state.locationText) &&
+      pendingLocation.boundaryKey === locationBoundaryKey(state.zipBoundary)) {
+      delete ui.locationMapUpdates[page];
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        window.dash_clientside.set_props(`${page}-location-input`, { loading: false });
+      }));
+    }
     return result;
   }
 
@@ -1327,6 +1368,16 @@
        */
       applyBuyFilterState: function (state, fullGeojson) {
         return apply("buy", state, fullGeojson);
+      },
+
+      /**
+       * Show the inline status while location resolution and its map update are pending.
+       * The same loading prop drives the field loader, so both indicators end together.
+       * @param {boolean} loading Whether the latest location change is still being applied.
+       * @returns {{display: string}} Inline status visibility.
+       */
+      syncLocationResolverSpinner: function (loading) {
+        return { display: loading ? "flex" : "none" };
       },
 
       /**

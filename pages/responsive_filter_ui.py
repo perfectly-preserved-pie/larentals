@@ -591,6 +591,11 @@ def register_responsive_filter_callbacks(page_type: str) -> None:
     """
     _register_hybrid_range_callbacks(page_type)
     clientside_callback(
+        ClientsideFunction(namespace="clientside", function_name="syncLocationResolverSpinner"),
+        Output(f"{page_type}-location-resolving-status", "style"),
+        Input(f"{page_type}-location-input", "loading"),
+    )
+    clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="syncListingSplitter"),
         Output(f"{page_type}-splitter-state", "data"),
         Input(f"{page_type}-listing-splitter", "sizes"),

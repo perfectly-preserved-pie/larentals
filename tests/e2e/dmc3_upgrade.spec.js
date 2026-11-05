@@ -172,6 +172,36 @@ test("exact numeric fields select their formatted amount on focus", async ({ pag
   await expect(input).toHaveValue("$2,500");
 });
 
+test("location loading remains active through the resolved map update", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await ready(page, "lease");
+  await page.evaluate(() => {
+    const callbacks = window.dash_clientside.clientside;
+    const apply = callbacks.applyLeaseFilterState;
+    callbacks.applyLeaseFilterState = async (state, geojson) => {
+      if (state?.zipBoundary?.zip_codes?.includes("90012")) {
+        window.__locationMapApplyStarted = true;
+        await new Promise(resolve => window.setTimeout(resolve, 900));
+      }
+      return apply(state, geojson);
+    };
+  });
+  await page.evaluate(() => window.dash_clientside.set_props("lease-location-input", { value: ["90012"] }));
+  const fieldLoader = page.locator(".location-tags-input .mantine-Loader-root");
+  const statusLoader = page.locator("#lease-location-resolving-status");
+  await expect(fieldLoader).toBeVisible();
+  await expect(statusLoader).toBeVisible();
+  await page.waitForFunction(() => window.__locationMapApplyStarted === true);
+  await expect(page.locator("#lease-location-status")).toContainText("Filtering by ZIP codes");
+  await page.waitForTimeout(250);
+  await expect(fieldLoader).toBeVisible();
+  await expect(statusLoader).toBeVisible();
+  await expect(fieldLoader).toBeHidden({ timeout: 5000 });
+  await expect(statusLoader).toBeHidden();
+  await page.waitForFunction(() => window.larentals.responsiveFilters.applied.lease.zipBoundary.zip_codes.includes("90012"));
+});
+
 test("phone amount entry replaces budget, square footage and deposit bounds", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,

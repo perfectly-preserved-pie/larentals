@@ -491,7 +491,7 @@ def update_buy_school_layer(
   Output("buy-location-status", "className"),
   Input("buy-location-input", "value"),
   Input("buy-nearby-zip-switch", "checked"),
-  running=[(Output("buy-location-input", "loading"), True, False)],
+  running=[(Output("buy-location-input", "loading"), True, True)],
 )
 def update_buy_zip_boundary(
   locations: list[str] | None,
@@ -502,7 +502,9 @@ def update_buy_zip_boundary(
   Each tag is resolved independently, then all matching ZIPs are combined
   with OR semantics. The HUD crosswalk is preferred, with geocoding and
   point-in-polygon lookup as a fallback. Validation reports failed tags even
-  when other tags still produce a usable boundary; loading covers the lookup.
+  when other tags still produce a usable boundary. When the responsive filter
+  applies the boundary, the client keeps loading active until filtered map data
+  returns; a staged phone edit ends loading after lookup until the user taps Apply.
 
   Returns:
     Boundary data, live status, field error/success, and status CSS classes.

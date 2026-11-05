@@ -421,7 +421,7 @@ def update_lease_school_layer(
   Output("lease-location-status", "className"),
   Input("lease-location-input", "value"),
   Input("lease-nearby-zip-switch", "checked"),
-  running=[(Output("lease-location-input", "loading"), True, False)],
+  running=[(Output("lease-location-input", "loading"), True, True)],
 )
 def update_lease_zip_boundary(
   locations: list[str] | None,
@@ -432,7 +432,9 @@ def update_lease_zip_boundary(
   Each tag is resolved independently, then all matching ZIPs are combined
   with OR semantics. The HUD crosswalk is preferred, with geocoding and
   point-in-polygon lookup as a fallback. Validation reports failed tags even
-  when other tags still produce a usable boundary; loading covers the lookup.
+  when other tags still produce a usable boundary. When the responsive filter
+  applies the boundary, the client keeps loading active until filtered map data
+  returns; a staged phone edit ends loading after lookup until the user taps Apply.
 
   Returns:
     Boundary data, live status, field error/success, and status CSS classes.

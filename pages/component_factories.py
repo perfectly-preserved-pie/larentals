@@ -647,35 +647,36 @@ def build_location_filter_components(
                 ],
                 className="location-entry-help",
             ),
-            dcc.Loading(
-                html.Div(
-                    id=f"{page_type}-location-status",
-                    className="location-filter-status",
-                    role="status",
-                    **{
-                        "aria-live": "polite",
-                        "aria-atomic": "true",
-                    },
-                ),
-                target_components={f"{page_type}-location-status": "children"},
-                custom_spinner=html.Div(
-                    [
-                        html.Span(
-                            className="location-resolving-indicator",
-                            **{"aria-hidden": "true"},
-                        ),
-                        "Resolving locations…",
-                    ],
-                    className="location-resolving-status",
-                    role="status",
-                    **{
-                        "aria-live": "polite",
-                        "aria-atomic": "true",
-                    },
-                ),
-                delay_show=150,
-                delay_hide=100,
-                parent_className="location-status-loading-wrapper",
+            html.Div(
+                [
+                    html.Div(
+                        id=f"{page_type}-location-status",
+                        className="location-filter-status",
+                        role="status",
+                        **{
+                            "aria-live": "polite",
+                            "aria-atomic": "true",
+                        },
+                    ),
+                    html.Div(
+                        [
+                            html.Span(
+                                className="location-resolving-indicator",
+                                **{"aria-hidden": "true"},
+                            ),
+                            "Resolving locations…",
+                        ],
+                        id=f"{page_type}-location-resolving-status",
+                        className="location-resolving-status",
+                        role="status",
+                        style={"display": "none"},
+                        **{
+                            "aria-live": "polite",
+                            "aria-atomic": "true",
+                        },
+                    ),
+                ],
+                className="location-feedback",
             ),
             dmc.Switch(
                 id=f"{page_type}-nearby-zip-switch",
