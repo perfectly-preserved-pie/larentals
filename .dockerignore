@@ -31,3 +31,16 @@ test-results/
 tests/
 ~/
 .codex
+
+# Build contexts must exclude secrets even when Git ignores them.
+**/.env
+**/.env.*
+**/.aws
+**/.codex
+**/.claude
+**/.cursor
+**/.gemini
+**/.specstory
+**/.aider*
+**/*.pem
+**/*.key

@@ -233,6 +233,25 @@ __marimo__/
 
 .codex
 
+# Local credentials and agent state must not travel with the repository.
+.aws/
+.env.*
+!.env.example
+!.env.sample
+.claude/settings.local.json
+.claude/settings.local.*.json
+.claude/projects/
+.claude/transcripts/
+.cursor/chats/
+.cursor/transcripts/
+.gemini/settings.json
+.gemini/history/
+.gemini/tmp/
+.specstory/
+.aider*
+*.pem
+*.key
+
 # Playwright UI test artifacts
 node_modules/
 playwright-report/
