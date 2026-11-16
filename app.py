@@ -51,7 +51,7 @@ external_stylesheets = [
 ]
 external_scripts = [
   {
-    "src": "https://analytics.automateordie.dev/api/script.js?siteId=3bc288cd62a8",
+    "src": "/analytics/script.js?siteId=3bc288cd62a8",
     "defer": "defer",
   },
   {
