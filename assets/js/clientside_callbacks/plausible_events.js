@@ -117,11 +117,20 @@
         "Other",
     ]);
 
+    /**
+     * Send shared product events to each available analytics SDK.
+     *
+     * Check SDKs separately because either script may be unavailable. Options,
+     * including callbacks, belong to Plausible; Rybbit receives only properties.
+     */
     function trackEvent(name, props, options) {
-        if (typeof window.plausible !== "function") return;
-
-        const payload = Object.assign({}, options || {}, { props: props || {} });
-        window.plausible(name, payload);
+        if (typeof window.plausible === "function") {
+            const payload = Object.assign({}, options || {}, { props: props || {} });
+            window.plausible(name, payload);
+        }
+        if (window.rybbit && typeof window.rybbit.event === "function") {
+            window.rybbit.event(name, props || {});
+        }
     }
 
     function currentPage() {
