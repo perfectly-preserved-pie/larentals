@@ -825,7 +825,10 @@
 
     /**
      * Compute the responsive popup sizing constraints for a map layer.
-     * The map container and viewport cap the popup dimensions across mobile and desktop layouts.
+     * Use the map's intersection with the viewport, since a map partly below the
+     * fold cannot offer its full height. Reserve a quarter of that visible area
+     * for map context and subtract space for Leaflet's margins and popup tip;
+     * the remaining listing details scroll inside the popup.
      *
      * @param {PopupLayer} layer Leaflet layer bound to the popup.
      * @returns {Record<string, unknown>} Leaflet popup options.
@@ -835,8 +838,8 @@
         const mapEl = layer?._map?.getContainer?.() ?? null;
         const rect = mapEl?.getBoundingClientRect?.() ?? null;
 
-        const availW = Math.floor(Math.min(window.innerWidth, rect?.width ?? window.innerWidth));
-        const availH = Math.floor(Math.min(window.innerHeight, rect?.height ?? window.innerHeight));
+        const availW = Math.max(0, Math.floor(Math.min(window.innerWidth, rect?.right ?? window.innerWidth) - Math.max(0, rect?.left ?? 0)));
+        const availH = Math.max(0, Math.floor(Math.min(window.innerHeight, rect?.bottom ?? window.innerHeight) - Math.max(0, rect?.top ?? 0)));
 
         const padding = isMobile ? 24 : 48;
         const leaseLikeMaxWidthCap = isMobile ? 225 : 350;
@@ -844,7 +847,7 @@
 
         return {
             maxWidth: Math.max(200, Math.min(leaseLikeMaxWidthCap, availW - padding)),
-            maxHeight: Math.max(220, Math.min(leaseLikeMaxHeightCap, availH - padding)),
+            maxHeight: Math.max(80, Math.min(leaseLikeMaxHeightCap, Math.floor(availH * 0.75) - padding)),
             keepInView: false,
             autoPanPadding: [10, 10],
             closeButton: true,
@@ -877,6 +880,10 @@
     /**
      * Update the popup content and hydrate ISP placeholder content if present.
      * Hydration runs after markup replacement so the new placeholder can be found in the popup DOM.
+     * Recompute Leaflet's content limits when the map resizes; otherwise an open
+     * popup retains its original height after a browser or split-panel resize.
+     * Retain a DOM body rather than an HTML string so Leaflet's later layout
+     * updates preserve hydrated ISP disclosure contents.
      *
      * @param {PopupLayer} layer Leaflet layer whose popup should be updated.
      * @param {string} content HTML content for the popup.
@@ -886,7 +893,22 @@
         const popup = layer.getPopup?.();
         if (!popup || typeof popup.setContent !== "function") return;
 
-        popup.setContent(content);
+        if (popup._map && !popup.larentalsResizeHandler) {
+            const map = popup._map;
+            popup.larentalsResizeHandler = () => {
+                Object.assign(popup.options, buildPopupOptions({ _map: map }));
+                popup.update();
+            };
+            map.on("resize", popup.larentalsResizeHandler);
+            popup.once("remove", () => {
+                map.off("resize", popup.larentalsResizeHandler);
+                popup.larentalsResizeHandler = null;
+            });
+        }
+
+        const body = document.createElement("div");
+        body.innerHTML = content;
+        popup.setContent(body);
 
         const popupEl = popup.getElement?.();
         if (!popupEl) return;
@@ -943,7 +965,10 @@
     window.dash_props = Object.assign({}, window.dash_props, {
         module: Object.assign({}, window.dash_props && window.dash_props.module, {
             /**
-             * Build and bind the main property popup for a GeoJSON listing feature.
+             * Open listing details independently of the clicked GeoJSON marker.
+             * Clustering can replace that marker when the larger detail popup
+             * pans the map. A marker-bound popup would close on source removal,
+             * making cold opens flash and disappear while cached reopens work.
              *
              * @param {PopupFeature} feature GeoJSON feature emitted by Dash Leaflet.
              * @param {PopupLayer} layer Leaflet layer receiving the popup binding.
@@ -956,42 +981,10 @@
                 }
 
                 const summaryData = feature.properties;
-                const path = String(window.location?.pathname || "").toLowerCase();
-                const isBuyPage = path === "/buy" || path.startsWith("/buy");
-                const listingId = normalizeListingId(summaryData.mls_number);
-                let openRequestSeq = 0;
-
-                layer.bindPopup(renderPopupLoadingContent(summaryData), buildPopupOptions(layer));
-
-                layer.on("popupopen", function handlePopupOpen() {
-                    openRequestSeq += 1;
-                    const requestSeq = openRequestSeq;
-
-                    window.larentals?.analytics?.trackListingOpened();
-
-                    setPopupContent(layer, renderPopupLoadingContent(summaryData));
-
-                    if (!listingId) {
-                        setPopupContent(layer, renderPopupErrorContent(summaryData));
-                        return;
-                    }
-
-                    fetchListingDetails(listingId)
-                        .then((detailData) => {
-                            if (requestSeq !== openRequestSeq) return;
-
-                            const popupData = Object.assign({}, summaryData, detailData || {});
-                            const popupContent = isBuyPage
-                                ? generateBuyPopupContent(popupData)
-                                : generateLeasePopupContent(popupData);
-
-                            setPopupContent(layer, popupContent);
-                        })
-                        .catch((error) => {
-                            if (requestSeq !== openRequestSeq) return;
-                            console.error("Failed to load popup details for listing", listingId, error);
-                            setPopupContent(layer, renderPopupErrorContent(summaryData));
-                        });
+                layer.on("click", function handleListingClick() {
+                    const latlng = layer.getLatLng?.();
+                    if (!latlng) return;
+                    larentals.popups.openAt(latlng, summaryData);
                 });
             },
         }),

@@ -66,3 +66,38 @@ for (const market of ["lease", "buy"]) {
     await expect(page.locator(".leaflet-popup")).not.toContainText(/first delayed listing/i);
   });
 }
+
+for (const market of ["lease", "buy"]) {
+  test(`${market} cold marker popup survives source removal during detail autopan`, async ({ page }) => {
+    await page.setViewportSize({ width: 1680, height: 1050 });
+    let pending;
+    await page.route(`**/api/${market}/listing-details/*`, route => { pending = route; });
+    await page.goto(market === "lease" ? "/" : "/buy", { waitUntil: "domcontentloaded" });
+    await expect(page.locator('.results-row').first()).toBeVisible({ timeout: 30_000 });
+    await page.waitForFunction(() => window.larentals?.map && window.dash_props?.module?.on_each_feature);
+    await page.evaluate(() => {
+      const map = window.larentals.map;
+      map.stop();
+      const point = map.getCenter();
+      const marker = L.marker(point, { zIndexOffset: 10000, icon: L.divIcon({ html: '<button id="cold-marker">Cold listing</button>' }) }).addTo(map);
+      window.dash_props.module.on_each_feature({ properties: { mls_number: "COLD-MLS", subtype: "Condominium", list_price: 1695 } }, marker);
+      window.coldMarker = marker;
+    });
+    await page.locator("#cold-marker").click();
+    await expect(page.locator(".leaflet-popup")).toContainText("Loading listing details...");
+    await expect.poll(() => Boolean(pending)).toBe(true);
+    await page.evaluate(() => {
+      const map = window.larentals.map;
+      // Clustering can replace the clicked marker when the larger popup pans the map.
+      map.once("autopanstart", () => map.removeLayer(window.coldMarker));
+    });
+    await pending.fulfill({ json: { mls_number: "COLD-MLS", full_street_address: "Cold listing survives", list_price: 1695 } });
+    await expect(page.locator(".leaflet-popup")).toContainText("Cold Listing Survives");
+    await expect.poll(() => page.evaluate(() => !window.larentals.map.hasLayer(window.coldMarker))).toBe(true);
+    await expect.poll(() => page.evaluate(() => {
+      const map = window.larentals.map;
+      return !!map._popup && map.hasLayer(map._popup);
+    })).toBe(true);
+    await expect(page.locator(".leaflet-popup")).toBeVisible();
+  });
+}
