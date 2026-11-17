@@ -44,13 +44,15 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
     def log_mcp_usage(response: Response) -> Response:
         """Emit a compact usage record after a tool-call response completes.
 
-        The compact record captures request outcome and duration after the response is known.
+        Successful calls use DEBUG because pagination can generate hundreds of
+        records per search. HTTP failures and JSON-RPC/tool errors stay visible
+        at WARNING, or ERROR for server failures, even with INFO filtering.
 
         Args:
             response: HTTP response being validated or summarized.
 
         Returns:
-            An HTTP response containing the log MCP usage.
+            The original response, unchanged by usage logging.
         """
         if request.path != normalized_mcp_path:
             return response
@@ -69,7 +71,15 @@ def register_mcp_usage_logging(server: Any, *, mcp_path: str = "/_mcp") -> None:
         arguments = _arguments_from_payload(payload)
         result_summary = _result_summary(response, request_id=payload.get("id"))
 
-        logger.info(
+        if response.status_code >= 500:
+            level = "ERROR"
+        elif response.status_code >= 400 or result_summary in {"rpc_error", "tool_error"}:
+            level = "WARNING"
+        else:
+            level = "DEBUG"
+
+        logger.log(
+            level,
             f"MCP tool call tool={tool_name} arguments={arguments} "
             f"status={response.status_code} duration_ms={duration_ms:.1f} "
             f"result={result_summary} user_agent={(request.user_agent.string or '-')!r}"

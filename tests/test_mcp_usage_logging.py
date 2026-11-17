@@ -66,7 +66,7 @@ class McpUsageLoggingTest(unittest.TestCase):
             },
         }
 
-        with patch("functions.mcp_usage_logging.logger.info") as log_info:
+        with patch("functions.mcp_usage_logging.logger.log") as log_info:
             response = self.client.post(
                 "/_mcp",
                 json=payload,
@@ -75,7 +75,8 @@ class McpUsageLoggingTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         log_info.assert_called_once()
-        log_output = log_info.call_args.args[0]
+        self.assertEqual(log_info.call_args.args[0], "DEBUG")
+        log_output = log_info.call_args.args[1]
         self.assertIn("MCP tool call", log_output)
         self.assertIn("tool=update_lease_zip_boundary", log_output)
         self.assertIn(
@@ -95,7 +96,7 @@ class McpUsageLoggingTest(unittest.TestCase):
         Returns:
             None.
         """
-        with patch("functions.mcp_usage_logging.logger.info") as log_info:
+        with patch("functions.mcp_usage_logging.logger.log") as log_info:
             response = self.client.post(
                 "/_mcp", json={"jsonrpc": "2.0", "method": "tools/list"}
             )
@@ -111,7 +112,7 @@ class McpUsageLoggingTest(unittest.TestCase):
         Returns:
             None.
         """
-        with patch("functions.mcp_usage_logging.logger.info") as log_info:
+        with patch("functions.mcp_usage_logging.logger.log") as log_info:
             response = self.client.get("/_mcp?failed=1")
 
         self.assertEqual(response.status_code, 500)
@@ -132,11 +133,36 @@ class McpUsageLoggingTest(unittest.TestCase):
             "params": {"name": "search_listings", "arguments": {}},
         }
 
-        with patch("functions.mcp_usage_logging.logger.info") as log_info:
+        with patch("functions.mcp_usage_logging.logger.log") as log_info:
             response = self.client.post("/_mcp", json=payload)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("result=missing", log_info.call_args.args[0])
+        self.assertIn("result=missing", log_info.call_args.args[1])
+
+    def test_failure_severity_includes_errors_returned_with_http_200(self) -> None:
+        """Keep failed calls visible when successful pagination is filtered.
+
+        MCP can report failures inside HTTP 200 responses, so severity must
+        account for both transport status and the protocol outcome.
+        """
+        payload = {
+            "id": 1, "method": "tools/call",
+            "params": {"name": "search_listings", "arguments": {}},
+        }
+        for status, body, expected in [
+            (200, {"result": {}}, "DEBUG"),
+            (200, {"error": {"code": -32602}}, "WARNING"),
+            (200, {"result": {"isError": True}}, "WARNING"),
+            (400, {}, "WARNING"),
+            (500, {"error": {"code": -32603}}, "ERROR"),
+        ]:
+            with self.subTest(status=status, body=body):
+                response = Response(json.dumps(body), status=status, mimetype="application/json")
+                with patch("functions.mcp_usage_logging.logger.log") as log:
+                    with self.client.application.test_request_context("/_mcp", json=payload):
+                        returned = self.client.application.process_response(response)
+                self.assertIs(returned, response)
+                self.assertEqual(log.call_args.args[0], expected)
 
     def test_summarizes_structured_tool_result_without_listing_data(self) -> None:
         """Verify that summarizes structured tool result without listing data.
@@ -169,7 +195,7 @@ class McpUsageLoggingTest(unittest.TestCase):
         Returns:
             None.
         """
-        with patch("functions.mcp_usage_logging.logger.info") as log_info:
+        with patch("functions.mcp_usage_logging.logger.log") as log_info:
             response = self.client.get("/health")
 
         self.assertEqual(response.status_code, 200)

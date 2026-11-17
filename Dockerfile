@@ -24,5 +24,8 @@ WORKDIR /app
 COPY --from=builder /app /app
 
 ENV PATH="/app/.venv/bin:$PATH"
+# Override with LOG_LEVEL=DEBUG when per-call diagnostics are needed.
+ENV LOG_LEVEL=INFO
+
 ENTRYPOINT ["gunicorn"]
 CMD ["--config", "/app/gunicorn.conf.py", "--chdir", "/app", "-b", "0.0.0.0:8080", "--worker-class=gthread", "--workers=10", "--threads=8", "--timeout=60", "--keep-alive=5", "--preload", "app:server"]
