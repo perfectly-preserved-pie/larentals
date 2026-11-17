@@ -1,0 +1,56 @@
+name: Refresh LAHD records snapshot
+
+on:
+  schedule:
+    - cron: '17 10 1 1,4,7,10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lahd-records-snapshot
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      snapshot_ref: ${{ steps.commit.outputs.snapshot_ref }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.13'
+      - name: Install snapshot downloader dependencies
+        run: python -m pip install requests orjson loguru
+      - name: Check source revisions and download changed datasets
+        run: python -m scripts.build_lahd_records_snapshot
+      - name: Commit updated snapshot
+        id: commit
+        run: |
+          git add data/derived/lookups/lahd_records.json.gz
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "data: refresh complete LAHD records snapshot"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "snapshot_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # GITHUB_TOKEN pushes do not trigger push workflows. Build the new commit explicitly.
+  build-image:
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    uses: ./.github/workflows/docker-image.yml
+    with:
+      snapshot_ref: ${{ needs.refresh.outputs.snapshot_ref }}
+    secrets: inherit

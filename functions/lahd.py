@@ -14,6 +14,7 @@ import time
 from loguru import logger
 import orjson
 import requests
+from functions.lahd_snapshot import read_records_snapshot
 from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
 from functions.data_paths import (
@@ -819,16 +820,76 @@ def _build_lahd_detail_fallback_from_lookup(apn: str, exc: Exception) -> JsonDic
     }
 
 
+def lahd_records_snapshot_available() -> bool:
+    """Check and prewarm the local raw-record snapshot without probing LAHD.
+
+    Missing snapshots disable housing summaries while leaving listing details
+    usable. Startup calls this before Gunicorn forks to share the local index.
+
+    Returns:
+        Whether the committed snapshot can supply property records.
+    """
+    try:
+        read_records_snapshot()
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def load_lahd_property_record_details(apn: str, row_limit: int = LAHD_RECORD_DETAIL_LIMIT) -> JsonDict:
+    """Read popup counts and drawer rows from the same complete local snapshot.
+
+    No network calls occur on a visitor request. Source revisions and download
+    time accompany the rows so quarterly data is not described as a live lookup.
+    The drawer limit still bounds unusually large property records.
+
+    Args:
+        apn: Parcel identifier; punctuation is removed before indexing.
+        row_limit: Maximum rows displayed per collection.
+
+    Returns:
+        Normalized records, summaries, truncation flags, and snapshot provenance.
+
+    Raises:
+        ValueError: If the APN is empty or the local snapshot is invalid.
+        OSError: If the committed snapshot cannot be read.
+    """
+    normalized_apn = _normalize_apn(apn)
+    if not normalized_apn:
+        raise ValueError("A numeric APN is required to read LAHD property records.")
+    snapshot = read_records_snapshot()
+    limit = max(1, min(int(row_limit), LAHD_RECORD_DETAIL_LIMIT))
+    raw_cases = snapshot["cases"].get(normalized_apn, [])
+    raw_violations = snapshot["violations"].get(normalized_apn, [])
+    cases = [_normalize_investigation_record(row) for row in raw_cases[:limit]]
+    violations = [_normalize_violation_record(row) for row in raw_violations[:limit]]
+    return {
+        "apn": normalized_apn,
+        "cases": cases,
+        "violations": violations,
+        "summary": _summarize_lahd_property_records(cases, violations),
+        "truncated": {"cases": len(raw_cases) > limit, "violations": len(raw_violations) > limit, "row_limit": limit},
+        # Keep the drawer's legacy row-availability flag; source_mode identifies offline data.
+        "detail_status": {"live_records_available": True, "source_mode": "local_snapshot", "snapshot_generated_at": snapshot["generated_at"]},
+        "sources": {
+            "investigation_source_url": LAHD_INVESTIGATION_SOURCE_URL,
+            "violation_source_url": LAHD_VIOLATION_SOURCE_URL,
+            "revisions": snapshot["sources"],
+        },
+        "fetched_at": snapshot["generated_at"],
+    }
+
+
 @lru_cache(maxsize=512)
 def fetch_lahd_property_record_details(
     apn: str,
     row_limit: int = LAHD_RECORD_DETAIL_LIMIT,
 ) -> JsonDict:
-    """Return detailed LAHD case and violation rows for a property APN.
+    """Fetch live LAHD rows for offline diagnostics of the published source.
 
-    The listing popup and records drawer share this cached live fetch so their
-    counts come from the same rows. A source outage can still return a marked
-    aggregate-only fallback for the drawer.
+    Visitor-facing popups and the drawer use ``load_lahd_property_record_details``
+    instead. This diagnostic path retains a marked aggregate-only fallback when
+    the source is unavailable; it must not be reintroduced into visitor requests.
 
     Args:
         apn: Assessor Parcel Number identifying the property.

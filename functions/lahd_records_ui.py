@@ -9,7 +9,7 @@ import dash_ag_grid as dag
 import dash_mantine_components as dmc
 from loguru import logger
 
-from functions.lahd import fetch_lahd_property_record_details
+from functions.lahd import load_lahd_property_record_details
 
 
 LAHD_RECORD_EVENT_NAME = "lahdrecordrequest"
@@ -94,10 +94,10 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
     def open_lahd_records_drawer(event: dict[str, Any] | None) -> tuple[bool, Any, Any]:
         """Open the LAHD records drawer for a popup parcel request.
 
-        Fetch the APN supplied by the popup, which already identifies its matched
+        Read the local snapshot for the APN supplied by the popup, which identifies its matched
         parcel. Resolving the address again could select a different property
         when multiple parcels share an address key. Missing APNs leave the drawer
-        untouched; fetch errors become readable drawer content.
+        untouched; file errors become readable drawer content without live requests.
 
         Args:
             event: Dash or browser event payload being handled.
@@ -115,9 +115,9 @@ def register_lahd_records_drawer_callback(app: Any) -> None:
         address = _event_value(event, "detail.address")
 
         try:
-            details = fetch_lahd_property_record_details(str(apn))
-        except Exception as exc:  # pragma: no cover - exercised manually against live data
-            logger.exception(f"Failed fetching Housing Department records for APN {apn}.")
+            details = load_lahd_property_record_details(str(apn))
+        except Exception as exc:  # pragma: no cover - deployment file failure
+            logger.exception(f"Failed reading Housing Department records for APN {apn}.")
             title = _build_drawer_title(apn, address)
             return True, title, _build_error_content(apn, exc)
 
@@ -405,16 +405,20 @@ def _build_truncation_notice(truncated: dict[str, Any]) -> Any:
 
 
 def _build_detail_status_notice(detail_status: dict[str, Any]) -> Any:
-    """Render a small notice when the drawer is showing aggregate snapshot data.
+    """Render source timing for full-record and aggregate-only snapshots.
 
-    Snapshot-only data is labeled so users know it may not represent current live records.
+    The full local snapshot is labeled with its download time; older aggregate-only
+    fallbacks retain their availability notice.
 
     Args:
-        detail_status: Availability and error metadata for the live record details.
+        detail_status: Source timing and availability metadata for record details.
 
     Returns:
         The constructed detail status notice.
     """
+    if detail_status.get("source_mode") == "local_snapshot":
+        downloaded = str(detail_status.get("snapshot_generated_at") or "")[:10]
+        return html.Div(f"Housing Department dataset downloaded {downloaded}. Source datasets are updated quarterly.", className="lahd-records-notice")
     if detail_status.get("live_records_available") is not False:
         return None
 

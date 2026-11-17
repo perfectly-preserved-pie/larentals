@@ -38,6 +38,7 @@ SCHOOLS_SOCAL_PATH = LAYER_DIR / "schools_socal.geojson"
 SOCAL_SERVICE_AREA_ZIP_CODES_PATH = LAYER_DIR / "socal_service_area_zip_codes.geojson"
 SUPERMARKETS_PATH = LAYER_DIR / "supermarkets_and_grocery_stores.geojson"
 LAHD_PROPERTY_LOOKUP_PATH = LOOKUP_DIR / "lahd_property_lookup.json.gz"
+LAHD_RECORDS_SNAPSHOT_PATH = LOOKUP_DIR / "lahd_records.json.gz"
 RSO_PROPERTY_LOOKUP_PATH = LOOKUP_DIR / "rso_property_lookup.json.gz"
 
 LAHD_PROPERTY_GEOCODE_CACHE_PATH = CACHE_DIR / "lahd_property_geocode_cache.json"

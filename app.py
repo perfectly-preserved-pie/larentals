@@ -12,7 +12,7 @@ from functions.lahd_records_ui import (
 )
 from functions.lahd import (
   prewarm_lahd_listing_lookup_cache,
-  prewarm_lahd_live_dataset_status_cache,
+  lahd_records_snapshot_available,
 )
 from functions.rso import prewarm_rso_property_lookup_cache
 from functions.mcp_usage_logging import register_mcp_usage_logging
@@ -227,7 +227,7 @@ def prewarm_startup_caches() -> None:
       None.
   """
   start_time = time.perf_counter()
-  prewarm_lahd_live_dataset_status_cache()
+  lahd_records_snapshot_available()
   prewarm_lahd_listing_lookup_cache()
   prewarm_rso_property_lookup_cache()
 

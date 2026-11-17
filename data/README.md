@@ -147,3 +147,26 @@ Preferred local derived artifact:
 - Excludes rows with missing coordinates, implausible bounds, or invalid fine amounts
 - Groups citations into rounded hotspot coordinates for weighted heatmap rendering
 - Keeps up to the top `50,000` 2025 hotspots, similar to the LA Controller reference map
+
+## LAHD complete property records
+
+- `derived/lookups/lahd_records.json.gz` contains **all raw rows** from LAHD's
+  [investigation/enforcement](https://data.lacity.org/d/eagk-wq48) and
+  [violation](https://data.lacity.org/d/cr8f-uc4j) datasets. Both sources publish a
+  quarterly update cadence.
+- Popups and the records drawer read this same local snapshot. Visitors do not
+  trigger per-property LAHD requests. The drawer shows the snapshot download date.
+- Refresh manually with `uv run build-lahd-records-snapshot`, or use the
+  **Refresh LAHD records snapshot** Actions workflow on the default branch.
+- Actions checks on January 1, April 1, July 1, and October 1 at 10:17 UTC.
+  A source `rowsUpdatedAt` change triggers a paginated full download of both
+  datasets. Unchanged revisions leave the existing bytes and Git history alone.
+- Downloads verify row counts and stable source revisions, then atomically
+  replace the gzip artifact. Failed or partial downloads retain the old snapshot.
+- The workflow commits changed data with its `contents: write` permission and
+  calls the existing Docker build with the new commit SHA. This explicit call
+  is necessary because a `GITHUB_TOKEN` commit does not trigger push workflows.
+  Existing Docker credentials remain the only publishing secrets. Branch rules
+  must permit the workflow bot to push snapshot updates.
+- Docker's existing `COPY . /app` includes this committed artifact; it is outside
+  `assets/` so browsers cannot download it through Dash's public asset directory.

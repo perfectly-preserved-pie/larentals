@@ -257,7 +257,7 @@ def test_listing_lahd_summary_hidden_when_live_datasets_unavailable(
         "is_listing_in_los_angeles_city",
         lambda *, city, latitude, longitude: True,
     )
-    monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: False)
+    monkeypatch.setattr(listings, "lahd_records_snapshot_available", lambda: False)
 
     def fail_lookup(**_kwargs: object) -> None:
         """Handle fail lookup.
@@ -539,7 +539,7 @@ def test_lahd_listing_summary_uses_live_counts(monkeypatch: pytest.MonkeyPatch) 
         None.
     """
     monkeypatch.setattr(listings, "is_listing_in_los_angeles_city", lambda **kwargs: True)
-    monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: True)
+    monkeypatch.setattr(listings, "lahd_records_snapshot_available", lambda: True)
     monkeypatch.setattr(listings, "lookup_lahd_property_for_listing", lambda **kwargs: {
         "matched": True, "data_available": True, "apn": "5539019017",
         "address": "3920 W MARATHON ST, Los Angeles, CA 90029",
@@ -566,7 +566,7 @@ def test_lahd_listing_summary_uses_live_counts(monkeypatch: pytest.MonkeyPatch) 
             "truncated": {"cases": False, "violations": False},
         }
 
-    monkeypatch.setattr(listings, "fetch_lahd_property_record_details", fake_fetch)
+    monkeypatch.setattr(listings, "load_lahd_property_record_details", fake_fetch)
     summary = listings.build_lahd_listing_summary({
         "city": "Los Angeles", "full_street_address": "3920 Marathon St #7a",
         "latitude": 34.0843, "longitude": -118.2987,
@@ -591,12 +591,12 @@ def test_lahd_listing_summary_hides_stale_fallback(monkeypatch: pytest.MonkeyPat
         None.
     """
     monkeypatch.setattr(listings, "is_listing_in_los_angeles_city", lambda **kwargs: True)
-    monkeypatch.setattr(listings, "live_lahd_datasets_available", lambda: True)
+    monkeypatch.setattr(listings, "lahd_records_snapshot_available", lambda: True)
     monkeypatch.setattr(listings, "lookup_lahd_property_for_listing", lambda **kwargs: {
         "matched": True, "data_available": True, "apn": "5539019017",
         "documented_issue_count": 70,
     })
-    monkeypatch.setattr(listings, "fetch_lahd_property_record_details", lambda apn: {
+    monkeypatch.setattr(listings, "load_lahd_property_record_details", lambda apn: {
         "summary": {"documented_issue_count": 70},
         "detail_status": {"live_records_available": False},
     })
@@ -661,7 +661,7 @@ def test_lahd_records_drawer_fetches_popup_apn(monkeypatch: pytest.MonkeyPatch) 
         requested_apns.append(apn)
         return {"apn": apn, "summary": {}}
 
-    monkeypatch.setattr(lahd_records_ui, "fetch_lahd_property_record_details", fake_fetch)
+    monkeypatch.setattr(lahd_records_ui, "load_lahd_property_record_details", fake_fetch)
     monkeypatch.setattr(lahd_records_ui, "build_lahd_records_drawer_content", lambda details: details)
     lahd_records_ui.register_lahd_records_drawer_callback(FakeApp())
 

@@ -6,9 +6,9 @@ from loguru import logger
 
 from functions.data_paths import LARENTALS_DB_PATH
 from functions.lahd import (
-    fetch_lahd_property_record_details,
+    load_lahd_property_record_details,
     is_listing_in_los_angeles_city,
-    live_lahd_datasets_available,
+    lahd_records_snapshot_available,
     lookup_lahd_property_for_listing,
     out_of_scope_lahd_listing_lookup_result,
     unavailable_lahd_listing_lookup_result,
@@ -189,9 +189,9 @@ def register_listing_routes(server: Any, db_path: str = str(LARENTALS_DB_PATH)) 
 def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
     """Resolve Housing Department context for a listing popup.
 
-    Resolve the APN from the local address index, then use the same live rows
-    that feed the records drawer for popup counts. A failed or truncated live
-    fetch is unavailable rather than a stale or partial total.
+    Resolve the APN from the local address index and read counts from the same
+    committed full-dataset snapshot as the records drawer. Missing or truncated
+    records are unavailable rather than a misleading partial total.
 
     Args:
         payload: Listing city, coordinates, and street address from the detail row.
@@ -207,7 +207,7 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
     if in_scope is False:
         return out_of_scope_lahd_listing_lookup_result()
 
-    if not live_lahd_datasets_available():
+    if not lahd_records_snapshot_available():
         return unavailable_lahd_listing_lookup_result()
 
     match = lookup_lahd_property_for_listing(
@@ -219,9 +219,9 @@ def build_lahd_listing_summary(payload: dict[str, Any]) -> dict[str, Any]:
         return match
 
     try:
-        details = fetch_lahd_property_record_details(str(match["apn"]))
+        details = load_lahd_property_record_details(str(match["apn"]))
     except Exception as exc:
-        logger.warning(f"Failed fetching live LAHD summary for APN {match['apn']}: {exc}")
+        logger.warning(f"Failed reading local LAHD summary for APN {match['apn']}: {exc}")
         return unavailable_lahd_listing_lookup_result()
 
     detail_status = details.get("detail_status") or {}
