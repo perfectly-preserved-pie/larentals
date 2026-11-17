@@ -969,6 +969,8 @@
              * Clustering can replace that marker when the larger detail popup
              * pans the map. A marker-bound popup would close on source removal,
              * making cold opens flash and disappear while cached reopens work.
+             * Cluster features share this hook but have no listing identity;
+             * leave their clicks to the cluster's zoom handler.
              *
              * @param {PopupFeature} feature GeoJSON feature emitted by Dash Leaflet.
              * @param {PopupLayer} layer Leaflet layer receiving the popup binding.
@@ -981,6 +983,7 @@
                 }
 
                 const summaryData = feature.properties;
+                if (summaryData.cluster || summaryData.cluster_id != null || !normalizeListingId(summaryData.mls_number)) return;
                 layer.on("click", function handleListingClick() {
                     const latlng = layer.getLatLng?.();
                     if (!latlng) return;

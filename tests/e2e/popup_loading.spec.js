@@ -101,3 +101,38 @@ for (const market of ["lease", "buy"]) {
     await expect(page.locator(".leaflet-popup")).toBeVisible();
   });
 }
+
+for (const market of ["lease", "buy"]) {
+  test(`${market} cluster clicks zoom without opening an unknown listing popup`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const detailRequests = [];
+    page.on("request", request => {
+      if (request.url().includes("/listing-details/")) detailRequests.push(request.url());
+    });
+    await page.goto(market === "lease" ? "/" : "/buy", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".results-row").first()).toBeVisible({ timeout: 30_000 });
+    const clusters = page.locator(".marker-cluster [data-cluster-id]");
+    await expect(clusters.first()).toBeVisible();
+    for (let click = 0; click < 3; click++) {
+      const zoom = await page.evaluate(() => window.larentals.map.getZoom());
+      // Pick a cluster whose center is exposed; panning can put the first DOM
+      // marker behind a map control even though Leaflet still renders it.
+      await page.waitForFunction(() => {
+        const map = window.larentals.map;
+        if (map._animatingZoom || map._panAnim?._inProgress) return false;
+        const cluster = [...document.querySelectorAll('.marker-cluster [data-cluster-id]')]
+          .find(element => {
+            const box = element.getBoundingClientRect();
+            return document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+              ?.closest('[data-cluster-id]') === element;
+          });
+        if (!cluster) return false;
+        cluster.click();
+        return true;
+      });
+      await expect.poll(() => page.evaluate(() => window.larentals.map.getZoom())).toBeGreaterThan(zoom);
+      await expect(page.locator(".leaflet-popup")).toHaveCount(0);
+      expect(detailRequests).toHaveLength(0);
+    }
+  });
+}
