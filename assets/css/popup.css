@@ -13,6 +13,40 @@
   z-index: 1200 !important;
 }
 
+.listing-popup__housing {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.listing-popup__housing-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.listing-popup__housing--empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.listing-popup__housing--empty .value {
+  text-align: right;
+}
+
+.listing-popup__housing-summary {
+  display: grid;
+  gap: 2px;
+}
+
+.listing-popup__housing-header .lahd-records-trigger {
+  flex-shrink: 0;
+}
+
 /* Default (mobile): let content size naturally, no forced height/scroll */
 .options-col {
   height: auto;

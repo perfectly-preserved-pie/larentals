@@ -229,15 +229,17 @@
                 data-lahd-address="${escapeHtml(address)}"
                 data-lahd-source="listing-popup"
             >
-                View records
+                Details
             </button>
         `;
     }
 
     /**
      * Build the compact Housing Department summary shown in listing popups.
-     * Unavailable data and a successful no-match have distinct messages for the renter.
-     * Counts come from the same live records fetched for the drawer.
+     * Separate the record count, estimated status, and latest case date so a
+     * historical record does not read as a confirmed current violation. Counts
+     * come from the same local snapshot as the drawer; closure fields only
+     * suggest whether issues remain unresolved.
      *
      * @param {unknown} summary Raw `lahd_property_summary` payload.
      * @returns {string} Human-readable housing issue summary.
@@ -251,25 +253,47 @@
             return "Not available";
         }
 
-        if (!summary.matched) {
-            return "No records found";
+        if (!summary.matched || Number(summary.documented_issue_count) === 0) {
+            return "No cases or violations";
         }
 
         const documented = formatWholeNumber(summary.documented_issue_count);
         const unresolved = formatWholeNumber(summary.unresolved_issue_count);
+        const cases = Number(summary.investigation_case_count);
+        const violations = Number(summary.violations_cited);
+        const counts = [];
+        if (cases > 0) counts.push(`${formatWholeNumber(cases)} ${cases === 1 ? "case" : "cases"}`);
+        if (violations > 0) counts.push(`${formatWholeNumber(violations)} ${violations === 1 ? "violation" : "violations"}`);
+        const countLabel = counts.length
+            ? counts.join(", ")
+            : `${documented} ${Number(summary.documented_issue_count) === 1 ? "case or violation" : "cases or violations"}`;
+        const status = Number(summary.unresolved_issue_count) > 0
+            ? `${unresolved} possibly unresolved`
+            : "Appears resolved";
         const latestCaseDate = normalizeNullableString(summary.latest_case_date);
+        const datePart = latestCaseDate?.split("T")[0];
+        const date = datePart ? new Date(`${datePart}T00:00:00Z`) : null;
+        const dateLabel = date && !Number.isNaN(date.getTime())
+            ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+            : datePart;
         const latestCaseLabel = latestCaseDate
-            ? `; latest record ${escapeHtml(latestCaseDate.split("T")[0])}`
+            ? `<span class="listing-popup__housing-date">Last case: ${escapeHtml(dateLabel)}</span>`
             : "";
-        const recordsTrigger = renderLahdRecordsTrigger(summary);
-        const recordsTriggerLabel = recordsTrigger ? `<br>${recordsTrigger}` : "";
 
-        return `${documented} records found · ${unresolved} may need attention (estimate)${latestCaseLabel}${recordsTriggerLabel}`;
+        return `<span class="listing-popup__housing-summary">
+            <span>${countLabel}<span title="Estimated from case closure and violation clearance fields in city data; this does not confirm current conditions."> · ${status}</span></span>
+            ${latestCaseLabel}
+        </span>`;
     }
 
     /**
      * Render the Housing Department issue row for listing popups.
      * Out-of-jurisdiction and unavailable summaries are omitted rather than implying zero records.
+     * Give the history its own full-width block so status text does not become
+     * a tall, narrow value column beside the heading. A successful no-match
+     * stays on one line with a right-aligned value like the surrounding rows.
+     * A matched property with zero records uses that same empty state; there
+     * are no issues to describe as resolved or records to open in the drawer.
      *
      * @param {Record<string, unknown>} popupData Listing detail payload.
      * @returns {string} HTML row.
@@ -284,12 +308,20 @@
             return "";
         }
 
+        if (!summary.matched || Number(summary.documented_issue_count) === 0) {
+            return `<div class="property-row listing-popup__housing listing-popup__housing--empty">
+                <strong>Complaints &amp; violations</strong>
+                <span class="value">No cases or violations</span>
+            </div>`;
+        }
+
         return `
-            <div class="property-row" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; border-bottom: 1px solid #ddd; gap: 12px;">
-                <span class="label" style="font-weight: bold;">Housing records</span>
-                <span class="value" style="text-align: right; white-space: normal; overflow-wrap: anywhere;">
-                    ${formatLahdIssueSummary(summary)}
-                </span>
+            <div class="property-row listing-popup__housing">
+                <div class="listing-popup__housing-header">
+                    <strong>Complaints &amp; violations</strong>
+                    ${renderLahdRecordsTrigger(summary)}
+                </div>
+                ${formatLahdIssueSummary(summary)}
             </div>
         `;
     }
