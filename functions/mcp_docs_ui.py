@@ -55,11 +55,13 @@ def build_mcp_docs_layout() -> html.Main:
     The contents menu jumps to the endpoint, setup instructions, and tool
     reference. Keep the skip link pointed at the page heading so keyboard
     users can bypass the shared site navigation and theme control.
+    Client commands use the same public URL as the standalone copy control.
 
     Returns:
         The complete Dash layout for the MCP documentation page.
     """
     claude_command = f"claude mcp add --transport http wheretolive {MCP_ENDPOINT}"
+    codex_command = f"codex mcp add wheretolive --url {MCP_ENDPOINT}"
     hermes_config = f'mcp_servers:\n  wheretolive:\n    url: "{MCP_ENDPOINT}"'
 
     return html.Main(
@@ -113,7 +115,7 @@ def build_mcp_docs_layout() -> html.Main:
                                         tabIndex=-1,
                                     ),
                                     html.P(
-                                        "Connect Claude, Hermes, or another MCP client "
+                                        "Connect Claude, ChatGPT, Codex, or another MCP client "
                                         "to search current rentals and homes for sale "
                                         "in Los Angeles County.",
                                         className="mcp-docs__intro",
@@ -216,7 +218,32 @@ def build_mcp_docs_layout() -> html.Main:
                                             _copyable_snippet(
                                                 "claude-command", claude_command, "Copy command"
                                             ),
-                                            html.H3("Hermes"),
+                                            html.H3("ChatGPT"),
+                                            html.P(
+                                                [
+                                                    "On the web, open ",
+                                                    html.Strong("Plugins"),
+                                                    ", select the plus button, then choose ",
+                                                    html.Strong("Add custom MCP server"),
+                                                    ". Name it WhereToLive.LA, paste the server "
+                                                    "address, and choose ",
+                                                    html.Strong("No authentication"),
+                                                    ". Review the prompt and select ",
+                                                    html.Strong("Create as a plugin"),
+                                                    ".",
+                                                ]
+                                            ),
+                                            html.P(
+                                                "Install the plugin, then select it with @ in "
+                                                "a new Work chat. Custom MCP access depends "
+                                                "on your account and workspace settings."
+                                            ),
+                                            html.H3("Codex"),
+                                            html.P("For the Codex CLI, run this in your terminal."),
+                                            _copyable_snippet(
+                                                "codex-command", codex_command, "Copy Codex command"
+                                            ),
+                                            html.H3("Hermes Agent"),
                                             html.P(
                                                 [
                                                     "Add this to ",
@@ -234,9 +261,10 @@ def build_mcp_docs_layout() -> html.Main:
                                             ),
                                             html.H3("Other clients"),
                                             html.P(
-                                                "Add a remote MCP server, choose Streamable "
-                                                "HTTP (sometimes labeled HTTP), and paste "
-                                                "the server address."
+                                                "In Cursor, VS Code with GitHub Copilot, or "
+                                                "another compatible client, add a remote MCP "
+                                                "server using Streamable HTTP (sometimes labeled "
+                                                "HTTP) and paste the server address."
                                             ),
                                         ]
                                     ),

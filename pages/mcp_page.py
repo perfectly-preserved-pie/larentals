@@ -16,8 +16,8 @@ dash.register_page(
     title="Connect WhereToLive.LA to Your AI Assistant",
     image_url=SOCIAL_PREVIEW_IMAGE_URL,
     description=(
-        "Connect Claude, Hermes, and other MCP clients to read-only Los Angeles "
-        "County lease and for-sale listing search."
+        "Connect Claude, ChatGPT, Codex, and other MCP clients to read-only "
+        "Los Angeles County lease and for-sale listing search."
     ),
 )
 

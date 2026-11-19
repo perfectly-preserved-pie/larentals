@@ -79,7 +79,7 @@ test("MCP setup snippets copy with the keyboard and keep focus", async ({ contex
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/mcp", { waitUntil: "domcontentloaded" });
 
-  for (const name of ["Copy URL", "Copy command", "Copy YAML"]) {
+  for (const name of ["Copy URL", "Copy command", "Copy Codex command", "Copy YAML"]) {
     const button = page.getByRole("button", { name, exact: true });
     const target = await button.getAttribute("data-mcp-copy");
     const snippet = await page.locator(`#${target}`).textContent();
