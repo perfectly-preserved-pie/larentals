@@ -9,7 +9,7 @@
   --filter-panel-border: var(--site-border);
   --filter-panel-text: var(--site-ink);
   --filter-panel-accent: var(--site-masthead);
-  --filter-panel-accent-hover: #405c44;
+  --filter-panel-accent-hover: color-mix(in srgb, var(--site-masthead) 88%, white);
   /* <shadow>: drawer elevation. */
   --filter-panel-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
 }

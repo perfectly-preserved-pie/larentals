@@ -1,54 +1,54 @@
 /* Site-wide <color> and font-family values. The document theme reaches
  * Leaflet and Mantine portals as well as the three Dash pages. */
 :root {
-  --site-background: #e0e4d5;
-  --site-dot: #b6bfa7;
-  --site-paper: #fffdf3;
-  --site-sidebar: #e9ecde;
-  --site-section: #eef0e3;
-  --site-border: #a9b299;
-  --site-ink: #262d23;
-  --site-muted: #4e5948;
-  --site-heading: #253c2d;
-  --site-link: #254e35;
+  --site-background: #e9eef0;
+  --site-dot: #c9d3d7;
+  --site-paper: #fbfcfd;
+  --site-sidebar: #edf2f4;
+  --site-section: #f1f5f6;
+  --site-border: #b6c5c9;
+  --site-ink: #202e34;
+  --site-muted: #496069;
+  --site-heading: #213a43;
+  --site-link: #205b67;
   --site-visited: #6b3a58;
-  --site-accent: #9e4229;
-  --site-rule: #bd684b;
-  --site-button: #eee7d3;
-  --site-button-edge: #766d58;
-  --site-button-light: #fffdf4;
-  --site-masthead: #304737;
-  --site-masthead-ink: #faf4dc;
+  --site-accent: #994a3d;
+  --site-rule: #b87669;
+  --site-button: #eaf1f3;
+  --site-button-edge: #788e96;
+  --site-button-light: #ffffff;
+  --site-masthead: #24434c;
+  --site-masthead-ink: #f5f9fa;
   --site-mono: "Courier New", Courier, monospace;
   --site-serif: Georgia, "Times New Roman", serif;
   --site-sans: Verdana, Geneva, sans-serif;
-  --site-selected: #d8e4cc;
-  --site-action: #426345;
-  --site-control-edge: #78836c;
-  --site-focus: #95411c;
+  --site-selected: #dbeaec;
+  --site-action: #306571;
+  --site-control-edge: #778d96;
+  --site-focus: #994a3d;
 }
 
 :root[data-mantine-color-scheme="dark"] {
-  --site-background: #191f19;
-  --site-dot: #3b4837;
-  --site-paper: #242c23;
-  --site-sidebar: #2c362a;
-  --site-section: #303b2e;
-  --site-border: #637259;
-  --site-ink: #f0ede0;
+  --site-background: #171e23;
+  --site-dot: #35444c;
+  --site-paper: #222d34;
+  --site-sidebar: #29373f;
+  --site-section: #2e3c44;
+  --site-border: #586e77;
+  --site-ink: #eaf1f3;
   --site-muted: #c0cbb7;
-  --site-heading: #e2ebd5;
-  --site-link: #c7e0a9;
+  --site-heading: #e5f1f3;
+  --site-link: #a6d9de;
   --site-visited: #e2b6d3;
   --site-accent: #ffc29f;
   --site-rule: #bd684b;
-  --site-button: #423c2d;
-  --site-button-edge: #afa387;
-  --site-button-light: #716655;
-  --site-masthead: #25372b;
-  --site-selected: #3b4b37;
-  --site-action: #b8d39f;
-  --site-control-edge: #88977c;
+  --site-button: #34454d;
+  --site-button-edge: #91a7af;
+  --site-button-light: #546a74;
+  --site-masthead: #203740;
+  --site-selected: #364e58;
+  --site-action: #a6d9de;
+  --site-control-edge: #859ba5;
   --site-focus: #ffc29f;
 }
 

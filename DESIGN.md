@@ -17,9 +17,9 @@ Use the semantic properties in [site-theme.css](assets/css/site-theme.css). Chan
 
 | Role | Application |
 | --- | --- |
-| Masthead | Forest green with cream lettering and a thin rust-colored rule. Use it for identity and major panel headings. |
-| Paper and ink | Warm cream reading surfaces, tinted sidebars, dark green-black text, and olive borders. Dark mode uses deep olive paper and warm light text. |
-| Links and actions | Underline text links. Use rust for the current navigation item and a visible current-page marker. Pair selection color with a check, marker, border, or text change. |
+| Masthead | Deep blue-green with near-white lettering and a thin clay-colored rule. Use it for identity and major panel headings. |
+| Paper and ink | Cool off-white reading surfaces, pale blue-gray sidebars, and slate text and borders. Dark mode uses deep slate surfaces with cool light text. |
+| Links and actions | Underline text links. Use muted clay for the current navigation item and a visible current-page marker. Pair selection color with a check, marker, border, or text change. |
 | Type | Georgia for the wordmark and reading headings, Verdana for navigation, instructions, controls, prices, and listing details. Reserve Courier for code and ASCII art. Use the shared system font stacks. |
 
 ## Page composition
