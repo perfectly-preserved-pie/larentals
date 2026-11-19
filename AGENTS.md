@@ -1,3 +1,8 @@
+# Project version
+
+Follow [VERSIONING.md](VERSIONING.md) when preparing a release or deciding
+whether a change warrants a project version bump.
+
 # Site design
 
 For user-facing changes, read [DESIGN.md](DESIGN.md) and follow the shared visual direction for the maps and MCP guide.
