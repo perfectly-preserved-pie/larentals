@@ -53,20 +53,20 @@ body {
 }
 
 :root[data-mantine-color-scheme="dark"] {
-    --wttl-dark-bg: #191c1e;
-    --wttl-dark-panel: #202427;
-    --wttl-dark-section: #252a2d;
-    --wttl-dark-section-active: #263331;
-    --wttl-dark-input: #2b2f32;
-    --wttl-dark-input-hover: #303538;
-    --wttl-dark-border: rgba(232, 238, 241, 0.14);
-    --wttl-dark-border-strong: rgba(232, 238, 241, 0.24);
-    --wttl-dark-text: #e7ecef;
-    --wttl-dark-text-muted: rgba(231, 236, 239, 0.68);
-    --wttl-dark-text-faint: rgba(231, 236, 239, 0.46);
-    --wttl-dark-accent: #4fc3b4;
-    --wttl-dark-accent-strong: #69d8ca;
-    --wttl-dark-accent-soft: rgba(79, 195, 180, 0.2);
+    --wttl-dark-bg: var(--site-background);
+    --wttl-dark-panel: var(--site-paper);
+    --wttl-dark-section: var(--site-section);
+    --wttl-dark-section-active: var(--site-selected);
+    --wttl-dark-input: var(--site-section);
+    --wttl-dark-input-hover: var(--site-selected);
+    --wttl-dark-border: var(--site-border);
+    --wttl-dark-border-strong: var(--site-control-edge);
+    --wttl-dark-text: var(--site-ink);
+    --wttl-dark-text-muted: var(--site-muted);
+    --wttl-dark-text-faint: var(--site-muted);
+    --wttl-dark-accent: var(--site-action);
+    --wttl-dark-accent-strong: var(--site-link);
+    --wttl-dark-accent-soft: var(--site-selected);
 }
 
 :root[data-mantine-color-scheme="dark"] body,

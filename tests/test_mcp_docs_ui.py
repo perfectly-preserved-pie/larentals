@@ -11,7 +11,7 @@ from functions.mcp_docs_ui import MCP_ENDPOINT, build_mcp_docs_layout
 def _collect_components(component: object) -> Iterator[object]:
   """Yield every Dash component in a layout tree.
 
-  Lists and tuples are traversed so nested cards and copy controls are covered.
+  Lists and tuples are traversed so nested sections and copy buttons are covered.
 
   Args:
       component: Dash component or nested component collection to traverse.
@@ -45,18 +45,20 @@ class McpDocsUiTest(unittest.TestCase):
   def test_layout_exposes_copyable_public_endpoint(self) -> None:
     """Keep the displayed and copied endpoint consistent.
 
-    The endpoint shown to users must match the value copied by the setup control.
+    The copy handler resolves the code element by ID and copies its text.
 
     Returns:
         None.
     """
-    codes = [item for item in self.components if isinstance(item, html.Code)]
-    clipboards = [
-      item for item in self.components if isinstance(item, dcc.Clipboard)
-    ]
+    components_by_id = {
+      item.id: item for item in self.components if hasattr(item, "id")
+    }
+    button = components_by_id["mcp-endpoint-copy"]
+    code = components_by_id[getattr(button, "data-mcp-copy")]
 
-    self.assertIn(MCP_ENDPOINT, [code.children for code in codes])
-    self.assertIn(MCP_ENDPOINT, [clipboard.content for clipboard in clipboards])
+    self.assertIsInstance(button, html.Button)
+    self.assertIsInstance(code, html.Code)
+    self.assertEqual(code.children, MCP_ENDPOINT)
 
   def test_layout_covers_supported_clients_and_listing_modes(self) -> None:
     """Ensure essential setup and capability copy remains present.

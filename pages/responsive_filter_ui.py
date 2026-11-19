@@ -111,7 +111,8 @@ def build_map_filter_toolbar(page_type: str) -> html.Div:
     """Build the compact toolbar shown over the map on smaller screens.
 
     ``page_type`` selects the Rent or Buy labels, links, and quick-filter chips.
-    The toolbar itself is hidden when the persistent desktop sidebar is visible.
+    On narrow phones the Filters button shows only its icon, so it keeps
+    a text alternative even when its visible label is hidden.
 
     Args:
         page_type: Listing page type, either ``buy`` or ``lease``.
@@ -235,6 +236,7 @@ def build_map_filter_toolbar(page_type: str) -> html.Div:
                                 **{
                                     "data-filter-open": page_type,
                                     "data-filter-source": "toolbar",
+                                    "aria-label": "Filters",
                                     "aria-controls": f"{page_type}-filter-panel",
                                     "aria-expanded": "false",
                                     "aria-haspopup": "dialog",

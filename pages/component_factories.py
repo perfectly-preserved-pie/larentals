@@ -16,6 +16,7 @@ import pandas as pd
 from .component_models import DashId, FilterSection, PageConfig, PageParts
 from functions.convex_hull import generate_convex_hulls
 from functions.price_markers import build_price_marker
+from functions.site_identity import DTLA_SKYLINE
 from functions.layers import (
     SCHOOL_LAYER_CAMPUS_CONFIGURATION_OPTIONS,
     DEFAULT_SCHOOL_LAYER_ENROLLMENT_MAX,
@@ -801,146 +802,72 @@ def build_title_card(
     title: str,
     subtitle: str,
     last_updated: str | None,
+    page_type: str | None = None,
 ) -> dbc.Card:
-    """Build the shared page title card.
+    """Build the site masthead and navigation for both listing maps.
 
-    Place the page switch, update date, and theme control beside the title so
-    lease and sale pages share the same navigation and status layout.
-    The responsive shell owns the semantic page heading because this card is
-    hidden inside the closed filter drawer on phones.
+    The compact drawer keeps the links and theme switch available on phones.
+    The responsive map shell owns the page heading because the drawer can close.
 
     Args:
-        title: Display title shown at the top of the sidebar.
-        subtitle: Secondary copy under the title.
+        title: Site wordmark displayed on desktop.
+        subtitle: Description of the current listing dataset.
         last_updated: Optional display date for the latest data refresh.
+        page_type: Listing mode to identify as current in the navigation.
 
     Returns:
-        A populated Bootstrap card.
+        The sidebar masthead with links to both maps and the setup guide.
     """
-    title_card_children = [
-        dbc.Row(
+    sections = [("lease", "For Rent", "/", "fa-building"), ("buy", "For Sale", "/buy", "fa-house")]
+    children = [
+        html.Div(
             [
-                dbc.Col(html.Div(title, className="card-title h3"), width="auto"),
-                dbc.Col(
-                    dbc.ButtonGroup(
-                        [
-                            dbc.Button(
-                                [
-                                    html.I(
-                                        className="fa fa-building",
-                                        style={"marginRight": "5px"},
-                                    ),
-                                    "For Rent",
-                                ],
-                                href="/",
-                                color="primary",
-                            ),
-                            html.Div(
-                                style={
-                                    "width": "1px",
-                                    "backgroundColor": "#ccc",
-                                    "margin": "0 1px",
-                                    "height": "100%",
-                                }
-                            ),
-                            dbc.Button(
-                                [
-                                    html.I(
-                                        className="fa fa-home",
-                                        style={"marginRight": "5px"},
-                                    ),
-                                    "For Sale",
-                                ],
-                                href="/buy",
-                                color="primary",
-                            ),
-                        ],
-                        className="ml-auto",
-                    ),
-                    width="auto",
-                    className="ml-auto",
-                ),
+                html.Div(title, className="card-title listing-wordmark"),
+                html.Pre(DTLA_SKYLINE, **{"aria-hidden": "true"}),
             ],
-            align="center",
+            className="listing-masthead",
         ),
-        html.P(subtitle),
+        html.Nav(
+            [
+                html.A(
+                    [html.I(className=f"fa-solid {icon}", **{"aria-hidden": "true"}), " ", label],
+                    href=url,
+                    **({"aria-current": "page"} if mode == page_type else {}),
+                )
+                for mode, label, url, icon in sections
+            ] + [html.A([html.I(className="fa-solid fa-robot", **{"aria-hidden": "true"}), " MCP setup"], href="/mcp")],
+            className="listing-site-nav",
+            **{"aria-label": "Site navigation"},
+        ),
+        html.P(subtitle, className="listing-intro"),
     ]
-
     if last_updated is not None:
-        title_card_children.append(
-            html.P(f"Last updated: {last_updated}", style={"marginBottom": "5px"})
-        )
-
-    title_card_children.extend(
-        [
-            html.Div(
-                [
-                    html.A(
-                        [
-                            html.I(className="bi bi-github"),
-                            html.Span("GitHub"),
-                        ],
-                        href="https://github.com/perfectly-preserved-pie/larentals",
-                        target="_blank",
-                        className="title-card-link",
-                    ),
-                    html.A(
-                        [
-                            html.I(className="fa-solid fa-blog"),
-                            html.Span("About This Project"),
-                        ],
-                        href="https://automateordie.dev/wheretolivedotla/",
-                        target="_blank",
-                        className="title-card-link",
-                    ),
-                    html.A(
-                        [
-                            DashIconify(icon="lucide:bot", width=16),
-                            html.Span("MCP"),
-                        ],
-                        href="/mcp",
-                        title="MCP setup instructions",
-                        className="title-card-link",
-                        **{"aria-label": "MCP setup instructions"},
-                    ),
-                    html.A(
-                        [
-                            html.I(className="fa fa-envelope"),
-                            html.Span("hey@wheretolive.la"),
-                        ],
-                        href="mailto:hey@wheretolive.la",
-                        target="_blank",
-                        className="title-card-link",
-                    ),
-                ],
-                className="title-card-links",
-            ),
-            dmc.Switch(
-                id="color-scheme-switch",
-                label="Toggle light/dark mode",
-                offLabel=DashIconify(
-                    icon="radix-icons:sun",
-                    width=15,
-                    color="var(--mantine-color-yellow-8)",
-                ),
-                onLabel=DashIconify(
-                    icon="radix-icons:moon",
-                    width=15,
-                    color="var(--mantine-color-yellow-6)",
-                ),
-                className="theme-switch-control",
-                color="gray",
-                mt=5,
-                persisted_props=["checked"],
-                persistence=True,
-                persistence_type="local",
-                size="md",
-                **{"aria-label": "Toggle light/dark mode"},
-            ),
-        ]
-    )
-
-    return dbc.Card(title_card_children, body=True, className="title-card")
+        children.append(html.P(f"Last updated: {last_updated}", className="listing-updated"))
+    children.extend([
+        html.Div(
+            [
+                html.A([html.I(className="fa-brands fa-github", **{"aria-hidden": "true"}), " GitHub"], href="https://github.com/perfectly-preserved-pie/larentals",
+                       target="_blank", rel="noopener"),
+                html.A([html.I(className="fa-solid fa-blog", **{"aria-hidden": "true"}), " About This Project"], href="https://automateordie.dev/wheretolivedotla/",
+                       target="_blank", rel="noopener"),
+                html.A([html.I(className="fa-solid fa-envelope", **{"aria-hidden": "true"}), " hey@wheretolive.la"], href="mailto:hey@wheretolive.la"),
+            ],
+            className="title-card-links",
+        ),
+        dmc.Switch(
+            id="color-scheme-switch",
+            label="Dark mode",
+            offLabel=html.I(className="fa-solid fa-sun", **{"aria-hidden": "true"}),
+            onLabel=html.I(className="fa-solid fa-moon", **{"aria-hidden": "true"}),
+            className="theme-switch-control",
+            color="gray",
+            persisted_props=["checked"],
+            persistence=True,
+            persistence_type="local",
+            size="sm",
+        ),
+    ])
+    return dbc.Card(children, body=True, className="title-card")
 
 
 def build_map(
@@ -1159,7 +1086,8 @@ def build_filter_card(
 ) -> dbc.Card:
     """Build the accordion card used for page filters.
 
-    A shared accordion shell keeps labels, spacing, and accessibility consistent across filter groups.
+    Keep the accordion ID and item IDs stable. The quick filters in the mobile
+    toolbar use them to open the matching section in the drawer.
 
     Args:
         items: Accordion sections as ``(title, children, item_id)`` tuples.
@@ -1184,12 +1112,10 @@ def build_filter_card(
 
     return dbc.Card(
         [
-            html.P(
-                "Use the options below to filter the map according to your needs.",
-                className="card-text",
-            ),
+            html.H2("Search filters", className="listing-filters__title"),
             accordion,
         ],
+        className="listing-filters",
         body=True,
     )
 
@@ -1659,6 +1585,7 @@ def build_page_parts(
     """
     return PageParts(
         title_card=build_title_card(
+            page_type=config.page_type,
             title=config.title,
             subtitle=config.subtitle,
             last_updated=last_updated,

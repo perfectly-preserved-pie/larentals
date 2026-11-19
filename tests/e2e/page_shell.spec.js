@@ -75,6 +75,23 @@ for (const width of [390, 1440]) {
   }
 }
 
+test("MCP setup snippets copy with the keyboard and keep focus", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/mcp", { waitUntil: "domcontentloaded" });
+
+  for (const name of ["Copy URL", "Copy command", "Copy YAML"]) {
+    const button = page.getByRole("button", { name, exact: true });
+    const target = await button.getAttribute("data-mcp-copy");
+    const snippet = await page.locator(`#${target}`).textContent();
+
+    await button.focus();
+    await page.keyboard.press("Enter");
+    await expect(button).toHaveText("Copied!");
+    await expect(button).toBeFocused();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(snippet);
+  }
+});
+
 for (const entry of pages.filter((entry) => entry.key)) {
   test(`${entry.key} photo reserves its frame before image delivery`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });

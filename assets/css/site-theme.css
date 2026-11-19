@@ -1,0 +1,347 @@
+/* Site-wide <color> and font-family values. The document theme reaches
+ * Leaflet and Mantine portals as well as the three Dash pages. */
+:root {
+  --site-background: #e0e4d5;
+  --site-dot: #b6bfa7;
+  --site-paper: #fffdf3;
+  --site-sidebar: #e9ecde;
+  --site-section: #eef0e3;
+  --site-border: #a9b299;
+  --site-ink: #262d23;
+  --site-muted: #4e5948;
+  --site-heading: #253c2d;
+  --site-link: #254e35;
+  --site-visited: #6b3a58;
+  --site-accent: #9e4229;
+  --site-rule: #bd684b;
+  --site-button: #eee7d3;
+  --site-button-edge: #766d58;
+  --site-button-light: #fffdf4;
+  --site-masthead: #304737;
+  --site-masthead-ink: #faf4dc;
+  --site-mono: "Courier New", Courier, monospace;
+  --site-serif: Georgia, "Times New Roman", serif;
+  --site-sans: Verdana, Geneva, sans-serif;
+  --site-selected: #d8e4cc;
+  --site-action: #426345;
+  --site-control-edge: #78836c;
+  --site-focus: #95411c;
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  --site-background: #191f19;
+  --site-dot: #3b4837;
+  --site-paper: #242c23;
+  --site-sidebar: #2c362a;
+  --site-section: #303b2e;
+  --site-border: #637259;
+  --site-ink: #f0ede0;
+  --site-muted: #c0cbb7;
+  --site-heading: #e2ebd5;
+  --site-link: #c7e0a9;
+  --site-visited: #e2b6d3;
+  --site-accent: #ffc29f;
+  --site-rule: #bd684b;
+  --site-button: #423c2d;
+  --site-button-edge: #afa387;
+  --site-button-light: #716655;
+  --site-masthead: #25372b;
+  --site-selected: #3b4b37;
+  --site-action: #b8d39f;
+  --site-control-edge: #88977c;
+  --site-focus: #ffc29f;
+}
+
+/* Mantine menus and drawers can be portaled under body, outside .app-shell. */
+:root[data-mantine-color-scheme] {
+  --mantine-font-family: var(--site-sans);
+  --mantine-font-family-headings: var(--site-serif);
+  --mantine-color-body: var(--site-paper);
+  --mantine-color-text: var(--site-ink);
+  --mantine-color-dimmed: var(--site-muted);
+  --mantine-color-default: var(--site-paper);
+  --mantine-color-default-border: var(--site-control-edge);
+  --mantine-color-default-hover: var(--site-selected);
+  --mantine-color-placeholder: var(--site-muted);
+  --mantine-color-bright: var(--site-heading);
+  --mantine-radius-default: 0;
+  --mantine-primary-color-filled: var(--site-masthead);
+  --mantine-primary-color-light: var(--site-selected);
+  --mantine-primary-color-light-color: var(--site-link);
+}
+
+.listing-page-layout {
+  --bs-body-bg: var(--site-paper);
+  --bs-body-color: var(--site-ink);
+  --bs-secondary-color: var(--site-muted);
+  --bs-border-color: var(--site-border);
+  --bs-tertiary-bg: var(--site-section);
+  --bs-link-color: var(--site-link);
+  --bs-primary: var(--site-action);
+  --bs-border-radius: 0;
+  --bs-border-radius-sm: 0;
+  --Dash-Fill-Interactive-Strong: var(--site-action);
+  --Dash-Fill-Inverse-Strong: var(--site-paper);
+  --Dash-Stroke-Strong: var(--site-control-edge);
+  font-family: var(--site-sans);
+  color: var(--site-ink);
+  background: var(--site-background);
+}
+
+.listing-page-layout .options-accordion {
+  --bs-accordion-bg: var(--site-paper);
+  --bs-accordion-color: var(--site-ink);
+  --bs-accordion-btn-bg: var(--site-section);
+  --bs-accordion-btn-color: var(--site-heading);
+  --bs-accordion-active-bg: var(--site-selected);
+  --bs-accordion-active-color: var(--site-heading);
+  --bs-accordion-border-color: var(--site-border);
+  --bs-accordion-btn-padding-y: 0.6rem;
+  --bs-accordion-btn-padding-x: 0.75rem;
+  --bs-accordion-body-padding-x: 0.75rem;
+  --bs-accordion-body-padding-y: 0.8rem;
+  --Dash-Fill-Interactive-Strong: var(--site-action);
+  --Dash-Stroke-Strong: var(--site-control-edge);
+  --Dash-Fill-Inverse-Strong: var(--site-paper);
+  border-radius: 0;
+}
+
+.listing-page-layout .options-accordion .accordion-button {
+  border-radius: 0;
+  border-block: 1px solid var(--site-border);
+  color: var(--site-heading);
+  font: bold 0.94rem/1.3 var(--site-sans);
+}
+
+.listing-page-layout .options-accordion .accordion-button::after {
+  content: "+" / "";
+  width: 1.1em;
+  height: auto;
+  text-align: center;
+  color: var(--site-link);
+  background: none;
+  transform: none;
+}
+
+.listing-page-layout .options-accordion .accordion-button:not(.collapsed)::after {
+  content: "−" / "";
+}
+
+.listing-page-layout .options-accordion .accordion-body {
+  background: var(--site-paper);
+  color: var(--site-ink);
+}
+
+.listing-page-layout .card {
+  --bs-card-bg: var(--site-paper);
+  --bs-card-color: var(--site-ink);
+  --bs-card-border-radius: 0;
+  --bs-card-border-color: var(--site-border);
+}
+
+.listing-page-layout .title-card > .card-body {
+  padding: 0;
+}
+
+.listing-masthead {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem 0.5rem;
+  border-bottom: 3px double var(--site-rule);
+  background: var(--site-masthead);
+}
+
+.dbc .title-card .listing-masthead .listing-wordmark {
+  margin: 0;
+  font: bold clamp(1rem, 6.6cqi, 1.65rem)/1.2 var(--site-serif);
+  color: var(--site-masthead-ink);
+}
+
+.listing-masthead pre {
+  margin: 0;
+  flex-shrink: 0;
+  color: #d7e2b6;
+  font: min(0.67cqi, 3px)/0.93 var(--site-mono);
+  font-variant-ligatures: none;
+}
+
+.listing-site-nav,
+.listing-page-layout .title-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.85rem;
+  font: bold 0.83rem/1.45 var(--site-sans);
+}
+
+.listing-site-nav {
+  background: var(--site-sidebar);
+  padding: 0.45rem 0.85rem;
+  border-bottom: 1px solid var(--site-border);
+}
+
+.title-card a,
+.leaflet-container .listing-popup__heading a,
+.listing-popup__heading a {
+  color: var(--site-link);
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.listing-site-nav [aria-current="page"] {
+  color: var(--site-accent);
+  text-decoration: none;
+}
+
+.listing-site-nav [aria-current="page"]::before {
+  content: "> " / "";
+}
+
+.title-card a:hover {
+  color: var(--site-accent);
+}
+
+.title-card .listing-intro {
+  margin: 0.7rem 0.85rem 0.35rem;
+  font: 0.87rem/1.45 var(--site-sans);
+}
+
+.title-card .listing-updated,
+.listing-page-layout .title-card-links {
+  margin: 0.35rem 0.85rem;
+  font: 0.78rem/1.4 var(--site-sans);
+}
+
+.title-card .theme-switch-control {
+  margin: 0.55rem 0.85rem 0.7rem;
+}
+
+.listing-page-layout .theme-switch-control .mantine-Switch-label {
+  color: var(--site-ink);
+  font: 0.8rem/1.35 var(--site-sans);
+}
+
+.listing-page-layout .mantine-Switch-track,
+.listing-page-layout .mantine-Switch-thumb {
+  border-radius: 2px;
+}
+
+.listing-filters > .card-body {
+  padding: 0.65rem;
+}
+
+.listing-filters__title {
+  margin: 0 0 0.55rem;
+  color: var(--site-heading);
+  font: bold 1.35rem/1.2 var(--site-serif);
+}
+
+.listing-page-layout :is(.mantine-Input-input, .dash-datepicker-input-wrapper, .dash-dropdown-trigger),
+.mantine-Combobox-dropdown {
+  border-color: var(--site-control-edge);
+  border-radius: 0;
+  background-color: var(--site-paper);
+  color: var(--site-ink);
+}
+
+.listing-page-layout :is(button, a, select, input):focus-visible,
+.listing-page-layout .options-accordion .accordion-button:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: -2px;
+}
+
+/* Preserve map tiles, marker scales and provider attribution. Theme the controls
+ * around the map and the Leaflet panes that display HTML controlled by the app. */
+.listing-page-layout .leaflet-container {
+  font-family: var(--site-sans);
+}
+
+.listing-page-layout .leaflet-control-layers,
+.listing-page-layout .leaflet-bar,
+.listing-page-layout .leaflet-bar a,
+.listing-page-layout .layers-control-disclosure__button,
+.listing-page-layout .map-gesture-panel-toggle,
+.listing-page-layout .map-gesture-panel,
+.listing-page-layout .leaflet-popup-content-wrapper,
+.listing-page-layout .leaflet-popup-tip {
+  background-color: var(--site-paper);
+  color: var(--site-ink);
+  border-radius: 0;
+}
+
+.listing-page-layout .leaflet-bar a:hover,
+.listing-page-layout .layers-control-disclosure__button:hover,
+.listing-page-layout .map-gesture-panel-toggle:hover {
+  background-color: var(--site-selected);
+  color: var(--site-heading);
+}
+
+@media (min-width: 1100px) {
+  /* Leave room for the sidebar toggle above Leaflet's zoom control. */
+  .listing-map-col .leaflet-top.leaflet-left { top: 2.25rem; }
+}
+
+.listing-page-layout .layers-control-disclosure__button,
+.listing-page-layout .map-gesture-panel-toggle {
+  font-family: var(--site-sans);
+}
+
+.listing-page-layout .layers-control-discovery {
+  border-radius: 0;
+  background: var(--site-masthead);
+  color: var(--site-masthead-ink);
+}
+
+.listing-page-layout .layers-control-discovery::before {
+  border-right-color: var(--site-masthead);
+}
+
+.leaflet-popup-content h5,
+.additional-layer-popup__title,
+.lahd-records-title,
+#lahd-records-drawer-title,
+.swal2-popup .swal2-title {
+  color: var(--site-heading);
+  font-family: var(--site-serif);
+  font-weight: bold;
+}
+
+.listing-page-layout .school-layer-map-prompt__card,
+.swal2-container .swal2-popup,
+.lahd-records-drawer .mantine-Drawer-content,
+.lahd-records-drawer .mantine-Drawer-header {
+  border: 1px solid var(--site-border);
+  border-radius: 0;
+  background: var(--site-paper);
+  color: var(--site-ink);
+  font-family: var(--site-sans);
+}
+
+.listing-page-layout .school-layer-map-prompt__title { color: var(--site-heading); }
+.listing-page-layout .school-layer-map-prompt__copy { color: var(--site-muted); }
+
+@media (max-width: 1099.98px) {
+  .listing-masthead, .listing-filters__title { display: none; }
+
+  .listing-page-layout .title-card > .card-body {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.85rem;
+    background: var(--site-sidebar);
+  }
+
+  .listing-site-nav {
+    gap: 0.65rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .title-card .theme-switch-control {
+    margin: 0.25rem 0;
+  }
+}

@@ -1,6 +1,6 @@
 /* Desktop listing results, column toggles, map price pins, and legend.
  * Native Splitter panes own desktop column widths; these rules style their
- * contents and collapse buttons. Dark mode changes the open-row color.
+ * contents and collapse buttons. The shared palette supplies both color schemes.
  */
 
 :root {
@@ -8,16 +8,7 @@
   --results-panel-width: clamp(260px, 20vw, 330px);
   --results-detail-max-height: 480px;
   /* <color>: hover overlay for the open result row. */
-  --results-row-open-hover: rgba(31, 104, 201, 0.26);
-}
-
-:root[data-mantine-color-scheme="dark"] {
-  --results-row-open-hover: rgba(24, 60, 116, 0.72);
-}
-
-:root[data-mantine-color-scheme="dark"] .results-panel__count,
-:root[data-mantine-color-scheme="dark"] .results-row__meta {
-  color: rgba(231, 236, 239, 0.72);
+  --results-row-open-hover: color-mix(in srgb, var(--site-action) 22%, var(--site-selected));
 }
 
 .results-panel {
@@ -57,21 +48,24 @@
   .results-panel__header {
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 8px;
-    padding: 0.9rem 0.9rem 0.6rem;
+    padding: 0.7rem 0.85rem;
+    background: var(--site-masthead);
+    color: var(--site-masthead-ink);
     border-bottom: 1px solid var(--filter-panel-border);
   }
 
   .results-panel__title {
     margin: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font: bold 1.2rem/1.2 var(--site-serif);
   }
 
   .results-panel__count {
-    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.42));
+    color: var(--site-masthead-ink);
     font-size: 0.6875rem;
+    font-family: var(--site-sans);
     font-variant-numeric: tabular-nums;
   }
 
@@ -79,7 +73,7 @@
     position: relative;
     z-index: 1;
     flex: 0 0 auto;
-    border-bottom: 1px solid var(--wttl-border-strong, rgba(30, 36, 62, 0.28));
+    border-bottom: 1px solid var(--site-border);
     background: var(--filter-panel-surface);
     box-shadow: 0 8px 14px -8px rgba(12, 15, 25, 0.45);
   }
@@ -91,13 +85,13 @@
 
   .results-panel__detail:not([hidden]) + .results-panel__header {
     padding-top: 0.7rem;
-    border-top: 18px solid var(--wttl-bg, #f2f3f9);
-    box-shadow: inset 0 1px 0 0 var(--wttl-border-strong, rgba(30, 36, 62, 0.28));
+    border-top: 18px solid var(--site-sidebar);
+    box-shadow: inset 0 1px 0 0 var(--site-border);
   }
 
   .results-panel__detail:not([hidden]) + .results-panel__header .results-panel__title {
-    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.55));
-    font-size: 0.6875rem;
+    color: var(--site-masthead-ink);
+    font-size: 0.85rem;
     font-weight: 650;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -138,6 +132,7 @@
   }
 
   .results-panel__sort-row {
+    background: var(--site-sidebar);
     padding: 0.5rem 0.9rem;
     border-bottom: 1px solid var(--filter-panel-border);
   }
@@ -146,9 +141,9 @@
     width: 100%;
     padding: 0.3rem 0.4rem;
     border: 1px solid var(--filter-panel-border);
-    border-radius: 6px;
-    background: transparent;
-    color: inherit;
+    border-radius: 0;
+    background: var(--site-paper);
+    color: var(--site-ink);
     font: inherit;
     font-size: 0.75rem;
   }
@@ -160,12 +155,18 @@
     overscroll-behavior: contain;
   }
 
+  .results-panel__count:empty { display: none; }
+
   .results-panel__empty {
     margin: 0;
     padding: 1rem 0.9rem;
-    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.5));
+    color: var(--site-muted);
     font-size: 0.75rem;
     line-height: 1.45;
+  }
+
+  .results-row-wrap:nth-child(even) {
+    background: var(--site-section);
   }
 
   .results-row-wrap {
@@ -177,7 +178,7 @@
     width: 100%;
     padding: 0.6rem 0.9rem;
     border: 0;
-    border-bottom: 1px solid var(--filter-panel-border);
+    border-bottom: 1px dotted var(--filter-panel-border);
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -194,9 +195,9 @@
     width: 36px;
     height: 36px;
     place-items: center;
-    border-radius: 8px;
+    border-radius: 0;
     opacity: 0;
-    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.55));
+    color: var(--site-muted);
     font-size: 1.35rem;
     line-height: 1;
     text-decoration: none;
@@ -230,20 +231,20 @@
 
   .results-row__link:hover,
   .results-row__link:focus-visible {
-    background: var(--wttl-accent-soft, rgba(31, 104, 201, 0.14));
-    color: var(--wttl-accent, #1f68c9);
+    background: var(--site-selected);
+    color: var(--site-action);
     opacity: 1;
   }
 
   .results-row:hover,
   .results-row:focus-visible,
   .results-row-wrap:hover .results-row {
-    background: var(--wttl-section, rgba(30, 36, 62, 0.05));
+    background: var(--site-selected);
   }
 
   .results-row.is-open {
-    background: var(--wttl-accent-soft, rgba(90, 162, 245, 0.18));
-    box-shadow: inset 3px 0 0 var(--wttl-accent, #5aa2f5);
+    background: var(--site-selected);
+    box-shadow: inset 3px 0 0 var(--site-action);
   }
 
   .results-row-wrap:hover .results-row.is-open,
@@ -253,8 +254,8 @@
   }
 
   .results-row__price {
-    font-size: 0.875rem;
-    font-weight: 650;
+    font: bold 0.97rem/1.3 var(--site-sans);
+    color: var(--site-heading);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
@@ -267,7 +268,7 @@
   }
 
   .results-row__meta {
-    color: var(--wttl-text-faint, rgba(25, 29, 46, 0.45));
+    color: var(--site-muted);
     font-size: 0.6875rem;
   }
 
@@ -281,7 +282,7 @@
     place-items: center;
     padding: 0;
     border: 1px solid var(--filter-panel-border);
-    border-radius: 7px;
+    border-radius: 0;
     background: var(--filter-panel-surface);
     color: var(--filter-panel-text);
     cursor: pointer;
@@ -301,7 +302,7 @@
     top: 50%;
     padding: 0.2rem 0.45rem;
     border: 1px solid var(--filter-panel-border);
-    border-radius: 6px;
+    border-radius: 0;
     opacity: 0;
     background: var(--filter-panel-surface);
     box-shadow: 0 2px 8px rgba(12, 15, 25, 0.18);
@@ -411,7 +412,6 @@
 .price-legend__swatch {
   height: 8px;
   flex: 1;
-  border-radius: 999px;
 }
 
 .price-legend__swatch--1 { background: #0d0887; }
@@ -422,13 +422,13 @@
 
 .price-legend__labels {
   margin-top: 4px;
-  color: var(--wttl-text-faint, rgba(25, 29, 46, 0.55));
+  color: var(--site-muted);
   font-size: 0.65rem;
 }
 
 .leaflet-marker-icon.is-open.marker-cluster,
 .leaflet-marker-icon.is-open .marker-cluster {
-  outline: 3px solid var(--wttl-accent, #1f68c9);
+  outline: 3px solid var(--site-action);
   outline-offset: 2px;
 }
 

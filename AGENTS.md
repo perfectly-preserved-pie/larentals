@@ -1,3 +1,7 @@
+# Site design
+
+For user-facing changes, read [DESIGN.md](DESIGN.md) and follow the shared visual direction for the maps and MCP guide.
+
 # Documentation for Python and JavaScript changes
 
 When you add or change a function, read its body and callers before writing its

@@ -1,0 +1,31 @@
+# WhereToLive.LA design
+
+WhereToLive.LA should feel like a hand-built Los Angeles housing directory from the early 2010s. Someone should be able to land on a page, recognize the place, and get straight to a listing or a setup instruction. The downtown ASCII illustration on `/mcp` is the visual reference. The maps on `/` and `/buy` apply the same choices to a denser working interface.
+
+## Color and type
+
+Use the semantic properties in [site-theme.css](assets/css/site-theme.css). Change a shared color there so the maps, setup guide, and menus rendered outside the page tree can follow it in both themes.
+
+| Role | Application |
+| --- | --- |
+| Masthead | Forest green with cream lettering and a thin rust-colored rule. Use it for identity and major panel headings. |
+| Paper and ink | Warm cream reading surfaces, tinted sidebars, dark green-black text, and olive borders. Dark mode uses deep olive paper and warm light text. |
+| Links and actions | Underline text links. Use rust for the current navigation item and a visible current-page marker. Pair selection color with a check, marker, border, or text change. |
+| Type | Georgia for the wordmark and reading headings, Verdana for navigation, instructions, controls, prices, and listing details. Reserve Courier for code and ASCII art. Use the shared system font stacks. |
+
+## Page composition
+
+- On reading pages, use a bounded paper column, a compact masthead, a contents list, and sections separated by rules. A subtle repeating dot pattern belongs in the margins.
+- On maps, give the viewport to the map. Put identity and navigation in the desktop filter sidebar. Use the results column like a directory, with aligned prices, fine rules, and a clear selected row. On phones, keep the small map toolbar and move detailed controls into the drawer.
+- Use rectangular buttons, thin edges, compact spacing, and a modest bevel where it suggests a pressable control. Reserve rounded shapes for controls or symbols whose shape carries meaning, such as radio buttons and clustered pins.
+- Favor a useful link, table, or list over a row of promotional cards. Give each heading, badge, and caption a job. Keep the basemap legible and preserve the relationship between data colors and their legends.
+
+Keep the existing Font Awesome icons alongside navigation and action labels. Hide decorative icons from screen readers so each label is announced once.
+
+## ASCII and accessibility
+
+Use ASCII as a local signature. The original downtown skyline and San Gabriel ridgeline live in [site_identity.py](functions/site_identity.py). Render them as preformatted monospace text with ligatures disabled. Keep the drawing intact across viewport sizes. The large illustration has a single accessible description, while its small decorative repeat beside the wordmark is hidden from assistive technology.
+
+Check a changed screen in light and dark mode, at a phone width and a desktop width. Try the actual interaction, including keyboard focus and selected states. On the maps, pay attention to the filter drawer, controls above the tiles, and listing details. Keep touch targets usable even where the visual treatment is compact.
+
+See [CSS conventions](docs/CSS.md) for stylesheet ownership and framework variables.

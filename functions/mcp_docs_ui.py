@@ -2,92 +2,65 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from dash import dcc, html
-from dash.development.base_component import Component
-from dash_iconify import DashIconify
 import dash_mantine_components as dmc
+
+from functions.site_identity import DTLA_RIDGELINE, DTLA_SKYLINE
 
 
 MCP_ENDPOINT = "https://wheretolive.la/_mcp"
 
+def _copyable_snippet(name: str, text: str, copy_label: str) -> html.Div:
+    """Show a URL or configuration alongside its copy control.
 
-def _setup_card(
-    *,
-    icon: str,
-    label: str,
-    title: str,
-    children: Sequence[Component | str],
-) -> html.Article:
-    """Build one client-specific setup card.
-
-    The shared structure keeps Claude, Hermes, and generic instructions aligned.
+    The clipboard script reads the code's text directly, preserving commands
+    and YAML indentation when lines wrap. Keep feedback separate from the
+    accessible button name so it can be announced without disrupting focus.
 
     Args:
-        icon: Iconify icon identifier displayed in the card heading.
-        label: User-facing label displayed for the component.
-        title: Heading displayed at the top of the card.
-        children: Dash child components rendered inside the card.
+        name: Unique snippet name used in the code and clipboard IDs.
+        text: The exact URL, command, or configuration to show and copy.
+        copy_label: Visible instruction on the copy button.
 
     Returns:
-        A Dash article containing one setup option.
+        A selectable snippet with a native copy button and status region.
     """
-    return html.Article(
+    code_id = f"mcp-{name}-value"
+    return html.Div(
         [
+            html.Pre(html.Code(text, id=code_id)),
             html.Div(
-                DashIconify(icon=icon, width=22),
-                className="mcp-docs__card-icon",
+                [
+                    html.Button(
+                        html.Span(copy_label, **{"aria-hidden": "true"}),
+                        id=f"mcp-{name}-copy",
+                        type="button",
+                        **{"aria-label": copy_label, "data-mcp-copy": code_id},
+                    ),
+                    html.Span(
+                        className="mcp-docs__copy-status",
+                        role="status",
+                    ),
+                ],
+                className="mcp-docs__copy",
             ),
-            html.Div(label, className="mcp-docs__card-label"),
-            html.H3(title),
-            *children,
         ],
-        className="mcp-docs__setup-card",
-    )
-
-
-def _feature_card(*, icon: str, title: str, copy: str) -> html.Article:
-    """Build a compact capability card for the page overview.
-
-    Each card pairs one MCP capability with a short plain-language explanation.
-
-    Args:
-        icon: Iconify icon identifier displayed in the card heading.
-        title: Heading displayed at the top of the card.
-        copy: Explanatory copy displayed in the feature card.
-
-    Returns:
-        A Dash article describing one MCP feature.
-    """
-    return html.Article(
-        [
-            DashIconify(icon=icon, width=20),
-            html.Div([html.H3(title), html.P(copy)]),
-        ],
-        className="mcp-docs__feature-card",
+        className="mcp-docs__snippet",
     )
 
 
 def build_mcp_docs_layout() -> html.Main:
-    """Build the responsive documentation page for the public MCP server.
+    """Build the setup guide for the public listing search server.
 
-    The page includes endpoint copying, client setup, capabilities, and prompts.
-    The skip link targets the hero heading so keyboard users can bypass the
-    navigation and theme switch without adding the heading to the tab order.
+    The contents menu jumps to the endpoint, setup instructions, and tool
+    reference. Keep the skip link pointed at the page heading so keyboard
+    users can bypass the shared site navigation and theme control.
 
     Returns:
         The complete Dash layout for the MCP documentation page.
     """
-    claude_command = (
-        "claude mcp add --transport http wheretolive "
-        "https://wheretolive.la/_mcp"
-    )
-    hermes_config = (
-        "mcp_servers:\n"
-        "  wheretolive:\n"
-        '    url: "https://wheretolive.la/_mcp"'
-    )
+    claude_command = f"claude mcp add --transport http wheretolive {MCP_ENDPOINT}"
+    hermes_config = f'mcp_servers:\n  wheretolive:\n    url: "{MCP_ENDPOINT}"'
 
     return html.Main(
         [
@@ -96,349 +69,254 @@ def build_mcp_docs_layout() -> html.Main:
                 href="#mcp-page-title",
                 className="skip-link",
             ),
-            html.Nav(
+            html.Div(
                 [
-                    dcc.Link(
+                    html.Header(
                         [
-                            html.Span("W", className="mcp-docs__brand-mark"),
-                            html.Span("WhereToLive.LA"),
-                        ],
-                        href="/",
-                        className="mcp-docs__brand",
-                        title="Return to the WhereToLive.LA rental map",
-                    ),
-                    html.Div(
-                        [
+                            dcc.Link(
+                                "WhereToLive.LA",
+                                href="/",
+                                className="mcp-docs__brand",
+                            ),
+                            html.Nav(
+                                [
+                                    dcc.Link("Rentals", href="/"),
+                                    dcc.Link("For sale", href="/buy"),
+                                    html.Span("MCP setup", **{"aria-current": "page"}),
+                                ],
+                                className="mcp-docs__site-links",
+                                **{"aria-label": "Site navigation"},
+                            ),
                             dmc.Switch(
                                 id="color-scheme-switch",
-                                offLabel=DashIconify(
-                                    icon="radix-icons:sun",
-                                    width=14,
-                                ),
-                                onLabel=DashIconify(
-                                    icon="radix-icons:moon",
-                                    width=14,
-                                ),
+                                label="Dark mode",
                                 className="mcp-docs__theme-switch",
-                                color="gray",
                                 persisted_props=["checked"],
                                 persistence=True,
                                 persistence_type="local",
-                                size="md",
-                                **{"aria-label": "Toggle light/dark mode"},
+                                size="xs",
                             ),
                         ],
-                        className="mcp-docs__nav-actions",
+                        className="mcp-docs__masthead",
                     ),
-                ],
-                className="mcp-docs__nav",
-                **{"aria-label": "MCP documentation navigation"},
-            ),
-            html.Section(
-                [
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    DashIconify(icon="lucide:bot", width=17),
-                                    "Model Context Protocol",
+                                    html.P(
+                                        "Model Context Protocol",
+                                        className="mcp-docs__protocol",
+                                    ),
+                                    html.H1(
+                                        "Search LA housing from your AI assistant.",
+                                        id="mcp-page-title",
+                                        tabIndex=-1,
+                                    ),
+                                    html.P(
+                                        "Connect Claude, Hermes, or another MCP client "
+                                        "to search current rentals and homes for sale "
+                                        "in Los Angeles County.",
+                                        className="mcp-docs__intro",
+                                    ),
                                 ],
-                                className="mcp-docs__eyebrow",
-                            ),
-                            html.H1(
-                                [
-                                    "Search LA housing from ",
-                                    html.Span("your AI assistant."),
-                                ],
-                                id="mcp-page-title",
-                                tabIndex=-1,
-                            ),
-                            html.P(
-                                "Connect Claude, Hermes, or any Streamable HTTP "
-                                "client to current lease and for-sale listings.",
-                                className="mcp-docs__lede",
+                                className="mcp-docs__headline",
                             ),
                             html.Div(
                                 [
-                                    html.Span(
-                                        [
-                                            DashIconify(
-                                                icon="lucide:eye",
-                                                width=15,
-                                            ),
-                                            "Read-only",
-                                        ]
+                                    html.Div(
+                                        "DOWNTOWN LOS ANGELES",
+                                        className="mcp-docs__skyline-caption",
                                     ),
-                                    html.Span(
+                                    html.Pre(
                                         [
-                                            DashIconify(
-                                                icon="lucide:shield-check",
-                                                width=15,
+                                            html.Span(
+                                                DTLA_RIDGELINE,
+                                                className="mcp-docs__ridgeline",
                                             ),
-                                            "No authentication",
-                                        ]
-                                    ),
-                                    html.Span(
-                                        [
-                                            DashIconify(
-                                                icon="lucide:search",
-                                                width=15,
+                                            html.Span(
+                                                DTLA_SKYLINE,
+                                                className="mcp-docs__buildings",
                                             ),
-                                            "Live listing search",
                                         ]
                                     ),
                                 ],
-                                className="mcp-docs__trust-row",
+                                className="mcp-docs__skyline",
+                                role="img",
+                                **{
+                                    "aria-label": (
+                                        "Downtown Los Angeles in ASCII, looking toward the San "
+                                        "Gabriel Mountains. Wilshire Grand and U.S. Bank Tower "
+                                        "rise above the surrounding blocks, with City Hall at right."
+                                    )
+                                },
                             ),
                         ],
-                        className="mcp-docs__hero-copy",
+                        className="mcp-docs__opening",
                     ),
                     html.Div(
                         [
-                            html.Div(
+                            html.Nav(
                                 [
-                                    html.Span("Streamable HTTP endpoint"),
-                                    html.Span("Ready", className="mcp-docs__ready"),
-                                ],
-                                className="mcp-docs__endpoint-header",
-                            ),
-                            html.Div(
-                                [
-                                    html.Code(
-                                        MCP_ENDPOINT,
-                                        id="mcp-endpoint-value",
-                                    ),
-                                    dcc.Clipboard(
-                                        id="mcp-endpoint-copy",
-                                        content=MCP_ENDPOINT,
-                                        children=[
-                                            DashIconify(
-                                                icon="lucide:copy",
-                                                width=16,
-                                            ),
-                                            html.Span("Copy endpoint"),
-                                        ],
-                                        copied_children=[
-                                            DashIconify(
-                                                icon="lucide:check",
-                                                width=16,
-                                            ),
-                                            html.Span("Copied"),
-                                        ],
-                                        title="Copy MCP endpoint",
-                                        className="mcp-docs__copy-button",
-                                    ),
-                                ],
-                                className="mcp-docs__endpoint-value",
-                            ),
-                            html.P(
-                                "Clients discover one bounded, read-only tool: "
-                                "search_listings.",
-                            ),
-                        ],
-                        className="mcp-docs__endpoint-card",
-                    ),
-                ],
-                className="mcp-docs__hero",
-            ),
-            html.Section(
-                [
-                    html.Div(
-                        [
-                            html.Div("Connect", className="mcp-docs__section-label"),
-                            html.H2("Choose your client"),
-                            html.P(
-                                "Setup takes less than a minute. No API key is required."
-                            ),
-                        ],
-                        className="mcp-docs__section-heading",
-                    ),
-                    html.Div(
-                        [
-                            _setup_card(
-                                icon="simple-icons:anthropic",
-                                label="Claude",
-                                title="Claude app or Claude Code",
-                                children=[
-                                    html.P(
-                                        "In Claude, open Customize → Connectors, "
-                                        "choose Add custom connector, and paste the endpoint."
-                                    ),
-                                    html.Div(
+                                    html.H2("On this page"),
+                                    html.Ul(
                                         [
-                                            html.Code(claude_command),
-                                            dcc.Clipboard(
-                                                content=claude_command,
-                                                title="Copy Claude Code command",
-                                                className="mcp-docs__inline-copy",
-                                            ),
-                                        ],
-                                        className="mcp-docs__code-block",
+                                            html.Li(html.A("Server address", href="#endpoint")),
+                                            html.Li(html.A("Client setup", href="#setup")),
+                                            html.Li(html.A("Listing search", href="#search")),
+                                            html.Li(html.A("Examples", href="#examples")),
+                                        ]
                                     ),
                                 ],
-                            ),
-                            _setup_card(
-                                icon="lucide:terminal-square",
-                                label="Hermes",
-                                title="Add a remote server",
-                                children=[
-                                    html.P(
-                                        "Add the server to ~/.hermes/config.yaml, "
-                                        "then restart Hermes to discover its tools."
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Pre(html.Code(hermes_config)),
-                                            dcc.Clipboard(
-                                                content=hermes_config,
-                                                title="Copy Hermes configuration",
-                                                className="mcp-docs__inline-copy",
-                                            ),
-                                        ],
-                                        className="mcp-docs__code-block",
-                                    ),
-                                ],
-                            ),
-                            _setup_card(
-                                icon="lucide:plug-zap",
-                                label="Other clients",
-                                title="Use standard HTTP",
-                                children=[
-                                    html.P(
-                                        "Create a remote MCP connection, select "
-                                        "Streamable HTTP (sometimes labeled HTTP), "
-                                        "and use the endpoint above."
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Span("Transport"),
-                                            html.Strong("Streamable HTTP"),
-                                        ],
-                                        className="mcp-docs__config-row",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Span("Authentication"),
-                                            html.Strong("None"),
-                                        ],
-                                        className="mcp-docs__config-row",
-                                    ),
-                                ],
-                            ),
-                        ],
-                        className="mcp-docs__setup-grid",
-                    ),
-                ],
-                className="mcp-docs__section",
-            ),
-            html.Section(
-                [
-                    html.Div(
-                        [
-                            html.Div("Capabilities", className="mcp-docs__section-label"),
-                            html.H2("One focused tool, useful answers"),
-                        ],
-                        className="mcp-docs__section-heading",
-                    ),
-                    html.Div(
-                        [
-                            _feature_card(
-                                icon="lucide:building-2",
-                                title="Lease listings",
-                                copy=(
-                                    "Filter by rent, location, bedrooms, pets, "
-                                    "furnishing, size, and listing date."
-                                ),
-                            ),
-                            _feature_card(
-                                icon="lucide:home",
-                                title="Homes for sale",
-                                copy=(
-                                    "Search by price, location, bedrooms, HOA, "
-                                    "lot size, senior community, and more."
-                                ),
-                            ),
-                            _feature_card(
-                                icon="lucide:gauge",
-                                title="Bounded responses",
-                                copy=(
-                                    "Results default to 10 listings per call. "
-                                    "Request up to 100 per page for broader searches."
-                                ),
-                            ),
-                        ],
-                        className="mcp-docs__feature-grid",
-                    ),
-                ],
-                className="mcp-docs__section mcp-docs__section--compact",
-            ),
-            html.Section(
-                [
-                    html.Div(
-                        [
-                            html.Div("Try it", className="mcp-docs__section-label"),
-                            html.H2("Ask naturally"),
-                            html.P(
-                                "Just describe the home you’re looking for—your "
-                                "assistant handles the search."
-                            ),
-                        ],
-                        className="mcp-docs__section-heading",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    DashIconify(icon="lucide:message-circle", width=18),
-                                    html.Span(
-                                        "Find pet-friendly lease listings in Pasadena "
-                                        "under $2,500 with at least two bedrooms."
-                                    ),
-                                ],
-                                className="mcp-docs__prompt",
+                                className="mcp-docs__contents",
+                                **{"aria-label": "On this page"},
                             ),
                             html.Div(
                                 [
-                                    DashIconify(icon="lucide:message-circle", width=18),
-                                    html.Span(
-                                        "Show me homes to buy in Long Beach under "
-                                        "$800,000, sorted by largest first."
+                                    html.Section(
+                                        [
+                                            html.H2("Server address", id="endpoint", tabIndex=-1),
+                                            _copyable_snippet(
+                                                "endpoint",
+                                                MCP_ENDPOINT,
+                                                "Copy URL",
+                                            ),
+                                            html.Dl(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.Dt("Transport"),
+                                                            html.Dd("Streamable HTTP"),
+                                                        ]
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Dt("Authentication"),
+                                                            html.Dd("None"),
+                                                        ]
+                                                    ),
+                                                ],
+                                                className="mcp-docs__connection",
+                                            ),
+                                        ]
+                                    ),
+                                    html.Section(
+                                        [
+                                            html.H2("Client setup", id="setup", tabIndex=-1),
+                                            html.H3("Claude"),
+                                            html.P(
+                                                [
+                                                    "In the Claude app, open ",
+                                                    html.Strong("Customize → Connectors"),
+                                                    ", choose ",
+                                                    html.Strong("Add custom connector"),
+                                                    ", and paste the server address.",
+                                                ]
+                                            ),
+                                            html.P("For Claude Code, run this in your terminal."),
+                                            _copyable_snippet(
+                                                "claude-command", claude_command, "Copy command"
+                                            ),
+                                            html.H3("Hermes"),
+                                            html.P(
+                                                [
+                                                    "Add this to ",
+                                                    html.Code("~/.hermes/config.yaml"),
+                                                    " and restart Hermes. If you already have "
+                                                    "an ",
+                                                    html.Code("mcp_servers"),
+                                                    " section, add ",
+                                                    html.Code("wheretolive"),
+                                                    " under it.",
+                                                ]
+                                            ),
+                                            _copyable_snippet(
+                                                "hermes-yaml", hermes_config, "Copy YAML"
+                                            ),
+                                            html.H3("Other clients"),
+                                            html.P(
+                                                "Add a remote MCP server, choose Streamable "
+                                                "HTTP (sometimes labeled HTTP), and paste "
+                                                "the server address."
+                                            ),
+                                        ]
+                                    ),
+                                    html.Section(
+                                        [
+                                            html.H2("Listing search", id="search", tabIndex=-1),
+                                            html.P(
+                                                [
+                                                    html.Code("search_listings"),
+                                                    " is a read-only tool that returns 10 "
+                                                    "listings by default and supports up to "
+                                                    "100 per page.",
+                                                ]
+                                            ),
+                                            html.Ul(
+                                                [
+                                                    html.Li(
+                                                        [
+                                                            html.Strong("Rentals"),
+                                                            " — filter by rent, location, bedrooms, "
+                                                            "pets, furnishing, size, or listing date.",
+                                                        ]
+                                                    ),
+                                                    html.Li(
+                                                        [
+                                                            html.Strong("Homes for sale"),
+                                                            " — filter by price, location, bedrooms, "
+                                                            "HOA fees, lot size, or senior community.",
+                                                        ]
+                                                    ),
+                                                ]
+                                            ),
+                                        ]
+                                    ),
+                                    html.Section(
+                                        [
+                                            html.H2(
+                                                "Example searches",
+                                                id="examples",
+                                                tabIndex=-1,
+                                            ),
+                                            html.Ul(
+                                                [
+                                                    html.Li(
+                                                        html.Q(
+                                                            "Find pet-friendly lease listings in Pasadena "
+                                                            "under $2,500 with at least two bedrooms."
+                                                        )
+                                                    ),
+                                                    html.Li(
+                                                        html.Q(
+                                                            "Show me homes to buy in Long Beach under "
+                                                            "$800,000, sorted by largest first."
+                                                        )
+                                                    ),
+                                                ]
+                                            ),
+                                        ]
                                     ),
                                 ],
-                                className="mcp-docs__prompt",
+                                className="mcp-docs__article",
                             ),
                         ],
-                        className="mcp-docs__prompt-grid",
+                        className="mcp-docs__body",
                     ),
-                ],
-                className="mcp-docs__section mcp-docs__section--prompts",
-            ),
-            html.Footer(
-                [
-                    html.Div(
+                    html.Footer(
                         [
-                            html.Strong("WhereToLive.LA"),
-                            html.Span("Open housing search for Los Angeles County."),
-                        ]
-                    ),
-                    html.Div(
-                        [
-                            dcc.Link("Rentals", href="/"),
-                            dcc.Link("For sale", href="/buy"),
+                            html.A("Back to top", href="#mcp-page-title"),
                             html.A(
-                                "GitHub",
-                                href=(
-                                    "https://github.com/"
-                                    "perfectly-preserved-pie/larentals"
-                                ),
+                                "Project on GitHub",
+                                href="https://github.com/perfectly-preserved-pie/larentals",
                                 target="_blank",
                                 rel="noopener",
                             ),
-                        ]
+                        ],
+                        className="mcp-docs__footer",
                     ),
                 ],
-                className="mcp-docs__footer",
+                className="mcp-docs__frame",
             ),
         ],
-        className="mcp-docs dbc dmc",
+        className="mcp-docs",
     )

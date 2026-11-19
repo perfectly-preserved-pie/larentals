@@ -169,7 +169,7 @@ test("mobile map shows the price legend clear of controls and the school prompt"
     await expect(legend).toHaveAttribute("aria-label", /lower to higher/);
     await page.evaluate(() => document.documentElement.setAttribute("data-mantine-color-scheme", "dark"));
     const darkLabelColor = await legend.locator(".price-legend__labels").evaluate((element) => getComputedStyle(element).color);
-    expect(darkLabelColor).toBe("rgba(231, 236, 239, 0.82)");
+    expect(darkLabelColor).toBe("rgb(192, 203, 183)");
     await page.evaluate(() => document.documentElement.removeAttribute("data-mantine-color-scheme"));
 
     const geometry = await page.evaluate((key) => {

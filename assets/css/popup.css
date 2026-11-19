@@ -919,8 +919,8 @@
    directly from the document color-scheme attribute. */
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper,
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-tip {
-  background: #202427;
-  color: #e7ecef;
+  background: var(--site-paper);
+  color: var(--site-ink);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content-wrapper {
@@ -928,7 +928,7 @@
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content {
-  color: #e7ecef;
+  color: var(--site-ink);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content h1,
@@ -937,7 +937,7 @@
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content h4,
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content h5,
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content h6 {
-  color: #f2f5f6;
+  color: var(--site-heading);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .property-row {
@@ -948,12 +948,12 @@
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__metric-label,
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__empty,
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .listing-popup__source-label {
-  color: rgba(231, 236, 239, 0.68);
+  color: var(--site-muted);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__metric-value,
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__status--unknown {
-  color: #e7ecef;
+  color: var(--site-ink);
 }
 
 :root[data-mantine-color-scheme="dark"] .leaflet-popup-content .additional-layer-popup__metric-item {
