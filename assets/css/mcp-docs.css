@@ -83,13 +83,15 @@
 }
 
 .mcp-docs__theme-switch .mantine-Switch-track {
-  border-color: var(--site-art-muted);
-  background: var(--site-masthead);
+  /* Mantine 9 leaves the track borderless. The off track needs an edge
+     against the matching masthead background. */
+  --switch-bg: var(--site-masthead);
+  border: 1px solid var(--site-art-muted);
 }
 
 .mcp-docs__theme-switch input:checked + .mantine-Switch-track {
+  --switch-bg: var(--site-action);
   border-color: var(--site-masthead-accent);
-  background: var(--site-action);
 }
 
 .mcp-docs__theme-switch input:focus-visible + .mantine-Switch-track {
