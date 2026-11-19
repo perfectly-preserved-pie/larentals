@@ -37,7 +37,7 @@
 .mcp-docs__masthead {
   --site-link: var(--site-masthead-ink);
   --site-visited: var(--site-masthead-ink);
-  --site-accent: #ffca9b;
+  --site-accent: var(--site-masthead-accent);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -64,11 +64,11 @@
 .mcp-docs__site-links > * + * {
   margin-inline-start: 0.7rem;
   padding-inline-start: 0.7rem;
-  border-inline-start: 1px solid #83947c;
+  border-inline-start: 1px solid var(--site-art-muted);
 }
 
 .mcp-docs__site-links [aria-current] {
-  color: #ffc89e;
+  color: var(--site-masthead-accent);
 }
 
 .mcp-docs__theme-switch .mantine-Switch-label {
@@ -83,13 +83,13 @@
 }
 
 .mcp-docs__theme-switch .mantine-Switch-track {
-  border-color: #9daa92;
-  background: #1e2c22;
+  border-color: var(--site-art-muted);
+  background: var(--site-masthead);
 }
 
 .mcp-docs__theme-switch input:checked + .mantine-Switch-track {
-  border-color: #e2bb91;
-  background: #725235;
+  border-color: var(--site-masthead-accent);
+  background: var(--site-action);
 }
 
 .mcp-docs__theme-switch input:focus-visible + .mantine-Switch-track {
@@ -130,16 +130,16 @@
   container-type: inline-size;
   min-width: 0;
   padding: 0.7rem 0.8rem 0.8rem;
-  border: 3px double #9da78c;
-  background: #24382c;
-  color: #d7e2b6;
+  border: 3px double var(--site-art-muted);
+  background: var(--site-masthead);
+  color: var(--site-art-ink);
   font-family: var(--site-sans);
 }
 
 .mcp-docs__skyline-caption {
   padding-bottom: 0.35rem;
-  border-bottom: 1px dashed #859572;
-  color: #f5bc8b;
+  border-bottom: 1px dashed var(--site-art-muted);
+  color: var(--site-masthead-accent);
   font-size: 0.72rem;
   font-weight: bold;
   letter-spacing: 0.09em;
@@ -161,7 +161,7 @@
 }
 
 .mcp-docs__ridgeline {
-  color: #94a391;
+  color: var(--site-art-muted);
 }
 
 .mcp-docs__buildings {

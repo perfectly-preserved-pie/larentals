@@ -19,6 +19,9 @@
   --site-button-light: #ffffff;
   --site-masthead: #24434c;
   --site-masthead-ink: #f5f9fa;
+  --site-masthead-accent: #ffc3b3;
+  --site-art-ink: #c5e4ea;
+  --site-art-muted: #9cb5bd;
   --site-mono: "Courier New", Courier, monospace;
   --site-serif: Georgia, "Times New Roman", serif;
   --site-sans: Verdana, Geneva, sans-serif;
@@ -163,7 +166,7 @@
 .listing-masthead pre {
   margin: 0;
   flex-shrink: 0;
-  color: #d7e2b6;
+  color: var(--site-art-ink);
   font: min(0.67cqi, 3px)/0.93 var(--site-mono);
   font-variant-ligatures: none;
 }
