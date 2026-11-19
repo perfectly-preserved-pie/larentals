@@ -1,6 +1,6 @@
 [project]
 name        = "WhereToLive.LA"
-version     = "2.1.0"
+version     = "1.6.0"
 description = "An interactive map of available rentals and for-sale properties in Los Angeles County. Updated weekly."             
 readme      = "README.md"
 license     = { text = "All rights reserved" }

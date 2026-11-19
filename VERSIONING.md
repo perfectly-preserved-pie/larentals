@@ -27,15 +27,15 @@ effect. Dependency version numbers do not determine the project version.
 
 ## Examples
 
-Each row assumes the previous release was `2.1.0`.
+These examples start from the `1.6.0` baseline.
 
 | Change | Next version |
 | --- | --- |
-| Make an optional MCP tool argument required. Existing clients can fail on previously valid requests. | `3.0.0` |
-| Add a map filter or an MCP tool while preserving existing behavior. | `2.2.0` |
-| Fix cluster clicks that open the wrong listing popup, as in commit `2a73cc4`. | `2.1.1` |
-| Refresh the weekly listing spreadsheets, as in commit `06b3200`. | Keep `2.1.0` |
-| Release a new filter and the popup fix together. The filter sets the bump level. | `2.2.0` |
+| Make an optional MCP tool argument required. Existing clients can fail on previously valid requests. | `2.0.0` |
+| Add a map filter or an MCP tool while preserving existing behavior. | `1.7.0` |
+| Fix cluster clicks that open the wrong listing popup, as in commit `2a73cc4`. | `1.6.1` |
+| Refresh the weekly listing spreadsheets, as in commit `06b3200`. | Keep `1.6.0` |
+| Release a new filter and the popup fix together. The filter sets the bump level. | `1.7.0` |
 
 ## How to bump
 
