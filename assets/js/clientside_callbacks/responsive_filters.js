@@ -643,13 +643,21 @@
 
     const panelCount = document.getElementById(`${page}-filter-panel-count`);
     if (panelCount && Number.isFinite(previewCount)) {
-      panelCount.textContent = `${formatNumber(previewCount)} matching ${noun}`;
+      panelCount.textContent = previewCount === 0
+        ? `No ${noun} match. Try widening your filters or choose Clear all.`
+        : `${formatNumber(previewCount)} matching ${noun}`;
     }
 
     const applyButton = document.getElementById(`${page}-filter-apply-button`);
     if (applyButton && Number.isFinite(previewCount)) {
-      applyButton.textContent = `Show ${formatNumber(previewCount)} ${noun}`;
-      applyButton.setAttribute("aria-label", `Apply filters and show ${formatNumber(previewCount)} matching ${noun}`);
+      // Keep the draft open when applying it would leave the visitor on an empty map.
+      applyButton.disabled = previewCount === 0;
+      applyButton.textContent = previewCount === 0
+        ? "No matches"
+        : `Show ${formatNumber(previewCount)} ${noun}`;
+      applyButton.setAttribute("aria-label", previewCount === 0
+        ? `No matching ${noun}`
+        : `Apply filters and show ${formatNumber(previewCount)} matching ${noun}`);
     }
   }
 

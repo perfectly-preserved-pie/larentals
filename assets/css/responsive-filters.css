@@ -432,7 +432,12 @@
     color: var(--site-paper);
   }
 
-  .responsive-filter-panel__apply:hover,
+  .responsive-filter-panel__apply:disabled {
+    background: var(--site-section);
+    color: var(--site-muted);
+  }
+
+  .responsive-filter-panel__apply:enabled:hover,
   .responsive-filter-panel__apply:focus-visible {
     border-color: var(--filter-panel-accent-hover);
     background: var(--filter-panel-accent-hover);

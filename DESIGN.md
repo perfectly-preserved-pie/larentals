@@ -2,6 +2,15 @@
 
 WhereToLive.LA should feel like a hand-built Los Angeles housing directory from the early 2010s. Someone should be able to land on a page, recognize the place, and get straight to a listing or a setup instruction. The downtown ASCII illustration on `/mcp` is the visual reference. The maps on `/` and `/buy` apply the same choices to a denser working interface.
 
+## Design decisions
+
+- Start with what the visitor came to do. A renter on a phone should be able to see the map, narrow the search, and open a listing. Someone setting up MCP should be able to find their client and copy the right command. Let that sequence determine what gets space and emphasis.
+- Reuse complete flows as well as colors and components. For a new map filter, follow how the existing filters open, preview, apply, and clear on mobile. Keep shared choices in shared styles and components so future changes carry across both maps.
+- Look to local references for character. Use actual LA landmarks, street maps, or neighborhood guides when exploring illustrations and layouts. The ASCII skyline earns its place because it depicts downtown LA. Give other flourishes a similarly specific reason to be there.
+- Treat the first working version as a draft. Try the task from start to finish with realistic data. For a filter change, try zero results and check how the visitor recovers. For a setup change, use the copy control and check what lands on the clipboard. Tighten awkward transitions and remove elements that add a step or repeat information.
+
+These principles draw on Katie Dill’s Stripe talk *Raise the Ceiling*, especially the sections on point of view (05:45), encoding standards (09:00), reviewing the full experience (12:26), and creative exploration (16:33).
+
 ## Color and type
 
 Use the semantic properties in [site-theme.css](assets/css/site-theme.css). Change a shared color there so the maps, setup guide, and menus rendered outside the page tree can follow it in both themes.
