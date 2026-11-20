@@ -13,6 +13,25 @@
   z-index: 1200 !important;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .listing-popup-from-results .leaflet-popup-content-wrapper {
+    /* Keep Leaflet's positioning and the pointer at the listing location. */
+    transform-origin: center bottom;
+    animation: listing-detail-open 200ms ease-out;
+  }
+
+  @keyframes listing-detail-open {
+    from { transform: scale(0.96); }
+    to { transform: scale(1); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-fade-anim .leaflet-popup.listing-popup-from-results {
+    transition: none;
+  }
+}
+
 .listing-popup__housing {
   padding: 8px;
   border-bottom: 1px solid #ddd;

@@ -563,7 +563,8 @@
     /**
      * Open a result while preserving the area the user chose to compare.
      * Cluster rows may refer to a point just outside the viewport; pan to those
-     * points only when needed, without changing the map zoom.
+     * points only when needed, without changing the map zoom. Honor reduced
+     * motion when panning and identify this open as coming from the results list.
      *
      * @param {object} entry Row descriptor from `collectVisible`.
      * @returns {void}
@@ -592,7 +593,7 @@
             if (api.popups && typeof api.popups.openAt === "function") {
                 openMls = summary.mls_number ? String(summary.mls_number) : null;
                 markOpenRow({ scroll: false });
-                api.popups.openAt(entry.latlng, summary);
+                api.popups.openAt(entry.latlng, summary, { fromResults: true });
                 markOpenRow({ scroll: false });
                 return;
             }
@@ -610,7 +611,10 @@
 
         if (typeof map.once === "function") map.once("moveend", openPopup);
         if (typeof map.panTo === "function") {
-            map.panTo(entry.latlng, { animate: true, duration: 0.35 });
+            map.panTo(entry.latlng, {
+                animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+                duration: 0.2,
+            });
         } else {
             openPopup();
             return;

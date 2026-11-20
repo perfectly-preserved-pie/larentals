@@ -963,12 +963,18 @@
 
     const larentals = window.larentals = window.larentals || {};
     larentals.popups = Object.assign({}, larentals.popups, {
+        /**
+         * Open a listing popup with its summary while full details load.
+         * Mark results-panel opens for the entrance animation before Leaflet
+         * mounts the popup, so fetching details never restarts the animation.
+         */
         openAt: function (latlng, summaryData, options) {
             const map = larentals.map;
             if (!map || !latlng) return null;
             const data = summaryData || {};
-            const popup = L.popup(buildPopupOptions({ _map: map }))
-                .setLatLng(latlng);
+            const popupOptions = buildPopupOptions({ _map: map });
+            if (options?.fromResults) popupOptions.className += " listing-popup-from-results";
+            const popup = L.popup(popupOptions).setLatLng(latlng);
             popup.larentalsMls = data.mls_number;
             popup.larentalsCenterInMap = options?.centerInMap === true;
             popup.setContent(renderPopupLoadingContent(data)).openOn(map);

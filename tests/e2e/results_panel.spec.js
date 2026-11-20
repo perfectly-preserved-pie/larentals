@@ -5,6 +5,19 @@ const pages = [
   { name: "buy", path: "/buy", key: "buy" },
 ];
 
+test("a result opens without popup motion when reduced motion is enabled", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const row = page.locator(".results-row").first();
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  await row.click();
+  const popup = page.locator(".listing-popup-from-results");
+  await expect(popup).toBeVisible();
+  await expect(popup).toHaveCSS("transition-duration", "0s");
+  await expect(popup.locator(".leaflet-popup-content-wrapper")).toHaveCSS("animation-name", "none");
+});
+
 for (const destination of pages) {
   test(`${destination.name} price scale refreshes after navigation and combined filters`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -68,6 +81,8 @@ for (const listingPage of pages) {
       return popup && String(popup.larentalsMls) === String(expectedMls);
     }, mls, { timeout: 15_000 });
     await expect(page.locator(".leaflet-popup")).toBeVisible();
+    await expect(page.locator(".listing-popup-from-results .leaflet-popup-content-wrapper"))
+      .toHaveCSS("animation-duration", "0.2s");
     expect(await page.evaluate(() => window.larentals.map.getZoom())).toBe(initialZoom);
     await expect(page.locator(`.results-row[data-mls="${mls}"]`)).toHaveClass(/is-open/);
     await expect(page.locator(".leaflet-popup .listing-popup__zoom")).toHaveCount(0);
