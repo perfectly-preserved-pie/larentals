@@ -20,6 +20,20 @@ by the merge. It stores a sidecar metadata file next to the GeoPackage and skips
 the download/conversion on later runs when CPUC's source validators have not
 changed.
 
+```mermaid
+flowchart TD
+    Fetch["Fetch CPUC broadband GeoPackage"] --> Cache{"Reusable local GeoPackage?"}
+    Cache -->|Yes| Reuse["Use the existing GeoPackage"]
+    Cache -->|No| Convert["Download, extract, and convert the CPUC archive"]
+    Convert --> Metadata["Save source metadata beside the GeoPackage"]
+    Reuse --> Merge["Run the broadband merge"]
+    Metadata --> Merge
+```
+
+Reuse requires an existing GeoPackage and matching source validators.
+The fetch rebuilds the file when run with `--force` or when the source probe
+fails.
+
 ---
 
 ## Open the GeoPackage

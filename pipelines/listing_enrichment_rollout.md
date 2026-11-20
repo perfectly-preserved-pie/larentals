@@ -51,16 +51,23 @@ app still loads listings into pandas and filters client-side.
 - Buy filter config: `pages/buy_components.py`
 - Lease filter config: `pages/lease_components.py`
 
-The loader now:
+```mermaid
+flowchart TD
+    Base["Base SQLite table (buy or lease)"] --> Read["Read available base columns"]
+    Config["Buy or lease page column config"] -->|Requested columns| Read
+    Read --> ISPJoin["Attach ISP speeds"]
+    ISP["ISP speed data"] --> ISPJoin
+    ISPJoin --> EnrichmentJoin["Attach enrichment by mls_number"]
+    Enrichment["Optional buy_enrichment or lease_enrichment table"] --> EnrichmentJoin
+    EnrichmentJoin --> Select["Keep requested fields and required columns"]
+    Config -->|Requested columns| Select
+    Select --> Page["Listings for the map page"]
+```
 
-1. Reads base-table columns that actually exist on `buy` or `lease`
-2. Joins ISP speed data
-3. Joins `<table_name>_enrichment` on `mls_number`
-4. Preserves requested enrichment columns when page configs opt in
-
-This means future page configs can safely request enrichment columns such as
-`school_district_name` or `dist_rail_station_mi` without causing the base SQL
-query to fail.
+The loader reads available base columns first, attaches ISP speeds, then
+left-joins the optional enrichment table on `mls_number`. Page configs can
+request enrichment columns such as `school_district_name` or
+`dist_rail_station_mi` because the loader selects the final fields after the joins.
 
 ## Rollout order
 

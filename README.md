@@ -89,6 +89,9 @@ Dash's initialization-based `2025-11-25` transport for legacy clients.
 
 ## How to Build and Run
 
+See the [weekly listing refresh](pipelines/listing_refresh.md) for how the buy
+and lease jobs build and publish the SQLite listing tables.
+
 Clone the repository and run the commands below from the project directory.
 
 ```bash
