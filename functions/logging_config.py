@@ -152,8 +152,9 @@ def configure_logging(logfile: str | None = None, pipeline: str | None = None) -
 
     DEBUG is enabled by default because filtering in Dozzle cannot recover
     events discarded by Python. LOG_LEVEL can raise the threshold. Replacing
-    sinks prevents imports and repeated pipeline runs from duplicating events;
-    file logs retain their readable format and seven-day retention.
+    sinks prevents imports and repeated pipeline runs from duplicating events.
+    The file sink rotates at midnight or 10 MB so old logs from quiet runs
+    can age out under the seven-day retention policy.
 
     Args:
         logfile: Optional rotating log path; a leading tilde is expanded.
@@ -174,7 +175,7 @@ def configure_logging(logfile: str | None = None, pipeline: str | None = None) -
         if pipeline:
             file_format += "[{extra[pipeline]}] "
         file_format += "{message}"
-        logger.add(Path(logfile).expanduser(), level=level, rotation="10 MB",
+        logger.add(Path(logfile).expanduser(), level=level, rotation=["00:00", "10 MB"],
                    retention="7 days", backtrace=False, diagnose=False,
                    format=file_format)
     logging.basicConfig(level=severity, handlers=[SharedLogHandler()], force=True)
