@@ -104,8 +104,10 @@ cd larentals
 With Docker running, build the app image.
 
 ```bash
-docker build -t larentals .
+docker build --build-arg SITE_PAGE_LASTMOD="$(python3 scripts/sitemap_lastmod.py)" -t larentals .
 ```
+
+The build argument records the latest tracked content changes for the sitemap.
 
 Start the container.
 
@@ -121,7 +123,7 @@ With `uv` installed, start the Dash development server. The project uses Python
 3.13, and `uv` installs the project and its dependencies into `.venv`.
 
 ```bash
-uv run wheretolive-la
+SITE_PAGE_LASTMOD="$(python3 scripts/sitemap_lastmod.py)" uv run wheretolive-la
 ```
 
 Open [http://127.0.0.1:8050](http://127.0.0.1:8050).

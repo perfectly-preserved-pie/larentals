@@ -1,0 +1,118 @@
+{% macro snippet(name, text, label) -%}
+<div class="mcp-docs__snippet">
+  <pre><code id="mcp-{{ name }}-value">{{ text }}</code></pre>
+  <div class="mcp-docs__copy">
+    <button id="mcp-{{ name }}-copy" type="button" aria-label="{{ label }}" data-mcp-copy="mcp-{{ name }}-value"><span aria-hidden="true">{{ label }}</span></button>
+    <span class="mcp-docs__copy-status" role="status"></span>
+  </div>
+</div>
+{%- endmacro %}
+<!doctype html>
+<html lang="en" data-mantine-color-scheme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title }} | WhereToLive.LA</title>
+<meta name="description" content="{{ description }}">
+<meta property="og:title" content="{{ page_title }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ image }}">
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="{{ page_title }}">
+<meta property="twitter:description" content="{{ description }}">
+<meta property="twitter:image" content="{{ image }}">
+{{ page_head }}
+{{ structured_data }}
+<link rel="icon" href="{{ asset('favicon.ico') }}">
+<script src="{{ asset('js/mcp_docs.js') }}"></script>
+<link rel="stylesheet" href="{{ bootstrap }}">
+<link rel="stylesheet" href="{{ asset('css/site-theme.css') }}">
+<link rel="stylesheet" href="{{ asset('css/accessibility.css') }}">
+<link rel="stylesheet" href="{{ asset('css/mcp-docs.css') }}">
+{% for script in analytics %}
+<script src="{{ script.src }}"{% if script.defer %} defer{% endif %}{% if script.async %} async{% endif %}></script>
+{% endfor %}
+<script src="{{ asset('js/plausible-init.js') }}" defer></script>
+</head>
+<body>
+<main class="mcp-docs">
+  <a class="skip-link" href="#mcp-page-title">Skip to main content</a>
+  <div class="mcp-docs__frame">
+    <header class="mcp-docs__masthead">
+      <a href="/" class="mcp-docs__brand">WhereToLive.LA</a>
+      <nav class="mcp-docs__site-links" aria-label="Site navigation">
+        <a href="/">Rentals</a><a href="/buy">For sale</a><span aria-current="page">MCP setup</span>
+      </nav>
+      <label class="mcp-docs__theme-switch"><input type="checkbox" id="color-scheme-switch" role="switch"> Dark mode</label>
+    </header>
+    <div class="mcp-docs__opening">
+      <div class="mcp-docs__headline">
+        <p class="mcp-docs__protocol">Model Context Protocol</p>
+        <h1 id="mcp-page-title" tabindex="-1">{{ title }}</h1>
+        <p class="mcp-docs__intro">{{ intro }}</p>
+      </div>
+      <div class="mcp-docs__skyline" role="img" aria-label="Downtown Los Angeles in ASCII, looking toward the San Gabriel Mountains. Wilshire Grand and U.S. Bank Tower rise above the surrounding blocks, with City Hall at right.">
+        <div class="mcp-docs__skyline-caption" aria-hidden="true">DOWNTOWN LOS ANGELES</div>
+        <pre aria-hidden="true"><span class="mcp-docs__ridgeline">{{ ridgeline }}</span><span class="mcp-docs__buildings">{{ skyline }}</span></pre>
+      </div>
+    </div>
+    <div class="mcp-docs__body">
+      <nav class="mcp-docs__contents" aria-label="On this page">
+        <h2>On this page</h2>
+        <ul>
+          <li><a href="#endpoint">Server address</a></li>
+          <li><a href="#setup">Client setup</a></li>
+          <li><a href="#search">Listing search</a></li>
+          <li><a href="#examples">Examples</a></li>
+        </ul>
+      </nav>
+      <div class="mcp-docs__article">
+        <section>
+          <h2 id="endpoint" tabindex="-1">Server address</h2>
+          {{ snippet('endpoint', endpoint, 'Copy URL') }}
+          <dl class="mcp-docs__connection">
+            {% for label, value in connection -%}
+            <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+            {% endfor -%}
+          </dl>
+        </section>
+        <section>
+          <h2 id="setup" tabindex="-1">Client setup</h2>
+          {% for client in clients -%}
+          <h3>{{ client.name }}</h3>
+          {% for paragraph in client.paragraphs -%}
+          <p>{{ paragraph }}</p>
+          {% endfor -%}
+          {% if client.snippet -%}
+          {{ snippet(client.snippet.name, client.snippet.text, client.snippet.copy_label) }}
+          {% endif -%}
+          {% endfor -%}
+        </section>
+        <section>
+          <h2 id="search" tabindex="-1">Listing search</h2>
+          <p>{{ search_guidance }}</p>
+          <ul>
+            {% for label, criteria in filters -%}
+            <li><strong>{{ label }}</strong> — {{ criteria }}</li>
+            {% endfor -%}
+          </ul>
+        </section>
+        <section>
+          <h2 id="examples" tabindex="-1">Example searches</h2>
+          <ul>
+            {% for example in examples -%}
+            <li><q>{{ example }}</q></li>
+            {% endfor -%}
+          </ul>
+        </section>
+      </div>
+    </div>
+    <footer class="mcp-docs__footer">
+      <a href="#mcp-page-title">Back to top</a>
+      <a href="https://github.com/perfectly-preserved-pie/larentals" target="_blank" rel="noopener">Project on GitHub</a>
+    </footer>
+  </div>
+</main>
+</body>
+</html>

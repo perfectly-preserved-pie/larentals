@@ -27,6 +27,12 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Collect sitemap modification dates
+        id: sitemap
+        run: echo "lastmod=$(python3 scripts/sitemap_lastmod.py)" >> "$GITHUB_OUTPUT"
 
       # setup Docker buld action
       - name: Set up Docker Buildx
@@ -54,6 +60,8 @@ jobs:
         with:
           # relative path to the place where source code with Dockerfile is located
           context: .
+          build-args: |
+            SITE_PAGE_LASTMOD=${{ steps.sitemap.outputs.lastmod }}
           # Note: tags has to be all lower-case
           tags: |
             strayingfromthepath/larentals:dev

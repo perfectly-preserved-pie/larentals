@@ -3,7 +3,8 @@ from api import register_api_routes
 from functions.data_paths import LARENTALS_DB_PATH
 from dash_extensions import EventListener
 from flask_compress import Compress
-from flask import Response, request
+from flask import Response, abort, redirect, render_template, request
+from markupsafe import Markup
 from functions.devtools import register_filter_exclusion_devtool
 from functions.lahd_records_ui import (
   create_lahd_records_drawer,
@@ -21,9 +22,25 @@ from functions.source_map_logging import register_source_map_error_filter
 from functions.dash_asset_requests import register_dash_asset_request_guard
 from functions.security_headers import register_security_headers
 from functions.mcp_listings import configure_listings_mcp
+from functions.mcp_guide import (
+  MCP_CLIENTS,
+  MCP_CONNECTION,
+  MCP_ENDPOINT,
+  MCP_EXAMPLES,
+  MCP_FILTERS,
+  MCP_GUIDE_INTRO,
+  MCP_GUIDE_TITLE,
+  MCP_SEARCH_GUIDANCE,
+)
+from functions.site_identity import DTLA_RIDGELINE, DTLA_SKYLINE
 from functions.seo import (
   CANONICAL_BASE_URL,
+  PAGE_MARKDOWN_PATHS,
+  SOCIAL_PREVIEW_IMAGE_URL,
+  build_initial_page_content,
+  build_llms_full_txt,
   build_page_head,
+  build_page_markdown,
   build_llms_txt,
   build_robots_txt,
   build_sitemap_xml,
@@ -34,12 +51,16 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import logging
+import json
+import os
 import time
+from html import escape
 
 # DMC 3 uses Mantine 9, whose components require React 19.
 dash._dash_renderer._set_react_version("19.2.4")
 
 STRUCTURED_DATA_SCRIPT = build_structured_data_script(CANONICAL_BASE_URL)
+PAGE_LASTMOD = json.loads(os.environ.get("SITE_PAGE_LASTMOD", "{}"))
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
 external_stylesheets = [
@@ -49,7 +70,7 @@ external_stylesheets = [
   # Supplies Mapbox's required, unmodified logo styling when Satellite imagery is active.
   "https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.css",
 ]
-external_scripts = [
+analytics_scripts = [
   {
     "src": "/analytics/script.js?siteId=3bc288cd62a8",
     "defer": "defer",
@@ -58,6 +79,9 @@ external_scripts = [
     "src": "https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js",
     "async": "async",
   },
+]
+external_scripts = [
+  *analytics_scripts,
   'https://cdn.jsdelivr.net/npm/@turf/turf@7.4.0/turf.min.js', # Turf.js for convex hulls and ZIP boundary filtering
   'https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js' # SweetAlert2 for popups
 ]
@@ -67,23 +91,41 @@ dmc.pre_render_color_scheme()
 
 
 @dash.hooks.index()
-def complete_page_head(index: str) -> str:
-  """Publish canonical metadata and document language in the initial response.
+def complete_page_index(index: str) -> str:
+  """Add public page metadata and readable content to Dash's initial response.
 
   Run after Mantine's hook, which matches a bare html tag when seeding the
   color scheme. Keeping that order preserves its pre-render theme handling.
-  Canonical URLs come from registered paths rather than the request host.
+  Put the introductory content inside React's mount point so mounting the
+  interactive page replaces it without leaving duplicate headings.
 
   Args:
       index: Dash's rendered HTML after earlier index hooks.
 
   Returns:
-      The HTML shell with language and public-page identity tags.
+      The HTML shell with language, public-page identity, and initial content.
   """
   head = build_page_head(
     CANONICAL_BASE_URL, request.path, get_public_page_paths(dash.page_registry),
   )
-  return index.replace("<html", '<html lang="en"', 1).replace("</head>", head + "\n</head>", 1)
+  index = index.replace("<html", '<html lang="en"', 1).replace("</head>", head + "\n</head>", 1)
+  for page in dash.page_registry.values():
+    if page["path"] == request.path:
+      title = page["title"]
+      if isinstance(title, str):
+        index = index.replace(
+          f"<title>{escape(app.title)}</title>",
+          f"<title>{escape(title)} | {escape(app.title)}</title>",
+          1,
+        )
+      break
+  initial_content = build_initial_page_content(request.path)
+  if initial_content:
+    entry = '<div id="react-entry-point">'
+    start = index.index(entry) + len(entry)
+    end = index.index("</div>", start) + len("</div>")
+    index = index[:start] + initial_content + index[end:]
+  return index
 
 
 configure_listings_mcp()
@@ -101,6 +143,7 @@ app = Dash(
   ],
   name = __name__,
   use_pages = True,
+  assets_ignore = r"^mcp_docs\.js$",
 )
 
 # Set the page title
@@ -129,19 +172,100 @@ register_source_map_error_filter(server)
 register_dash_asset_request_guard(server)
 
 
+@server.before_request
+def enforce_public_page_routes() -> Response | None:
+  """Return a real 404 for paths that would only hit Dash's fallback shell.
+
+  Dash has a catch-all for browser pages, so Flask can otherwise serve HTML
+  with a success status for missing discovery files or mistyped links. Explicit
+  routes such as the MCP transport, health, and static assets bypass this check.
+
+  Returns:
+      A canonical redirect for a trailing slash, or None to continue routing.
+
+  Raises:
+      NotFound: The catch-all path does not match a public page.
+  """
+  if request.endpoint != "/<path:path>":
+    return None
+  page_paths = {"/mcp", *get_public_page_paths(dash.page_registry)}
+  if request.path in page_paths:
+    return None
+  canonical_path = request.path.rstrip("/")
+  if canonical_path in page_paths:
+    query = "?" + request.query_string.decode("latin-1") if request.query_string else ""
+    return redirect(canonical_path + query, code=308)
+  abort(404)
+
+
+@server.after_request
+def advertise_page_alternates(response: Response) -> Response:
+  """Expose the public text guides to clients that only inspect HTTP headers.
+
+  These links describe variants of the public HTML pages, so error responses
+  and the text guides themselves do not advertise them.
+
+  Args:
+      response: Flask response after route handling.
+
+  Returns:
+      The response with discovery links on successful HTML pages.
+  """
+  markdown = PAGE_MARKDOWN_PATHS.get(request.path)
+  if markdown and response.status_code == 200:
+    response.headers.add("Link", '</llms.txt>; rel="alternate"; type="text/plain"')
+    response.headers.add("Link", f'<{markdown}>; rel="alternate"; type="text/markdown"')
+  return response
+
+
 @server.route("/sitemap.xml")
 def sitemap_xml() -> Response:
-  """Render the canonical sitemap for all public Dash pages.
+  """Render the canonical sitemap for the map pages and standalone MCP guide.
 
-  Using the registered public pages keeps crawler output aligned with Dash routing.
+  Read map paths from the Dash registry. The image build supplies
+  modification dates from source history for both the maps and the guide.
 
   Returns:
       An HTTP response containing the sitemap XML.
   """
-  page_paths = get_public_page_paths(dash.page_registry)
+  page_paths = sorted({"/mcp", *get_public_page_paths(dash.page_registry)})
   return Response(
-    build_sitemap_xml(CANONICAL_BASE_URL, page_paths),
+    build_sitemap_xml(CANONICAL_BASE_URL, page_paths, last_modified=PAGE_LASTMOD),
     mimetype="application/xml",
+  )
+
+
+@server.route("/mcp")
+def mcp_guide_page() -> str:
+  """Serve the setup guide directly so it can be read without Dash.
+
+  The guide shares the sitemap, canonical metadata, theme assets, and Markdown
+  source with the rest of the site. Only the copy and theme controls need JS.
+
+  Returns:
+      The full HTML document for the public MCP setup guide.
+  """
+  return render_template(
+    "mcp_guide.html",
+    page_title="Connect WhereToLive.LA to Your AI Assistant",
+    description="Connect Claude, ChatGPT, Codex, and other MCP clients to read-only "
+                "Los Angeles County lease and for-sale listing search.",
+    image=SOCIAL_PREVIEW_IMAGE_URL,
+    page_head=Markup(build_page_head(CANONICAL_BASE_URL, "/mcp", ["/mcp"])),
+    structured_data=Markup(STRUCTURED_DATA_SCRIPT),
+    asset=app.get_asset_url,
+    bootstrap=dbc.themes.BOOTSTRAP,
+    analytics=analytics_scripts,
+    title=MCP_GUIDE_TITLE,
+    intro=MCP_GUIDE_INTRO,
+    ridgeline=DTLA_RIDGELINE,
+    skyline=DTLA_SKYLINE,
+    endpoint=MCP_ENDPOINT,
+    connection=MCP_CONNECTION,
+    clients=MCP_CLIENTS,
+    filters=MCP_FILTERS,
+    search_guidance=MCP_SEARCH_GUIDANCE,
+    examples=MCP_EXAMPLES,
   )
 
 
@@ -173,6 +297,42 @@ def llms_txt() -> Response:
     build_llms_txt(CANONICAL_BASE_URL),
     mimetype="text/plain",
   )
+
+
+@server.route("/llms-full.txt")
+def llms_full_txt() -> Response:
+  """Serve the combined guide for clients that prefer a single request.
+
+  The summary manifest links here so clients can choose the expanded material
+  before fetching or rendering the interactive pages.
+
+  Returns:
+      The expanded guide as plain text.
+  """
+  return Response(build_llms_full_txt(CANONICAL_BASE_URL), mimetype="text/plain")
+
+
+@server.route(PAGE_MARKDOWN_PATHS["/"], defaults={"page_path": "/"})
+@server.route(PAGE_MARKDOWN_PATHS["/buy"], defaults={"page_path": "/buy"})
+@server.route(PAGE_MARKDOWN_PATHS["/mcp"], defaults={"page_path": "/mcp"})
+def page_markdown(page_path: str) -> Response:
+  """Serve a Markdown companion at the alternate URL advertised by the page.
+
+  The Link header identifies the original page for clients that read HTTP
+  metadata without parsing the Markdown frontmatter.
+
+  Args:
+      page_path: Canonical HTML path associated with the companion route.
+
+  Returns:
+      The Markdown response with a canonical Link header.
+  """
+  return Response(
+    build_page_markdown(CANONICAL_BASE_URL, page_path),
+    mimetype="text/markdown",
+    headers={"Link": f'<{CANONICAL_BASE_URL}{page_path}>; rel="canonical"'},
+  )
+
 
 app.index_string = """<!DOCTYPE html>
 <html>

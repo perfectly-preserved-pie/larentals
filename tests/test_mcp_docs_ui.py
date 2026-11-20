@@ -1,92 +1,29 @@
-"""Smoke tests for the human-facing MCP documentation page."""
+"""Smoke tests for the standalone MCP documentation response."""
 
-import unittest
-from collections.abc import Iterator
+from bs4 import BeautifulSoup
 
-from dash import dcc, html
-
-from functions.mcp_docs_ui import MCP_ENDPOINT, build_mcp_docs_layout
+from app import server
+from functions.mcp_guide import MCP_ENDPOINT
 
 
-def _collect_components(component: object) -> Iterator[object]:
-  """Yield every Dash component in a layout tree.
+def test_mcp_docs_exposes_setup_and_copy_controls() -> None:
+  """Verify that the MCP guide sends its complete content as HTML.
 
-  Lists and tuples are traversed so nested sections and copy buttons are covered.
+  The clipboard handler resolves snippets by ID, so the endpoint button must
+  keep its association when the page is served without the Dash renderer.
 
-  Args:
-      component: Dash component or nested component collection to traverse.
-
-  Yields:
-      Values produced by the iterator.
+  Returns:
+      None.
   """
-  if isinstance(component, (list, tuple)):
-    for child in component:
-      yield from _collect_components(child)
-    return
-
-  yield component
-  children = getattr(component, "children", None)
-  if children is not None:
-    yield from _collect_components(children)
-
-
-class McpDocsUiTest(unittest.TestCase):
-  def setUp(self) -> None:
-    """Build one documentation layout for each isolated test case.
-
-    Each test gets a fresh docs layout so IDs and callback state do not leak between cases.
-
-    Returns:
-        None.
-    """
-    self.layout = build_mcp_docs_layout()
-    self.components = list(_collect_components(self.layout))
-
-  def test_layout_exposes_copyable_public_endpoint(self) -> None:
-    """Keep the displayed and copied endpoint consistent.
-
-    The copy handler resolves the code element by ID and copies its text.
-
-    Returns:
-        None.
-    """
-    components_by_id = {
-      item.id: item for item in self.components if hasattr(item, "id")
-    }
-    button = components_by_id["mcp-endpoint-copy"]
-    code = components_by_id[getattr(button, "data-mcp-copy")]
-
-    self.assertIsInstance(button, html.Button)
-    self.assertIsInstance(code, html.Code)
-    self.assertEqual(code.children, MCP_ENDPOINT)
-
-  def test_layout_covers_supported_clients_and_listing_modes(self) -> None:
-    """Ensure essential setup and capability copy remains present.
-
-    The setup page must explain both protocol clients and listing modes the tool supports.
-
-    Returns:
-        None.
-    """
-    text = str(self.layout.to_plotly_json())
-
-    for expected in ("Claude", "Hermes", "lease", "buy", "Streamable HTTP"):
-      self.assertIn(expected, text)
-
-  def test_layout_has_navigation_and_theme_control(self) -> None:
-    """Verify that users can return home and use the shared theme callback.
-
-    The docs page should remain reachable and use the application-wide theme behavior.
-
-    Returns:
-        None.
-    """
-    links = [item for item in self.components if isinstance(item, dcc.Link)]
-    ids = [getattr(item, "id", None) for item in self.components]
-
-    self.assertIn("/", [link.href for link in links])
-    self.assertIn("color-scheme-switch", ids)
-
-
-if __name__ == "__main__":
-  unittest.main()
+  response = server.test_client().get("/mcp")
+  assert response.status_code == 200
+  assert len(response.data) < 18_000
+  document = BeautifulSoup(response.data, "html.parser")
+  assert document.select_one("#react-entry-point, #_dash-config") is None
+  button = document.select_one("button#mcp-endpoint-copy")
+  assert document.find("code", id=button["data-mcp-copy"]).get_text() == MCP_ENDPOINT
+  assert document.select_one('nav a[href="/"]')
+  assert document.select_one('input#color-scheme-switch[role="switch"]')
+  text = document.select_one("main").get_text()
+  for expected in ("Claude", "Hermes", "lease", "buy", "Streamable HTTP", "Long Beach"):
+    assert expected in text

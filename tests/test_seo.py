@@ -36,7 +36,10 @@ class SeoTest(unittest.TestCase):
     Returns:
         None.
     """
-    sitemap = build_sitemap_xml("https://wheretolive.la", ["/", "/buy", "/mcp"])
+    sitemap = build_sitemap_xml(
+      "https://wheretolive.la", ["/", "/buy", "/mcp"],
+      last_modified={"/": "2026-11-19", "/mcp": "2026-11-18"},
+    )
     sitemap_text = sitemap.decode("utf-8")
     root = ElementTree.fromstring(sitemap)
     namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
@@ -55,6 +58,11 @@ class SeoTest(unittest.TestCase):
       ],
     )
     self.assertNotIn("_mcp", sitemap_text)
+    self.assertEqual(
+      [url.findtext("sitemap:lastmod", namespaces=namespace)
+       for url in root.findall("sitemap:url", namespace)],
+      ["2026-11-19", None, "2026-11-18"],
+    )
 
   def test_build_robots_txt_points_to_sitemap(self) -> None:
     """Verify that build robots txt points to sitemap.

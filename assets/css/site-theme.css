@@ -348,3 +348,34 @@
     margin: 0.25rem 0;
   }
 }
+.initial-page {
+  max-width: 48rem;
+  margin: 1rem auto;
+  padding: 1rem;
+  background: var(--site-paper);
+  color: var(--site-ink);
+  border-top: 2px solid var(--site-rule);
+  font-family: var(--site-sans);
+  overflow-wrap: anywhere;
+}
+
+.initial-page :is(h1, h2) {
+  color: var(--site-heading);
+  font-family: var(--site-serif);
+}
+
+.initial-page a {
+  color: var(--site-link);
+}
+
+.initial-page pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the HTML introduction available when browser scripting is disabled. */
+@media (scripting: enabled) {
+  .initial-page {
+    display: none;
+  }
+}

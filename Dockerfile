@@ -28,6 +28,8 @@ COPY --from=builder /app /app
 ENV PYTHONPATH="/app/.venv/lib/python3.13/site-packages"
 # Override with LOG_LEVEL=DEBUG when per-call diagnostics are needed.
 ENV LOG_LEVEL=INFO
+ARG SITE_PAGE_LASTMOD={}
+ENV SITE_PAGE_LASTMOD=$SITE_PAGE_LASTMOD
 
 ENTRYPOINT ["python3", "-m", "gunicorn"]
 CMD ["--config", "/app/gunicorn.conf.py", "--chdir", "/app", "-b", "0.0.0.0:8080", "--worker-class=gthread", "--workers=10", "--threads=8", "--timeout=60", "--keep-alive=5", "--preload", "app:server"]

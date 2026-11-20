@@ -71,32 +71,17 @@
   color: var(--site-masthead-accent);
 }
 
-.mcp-docs__theme-switch .mantine-Switch-label {
-  padding-inline-start: 0.45rem;
+.mcp-docs__theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   color: var(--site-masthead-ink);
   font: 0.8rem / 1.3 var(--site-sans);
+  cursor: pointer;
 }
 
-.mcp-docs__theme-switch .mantine-Switch-track,
-.mcp-docs__theme-switch .mantine-Switch-thumb {
-  border-radius: 0;
-}
-
-.mcp-docs__theme-switch .mantine-Switch-track {
-  /* Mantine 9 leaves the track borderless. The off track needs an edge
-     against the matching masthead background. */
-  --switch-bg: var(--site-masthead);
-  border: 1px solid var(--site-art-muted);
-}
-
-.mcp-docs__theme-switch input:checked + .mantine-Switch-track {
-  --switch-bg: var(--site-action);
-  border-color: var(--site-masthead-accent);
-}
-
-.mcp-docs__theme-switch input:focus-visible + .mantine-Switch-track {
-  outline: 2px solid var(--site-masthead-ink);
-  outline-offset: 3px;
+.mcp-docs__theme-switch input {
+  accent-color: var(--site-action);
 }
 
 .mcp-docs__opening {
@@ -415,5 +400,12 @@
 
   .mcp-docs__snippet {
     flex-wrap: wrap;
+  }
+}
+
+@media (scripting: none) {
+  .mcp-docs__theme-switch,
+  .mcp-docs__copy {
+    display: none;
   }
 }
