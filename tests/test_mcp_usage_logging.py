@@ -144,6 +144,9 @@ class McpUsageLoggingTest(unittest.TestCase):
 
         MCP can report failures inside HTTP 200 responses, so severity must
         account for both transport status and the protocol outcome.
+
+        Returns:
+            None.
         """
         payload = {
             "id": 1, "method": "tools/call",
@@ -202,6 +205,13 @@ class McpUsageLoggingTest(unittest.TestCase):
         log_info.assert_not_called()
 
     def test_summarizes_stale_session_bundle(self) -> None:
+        """Find a listing summary in a bundled response from a stale session.
+
+        Earlier notifications must not hide the structured tool result.
+
+        Returns:
+            None.
+        """
         messages = [
             {"jsonrpc": "2.0", "method": "notifications/tools/list_changed"},
             {"jsonrpc": "2.0", "method": "notifications/resources/list_changed"},
@@ -219,6 +229,13 @@ class McpUsageLoggingTest(unittest.TestCase):
         self.assertEqual(response.get_data(), original_body)
 
     def test_selects_matching_bundled_reply_and_preserves_errors(self) -> None:
+        """Classify the reply for the requested ID inside a JSON-RPC bundle.
+
+        A neighboring success must not hide either kind of error on the matching reply.
+
+        Returns:
+            None.
+        """
         for reply, expected in [
             ({"result": {"isError": True}}, "tool_error"),
             ({"error": {"code": -32602, "message": "Invalid params"}}, "rpc_error"),
@@ -232,6 +249,13 @@ class McpUsageLoggingTest(unittest.TestCase):
                 self.assertEqual(_result_summary(response), "missing")
 
     def test_notification_only_bundle_has_no_result(self) -> None:
+        """Treat notification-only responses as having no matching reply.
+
+        Notifications and invalid entries carry no tool result for the request ID.
+
+        Returns:
+            None.
+        """
         response = Response(json.dumps([
             {"method": "notifications/tools/list_changed"}, None, "invalid",
         ]), mimetype="application/json")

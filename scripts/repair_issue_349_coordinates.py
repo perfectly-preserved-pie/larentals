@@ -37,6 +37,18 @@ REVIEWED_IDS = {
 
 
 def component(raw: dict, kind: str) -> str | None:
+    """Read the first address component of the requested kind.
+
+    Compare explicit components so an address string formatted by Google cannot
+    mask a different street number or ZIP.
+
+    Args:
+        raw: Result returned by Google Geocoding.
+        kind: Component type such as street_number, route, or postal_code.
+
+    Returns:
+        Component long name, or None when the type is absent.
+    """
     for item in raw.get("address_components", []):
         if kind in item.get("types", []):
             return str(item.get("long_name", ""))
@@ -44,6 +56,17 @@ def component(raw: dict, kind: str) -> str | None:
 
 
 def street_key(value: str) -> str:
+    """Normalize a route for similarity matching.
+
+    Case, punctuation, and common street suffixes vary between listing and
+    geocoder addresses. The repair still checks the street number and ZIP separately.
+
+    Args:
+        value: Street name from the listing or geocoder.
+
+    Returns:
+        Compact route name for comparison.
+    """
     value = re.sub(r"[^a-z0-9]", "", value.casefold())
     for suffix in ("boulevard", "blvd", "avenue", "ave", "street", "st", "road", "rd"):
         if value.endswith(suffix):
@@ -52,6 +75,14 @@ def street_key(value: str) -> str:
 
 
 def main() -> None:
+    """Review the selected listing pins and optionally apply verified coordinates.
+
+    Write the report before updating the local database and checkpoint files so
+    each attempted or skipped correction can be inspected.
+
+    Returns:
+        None.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-requests", type=int, default=6)
     parser.add_argument("--only-mls", nargs="*", help="Restrict the reviewed MLS numbers")

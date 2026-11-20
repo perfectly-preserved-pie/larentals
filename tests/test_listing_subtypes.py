@@ -20,10 +20,17 @@ SAMPLES = json.loads((Path(__file__).parent / "fixtures/agency_subtypes_sample.j
 
 
 @pytest.mark.parametrize("sample", SAMPLES, ids=lambda sample: sample["mls_number"])
-def test_recorded_agency_subtypes(monkeypatch, sample):
+def test_recorded_agency_subtypes(monkeypatch: pytest.MonkeyPatch, sample: dict[str, object]) -> None:
     """Replay the live sample through the pipeline's actual detail reader.
 
     A missing provider record must stay unknown instead of becoming a URL guess.
+
+    Args:
+        monkeypatch: Fixture for substituting the service calls used by this test.
+        sample: Recorded response, status, and expected subtype.
+
+    Returns:
+        None.
     """
     response = Mock()
     response.json.return_value = sample["payload"]
@@ -36,11 +43,27 @@ def test_recorded_agency_subtypes(monkeypatch, sample):
 @pytest.mark.parametrize("market", ["buy", "lease"])
 @pytest.mark.parametrize("encoded", [False, True])
 @pytest.mark.parametrize("provider_type", ["Condominium", "Residential"])
-def test_expiration_backfills_without_another_request(tmp_path, monkeypatch, market, encoded, provider_type):
+def test_expiration_backfills_without_another_request(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    market: str,
+    encoded: bool,
+    provider_type: str,
+) -> None:
     """Expiration, subtype recovery, and resume share one HTTP response.
 
     Successful responses with no home type are also checkpointed, so the
     subtype-only pass cannot repeat a completed expiration request.
+
+    Args:
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        monkeypatch: Fixture for substituting the service calls used by this test.
+        market: Listing market used to select the checkpoint behavior.
+        encoded: Whether the provider wraps the detail object in a JSON string.
+        provider_type: Property type supplied by the provider.
+
+    Returns:
+        None.
     """
     payload = {"Status": "Active", "PropertyType": provider_type}
     response = SimpleNamespace(
@@ -64,11 +87,21 @@ def test_expiration_backfills_without_another_request(tmp_path, monkeypatch, mar
     assert "/detail/crmls/OLD-1" in get.call_args.args[0]
 
 
-def test_remaining_unknowns_retry_failures_and_reuse_outcomes(tmp_path, monkeypatch):
+def test_remaining_unknowns_retry_failures_and_reuse_outcomes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A legacy cached expiration check still permits a missing subtype lookup.
 
     Only failed attempts are retried; absent types and unavailable records stay
     cached, and known source subtypes are never requested or overwritten.
+
+    Args:
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     store = ListingCheckpointStore(tmp_path / "checkpoint.sqlite", listing_type="buy")
     source = pd.DataFrame([
@@ -94,11 +127,21 @@ def test_remaining_unknowns_retry_failures_and_reuse_outcomes(tmp_path, monkeypa
     assert store.get("GONE")["subtype_lookup_status"] == "unavailable"
 
 
-def test_missing_expiration_records_do_not_repeat_detail_lookup(tmp_path, monkeypatch):
+def test_missing_expiration_records_do_not_repeat_detail_lookup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Two HTTP 404 status checks also complete the subtype lookup.
 
     Missing provider records do not prove expiration, so keep the listing while
     avoiding a third request to the same active detail endpoint.
+
+    Args:
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     monkeypatch.delenv("RENTCAST_API_KEY", raising=False)
     get = Mock(return_value=SimpleNamespace(status_code=404))
@@ -112,10 +155,20 @@ def test_missing_expiration_records_do_not_repeat_detail_lookup(tmp_path, monkey
     assert store.get("GONE")["subtype_lookup_status"] == "unavailable"
 
 
-def test_host_circuit_stops_remaining_subtype_requests(tmp_path, monkeypatch):
+def test_host_circuit_stops_remaining_subtype_requests(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """An open provider circuit leaves remaining listings pending for resume.
 
     It must not create terminal missing-type checkpoints for unattempted rows.
+
+    Args:
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     store = ListingCheckpointStore(tmp_path / "checkpoint.sqlite", listing_type="lease")
     fetch = Mock(side_effect=scraping.HostCircuitOpen("paused"))
@@ -136,10 +189,22 @@ def test_host_circuit_stops_remaining_subtype_requests(tmp_path, monkeypatch):
     ("Apartment", "Condominium", "Apartment"),
     ("Unknown", "Unknown", "Unknown"),
 ])
-def test_refresh_preserves_backfilled_subtypes(incoming, stored, expected):
+def test_refresh_preserves_backfilled_subtypes(
+    incoming: str | None,
+    stored: str,
+    expected: str,
+) -> None:
     """An incomplete source refresh cannot undo a recovered stored home type.
 
     Explicit incoming types still take priority over previously saved types.
+
+    Args:
+        incoming: Subtype from the current source refresh.
+        stored: Previously stored listing subtype.
+        expected: Subtype expected after merging the source and stored rows.
+
+    Returns:
+        None.
     """
     merged = frames.merge_listing_dataframes(
         pd.DataFrame([{"mls_number": "MLS-1", "subtype": incoming}]),
@@ -148,11 +213,21 @@ def test_refresh_preserves_backfilled_subtypes(incoming, stored, expected):
     assert merged.at[0, "subtype"] == expected
 
 
-def test_standalone_backfill_limits_resumes_and_preserves_fields(tmp_path, monkeypatch):
+def test_standalone_backfill_limits_resumes_and_preserves_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Subtype-only runs skip known types and preserve unrelated listing data.
 
     Resetting a filled row simulates a crash before the database update, which
     must replay the saved lookup without another HTTP request.
+
+    Args:
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     db_path, checkpoint_path = tmp_path / "listings.sqlite", tmp_path / "lookups.sqlite"
     with sqlite3.connect(db_path) as db:
@@ -176,10 +251,20 @@ def test_standalone_backfill_limits_resumes_and_preserves_fields(tmp_path, monke
             assert db.execute(f"SELECT subtype, price FROM {market} WHERE mls_number = 'FOUND'").fetchone() == ("Condominium", 123)
 
 
-def test_standalone_backfill_retries_transport_errors(tmp_path, monkeypatch):
+def test_standalone_backfill_retries_transport_errors(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A transport failure remains retryable while HTTP 404 is cached.
 
     Neither outcome should change an existing Unknown subtype on the first pass.
+
+    Args:
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     db_path, checkpoint_path = tmp_path / "listings.sqlite", tmp_path / "lookups.sqlite"
     with sqlite3.connect(db_path) as db:

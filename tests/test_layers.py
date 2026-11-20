@@ -216,7 +216,7 @@ def test_layers_control_includes_mapbox_satellite_when_configured(
     assert street.checked is True
     assert isinstance(satellite, dl.BaseLayer)
     assert satellite.name == MAPBOX_SATELLITE_BASE_LAYER_NAME
-    assert satellite.name == "Satellite with labels"
+    assert satellite.name == "Satellite imagery"
     assert satellite.checked is False
     assert satellite.children.url == (
         "https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}"

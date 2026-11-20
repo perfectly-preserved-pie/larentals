@@ -1,4 +1,5 @@
 import gzip
+from collections.abc import Callable
 from pathlib import Path
 
 import orjson
@@ -547,7 +548,7 @@ def test_lahd_listing_summary_uses_live_counts(monkeypatch: pytest.MonkeyPatch) 
     })
     requested_apns = []
 
-    def fake_fetch(apn):
+    def fake_fetch(apn: str) -> dict[str, object]:
         """Supply a live count for the requested APN.
 
         Args:
@@ -624,7 +625,9 @@ def test_lahd_records_drawer_fetches_popup_apn(monkeypatch: pytest.MonkeyPatch) 
     class FakeApp:
         """Capture the callback registered for the drawer event."""
 
-        def callback(self, *args, **kwargs):
+        def callback(
+            self, *args: object, **kwargs: object,
+        ) -> Callable[[Callable[..., object]], Callable[..., object]]:
             """Return a decorator that records the drawer handler.
 
             Args:
@@ -634,7 +637,7 @@ def test_lahd_records_drawer_fetches_popup_apn(monkeypatch: pytest.MonkeyPatch) 
             Returns:
                 A decorator that captures the callback.
             """
-            def capture(handler):
+            def capture(handler: Callable[..., object]) -> Callable[..., object]:
                 """Keep the handler available for the event test.
 
                 Args:
@@ -649,7 +652,7 @@ def test_lahd_records_drawer_fetches_popup_apn(monkeypatch: pytest.MonkeyPatch) 
 
     requested_apns = []
 
-    def fake_fetch(apn):
+    def fake_fetch(apn: str) -> dict[str, object]:
         """Record the requested parcel without contacting LAHD.
 
         Args:

@@ -23,6 +23,18 @@ from functions.listing_pipeline_checkpoint import ListingCheckpointStore, addres
 
 
 def component(raw: dict, kind: str) -> str | None:
+    """Read the first address component of the requested kind.
+
+    Compare explicit components so an address string formatted by Google cannot
+    mask a different street number or ZIP.
+
+    Args:
+        raw: Result returned by Google Geocoding.
+        kind: Component type such as street_number, route, or postal_code.
+
+    Returns:
+        Component long name, or None when the type is absent.
+    """
     for item in raw.get("address_components", []):
         if kind in item.get("types", []):
             return str(item.get("long_name", ""))
@@ -30,6 +42,17 @@ def component(raw: dict, kind: str) -> str | None:
 
 
 def street_key(value: str) -> str:
+    """Normalize a route for similarity matching.
+
+    Case, punctuation, and common street suffixes vary between listing and
+    geocoder addresses. The repair still checks the street number and ZIP separately.
+
+    Args:
+        value: Street name from the listing or geocoder.
+
+    Returns:
+        Compact route name for comparison.
+    """
     value = re.sub(r"[^a-z0-9]", "", value.casefold())
     for suffix in ("boulevard", "blvd", "avenue", "ave", "street", "st", "road", "rd"):
         if value.endswith(suffix):
@@ -38,6 +61,17 @@ def street_key(value: str) -> str:
 
 
 def prepare(row: dict) -> dict | None:
+    """Build a ZIP-restricted query for a flagged listing's building.
+
+    Remove unit identifiers so listings at the same building share one request.
+    Fall back to the address locality when the separate city column is unusable.
+
+    Args:
+        row: Listing record from the coordinate audit.
+
+    Returns:
+        Parsed address and query, or None if the street or ZIP is unusable.
+    """
     address = str(row.get("full_street_address") or "")
     match = re.match(r"\s*(\d+)\s+([^,]+),\s*(.+)$", address)
     zip_match = re.fullmatch(r"(\d{5})(?:\.0)?", str(row.get("zip_code") or "").strip())
@@ -54,6 +88,19 @@ def prepare(row: dict) -> dict | None:
 
 
 def apply_result(conn: sqlite3.Connection, stores: dict, entry: dict) -> int:
+    """Persist an accepted building correction without overwriting newer pins.
+
+    Match the original coordinates before updating a listing and record the
+    correction in its pipeline checkpoint so a refresh can reuse it.
+
+    Args:
+        conn: Connection to the listing database.
+        stores: Checkpoint stores keyed by listing table.
+        entry: Reviewed geocoder outcome and the listings sharing its address.
+
+    Returns:
+        Number of listing rows updated.
+    """
     if not entry.get("accepted"):
         return 0
     changed = 0
@@ -88,6 +135,14 @@ def apply_result(conn: sqlite3.Connection, stores: dict, entry: dict) -> int:
 
 
 def main() -> None:
+    """Geocode the most displaced listings by building within a request budget.
+
+    Resume from the JSONL report and apply accepted coordinates only when the
+    operator supplies the apply flag.
+
+    Returns:
+        None.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--audit", type=Path, default=Path("data/audits/issue_349/zip_coordinate_audit_after.csv"))
     parser.add_argument("--output", type=Path, default=Path("data/audits/issue_349/bulk_pass1.jsonl"))

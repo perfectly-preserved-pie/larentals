@@ -112,6 +112,14 @@ def audit_coordinates(
 
 
 def main() -> None:
+    """Report listing coordinates outside their source ZIP tolerance.
+
+    Write all flagged rows to the requested CSV when supplied. Otherwise show
+    the twenty worst results alongside counts by audit status.
+
+    Returns:
+        None.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", type=Path, default=LARENTALS_DB_PATH)
     parser.add_argument("--zip-polygons", type=Path, default=LA_COUNTY_ZIP_CODES_PATH)

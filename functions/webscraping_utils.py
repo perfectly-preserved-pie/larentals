@@ -577,6 +577,12 @@ def listing_subtype(raw: object) -> Optional[str]:
 
     Residential identifies a market, not a home subtype, so accepting it would
     hide an unknown home type in the listing filters.
+
+    Args:
+        raw: Provider field that may contain an explicit home type.
+
+    Returns:
+        Canonical home subtype, or None if the provider did not supply one.
     """
     if not isinstance(raw, str) or raw.strip().lower() in {
         "", "unknown", "none", "null", "nan", "n/a", "residential",
@@ -591,6 +597,12 @@ def extract_bhhs_subtype(soup: BeautifulSoup) -> Optional[str]:
 
     Descriptions can mention other home types, so they are never used to guess
     a subtype. This lookup makes no additional detail-page request.
+
+    Args:
+        soup: Parsed BHHS listing details page.
+
+    Returns:
+        First usable subtype from an explicit property label, or None.
     """
     tokens = list(soup.stripped_strings)
     for index, token in enumerate(tokens):
@@ -800,6 +812,12 @@ def _decode_agency_detail(payload: object) -> dict:
 
     Reject other JSON types so callers can retry invalid responses instead of
     recording them as successful lookups with no reported subtype or status.
+
+    Args:
+        payload: Decoded response object or an extra JSON string wrapper.
+
+    Returns:
+        Listing detail object. Invalid JSON and non-object payloads raise errors.
     """
     if isinstance(payload, str):
         payload = json.loads(payload)
@@ -837,6 +855,12 @@ def _agency_detail_fields(payload: dict) -> list[dict]:
 
     Empty and singleton containers occur alongside normal item lists. Ignore
     malformed items so they cannot discard usable subtype or amenity fields.
+
+    Args:
+        payload: Decoded Agency listing detail object.
+
+    Returns:
+        Dictionary items in the provider’s additional property information.
     """
     details = payload.get("AddtionalPropertyInfo", payload.get("AdditionalPropertyInfo")) or {}
     fields = (details.get("Item") or []) if isinstance(details, dict) else []

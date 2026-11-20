@@ -261,6 +261,9 @@ def test_resolve_locations_expands_obvious_comma_separated_list() -> None:
 
     This preserves the user-facing shorthand for entering several places in
     one field when none of the commas belongs to a qualified address.
+
+    Returns:
+        None.
     """
     crosswalk = {
         "SILVER LAKE": {"90026"},
@@ -291,10 +294,23 @@ def test_resolve_locations_preserves_qualified_place_and_address_commas() -> Non
 
     Their commas are part of a single location, so splitting them would send
     geocoding requests for incomplete fragments.
+
+    Returns:
+        None.
     """
     geocode_calls: list[str] = []
 
     def fake_geocode(location: str) -> None:
+        """Capture unresolved queries without consulting the geocoder.
+
+        Returning None lets the test focus on whether commas were preserved.
+
+        Args:
+            location: Location string forwarded to the geocoding fallback.
+
+        Returns:
+            None.
+        """
         geocode_calls.append(location)
         return None
 

@@ -3,32 +3,38 @@
 import ast
 from pathlib import Path
 import re
+import subprocess
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_DIRECTORIES = {".git", ".venv", "venv"}
 
 
 def test_all_python_functions_are_typed_and_documented() -> None:
     """Require complete type hints and applicable docstring sections.
 
-    This catches newly added Python functions that lack type hints or required doc sections.
+    Honor Git's ignore rules so local environments and generated copies do not
+    affect the check. Include untracked source so new files are checked before
+    they are staged.
 
     Returns:
         None.
     """
     issues: list[str] = []
 
-    for path in sorted(PROJECT_ROOT.rglob("*.py")):
-        if any(part in EXCLUDED_DIRECTORIES for part in path.parts):
+    files = subprocess.check_output(
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.py"],
+        cwd=PROJECT_ROOT,
+    ).decode()
+    for relative_path in sorted(set(files.split("\0")) - {""}):
+        path = PROJECT_ROOT / relative_path
+        if not path.is_file():
             continue
-
         tree = ast.parse(path.read_text(), filename=str(path))
         for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
 
-            location = f"{path.relative_to(PROJECT_ROOT)}:{node.lineno} ({node.name})"
+            location = f"{relative_path}:{node.lineno} ({node.name})"
             docstring = ast.get_docstring(node) or ""
             parameters = [
                 parameter

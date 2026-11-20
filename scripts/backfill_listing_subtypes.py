@@ -115,6 +115,9 @@ def main() -> None:
     completed lookups, and the original backup remains intact across resumes.
     Failures or a host circuit produce an unsuccessful exit for retry tooling;
     reaching an explicitly requested limit is a normal completion.
+
+    Returns:
+        None.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db-path", type=Path, default=LARENTALS_DB_PATH)

@@ -148,13 +148,43 @@ def test_guard_writes_audit_without_deleting_assets(
         """Expose current files and fail if guarded cleanup attempts deletion."""
 
         def __init__(self, private_key: str) -> None:
+            """Capture the credential passed to the fake ImageKit client.
+
+            The test can exercise client construction without accessing the remote account.
+
+            Args:
+                private_key: Test credential passed into the client constructor.
+
+            Returns:
+                None.
+            """
             self.private_key = private_key
 
         def list_assets(self, asset_type: str) -> list[dict]:
+            """Return controlled inventory to the reconciliation script.
+
+            The fake accepts only file listings because folder inventory is irrelevant to this run.
+
+            Args:
+                asset_type: Asset selector passed by the reconciler.
+
+            Returns:
+                Asset records held by the fake client.
+            """
             assert asset_type == "file"
             return assets
 
         def delete_files(self, file_ids: object) -> int:
+            """Fail immediately if guarded cleanup attempts a deletion.
+
+            Guarded cleanup is expected to produce an audit while leaving remote files alone.
+
+            Args:
+                file_ids: Identifiers that would be sent for deletion.
+
+            Returns:
+                Raises if the guarded path attempts a deletion.
+            """
             raise AssertionError("guarded cleanup must not delete files")
 
     monkeypatch.setattr("scripts.reconcile_imagekit_assets.ImageKitMediaClient", FakeClient)

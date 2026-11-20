@@ -70,7 +70,7 @@ for (const market of ["lease", "buy"]) {
         hull.toGeoJSON().features[0]?.geometry.type === "Polygon");
     })).toBe(true);
     // Leave the map entirely so its result overlay cannot retain marker hover.
-    await page.getByRole("link", { name: "MCP setup instructions" }).hover();
+    await page.getByRole("link", { name: "MCP setup", exact: true }).hover();
     await expect.poll(() => page.evaluate(() => Boolean(window.larentals.currentConvexHull))).toBe(false);
   });
 }

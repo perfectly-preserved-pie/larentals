@@ -24,6 +24,17 @@ from scripts.bulk_repair_issue_349 import apply_result, component, prepare, stre
 
 
 def suffix(value: str) -> str | None:
+    """Read a comparable street suffix for partial-match validation.
+
+    Normalize common long names to abbreviations so route spelling alone does
+    not cause a rooftop result to be rejected.
+
+    Args:
+        value: Street name from the listing or geocoder.
+
+    Returns:
+        Normalized suffix, or None when no recognized suffix is present.
+    """
     match = re.search(r"\b(street|st|avenue|ave|boulevard|blvd|road|rd|lane|ln|drive|dr|way|wy|place|pl|court|ct)\s*$", value, re.I)
     if not match:
         return None
@@ -33,6 +44,17 @@ def suffix(value: str) -> str | None:
 
 
 def variants(details: dict) -> list[tuple[str, bool]]:
+    """Build up to two alternate searches for an unresolved building.
+
+    Try a spelling or suffix adjustment with a ZIP restriction first when
+    available, then let Google search more broadly while retaining ZIP validation.
+
+    Args:
+        details: Parsed number, street, city, and ZIP from the audit listing.
+
+    Returns:
+        Query strings paired with whether to restrict the request by ZIP.
+    """
     street = details["street"]
     city = details["city"]
     zip_code = details["zip"]
@@ -50,6 +72,14 @@ def variants(details: dict) -> list[tuple[str, bool]]:
 
 
 def main() -> None:
+    """Run a bounded second pass over unresolved building coordinates.
+
+    Reuse prior report entries across runs and write accepted outcomes to the
+    database only when the operator requests it.
+
+    Returns:
+        None.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--audit", type=Path, default=Path("data/audits/issue_349/zip_coordinate_audit_live_pass2.csv"))
     parser.add_argument("--output", type=Path, default=Path("data/audits/issue_349/bulk_retry.jsonl"))

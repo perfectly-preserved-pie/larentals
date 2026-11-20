@@ -166,6 +166,12 @@ def test_persistent_rate_limit_opens_host_circuit(
 
     Once a host is rate limited, retrying every row only wastes time and can
     prolong the scrape without improving its result.
+
+    Args:
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     scraping._next_request_at.clear()
     scraping._cooldown_until.clear()
@@ -175,9 +181,30 @@ def test_persistent_rate_limit_opens_host_circuit(
     request_count = [0]
 
     def sleep(seconds: float) -> None:
+        """Advance the rate-limit test clock without waiting.
+
+        Retries and cooldowns can finish deterministically without using wall-clock time.
+
+        Args:
+            seconds: Requested delay added to the simulated clock.
+
+        Returns:
+            None.
+        """
         clock[0] += seconds
 
     def rate_limited(*args: object, **kwargs: object) -> FakeResponse:
+        """Record each request and return an HTTP rate limit.
+
+        A persistent limit should open the host circuit after the configured retries.
+
+        Args:
+            *args: Positional arguments from the provider request.
+            **kwargs: Keyword arguments from the provider request.
+
+        Returns:
+            HTTP 429 response for every request.
+        """
         request_count[0] += 1
         return FakeResponse(429)
 
@@ -579,11 +606,25 @@ def test_rentcast_missing_exact_mls_is_unknown(
     ({}, None),
 ])
 @pytest.mark.parametrize("encoded", [False, True])
-def test_agency_extracts_explicit_subtype(monkeypatch, payload, expected, encoded):
+def test_agency_extracts_explicit_subtype(
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, object],
+    expected: str | None,
+    encoded: bool,
+) -> None:
     """Read subtype from the response already fetched for listing details.
 
     A market category must not masquerade as a home type when subtype is absent.
     Both supported JSON encodings must retain the same priority among fields.
+
+    Args:
+        monkeypatch: Fixture for substituting the service calls used by this test.
+        payload: JSON record returned by the fake Agency request.
+        expected: Expected normalized listing subtype.
+        encoded: Whether the provider wraps the detail object in a JSON string.
+
+    Returns:
+        None.
     """
     monkeypatch.setattr(scraping, "get_with_backoff", lambda *args, **kwargs: FakeResponse(200, json_data=json.dumps(payload) if encoded else payload))
     assert scraping.fetch_the_agency_data("MLS-1", 0, 1)[3] == expected
@@ -595,9 +636,16 @@ def test_agency_extracts_explicit_subtype(monkeypatch, payload, expected, encode
     ("<p>Property Type: Residential</p>", None),
     ("<p>A condominium near single family homes</p>", None),
 ])
-def test_bhhs_extracts_only_labeled_type(html, expected):
+def test_bhhs_extracts_only_labeled_type(html: str, expected: str | None) -> None:
     """Use explicit type labels without guessing from the description.
 
     Missing or broad market types leave the listing subtype unknown.
+
+    Args:
+        html: Listing markup parsed for an explicit property-type label.
+        expected: Expected normalized listing subtype.
+
+    Returns:
+        None.
     """
     assert scraping.extract_bhhs_subtype(scraping.BeautifulSoup(html, "html.parser")) == expected

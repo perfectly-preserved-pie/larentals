@@ -51,6 +51,9 @@ class ComponentsSmokeTest(unittest.TestCase):
 
         Both price filters use the shared mark generator; preserve the exact
         endpoint while dropping only the interior tick that would overlap it.
+
+        Returns:
+            None.
         """
         for maximum, step, endpoint in (
             (1_050_000, 500_000, "$1.05M"),
@@ -198,9 +201,12 @@ class ComponentsSmokeTest(unittest.TestCase):
     def test_location_suggestions_include_listing_places_and_zip_codes(self) -> None:
         """Build canonical suggestions from local listing values.
 
-    Suggestions should reflect actual listing cities and ZIP codes, with
-    duplicates and formatting differences normalized for the filter UI.
-    """
+        Suggestions should reflect actual listing cities and ZIP codes, with
+        duplicates and formatting differences normalized for the filter UI.
+
+        Returns:
+            None.
+        """
         suggestions = build_location_suggestions(
             ["SILVER LAKE", "Pasadena", "#302, LONG BEACH", "BDPK", None],
             ["90026", "91030-1234", None],

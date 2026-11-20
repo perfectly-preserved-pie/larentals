@@ -165,6 +165,8 @@ test("MCP setup snippets copy with the keyboard and keep focus", async ({ contex
 for (const entry of pages.filter((entry) => entry.key)) {
   test(`${entry.key} photo reserves its frame before image delivery`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
+    // Measure the reserved frame without the result popup's entrance scale animation.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     let pendingImage;
     await page.route("**/photo-layout-fixture.png", (route) => { pendingImage = route; });
     await page.route(`**/api/${entry.key}/listing-details/*`, async (route) => {

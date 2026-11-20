@@ -9,10 +9,13 @@ from functions.dash_asset_requests import register_dash_asset_request_guard
 
 
 @pytest.fixture
-def dash_client():
+def dash_client() -> FlaskClient:
     """Create a small app without loading production data or services.
 
     The fixture isolates request-routing behavior from external dependencies.
+
+    Returns:
+        Client for requests to the isolated Dash app.
     """
     app = Dash(__name__)
     app.layout = html.Div(
@@ -33,10 +36,24 @@ def dash_client():
         "157.async-dropdown.js",
     ],
 )
-def test_scanned_assets_return_404_without_errors(dash_client, caplog, method, filename):
+def test_scanned_assets_return_404_without_errors(
+    dash_client: FlaskClient,
+    caplog: pytest.LogCaptureFixture,
+    method: str,
+    filename: str,
+) -> None:
     """Invalid filenames produce a normal 404, not a Dash exception.
 
     This covers malformed and traversal-style asset paths at the HTTP boundary.
+
+    Args:
+        dash_client: Test client with the Dash asset guard installed.
+        caplog: Captured logs used to check for unexpected errors.
+        method: HTTP method used to request the route.
+        filename: Asset filename requested from the Dash component suite.
+
+    Returns:
+        None.
     """
     response = dash_client.open(
         f"/_dash-component-suites/dash/dcc/{filename}?v=1", method=method
@@ -102,11 +119,18 @@ def test_valid_plotly_asset_still_loads(dash_client: FlaskClient, method: str) -
         "dash_core_components.js",
     ],
 )
-def test_valid_dash_assets_still_load(dash_client, filename):
+def test_valid_dash_assets_still_load(dash_client: FlaskClient, filename: str) -> None:
     """Keep real JavaScript bundles and source maps available.
 
     The guard should reject suspicious names without blocking legitimate Dash
     assets required by the browser.
+
+    Args:
+        dash_client: Test client with the Dash asset guard installed.
+        filename: Asset filename requested from the Dash component suite.
+
+    Returns:
+        None.
     """
     response = dash_client.get(f"/_dash-component-suites/dash/dcc/{filename}")
     assert response.status_code == 200
@@ -125,10 +149,17 @@ def test_valid_dash_assets_still_load(dash_client, filename):
         ("/api/listings", 200),
     ],
 )
-def test_guard_scope(path, expected):
+def test_guard_scope(path: str, expected: int) -> None:
     """Only matching component filenames are intercepted before routing.
 
     Unrelated paths must continue through Dash's normal route handling.
+
+    Args:
+        path: URL path exercised by the test client.
+        expected: Expected HTTP status for the guarded or pass-through path.
+
+    Returns:
+        None.
     """
     server = Flask(__name__)
     register_dash_asset_request_guard(server)
@@ -148,11 +179,25 @@ def test_guard_scope(path, expected):
         "/_dash-component-suites/dash/dcc/missing.js.map",
     ],
 )
-def test_unregistered_assets_return_404(dash_client, caplog, method, path):
+def test_unregistered_assets_return_404(
+    dash_client: FlaskClient,
+    caplog: pytest.LogCaptureFixture,
+    method: str,
+    path: str,
+) -> None:
     """Reject scanner paths through Dash's actual package validation.
 
     These names bypass the early malformed-chunk checks and previously raised
     dependency exceptions, including probes under otherwise valid packages.
+
+    Args:
+        dash_client: Test client with the Dash asset guard installed.
+        caplog: Captured logs used to check for unexpected errors.
+        method: HTTP method used to request the route.
+        path: URL path exercised by the test client.
+
+    Returns:
+        None.
     """
     response = dash_client.open(path, method=method)
     assert response.status_code == 404
@@ -163,11 +208,18 @@ def test_unregistered_assets_return_404(dash_client, caplog, method, path):
     "path, method",
     [("/callback", "GET"), ("/_dash-component-suites/dash/bundle.js", "POST")],
 )
-def test_other_dependency_failures_remain_visible(path, method):
+def test_other_dependency_failures_remain_visible(path: str, method: str) -> None:
     """Keep unrelated dependency errors from becoming misleading 404s.
 
     The handler is registered on Flask globally, so both the route prefix and
     request method must constrain which failures it translates.
+
+    Args:
+        path: URL path exercised by the test client.
+        method: HTTP method used to request the route.
+
+    Returns:
+        None.
     """
     from dash.exceptions import DependencyException
 
@@ -175,10 +227,13 @@ def test_other_dependency_failures_remain_visible(path, method):
     server.config["TESTING"] = True
     register_dash_asset_request_guard(server)
 
-    def fail():
+    def fail() -> None:
         """Simulate a dependency failure outside component asset retrieval.
 
         A real callback failure must still propagate to Flask's error handling.
+
+        Returns:
+            Raises the simulated dependency error.
         """
         raise DependencyException("unrelated dependency failure")
 
@@ -187,11 +242,17 @@ def test_other_dependency_failures_remain_visible(path, method):
         server.test_client().open(path, method=method)
 
 
-def test_fingerprinted_asset_still_loads(dash_client):
+def test_fingerprinted_asset_still_loads(dash_client: FlaskClient) -> None:
     """Let Dash normalize cache fingerprints before validating asset names.
 
     Browser bundle URLs contain version and modification-time tokens that are
     absent from the registered filename and must not be rejected literally.
+
+    Args:
+        dash_client: Test client with the Dash asset guard installed.
+
+    Returns:
+        None.
     """
     response = dash_client.get(
         "/_dash-component-suites/dash/dcc/"

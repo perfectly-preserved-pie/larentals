@@ -3,7 +3,14 @@ from flask import Flask
 from functions.security_headers import register_security_headers
 
 
-def test_csp_covers_documents_api_and_errors():
+def test_csp_covers_documents_api_and_errors() -> None:
+    """Apply the CSP to documents, API responses, health checks, and 404s.
+
+    Check for a single enforced policy so inherited or duplicate headers cannot conflict.
+
+    Returns:
+        None.
+    """
     server = Flask(__name__)
     register_security_headers(server)
     server.add_url_rule("/", endpoint="index", view_func=lambda: "<html></html>")
@@ -28,13 +35,27 @@ def test_csp_covers_documents_api_and_errors():
             assert "Content-Security-Policy-Report-Only" not in response.headers
 
 
-def test_hashes_are_resolved_after_request_setup():
+def test_hashes_are_resolved_after_request_setup() -> None:
+    """Include script hashes registered during request setup.
+
+    This models Dash initializing page callbacks on its first request.
+
+    Returns:
+        None.
+    """
     server = Flask(__name__)
     hashes = []
     register_security_headers(server, lambda: hashes)
 
     @server.before_request
-    def register_lazy_callback():
+    def register_lazy_callback() -> None:
+        """Add a script hash during request setup.
+
+        The response hook must see the hash even though it was absent at registration time.
+
+        Returns:
+            None.
+        """
         hashes.append("'sha256-lazy-callback'")
 
     with server.test_client() as client:

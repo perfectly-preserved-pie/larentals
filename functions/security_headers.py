@@ -39,6 +39,13 @@ def register_security_headers(
     additional inline callbacks during its first-request setup. Hashes come from
     registered code, never response HTML that might contain untrusted markup.
     Inline styles remain necessary for React and Leaflet positioning.
+
+    Args:
+        server: Flask application that serves the maps, API, and public guides.
+        script_hashes: Callback supplying hashes for Dash's registered inline scripts.
+
+    Returns:
+        None.
     """
 
     @server.after_request
@@ -47,6 +54,12 @@ def register_security_headers(
 
         Assignment replaces an existing app header so repeated policy values
         cannot accidentally impose conflicting restrictions on the same response.
+
+        Args:
+            response: Outgoing Flask response, including HTTP errors.
+
+        Returns:
+            Response with the current Content-Security-Policy header.
         """
         hashes = " ".join(dict.fromkeys([*script_hashes(), MANTINE_COLOR_SCHEME_HASH]))
         response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY.format(script_hashes=hashes)

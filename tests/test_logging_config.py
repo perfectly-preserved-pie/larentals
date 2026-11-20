@@ -208,6 +208,12 @@ def test_gunicorn_keeps_only_warnings_and_errors(level: str) -> None:
 
     Real Gunicorn initialization must disable access logging and still emit
     warnings and errors once, even when application logging is more restrictive.
+
+    Args:
+        level: Configured Gunicorn log level.
+
+    Returns:
+        None.
     """
     events = run_logging('''
         import runpy

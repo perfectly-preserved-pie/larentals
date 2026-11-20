@@ -33,7 +33,7 @@ def test_complete_snapshot_and_unchanged_revisions(tmp_path: Path, monkeypatch: 
     }
     calls = []
 
-    def get(url, params=None, **kwargs):
+    def get(url: str, params: dict[str, str | int] | None = None, **kwargs: object) -> SimpleNamespace:
         """Return stable metadata and paginated raw rows from the fake source.
 
         Args:
@@ -100,7 +100,7 @@ def test_incomplete_refresh_retains_previous_snapshot(tmp_path: Path, monkeypatc
     before = output.read_bytes()
     revisions = {dataset: 0 for dataset in snapshot.DATASETS.values()}
 
-    def metadata(dataset):
+    def metadata(dataset: str) -> dict[str, str | int]:
         """Advance the source revision only when simulating a mid-download edit.
 
         Args:
@@ -113,7 +113,7 @@ def test_incomplete_refresh_retains_previous_snapshot(tmp_path: Path, monkeypatc
         revision = revisions[dataset] if failure == 'revision_changed' else 1
         return {"dataset": dataset, "rows_updated_at": revision}
 
-    def get(url, params, **kwargs):
+    def get(url: str, params: dict[str, str | int], **kwargs: object) -> SimpleNamespace:
         """Claim two rows but truncate the second page for the short-page fault.
 
         Args:

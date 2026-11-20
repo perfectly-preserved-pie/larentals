@@ -94,6 +94,16 @@ class FakeLocation:
     longitude = -118.25
 
     def __init__(self, query: str) -> None:
+        """Create a rooftop result matching the fake geocoder query.
+
+        Echo the street number and ZIP so the coordinate validator accepts the synthetic result.
+
+        Args:
+            query: Address passed to the fake geocoder.
+
+        Returns:
+            None.
+        """
         number = re.search(r"\b(\d+)\s+Main St", query)
         zip_code = re.search(r"(?<!\d)(\d{5})\s*$", query)
         self.raw = {
@@ -409,6 +419,12 @@ def test_complete_agency_result_skips_bhhs(
 
     This protects the pipeline from adding needless latency or replacing a
     usable provider result with secondary-provider data.
+
+    Args:
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     bhhs_calls: list[dict[str, object]] = []
 
@@ -551,6 +567,12 @@ def test_inactive_check_ignores_spoofed_bhhs_host(
 
     Provider routing must use the parsed hostname so lookalike domains cannot
     receive BHHS-specific handling.
+
+    Args:
+        monkeypatch: Fixture for substituting the service calls used by this test.
+
+    Returns:
+        None.
     """
     checks: list[str] = []
 
@@ -782,6 +804,13 @@ def test_google_accepts_fractional_numbers_on_the_same_building() -> None:
 
 
 def test_google_normalizes_decimal_street_number_before_lookup() -> None:
+    """Use the actual street and ZIP digits from spreadsheet numeric fields.
+
+    The provider query must drop decimal suffixes while still identifying the same building and ZIP.
+
+    Returns:
+        None.
+    """
     geolocator = Mock()
     geolocator.geocode.side_effect = lambda query, **kwargs: FakeLocation(query)
 
@@ -1829,28 +1858,59 @@ def test_changed_address_and_photo_invalidate_failed_enrichment() -> None:
     ("Own Your Own", "Single Family", None, "Own Your Own", 0),
 ])
 def test_missing_subtype_enrichment_and_resume(
-    monkeypatch, tmp_path, source_type, agency_type, bhhs_type, expected, bhhs_count,
-):
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    source_type: str | None,
+    agency_type: str | None,
+    bhhs_type: str | None,
+    expected: str,
+    bhhs_count: int,
+) -> None:
     """Fill missing types while retaining source types and cached provider attempts.
 
     Resume must restore a recovered subtype without repeating provider lookups,
     including when an earlier attempt found no explicit type.
+
+    Args:
+        monkeypatch: Fixture for substituting the service calls used by this test.
+        tmp_path: Temporary directory for the listing and checkpoint databases.
+        source_type: Subtype present in the incoming listing row.
+        agency_type: Subtype returned by the primary provider.
+        bhhs_type: Subtype returned by the fallback provider.
+        expected: Subtype expected after enrichment.
+        bhhs_count: Expected number of requests to the fallback provider.
+
+    Returns:
+        None.
     """
     agency_calls = []
     bhhs_calls = []
 
-    def agency(*args, **kwargs):
+    def agency(*args: object, **kwargs: object) -> tuple[pd.Timestamp, str, str, str | None]:
         """Return a complete primary listing with a controlled type.
 
         Tracking calls detects repeated requests during checkpoint reuse.
+
+        Args:
+            *args: Positional arguments from the provider request.
+            **kwargs: Keyword arguments from the provider request.
+
+        Returns:
+            Complete listing details with the configured primary subtype.
         """
         agency_calls.append(args)
         return pd.Timestamp("2026-07-20"), "https://example.test/listing", "https://example.test/photo", agency_type
 
-    def bhhs(**kwargs):
+    def bhhs(**kwargs: object) -> tuple[None, None, None, str | None]:
         """Supply only the fallback subtype.
 
         The primary provider already supplied all other listing fields.
+
+        Args:
+            **kwargs: Keyword arguments from the provider request.
+
+        Returns:
+            Fallback subtype without unrelated listing details.
         """
         bhhs_calls.append(kwargs)
         return None, None, None, bhhs_type
