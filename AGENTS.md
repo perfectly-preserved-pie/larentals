@@ -7,6 +7,16 @@ whether a change warrants a project version bump.
 
 For user-facing changes, read [DESIGN.md](DESIGN.md) and follow the shared visual direction for the maps and MCP guide.
 
+# Crawler regression checks
+
+Before finishing changes that can affect what the public site serves, run
+`npm run test:e2e -- agentmarkup.spec.js` against the local build. This includes
+changes to page HTML, metadata, routing, crawler files, and deployment settings
+that affect those responses. A run of the full Playwright suite covers this check.
+
+Fix affected regressions and rerun the check. Treat the overall score and
+warnings as diagnostics. If the check cannot run, report what blocked it.
+
 # Documentation for Python and JavaScript changes
 
 When you add or change a function, read its body and callers before writing its

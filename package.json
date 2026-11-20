@@ -2,10 +2,12 @@
   "name": "wheretolive-la-ui-tests",
   "private": true,
   "scripts": {
+    "audit:local": "node scripts/audit_local.mjs",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium"
   },
   "devDependencies": {
+    "@agentmarkup/audit": "0.3.0",
     "@playwright/test": "1.64.1"
   }
 }
