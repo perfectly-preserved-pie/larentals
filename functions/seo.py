@@ -195,9 +195,10 @@ def build_sitemap_xml(
 
 
 def build_robots_txt(base_url: str) -> str:
-  """Build a minimal robots.txt that advertises the sitemap.
+  """Build robots.txt with the public sitemap and content-use preferences.
 
-  A small robots file exposes the sitemap without restricting public pages.
+  Keep public pages crawlable and signal that their content can be indexed
+  or used in AI answers while opting out of model training.
 
   Args:
       base_url: Canonical public base URL without a trailing slash.
@@ -208,6 +209,7 @@ def build_robots_txt(base_url: str) -> str:
   return "\n".join([
     "User-agent: *",
     "Allow: /",
+    "Content-Signal: search=yes, ai-input=yes, ai-train=no",
     "",
     f"Sitemap: {base_url.rstrip('/')}/sitemap.xml",
     "",

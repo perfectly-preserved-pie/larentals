@@ -64,10 +64,11 @@ class SeoTest(unittest.TestCase):
       ["2026-11-19", None, "2026-11-18"],
     )
 
-  def test_build_robots_txt_points_to_sitemap(self) -> None:
-    """Verify that build robots txt points to sitemap.
+  def test_build_robots_txt_publishes_sitemap_and_content_signal(self) -> None:
+    """Verify the public crawler access and content-use policy.
 
-    Search crawlers need the generated sitemap location advertised in robots.txt.
+    Search crawlers need the sitemap location, and AI crawlers can distinguish
+    answering questions from training models.
 
     Returns:
         None.
@@ -76,6 +77,7 @@ class SeoTest(unittest.TestCase):
 
     self.assertIn("User-agent: *", robots_txt)
     self.assertIn("Allow: /", robots_txt)
+    self.assertIn("Content-Signal: search=yes, ai-input=yes, ai-train=no", robots_txt)
     self.assertIn("Sitemap: https://wheretolive.la/sitemap.xml", robots_txt)
 
   def test_build_llms_txt_describes_primary_ai_search_context(self) -> None:
