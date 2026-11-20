@@ -23,9 +23,11 @@ WORKDIR /app
 # Copy the whole prepared app tree including its permsissions from the builder stage
 COPY --from=builder /app /app
 
-ENV PATH="/app/.venv/bin:$PATH"
+# Use the runtime interpreter. Launchers in the copied environment point to
+# the builder's Python path, which is absent from the runtime image.
+ENV PYTHONPATH="/app/.venv/lib/python3.13/site-packages"
 # Override with LOG_LEVEL=DEBUG when per-call diagnostics are needed.
 ENV LOG_LEVEL=INFO
 
-ENTRYPOINT ["gunicorn"]
+ENTRYPOINT ["python3", "-m", "gunicorn"]
 CMD ["--config", "/app/gunicorn.conf.py", "--chdir", "/app", "-b", "0.0.0.0:8080", "--worker-class=gthread", "--workers=10", "--threads=8", "--timeout=60", "--keep-alive=5", "--preload", "app:server"]
