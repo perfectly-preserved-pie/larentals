@@ -1,6 +1,6 @@
 """Add MCP 2026-07-28 support to Dash's legacy MCP endpoint.
 
-Dash 4.4.1 implements the initialization-based 2025-11-25 protocol. This
+Dash 4.5.1 implements the initialization-based 2025-11-25 protocol. This
 module adds the stateless 2026-07-28 wire protocol at the same HTTP endpoint
 while leaving Dash's native handler available to legacy clients.
 """

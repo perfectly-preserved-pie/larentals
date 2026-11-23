@@ -90,14 +90,7 @@ def main() -> None:
 
   g = GoogleV3(api_key=os.getenv('GOOGLE_API_KEY')) # https://github.com/geopy/geopy/issues/171
 
-  # ImageKit.IO
-  # https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#uploading-file-via-url
-  # Create keys at https://imagekit.io/dashboard/developer/api-keys
-  imagekit = ImageKit(
-      public_key=os.getenv('IMAGEKIT_PUBLIC_KEY'),
-      private_key=os.getenv('IMAGEKIT_PRIVATE_KEY'),
-      url_endpoint = os.getenv('IMAGEKIT_URL_ENDPOINT')
-  )
+  imagekit = ImageKit()
 
   # Database path and table name
   DB_PATH = args.db_path

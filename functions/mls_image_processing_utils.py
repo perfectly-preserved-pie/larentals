@@ -1,6 +1,6 @@
 from dotenv import load_dotenv, find_dotenv
 from imagekitio import ImageKit
-from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
+from imagekitio.types.file import File
 from loguru import logger
 from typing import Optional, List, Generator, Set
 import geopandas as gpd
@@ -18,11 +18,11 @@ def imagekit_transform(
         imagekit_instance: ImageKit,
         folder: Optional[str] = None,
     ) -> Optional[str]:
-    """Uploads and transforms an image using ImageKit.
+    """Upload a listing photo and return its 400-by-300 delivery URL.
 
-    Store a provider photo under the listing's MLS identity, then return its
-    transformed delivery URL. A failed upload or transformation leaves the
-    listing without a new photo URL.
+    Use the MLS number as a stable filename so retrying an upload replaces the
+    same asset. A missing source URL or failed ImageKit operation leaves the
+    listing without a new delivery URL.
 
     Args:
         bhhs_mls_photo_url: URL for the bhhs MLS photo.
@@ -33,48 +33,37 @@ def imagekit_transform(
     Returns:
         The transformed ImageKit URL, or ``None`` if processing fails.
     """
-    # Initialize variables
-    uploaded_image: Optional[str] = None
-    transformed_image: Optional[str] = None
-
-    # Set up upload options
-    options = UploadFileRequestOptions(
-        is_private_file=False,
-        use_unique_file_name=False,
-        overwrite_file=True,
-        folder=folder,
-    )
-
-    # Check if a photo URL is available
-    if pd.notnull(bhhs_mls_photo_url):
-        try:
-            uploaded_image = imagekit_instance.upload_file(
-                file=bhhs_mls_photo_url,
-                file_name=mls,
-                options=options
-            ).url
-        except Exception as e:
-            logger.warning(f"Couldn't upload image to ImageKit because {e}.")
-            return None  # Return early if upload fails
-    else:
+    if pd.isna(bhhs_mls_photo_url):
         logger.info(f"No image URL found on BHHS for {mls}. Not uploading anything to ImageKit.")
-        return None  # Return early if no image URL
+        return None
 
-    # Transform the uploaded image if it exists
-    if uploaded_image:
-        try:
-            transformed_image = imagekit_instance.url({
-                "src": uploaded_image,
-                "transformation": [{
-                    "height": "300",
-                    "width": "400"
-                }]
-            })
-            logger.debug(f"ImageKit transformation generated for MLS {mls}.")
-        except Exception as e:
-            logger.warning(f"Couldn't transform image because {e}.")
-            return None  # Return early if transform fails
+    try:
+        uploaded_image = imagekit_instance.files.upload(
+            # A multipart field without a filename tells ImageKit to fetch the source URL.
+            file=(None, bhhs_mls_photo_url.encode("utf-8")),
+            file_name=mls,
+            folder=folder or "/",
+            is_private_file=False,
+            use_unique_file_name=False,
+            overwrite_file=True,
+        ).url
+    except Exception as e:
+        logger.warning(f"Couldn't upload image to ImageKit because {e}.")
+        return None
 
+    if not uploaded_image:
+        return None
+
+    try:
+        transformed_image = imagekit_instance.helper.build_url(
+            src=uploaded_image,
+            transformation=[{"height": 300, "width": 400}],
+        )
+    except Exception as e:
+        logger.warning(f"Couldn't transform image because {e}.")
+        return None
+
+    logger.debug(f"ImageKit transformation generated for MLS {mls}.")
     return transformed_image
 
 def chunked_list(lst: List, chunk_size: int) -> Generator[List, None, None]:
@@ -95,9 +84,9 @@ Bounded groups keep remote image operations within service request limits.
 def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> None:
     """Delete ImageKit files absent from the active listing GeoJSON.
 
-    Use the GeoJSON's MLS numbers as the keep set and delete account files
-    whose listing number is absent. The input must represent the intended
-    active listings because this operation removes remote assets.
+    Use the GeoJSON's MLS numbers as the keep set for files in the returned
+    asset page. The input must represent the intended active listings because
+    this operation removes remote assets.
 
     Parameters:
     geojson_path (str): The path to the GeoJSON file.
@@ -109,9 +98,7 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     # Load the GeoJSON file
     gdf = gpd.read_file(geojson_path)
 
-    # Get the list of files
-    list_files_response = imagekit_instance.list_files()
-    list_files: list = list_files_response.list if hasattr(list_files_response, 'list') else []
+    list_files = imagekit_instance.assets.list()
 
     # Create a set of referenced mls numbers for faster searching
     referenced_mls_numbers: Set[str] = set(
@@ -121,14 +108,16 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     # Initialize a list for file IDs to delete
     file_ids_for_deletion: List[str] = [
         file.file_id for file in list_files
-        if os.path.splitext(file.name)[0] not in referenced_mls_numbers
+        if isinstance(file, File) and file.file_id and file.name
+        and os.path.splitext(file.name)[0] not in referenced_mls_numbers
     ]
 
     # Function to handle bulk deletion in chunks
     def delete_in_chunks(file_ids: List[str], imagekit_instance: ImageKit) -> None:
-        """Deletes files in chunks of 100 to avoid overloading the API requests.
+        """Submit bulk deletes in batches accepted by ImageKit.
 
-        The service accepts at most 100 file IDs per delete request.
+        Each API call accepts at most 100 IDs and can return without deleting
+        any of them, so log that outcome for the corresponding batch.
 
         Args:
             file_ids: ImageKit file identifiers to delete in one or more batches.
@@ -139,16 +128,10 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
         """
         for i in range(0, len(file_ids), 100):
             chunk = file_ids[i:i + 100]
-            bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=chunk)
+            bulk_delete_result = imagekit_instance.files.bulk.delete(file_ids=chunk)
 
             if not bulk_delete_result.successfully_deleted_file_ids:
-                # Since successfully_deleted_file_ids is None or empty, no files were deleted.
-                logger.error("No files were deleted.")
-                # Use the response_metadata to get more details about the request and response.
-                if bulk_delete_result.response_metadata:
-                    logger.debug(f"Response metadata: {bulk_delete_result.response_metadata.raw}")
-                else:
-                    logger.error("No response metadata available.")
+                logger.error(f"No files were deleted in the batch of {len(chunk)} ImageKit IDs.")
 
     # Call the function to delete files in chunks
     delete_in_chunks(file_ids_for_deletion, imagekit_instance)
@@ -157,9 +140,10 @@ def reclaim_imagekit_space(geojson_path: str, imagekit_instance: ImageKit) -> No
     logger.info(f"Total number of files requested for deletion: {len(file_ids_for_deletion)}")
 
 def delete_single_mls_image(mls_number: str) -> None:
-    """Deletes all images associated with a single MLS number from ImageKit.
+    """Delete ImageKit files whose names start with the given MLS number.
 
-Grouping by listing identifier prevents assets from other listings being included in cleanup.
+    Check the returned asset page and skip directory entries, which have no
+    file ID for the bulk delete API.
 
     Parameters:
     mls_number (str): The MLS number associated with the images.
@@ -167,30 +151,21 @@ Grouping by listing identifier prevents assets from other listings being include
     Returns:
     None
     """
-    imagekit_instance = ImageKit(
-        public_key=os.getenv('IMAGEKIT_PUBLIC_KEY'),
-        private_key=os.getenv('IMAGEKIT_PRIVATE_KEY'),
-        url_endpoint=os.getenv('IMAGEKIT_URL_ENDPOINT')
-    )
     try:
-        # Find files associated with the MLS number
-        list_files_response = imagekit_instance.list_files()
-        list_files: list = list_files_response.list if hasattr(list_files_response, 'list') else []
+        with ImageKit() as imagekit_instance:
+            files_to_delete = [
+                file.file_id for file in imagekit_instance.assets.list()
+                if isinstance(file, File) and file.file_id and file.name
+                and file.name.startswith(mls_number)
+            ]
 
-        files_to_delete = [file.file_id for file in list_files if file.name.startswith(mls_number)]
-
-        if files_to_delete:
-            # Delete files in bulk
-            bulk_delete_result = imagekit_instance.bulk_file_delete(file_ids=files_to_delete)
-            if bulk_delete_result.successfully_deleted_file_ids:
-                logger.info(f"Deleted images for MLS {mls_number}.")
-            else:
-                logger.error(f"Failed to delete some images for MLS {mls_number}.")
-                if bulk_delete_result.response_metadata:
-                    logger.debug(f"Response metadata: {bulk_delete_result.response_metadata.raw}")
+            if files_to_delete:
+                bulk_delete_result = imagekit_instance.files.bulk.delete(file_ids=files_to_delete)
+                if bulk_delete_result.successfully_deleted_file_ids:
+                    logger.info(f"Deleted images for MLS {mls_number}.")
                 else:
-                    logger.error("No response metadata available.")
-        else:
-            logger.info(f"No images found for MLS {mls_number}.")
+                    logger.error(f"Failed to delete images for MLS {mls_number}.")
+            else:
+                logger.info(f"No images found for MLS {mls_number}.")
     except Exception as e:
         logger.error(f"Error deleting images for MLS {mls_number}: {e}")
