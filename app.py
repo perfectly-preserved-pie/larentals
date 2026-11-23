@@ -20,7 +20,13 @@ from functions.mcp_usage_logging import register_mcp_usage_logging
 from functions.mcp_2026 import register_mcp_2026_transport
 from functions.source_map_logging import register_source_map_error_filter
 from functions.dash_asset_requests import register_dash_asset_request_guard
-from functions.security_headers import register_security_headers
+from functions.security_headers import (
+  BOOTSTRAP_CSS_URL,
+  BOOTSTRAP_ICONS_CSS_URL,
+  FONT_AWESOME_CSS_URL,
+  MAPBOX_CSS_URL,
+  register_security_headers,
+)
 from functions.mcp_listings import configure_listings_mcp
 from functions.mcp_guide import (
   MCP_CLIENTS,
@@ -64,11 +70,11 @@ PAGE_LASTMOD = json.loads(os.environ.get("SITE_PAGE_LASTMOD", "{}"))
 VIEWPORT_EVENT_PROPS: list[str] = ["detail.width", "detail.isMobile"]
 
 external_stylesheets = [
-  dbc.themes.BOOTSTRAP,
-  dbc.icons.BOOTSTRAP,
-  dbc.icons.FONT_AWESOME,
+  BOOTSTRAP_CSS_URL,
+  BOOTSTRAP_ICONS_CSS_URL,
+  FONT_AWESOME_CSS_URL,
   # Supplies Mapbox's required, unmodified logo styling when Satellite imagery is active.
-  "https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.css",
+  MAPBOX_CSS_URL,
 ]
 analytics_scripts = [
   {
@@ -254,7 +260,7 @@ def mcp_guide_page() -> str:
     page_head=Markup(build_page_head(CANONICAL_BASE_URL, "/mcp", ["/mcp"])),
     structured_data=Markup(STRUCTURED_DATA_SCRIPT),
     asset=app.get_asset_url,
-    bootstrap=dbc.themes.BOOTSTRAP,
+    bootstrap=BOOTSTRAP_CSS_URL,
     analytics=analytics_scripts,
     title=MCP_GUIDE_TITLE,
     intro=MCP_GUIDE_INTRO,

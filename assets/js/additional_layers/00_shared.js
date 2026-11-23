@@ -10,8 +10,8 @@
 
     const BREAKFAST_BURRITO_ICON_URL = "https://api.iconify.design/twemoji/burrito.svg?width=18&height=18";
     const LEAFLET_HEAT_SCRIPT_URLS = [
-        "https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js",
-        "https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js",
+        "https://cdn.jsdelivr.net/npm/leaflet.heat@1.0.1/dist/leaflet-heat-global.js",
+        "https://unpkg.com/leaflet.heat@1.0.1/dist/leaflet-heat-global.js",
     ];
 
     /**

@@ -1,5 +1,5 @@
-FROM dhi.io/python:3.13-sfw-dev AS builder
-COPY --from=dhi.io/uv:0.10-dev /usr/local/bin/uv /usr/local/bin/uv
+FROM dhi.io/python:3.13.18-sfw-dev AS builder
+COPY --from=dhi.io/uv:0.13-dev /usr/local/bin/uv /usr/local/bin/uv
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
@@ -17,7 +17,7 @@ RUN mkdir -p /app/data/runtime \
  && chmod 664 /app/assets/dashExtensions_default.js \
  && chmod 755 /app/data /app/data/runtime
 
-FROM dhi.io/python:3.13 AS runtime
+FROM dhi.io/python:3.13.18 AS runtime
 WORKDIR /app
 
 # Copy the whole prepared app tree including its permsissions from the builder stage

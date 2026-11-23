@@ -5,6 +5,14 @@ from collections.abc import Callable, Sequence
 from flask import Flask, Response
 
 
+BOOTSTRAP_CSS_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css"
+_BOOTSTRAP_ICONS_BASE_URL = "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font"
+BOOTSTRAP_ICONS_CSS_URL = f"{_BOOTSTRAP_ICONS_BASE_URL}/bootstrap-icons.css"
+_FONT_AWESOME_BASE_URL = "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1"
+FONT_AWESOME_CSS_URL = f"{_FONT_AWESOME_BASE_URL}/css/all.min.css"
+MAPBOX_CSS_URL = "https://api.mapbox.com/mapbox-gl-js/v3.35.2/mapbox-gl.css"
+
+
 # Mantine's pre_render_color_scheme index hook is outside app.csp_hashes().
 # This authorizes its exact installed script; upgrades that change the hook
 # must update the hash and pass the browser CSP checks again.
@@ -17,10 +25,10 @@ CONTENT_SECURITY_POLICY = "; ".join([
     "base-uri 'none'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self' 'wasm-unsafe-eval' {script_hashes} https://cdn.jsdelivr.net/npm/@turf/turf@7.4.0/turf.min.js https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js https://cdn.jsdelivr.net/npm/@map-gesture-controls/leaflet@1.0.0/ https://cdn.jsdelivr.net/npm/@map-gesture-controls/core@1.0.0/+esm https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/+esm https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/ https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js https://analytics.automateordie.dev/api/script.js",
+    "script-src 'self' 'wasm-unsafe-eval' {script_hashes} https://cdn.jsdelivr.net/npm/@turf/turf@7.4.0/turf.min.js https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js https://cdn.jsdelivr.net/npm/leaflet.heat@1.0.1/dist/leaflet-heat-global.js https://unpkg.com/leaflet.heat@1.0.1/dist/leaflet-heat-global.js https://cdn.jsdelivr.net/npm/@map-gesture-controls/leaflet@1.0.0/ https://cdn.jsdelivr.net/npm/@map-gesture-controls/core@1.0.0/+esm https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/+esm https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/ https://plausible.automateordie.dev/js/pa-DWgFshrhRptVOrZUWP7Ia.js https://analytics.automateordie.dev/api/script.js",
     "script-src-attr 'none'",
-    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css https://cdn.jsdelivr.net/npm/@map-gesture-controls/leaflet@1.0.0/dist/style.css https://use.fontawesome.com/releases/v6.7.2/css/all.css https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.css",
-    "font-src 'self' https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/fonts/ https://use.fontawesome.com/releases/v6.7.2/webfonts/",
+    f"style-src 'self' 'unsafe-inline' {BOOTSTRAP_CSS_URL} {BOOTSTRAP_ICONS_CSS_URL} https://cdn.jsdelivr.net/npm/@map-gesture-controls/leaflet@1.0.0/dist/style.css {FONT_AWESOME_CSS_URL} {MAPBOX_CSS_URL}",
+    f"font-src 'self' {_BOOTSTRAP_ICONS_BASE_URL}/fonts/ {_FONT_AWESOME_BASE_URL}/webfonts/",
     "img-src 'self' data: https://ik.imagekit.io https://tile.openstreetmap.org https://api.mapbox.com https://cache.gis.lacounty.gov https://services.arcgisonline.com https://api.iconify.design",
     "connect-src 'self' https://analytics.automateordie.dev https://plausible.automateordie.dev/api/event https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/ https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
     "frame-src https://maps.google.com https://www.google.com",
