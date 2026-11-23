@@ -84,31 +84,6 @@
         "recently-opened-switch": "recently_opened",
     });
 
-    const SECTION_LABELS = Object.freeze({
-        listed_date: "Listed Date",
-        location: "Location",
-        subtypes: "Home Type",
-        monthly_rent: "Monthly Rent",
-        rent_control: "Rent Control",
-        bedrooms: "Bedrooms",
-        bathrooms: "Bathrooms",
-        pet_policy: "Pet Policy",
-        amenities: "Amenities",
-        deposits: "Deposits",
-        furnished: "Furnished",
-        parking_spaces: "Parking Spaces",
-        isp_speed: "Internet Service Provider (ISP) Speed",
-        laundry: "Laundry",
-        ppsqft: "Price Per Sqft",
-        rental_terms: "Rental Terms",
-        square_footage: "Square Footage",
-        year_built: "Year Built",
-        list_price: "List Price",
-        hoa_fees: "HOA Fees",
-        hoa_fee_frequency: "HOA Fee Frequency",
-        lot_size: "Lot Size",
-    });
-
     const REPORT_REASONS = new Set([
         "Wrong Location",
         "Unavailable/Sold/Rented",
@@ -148,10 +123,16 @@
         }).filter(Boolean)));
     }
 
-    function asStringList(value) {
-        if (Array.isArray(value)) return value.map(String);
-        if (value === null || value === undefined || value === "") return [];
-        return [String(value)];
+    /**
+     * Normalize layer selections before diffing the previous and current overlays.
+     * Dash can send a single selection or no selection as well as an array.
+     * @param {*} selection Overlay selection received from Dash.
+     * @returns {string[]} Overlay names for comparison.
+     */
+    function asStringList(selection) {
+        if (Array.isArray(selection)) return selection.map(String);
+        if (selection === null || selection === undefined || selection === "") return [];
+        return [String(selection)];
     }
 
     function trackFilterChanges(categoryMap) {
@@ -173,11 +154,21 @@
     analytics.trackBuyFilterChanges = function () {
         trackFilterChanges(BUY_FILTER_CATEGORIES);
     };
-    analytics.trackListingOpened = function () {
-        trackEvent("Listing Opened", { page: currentPage() });
+    /**
+     * Record which part of the map experience opened a listing.
+     * Keep the existing event name so saved goals and funnels continue to use it.
+     * @param {"map_pin" | "results_list"} source Control that opened the listing.
+     */
+    analytics.trackListingOpened = function (source) {
+        trackEvent("Listing Opened", { page: currentPage(), schema_version: 2, source });
     };
-    analytics.trackListingLinkClicked = function () {
-        trackEvent("Listing Link Clicked", { page: currentPage() });
+    /**
+     * Track provider-link activation under the existing conversion event.
+     * Middle-clicks open a provider tab and count toward the same goal.
+     * @param {"primary" | "middle"} activation Button or keyboard activation class.
+     */
+    analytics.trackListingLinkClicked = function (activation) {
+        trackEvent("Listing Link Clicked", { page: currentPage(), schema_version: 2, activation });
     };
     analytics.trackReportListingOpened = function () {
         trackEvent("Report Listing Opened", { page: currentPage() });
@@ -192,19 +183,6 @@
 
     window.dash_clientside = Object.assign({}, window.dash_clientside, {
         clientside: Object.assign({}, window.dash_clientside && window.dash_clientside.clientside, {
-            trackFilterSectionOpen: function (activeItems, previousData) {
-                const current = asStringList(activeItems);
-                const previous = asStringList(previousData && previousData.active);
-                const previousSet = new Set(previous);
-
-                current.forEach(function (itemId) {
-                    if (!previousSet.has(itemId) && SECTION_LABELS[itemId]) {
-                        trackEvent("Filter Section Opened", { section: SECTION_LABELS[itemId] });
-                    }
-                });
-                return { active: current };
-            },
-
             trackLayerToggled: function (selectedOverlays, previousData) {
                 const current = asStringList(selectedOverlays);
                 const previous = asStringList(previousData && previousData.overlays);

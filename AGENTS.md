@@ -7,6 +7,12 @@ whether a change warrants a project version bump.
 
 For user-facing changes, read [DESIGN.md](DESIGN.md) and follow the shared visual direction for the maps and MCP guide.
 
+# Analytics
+
+Read [ANALYTICS.md](ANALYTICS.md) before answering questions from Rybbit data or
+changing tracking, goals, or funnels. Keep the event contract and its checks
+in sync with analytics changes.
+
 # Crawler regression checks
 
 Before finishing changes that can affect what the public site serves, run

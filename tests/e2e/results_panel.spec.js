@@ -185,6 +185,10 @@ test("lease popup listing links stay on canonical http(s) URLs", async ({ page }
   await page.setViewportSize({ width: 1440, height: 900 });
   // Weekly data may start with a listing that has neither a photo nor a link.
   // Supply a known destination so this check exercises URL rendering every run.
+  await page.route("**/analytics/script.js?*", (route) => route.fulfill({
+    contentType: "application/javascript",
+    body: "window.analyticsEvents = []; window.rybbit = { event: (...args) => window.analyticsEvents.push(args) };",
+  }));
   const listingUrl = "https://www.theagencyre.com/listing/test-property?source=popup&mode=lease";
   await page.route("**/api/lease/listing-details/*", async (route) => {
     const response = await route.fetch();
@@ -215,4 +219,30 @@ test("lease popup listing links stay on canonical http(s) URLs", async ({ page }
     expect(href).toMatch(/^https?:\/\//);
     expect(href).toBe(listingUrl);
   }
+
+  const events = (name) => page.evaluate((eventName) =>
+    window.analyticsEvents.filter(([name]) => name === eventName).map(([, properties]) => properties), name);
+  const link = popupLinks.first();
+  await link.evaluate((element) => {
+    for (const type of ["click", "auxclick", "contextmenu"]) {
+      element.addEventListener(type, (event) => event.preventDefault());
+    }
+  });
+  await link.click();
+  await link.click({ button: "middle" });
+  await link.click({ button: "right" });
+  expect(await events("Listing Link Clicked")).toEqual([
+    { page: "lease", schema_version: 2, activation: "primary" },
+    { page: "lease", schema_version: 2, activation: "middle" },
+  ]);
+
+  // Map markers call the same popup entry point without the results-list option.
+  await page.evaluate((listingId) => {
+    const { map, popups } = window.larentals;
+    popups.openAt(map._popup.getLatLng(), { mls_number: listingId });
+  }, mls);
+  expect(await events("Listing Opened")).toEqual([
+    { page: "lease", schema_version: 2, source: "results_list" },
+    { page: "lease", schema_version: 2, source: "map_pin" },
+  ]);
 });

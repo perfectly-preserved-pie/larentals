@@ -19,7 +19,9 @@
   ui.pendingApplyAnalytics = ui.pendingApplyAnalytics || {};
   ui.pendingLocationApply = ui.pendingLocationApply || {};
   ui.locationMapUpdates = ui.locationMapUpdates || {};
-  ui.lastLocationErrorKey = ui.lastLocationErrorKey || {};
+  const pendingSearches = {};
+  const locationAttempts = {};
+  const viewedPanels = new WeakMap();
   ui.restoring = ui.restoring || {};
   ui.openedAt = ui.openedAt || {};
   ui.pageStartedAt = ui.pageStartedAt || {};
@@ -247,20 +249,114 @@
   }
 
   /**
-   * Find filter groups whose values differ from the page defaults.
-   * A group can include several controls, such as a range and its missing-value switch.
+   * Compare filter groups using the captured control values.
+   * A group's range and missing-value controls count as one edit when they change together.
    * @param {ListingPage} page Listing mode to inspect.
-   * @param {FilterState} state Filter values to compare.
-   * @returns {string[]} Names of active filter groups.
+   * @param {FilterState} state Captured filter values.
+   * @param {FilterState} previous Baseline used for comparison.
+   * @returns {string[]} Keys of changed groups.
    */
-  function activeGroups(page, state) {
-    const defaults = ui.defaults[page];
-    if (!state || !defaults) return [];
-    return Object.keys(GROUPS[page]).filter(function (groupName) {
-      return GROUPS[page][groupName].some(function (key) {
-        return !equal(state[key], defaults[key]);
+  function changedGroups(page, state, previous) {
+    return Object.keys(GROUPS[page]).filter(function (group) {
+      return GROUPS[page][group].some(function (key) {
+        return !equal(state[key], previous[key]);
       });
     });
+  }
+
+  /**
+   * Map captured groups to their reporting category and accordion section.
+   * Keep established category names so draft edits and commits can be compared.
+   * @param {ListingPage} page Listing mode that defines the price filter.
+   * @param {string} group Key from the captured filter state groups.
+   * @returns {{category: string, section_id: string}} Reporting dimensions.
+   */
+  function filterGroupProperties(page, group) {
+    const categories = {
+      price: page === "lease" ? "monthly_rent" : "list_price",
+      pets: "pet_policy", year: "year_built", terms: "rental_terms",
+      ppsqft: "price_per_sqft", listedDate: "listed_date", isp: "isp_speed",
+      rentControl: "rent_control", lotSize: "lot_size", hoa: "hoa_fees",
+      hoaFrequency: "hoa_fee_frequency",
+    };
+    const category = categories[group] || group;
+    const sections = { sqft: "square_footage", parking: "parking_spaces", price_per_sqft: "ppsqft" };
+    return { category, section_id: sections[category] || category };
+  }
+
+  /**
+   * Find groups that narrow the search relative to the page defaults.
+   * The defaults are captured on mount, so counts reflect the available listing data.
+   * @param {ListingPage} page Listing mode to inspect.
+   * @param {FilterState} state Captured filter values.
+   * @returns {string[]} Keys of active groups.
+   */
+  function activeGroups(page, state) {
+    return state && ui.defaults[page] ? changedGroups(page, state, ui.defaults[page]) : [];
+  }
+
+  /**
+   * Identify the sidebar presentation that controls whether edits need Apply.
+   * Device type alone cannot distinguish a compact browser window from a full sidebar.
+   * @returns {string} Layout used for analytics breakdowns.
+   */
+  function filterLayout() {
+    return window.innerWidth >= DESKTOP_BREAKPOINT ? "sidebar"
+      : window.innerWidth < 768 ? "bottom-sheet" : "side-drawer";
+  }
+
+  /**
+   * Attach consistent dimensions to revised filter events.
+   * A version distinguishes state-based events from the earlier callback-based counts.
+   * @param {string} name Analytics event name.
+   * @param {ListingPage} page Listing mode that produced the event.
+   * @param {object} [properties] Event-specific, low-cardinality dimensions.
+   */
+  function trackFilterEvent(name, page, properties) {
+    return root.analytics?.trackEvent?.(name, {
+      page, layout: filterLayout(), schema_version: 2, ...properties,
+    });
+  }
+
+  /**
+   * Check that a location response belongs to the current controls.
+   * A response from the previous edit can still be in the store when Apply runs.
+   * @param {FilterState} state Captured filter values.
+   * @returns {boolean} Whether the current ZIP lookup is complete.
+   */
+  function locationSettled(state) {
+    const request = state.zipBoundary?.request;
+    if (!locationText(state.locationText)) {
+      return !state.zipBoundary?.zip_codes?.length && !state.zipBoundary?.error;
+    }
+    return Boolean(request &&
+      locationValueKey(request.locations) === locationValueKey(state.locationText) &&
+      request.nearby === Boolean(state.nearbyZip));
+  }
+
+  /**
+   * Report the resolver outcome for an accepted addition once its lookup returns.
+   * Keep the entry method for attribution and exclude location text and ZIP codes from events.
+   * @param {ListingPage} page Listing mode that owns the lookup.
+   * @param {FilterState} state Captured filter values.
+   */
+  function trackLocationOutcome(page, state) {
+    const attempt = locationAttempts[page];
+    if (!attempt || !locationSettled(state) || !Array.isArray(state.locationText) ||
+      !state.locationText.some((tag) => !attempt.previous.includes(tag))) return;
+    delete locationAttempts[page];
+
+    const boundary = state.zipBoundary;
+    if (boundary?.zip_codes?.length) {
+      trackFilterEvent("Location Resolved", page, {
+        method: attempt.method,
+        outcome: boundary.warnings?.length ? "partial" : "resolved",
+      });
+    } else {
+      const reason = ["place_outside", "place_not_found"].includes(boundary?.error)
+        ? boundary.error : "unknown";
+      trackFilterEvent("Location Resolution Failed", page, { method: attempt.method, error: reason });
+    }
   }
 
   /**
@@ -277,6 +373,11 @@
     const zipStoreId = `${page}-zip-boundary-store`;
     const viewportOnly = ids.length === 1 && ids[0] === "viewport-listener";
     const isInitial = !currentApplied;
+    const previousDraft = ui.drafts[page];
+    if (isInitial) {
+      delete pendingSearches[page];
+      delete locationAttempts[page];
+    }
     const forced = Number(ui.forceApplyUntil[page] || 0) >= Date.now();
     const pendingLocation = ui.pendingLocationApply[page];
     const restoring = ui.restoring[page];
@@ -322,13 +423,24 @@
       ui.applied[page] = clone(currentApplied);
     }
 
-    if (!viewportOnly && page === "lease") {
-      root.analytics?.trackLeaseFilterChanges?.();
-    } else if (!viewportOnly && page === "buy") {
-      root.analytics?.trackBuyFilterChanges?.();
+    if (!isInitial && !viewportOnly && previousDraft && !forced) {
+      changedGroups(page, state, previousDraft).forEach(function (group) {
+        trackFilterEvent("Filter Changed", page, filterGroupProperties(page, group));
+      });
     }
 
+    if (ids.includes(zipStoreId)) trackLocationOutcome(page, state);
+
     if (shouldApply) {
+      if (!isInitial && !viewportOnly && changedGroups(page, state, currentApplied).length) {
+        const pending = pendingSearches[page];
+        const explicit = ids.includes(applyId) || pending?.mode === "explicit";
+        pendingSearches[page] = {
+          mode: explicit ? "explicit" : "automatic",
+          state,
+          previous: pending?.previous || currentApplied,
+        };
+      }
       ui.applied[page] = clone(state);
       if (ids.includes(applyId)) {
         ui.pendingApplyAnalytics[page] = true;
@@ -355,7 +467,8 @@
 
   /**
    * Run the page-specific filter engine against the source listings.
-   * Incomplete inputs or an unavailable page engine return `null` so callers can wait safely.
+   * Engines run quietly because capture already records user edits. Incomplete
+   * inputs return `null` so callers can wait for the listing data.
    * @param {ListingPage} page Listing mode being filtered.
    * @param {FilterState} state Filter values to apply.
    * @param {FeatureCollection} fullGeojson Unfiltered listing features.
@@ -366,10 +479,10 @@
       return null;
     }
     if (page === "lease" && typeof filtersApi.filterLeaseState === "function") {
-      return filtersApi.filterLeaseState(state, fullGeojson);
+      return filtersApi.filterLeaseState(state, fullGeojson, true);
     }
     if (page === "buy" && typeof filtersApi.filterBuyState === "function") {
-      return filtersApi.filterBuyState(state, fullGeojson);
+      return filtersApi.filterBuyState(state, fullGeojson, true);
     }
     return null;
   }
@@ -408,7 +521,9 @@
 
   /**
    * Apply committed filter values and update result-count analytics.
-   * The analytics event is emitted only when a user initiated Apply is pending.
+   * Preserve the explicit Apply metric and report effective desktop or mobile commits
+   * once the results include the current location response. Group events compare
+   * against the applied state from before the pending search, even during a lookup.
    * @param {ListingPage} page Listing mode being filtered.
    * @param {FilterState} state Committed filter values.
    * @param {FeatureCollection} fullGeojson Unfiltered listing features.
@@ -429,6 +544,29 @@
         ui: "adaptive-sheet-v1",
         active_filters: activeGroups(page, state).length,
         results: resultBucket(count),
+      });
+    }
+
+    const pendingSearch = pendingSearches[page];
+    if (pendingSearch && locationSettled(state) && !changedGroups(page, state, pendingSearch.state).length) {
+      delete pendingSearches[page];
+      const active = new Set(activeGroups(page, state).filter((group) =>
+        group !== "location" || state.zipBoundary?.zip_codes?.length
+      ));
+      const activeFilterCount = active.size;
+      trackFilterEvent("Filter Search Committed", page, {
+        commit_mode: pendingSearch.mode,
+        result_bucket: resultBucket(count),
+        has_results: count > 0,
+        active_filter_count: activeFilterCount,
+        has_active_filters: activeFilterCount > 0,
+      });
+      changedGroups(page, state, pendingSearch.previous).forEach(function (group) {
+        trackFilterEvent("Filter Group Committed", page, {
+          ...filterGroupProperties(page, group),
+          commit_mode: pendingSearch.mode,
+          is_active: active.has(group),
+        });
       });
     }
 
@@ -581,30 +719,14 @@
 
   /**
    * Synchronize toolbar labels, counts, and chips with filter state.
-   * Draft errors are reported once per distinct input/error pair to avoid duplicate analytics.
+   * Desktop exposure is recorded here because the sidebar does not need a drawer click.
    * @param {ListingPage} page Listing mode to render.
    * @returns {void}
    */
   function render(page) {
     setLocationInputCues(page);
 
-    const draftState = ui.drafts[page];
-    const locationError = draftState?.zipBoundary?.error || null;
-    if (locationError) {
-      const errorKey = `${locationValueKey(draftState.locationText)}:${locationError}`;
-      if (ui.lastLocationErrorKey[page] !== errorKey) {
-        ui.lastLocationErrorKey[page] = errorKey;
-        root.analytics?.trackEvent?.("Location Resolution Failed", {
-          page,
-          error: locationError,
-          entry_count: Array.isArray(draftState.locationText)
-            ? draftState.locationText.length
-            : Number(Boolean(locationText(draftState.locationText))),
-        });
-      }
-    } else {
-      ui.lastLocationErrorKey[page] = null;
-    }
+    if (window.innerWidth >= DESKTOP_BREAKPOINT) trackPanelView(page);
 
     const appliedState = ui.applied[page];
     const defaults = ui.defaults[page];
@@ -729,6 +851,7 @@
   function clearFilters(page) {
     const defaults = ui.defaults[page];
     if (!defaults) return;
+    delete locationAttempts[page];
     delete ui.restoring[page];
     const current = ui.drafts[page] || ui.applied[page] || {};
     const changedKeys = Object.keys(CONTROL_MAP[page]).filter(function (key) {
@@ -759,6 +882,51 @@
   }
 
   /**
+   * Count exposure once for each mounted panel and presentation.
+   * A new page mount gets its own exposure while repeated drawer opens use the same denominator.
+   * @param {ListingPage} page Listing mode that owns the visible controls.
+   */
+  function trackPanelView(page) {
+    const panel = panelFor(page);
+    if (!panel || typeof root.analytics?.trackEvent !== "function") return;
+    const layout = filterLayout();
+    if (!viewedPanels.has(panel)) viewedPanels.set(panel, new Set());
+    const layouts = viewedPanels.get(panel);
+    if (layouts.has(layout)) return;
+    layouts.add(layout);
+    trackFilterEvent("Filter Panel Viewed", page);
+  }
+
+  /**
+   * Remember how a location was submitted until the resolver confirms it.
+   * Keep the earlier input key in memory so duplicate or rejected entries do not count as resolved.
+   * @param {ListingPage} page Listing mode that owns the input.
+   * @param {string} method Submission method.
+   */
+  function trackLocationAttempt(page, method) {
+    const previous = ui.drafts[page]?.locationText;
+    const attempt = { previous: Array.isArray(previous) ? previous : [previous], method };
+    locationAttempts[page] = attempt;
+    window.setTimeout(function () {
+      if (locationAttempts[page] === attempt) delete locationAttempts[page];
+    }, 15_000);
+    trackFilterEvent("Location Added", page, { method });
+  }
+
+  /**
+   * Record a user-requested expansion with a stable section key.
+   * The label remains available for charts that group earlier events by heading.
+   * @param {ListingPage} page Listing mode that owns the section.
+   * @param {string} section Section key shared with the quick-filter buttons.
+   * @param {string} source Header or shortcut that requested the expansion.
+   */
+  function trackSectionOpen(page, section, source) {
+    trackFilterEvent("Filter Section Opened", page, {
+      section: SECTION_LABELS[section], section_id: section, source,
+    });
+  }
+
+  /**
    * Open the responsive panel and optionally focus a filter section.
    * Mobile mode makes the map inert and moves keyboard focus into the modal drawer.
    * @param {ListingPage} page Listing mode to open.
@@ -779,6 +947,7 @@
     ui.lastTrigger = trigger || document.activeElement;
     ui.openedAt[page] = Date.now();
     panel.classList.add("is-open");
+    trackPanelView(page);
     backdrop.classList.add("is-open");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
@@ -825,6 +994,7 @@
     if (!panel || !panel.classList.contains("is-open")) return;
 
     if (restore) {
+      delete locationAttempts[page];
       const applied = ui.applied[page] || {};
       const draft = ui.drafts[page] || {};
       const locationKeys = new Set(["locationText", "nearbyZip", "zipBoundary"]);
@@ -864,15 +1034,28 @@
   }
 
   const SECTION_LABELS = Object.freeze({
-    listed_date: "Listed Date",
-    location: "Location",
-    subtypes: "Home Type",
-    monthly_rent: "Monthly Rent",
-    list_price: "List Price",
-    bedrooms: "Bedrooms",
-    bathrooms: "Bathrooms",
-    pet_policy: "Pet Policy",
-    amenities: "Amenities",
+      listed_date: "Listed Date",
+      location: "Location",
+      subtypes: "Home Type",
+      monthly_rent: "Monthly Rent",
+      rent_control: "Rent Control",
+      bedrooms: "Bedrooms",
+      bathrooms: "Bathrooms",
+      pet_policy: "Pet Policy",
+      amenities: "Amenities",
+      deposits: "Deposits",
+      furnished: "Furnished",
+      parking_spaces: "Parking Spaces",
+      isp_speed: "Internet Service Provider (ISP) Speed",
+      laundry: "Laundry",
+      ppsqft: "Price Per Sqft",
+      rental_terms: "Rental Terms",
+      square_footage: "Square Footage",
+      year_built: "Year Built",
+      list_price: "List Price",
+      hoa_fees: "HOA Fees",
+      hoa_fee_frequency: "HOA Fee Frequency",
+      lot_size: "Lot Size",
   });
 
   const ACCORDION_DEFAULTS = Object.freeze({
@@ -946,11 +1129,23 @@
 
   /**
    * Route delegated clicks to open, close, apply, clear, or remove actions.
-   * Delegation handles dynamically rendered controls and records location interactions in one place.
+   * Delegation captures a collapsed header before Bootstrap changes aria-expanded
+   * and captures location submissions before Dash starts the lookup.
    * @param {MouseEvent} event Captured document click.
    * @returns {void}
    */
   function clickHandler(event) {
+    const heading = event.target.closest(".options-accordion button.accordion-button");
+    if (heading?.getAttribute("aria-expanded") === "false") {
+      const accordion = heading.closest(".options-accordion");
+      const page = currentPage();
+      if (accordion.id === `${page}-options-accordion`) {
+        const label = heading.textContent.trim();
+        const section = Object.keys(SECTION_LABELS).find((key) => SECTION_LABELS[key] === label);
+        if (section) trackSectionOpen(page, section, "header");
+      }
+    }
+
     const locationRemoveTrigger = event.target.closest(
       ".location-tags-input .mantine-TagsInput-pill button"
     );
@@ -968,20 +1163,14 @@
       && activeInput instanceof HTMLInputElement
       && /^(lease|buy)-location-input$/.test(activeInput.id)
     ) {
-      root.analytics?.trackEvent?.("Location Added", {
-        page: activeInput.id.startsWith("buy-") ? "buy" : "lease",
-        method: "suggestion_pointer",
-      });
+      trackLocationAttempt(currentPage(), "suggestion_pointer");
     }
 
     const locationAddTrigger = event.target.closest(".location-add-button");
     if (locationAddTrigger) {
       const page = locationAddTrigger.id.startsWith("buy-") ? "buy" : "lease";
       event.preventDefault();
-      root.analytics?.trackEvent?.("Location Added", {
-        page,
-        method: "add_button",
-      });
+      trackLocationAttempt(page, "add_button");
       addTypedLocation(page);
       return;
     }
@@ -1038,13 +1227,11 @@
   }
 
   /**
-   * Handle Escape dismissal and Tab wrapping inside an open panel.
-   * Escape first belongs to an expanded location combobox, and otherwise closes the drawer.
-   * @param {KeyboardEvent} event Document keyboard event.
-   * @returns {void}
+   * Capture location submission before the tags input handles Enter.
+   * The control can consume the key and clear its text before document bubbling.
+   * @param {KeyboardEvent} event Captured keyboard event.
    */
-  function keyHandler(event) {
-    const page = currentPage();
+  function trackLocationKey(event) {
     if (
       event.isTrusted
       && event.key === "Enter"
@@ -1052,14 +1239,19 @@
       && /^(lease|buy)-location-input$/.test(event.target.id)
       && event.target.value.trim()
     ) {
-      root.analytics?.trackEvent?.("Location Added", {
-        page,
-        method: event.target.getAttribute("aria-activedescendant")
-          ? "suggestion_keyboard"
-          : "free_form_keyboard",
-      });
+      trackLocationAttempt(currentPage(), event.target.getAttribute("aria-activedescendant")
+        ? "suggestion_keyboard" : "free_form_keyboard");
     }
+  }
 
+  /**
+   * Handle Escape dismissal and Tab wrapping inside an open panel.
+   * Escape first belongs to an expanded location combobox, and otherwise closes the drawer.
+   * @param {KeyboardEvent} event Document keyboard event.
+   * @returns {void}
+   */
+  function keyHandler(event) {
+    const page = currentPage();
     const panel = panelFor(page);
     if (!panel || !panel.classList.contains("is-open")) return;
 
@@ -1390,7 +1582,8 @@
 
       /**
        * Apply viewport-specific defaults or add a quick-filter target to the
-       * accordion's expanded sections.
+       * accordion's expanded sections. Only a shortcut that expands a section
+       * contributes an open event, so breakpoint changes cannot count as interest.
        * @returns {string[] | *} Expanded section keys or Dash's no-update value.
        */
       openFilterAccordionSection: function () {
@@ -1415,13 +1608,16 @@
         }
         const section = button?.dataset.filterSection;
         if (!section) return window.dash_clientside.no_update;
-        return current.includes(section) ? current : current.concat(section);
+        if (current.includes(section)) return current;
+        trackSectionOpen(page, section, "quick_filter");
+        return current.concat(section);
       },
     }),
   });
 
   // Capture the interaction before Dash's React handlers consume component clicks.
   document.addEventListener("click", clickHandler, true);
+  document.addEventListener("keydown", trackLocationKey, true);
   document.addEventListener("keydown", keyHandler);
   window.addEventListener("resize", syncBreakpoint, { passive: true });
   window.addEventListener("orientationchange", syncBreakpoint, { passive: true });

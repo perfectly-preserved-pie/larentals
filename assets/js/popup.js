@@ -24,15 +24,24 @@
     /** @type {Map<string, Promise<Record<string, unknown>>>} */
     const listingDetailFetchCache = new Map();
 
-    document.addEventListener("click", function trackListingLinkClick(event) {
+    /**
+     * Track provider links rendered dynamically in a listing popup.
+     * Browsers use auxclick for middle-button navigation and also emit it for right clicks.
+     * @param {MouseEvent} event Delegated link activation.
+     */
+    function trackListingLinkClick(event) {
+        if (event.type === "auxclick" && event.button !== 1) return;
         const target = event.target;
         const link = target && typeof target.closest === "function"
             ? target.closest(".plausible-listing-link")
             : null;
         if (link) {
-            window.larentals?.analytics?.trackListingLinkClicked();
+            window.larentals?.analytics?.trackListingLinkClicked(event.type === "auxclick" ? "middle" : "primary");
         }
-    });
+    }
+
+    document.addEventListener("click", trackListingLinkClick);
+    document.addEventListener("auxclick", trackListingLinkClick);
 
     /**
      * Escape text for safe HTML interpolation.
@@ -967,6 +976,7 @@
          * Open a listing popup with its summary while full details load.
          * Mark results-panel opens for the entrance animation before Leaflet
          * mounts the popup, so fetching details never restarts the animation.
+         * The same flag attributes the open to the results list in analytics.
          */
         openAt: function (latlng, summaryData, options) {
             const map = larentals.map;
@@ -995,7 +1005,7 @@
                     console.error("Failed to load listing details", listingId, error);
                     if (map.hasLayer(popup)) setPopupContent(target, renderPopupErrorContent(data));
                 });
-            window.larentals?.analytics?.trackListingOpened();
+            window.larentals?.analytics?.trackListingOpened(options?.fromResults ? "results_list" : "map_pin");
             return popup;
         },
     });

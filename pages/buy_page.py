@@ -91,11 +91,6 @@ def layout(**_: object) -> dbc.Container:
     storage_type="memory",
     data=None,
   )
-  analytics_section_store = dcc.Store(
-    id="buy-analytics-section-store",
-    storage_type="memory",
-    data={"active": list(components.CONFIG.active_filter_items)},
-  )
   analytics_layer_store = dcc.Store(
     id="buy-analytics-layer-store",
     storage_type="memory",
@@ -121,7 +116,6 @@ def layout(**_: object) -> dbc.Container:
       zip_boundary_store,
       school_layer_prompt_state_store,
       school_layer_focus_store,
-      analytics_section_store,
       analytics_layer_store,
       analytics_basemap_store,
       analytics_school_filter_store,
@@ -166,14 +160,6 @@ clientside_callback(
   Input("buy-geojson-store", "data"),
   Input("buy_geojson", "data"),
   State("buy-map-spinner", "style"),
-)
-
-clientside_callback(
-  ClientsideFunction(namespace='clientside', function_name='trackFilterSectionOpen'),
-  Output('buy-analytics-section-store', 'data'),
-  Input('buy-options-accordion', 'active_item'),
-  State('buy-analytics-section-store', 'data'),
-  prevent_initial_call=True,
 )
 
 clientside_callback(
@@ -505,6 +491,8 @@ def update_buy_zip_boundary(
   when other tags still produce a usable boundary. When the responsive filter
   applies the boundary, the client keeps loading active until filtered map data
   returns; a staged phone edit ends loading after lookup until the user taps Apply.
+  The payload echoes the controls so analytics can match the response to
+  the correct search when a ZIP lookup finishes asynchronously.
 
   Returns:
     Boundary data, live status, field error/success, and status CSS classes.
@@ -519,6 +507,7 @@ def update_buy_zip_boundary(
     ZIP_POLYGONS,
     include_nearby=bool(include_nearby),
   )
+  payload["request"] = {"locations": locations or [], "nearby": bool(include_nearby)}
   error, success, status_class = build_location_input_feedback(payload, status)
   return payload, build_location_filter_status(payload, status), error, success, status_class
 
