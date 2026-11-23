@@ -3,8 +3,16 @@
 
     var root = window.larentals = window.larentals || {};
 
-    // Five vivid, perceptually ordered bands read clearly on individual markers.
-    var PRICE_BANDS = ["#0d0887", "#7e03a8", "#cc4778", "#f89540", "#f0f921"];
+    // Lower prices are lighter so the order reads even in grayscale.
+    var PRICE_BANDS = ["#cbd8df", "#9aafb8", "#708e97", "#456771", "#193b43"];
+
+    // Publish the marker palette for both legends, including after navigation
+    // replaces their markup.
+    if (window.document) {
+        PRICE_BANDS.forEach(function (color, index) {
+            window.document.documentElement.style.setProperty("--price-band-" + (index + 1), color);
+        });
+    }
 
     var MISSING_COLOR = "#6b7280";
 
@@ -114,11 +122,19 @@
         return fraction === null ? MISSING_COLOR : colorForFraction(fraction);
     };
 
+    /**
+     * Keep exact prices and cluster counts readable on every band.
+     * Switch between black and white at their equal-contrast luminance so
+     * small marker text meets 4.5:1 on every band.
+     *
+     * @param {number} price Listing price or cluster median.
+     * @returns {string} Contrasting text color for the marker.
+     */
     scale.labelColorFor = function (price) {
         var fraction = scale.fractionFor(price);
         if (fraction === null) return "#ffffff";
         var background = colorForFraction(fraction);
-        return relativeLuminance(background) > 0.179 ? "#172033" : "#ffffff";
+        return relativeLuminance(background) > 0.179 ? "#000000" : "#ffffff";
     };
 
     /**

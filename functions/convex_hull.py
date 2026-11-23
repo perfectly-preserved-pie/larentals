@@ -19,7 +19,8 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
         .sort(function (a, b) { return a - b; });
     const medianPrice = prices.length ? prices[Math.floor((prices.length - 1) / 2)] : NaN;
     const scale = (window.larentals || {}).priceScale;
-    const color = scale ? scale.colorFor(medianPrice) : 'rgba(23, 162, 184, 0.9)';
+    const color = scale ? scale.colorFor(medianPrice) : '#6b7280';
+    const labelColor = scale ? scale.labelColorFor(medianPrice) : '#ffffff';
                                
     // Scale marker size based on cluster density instead of color
     // Larger clusters = physically bigger markers
@@ -110,7 +111,7 @@ generate_convex_hulls = assign("""function(feature, latlng, index, context){
                                 border-radius:50%; width:${innerSize}px; height:${innerSize}px; 
                                 position:absolute; top:${(markerSize - innerSize) / 2}px; left:${(markerSize - innerSize) / 2}px; 
                                 display:flex; align-items:center; justify-content:center; 
-                                font-weight:bold; color:white; font-size:${Math.floor(innerSize / 2.5)}px;">
+                                font-weight:bold; color:${labelColor}; font-size:${Math.floor(innerSize / 2.5)}px;">
                         ${feature.properties.point_count_abbreviated}
                     </div>
                 </div>`,

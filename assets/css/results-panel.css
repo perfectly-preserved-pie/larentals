@@ -406,7 +406,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+}
+
+.price-legend__swatches {
+  border: 1px solid var(--site-control-edge);
 }
 
 .price-legend__swatch {
@@ -414,15 +417,16 @@
   flex: 1;
 }
 
-.price-legend__swatch--1 { background: #0d0887; }
-.price-legend__swatch--2 { background: #7e03a8; }
-.price-legend__swatch--3 { background: #cc4778; }
-.price-legend__swatch--4 { background: #f89540; }
-.price-legend__swatch--5 { background: #f0f921; }
+.price-legend__swatch--1 { background: var(--price-band-1); }
+.price-legend__swatch--2 { background: var(--price-band-2); }
+.price-legend__swatch--3 { background: var(--price-band-3); }
+.price-legend__swatch--4 { background: var(--price-band-4); }
+.price-legend__swatch--5 { background: var(--price-band-5); }
 
 .price-legend__labels {
   margin-top: 4px;
   color: var(--site-muted);
+  font-family: var(--site-sans);
   font-size: 0.65rem;
 }
 

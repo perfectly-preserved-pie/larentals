@@ -16,7 +16,7 @@ const { matrix, stateFor } = require("./fixtures/price_filter_matrix");
 function assertPriceColors(scale, features, key) {
   const prices = features.map((feature) => Number(feature.properties.list_price)).sort((a, b) => a - b);
   scale.update(prices);
-  const bands = ["#0d0887", "#7e03a8", "#cc4778", "#f89540", "#f0f921"];
+  const bands = ["#cbd8df", "#9aafb8", "#708e97", "#456771", "#193b43"];
   const [low, high] = key === "lease" ? [1950, 4000] : [449000, 949000];
   for (const price of prices) {
     const fraction = prices.length >= 5
@@ -42,7 +42,7 @@ for (const key of ["lease", "buy"]) {
     expect(groups.map(([name]) => name).sort()).toEqual(Object.keys(configuredGroups[key]).sort());
     const filter = context.window.larentals.filters[key === "lease" ? "filterLeaseState" : "filterBuyState"];
     const scale = context.window.larentals.priceScale;
-    const bands = ["#0d0887", "#7e03a8", "#cc4778", "#f89540", "#f0f921"];
+    const bands = ["#cbd8df", "#9aafb8", "#708e97", "#456771", "#193b43"];
     for (let mask = 0; mask < 2 ** groups.length; mask++) {
       const filtered = filter(stateFor(base, groups, mask), source).features;
       const expected = source.features.filter((feature) => feature.excludedBy < 0 || !(mask & 2 ** feature.excludedBy));
@@ -164,7 +164,7 @@ for (const key of ["lease", "buy"]) {
       await expect.poll(() => page.evaluate(() => {
         const prices = [...document.querySelectorAll(".results-row__price")]
           .map((row) => Number(row.textContent.replace(/[^0-9]/g, ""))).sort((a, b) => a - b);
-        const bands = ["#0d0887", "#7e03a8", "#cc4778", "#f89540", "#f0f921"];
+        const bands = ["#cbd8df", "#9aafb8", "#708e97", "#456771", "#193b43"];
         const markers = [...document.querySelectorAll(".price-marker[data-price], [data-cluster-price]")];
         return markers.length > 0 && markers.every((marker) => {
           const price = Number(marker.dataset.price || marker.dataset.clusterPrice);
