@@ -1,3 +1,5 @@
+from urllib.parse import quote_from_bytes, urlsplit
+
 from dash import Dash, clientside_callback, ClientsideFunction, Input, Output, dcc
 from api import register_api_routes
 from functions.data_paths import LARENTALS_DB_PATH
@@ -185,6 +187,8 @@ def enforce_public_page_routes() -> Response | None:
   Dash has a catch-all for browser pages, so Flask can otherwise serve HTML
   with a success status for missing discovery files or mistyped links. Explicit
   routes such as the MCP transport, health, and static assets bypass this check.
+  Trailing slashes redirect only to registered local pages. Query escapes are
+  preserved so canonicalizing the path keeps filters and other URL parameters.
 
   Returns:
       A canonical redirect for a trailing slash, or None to continue routing.
@@ -199,8 +203,19 @@ def enforce_public_page_routes() -> Response | None:
     return None
   canonical_path = request.path.rstrip("/")
   if canonical_path in page_paths:
-    query = "?" + request.query_string.decode("latin-1") if request.query_string else ""
-    return redirect(canonical_path + query, code=308)
+    query = quote_from_bytes(
+      request.query_string.replace(b"\\", b""), safe="!$&'()*+,/:;=?@%[]"
+    )
+    target = canonical_path + ("?" + query if query else "")
+    parsed = urlsplit(target)
+    if (
+      target.startswith("/")
+      and not target.startswith("//")
+      and not parsed.scheme
+      and not parsed.netloc
+      and parsed.path == canonical_path
+    ):
+      return redirect(target, code=308)
   abort(404)
 
 
